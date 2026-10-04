@@ -31,4 +31,14 @@ public class HitReactionTest {
         assertEquals(0f, HitReaction.weight(0, 100, false), 0f);
         assertEquals(1f, HitReaction.weight(5, 0, false), 0f);
     }
+
+    @Test
+    public void aKillingBlowRemembersHowFarPastZeroItWent() {
+        com.bpm.minotaur.gamedata.monster.Monster m =
+                new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.GOBLIN, 20, 12);
+        int hp = m.getCurrentHP();
+        m.takeDamage(hp + 9, true);
+        assertEquals(0, m.getCurrentHP());
+        assertEquals(9, m.getLastOverkill());
+    }
 }

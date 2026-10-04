@@ -612,6 +612,9 @@ public class Monster implements Renderable {
         // Critical strikes and piercing strikes bypass armor soak completely.
         int reduction = (isCrit || isPiercing) ? 0 : Math.max(0, (armorClass - 14) / 2);
         int taken = Math.max(1, amount - reduction);
+        // Measured before the clamp below: HP stops at 0, so reading it after
+        // a kill always said the blow landed exactly enough.
+        lastOverkill = Math.max(0, taken - Math.max(0, this.currentHP));
         this.currentHP -= taken;
         if (this.currentHP < 0) {
             this.currentHP = 0;
@@ -625,6 +628,12 @@ public class Monster implements Renderable {
     private long lastHitTimeMillis = -1L;
     /** How heavy the last blow was, 0..1 (see HitReaction): scales recoil and flash. */
     private float lastHitWeight = 0f;
+    /** Damage the last blow dealt beyond what HP it had left; what makes a gib death. */
+    private int lastOverkill = 0;
+
+    public int getLastOverkill() {
+        return lastOverkill;
+    }
 
     /** 0.0 = just hit, 1.0 = flash fully faded (or never hit). */
     public float getHitFlashProgress() {

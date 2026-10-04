@@ -794,7 +794,7 @@ public class CombatManager {
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " slayed " + defender.getMonsterType() + "!", 2f));
                 }
-                int infightTier = DeathGore.overkillTier(Math.max(0, -defender.getCurrentHP()),
+                int infightTier = DeathGore.overkillTier(defender.getLastOverkill(),
                         defender.getMaxHP(), false, GoreLevel.current());
                 spawnCorpseEffects(defender, DeathGore.plan(KillCause.none(), infightTier, GoreLevel.current()));
             }
@@ -2228,8 +2228,7 @@ public class CombatManager {
                                 showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                                 if (adjMonster.getCurrentHP() <= 0) {
                                     // The full kill path, so a cleaved monster leaves a body and dies on screen.
-                                    handleRemoteKill(adjMonster, KillCause.weapon(AnimationArchetype.fromItem(
-                                            player.getInventory() != null ? player.getInventory().getRightHand() : null), false));
+                                    handleRemoteKill(adjMonster, KillCause.weapon(heldWeaponKillCause().weapon, false));
                                 }
                                 break;
                             }
@@ -2416,6 +2415,8 @@ public class CombatManager {
             }
         }
 
+        // Read before a thrown consumable empties the hand, or the kill has no weapon.
+        KillCause attackCause = heldWeaponKillCause();
         if (pendingWeapon != null && pendingWeapon.isUsable()) {
             player.getInventory().setRightHand(null);
         }
@@ -2423,7 +2424,7 @@ public class CombatManager {
         pendingWeapon = null;
 
         if (monster.getCurrentHP() <= 0) {
-            handleMonsterDeath();
+            handleMonsterDeath(attackCause);
             // Always route through VICTORY state so at least one render frame
             // shows the monster before removal (fixes "died before rendered" bug).
             currentState = CombatState.VICTORY;
@@ -3464,8 +3465,7 @@ public class CombatManager {
     private DeathGore.Plan spawnDeathGore(Monster monster, KillCause cause) {
         GoreLevel level = GoreLevel.current();
         if (cause == null) cause = KillCause.none();
-        int overkill = Math.max(0, -monster.getCurrentHP());
-        int tier = DeathGore.overkillTier(overkill, monster.getMaxHP(), cause.critOrFinisher, level);
+        int tier = DeathGore.overkillTier(monster.getLastOverkill(), monster.getMaxHP(), cause.critOrFinisher, level);
         DeathGore.Plan plan = DeathGore.plan(cause, tier, level);
         if (maze == null || maze.getGoreManager() == null || player == null) return plan;
         com.bpm.minotaur.gamedata.gore.GoreManager gore = maze.getGoreManager();

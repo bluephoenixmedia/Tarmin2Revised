@@ -1939,7 +1939,13 @@ public class World3DRenderer implements Disposable {
                         sw = sw * CORPSE_SPREAD;
                         sh = sh * CORPSE_FLATTEN;
 
-                        if (bloodPoolTexture != null) {
+                        // Burnt, frozen, ashed and melted bodies did not bleed out, and
+                        // with gore off nothing does.
+                        com.bpm.minotaur.gamedata.gore.CorpseFinish bodyFinish = sc.getCorpseFinish();
+                        boolean bled = com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()
+                                && (bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE
+                                    || bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.HEADLESS);
+                        if (bloodPoolTexture != null && bled) {
                             bloodPoolRegion.setRegion(bloodPoolTexture);
                             dynamicBatcher.addBillboard(ex, 0.001f, wz, sw * 1.15f, sh * 0.5f,
                                     bloodPoolRegion, BLOOD_POOL_TINT, camRight, camUp, camDir);
