@@ -123,6 +123,8 @@ public class World3DRenderer implements Disposable {
     private final Texture gateTexture;
     private final Texture floorTexture;
     private final Texture forestFloorTexture;
+    /** Leaf ceiling over the surface forest; null if the art is missing, leaving the sky open. */
+    private final Texture canopyTexture;
     private final Texture ceilingTexture;
     private final Texture fluidTexture;
     private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
@@ -269,6 +271,14 @@ public class World3DRenderer implements Disposable {
             this.forestFloorTexture = this.floorTexture;
         }
 
+        if (Gdx.files.internal("images/forest/canopy.png").exists()) {
+            this.canopyTexture = new Texture(Gdx.files.internal("images/forest/canopy.png"));
+            this.canopyTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+            this.canopyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        } else {
+            this.canopyTexture = null;
+        }
+
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
@@ -323,6 +333,7 @@ public class World3DRenderer implements Disposable {
         loadPortalTextures();
 
         this.meshCache = new WorldMeshCache();
+        this.meshCache.setCanopyTexture(canopyTexture);
         this.dynamicBatcher = new DynamicQuadBatcher();
 
         // Load 3D Skullgate Assets
@@ -755,7 +766,8 @@ public class World3DRenderer implements Disposable {
 
         // Dynamic surface weather modulation
         float wetness = (wm != null && currentLevel == 1) ? wm.getWetness() : 0.0f;
-        float snowAccum = (wm != null && currentLevel == 1) ? wm.getSnowAccumulation() : 0.0f;
+        // Snow falls through the canopy but never settles on the forest floor.
+        float snowAccum = (wm != null && currentLevel == 1 && !underCanopy) ? wm.getSnowAccumulation() : 0.0f;
         shader.setUniformf("u_wetness", wetness);
         shader.setUniformf("u_snowAccumulation", snowAccum);
 
@@ -764,6 +776,7 @@ public class World3DRenderer implements Disposable {
 
         // --- PASS 1: OPAQUE CHUNK SUB-MESHES & DYNAMIC SLIDING DOORS ---
         shader.setUniformf("u_alphaCutoff", 0.0f);
+        shader.setUniformf("u_vertexCoverage", 0.0f);
 
         RetroTheme.Theme theme = maze.getTheme();
         if (theme == null) theme = RetroTheme.STANDARD_THEME;
@@ -802,7 +815,17 @@ public class World3DRenderer implements Disposable {
             } else {
                 shader.setUniformf("u_retroBorder", 0.0f);
             }
+            boolean canopy = subMesh.getSurface() == ChunkSubMesh.Surface.CANOPY;
+            if (canopy) {
+                // Fronds cut out where coverage thins: see CanopyMeshBuilder.
+                shader.setUniformf("u_alphaCutoff", 0.5f);
+                shader.setUniformf("u_vertexCoverage", 1.0f);
+            }
             subMesh.render(shader);
+            if (canopy) {
+                shader.setUniformf("u_alphaCutoff", 0.0f);
+                shader.setUniformf("u_vertexCoverage", 0.0f);
+            }
         }
 
         // Dynamic Doors & Gates
@@ -2192,6 +2215,7 @@ public class World3DRenderer implements Disposable {
         gateTexture.dispose();
         floorTexture.dispose();
         if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
+        if (canopyTexture != null) canopyTexture.dispose();
         ceilingTexture.dispose();
 
         if (fluidTexture != null && fluidTexture != blankTexture) {

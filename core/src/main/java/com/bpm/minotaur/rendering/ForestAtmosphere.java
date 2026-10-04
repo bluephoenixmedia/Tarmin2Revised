@@ -3,6 +3,7 @@ package com.bpm.minotaur.rendering;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.weather.WeatherType;
 
 /**
@@ -105,13 +106,22 @@ public final class ForestAtmosphere {
         for (int dy = -GLADE_RADIUS; dy <= GLADE_RADIUS; dy++) {
             for (int dx = -GLADE_RADIUS; dx <= GLADE_RADIUS; dx++) {
                 total++;
-                if (maze.isPassable(x + dx, y + dy)) open++;
+                if (isOpen(maze, x + dx, y + dy)) open++;
             }
         }
         float openness = open / (float) total;
         float t = MathUtils.clamp((openness - GLADE_OPENNESS_START)
                 / (GLADE_OPENNESS_FULL - GLADE_OPENNESS_START), 0f, 1f);
         return t * t * (3f - 2f * t);
+    }
+
+    /**
+     * Ground you could stand on. Maze.isPassable no longer looks at wall data,
+     * so the cliff blocks around a forest chunk would otherwise count as open.
+     */
+    public static boolean isOpen(Maze maze, int x, int y) {
+        return maze.isPassable(x, y)
+                && (maze.getWallDataAt(x, y) & ChunkMeshBuilder.ALL_WALLS) != ChunkMeshBuilder.ALL_WALLS;
     }
 
     /** Scales a value that is {@code share} of itself under a closed canopy and whole in a glade. */

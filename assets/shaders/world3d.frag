@@ -15,6 +15,7 @@ uniform int u_retroMode;           // 1 = RETRO unlit mode, 0 = MODERN lit mode
 uniform vec4 u_retroColor;          // Flat base color for RETRO mode
 uniform float u_retroBorder;        // 1.0 = draw border outline, 0.0 = none
 uniform float u_alphaCutoff;        // 0.1 for alpha test discard, 0.0 for opaque
+uniform float u_vertexCoverage;     // 1.0 = vertex alpha scales the cutoff test (forest canopy), 0.0 = ignore it
 
 // Fog uniforms
 uniform float u_fogEnabled;
@@ -50,7 +51,10 @@ void main() {
     vec4 texColor = texture2D(u_diffuseTexture, v_texCoords);
 
     // Alpha cutout discard
-    if (u_alphaCutoff > 0.0 && texColor.a < u_alphaCutoff) {
+    // The forest canopy carries per-vertex coverage in v_color.a: fronds thin out
+    // and drop away where coverage falls, which is what opens the seam over a trail.
+    float cutoutAlpha = texColor.a * mix(1.0, v_color.a, u_vertexCoverage);
+    if (u_alphaCutoff > 0.0 && cutoutAlpha < u_alphaCutoff) {
         discard;
     }
 

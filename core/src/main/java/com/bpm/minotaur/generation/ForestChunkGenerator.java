@@ -896,6 +896,10 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         }
                     }
                     bitmaskedData[y][x] = mask;
+                } else {
+                    // The cliff itself is solid rock (ChunkMeshBuilder.ALL_WALLS). Left at 0 it
+                    // read as open ground, and the canopy opened over the whole border.
+                    bitmaskedData[y][x] = 0b01010101;
                 }
             }
         }
