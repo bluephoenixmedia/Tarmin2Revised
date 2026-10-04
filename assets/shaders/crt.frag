@@ -20,6 +20,8 @@ uniform float u_sonarProgress;
 uniform float u_wisdomIrisIntensity;
 // Desert heat: the air over the sand wavers around the horizon at midday. 0 = off.
 uniform float u_heatShimmer;
+// Lakelands water mist: low rolling ground haze over the water and shallows. 0 = off.
+uniform float u_waterMist;
 
 // --- TWEAKED VALUES FOR SUBTLE CRT ---
 const float curvature = 0.0;        // WAS 3.0. Now 0.3 for very slight curve. Set to 0.0 for perfectly flat.
@@ -86,6 +88,14 @@ void main() {
     // 4. Scanlines
     float scanline = sin(uv.y * scanlineCount) * 0.5 + 0.5;
     color -= scanline * scanlineIntensity;
+
+    // 4b. Low rolling water mist over wetland water and shallows
+    if (u_waterMist > 0.001) {
+        float groundHaze = smoothstep(0.50, 0.05, uv.y);
+        float wave = sin(uv.x * 20.0 + u_time * 0.75) * cos(uv.x * 12.0 - u_time * 0.45);
+        float mistDrift = smoothstep(0.15, 0.85, 0.5 + 0.5 * wave) * groundHaze * u_waterMist;
+        color = mix(color, vec3(0.10, 0.22, 0.26), mistDrift * 0.38);
+    }
 
     // 5. CRT Base Vignette
     float vignette = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);

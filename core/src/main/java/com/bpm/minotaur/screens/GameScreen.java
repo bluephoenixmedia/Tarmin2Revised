@@ -890,6 +890,7 @@ public class GameScreen extends BaseScreen {
                 postProcessBatch.setShader(crtShader);
                 crtShader.setUniformf("u_time", time);
                 crtShader.setUniformf("u_heatShimmer", heatShimmer());
+                crtShader.setUniformf("u_waterMist", waterMist());
                 if (spellPostProcessor != null) {
                     spellPostProcessor.applyUniforms(crtShader, time);
                 }
@@ -1023,6 +1024,20 @@ public class GameScreen extends BaseScreen {
         }
         com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
         return com.bpm.minotaur.rendering.DesertAtmosphere.heatShimmer(
+                worldManager.getDayNightManager().getTimeOfDay(),
+                (wm != null) ? wm.getCurrentWeather() : null);
+    }
+
+    /** Low rolling ground mist over the surface Lakelands, for the CRT pass; 0 anywhere else. */
+    private float waterMist() {
+        if (worldManager == null || maze == null || player == null
+                || maze.getBiome() != com.bpm.minotaur.generation.Biome.LAKELANDS
+                || maze.getLevel() != 1 || worldManager.getDayNightManager() == null
+                || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) {
+            return 0f;
+        }
+        com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
+        return com.bpm.minotaur.rendering.LakelandsAtmosphere.waterMist(
                 worldManager.getDayNightManager().getTimeOfDay(),
                 (wm != null) ? wm.getCurrentWeather() : null);
     }

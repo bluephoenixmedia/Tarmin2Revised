@@ -23,7 +23,8 @@ public enum Biome {
     DESERT(true, true, 20, new Color(0.7f, 0.6f, 0.4f, 1.0f), null,
             "images/floor_desert.png", "images/desert_cliff.png"),
     MOUNTAINS(false, false, 100, null), // Not seamless, impassable
-    LAKELANDS(true, true, 15, new Color(0.4f, 0.4f, 0.7f, 1.0f)),
+    LAKELANDS(true, true, 16, new Color(0.12f, 0.24f, 0.28f, 1.0f), null,
+            "images/floor_lakelands.png", "images/lakelands_cliff.png"),
     OCEAN(false, false, 100, null); // Not seamless, impassable
 
     // --- New Properties ---
