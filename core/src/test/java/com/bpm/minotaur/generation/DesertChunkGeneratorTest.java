@@ -4,6 +4,7 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.rendering.OpenGround;
 import com.bpm.minotaur.rendering.RetroTheme;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +45,7 @@ public class DesertChunkGeneratorTest {
                     assertEquals(path + " keeps its canvas aspect", expected, aspect, 0.01f);
                 } else if (s.getType() == Scenery.SceneryType.SANDSTONE_ROCK) {
                     rocks++;
-                    assertEquals("images/desert/rock_01.png", path);
+                    assertTrue("baked rock, was " + path, path.startsWith("images/desert/rock_0"));
                     assertEquals(1.2f, aspect, 0.01f);
                 }
             }
@@ -105,5 +106,83 @@ public class DesertChunkGeneratorTest {
         e.maxLevel = max;
         e.weight = weight;
         return e;
+    }
+
+    @Test
+    public void everyDesertSpriteIsBakedPixelArt() {
+        for (long seed = 1; seed <= 15; seed++) {
+            for (Scenery s : generate(seed).getScenery().values()) {
+                if (s.getType() == Scenery.SceneryType.STATUE) continue; // encounter art
+                assertTrue("seed " + seed + ": " + s.getType() + " " + s.getPropId() + " draws " + s.getTexturePath(),
+                        s.getTexturePath() != null && s.getTexturePath().startsWith("images/desert/"));
+            }
+        }
+    }
+
+    @Test
+    public void anOasisIsRingedByPalms() {
+        int oases = 0;
+        for (long seed = 1; seed <= 30; seed++) {
+            Maze maze = generate(seed);
+            GridPoint2 water = null;
+            for (int y = 0; y < maze.getHeight() && water == null; y++) {
+                for (int x = 0; x < maze.getWidth(); x++) {
+                    if (maze.getLiquidManager().hasLiquidAt(x, y)) { water = new GridPoint2(x, y); break; }
+                }
+            }
+            if (water == null) continue;
+            oases++;
+            int palms = 0;
+            for (Scenery s : maze.getScenery().values()) {
+                if (s.getTexturePath() != null && s.getTexturePath().contains("palm")
+                        && s.getPosition().dst(water.x + 1.5f, water.y + 1.5f) < 4f) palms++;
+            }
+            assertTrue("seed " + seed + ": palms around the oasis, found " + palms, palms >= 2);
+        }
+        assertTrue(oases > 0);
+    }
+
+    @Test
+    public void sideBasinsCarryALandmark() {
+        int withLandmark = 0;
+        for (long seed = 1; seed <= 20; seed++) {
+            for (Scenery s : generate(seed).getScenery().values()) {
+                String path = s.getTexturePath();
+                if (path != null && (path.endsWith("hoodoo.png") || path.endsWith("beast_skull.png") || path.endsWith("arch.png"))) {
+                    withLandmark++;
+                    break;
+                }
+            }
+        }
+        assertTrue("most chunks raise a hoodoo, beast skull or arch in a side basin, " + withLandmark + "/20",
+                withLandmark >= 15);
+    }
+
+    @Test
+    public void nothingPlacedCutsOffOpenGround() {
+        for (long seed = 1; seed <= 20; seed++) {
+            Maze maze = generate(seed);
+            java.util.Set<GridPoint2> seen = new java.util.HashSet<>();
+            java.util.ArrayDeque<GridPoint2> queue = new java.util.ArrayDeque<>();
+            GridPoint2 start = new GridPoint2(18, 18);
+            seen.add(start);
+            queue.add(start);
+            while (!queue.isEmpty()) {
+                GridPoint2 c = queue.poll();
+                int[][] steps = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+                for (int[] d : steps) {
+                    GridPoint2 n = new GridPoint2(c.x + d[0], c.y + d[1]);
+                    if (OpenGround.isOpen(maze, n.x, n.y) && seen.add(n)) queue.add(n);
+                }
+            }
+            for (int y = 0; y < maze.getHeight(); y++) {
+                for (int x = 0; x < maze.getWidth(); x++) {
+                    if (OpenGround.isOpen(maze, x, y) && maze.getGateAt(x, y) == null) {
+                        assertTrue("seed " + seed + ": open ground at (" + x + "," + y + ") is cut off",
+                                seen.contains(new GridPoint2(x, y)));
+                    }
+                }
+            }
+        }
     }
 }

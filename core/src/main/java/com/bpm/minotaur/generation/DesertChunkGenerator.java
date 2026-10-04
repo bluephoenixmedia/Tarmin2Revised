@@ -51,10 +51,68 @@ public class DesertChunkGenerator implements IChunkGenerator {
             "images/desert/cactus_tall.png", "images/desert/cactus_large.png", "images/desert/cactus_short.png"
     };
     private static final float[][] CACTUS_SIZES = {{0.9f, 2.4f}, {1.4f, 2.2f}, {0.9f, 1.2f}};
-    private static final String ROCK_TEXTURE = "images/desert/rock_01.png";
-    private static final String DEAD_TREE_TEXTURE = "images/forest/tree_dead_01.png";
-    private static final String BONE_PILE_TEXTURE = "images/props/bone_pile.png";
-    private static final String SKULL_PILE_TEXTURE = "images/props/skull_pile.png";
+    private static final String[] ROCK_TEXTURES = {
+            "images/desert/rock_01.png", "images/desert/rock_02.png", "images/desert/rock_03.png"
+    };
+
+    /** A baked desert sprite and the billboard size its canvas was rendered at. */
+    private record Sprite(String path, float width, float height) {
+        void applyTo(Scenery s, float jitter) {
+            s.scale.set(width * jitter, height * jitter);
+        }
+    }
+
+    private static final Sprite[] DEAD_TREES = {
+            new Sprite("images/desert/tree_dead_01.png", 1.8f, 3.2f),
+            new Sprite("images/desert/tree_dead_02.png", 1.8f, 3.2f),
+            new Sprite("images/desert/tree_agave.png", 1.6f, 1.6f),
+    };
+    private static final Sprite[] BONES = {
+            new Sprite("images/desert/bones_01.png", 0.8f, 0.6f),
+            new Sprite("images/desert/bones_rib.png", 0.9f, 0.6f),
+    };
+    private static final Sprite SKULL_PILE = new Sprite("images/desert/skull_pile.png", 0.9f, 0.5f);
+    private static final Sprite[] PALMS = {
+            new Sprite("images/desert/palm_tall.png", 2.0f, 3.6f),
+            new Sprite("images/desert/palm_huge.png", 2.6f, 4.0f),
+            new Sprite("images/desert/palm_date.png", 2.4f, 3.2f),
+    };
+    private static final Sprite[] REEDS = {
+            new Sprite("images/desert/reeds_01.png", 0.6f, 0.9f),
+            new Sprite("images/desert/reeds_02.png", 0.6f, 0.9f),
+    };
+    /** Raised in a side basin without an oasis: a spire, a beast's skull or a wind-cut arch. */
+    private static final Sprite[] BASIN_LANDMARKS = {
+            new Sprite("images/desert/hoodoo.png", 1.1f, 3.6f),
+            new Sprite("images/desert/beast_skull.png", 1.6f, 1.2f),
+            new Sprite("images/desert/arch.png", 2.8f, 2.2f),
+    };
+    private static final float[] BASIN_LANDMARK_WEIGHTS = {0.6f, 0.25f, 0.15f};
+    private static final Sprite TITAN_SKULL = new Sprite("images/desert/titan_skull.png", 2.6f, 2.4f);
+    private static final Sprite RUIN_IDOL = new Sprite("images/desert/ruin_idol.png", 0.9f, 1.4f);
+    private static final Sprite RUIN_ARCH = new Sprite("images/desert/ruin_arch.png", 2.4f, 1.6f);
+    /**
+     * The desert's own variants of shared props, sized to the canvas each was baked on.
+     * The prop keeps its catalogue behaviour (burning, glowing, blocking); only its art changes.
+     */
+    private static final Map<String, Sprite> DESERT_PROP_VARIANTS = Map.of(
+            "campfire", new Sprite("images/desert/campfire.png", 1.0f, 0.7f),
+            "camp_tent", new Sprite("images/desert/camp_tent.png", 1.6f, 1.4f),
+            "ruined_pillar", new Sprite("images/desert/ruin_pillar.png", 0.8f, 2.2f),
+            "skull_pile", SKULL_PILE,
+            "bone_pile", BONES[0]);
+
+    /** Every baked desert texture, for the asset preload. */
+    public static List<String> textures() {
+        List<String> paths = new ArrayList<>(Arrays.asList(CACTUS_TEXTURES));
+        paths.addAll(Arrays.asList(ROCK_TEXTURES));
+        for (Sprite[] set : new Sprite[][]{DEAD_TREES, BONES, PALMS, REEDS, BASIN_LANDMARKS}) {
+            for (Sprite sp : set) paths.add(sp.path());
+        }
+        for (Sprite sp : DESERT_PROP_VARIANTS.values()) paths.add(sp.path());
+        paths.addAll(Arrays.asList(TITAN_SKULL.path(), RUIN_IDOL.path(), RUIN_ARCH.path()));
+        return paths;
+    }
 
     private final Map<String, Texture> textureCache = new HashMap<>();
 
@@ -137,7 +195,7 @@ public class DesertChunkGenerator implements IChunkGenerator {
         maze.setSecondaryTheme(mazeTheme);
 
         // 4. Distribute oasis pools in sheltered depressions
-        placeOasisPools(maze);
+        placeOasisPools(maze, assetManager);
 
         // 5. Compute traversable reachable tiles
         Set<GridPoint2> reachable = computeReachableTiles(maze);
@@ -439,7 +497,8 @@ public class DesertChunkGenerator implements IChunkGenerator {
         return seen;
     }
 
-    private void placeOasisPools(Maze maze) {
+    /** The pool, palms on the corners of the clear ground around it, reeds at its edges. */
+    private void placeOasisPools(Maze maze, AssetManager assetManager) {
         if (oasis == null) return;
         for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
@@ -450,28 +509,149 @@ public class DesertChunkGenerator implements IChunkGenerator {
                 }
             }
         }
+        // Up to three palms on the ring of sand around the pool, each kept only if every
+        // patch of open ground stays reachable: a palm in a canyon mouth would seal the basin.
+        List<GridPoint2> ring = new ArrayList<>();
+        for (int dy = -2; dy <= 2; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                boolean onRing = Math.max(Math.abs(dx), Math.abs(dy)) == 2;
+                boolean edgeMiddle = dx == 0 || dy == 0; // left for the reeds
+                if (onRing && !edgeMiddle) ring.add(new GridPoint2(oasis.x + dx, oasis.y + dy));
+            }
+        }
+        Collections.shuffle(ring, random);
+        int reachable = reachableOpenGround(maze);
+        int palms = 0;
+        for (GridPoint2 t : ring) {
+            if (palms >= 3) break;
+            if (!OpenGround.isOpen(maze, t.x, t.y) || maze.getScenery().containsKey(t)) continue;
+            Scenery palm = new Scenery(Scenery.SceneryType.TREE, t.x, t.y);
+            maze.addScenery(palm);
+            int after = reachableOpenGround(maze);
+            if (after < reachable - 1) {
+                maze.removeScenery(t.x, t.y);
+                continue;
+            }
+            reachable = after;
+            palm.setFlippedX(random.nextBoolean());
+            Sprite sprite = PALMS[random.nextInt(PALMS.length)];
+            sprite.applyTo(palm, 0.9f + random.nextFloat() * 0.2f);
+            loadTextureSafely(palm, sprite.path(), assetManager);
+            palms++;
+        }
+        int[][] edges = {{0, -2}, {0, 2}, {-2, 0}, {2, 0}};
+        for (int[] e : edges) {
+            int x = oasis.x + e[0];
+            int y = oasis.y + e[1];
+            if (random.nextFloat() < 0.5f && OpenGround.isOpen(maze, x, y)
+                    && !maze.getScenery().containsKey(new GridPoint2(x, y))) {
+                Scenery reeds = new Scenery(Scenery.SceneryType.BUSH, x, y);
+                reeds.setImpassable(false);
+                Sprite sprite = REEDS[random.nextInt(REEDS.length)];
+                sprite.applyTo(reeds, 1f);
+                loadTextureSafely(reeds, sprite.path(), assetManager);
+                maze.addScenery(reeds);
+            }
+        }
     }
 
     private void spawnLandmarks(Maze maze, AssetManager assetManager, ItemDataManager itemDataManager, long seed) {
         int archetype = (int) (Math.abs(seed) % 3);
-        int cx = 18;
-        int cy = 18;
+        int cx = CHUNK_SIZE / 2;
+        int cy = CHUNK_SIZE / 2;
 
+        // The bowl's centre is where the player arrives: anything solid stands off it.
         if (archetype == 0) {
-            // Archetype 0: Desert Oasis Outpost
+            // Nomad camp
             placeThemedProp(maze, "campfire", cx, cy, assetManager);
             placeThemedProp(maze, "camp_tent", cx + 2, cy + 2, assetManager);
         } else if (archetype == 1) {
-            // Archetype 1: Ancient Sandstone Crypt Ruin
-            placeThemedProp(maze, "cairn", cx, cy, assetManager);
-            placeThemedProp(maze, "skull_pile", cx + 2, cy, assetManager);
-            placeThemedProp(maze, "ruined_pillar", cx - 2, cy + 1, assetManager);
+            // Sunken ruin
+            placeLandmark(maze, RUIN_ARCH, cx, cy + 3, assetManager);
+            placeThemedProp(maze, "ruined_pillar", cx - 2, cy + 2, assetManager);
+            placeThemedProp(maze, "ruined_pillar", cx + 2, cy + 2, assetManager);
+            placeLandmark(maze, RUIN_IDOL, cx + 2, cy - 2, assetManager);
         } else {
-            // Archetype 2: Titan Bone Graveyard
-            placeThemedProp(maze, "bone_pile", cx, cy, assetManager);
+            // Titan graveyard
+            placeLandmark(maze, TITAN_SKULL, cx, cy + 3, assetManager);
             placeThemedProp(maze, "skull_pile", cx - 2, cy, assetManager);
             placeThemedProp(maze, "bone_pile", cx + 2, cy - 1, assetManager);
         }
+
+        for (GridPoint2 basin : sideBasins) {
+            if (basin.equals(oasis)) continue;
+            float roll = random.nextFloat();
+            int pick = roll < BASIN_LANDMARK_WEIGHTS[0] ? 0 : roll < BASIN_LANDMARK_WEIGHTS[0] + BASIN_LANDMARK_WEIGHTS[1] ? 1 : 2;
+            placeInterior(maze, BASIN_LANDMARKS[pick], basin, assetManager);
+        }
+    }
+
+    /**
+     * A solid landmark on a basin tile whose eight neighbours are all open sand,
+     * so it can never close a way through. Tries the basin centre, then the tiles
+     * around it.
+     */
+    private void placeInterior(Maze maze, Sprite sprite, GridPoint2 centre, AssetManager assetManager) {
+        for (int r = 0; r <= 2; r++) {
+            for (int dy = -r; dy <= r; dy++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    int x = centre.x + dx;
+                    int y = centre.y + dy;
+                    if (surroundedByOpenGround(maze, x, y)) {
+                        placeLandmark(maze, sprite, x, y, assetManager);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    /** How much open ground can be walked to from the bowl's centre. */
+    private int reachableOpenGround(Maze maze) {
+        int w = maze.getWidth();
+        int h = maze.getHeight();
+        boolean[] seen = new boolean[w * h];
+        ArrayDeque<GridPoint2> queue = new ArrayDeque<>();
+        GridPoint2 start = new GridPoint2(CHUNK_SIZE / 2, CHUNK_SIZE / 2);
+        if (!OpenGround.isOpen(maze, start.x, start.y)) return 0;
+        seen[start.y * w + start.x] = true;
+        queue.add(start);
+        int count = 0;
+        int[][] steps = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while (!queue.isEmpty()) {
+            GridPoint2 c = queue.poll();
+            count++;
+            for (int[] d : steps) {
+                int nx = c.x + d[0];
+                int ny = c.y + d[1];
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h || seen[ny * w + nx]) continue;
+                if (!OpenGround.isOpen(maze, nx, ny)) continue;
+                seen[ny * w + nx] = true;
+                queue.add(new GridPoint2(nx, ny));
+            }
+        }
+        return count;
+    }
+
+    private boolean surroundedByOpenGround(Maze maze, int x, int y) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (!OpenGround.isOpen(maze, x + dx, y + dy)) return false;
+                if (maze.getLiquidManager().hasLiquidAt(x + dx, y + dy)) return false;
+                if (maze.getScenery().containsKey(new GridPoint2(x + dx, y + dy))) return false;
+            }
+        }
+        return true;
+    }
+
+    private void placeLandmark(Maze maze, Sprite sprite, int x, int y, AssetManager assetManager) {
+        if (!surroundedByOpenGround(maze, x, y)) return;
+        Scenery s = new Scenery(Scenery.SceneryType.PROP, x, y);
+        s.setImpassable(true);
+        s.setFlippedX(random.nextBoolean());
+        sprite.applyTo(s, 1f);
+        loadTextureSafely(s, sprite.path(), assetManager);
+        maze.addScenery(s);
     }
 
     private void placeThemedProp(Maze maze, String propId, int x, int y, AssetManager assetManager) {
@@ -482,8 +662,11 @@ public class DesertChunkGenerator implements IChunkGenerator {
 
         Scenery s = Scenery.fromProp(propId, x, y);
         if (s != null) {
-            if (s.getTexturePath() != null) {
-                loadTextureSafely(s, s.getTexturePath(), assetManager);
+            Sprite variant = DESERT_PROP_VARIANTS.get(propId);
+            if (variant != null) variant.applyTo(s, 1f);
+            String path = (variant != null) ? variant.path() : s.getTexturePath();
+            if (path != null) {
+                loadTextureSafely(s, path, assetManager);
             }
             maze.addScenery(s);
         }
@@ -701,7 +884,7 @@ public class DesertChunkGenerator implements IChunkGenerator {
                         s.setFlippedX(random.nextBoolean());
                         float jitter = 0.85f + random.nextFloat() * 0.35f;
                         s.scale.set(1.2f * jitter, 1.0f * jitter);
-                        loadTextureSafely(s, ROCK_TEXTURE, assetManager);
+                        loadTextureSafely(s, ROCK_TEXTURES[random.nextInt(ROCK_TEXTURES.length)], assetManager);
                         maze.addScenery(s);
                         break;
                     }
@@ -709,15 +892,18 @@ public class DesertChunkGenerator implements IChunkGenerator {
                         Scenery s = new Scenery(Scenery.SceneryType.TREE, x, y);
                         s.setFlippedX(random.nextBoolean());
                         float jitter = 0.90f + random.nextFloat() * 0.20f;
-                        s.scale.set(1.8f * jitter, 3.2f * jitter);
-                        loadTextureSafely(s, DEAD_TREE_TEXTURE, assetManager);
+                        Sprite tree = DEAD_TREES[random.nextInt(DEAD_TREES.length)];
+                        tree.applyTo(s, jitter);
+                        loadTextureSafely(s, tree.path(), assetManager);
                         maze.addScenery(s);
                         break;
                     }
                     case 'B': {
                         Scenery s = Scenery.fromProp("bone_pile", x, y);
                         if (s != null) {
-                            loadTextureSafely(s, BONE_PILE_TEXTURE, assetManager);
+                            Sprite bones = BONES[random.nextInt(BONES.length)];
+                            bones.applyTo(s, 1f);
+                            loadTextureSafely(s, bones.path(), assetManager);
                             maze.addScenery(s);
                         }
                         break;
@@ -725,7 +911,8 @@ public class DesertChunkGenerator implements IChunkGenerator {
                     case 'S': {
                         Scenery s = Scenery.fromProp("skull_pile", x, y);
                         if (s != null) {
-                            loadTextureSafely(s, SKULL_PILE_TEXTURE, assetManager);
+                            SKULL_PILE.applyTo(s, 1f);
+                            loadTextureSafely(s, SKULL_PILE.path(), assetManager);
                             maze.addScenery(s);
                         }
                         break;

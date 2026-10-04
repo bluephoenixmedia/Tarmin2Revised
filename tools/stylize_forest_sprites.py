@@ -51,6 +51,8 @@ PETAL = [(60, 58, 52), (96, 92, 80), (140, 132, 112), (176, 168, 140)]
 TEAL = [(14, 38, 40), (24, 70, 70), (50, 120, 112), (120, 200, 180)]
 CACTUS = [(20, 38, 22), (34, 62, 32), (56, 92, 42), (88, 126, 58)]
 SANDSTONE = [(64, 26, 16), (112, 50, 28), (160, 82, 44), (206, 132, 78)]
+BONE = [(70, 58, 44), (130, 112, 86), (184, 168, 136), (226, 214, 184)]
+DRIFTWOOD = [(44, 34, 28), (82, 66, 52), (126, 106, 84), (168, 150, 120)]
 EMBER_RIM = (112, 44, 26)
 
 # Sprite name prefix -> (palette for green pixels, palette for the rest). The first
@@ -72,7 +74,17 @@ GROUPS = {
     "scatter_branch": (MOSS, BARK),
     "scatter_": (NEEDLES, BARK),
     "desert_cactus_": (CACTUS, SANDSTONE),
-    "desert_rock_": (SANDSTONE, SANDSTONE),
+    "desert_palm_": (CACTUS, BARK),
+    "desert_reeds_": (CACTUS, BARK),
+    "desert_tree_agave": (CACTUS, BARK),
+    "desert_tree_": (CACTUS, DRIFTWOOD),
+    "desert_bones_": (BONE, BONE),
+    "desert_skull_": (BONE, BONE),
+    "desert_beast_skull": (BONE, BONE),
+    "desert_titan_skull": (BONE, BONE),
+    "desert_campfire": (CACTUS, BARK),
+    "desert_camp_tent": (CACTUS, BARK),
+    "desert_": (SANDSTONE, SANDSTONE),
 }
 
 # Where a sprite is written, by name prefix: landmark_<id> is the forest's own
