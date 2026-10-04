@@ -51,9 +51,12 @@ public final class LakelandsAtmosphere {
         }
 
         if (skyTint != null) {
-            out.r *= MathUtils.lerp(1f, skyTint.r, SKY_TINT_SHARE);
-            out.g *= MathUtils.lerp(1f, skyTint.g, SKY_TINT_SHARE);
-            out.b *= MathUtils.lerp(1f, skyTint.b, SKY_TINT_SHARE);
+            // Distance mist scatters the horizon sky light:
+            // At dawn/dusk, the mist takes on the burning horizon hue,
+            // while retaining its cool aquatic undertone.
+            out.lerp(skyTint, SKY_TINT_SHARE);
+            float lum = skyTint.r * 0.299f + skyTint.g * 0.587f + skyTint.b * 0.114f;
+            out.mul(MathUtils.clamp(lum * 1.6f, 0.25f, 1.1f));
         }
         return out.clamp();
     }

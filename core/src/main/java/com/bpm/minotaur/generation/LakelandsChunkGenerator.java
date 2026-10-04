@@ -505,23 +505,23 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
         int cy = 18;
 
         if (archetype == 0) {
-            // Archetype 0: Sunken Shrine
-            placeSolidSprite(maze, SHRINE, cx, cy, 1f, assetManager);
-            placeScenerySprite(maze, STATUE, cx + 2, cy + 1, 1f, assetManager);
-            placeScenerySprite(maze, LILYPADS[0], cx - 2, cy - 1, 1f, assetManager);
+            // Archetype 0: Sunken Shrine on islet bank
+            placeSolidSprite(maze, SHRINE, cx + 2, cy + 2, 1f, assetManager);
+            placeScenerySprite(maze, STATUE, cx + 3, cy + 1, 1f, assetManager);
+            placeScenerySprite(maze, LILYPADS[0], cx - 2, cy - 2, 1f, assetManager);
             placeScenerySprite(maze, REEDS[0], cx + 2, cy - 2, 1f, assetManager);
         } else if (archetype == 1) {
             // Archetype 1: Wrecked Skiff & Stilt Fisher Pier
-            placeSolidSprite(maze, BOAT_WRECK, cx, cy, 1f, assetManager);
-            placeScenerySprite(maze, DOCKS[0], cx - 2, cy + 1, 1f, assetManager);
-            placeScenerySprite(maze, DOCKS[1], cx + 2, cy - 1, 1f, assetManager);
-            placeScenerySprite(maze, ROOT, cx - 1, cy - 2, 1f, assetManager);
+            placeSolidSprite(maze, BOAT_WRECK, cx + 2, cy + 2, 1f, assetManager);
+            placeScenerySprite(maze, DOCKS[1], cx - 2, cy - 2, 1f, assetManager);
+            placeScenerySprite(maze, REEDS[0], cx - 3, cy - 2, 1f, assetManager);
+            placeScenerySprite(maze, ROOT, cx + 3, cy + 1, 1f, assetManager);
         } else {
             // Archetype 2: Rotting Bog Barrow
-            placeSolidSprite(maze, MOUND, cx, cy, 1f, assetManager);
-            placeScenerySprite(maze, BEAST_SKULL, cx + 2, cy, 1f, assetManager);
-            placeScenerySprite(maze, BONES_RIB, cx - 2, cy + 1, 1f, assetManager);
-            placeScenerySprite(maze, GLOWPLANT, cx + 1, cy - 2, 1f, assetManager);
+            placeSolidSprite(maze, MOUND, cx + 2, cy + 2, 1f, assetManager);
+            placeScenerySprite(maze, BEAST_SKULL, cx + 3, cy + 1, 1f, assetManager);
+            placeScenerySprite(maze, BONES_RIB, cx - 2, cy - 2, 1f, assetManager);
+            placeScenerySprite(maze, GLOWPLANT, cx + 1, cy - 3, 1f, assetManager);
         }
 
         // Side Basin Landmarks
@@ -536,7 +536,7 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
                 placeScenerySprite(maze, BEAST_SKULL, bp.x, bp.y, 1f, assetManager);
                 placeScenerySprite(maze, REEDS[1], bp.x - 1, bp.y + 1, 1f, assetManager);
             } else {
-                placeScenerySprite(maze, DOCKS[0], bp.x, bp.y, 1f, assetManager);
+                placeScenerySprite(maze, ROCK_MOSS, bp.x, bp.y, 1f, assetManager);
                 placeScenerySprite(maze, GLOWPLANT, bp.x + 1, bp.y - 1, 1f, assetManager);
             }
         }
@@ -549,7 +549,8 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
                 if (maze.isWall(x, y)) continue;
                 GridPoint2 pt = new GridPoint2(x, y);
                 if (maze.getScenery().containsKey(pt) || maze.getGateAt(x, y) != null) continue;
-                if (Math.abs(x - 18) <= 2 && Math.abs(y - 18) <= 2) continue;
+                // Cardinal corridors and center glade must stay clear of blocking sightline debris
+                if (Math.abs(x - 18) <= 2 || Math.abs(y - 18) <= 2) continue;
 
                 // Scatter on ~20% of open tiles
                 if (rng.nextFloat() > 0.20f) continue;

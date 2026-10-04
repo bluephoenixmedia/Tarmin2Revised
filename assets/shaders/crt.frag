@@ -89,12 +89,12 @@ void main() {
     float scanline = sin(uv.y * scanlineCount) * 0.5 + 0.5;
     color -= scanline * scanlineIntensity;
 
-    // 4b. Low rolling water mist over wetland water and shallows
+    // 4b. Low rolling water mist over wetland water and shallows (subtle vapor at player's feet)
     if (u_waterMist > 0.001) {
-        float groundHaze = smoothstep(0.50, 0.05, uv.y);
-        float wave = sin(uv.x * 20.0 + u_time * 0.75) * cos(uv.x * 12.0 - u_time * 0.45);
-        float mistDrift = smoothstep(0.15, 0.85, 0.5 + 0.5 * wave) * groundHaze * u_waterMist;
-        color = mix(color, vec3(0.10, 0.22, 0.26), mistDrift * 0.38);
+        float groundHaze = smoothstep(0.24, 0.02, uv.y);
+        float wave = sin(uv.x * 12.0 + u_time * 0.65) * cos(uv.x * 7.0 - u_time * 0.40);
+        float mistDrift = (0.5 + 0.5 * wave) * groundHaze * u_waterMist;
+        color = mix(color, color + vec3(0.04, 0.07, 0.08), mistDrift * 0.22);
     }
 
     // 5. CRT Base Vignette
