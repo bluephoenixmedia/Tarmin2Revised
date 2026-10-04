@@ -171,6 +171,10 @@ MODELS = [
     Model("lakelands_rock_moss", "sized", ("models", "forest_other/rock1.glb"), None, None, (1.1, 0.9)),
     Model("lakelands_tree_dead_01", "sized", (ADVENTURE, "FBX/SM_Env_TreeDead_01.fbx"), {}, ADVENTURE_ATLAS, (1.9, 3.2)),
     Model("lakelands_tree_dead_02", "sized", (GENERIC, "Models/SM_Gen_Env_Tree_Dead_01.fbx"), {}, GENERIC_ATLAS, (1.9, 3.2)),
+    Model("lakelands_tree_cypress_01", "sized", ("models", "trees/tall_cypress_Tree_Textured.glb"), None, None, (2.0, 3.8)),
+    Model("lakelands_tree_dead_03", "sized", ("models", "forest_other/Dead_Tree_Textured.glb"), None, None, (2.2, 3.4)),
+    Model("lakelands_tree_willow_01", "sized", ("models", "trees/dense_jungle_Tree_Textured.glb"), None, None, (2.4, 3.6)),
+    Model("lakelands_tree_snag_01", "sized", ("models", "trees/dead_tree3.glb"), None, None, (1.9, 3.2)),
 ]
 
 

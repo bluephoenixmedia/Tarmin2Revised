@@ -47,10 +47,15 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
         }
     }
 
-    private static final Sprite[] DEAD_TREES = {
+    public static final Sprite[] SWAMP_TREES = {
+            new Sprite("images/lakelands/tree_cypress_01.png", 2.0f, 3.8f),
+            new Sprite("images/lakelands/tree_willow_01.png", 2.4f, 3.6f),
             new Sprite("images/lakelands/tree_dead_01.png", 1.9f, 3.2f),
             new Sprite("images/lakelands/tree_dead_02.png", 1.9f, 3.2f),
+            new Sprite("images/lakelands/tree_dead_03.png", 2.2f, 3.4f),
+            new Sprite("images/lakelands/tree_snag_01.png", 1.9f, 3.2f),
     };
+    private static final Sprite[] DEAD_TREES = SWAMP_TREES;
     private static final Sprite[] REEDS = {
             new Sprite("images/lakelands/reeds_01.png", 0.7f, 1.0f),
             new Sprite("images/lakelands/reeds_02.png", 0.7f, 1.0f),
@@ -199,7 +204,10 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
         // 6. Spawn Central & Side Basin Landmarks & Scenery
         spawnLandmarks(maze, reachable, assetManager, chunkSeed);
 
-        // 7. Scatter ground cover decoration (render-only backdrop scenery)
+        // 7. Spawn Swamp Trees (Cypress, Willow, and Dead Snag Copses & Groves)
+        spawnSwampTrees(maze, reachable, assetManager, chunkSeed);
+
+        // 8. Scatter ground cover decoration (render-only backdrop scenery)
         scatterGroundCover(maze, assetManager, chunkSeed);
 
         // 8. Spawn Monsters, Items, Encounters, Ladders
@@ -540,6 +548,195 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
                 placeScenerySprite(maze, GLOWPLANT, bp.x + 1, bp.y - 1, 1f, assetManager);
             }
         }
+    }
+
+    private void spawnSwampTrees(Maze maze, Set<GridPoint2> reachable, AssetManager assetManager, long seed) {
+        Random rng = new Random(seed ^ 0x72EE51A4EL);
+
+        // 1. Solid Trees (Physical Obstacle Copses & Groves)
+        List<GridPoint2> candidates = new ArrayList<>();
+        for (GridPoint2 pt : reachable) {
+            // Keep central spawn clearing clear
+            if (Math.abs(pt.x - 18) <= 2 && Math.abs(pt.y - 18) <= 2) continue;
+            // Keep main cardinal walking avenues clear
+            if (Math.abs(pt.x - 18) <= 1 || Math.abs(pt.y - 18) <= 1) continue;
+            // Keep gate approaches clear
+            if (pt.x <= 3 || pt.x >= CHUNK_SIZE - 4 || pt.y <= 3 || pt.y >= CHUNK_SIZE - 4) continue;
+            // Avoid landmarks and existing scenery
+            if (maze.getScenery().containsKey(pt) || maze.getGateAt(pt.x, pt.y) != null) continue;
+
+            candidates.add(pt);
+        }
+        Collections.shuffle(candidates, rng);
+
+        int currentReachable = countReachable(maze);
+        int targetSolid = 36 + rng.nextInt(12); // ~36-48 solid trees
+        int solidPlaced = 0;
+        List<GridPoint2> solidTreeLocations = new ArrayList<>();
+
+        for (GridPoint2 pt : candidates) {
+            if (solidPlaced >= targetSolid) break;
+
+            Scenery tree = new Scenery(Scenery.SceneryType.TREE, pt.x, pt.y);
+            tree.setImpassable(true);
+            tree.setFlippedX(rng.nextBoolean());
+            Sprite sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+            float jitter = 0.90f + rng.nextFloat() * 0.25f;
+            sp.applyTo(tree, jitter);
+            loadTextureSafely(tree, sp.path(), assetManager);
+            maze.addScenery(tree);
+
+            int after = countReachable(maze);
+            // Must not disconnect reachable open ground
+            if (after < currentReachable - 1) {
+                maze.getScenery().remove(pt);
+                continue;
+            }
+            currentReachable = after;
+            solidTreeLocations.add(pt);
+            solidPlaced++;
+        }
+
+        // 2. Clustered Stand / Companion Trees (Visual Backdrop Depth behind/beside solid trees)
+        for (GridPoint2 pt : solidTreeLocations) {
+            int companionCount = 1 + (rng.nextFloat() < 0.45f ? 1 : 0);
+            for (int i = 0; i < companionCount; i++) {
+                float ox = (rng.nextFloat() - 0.5f) * 0.7f;
+                float oy = (rng.nextFloat() - 0.5f) * 0.7f;
+                Scenery trunk = new Scenery(Scenery.SceneryType.TREE, pt.x, pt.y);
+                trunk.getPosition().set(pt.x + 0.5f + ox, pt.y + 0.5f + oy);
+                trunk.setFlippedX(rng.nextBoolean());
+                Sprite sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+                float jitter = 0.75f + rng.nextFloat() * 0.35f;
+                sp.applyTo(trunk, jitter);
+                loadTextureSafely(trunk, sp.path(), assetManager);
+                maze.addBackdropScenery(trunk);
+            }
+        }
+
+        // 3. Bluff Edge Trees (Rising along the foot and ledges of the thicket/bluff walls '#')
+        for (int y = 2; y < CHUNK_SIZE - 2; y++) {
+            for (int x = 2; x < CHUNK_SIZE - 2; x++) {
+                if (!maze.isWall(x, y)) continue;
+                if (!facesOpenGround(x, y)) continue;
+                if (rng.nextFloat() > 0.35f) continue;
+
+                float[] offset = directionToOpenGround(x, y);
+                float px = x + 0.5f + offset[0] * 0.35f;
+                float py = y + 0.5f + offset[1] * 0.35f;
+
+                Scenery bluffTree = new Scenery(Scenery.SceneryType.TREE, x, y);
+                bluffTree.getPosition().set(px, py);
+                bluffTree.setFlippedX(rng.nextBoolean());
+                Sprite sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+                float jitter = 0.85f + rng.nextFloat() * 0.35f;
+                sp.applyTo(bluffTree, jitter);
+                loadTextureSafely(bluffTree, sp.path(), assetManager);
+                maze.addBackdropScenery(bluffTree);
+            }
+        }
+
+        // 4. Water Pools & Basin Trees (Bald cypress and weeping willows rising from the shallows)
+        for (int y = 3; y < CHUNK_SIZE - 3; y++) {
+            for (int x = 3; x < CHUNK_SIZE - 3; x++) {
+                if (maze.isWall(x, y)) continue;
+                if (Math.abs(x - 18) <= 1 && Math.abs(y - 18) <= 1) continue;
+                if (x == 18 || y == 18) continue;
+
+                boolean isWater = maze.getLiquidManager() != null && maze.getLiquidManager().hasLiquidAt(x, y);
+                float chance = isWater ? 0.22f : 0.15f;
+                if (rng.nextFloat() > chance) continue;
+
+                GridPoint2 pt = new GridPoint2(x, y);
+                if (maze.getScenery().containsKey(pt) || maze.getGateAt(x, y) != null) continue;
+
+                float ox = (rng.nextFloat() - 0.5f) * 0.5f;
+                float oy = (rng.nextFloat() - 0.5f) * 0.5f;
+
+                Scenery waterTree = new Scenery(Scenery.SceneryType.TREE, x, y);
+                waterTree.getPosition().set(x + 0.5f + ox, y + 0.5f + oy);
+                waterTree.setFlippedX(rng.nextBoolean());
+
+                Sprite sp;
+                if (isWater) {
+                    float roll = rng.nextFloat();
+                    if (roll < 0.40f) sp = SWAMP_TREES[0]; // cypress
+                    else if (roll < 0.70f) sp = SWAMP_TREES[1]; // willow
+                    else sp = SWAMP_TREES[2 + rng.nextInt(4)]; // dead snags
+                } else {
+                    sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+                }
+
+                float jitter = 0.85f + rng.nextFloat() * 0.35f;
+                sp.applyTo(waterTree, jitter);
+                loadTextureSafely(waterTree, sp.path(), assetManager);
+                maze.addBackdropScenery(waterTree);
+            }
+        }
+    }
+
+    private boolean facesOpenGround(int x, int y) {
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int nx = x + d[0];
+            int ny = y + d[1];
+            if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
+                int ly = CHUNK_SIZE - 1 - ny;
+                if (isTraversable(finalLayout[ly].charAt(nx))) return true;
+            }
+        }
+        return false;
+    }
+
+    private float[] directionToOpenGround(int x, int y) {
+        float ox = 0f;
+        float oy = 0f;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int nx = x + d[0];
+            int ny = y + d[1];
+            if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
+                int ly = CHUNK_SIZE - 1 - ny;
+                if (isTraversable(finalLayout[ly].charAt(nx))) {
+                    ox += d[0];
+                    oy += d[1];
+                }
+            }
+        }
+        float len = (float) Math.sqrt(ox * ox + oy * oy);
+        if (len > 0f) {
+            ox /= len;
+            oy /= len;
+        }
+        return new float[]{ox, oy};
+    }
+
+    private int countReachable(Maze maze) {
+        int width = maze.getWidth();
+        int height = maze.getHeight();
+        boolean[] seen = new boolean[width * height];
+        ArrayDeque<GridPoint2> queue = new ArrayDeque<>();
+        GridPoint2 start = new GridPoint2(width / 2, height / 2);
+        if (!maze.isPassable(start.x, start.y)) return 0;
+        seen[start.y * width + start.x] = true;
+        queue.add(start);
+        int count = 0;
+        int[][] steps = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while (!queue.isEmpty()) {
+            GridPoint2 c = queue.poll();
+            count++;
+            for (int[] d : steps) {
+                int nx = c.x + d[0];
+                int ny = c.y + d[1];
+                if (nx < 0 || ny < 0 || nx >= width || ny >= height || seen[ny * width + nx]) continue;
+                int ly = height - 1 - ny;
+                if (!isTraversable(finalLayout[ly].charAt(nx))) continue;
+                if (!maze.isPassable(nx, ny)) continue;
+                seen[ny * width + nx] = true;
+                queue.add(new GridPoint2(nx, ny));
+            }
+        }
+        return count;
     }
 
     private void scatterGroundCover(Maze maze, AssetManager assetManager, long seed) {

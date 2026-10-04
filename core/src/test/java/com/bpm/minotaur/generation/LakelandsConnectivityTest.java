@@ -181,6 +181,74 @@ public class LakelandsConnectivityTest {
         }
     }
 
+    @Test
+    public void testSwampTreeSpawning() throws Exception {
+        long[] seeds = {42L, 1337L, 999999L, 55555L, 777L};
+        for (long seed : seeds) {
+            String[] layout = generateLayout(seed);
+            LakelandsChunkGenerator gen = new LakelandsChunkGenerator();
+
+            Field layoutField = LakelandsChunkGenerator.class.getDeclaredField("finalLayout");
+            layoutField.setAccessible(true);
+            layoutField.set(gen, layout);
+
+            // Construct Maze with layout walls
+            int[][] bitmask = new int[SIZE][SIZE];
+            for (int y = 0; y < SIZE; y++) {
+                for (int x = 0; x < SIZE; x++) {
+                    if (at(layout, x, y) == '#') {
+                        bitmask[y][x] = 0b01010101; // wall
+                    }
+                }
+            }
+            Maze maze = new Maze(1, bitmask);
+
+            Method dist = LakelandsChunkGenerator.class.getDeclaredMethod("distributeWetlandLiquids", Maze.class, long.class);
+            dist.setAccessible(true);
+            dist.invoke(gen, maze, seed);
+
+            Method comp = LakelandsChunkGenerator.class.getDeclaredMethod("computeReachableTiles", Maze.class);
+            comp.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Set<com.badlogic.gdx.math.GridPoint2> reachable = (Set<com.badlogic.gdx.math.GridPoint2>) comp.invoke(gen, maze);
+
+            Method spawnTrees = LakelandsChunkGenerator.class.getDeclaredMethod(
+                    "spawnSwampTrees", Maze.class, Set.class, com.badlogic.gdx.assets.AssetManager.class, long.class);
+            spawnTrees.setAccessible(true);
+            spawnTrees.invoke(gen, maze, reachable, null, seed);
+
+            // Verify solid trees placed
+            int solidTrees = 0;
+            for (com.bpm.minotaur.gamedata.Scenery sc : maze.getScenery().values()) {
+                if (sc.getType() == com.bpm.minotaur.gamedata.Scenery.SceneryType.TREE) {
+                    solidTrees++;
+                }
+            }
+            assertTrue("seed " + seed + ": must spawn solid swamp trees (got " + solidTrees + ")", solidTrees >= 30);
+
+            // Verify backdrop trees placed
+            int backdropTrees = 0;
+            for (com.bpm.minotaur.gamedata.Scenery sc : maze.getBackdropScenery()) {
+                if (sc.getType() == com.bpm.minotaur.gamedata.Scenery.SceneryType.TREE) {
+                    backdropTrees++;
+                }
+            }
+            assertTrue("seed " + seed + ": must spawn backdrop swamp trees (got " + backdropTrees + ")", backdropTrees >= 50);
+
+            // Verify gate connectivity is maintained with trees placed
+            int[][] gates = {
+                    {18, SIZE - 1}, // North
+                    {18, 0},        // South
+                    {SIZE - 1, 18}, // East
+                    {0, 18}         // West
+            };
+            for (int i = 0; i < 4; i++) {
+                assertTrue("seed " + seed + ": Gate " + i + " must remain reachable",
+                        maze.isPassable(gates[i][0], gates[i][1]));
+            }
+        }
+    }
+
     private boolean isGateApproach(int[][] approaches, int x, int y) {
         for (int[] a : approaches) {
             if (a[0] == x && a[1] == y) return true;

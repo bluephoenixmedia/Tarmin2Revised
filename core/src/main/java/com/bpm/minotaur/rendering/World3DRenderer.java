@@ -1756,9 +1756,9 @@ public class World3DRenderer implements Disposable {
             entities.add(sc);
         }
         for (Scenery backdrop : maze.getBackdropScenery()) {
-            float range = backdrop.getType() == Scenery.SceneryType.TREE ? FOREST_TREE_RANGE
-                    : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE
-                    : (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE : SCATTER_RANGE;
+            float range = (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE
+                    : (backdrop.getType() == Scenery.SceneryType.TREE) ? FOREST_TREE_RANGE
+                    : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE : SCATTER_RANGE;
             if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);
         }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
