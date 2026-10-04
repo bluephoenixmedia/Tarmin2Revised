@@ -12,6 +12,7 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
+import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 
 import java.util.*;
 
@@ -30,20 +31,25 @@ public class ForestChunkGenerator implements IChunkGenerator {
     private final GridPoint2 playerSpawnPoint = new GridPoint2(18, 18);
     private GridPoint2 forcedUpLadderPos = null;
 
-    private static final String[] PINE_TEXTURES = {
-            "images/forest/tree_pine_01.png",
-            "images/forest/tree_pine_02.png",
-            "images/forest/tree_pine_03.png"
+    // Baked from the tree models by tools/blender/bake_forest_models.py and
+    // tools/stylize_forest_sprites.py: _l is lit from the left, _r from the right.
+    public static final String[] PINE_TEXTURES = {
+            "images/forest/tree_pine_a_l.png", "images/forest/tree_pine_a_r.png",
+            "images/forest/tree_pine_b_l.png", "images/forest/tree_pine_b_r.png",
+            "images/forest/tree_pine_c_l.png", "images/forest/tree_pine_c_r.png",
+            "images/forest/tree_pine_d_l.png", "images/forest/tree_pine_d_r.png"
     };
 
-    private static final String[] BIRCH_TEXTURES = {
-            "images/forest/tree_birch_01.png",
-            "images/forest/tree_birch_02.png"
+    public static final String[] DEAD_TREE_TEXTURES = {
+            "images/forest/tree_dead_a_l.png", "images/forest/tree_dead_a_r.png",
+            "images/forest/tree_dead_b_l.png", "images/forest/tree_dead_b_r.png",
+            "images/forest/tree_dead_c_l.png", "images/forest/tree_dead_c_r.png",
+            "images/forest/tree_dead_d_l.png", "images/forest/tree_dead_d_r.png",
+            "images/forest/tree_dead_e_l.png", "images/forest/tree_dead_e_r.png"
     };
 
-    private static final String[] DEAD_TREE_TEXTURES = {
-            "images/forest/tree_dead_01.png"
-    };
+    /** Width over height of every baked tree sprite's canvas, so billboards never stretch. */
+    private static final float TREE_ASPECT = 648f / 864f;
 
     private static final String[] BOULDER_TEXTURES = {
             "images/forest/rock_boulder_01.png",
@@ -814,20 +820,15 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         Scenery s = new Scenery(Scenery.SceneryType.TREE, x, y);
                         s.setFlippedX(random.nextBoolean());
 
-                        // Tree type selection: 65% pine, 25% birch, 10% dead tree
-                        float r = random.nextFloat();
-                        String path;
-                        if (r < 0.65f) {
-                            path = PINE_TEXTURES[random.nextInt(PINE_TEXTURES.length)];
-                        } else if (r < 0.90f) {
-                            path = BIRCH_TEXTURES[random.nextInt(BIRCH_TEXTURES.length)];
-                        } else {
-                            path = DEAD_TREE_TEXTURES[random.nextInt(DEAD_TREE_TEXTURES.length)];
-                        }
+                        // Alpine: 90% pine, 10% dead snags. No birch; white bark glows in the canopy gloom.
+                        String path = random.nextFloat() < 0.90f
+                                ? PINE_TEXTURES[random.nextInt(PINE_TEXTURES.length)]
+                                : DEAD_TREE_TEXTURES[random.nextInt(DEAD_TREE_TEXTURES.length)];
 
                         // Organic scale jitter
                         float jitter = 0.92f + random.nextFloat() * 0.22f;
-                        s.scale.set(2.0f * jitter, 4.0f * jitter);
+                        float treeHeight = 4.0f * jitter;
+                        s.scale.set(treeHeight * TREE_ASPECT, treeHeight);
 
                         loadTextureSafely(s, path, assetManager);
                         maze.addScenery(s);
@@ -897,9 +898,9 @@ public class ForestChunkGenerator implements IChunkGenerator {
                     }
                     bitmaskedData[y][x] = mask;
                 } else {
-                    // The cliff itself is solid rock (ChunkMeshBuilder.ALL_WALLS). Left at 0 it
-                    // read as open ground, and the canopy opened over the whole border.
-                    bitmaskedData[y][x] = 0b01010101;
+                    // The cliff itself is solid rock. Left at 0 it read as open ground,
+                    // and the canopy opened over the whole border.
+                    bitmaskedData[y][x] = ChunkMeshBuilder.ALL_WALLS;
                 }
             }
         }

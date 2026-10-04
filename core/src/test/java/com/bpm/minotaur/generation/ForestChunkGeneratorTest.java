@@ -242,4 +242,23 @@ public class ForestChunkGeneratorTest {
         assertTrue("Forest chunk must contain 2 to 3 DOWN ladders, found: " + downLadders,
                 downLadders >= 2 && downLadders <= 3);
     }
+
+    @Test
+    public void treesUseTheBakedAlpineSpritesWithoutStretching() {
+        Maze maze = generateTestChunk(42L);
+        Set<String> baked = new HashSet<>(Arrays.asList(ForestChunkGenerator.PINE_TEXTURES));
+        baked.addAll(Arrays.asList(ForestChunkGenerator.DEAD_TREE_TEXTURES));
+
+        int pines = 0;
+        int trees = 0;
+        for (Scenery s : maze.getScenery().values()) {
+            if (s.getType() != Scenery.SceneryType.TREE) continue;
+            trees++;
+            assertTrue("unbaked tree sprite " + s.getTexturePath(), baked.contains(s.getTexturePath()));
+            if (s.getTexturePath().contains("tree_pine_")) pines++;
+            assertEquals("billboard keeps the 648x864 canvas aspect",
+                    648f / 864f, s.getScale().x / s.getScale().y, 0.001f);
+        }
+        assertTrue("an alpine forest is mostly pine, was " + pines + "/" + trees, pines > trees * 0.8f);
+    }
 }
