@@ -52,6 +52,7 @@ TEAL = [(14, 38, 40), (24, 70, 70), (50, 120, 112), (120, 200, 180)]
 CACTUS = [(20, 38, 22), (34, 62, 32), (56, 92, 42), (88, 126, 58)]
 SANDSTONE = [(64, 26, 16), (112, 50, 28), (160, 82, 44), (206, 132, 78)]
 BONE = [(70, 58, 44), (130, 112, 86), (184, 168, 136), (226, 214, 184)]
+STRAW = [(58, 42, 24), (102, 78, 44), (150, 118, 70), (196, 164, 108)]
 DRY_SCRUB = [(50, 44, 24), (84, 76, 38), (122, 108, 56), (160, 146, 84)]
 DRIFTWOOD = [(44, 34, 28), (82, 66, 52), (126, 106, 84), (168, 150, 120)]
 EMBER_RIM = (112, 44, 26)
@@ -84,6 +85,7 @@ GROUPS = {
     "desert_beast_skull": (BONE, BONE),
     "desert_titan_skull": (BONE, BONE),
     "desert_scrub_": (DRY_SCRUB, DRY_SCRUB),
+    "desert_tumbleweed": (STRAW, STRAW),
     "desert_campfire": (CACTUS, BARK),
     "desert_camp_tent": (CACTUS, BARK),
     "desert_": (SANDSTONE, SANDSTONE),

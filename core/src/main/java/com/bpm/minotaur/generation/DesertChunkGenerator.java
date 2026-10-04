@@ -114,6 +114,9 @@ public class DesertChunkGenerator implements IChunkGenerator {
             new Sprite("images/desert/scrub_01.png", 0.65f, 0.42f),
             new Sprite("images/desert/bones_01.png", 0.4f, 0.3f),
             new Sprite("images/desert/bones_rib.png", 0.45f, 0.3f),
+            // Generated 2D art, keyed and stylized by tools/prepare_generated_sprite.py at
+            // twice the trees' density: its thin branches turn to mush any coarser.
+            new Sprite("images/desert/tumbleweed.png", 0.45f, 0.43f),
     };
     /** Share of clear open sand that gets a piece of ground cover. */
     private static final float SCATTER_SHARE = 0.2f;
