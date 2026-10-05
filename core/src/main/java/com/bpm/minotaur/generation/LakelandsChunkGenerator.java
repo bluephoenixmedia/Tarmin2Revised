@@ -2,6 +2,7 @@ package com.bpm.minotaur.generation;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
@@ -80,17 +81,24 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
     private static final Sprite BEAST_SKULL = new Sprite("images/lakelands/beast_skull.png", 1.6f, 1.2f);
     private static final Sprite ROOT = new Sprite("images/lakelands/root_01.png", 0.9f, 0.4f);
     private static final Sprite ROCK_MOSS = new Sprite("images/lakelands/rock_moss.png", 1.1f, 0.9f);
-    private static final Sprite GLOWPLANT = new Sprite("images/lakelands/glowplant.png", 0.7f, 0.6f);
-    private static final Sprite UNDERWATER_PLANT = new Sprite("images/lakelands/underwater_plant.png", 0.6f, 0.5f);
+    private static final Sprite GLOWPLANT = new Sprite("images/lakelands/glowplant.png", 0.8f, 0.7f);
+    private static final Sprite UNDERWATER_PLANT = new Sprite("images/lakelands/underwater_plant.png", 0.7f, 1.4f);
+    private static final Sprite TALL_GRASS = new Sprite("images/lakelands/tall_grass.png", 0.8f, 1.1f);
+    private static final Sprite SWAMP_PLANT = new Sprite("images/lakelands/swamp_plant.png", 0.9f, 0.35f);
+    private static final Sprite SWAMP_FERN = new Sprite("images/lakelands/swamp_fern.png", 1.3f, 1.3f);
+    private static final Sprite TROPICAL_BUSH = new Sprite("images/lakelands/tropical_bush.png", 1.5f, 0.55f);
+    private static final Sprite WATER_KELP = new Sprite("images/lakelands/water_kelp.png", 1.1f, 1.1f);
 
-    /** Ground scatter on water tiles: lilypads, reeds, underwater flora. */
+    /** Ground scatter on water tiles: kelp, marine leaves, tall marsh grass, swamp ferns, glowplants, lilypads, reeds. */
     private static final Sprite[] WATER_SCATTER = {
-            LILYPADS[0], LILYPADS[1], REEDS[0], UNDERWATER_PLANT
+            WATER_KELP, UNDERWATER_PLANT, TALL_GRASS, GLOWPLANT, SWAMP_FERN,
+            LILYPADS[0], LILYPADS[1], REEDS[0], REEDS[1]
     };
 
-    /** Ground scatter on land tiles: swamp grass, roots, mossy rock, glowplants. */
+    /** Ground scatter on land/muck tiles: tall grass, leafy swamp plants, ferns, tropical bushes, glowplants, roots, moss. */
     private static final Sprite[] LAND_SCATTER = {
-            SWAMP_GRASS[0], SWAMP_GRASS[1], ROOT, GLOWPLANT, ROCK_MOSS
+            TALL_GRASS, SWAMP_PLANT, SWAMP_FERN, TROPICAL_BUSH, GLOWPLANT,
+            SWAMP_GRASS[0], SWAMP_GRASS[1], ROOT, ROCK_MOSS
     };
 
     private static final MonsterType[] LAKELANDS_FAUNA = {
@@ -104,16 +112,17 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
 
     /** Every baked Lakelands texture, for the asset preload. */
     public static List<String> textures() {
-        List<String> paths = new ArrayList<>();
-        for (Sprite[] set : new Sprite[][]{DEAD_TREES, REEDS, SWAMP_GRASS, LILYPADS, DOCKS, WATER_SCATTER, LAND_SCATTER}) {
+        Set<String> paths = new LinkedHashSet<>();
+        for (Sprite[] set : new Sprite[][]{SWAMP_TREES, REEDS, SWAMP_GRASS, LILYPADS, DOCKS, WATER_SCATTER, LAND_SCATTER}) {
             for (Sprite sp : set) paths.add(sp.path());
         }
         paths.addAll(Arrays.asList(
                 BOAT_WRECK.path(), SHRINE.path(), STATUE.path(), MOUND.path(),
                 BONES_RIB.path(), BEAST_SKULL.path(), ROOT.path(), ROCK_MOSS.path(),
-                GLOWPLANT.path(), UNDERWATER_PLANT.path()
+                GLOWPLANT.path(), UNDERWATER_PLANT.path(), TALL_GRASS.path(),
+                SWAMP_PLANT.path(), SWAMP_FERN.path(), TROPICAL_BUSH.path(), WATER_KELP.path()
         ));
-        return paths;
+        return new ArrayList<>(paths);
     }
 
     private final Map<String, Texture> textureCache = new HashMap<>();
@@ -454,25 +463,23 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
     private void distributeWetlandLiquids(Maze maze, long seed) {
         FastNoiseLite liquidNoise = new FastNoiseLite((int) (seed ^ 0x51A7F00DL));
         liquidNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
-        liquidNoise.SetFrequency(0.09f);
+        liquidNoise.SetFrequency(0.08f);
 
         for (int y = 1; y < CHUNK_SIZE - 1; y++) {
             for (int x = 1; x < CHUNK_SIZE - 1; x++) {
                 if (maze.isWall(x, y)) continue;
 
-                // Keep gate approaches and exact center dry for clean footing
-                if ((Math.abs(x - 18) <= 1 && Math.abs(y - 18) <= 1)
-                        || (x == 18 && (y <= 3 || y >= CHUNK_SIZE - 4))
-                        || (y == 18 && (x <= 3 || x >= CHUNK_SIZE - 4))) {
-                    continue;
-                }
+                // Keep only the immediate player spawn tile dry so the hero starts on stone
+                if (x == 18 && y == 18) continue;
+                // Keep immediate gate doorstep dry
+                if ((x == 18 && (y == 0 || y == CHUNK_SIZE - 1)) || (y == 18 && (x == 0 || x == CHUNK_SIZE - 1))) continue;
 
                 float n = liquidNoise.GetNoise(x, y);
-                if (n > 0.10f) {
-                    // Wadeable shallow water
+                if (n > -0.28f) {
+                    // Wadeable murky shallow water (covers ~75-80% of open wetland)
                     maze.getLiquidManager().setLiquidAt(x, y, LiquidType.WATER);
-                } else if (n < -0.40f) {
-                    // Toxic stagnant muck depression
+                } else if (n < -0.48f) {
+                    // Toxic stagnant muck depression (covers ~10-12% of open wetland)
                     maze.getLiquidManager().setLiquidAt(x, y, LiquidType.BLACK_MUCK);
                 }
             }
@@ -746,20 +753,51 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
                 if (maze.isWall(x, y)) continue;
                 GridPoint2 pt = new GridPoint2(x, y);
                 if (maze.getScenery().containsKey(pt) || maze.getGateAt(x, y) != null) continue;
-                // Cardinal corridors and center glade must stay clear of blocking sightline debris
-                if (Math.abs(x - 18) <= 2 || Math.abs(y - 18) <= 2) continue;
 
-                // Scatter on ~20% of open tiles
-                if (rng.nextFloat() > 0.20f) continue;
+                // Player spawn tile must stay clear of clutter directly under feet
+                if (x == 18 && y == 18) continue;
 
                 boolean isWater = maze.getLiquidManager() != null && maze.getLiquidManager().hasLiquidAt(x, y);
+                // Dense swamp flora: 65% chance on water tiles, 55% on land/muck
+                float scatterChance = isWater ? 0.65f : 0.55f;
+                if (rng.nextFloat() > scatterChance) continue;
+
                 Sprite[] pool = isWater ? WATER_SCATTER : LAND_SCATTER;
                 Sprite pick = pool[rng.nextInt(pool.length)];
 
+                float ox = (rng.nextFloat() - 0.5f) * 0.55f;
+                float oy = (rng.nextFloat() - 0.5f) * 0.55f;
+
                 Scenery sc = new Scenery(Scenery.SceneryType.PROP, x, y, pick.path());
-                pick.applyTo(sc, 0.85f + rng.nextFloat() * 0.3f);
+                sc.getPosition().set(x + 0.5f + ox, y + 0.5f + oy);
+                sc.setFlippedX(rng.nextBoolean());
+                pick.applyTo(sc, 0.85f + rng.nextFloat() * 0.35f);
+                if (pick == GLOWPLANT) {
+                    sc.setEmissiveTint(new Color(0.25f, 0.95f, 0.85f, 1.0f));
+                }
                 loadTextureSafely(sc, pick.path(), assetManager);
                 maze.addBackdropScenery(sc);
+
+                // On water tiles, 35% chance of secondary companion plant (e.g. lilypads next to tall grass or kelp)
+                if (isWater && rng.nextFloat() < 0.35f) {
+                    Sprite secondPick;
+                    if (pick == LILYPADS[0] || pick == LILYPADS[1]) {
+                        secondPick = (rng.nextFloat() < 0.5f) ? TALL_GRASS : WATER_KELP;
+                    } else {
+                        secondPick = (rng.nextFloat() < 0.6f) ? LILYPADS[rng.nextInt(2)] : UNDERWATER_PLANT;
+                    }
+                    float ox2 = (rng.nextFloat() - 0.5f) * 0.65f;
+                    float oy2 = (rng.nextFloat() - 0.5f) * 0.65f;
+                    Scenery sc2 = new Scenery(Scenery.SceneryType.PROP, x, y, secondPick.path());
+                    sc2.getPosition().set(x + 0.5f + ox2, y + 0.5f + oy2);
+                    sc2.setFlippedX(rng.nextBoolean());
+                    secondPick.applyTo(sc2, 0.80f + rng.nextFloat() * 0.30f);
+                    if (secondPick == GLOWPLANT) {
+                        sc2.setEmissiveTint(new Color(0.25f, 0.95f, 0.85f, 1.0f));
+                    }
+                    loadTextureSafely(sc2, secondPick.path(), assetManager);
+                    maze.addBackdropScenery(sc2);
+                }
             }
         }
     }

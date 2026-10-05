@@ -249,6 +249,53 @@ public class LakelandsConnectivityTest {
         }
     }
 
+    @Test
+    public void testGroundCoverFloraSpawning() throws Exception {
+        long[] seeds = {101L, 202L, 303L};
+        for (long seed : seeds) {
+            String[] layout = generateLayout(seed);
+            LakelandsChunkGenerator gen = new LakelandsChunkGenerator();
+
+            Field layoutField = LakelandsChunkGenerator.class.getDeclaredField("finalLayout");
+            layoutField.setAccessible(true);
+            layoutField.set(gen, layout);
+
+            int[][] bitmask = new int[SIZE][SIZE];
+            for (int y = 0; y < SIZE; y++) {
+                for (int x = 0; x < SIZE; x++) {
+                    if (at(layout, x, y) == '#') {
+                        bitmask[y][x] = 0b01010101;
+                    }
+                }
+            }
+            Maze maze = new Maze(1, bitmask);
+
+            Method dist = LakelandsChunkGenerator.class.getDeclaredMethod("distributeWetlandLiquids", Maze.class, long.class);
+            dist.setAccessible(true);
+            dist.invoke(gen, maze, seed);
+
+            Method scatter = LakelandsChunkGenerator.class.getDeclaredMethod(
+                    "scatterGroundCover", Maze.class, com.badlogic.gdx.assets.AssetManager.class, long.class);
+            scatter.setAccessible(true);
+            scatter.invoke(gen, maze, null, seed);
+
+            int floraCount = 0;
+            Set<String> observedFlora = new HashSet<>();
+            for (com.bpm.minotaur.gamedata.Scenery sc : maze.getBackdropScenery()) {
+                if (sc.getTexturePath() != null) {
+                    observedFlora.add(sc.getTexturePath());
+                    floraCount++;
+                }
+            }
+
+            assertTrue("seed " + seed + ": must spawn dense ground flora (got " + floraCount + ")", floraCount >= 150);
+            assertTrue("seed " + seed + ": must contain tall grass", observedFlora.contains("images/lakelands/tall_grass.png"));
+            assertTrue("seed " + seed + ": must contain water kelp", observedFlora.contains("images/lakelands/water_kelp.png"));
+            assertTrue("seed " + seed + ": must contain glowplant", observedFlora.contains("images/lakelands/glowplant.png"));
+            assertTrue("seed " + seed + ": must contain swamp fern", observedFlora.contains("images/lakelands/swamp_fern.png"));
+        }
+    }
+
     private boolean isGateApproach(int[][] approaches, int x, int y) {
         for (int[] a : approaches) {
             if (a[0] == x && a[1] == y) return true;
