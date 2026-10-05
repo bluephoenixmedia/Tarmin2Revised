@@ -707,6 +707,8 @@ public class World3DRenderer implements Disposable {
                 ForestAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
                 // The canopy keeps its own colour in the rain; the slate overcast only greys it.
                 overcastFactor *= ForestAtmosphere.CANOPY_OVERCAST_SHARE;
+            } else if (mazeBiome == Biome.LAKELANDS) {
+                LakelandsAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
             } else {
                 targetAmbientColor.set(skyTint);
             }
@@ -871,13 +873,18 @@ public class World3DRenderer implements Disposable {
             shader.setUniformf("u_retroColor", Color.WHITE);
         }
 
-        // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
-        renderLiquids(maze, player, isRetro);
-        renderAreaEffects(maze, player, isRetro);
-        renderBiomePortals(maze, player);
+        // A. Gore System: Coplanar Wall Decals, Floor Decals (Blood Pools)
         renderGore(maze, worldManager, isRetro, theme);
 
-        // B. Entities: Monsters, Items, Ladders, Scenery
+        // B. Liquids: Murky shallow water & toxic muck pooling over floor and submerged blood
+        Gdx.gl.glDepthMask(false);
+        renderLiquids(maze, player, isRetro);
+        Gdx.gl.glDepthMask(true);
+
+        renderAreaEffects(maze, player, isRetro);
+        renderBiomePortals(maze, player);
+
+        // C. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
         renderProjectiles();
 
@@ -1533,7 +1540,7 @@ public class World3DRenderer implements Disposable {
 
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
-        int radius = 14;
+        int radius = (maze.getBiome() == Biome.LAKELANDS) ? 26 : 14;
 
         int minX = Math.max(0, px - radius);
         int maxX = Math.min(maze.getWidth() - 1, px + radius);
@@ -1541,9 +1548,8 @@ public class World3DRenderer implements Disposable {
         int maxY = Math.min(maze.getHeight() - 1, py + radius);
 
         // A gentle swell so the surface reads as liquid rather than a stain.
-        float swell = (float) Math.sin(totalTime * 1.6f) * 0.004f;
-        float uFlow = totalTime * 0.035f;
-        float vFlow = totalTime * 0.025f;
+        float uFlow = totalTime * 0.045f;
+        float vFlow = totalTime * 0.030f;
         Texture useTex = (fluidTexture != null) ? fluidTexture : blankTexture;
         boolean any = false;
 
@@ -1554,16 +1560,22 @@ public class World3DRenderer implements Disposable {
                 if (maze.isWall(x, y)) continue;
 
                 Color base = liquid.getColor();
-                float ripple = (float) Math.sin(totalTime * 2.2f + x * 0.7f + y * 0.5f) * 0.06f + 0.94f;
-                Color tint = new Color(base.r * ripple, base.g * ripple, base.b * ripple, base.a * 0.85f);
+                float ripple = (float) Math.sin(totalTime * 2.2f + x * 0.7f + y * 0.5f) * 0.08f + 0.96f;
+                // Specular glint gives water a glistening reflective wave sheen
+                float glint = (float) Math.pow(Math.max(0f, (float) Math.sin(totalTime * 2.8f + x * 1.6f + y * 1.3f)), 4.0) * 0.38f;
+                float r = Math.min(1f, base.r * ripple + glint * 0.75f);
+                float g = Math.min(1f, base.g * ripple + glint * 1.05f);
+                float b = Math.min(1f, base.b * ripple + glint * 1.00f);
+                Color tint = new Color(r, g, b, Math.min(1.0f, base.a * 1.35f));
 
-                float u1 = x * 0.5f + uFlow;
-                float v1 = y * 0.5f + vFlow;
-                float u2 = u1 + 0.5f;
-                float v2 = v1 + 0.5f;
+                float swell = (float) Math.sin(totalTime * 1.8f + x * 0.5f + y * 0.4f) * 0.005f;
+                float u1 = x * 0.65f + uFlow;
+                float v1 = y * 0.65f + vFlow;
+                float u2 = u1 + 0.65f;
+                float v2 = v1 + 0.65f;
 
                 dynamicBatcher.addFloorQuad(
-                        x + 0.5f, 0.021f + swell, -(y + 0.5f),
+                        x + 0.5f, 0.022f + swell, -(y + 0.5f),
                         0.5f, 0.5f,
                         u1, v1, u2, v2, tint);
                 any = true;
@@ -1756,9 +1768,9 @@ public class World3DRenderer implements Disposable {
             entities.add(sc);
         }
         for (Scenery backdrop : maze.getBackdropScenery()) {
-            float range = backdrop.getType() == Scenery.SceneryType.TREE ? FOREST_TREE_RANGE
-                    : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE
-                    : (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE : SCATTER_RANGE;
+            float range = (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE
+                    : (backdrop.getType() == Scenery.SceneryType.TREE) ? FOREST_TREE_RANGE
+                    : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE : SCATTER_RANGE;
             if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);
         }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {

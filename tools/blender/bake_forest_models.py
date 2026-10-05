@@ -165,12 +165,21 @@ MODELS = [
     Model("lakelands_mound_01", "sized", (GOBLIN, "FBX/Environment/SM_Env_Swamp_Mound_01.fbx"), {}, GOBLIN_ATLAS, (1.3, 0.7)),
     Model("lakelands_bones_rib", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Part_Bone_Rib_01.fbx"), {}, GOBLIN_ATLAS, (1.0, 0.7)),
     Model("lakelands_beast_skull", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Part_Bone_Skull_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.2)),
-    Model("lakelands_glowplant", "sized", ("models", "forest_other/luminescent_plants.glb"), None, None, (0.7, 0.6)),
-    Model("lakelands_underwater_plant", "sized", ("models", "forest_other/lowpoly_marine_plant.glb"), None, None, (0.6, 0.5)),
+    Model("lakelands_glowplant", "sized", ("models", "forest_other/luminescent_plants.glb"), None, None, (0.8, 0.7)),
+    Model("lakelands_underwater_plant", "sized", ("models", "forest_other/lowpoly_marine_plant.glb"), None, None, (0.7, 1.4)),
+    Model("lakelands_tall_grass", "sized", ("models", "forest_other/common_grass.glb"), None, None, (0.8, 1.1)),
+    Model("lakelands_swamp_plant", "sized", ("models", "forest_other/plant.glb"), None, None, (0.9, 0.35)),
+    Model("lakelands_swamp_fern", "sized", ("models", "forest_other/tropical_plant_2.glb"), None, None, (1.3, 1.3)),
+    Model("lakelands_tropical_bush", "sized", ("models", "forest_other/tropical_plant_bush.glb"), None, None, (1.5, 0.55)),
+    Model("lakelands_water_kelp", "sized", ("models", "forest_other/underwater_plant_pack.glb"), None, None, (1.1, 1.1)),
     Model("lakelands_root_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Branch_01.fbx"), {}, ALPINE_ATLAS, (0.9, 0.4)),
     Model("lakelands_rock_moss", "sized", ("models", "forest_other/rock1.glb"), None, None, (1.1, 0.9)),
     Model("lakelands_tree_dead_01", "sized", (ADVENTURE, "FBX/SM_Env_TreeDead_01.fbx"), {}, ADVENTURE_ATLAS, (1.9, 3.2)),
     Model("lakelands_tree_dead_02", "sized", (GENERIC, "Models/SM_Gen_Env_Tree_Dead_01.fbx"), {}, GENERIC_ATLAS, (1.9, 3.2)),
+    Model("lakelands_tree_cypress_01", "sized", ("models", "trees/tall_cypress_Tree_Textured.glb"), None, None, (2.0, 3.8)),
+    Model("lakelands_tree_dead_03", "sized", ("models", "forest_other/Dead_Tree_Textured.glb"), None, None, (2.2, 3.4)),
+    Model("lakelands_tree_willow_01", "sized", ("models", "trees/dense_jungle_Tree_Textured.glb"), None, None, (2.4, 3.6)),
+    Model("lakelands_tree_snag_01", "sized", ("models", "trees/dead_tree3.glb"), None, None, (1.9, 3.2)),
 ]
 
 

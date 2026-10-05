@@ -2,6 +2,7 @@ package com.bpm.minotaur.generation;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
@@ -47,10 +48,15 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
         }
     }
 
-    private static final Sprite[] DEAD_TREES = {
+    public static final Sprite[] SWAMP_TREES = {
+            new Sprite("images/lakelands/tree_cypress_01.png", 2.0f, 3.8f),
+            new Sprite("images/lakelands/tree_willow_01.png", 2.4f, 3.6f),
             new Sprite("images/lakelands/tree_dead_01.png", 1.9f, 3.2f),
             new Sprite("images/lakelands/tree_dead_02.png", 1.9f, 3.2f),
+            new Sprite("images/lakelands/tree_dead_03.png", 2.2f, 3.4f),
+            new Sprite("images/lakelands/tree_snag_01.png", 1.9f, 3.2f),
     };
+    private static final Sprite[] DEAD_TREES = SWAMP_TREES;
     private static final Sprite[] REEDS = {
             new Sprite("images/lakelands/reeds_01.png", 0.7f, 1.0f),
             new Sprite("images/lakelands/reeds_02.png", 0.7f, 1.0f),
@@ -75,17 +81,24 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
     private static final Sprite BEAST_SKULL = new Sprite("images/lakelands/beast_skull.png", 1.6f, 1.2f);
     private static final Sprite ROOT = new Sprite("images/lakelands/root_01.png", 0.9f, 0.4f);
     private static final Sprite ROCK_MOSS = new Sprite("images/lakelands/rock_moss.png", 1.1f, 0.9f);
-    private static final Sprite GLOWPLANT = new Sprite("images/lakelands/glowplant.png", 0.7f, 0.6f);
-    private static final Sprite UNDERWATER_PLANT = new Sprite("images/lakelands/underwater_plant.png", 0.6f, 0.5f);
+    private static final Sprite GLOWPLANT = new Sprite("images/lakelands/glowplant.png", 0.8f, 0.7f);
+    private static final Sprite UNDERWATER_PLANT = new Sprite("images/lakelands/underwater_plant.png", 0.7f, 1.4f);
+    private static final Sprite TALL_GRASS = new Sprite("images/lakelands/tall_grass.png", 0.8f, 1.1f);
+    private static final Sprite SWAMP_PLANT = new Sprite("images/lakelands/swamp_plant.png", 0.9f, 0.35f);
+    private static final Sprite SWAMP_FERN = new Sprite("images/lakelands/swamp_fern.png", 1.3f, 1.3f);
+    private static final Sprite TROPICAL_BUSH = new Sprite("images/lakelands/tropical_bush.png", 1.5f, 0.55f);
+    private static final Sprite WATER_KELP = new Sprite("images/lakelands/water_kelp.png", 1.1f, 1.1f);
 
-    /** Ground scatter on water tiles: lilypads, reeds, underwater flora. */
+    /** Ground scatter on water tiles: kelp, marine leaves, tall marsh grass, swamp ferns, glowplants, lilypads, reeds. */
     private static final Sprite[] WATER_SCATTER = {
-            LILYPADS[0], LILYPADS[1], REEDS[0], UNDERWATER_PLANT
+            WATER_KELP, UNDERWATER_PLANT, TALL_GRASS, GLOWPLANT, SWAMP_FERN,
+            LILYPADS[0], LILYPADS[1], REEDS[0], REEDS[1]
     };
 
-    /** Ground scatter on land tiles: swamp grass, roots, mossy rock, glowplants. */
+    /** Ground scatter on land/muck tiles: tall grass, leafy swamp plants, ferns, tropical bushes, glowplants, roots, moss. */
     private static final Sprite[] LAND_SCATTER = {
-            SWAMP_GRASS[0], SWAMP_GRASS[1], ROOT, GLOWPLANT, ROCK_MOSS
+            TALL_GRASS, SWAMP_PLANT, SWAMP_FERN, TROPICAL_BUSH, GLOWPLANT,
+            SWAMP_GRASS[0], SWAMP_GRASS[1], ROOT, ROCK_MOSS
     };
 
     private static final MonsterType[] LAKELANDS_FAUNA = {
@@ -99,16 +112,17 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
 
     /** Every baked Lakelands texture, for the asset preload. */
     public static List<String> textures() {
-        List<String> paths = new ArrayList<>();
-        for (Sprite[] set : new Sprite[][]{DEAD_TREES, REEDS, SWAMP_GRASS, LILYPADS, DOCKS, WATER_SCATTER, LAND_SCATTER}) {
+        Set<String> paths = new LinkedHashSet<>();
+        for (Sprite[] set : new Sprite[][]{SWAMP_TREES, REEDS, SWAMP_GRASS, LILYPADS, DOCKS, WATER_SCATTER, LAND_SCATTER}) {
             for (Sprite sp : set) paths.add(sp.path());
         }
         paths.addAll(Arrays.asList(
                 BOAT_WRECK.path(), SHRINE.path(), STATUE.path(), MOUND.path(),
                 BONES_RIB.path(), BEAST_SKULL.path(), ROOT.path(), ROCK_MOSS.path(),
-                GLOWPLANT.path(), UNDERWATER_PLANT.path()
+                GLOWPLANT.path(), UNDERWATER_PLANT.path(), TALL_GRASS.path(),
+                SWAMP_PLANT.path(), SWAMP_FERN.path(), TROPICAL_BUSH.path(), WATER_KELP.path()
         ));
-        return paths;
+        return new ArrayList<>(paths);
     }
 
     private final Map<String, Texture> textureCache = new HashMap<>();
@@ -199,7 +213,10 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
         // 6. Spawn Central & Side Basin Landmarks & Scenery
         spawnLandmarks(maze, reachable, assetManager, chunkSeed);
 
-        // 7. Scatter ground cover decoration (render-only backdrop scenery)
+        // 7. Spawn Swamp Trees (Cypress, Willow, and Dead Snag Copses & Groves)
+        spawnSwampTrees(maze, reachable, assetManager, chunkSeed);
+
+        // 8. Scatter ground cover decoration (render-only backdrop scenery)
         scatterGroundCover(maze, assetManager, chunkSeed);
 
         // 8. Spawn Monsters, Items, Encounters, Ladders
@@ -446,25 +463,23 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
     private void distributeWetlandLiquids(Maze maze, long seed) {
         FastNoiseLite liquidNoise = new FastNoiseLite((int) (seed ^ 0x51A7F00DL));
         liquidNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
-        liquidNoise.SetFrequency(0.09f);
+        liquidNoise.SetFrequency(0.08f);
 
         for (int y = 1; y < CHUNK_SIZE - 1; y++) {
             for (int x = 1; x < CHUNK_SIZE - 1; x++) {
                 if (maze.isWall(x, y)) continue;
 
-                // Keep gate approaches and exact center dry for clean footing
-                if ((Math.abs(x - 18) <= 1 && Math.abs(y - 18) <= 1)
-                        || (x == 18 && (y <= 3 || y >= CHUNK_SIZE - 4))
-                        || (y == 18 && (x <= 3 || x >= CHUNK_SIZE - 4))) {
-                    continue;
-                }
+                // Keep only the immediate player spawn tile dry so the hero starts on stone
+                if (x == 18 && y == 18) continue;
+                // Keep immediate gate doorstep dry
+                if ((x == 18 && (y == 0 || y == CHUNK_SIZE - 1)) || (y == 18 && (x == 0 || x == CHUNK_SIZE - 1))) continue;
 
                 float n = liquidNoise.GetNoise(x, y);
-                if (n > 0.10f) {
-                    // Wadeable shallow water
+                if (n > -0.28f) {
+                    // Wadeable murky shallow water (covers ~75-80% of open wetland)
                     maze.getLiquidManager().setLiquidAt(x, y, LiquidType.WATER);
-                } else if (n < -0.40f) {
-                    // Toxic stagnant muck depression
+                } else if (n < -0.48f) {
+                    // Toxic stagnant muck depression (covers ~10-12% of open wetland)
                     maze.getLiquidManager().setLiquidAt(x, y, LiquidType.BLACK_MUCK);
                 }
             }
@@ -505,23 +520,23 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
         int cy = 18;
 
         if (archetype == 0) {
-            // Archetype 0: Sunken Shrine
-            placeSolidSprite(maze, SHRINE, cx, cy, 1f, assetManager);
-            placeScenerySprite(maze, STATUE, cx + 2, cy + 1, 1f, assetManager);
-            placeScenerySprite(maze, LILYPADS[0], cx - 2, cy - 1, 1f, assetManager);
+            // Archetype 0: Sunken Shrine on islet bank
+            placeSolidSprite(maze, SHRINE, cx + 2, cy + 2, 1f, assetManager);
+            placeScenerySprite(maze, STATUE, cx + 3, cy + 1, 1f, assetManager);
+            placeScenerySprite(maze, LILYPADS[0], cx - 2, cy - 2, 1f, assetManager);
             placeScenerySprite(maze, REEDS[0], cx + 2, cy - 2, 1f, assetManager);
         } else if (archetype == 1) {
             // Archetype 1: Wrecked Skiff & Stilt Fisher Pier
-            placeSolidSprite(maze, BOAT_WRECK, cx, cy, 1f, assetManager);
-            placeScenerySprite(maze, DOCKS[0], cx - 2, cy + 1, 1f, assetManager);
-            placeScenerySprite(maze, DOCKS[1], cx + 2, cy - 1, 1f, assetManager);
-            placeScenerySprite(maze, ROOT, cx - 1, cy - 2, 1f, assetManager);
+            placeSolidSprite(maze, BOAT_WRECK, cx + 2, cy + 2, 1f, assetManager);
+            placeScenerySprite(maze, DOCKS[1], cx - 2, cy - 2, 1f, assetManager);
+            placeScenerySprite(maze, REEDS[0], cx - 3, cy - 2, 1f, assetManager);
+            placeScenerySprite(maze, ROOT, cx + 3, cy + 1, 1f, assetManager);
         } else {
             // Archetype 2: Rotting Bog Barrow
-            placeSolidSprite(maze, MOUND, cx, cy, 1f, assetManager);
-            placeScenerySprite(maze, BEAST_SKULL, cx + 2, cy, 1f, assetManager);
-            placeScenerySprite(maze, BONES_RIB, cx - 2, cy + 1, 1f, assetManager);
-            placeScenerySprite(maze, GLOWPLANT, cx + 1, cy - 2, 1f, assetManager);
+            placeSolidSprite(maze, MOUND, cx + 2, cy + 2, 1f, assetManager);
+            placeScenerySprite(maze, BEAST_SKULL, cx + 3, cy + 1, 1f, assetManager);
+            placeScenerySprite(maze, BONES_RIB, cx - 2, cy - 2, 1f, assetManager);
+            placeScenerySprite(maze, GLOWPLANT, cx + 1, cy - 3, 1f, assetManager);
         }
 
         // Side Basin Landmarks
@@ -536,10 +551,199 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
                 placeScenerySprite(maze, BEAST_SKULL, bp.x, bp.y, 1f, assetManager);
                 placeScenerySprite(maze, REEDS[1], bp.x - 1, bp.y + 1, 1f, assetManager);
             } else {
-                placeScenerySprite(maze, DOCKS[0], bp.x, bp.y, 1f, assetManager);
+                placeScenerySprite(maze, ROCK_MOSS, bp.x, bp.y, 1f, assetManager);
                 placeScenerySprite(maze, GLOWPLANT, bp.x + 1, bp.y - 1, 1f, assetManager);
             }
         }
+    }
+
+    private void spawnSwampTrees(Maze maze, Set<GridPoint2> reachable, AssetManager assetManager, long seed) {
+        Random rng = new Random(seed ^ 0x72EE51A4EL);
+
+        // 1. Solid Trees (Physical Obstacle Copses & Groves)
+        List<GridPoint2> candidates = new ArrayList<>();
+        for (GridPoint2 pt : reachable) {
+            // Keep central spawn clearing clear
+            if (Math.abs(pt.x - 18) <= 2 && Math.abs(pt.y - 18) <= 2) continue;
+            // Keep main cardinal walking avenues clear
+            if (Math.abs(pt.x - 18) <= 1 || Math.abs(pt.y - 18) <= 1) continue;
+            // Keep gate approaches clear
+            if (pt.x <= 3 || pt.x >= CHUNK_SIZE - 4 || pt.y <= 3 || pt.y >= CHUNK_SIZE - 4) continue;
+            // Avoid landmarks and existing scenery
+            if (maze.getScenery().containsKey(pt) || maze.getGateAt(pt.x, pt.y) != null) continue;
+
+            candidates.add(pt);
+        }
+        Collections.shuffle(candidates, rng);
+
+        int currentReachable = countReachable(maze);
+        int targetSolid = 36 + rng.nextInt(12); // ~36-48 solid trees
+        int solidPlaced = 0;
+        List<GridPoint2> solidTreeLocations = new ArrayList<>();
+
+        for (GridPoint2 pt : candidates) {
+            if (solidPlaced >= targetSolid) break;
+
+            Scenery tree = new Scenery(Scenery.SceneryType.TREE, pt.x, pt.y);
+            tree.setImpassable(true);
+            tree.setFlippedX(rng.nextBoolean());
+            Sprite sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+            float jitter = 0.90f + rng.nextFloat() * 0.25f;
+            sp.applyTo(tree, jitter);
+            loadTextureSafely(tree, sp.path(), assetManager);
+            maze.addScenery(tree);
+
+            int after = countReachable(maze);
+            // Must not disconnect reachable open ground
+            if (after < currentReachable - 1) {
+                maze.getScenery().remove(pt);
+                continue;
+            }
+            currentReachable = after;
+            solidTreeLocations.add(pt);
+            solidPlaced++;
+        }
+
+        // 2. Clustered Stand / Companion Trees (Visual Backdrop Depth behind/beside solid trees)
+        for (GridPoint2 pt : solidTreeLocations) {
+            int companionCount = 1 + (rng.nextFloat() < 0.45f ? 1 : 0);
+            for (int i = 0; i < companionCount; i++) {
+                float ox = (rng.nextFloat() - 0.5f) * 0.7f;
+                float oy = (rng.nextFloat() - 0.5f) * 0.7f;
+                Scenery trunk = new Scenery(Scenery.SceneryType.TREE, pt.x, pt.y);
+                trunk.getPosition().set(pt.x + 0.5f + ox, pt.y + 0.5f + oy);
+                trunk.setFlippedX(rng.nextBoolean());
+                Sprite sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+                float jitter = 0.75f + rng.nextFloat() * 0.35f;
+                sp.applyTo(trunk, jitter);
+                loadTextureSafely(trunk, sp.path(), assetManager);
+                maze.addBackdropScenery(trunk);
+            }
+        }
+
+        // 3. Bluff Edge Trees (Rising along the foot and ledges of the thicket/bluff walls '#')
+        for (int y = 2; y < CHUNK_SIZE - 2; y++) {
+            for (int x = 2; x < CHUNK_SIZE - 2; x++) {
+                if (!maze.isWall(x, y)) continue;
+                if (!facesOpenGround(x, y)) continue;
+                if (rng.nextFloat() > 0.35f) continue;
+
+                float[] offset = directionToOpenGround(x, y);
+                float px = x + 0.5f + offset[0] * 0.35f;
+                float py = y + 0.5f + offset[1] * 0.35f;
+
+                Scenery bluffTree = new Scenery(Scenery.SceneryType.TREE, x, y);
+                bluffTree.getPosition().set(px, py);
+                bluffTree.setFlippedX(rng.nextBoolean());
+                Sprite sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+                float jitter = 0.85f + rng.nextFloat() * 0.35f;
+                sp.applyTo(bluffTree, jitter);
+                loadTextureSafely(bluffTree, sp.path(), assetManager);
+                maze.addBackdropScenery(bluffTree);
+            }
+        }
+
+        // 4. Water Pools & Basin Trees (Bald cypress and weeping willows rising from the shallows)
+        for (int y = 3; y < CHUNK_SIZE - 3; y++) {
+            for (int x = 3; x < CHUNK_SIZE - 3; x++) {
+                if (maze.isWall(x, y)) continue;
+                if (Math.abs(x - 18) <= 1 && Math.abs(y - 18) <= 1) continue;
+                if (x == 18 || y == 18) continue;
+
+                boolean isWater = maze.getLiquidManager() != null && maze.getLiquidManager().hasLiquidAt(x, y);
+                float chance = isWater ? 0.22f : 0.15f;
+                if (rng.nextFloat() > chance) continue;
+
+                GridPoint2 pt = new GridPoint2(x, y);
+                if (maze.getScenery().containsKey(pt) || maze.getGateAt(x, y) != null) continue;
+
+                float ox = (rng.nextFloat() - 0.5f) * 0.5f;
+                float oy = (rng.nextFloat() - 0.5f) * 0.5f;
+
+                Scenery waterTree = new Scenery(Scenery.SceneryType.TREE, x, y);
+                waterTree.getPosition().set(x + 0.5f + ox, y + 0.5f + oy);
+                waterTree.setFlippedX(rng.nextBoolean());
+
+                Sprite sp;
+                if (isWater) {
+                    float roll = rng.nextFloat();
+                    if (roll < 0.40f) sp = SWAMP_TREES[0]; // cypress
+                    else if (roll < 0.70f) sp = SWAMP_TREES[1]; // willow
+                    else sp = SWAMP_TREES[2 + rng.nextInt(4)]; // dead snags
+                } else {
+                    sp = SWAMP_TREES[rng.nextInt(SWAMP_TREES.length)];
+                }
+
+                float jitter = 0.85f + rng.nextFloat() * 0.35f;
+                sp.applyTo(waterTree, jitter);
+                loadTextureSafely(waterTree, sp.path(), assetManager);
+                maze.addBackdropScenery(waterTree);
+            }
+        }
+    }
+
+    private boolean facesOpenGround(int x, int y) {
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int nx = x + d[0];
+            int ny = y + d[1];
+            if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
+                int ly = CHUNK_SIZE - 1 - ny;
+                if (isTraversable(finalLayout[ly].charAt(nx))) return true;
+            }
+        }
+        return false;
+    }
+
+    private float[] directionToOpenGround(int x, int y) {
+        float ox = 0f;
+        float oy = 0f;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int nx = x + d[0];
+            int ny = y + d[1];
+            if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
+                int ly = CHUNK_SIZE - 1 - ny;
+                if (isTraversable(finalLayout[ly].charAt(nx))) {
+                    ox += d[0];
+                    oy += d[1];
+                }
+            }
+        }
+        float len = (float) Math.sqrt(ox * ox + oy * oy);
+        if (len > 0f) {
+            ox /= len;
+            oy /= len;
+        }
+        return new float[]{ox, oy};
+    }
+
+    private int countReachable(Maze maze) {
+        int width = maze.getWidth();
+        int height = maze.getHeight();
+        boolean[] seen = new boolean[width * height];
+        ArrayDeque<GridPoint2> queue = new ArrayDeque<>();
+        GridPoint2 start = new GridPoint2(width / 2, height / 2);
+        if (!maze.isPassable(start.x, start.y)) return 0;
+        seen[start.y * width + start.x] = true;
+        queue.add(start);
+        int count = 0;
+        int[][] steps = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while (!queue.isEmpty()) {
+            GridPoint2 c = queue.poll();
+            count++;
+            for (int[] d : steps) {
+                int nx = c.x + d[0];
+                int ny = c.y + d[1];
+                if (nx < 0 || ny < 0 || nx >= width || ny >= height || seen[ny * width + nx]) continue;
+                int ly = height - 1 - ny;
+                if (!isTraversable(finalLayout[ly].charAt(nx))) continue;
+                if (!maze.isPassable(nx, ny)) continue;
+                seen[ny * width + nx] = true;
+                queue.add(new GridPoint2(nx, ny));
+            }
+        }
+        return count;
     }
 
     private void scatterGroundCover(Maze maze, AssetManager assetManager, long seed) {
@@ -549,19 +753,51 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
                 if (maze.isWall(x, y)) continue;
                 GridPoint2 pt = new GridPoint2(x, y);
                 if (maze.getScenery().containsKey(pt) || maze.getGateAt(x, y) != null) continue;
-                if (Math.abs(x - 18) <= 2 && Math.abs(y - 18) <= 2) continue;
 
-                // Scatter on ~20% of open tiles
-                if (rng.nextFloat() > 0.20f) continue;
+                // Player spawn tile must stay clear of clutter directly under feet
+                if (x == 18 && y == 18) continue;
 
                 boolean isWater = maze.getLiquidManager() != null && maze.getLiquidManager().hasLiquidAt(x, y);
+                // Dense swamp flora: 65% chance on water tiles, 55% on land/muck
+                float scatterChance = isWater ? 0.65f : 0.55f;
+                if (rng.nextFloat() > scatterChance) continue;
+
                 Sprite[] pool = isWater ? WATER_SCATTER : LAND_SCATTER;
                 Sprite pick = pool[rng.nextInt(pool.length)];
 
+                float ox = (rng.nextFloat() - 0.5f) * 0.55f;
+                float oy = (rng.nextFloat() - 0.5f) * 0.55f;
+
                 Scenery sc = new Scenery(Scenery.SceneryType.PROP, x, y, pick.path());
-                pick.applyTo(sc, 0.85f + rng.nextFloat() * 0.3f);
+                sc.getPosition().set(x + 0.5f + ox, y + 0.5f + oy);
+                sc.setFlippedX(rng.nextBoolean());
+                pick.applyTo(sc, 0.85f + rng.nextFloat() * 0.35f);
+                if (pick == GLOWPLANT) {
+                    sc.setEmissiveTint(new Color(0.25f, 0.95f, 0.85f, 1.0f));
+                }
                 loadTextureSafely(sc, pick.path(), assetManager);
                 maze.addBackdropScenery(sc);
+
+                // On water tiles, 35% chance of secondary companion plant (e.g. lilypads next to tall grass or kelp)
+                if (isWater && rng.nextFloat() < 0.35f) {
+                    Sprite secondPick;
+                    if (pick == LILYPADS[0] || pick == LILYPADS[1]) {
+                        secondPick = (rng.nextFloat() < 0.5f) ? TALL_GRASS : WATER_KELP;
+                    } else {
+                        secondPick = (rng.nextFloat() < 0.6f) ? LILYPADS[rng.nextInt(2)] : UNDERWATER_PLANT;
+                    }
+                    float ox2 = (rng.nextFloat() - 0.5f) * 0.65f;
+                    float oy2 = (rng.nextFloat() - 0.5f) * 0.65f;
+                    Scenery sc2 = new Scenery(Scenery.SceneryType.PROP, x, y, secondPick.path());
+                    sc2.getPosition().set(x + 0.5f + ox2, y + 0.5f + oy2);
+                    sc2.setFlippedX(rng.nextBoolean());
+                    secondPick.applyTo(sc2, 0.80f + rng.nextFloat() * 0.30f);
+                    if (secondPick == GLOWPLANT) {
+                        sc2.setEmissiveTint(new Color(0.25f, 0.95f, 0.85f, 1.0f));
+                    }
+                    loadTextureSafely(sc2, secondPick.path(), assetManager);
+                    maze.addBackdropScenery(sc2);
+                }
             }
         }
     }

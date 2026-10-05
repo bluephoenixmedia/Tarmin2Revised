@@ -29,6 +29,8 @@ public class ChunkMeshBuilder {
     public static final float SHELTER_CEILING_Y = 1.5f;
     /** Surface desert mesas tower over the canyons cut between them. */
     public static final float DESERT_MESA_Y = 2.5f;
+    /** Surface lakelands mangrove bluffs and mossy root walls tower over the waterways. */
+    public static final float LAKELANDS_BLUFF_Y = 2.5f;
 
 
     // Wall & Door bitmasks matching Maze and FirstPersonRenderer
@@ -462,6 +464,7 @@ public class ChunkMeshBuilder {
     public static float ceilingHeightFor(Maze maze, int x, int y) {
         if (maze.isHomeTile(x, y)) return SHELTER_CEILING_Y;
         if (maze.getBiome() == com.bpm.minotaur.generation.Biome.DESERT && maze.getLevel() == 1) return DESERT_MESA_Y;
+        if (maze.getBiome() == com.bpm.minotaur.generation.Biome.LAKELANDS && maze.getLevel() == 1) return LAKELANDS_BLUFF_Y;
         return STANDARD_CEILING_Y;
     }
 
