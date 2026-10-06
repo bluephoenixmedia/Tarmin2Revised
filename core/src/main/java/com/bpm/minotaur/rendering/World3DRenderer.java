@@ -1549,7 +1549,7 @@ public class World3DRenderer implements Disposable {
 
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
-        int radius = (maze.getBiome() == Biome.LAKELANDS) ? 26 : 14;
+        int radius = (maze.getBiome() == Biome.LAKELANDS || maze.getBiome() == Biome.TUNDRA) ? 26 : 14;
 
         int minX = Math.max(0, px - radius);
         int maxX = Math.min(maze.getWidth() - 1, px + radius);

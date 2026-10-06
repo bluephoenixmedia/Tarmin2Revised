@@ -31,6 +31,8 @@ public class ChunkMeshBuilder {
     public static final float DESERT_MESA_Y = 2.5f;
     /** Surface lakelands mangrove bluffs and mossy root walls tower over the waterways. */
     public static final float LAKELANDS_BLUFF_Y = 2.5f;
+    /** Surface tundra glacial moraine crags tower over the frozen valleys. */
+    public static final float TUNDRA_BLUFF_Y = 2.8f;
 
 
     // Wall & Door bitmasks matching Maze and FirstPersonRenderer
@@ -465,6 +467,7 @@ public class ChunkMeshBuilder {
         if (maze.isHomeTile(x, y)) return SHELTER_CEILING_Y;
         if (maze.getBiome() == com.bpm.minotaur.generation.Biome.DESERT && maze.getLevel() == 1) return DESERT_MESA_Y;
         if (maze.getBiome() == com.bpm.minotaur.generation.Biome.LAKELANDS && maze.getLevel() == 1) return LAKELANDS_BLUFF_Y;
+        if (maze.getBiome() == com.bpm.minotaur.generation.Biome.TUNDRA && maze.getLevel() == 1) return TUNDRA_BLUFF_Y;
         return STANDARD_CEILING_Y;
     }
 
