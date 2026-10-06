@@ -57,6 +57,10 @@ public class BiomeManager {
         } else if (noiseValue > WorldConstants.MOUNTAIN_THRESHOLD) {
             return Biome.MOUNTAINS;
         } else {
+            // Far North wilderness (beyond forest border, y >= 16): Siberian Tundra
+            if (chunkId.y >= 16) {
+                return Biome.TUNDRA;
+            }
             // Wilderness land biomes: determine via humidity noise
             float humidity = humidityNoise.GetNoise(chunkId.x, chunkId.y);
             if (humidity < WorldConstants.DESERT_HUMIDITY_THRESHOLD) {

@@ -220,6 +220,8 @@ public class World3DRenderer implements Disposable {
     private static final float DESERT_SCATTER_RANGE = 14f;
     /** Lakelands pools see across their open water, so scatter is drawn within pool fog distance. */
     private static final float LAKELANDS_SCATTER_RANGE = LakelandsAtmosphere.POOL_FOG_DISTANCE;
+    /** Tundra basins see across their open frozen lake, so scatter is drawn within basin fog distance. */
+    private static final float TUNDRA_SCATTER_RANGE = TundraAtmosphere.BASIN_FOG_DISTANCE;
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -597,10 +599,11 @@ public class World3DRenderer implements Disposable {
         // light through its canopy into green-black fog; the desert takes it at full force
         // as amber dust. Both close in along their corridors and open across their clearings.
         Biome mazeBiome = maze.getBiome();
-        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS))
+        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS || mazeBiome == Biome.TUNDRA))
                 ? mazeBiome : null;
         boolean underCanopy = wild == Biome.FOREST;
         boolean onSand = wild == Biome.DESERT;
+        boolean inTundra = wild == Biome.TUNDRA;
         Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
         if (wild != null) {
             float open = OpenGround.openness(maze,
@@ -611,6 +614,8 @@ public class World3DRenderer implements Disposable {
                 ForestAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else if (onSand) {
                 DesertAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else if (inTundra) {
+                TundraAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else {
                 LakelandsAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             }
@@ -628,6 +633,8 @@ public class World3DRenderer implements Disposable {
                     ? ForestAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
                     : onSand
                     ? DesertAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : inTundra
+                    ? TundraAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
                     : LakelandsAtmosphere.fogDistance(wildOpenness, weatherFogDistance);
             fogColor.set(wildFogColor);
         }
@@ -709,6 +716,8 @@ public class World3DRenderer implements Disposable {
                 overcastFactor *= ForestAtmosphere.CANOPY_OVERCAST_SHARE;
             } else if (mazeBiome == Biome.LAKELANDS) {
                 LakelandsAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+            } else if (mazeBiome == Biome.TUNDRA) {
+                TundraAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
             } else {
                 targetAmbientColor.set(skyTint);
             }
@@ -1768,7 +1777,8 @@ public class World3DRenderer implements Disposable {
             entities.add(sc);
         }
         for (Scenery backdrop : maze.getBackdropScenery()) {
-            float range = (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE
+            float range = (maze.getBiome() == Biome.TUNDRA) ? TUNDRA_SCATTER_RANGE
+                    : (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE
                     : (backdrop.getType() == Scenery.SceneryType.TREE) ? FOREST_TREE_RANGE
                     : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE : SCATTER_RANGE;
             if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);

@@ -184,7 +184,9 @@ public class Tarmin2 extends Game {
                 "images/floor_forest.png",
                 "images/forest_cliff.png",
                 "images/floor_lakelands.png",
-                "images/lakelands_cliff.png"
+                "images/lakelands_cliff.png",
+                "images/floor_tundra.png",
+                "images/tundra_cliff.png"
         };
         java.util.List<String> forestQueue = new java.util.ArrayList<>(java.util.Arrays.asList(forestAssets));
         java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.PINE_TEXTURES);
@@ -193,6 +195,7 @@ public class Tarmin2 extends Game {
         java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.scatterTextures());
         forestQueue.addAll(com.bpm.minotaur.generation.DesertChunkGenerator.textures());
         forestQueue.addAll(com.bpm.minotaur.generation.LakelandsChunkGenerator.textures());
+        forestQueue.addAll(com.bpm.minotaur.generation.TundraChunkGenerator.textures());
         for (String assetPath : forestQueue) {
             if (Gdx.files.internal(assetPath).exists()) {
                 assetManager.load(assetPath, com.badlogic.gdx.graphics.Texture.class);

@@ -60,6 +60,16 @@ REED_GOLD = [(32, 38, 22), (54, 64, 34), (82, 94, 48), (122, 138, 72)]
 LILYPAD = [(14, 36, 28), (24, 62, 46), (42, 102, 74), (72, 154, 112)]
 MUCK_MOUND = [(20, 18, 16), (36, 32, 28), (56, 48, 42), (78, 68, 58)]
 EMBER_RIM = (112, 44, 26)
+FROST_RIM = (130, 215, 250)
+
+# Tundra Siberian Palettes
+SNOW = [(150, 175, 200), (185, 205, 225), (220, 235, 245), (250, 252, 255)]
+ICE = [(25, 55, 80), (45, 95, 135), (75, 145, 185), (140, 210, 240)]
+SNOW_PINE = [(18, 30, 28), (30, 52, 46), (54, 82, 70), (160, 195, 215)]
+FROZEN_BARK = [(22, 20, 24), (44, 40, 46), (72, 66, 76), (150, 175, 200)]
+FROST_WOOD = [(28, 25, 26), (62, 54, 48), (120, 105, 92), (230, 240, 250)]
+FROST_STONE = [(25, 30, 36), (50, 58, 68), (85, 98, 115), (220, 235, 250)]
+FIRE_CAMP = [(55, 22, 18), (135, 45, 20), (220, 110, 25), (255, 215, 85)]
 
 # Sprite name prefix -> (palette for green pixels, palette for the rest). The first
 # matching prefix wins, so specific names sit above the general ones.
@@ -114,6 +124,17 @@ GROUPS = {
     "lakelands_rock_": (MOSS, STONE),
     "lakelands_tree_": (MOSS, DRIFTWOOD),
     "lakelands_": (MOSS, STONE),
+    "tundra_tree_pine_": (SNOW_PINE, FROZEN_BARK),
+    "tundra_tree_snag_": (FROST_WOOD, FROZEN_BARK),
+    "tundra_snow_mound_": (SNOW, SNOW),
+    "tundra_pine_stump_": (FROST_WOOD, FROST_WOOD),
+    "tundra_log_snow_": (FROST_WOOD, FROST_WOOD),
+    "tundra_stalactite_": (ICE, ICE),
+    "tundra_cairn_": (FROST_STONE, FROST_STONE),
+    "tundra_campfire_": (FIRE_CAMP, FROST_STONE),
+    "tundra_wood_pile_": (FROST_WOOD, FROST_WOOD),
+    "tundra_ice_hut_": (FROST_WOOD, FROST_WOOD),
+    "tundra_": (SNOW, FROST_STONE),
 }
 
 # Where a sprite is written, by name prefix: landmark_<id> is the forest's own
@@ -122,6 +143,7 @@ OUTPUT_BY_PREFIX = {
     "landmark_": os.path.join(OUT_DIR, "props"),
     "desert_": os.path.join(IMG_DIR, "desert"),
     "lakelands_": os.path.join(IMG_DIR, "lakelands"),
+    "tundra_": os.path.join(IMG_DIR, "tundra"),
 }
 
 # Where each material's tone boundaries fall, as luminance percentiles.
@@ -135,6 +157,8 @@ ALPINE_TEXTURES = os.path.join("POLYGON_NatureBiomes_AlpineMountain_SourceFiles_
 GROUND = [
     ("floor_forest.png", "Synty_Alpine_Ground_GrassPine_01_basecolor.png", 128, MOSS, UMBER, 0.9),
     ("forest_cliff.png", "Synty_Alpine_Ground_MossyRockPine_01_basecolor.png", 128, MOSS, STONE, 1.0),
+    ("floor_tundra.png", "Snow_01.png", 128, SNOW, SNOW, 2.0),
+    ("tundra_cliff.png", "IceWall.png", 128, ICE, ICE, 2.0),
 ]
 
 
@@ -173,7 +197,7 @@ def quantize(rgb, mask, green_cuts, other_cuts, palettes, ratio=1.08):
     return out
 
 
-def stylize(rgb, mask, green_cuts, other_cuts, palettes=(NEEDLES, BARK)):
+def stylize(rgb, mask, green_cuts, other_cuts, palettes=(NEEDLES, BARK), rim_color=EMBER_RIM):
     out = quantize(rgb, mask, green_cuts, other_cuts, palettes)
 
     # Inside edge: an opaque pixel with any transparent 4-neighbour.
@@ -186,7 +210,7 @@ def stylize(rgb, mask, green_cuts, other_cuts, palettes=(NEEDLES, BARK)):
     rim[1:, :] = top_edge[:-1, :]
     rim &= mask & ~edge
 
-    out[rim, :3] = EMBER_RIM
+    out[rim, :3] = rim_color
     out[edge, :3] = OUTLINE
     return Image.fromarray(out, "RGBA")
 
@@ -211,10 +235,11 @@ def stylize_sprites():
         frames = [frame for _, frame in items]
         green_cuts = thresholds(frames, True)
         other_cuts = thresholds(frames, False)
+        rim = FROST_RIM if prefix.startswith("tundra_") else EMBER_RIM
         for path, (rgb, mask) in items:
             out = output_path(os.path.basename(path))
             os.makedirs(os.path.dirname(out), exist_ok=True)
-            stylize(rgb, mask, green_cuts, other_cuts, palettes).save(out, optimize=True)
+            stylize(rgb, mask, green_cuts, other_cuts, palettes, rim_color=rim).save(out, optimize=True)
             print("wrote", out)
 
 

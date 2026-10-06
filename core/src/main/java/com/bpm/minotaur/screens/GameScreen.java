@@ -3105,7 +3105,9 @@ public class GameScreen extends BaseScreen {
                             // game clanks and reports a solid wall every single
                             // time the player walks through a gate.
                             boolean gateTransition = player.consumeQueuedChunkTransition();
+                            boolean harvestedScenery = player.consumeHarvestedScenery();
                             if (gateTransition
+                                    || harvestedScenery
                                     || player.getPosition().x != prevX
                                     || player.getPosition().y != prevY) {
                                 weaponOverlay.setWalking(true);
@@ -3139,7 +3141,9 @@ public class GameScreen extends BaseScreen {
                         float prevY = player.getPosition().y;
                         player.moveBackward(maze, eventManager, gameMode, soundManager);
                         boolean gateTransition = player.consumeQueuedChunkTransition();
+                        boolean harvestedScenery = player.consumeHarvestedScenery();
                         if (gateTransition
+                                || harvestedScenery
                                 || player.getPosition().x != prevX
                                 || player.getPosition().y != prevY) {
                             weaponOverlay.setWalking(true);

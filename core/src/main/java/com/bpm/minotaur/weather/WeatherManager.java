@@ -298,6 +298,14 @@ public class WeatherManager {
                 if (roll < 0.97f)
                     return WeatherType.SNOW;
                 return WeatherType.BLIZZARD;
+            case TUNDRA:
+                if (roll < 0.15f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.45f)
+                    return WeatherType.FOG;
+                if (roll < 0.80f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
             default:
                 if (roll < 0.20f)
                     return WeatherType.SNOW;
@@ -582,6 +590,9 @@ public class WeatherManager {
             case OCEAN:
                 baseTemp = 19.0f; // 66.2°F - maritime breeze
                 break;
+            case TUNDRA:
+                baseTemp = -12.0f; // 10.4°F - Siberian permafrost baseline
+                break;
             default:
                 baseTemp = 20.0f;
                 break;
@@ -610,11 +621,11 @@ public class WeatherManager {
                 break;
             case SNOW:
                 // Winter weather: drops near freezing
-                baseTemp = (biome == Biome.MOUNTAINS) ? -2.0f : 1.0f;
+                baseTemp = (biome == Biome.TUNDRA) ? -18.0f : (biome == Biome.MOUNTAINS) ? -2.0f : 1.0f;
                 break;
             case BLIZZARD:
                 // Severe winter weather: extreme sub-zero freezing
-                float blizzardBase = (biome == Biome.MOUNTAINS) ? -16.0f : -10.0f;
+                float blizzardBase = (biome == Biome.TUNDRA) ? -26.0f : (biome == Biome.MOUNTAINS) ? -16.0f : -10.0f;
                 if (currentIntensity == WeatherIntensity.HEAVY) {
                     blizzardBase -= 3.0f;
                 } else if (currentIntensity == WeatherIntensity.EXTREME) {
