@@ -4145,8 +4145,9 @@ public class GameScreen extends BaseScreen {
 
     /**
      * The debug-mode keys and what they do, in a plain readable font (not the game's pixel font) at
-     * a small size, top right. Only drawn while debug mode (F5) is on. The text comes from DebugKeys,
-     * the same table that handles the keys.
+     * a small size, top right beside the minimap's reserved box (it used to take the same corner, so
+     * the map was drawn over it). Only drawn while debug mode (F5) is on. The text comes from
+     * DebugKeys, the same table that handles the keys.
      */
     private void renderDebugLegend() {
         if (!com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked()) {
@@ -4161,8 +4162,9 @@ public class GameScreen extends BaseScreen {
         float lineH = debugLegendFont.getLineHeight() + 2f;
         float width = 330f;
         float height = lines.size() * lineH + 16f;
-        float x = game.getViewport().getWorldWidth() - width - 10f;
-        float top = game.getViewport().getWorldHeight() - 10f;
+        float x = com.bpm.minotaur.rendering.Hud.STAGE_WIDTH - com.bpm.minotaur.rendering.Hud.MINIMAP_MARGIN_RIGHT
+                - com.bpm.minotaur.rendering.Hud.MINIMAP_MAX_SIZE - 10f - width;
+        float top = com.bpm.minotaur.rendering.Hud.STAGE_HEIGHT - com.bpm.minotaur.rendering.Hud.MINIMAP_MARGIN_TOP;
 
         com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
