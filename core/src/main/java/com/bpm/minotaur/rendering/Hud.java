@@ -1862,6 +1862,10 @@ public class Hud implements Disposable {
                 return "L";
             case OCEAN:
                 return "O";
+            case TUNDRA:
+                return "T";
+            case BLIGHT:
+                return "B";
             default:
                 return "?";
         }

@@ -378,10 +378,20 @@ Sprite brightness falloff (`J/generation/WorldConstants.java`): `TORCH_FULL_BRIG
   - Mountains: clear 0.25, fog 0.20, snow 0.30, blizzard 0.25.
   - Ocean: clear 0.10, rain 0.20, storm 0.35, snow 0.25, blizzard 0.10.
   - Desert: clear 0.70, tornado 0.15, snow 0.12, blizzard 0.03.
+  - Blight: fog 0.38, ashfall 0.57, snow 0.05 (never clear; ashfall is allowed nowhere else).
 - Intensity odds: LIGHT 0.10, MEDIUM 0.20, HEAVY 0.30, EXTREME 0.40 (clear is always LIGHT).
 - Ambient temperature: Maze 20C fixed, Lakelands 18, Forest 20, Mountains 15, Ocean 19, Desert 14-42C by sun.
 
-**World generation** (`J/generation/WorldConstants.java`): `WORLD_SEED` 12345, `CENTRAL_MAZE_RADIUS` 10, `FOREST_BORDER_SIZE` 5, `OCEAN_THRESHOLD` -0.3, `MOUNTAIN_THRESHOLD` 0.6, `DESERT_HUMIDITY_THRESHOLD` -0.30, `LAKELANDS_HUMIDITY_THRESHOLD` 0.30, `BIOME_NOISE_FREQUENCY` 0.02, `HUMIDITY_NOISE_FREQUENCY` 0.08.
+**World generation** (`J/generation/WorldConstants.java`). Two algorithms, picked by the save's `worldGenVersion`; see `docs/DEsign/Requirements_ Procedural World & The Blighted Marches.md`.
+- Shared: `CENTRAL_MAZE_RADIUS` 10, `OCEAN_THRESHOLD` -0.3, `MOUNTAIN_THRESHOLD` 0.6, `BIOME_NOISE_FREQUENCY` 0.02 (elevation).
+- Legacy (version 1, old saves only, until their next death): `WORLD_SEED` 12345, `FOREST_BORDER_SIZE` 5, Tundra at `y >= 16`, `DESERT_HUMIDITY_THRESHOLD` -0.30, `LAKELANDS_HUMIDITY_THRESHOLD` 0.30, `HUMIDITY_NOISE_FREQUENCY` 0.08.
+- Current (version 2): the world seed drives everything. Bands in chunks beyond the maze edge: Forest up to `FOREST_BAND_MAX` 10, Desert `DESERT_BAND_MIN`-`MAX` 6-18, Lakelands 12-24, Tundra 18-32, Blight from `BLIGHT_BAND_MIN` 28. `BAND_WARP_CHUNKS` 4 (freq `BAND_WARP_FREQUENCY` 0.035) ragged the edges; `BAND_SELECTOR_FREQUENCY` 0.05 picks among overlapping bands. No sea or mountain within `CLEAR_GROUND_RADIUS` 6 of the maze.
+- Castle Tarmin: `CASTLE_MIN_DISTANCE` 40 to `CASTLE_MAX_DISTANCE` 60 chunks from the origin; Blight within `CASTLE_BLIGHT_RADIUS` 8 (noise-ragged); land corridor half-width `CASTLE_CORRIDOR_HALF_WIDTH` 1.0 (below 1 the walkable-route guarantee breaks).
+
+**Blighted Marches** (`J/generation/BlightChunkGenerator.java`, `J/gamedata/blight/Taint.java`)
+- Taint: `BASE_RATE` 0.06/turn on the Blight surface, `NIGHT_MULT` 2 (dusk and night), `ROT_POOL_RATE` +0.5/turn in necrotic sludge, `WARD_MULT` 0.5 with a carried Ward Charm, `BLIGHTED_HIT` +3 per wounding blow from a Blighted monster, `ASHWATER_CLEANSE` 40. Cleared by the shelter bed and by death.
+- Taint tiers: 25 regen interval x`SLOWED_REGEN_MULT` 2; 50 max HP x0.85; 75 max HP x0.70; 100 the Legion hunts, mustering a patrol every `LEGION_MUSTER_INTERVAL` 40 turns while fewer than `LEGION_MUSTER_CAP` 3 are in the chunk.
+- Chunk: `CAMP_CHANCE` 0.5 (wrecked Legion camp), `ASHWATER_CHANCE` 0.35, `WARD_CHARM_CHANCE` 0.08, `RARE_ELITE_CHANCE` 1/12 (Fall Angel), `BLIGHTED_HP_MULT` 1.25. Castle chunk: impassable block `CASTLE_HALF` 7, ring road at 9.
 
 ## 13. Blood and gore (mostly visual)
 

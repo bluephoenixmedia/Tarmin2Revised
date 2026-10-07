@@ -1564,6 +1564,19 @@ public class Player {
             return;
         }
 
+        // --- Ashwater: scours Blight Taint in the field ---
+        if (item.getType() == Item.ItemType.ASHWATER) {
+            float before = stats.getTaint();
+            stats.addTaint(-com.bpm.minotaur.gamedata.blight.Taint.ASHWATER_CLEANSE);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(before > 0f
+                        ? "The Ashwater burns going down. The Blight loosens its hold."
+                        : "The Ashwater tastes of soot. You were not tainted.", 2.5f));
+            }
+            inventory.consumeOne(item);
+            return;
+        }
+
         // --- NEW: Handle Food & Meal Eating ---
         if (item.isFood()) {
             if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
@@ -2947,6 +2960,14 @@ public class Player {
             }
             if (!passable) {
                 Scenery s = maze.getScenery().get(nextTile);
+                if (com.bpm.minotaur.gamedata.blight.CastleGate.isCastleGate(s)
+                        && !com.bpm.minotaur.gamedata.blight.CastleGate.isOpen()) {
+                    // Knocking at Castle Tarmin. Phase 5 turns this into the way in.
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent(com.bpm.minotaur.gamedata.blight.CastleGate.SEALED_MESSAGE, 3.5f));
+                    }
+                    return;
+                }
                 if (s != null && s.isImpassable()) {
                     String path = s.getTexturePath();
                     if (path != null && (path.contains("log_snow_01") || path.contains("pine_stump_01"))) {

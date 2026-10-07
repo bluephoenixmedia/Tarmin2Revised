@@ -215,6 +215,20 @@ public class Skybox3DRenderer {
         worldSkyState.chunkYProgress = chunk.y + (player.getPosition().y / 16f);
         worldSkyState.chunkX = chunk.x;
 
+        com.badlogic.gdx.math.GridPoint2 site = (worldManager != null && worldManager.getBiomeManager() != null)
+                ? worldManager.getBiomeManager().getCastleSite() : null;
+        worldSkyState.hasCastleSite = site != null;
+        if (site != null) {
+            com.bpm.minotaur.gamedata.Maze here = worldManager.getCurrentMaze();
+            float w = (here != null && here.getWidth() > 0) ? here.getWidth() : 1f;
+            float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 1f;
+            // Chunk-space position, so the bearing turns as the player walks across a chunk.
+            float px = chunk.x + player.getPosition().x / w - 0.5f;
+            float py = chunk.y + player.getPosition().y / h - 0.5f;
+            worldSkyState.castleDX = site.x - px;
+            worldSkyState.castleDY = site.y - py;
+        }
+
         updateSky(delta, worldSkyState);
     }
 
@@ -243,6 +257,15 @@ public class Skybox3DRenderer {
         /** Progress north in chunks; the castle closes and grows across the first 25. */
         public float chunkYProgress;
         public int chunkX;
+        /**
+         * True when the world has a Castle Tarmin site (every non-legacy world). The castle
+         * then stands on the bearing to it rather than due north, and the South Spire takes
+         * the opposite bearing so the two never overlap.
+         */
+        public boolean hasCastleSite;
+        /** From the player to the castle site, in chunks (x east, y north). */
+        public float castleDX;
+        public float castleDY;
         /**
          * Pins animation time instead of accumulating it. NaN (the default) means "run normally".
          * Captures set this so cloud drift, ember flicker and heat-lightning land identically on
@@ -365,8 +388,11 @@ public class Skybox3DRenderer {
 
         }
 
-        // Dynamic Castle Tarmin Landmark Parallax (North: World -Z)
-        if (castleInstance != null) {
+        castleHidden = false;
+        if (castleInstance != null && state.hasCastleSite) {
+            placeOnCastleBearing(state, camX, camZ);
+        } else if (castleInstance != null) {
+            // Legacy worlds: the castle has no site, so it stays due north.
             float chunkY = state.chunkYProgress;
             // Reduced progress rate towards Castle Tarmin by 80% (paced over 25 chunks north)
             float northProgress = Math.min(Math.max(chunkY / 25.0f, 0f), 1.0f);
@@ -376,6 +402,49 @@ public class Skybox3DRenderer {
             castleInstance.transform.idt()
                     .setToTranslation(camX + castleX, -6f, -currentDist)
                     .scale(currentScale, currentScale, currentScale);
+        }
+    }
+
+    /** Set when the player stands in the castle chunk, where the world billboard takes over. */
+    private boolean castleHidden = false;
+
+    /** Chunks over which the castle closes and grows; beyond this it sits at the horizon. */
+    private static final float CASTLE_APPROACH_CHUNKS = 50f;
+
+    /**
+     * Stands the castle on the bearing to its site, nearer and larger as the player
+     * closes in, facing them; and puts the South Spire on the opposite bearing.
+     * Maze y is world -Z, so the site's +y (north) is -Z here.
+     */
+    private void placeOnCastleBearing(SkyState state, float camX, float camZ) {
+        float dx = state.castleDX;
+        float dz = -state.castleDY;
+        float chunksAway = (float) Math.sqrt(dx * dx + dz * dz);
+
+        // Inside the castle chunk the billboard in the world is the castle.
+        if (chunksAway < 0.75f) {
+            castleHidden = true;
+            return;
+        }
+        float dirX = dx / chunksAway;
+        float dirZ = dz / chunksAway;
+
+        float progress = MathUtils.clamp(1f - (chunksAway - 1f) / CASTLE_APPROACH_CHUNKS, 0f, 1f);
+        float dist = LANDMARK_DISTANCE - progress * 55f;
+        float scale = 2.025f * (1.0f + progress * 0.85f);
+        // The model was authored facing +Z (seen from the south); turn that face toward the camera.
+        float yaw = MathUtils.atan2(-dirX, -dirZ) * MathUtils.radiansToDegrees;
+
+        castleInstance.transform.idt()
+                .setToTranslation(camX + dirX * dist, -6f, camZ + dirZ * dist)
+                .rotate(0f, 1f, 0f, yaw)
+                .scale(scale, scale, scale);
+
+        if (spireInstance != null) {
+            spireInstance.transform.idt()
+                    .setToTranslation(camX - dirX * LANDMARK_DISTANCE, -6f, camZ - dirZ * LANDMARK_DISTANCE)
+                    .rotate(0f, 1f, 0f, yaw + 180f)
+                    .scale(1.875f, 1.875f, 1.875f);
         }
     }
 
@@ -456,7 +525,7 @@ public class Skybox3DRenderer {
         modelBatch.begin(camera);
 
         if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
-        if (castleInstance   != null) modelBatch.render(castleInstance, environment);
+        if (castleInstance   != null && !castleHidden) modelBatch.render(castleInstance, environment);
         if (spireInstance    != null) modelBatch.render(spireInstance, environment);
 
         modelBatch.end();

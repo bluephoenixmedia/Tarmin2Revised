@@ -183,10 +183,13 @@ public class Item implements Renderable {
         // Home Props
         HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN,
         // Shelter biome portals, and the return portal they leave behind.
-        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_PORTAL_TUNDRA, BIOME_RETURN_PORTAL,
+        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_PORTAL_TUNDRA, BIOME_PORTAL_BLIGHT, BIOME_RETURN_PORTAL,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
+
+        // Blighted Marches: the ward slows Taint while carried; Ashwater scours it.
+        WARD_CHARM, ASHWATER,
 
         // Powder and ball for firearms. Its own resource, never mixed with arrows.
         SHOT_POUCH,

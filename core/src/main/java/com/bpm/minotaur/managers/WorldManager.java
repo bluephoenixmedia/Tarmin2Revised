@@ -15,6 +15,7 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.generation.BlightChunkGenerator;
 import com.bpm.minotaur.generation.DesertChunkGenerator;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
@@ -74,7 +75,9 @@ public class WorldManager {
     private final java.util.Set<String> seenChoiceEvents = new java.util.LinkedHashSet<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
 
-    private final BiomeManager biomeManager;
+    private BiomeManager biomeManager;
+    /** Which algorithm lays out this world; see WorldConstants.WORLD_GEN_*. */
+    private int worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
     private final GoreManager goreManager;
@@ -127,7 +130,7 @@ public class WorldManager {
             Gdx.app.log("WorldManager", "World Initialized with Seed: " + this.worldSeed);
         }
 
-        this.biomeManager = new BiomeManager();
+        this.biomeManager = new BiomeManager(this.worldSeed, this.worldGenVersion);
         this.dataManager = dataManager;
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
@@ -154,12 +157,15 @@ public class WorldManager {
         DesertChunkGenerator desertGen = new DesertChunkGenerator();
         LakelandsChunkGenerator lakelandsGen = new LakelandsChunkGenerator();
         TundraChunkGenerator tundraGen = new TundraChunkGenerator();
+        BlightChunkGenerator blightGen = new BlightChunkGenerator();
+        blightGen.setCastleSite(biomeManager.getCastleSite());
 
         this.generators.put(Biome.MAZE, mazeGen);
         this.generators.put(Biome.FOREST, forestGen);
         this.generators.put(Biome.DESERT, desertGen);
         this.generators.put(Biome.LAKELANDS, lakelandsGen);
         this.generators.put(Biome.TUNDRA, tundraGen);
+        this.generators.put(Biome.BLIGHT, blightGen);
         this.currentLevelTheme = getThemeForLevel(initialLevel);
     }
 
@@ -178,6 +184,8 @@ public class WorldManager {
                 return RetroTheme.LAKELANDS_THEME;
             case TUNDRA:
                 return RetroTheme.TUNDRA_THEME;
+            case BLIGHT:
+                return RetroTheme.BLIGHT_THEME;
             case MAZE:
             default:
                 return retroThemeForMazePalette(getAppearanceSeed(this.currentLevel, chunkId.x, chunkId.y));
@@ -375,6 +383,9 @@ public class WorldManager {
                 }
             }
         }
+        // No chunk survives, so a legacy world can take the current layout.
+        this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
+        rebuildBiomeManager();
     }
 
     // --- NEW: Descent Logic ---
@@ -534,6 +545,9 @@ public class WorldManager {
                 pendingUpLadderPos = null; // Consume the request
             } else if (generator instanceof TundraChunkGenerator) {
                 ((TundraChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof BlightChunkGenerator) {
+                ((BlightChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
             }
         }
@@ -929,11 +943,45 @@ public class WorldManager {
             }
         }
         this.worldSeed = new java.util.Random().nextLong();
+        // Every chunk file is gone, so nothing old can meet the new layout:
+        // a legacy world moves to the current algorithm here.
+        this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
+        rebuildBiomeManager();
         Gdx.app.log("WorldManager", "Explored world wiped on death. New world seed: " + this.worldSeed);
     }
 
     public BiomeManager getBiomeManager() {
         return biomeManager;
+    }
+
+    public MonsterDataManager getMonsterDataManager() {
+        return dataManager;
+    }
+
+    public AssetManager getAssetManager() {
+        return assetManager;
+    }
+
+    public int getWorldGenVersion() {
+        return worldGenVersion;
+    }
+
+    /**
+     * Sets the algorithm a loaded save was laid out with. Must run before any
+     * wilderness chunk loads, or that chunk is placed by the wrong rule.
+     */
+    public void setWorldGenVersion(int version) {
+        this.worldGenVersion = version;
+        rebuildBiomeManager();
+    }
+
+    /** Biome layout derives from seed and version; both setters and the wipes come through here. */
+    private void rebuildBiomeManager() {
+        this.biomeManager = new BiomeManager(this.worldSeed, this.worldGenVersion);
+        BlightChunkGenerator blight = (BlightChunkGenerator) generators.get(Biome.BLIGHT);
+        if (blight != null) {
+            blight.setCastleSite(biomeManager.getCastleSite());
+        }
     }
 
     public GameMode getGameMode() {
@@ -1161,6 +1209,7 @@ public class WorldManager {
 
     public void setWorldSeed(long worldSeed) {
         this.worldSeed = worldSeed;
+        rebuildBiomeManager();
         if (this.factionMatrix == null) {
             this.factionMatrix = new FactionMatrix(worldSeed);
         }
@@ -1282,7 +1331,10 @@ public class WorldManager {
     public PortalWarp prepareBiomeWarp(com.bpm.minotaur.gamedata.progression.BiomePortal portal) {
         if (portal == null) return null;
 
-        GridPoint2 target = findNearestChunkOfBiome(portal.getDestination());
+        // The Crimson Gate lands on the castle road, the one Blight guaranteed to reach the castle.
+        GridPoint2 target = (portal.getDestination() == Biome.BLIGHT && biomeManager.getCastleSite() != null)
+                ? biomeManager.findCorridorBlightEntry()
+                : findNearestChunkOfBiome(portal.getDestination());
         if (target == null) {
             log("No chunk of biome " + portal.getDestination() + " found within scan range.");
             return null;

@@ -247,6 +247,14 @@ public class Monster implements Renderable {
      */
     private boolean bridgeBoss = false;
     private boolean invulnerable = false; // Objective-critical NPC; damage is discarded
+    /**
+     * Rotted by the Blighted Marches: drawn ashen, tougher, and its blows add Taint.
+     * See docs/DEsign/Requirements_ Procedural World &amp; The Blighted Marches.md section 9.
+     */
+    private boolean blighted = false;
+    /** Ash-grey with an ember cast, multiplied into the sprite's tint. */
+    public static final com.badlogic.gdx.graphics.Color BLIGHTED_TINT =
+            new com.badlogic.gdx.graphics.Color(0.72f, 0.56f, 0.50f, 1f);
     private int stunImmunityTurns = 0; // Concussion resilience: turns of stun immunity after recovering
     private int staggerTurns = 0;      // Staggered status: breaks poise, reduces effective AC and accuracy
 
@@ -1151,6 +1159,14 @@ public class Monster implements Renderable {
 
     public boolean isBridgeBoss() {
         return bridgeBoss;
+    }
+
+    public boolean isBlighted() {
+        return blighted;
+    }
+
+    public void setBlighted(boolean blighted) {
+        this.blighted = blighted;
     }
 
     public void setBridgeBoss(boolean bridgeBoss) {

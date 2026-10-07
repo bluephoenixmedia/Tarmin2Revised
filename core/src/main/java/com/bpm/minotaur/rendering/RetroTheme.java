@@ -245,6 +245,16 @@ public class RetroTheme {
         INTV_BLUE_DARK                     // Door Dark
     );
 
+    public static final Theme BLIGHT_THEME = new Theme(
+        "Blighted Marches",
+        INTV_GREY_DARK,                    // Floor (Ash and cinder)
+        new Color(0.30f, 0.13f, 0.09f, 1), // Ceiling (Crimson-ochre murk)
+        INTV_BROWN_DARK,                   // Wall (Charred ridges)
+        INTV_RED_DARK,                     // Wall Dark (Ember-lit rock)
+        INTV_GREY_LIGHT,                   // Door
+        INTV_GREY_DARK                     // Door Dark
+    );
+
     private static final Theme[] ADVANCED_THEMES = new Theme[] {
         ADVANCED_COLOR_THEME_RED,
         ADVANCED_COLOR_THEME_BLUE,

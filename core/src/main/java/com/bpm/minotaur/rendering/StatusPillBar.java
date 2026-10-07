@@ -85,6 +85,18 @@ public class StatusPillBar extends Table {
             }
         }
 
+        // 2a. Blight Taint. Shown only while there is some: it is the Marches' clock, and it
+        // follows the player home, so they need to see it outside the Blight too.
+        if (player.getStats() != null && player.getStats().getTaint() > 0f) {
+            float taint = player.getStats().getTaint();
+            com.bpm.minotaur.gamedata.blight.Taint.Tier tier = com.bpm.minotaur.gamedata.blight.Taint.tierOf(taint);
+            addPill("TAINT " + (int) Math.ceil(taint), HudSkin.COL_TAINT,
+                    taintTitle(tier),
+                    "[BLIGHT]",
+                    taintEffect(tier),
+                    "Rest in your shelter bed, or drink Ashwater (-40). A carried Ward Charm halves the gain.");
+        }
+
         // 2b. Obscuring fog. Positional rather than inflicted, so it has no countdown: it
         // lasts exactly as long as the player stands in the cloud. Worth a pill because it is
         // the reason their shots are being swallowed, and nothing else on screen says so.
@@ -212,6 +224,26 @@ public class StatusPillBar extends Table {
         // drawn over the map and clipped at the screen edge.
         setPosition(Hud.STAGE_WIDTH - Hud.MINIMAP_MARGIN_RIGHT - getWidth(),
                 Hud.minimapZoneBottom() - 12f - getHeight());
+    }
+
+    private static String taintTitle(com.bpm.minotaur.gamedata.blight.Taint.Tier tier) {
+        switch (tier) {
+            case FESTERING: return "Festering Taint";
+            case WASTING:   return "Wasting Taint";
+            case CONSUMED:  return "Consuming Taint";
+            case CLAIMED:   return "Claimed by the Blight";
+            default:        return "Blight Taint";
+        }
+    }
+
+    private static String taintEffect(com.bpm.minotaur.gamedata.blight.Taint.Tier tier) {
+        switch (tier) {
+            case FESTERING: return "Natural healing takes twice as long.";
+            case WASTING:   return "Slow healing, and maximum HP -15%.";
+            case CONSUMED:  return "Slow healing, and maximum HP -30%.";
+            case CLAIMED:   return "Slow healing, maximum HP -30%, and the Tarmin Legion hunts you.";
+            default:        return "The Blight's rot is settling in. It rises on the Marches, faster at night and in rot pools.";
+        }
     }
 
     private void addPill(String labelText, Color accentColor, String tooltipTitle, String tooltipCategory,

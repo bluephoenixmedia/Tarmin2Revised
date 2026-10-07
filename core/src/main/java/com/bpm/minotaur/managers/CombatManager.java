@@ -644,6 +644,12 @@ public class CombatManager {
         }
     }
 
+    /** A Blighted monster's blow that draws blood carries the rot in with it. */
+    private void applyBlightedTaint(Monster attacker, int actualDamage) {
+        if (attacker == null || !attacker.isBlighted() || actualDamage <= 0) return;
+        player.getStats().addTaint(com.bpm.minotaur.gamedata.blight.Taint.BLIGHTED_HIT);
+    }
+
     public void monsterMeleeStrike(Monster attacker) {
         if (attacker != null && this.monster != attacker && currentState == CombatState.INACTIVE) {
             triggerCombatMusic(attacker);
@@ -679,6 +685,7 @@ public class CombatManager {
             }
 
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            applyBlightedTaint(attacker, actualDamage);
             showPlayerDamageText(actualDamage);
             bleedPlayer(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
@@ -3241,6 +3248,7 @@ public class CombatManager {
             dmg = applyGuardMitigation(dmg);
 
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            applyBlightedTaint(monster, actualDamage);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
 
             eventManager.addEvent(new GameEvent(monster.getMonsterType() + " hits you for " + actualDamage, 1f));

@@ -16,6 +16,7 @@ final class WeatherFog {
             case FOG:      return 0.55f;
             case SNOW:     return 0.60f;
             case BLIZZARD: return 0.90f;
+            case ASHFALL:  return 0.55f;
             default:       return 0f;
         }
     }

@@ -58,6 +58,10 @@ public class WeatherRenderer {
     private final Color modernStormStreak = new Color(0.85f, 0.93f, 1.0f, 0.72f);
     private final Color modernSnowCrystalline = new Color(0.98f, 0.99f, 1.0f, 0.92f);
     private final Color modernSnowFluffy = new Color(0.92f, 0.95f, 1.0f, 0.78f);
+    /** Ashfall: grey flakes, and the odd ember still glowing (the "fluffy" share). */
+    private final Color modernAshFlake = new Color(0.55f, 0.50f, 0.48f, 0.85f);
+    private final Color modernEmber = new Color(1.0f, 0.42f, 0.12f, 0.90f);
+    private final Color ashColor2D = new Color(0.58f, 0.52f, 0.50f, 1f);
     private final Color modernBlizzardStreak = new Color(0.96f, 0.98f, 1.0f, 0.88f);
     private final Color tornadoDebrisColor = new Color(0.28f, 0.24f, 0.18f, 0.85f);
     private final Color modernSplash = new Color(0.80f, 0.90f, 1.0f, 0.70f);
@@ -124,7 +128,7 @@ public class WeatherRenderer {
             tornadoInitialized = false;
         }
 
-        if (!weatherManager.isPrecipitation(type)) {
+        if (!hasParticles(type)) {
             if (particles.size > 0) particles.clear();
             if (splashDroplets.size > 0) splashDroplets.clear();
             return;
@@ -208,8 +212,15 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (!weatherManager.isPrecipitation(type)) return 0;
+        if (!hasParticles(type)) return 0;
         switch (type) {
+            case ASHFALL:
+                switch (intensity) {
+                    case LIGHT: return 80;
+                    case MEDIUM: return 140;
+                    case HEAVY: return 210;
+                    case EXTREME: default: return 290;
+                }
             case BLIZZARD:
                 switch (intensity) {
                     case LIGHT: return 200;
@@ -316,9 +327,15 @@ public class WeatherRenderer {
             float vz;
             float length;
             boolean isFluffy = (type == WeatherType.SNOW) && (MathUtils.random() < 0.32f);
+            // For ash the "fluffy" share are embers: few, and they fall a little faster.
+            if (type == WeatherType.ASHFALL) isFluffy = MathUtils.random() < 0.08f;
             boolean isDebris = (type == WeatherType.TORNADO) && (MathUtils.random() < 0.45f);
 
-            if (type == WeatherType.SNOW) {
+            if (type == WeatherType.ASHFALL) {
+                // Ash hangs in the air and settles slowly.
+                vz = isFluffy ? -MathUtils.random(1.4f, 2.0f) : -MathUtils.random(0.8f, 1.4f);
+                length = 0.014f;
+            } else if (type == WeatherType.SNOW) {
                 // Gentle fluttering descent
                 vz = isFluffy ? -MathUtils.random(1.2f, 1.8f) : -MathUtils.random(1.8f, 2.6f);
                 length = isFluffy ? 0.024f : 0.012f;
@@ -343,6 +360,11 @@ public class WeatherRenderer {
             return;
         }
         p.isDead = true;
+    }
+
+    /** Weather that draws falling particles: precipitation, and ash, which is not wet. */
+    private boolean hasParticles(WeatherType type) {
+        return weatherManager.isPrecipitation(type) || type == WeatherType.ASHFALL;
     }
 
     private void spawnSplash(float x, float y, float playerX, float playerY, Maze maze) {
@@ -408,7 +430,11 @@ public class WeatherRenderer {
             splashCol = streakColor;
             streakHalfWidth = 0.0018f; // Crisp retro pixel streak (~3.6mm wide)
         } else {
-            if (type == WeatherType.SNOW) {
+            if (type == WeatherType.ASHFALL) {
+                streakColor = modernAshFlake;
+                splashCol = modernAshFlake;
+                streakHalfWidth = 0.010f;
+            } else if (type == WeatherType.SNOW) {
                 streakColor = modernSnowCrystalline;
                 splashCol = modernSnowCrystalline;
                 streakHalfWidth = 0.010f;
@@ -502,11 +528,14 @@ public class WeatherRenderer {
                 scale = Math.max(0.40f, dist / 1.5f);
             }
 
-            if (p.type == WeatherType.SNOW) {
+            if (p.type == WeatherType.SNOW || p.type == WeatherType.ASHFALL) {
                 // Square snowflake billboard quad with dual-layer variety
-                float baseSize = p.isFluffy ? 0.016f : 0.008f;
+                boolean ash = p.type == WeatherType.ASHFALL;
+                float baseSize = ash ? (p.isFluffy ? 0.007f : 0.010f) : (p.isFluffy ? 0.016f : 0.008f);
                 float halfS = baseSize * scale;
-                Color flakeColor = isRetro ? Color.WHITE : (p.isFluffy ? modernSnowFluffy : modernSnowCrystalline);
+                Color flakeColor = ash
+                        ? (isRetro ? Color.GRAY : (p.isFluffy ? modernEmber : modernAshFlake))
+                        : (isRetro ? Color.WHITE : (p.isFluffy ? modernSnowFluffy : modernSnowCrystalline));
                 batcher.addParticleQuad(
                         worldX - scratchCamRight.x * halfS - camUp.x * halfS,
                         worldY - scratchCamRight.y * halfS - camUp.y * halfS,
@@ -855,11 +884,12 @@ public class WeatherRenderer {
             // Proximity alpha fade & atmospheric depth falloff
             float alpha = MathUtils.clamp(0.85f - (transformY / CYLINDER_RADIUS) * 0.55f, 0.20f, 0.75f);
 
-            if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD) {
+            if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD || p.type == WeatherType.ASHFALL) {
                 // SNOWFLAKE: Fluttering square quad
                 float flakeSize = Math.max(1.2f, (0.07f / transformY) * worldH);
-                snowColor.a = alpha * 0.85f;
-                spriteBatch.setColor(snowColor);
+                Color flake = (p.type == WeatherType.ASHFALL) ? ashColor2D : snowColor;
+                flake.a = alpha * 0.85f;
+                spriteBatch.setColor(flake);
                 spriteBatch.draw(blankTexture, screenX - flakeSize * 0.5f, screenY - flakeSize * 0.5f, flakeSize, flakeSize);
             } else {
                 // RAIN STREAK: Directional slender angled quad
@@ -948,7 +978,7 @@ public class WeatherRenderer {
         }
 
         public void update(float delta) {
-            if (type == WeatherType.SNOW) {
+            if (type == WeatherType.SNOW || type == WeatherType.ASHFALL) {
                 wobble += wobbleSpeed * delta;
                 float drift = MathUtils.sin(wobble) * (isFluffy ? 0.60f : 0.28f);
                 x += (vx + drift) * delta;

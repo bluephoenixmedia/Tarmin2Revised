@@ -599,11 +599,12 @@ public class World3DRenderer implements Disposable {
         // light through its canopy into green-black fog; the desert takes it at full force
         // as amber dust. Both close in along their corridors and open across their clearings.
         Biome mazeBiome = maze.getBiome();
-        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS || mazeBiome == Biome.TUNDRA))
+        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS || mazeBiome == Biome.TUNDRA || mazeBiome == Biome.BLIGHT))
                 ? mazeBiome : null;
         boolean underCanopy = wild == Biome.FOREST;
         boolean onSand = wild == Biome.DESERT;
         boolean inTundra = wild == Biome.TUNDRA;
+        boolean inBlight = wild == Biome.BLIGHT;
         Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
         if (wild != null) {
             float open = OpenGround.openness(maze,
@@ -616,6 +617,8 @@ public class World3DRenderer implements Disposable {
                 DesertAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else if (inTundra) {
                 TundraAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else if (inBlight) {
+                BlightAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else {
                 LakelandsAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             }
@@ -635,6 +638,9 @@ public class World3DRenderer implements Disposable {
                     ? DesertAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
                     : inTundra
                     ? TundraAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : inBlight
+                    ? BlightAtmosphere.fogDistance(wildOpenness,
+                            (wm != null) ? wm.getCurrentWeather() : null, weatherFogDistance)
                     : LakelandsAtmosphere.fogDistance(wildOpenness, weatherFogDistance);
             fogColor.set(wildFogColor);
         }
@@ -718,6 +724,8 @@ public class World3DRenderer implements Disposable {
                 LakelandsAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
             } else if (mazeBiome == Biome.TUNDRA) {
                 TundraAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+            } else if (mazeBiome == Biome.BLIGHT) {
+                BlightAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
             } else {
                 targetAmbientColor.set(skyTint);
             }
@@ -1838,6 +1846,9 @@ public class World3DRenderer implements Disposable {
                     Color tint = (hitFlash < 1f)
                             ? new Color(1f, 1f - (1f - hitFlash) * 0.4f, 1f - (1f - hitFlash) * 0.4f, 1f)
                             : Color.WHITE;
+                    if (m.isBlighted()) {
+                        tint = new Color(tint).mul(Monster.BLIGHTED_TINT);
+                    }
 
                     // Twitchy monster attack telegraph (Eye Flare + Lunge / Retro Threat Aura)
                     if (combatManager != null && combatManager.getAttackIndicatorMonster() == m) {

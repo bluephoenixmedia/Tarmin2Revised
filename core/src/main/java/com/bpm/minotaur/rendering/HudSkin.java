@@ -53,6 +53,8 @@ public class HudSkin implements Disposable {
     public static final Color COL_WATER_CYAN       = Color.valueOf("4A7AC2");
     public static final Color COL_TEMP_ORANGE      = Color.valueOf("E8A63A");
     public static final Color COL_TOX              = Color.valueOf("7A2A20");
+    /** Blight Taint: ash-crimson, darker than toxicity's rust so the two pills never read alike. */
+    public static final Color COL_TAINT            = Color.valueOf("9A3A4E");
     /** Death-sequence blood and the ember glow on discovery cards. */
     public static final Color COL_BLOOD            = Color.valueOf("6B0508");
     public static final Color COL_BLOOD_BEAD       = Color.valueOf("9B0A0C");

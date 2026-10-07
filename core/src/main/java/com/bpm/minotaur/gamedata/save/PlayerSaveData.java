@@ -49,6 +49,8 @@ public class PlayerSaveData {
     public float satiety = 80f;
     public float hydration = 80f;
     public float bodyTemperature = 37f;
+    /** Blight Taint; 0 on saves written before it existed. */
+    public float taint = 0f;
     public int toxicity = 0;
     public int arrows = 0;
     public int shot = 0;
@@ -172,6 +174,7 @@ public class PlayerSaveData {
             this.satiety = stats.getSatietyFloat();
             this.hydration = stats.getHydrationFloat();
             this.bodyTemperature = stats.getBodyTemperature();
+            this.taint = stats.getTaint();
             this.toxicity = stats.getToxicity();
             this.arrows = stats.getArrows();
             this.shot = stats.getShot();
@@ -320,6 +323,7 @@ public class PlayerSaveData {
             stats.setSatiety(satiety);
             stats.setHydration(hydration);
             stats.setBodyTemperature(bodyTemperature);
+            stats.setTaint(taint);
             stats.setToxicity(toxicity);
             stats.setArrows(arrows);
             stats.setShot(shot);

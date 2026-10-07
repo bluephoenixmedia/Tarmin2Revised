@@ -33,6 +33,8 @@ public class ChunkMeshBuilder {
     public static final float LAKELANDS_BLUFF_Y = 2.5f;
     /** Surface tundra glacial moraine crags tower over the frozen valleys. */
     public static final float TUNDRA_BLUFF_Y = 2.8f;
+    /** Low ash ridges: the Marches are burnt flat, and Castle Tarmin must rise over them. */
+    public static final float BLIGHT_RIDGE_Y = 1.6f;
 
 
     // Wall & Door bitmasks matching Maze and FirstPersonRenderer
@@ -468,6 +470,7 @@ public class ChunkMeshBuilder {
         if (maze.getBiome() == com.bpm.minotaur.generation.Biome.DESERT && maze.getLevel() == 1) return DESERT_MESA_Y;
         if (maze.getBiome() == com.bpm.minotaur.generation.Biome.LAKELANDS && maze.getLevel() == 1) return LAKELANDS_BLUFF_Y;
         if (maze.getBiome() == com.bpm.minotaur.generation.Biome.TUNDRA && maze.getLevel() == 1) return TUNDRA_BLUFF_Y;
+        if (maze.getBiome() == com.bpm.minotaur.generation.Biome.BLIGHT && maze.getLevel() == 1) return BLIGHT_RIDGE_Y;
         return STANDARD_CEILING_Y;
     }
 

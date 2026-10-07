@@ -322,6 +322,23 @@
       "scaleY": 1.6,
       "passable": false,
       "emissiveTint": { "r": 0.95, "g": 0.75, "b": 0.35 }
+    },
+    {
+      "id": "castle_billboard",
+      "asset": "images/blight/castle_tarmin_billboard.png",
+      "renderMode": "SPRITE",
+      "scaleX": 18.0,
+      "scaleY": 8.3,
+      "passable": false
+    },
+    {
+      "id": "castle_gate",
+      "asset": "images/gate.png",
+      "renderMode": "SPRITE",
+      "scaleX": 2.4,
+      "scaleY": 2.8,
+      "passable": false,
+      "emissiveTint": { "r": 0.85, "g": 0.25, "b": 0.12 }
     }
   ]
 }

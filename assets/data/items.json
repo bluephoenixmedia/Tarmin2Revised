@@ -659,7 +659,10 @@
         "isUsable": false,
         "isContainer": false,
         "isRing": false,
-        "scale": { "x": 1.0, "y": 2.5 },
+        "scale": {
+            "x": 1.0,
+            "y": 2.5
+        },
         "variants": [
             {
                 "color": "GOLD",
@@ -6314,11 +6317,64 @@
         "texturePath": "images/portals/portal_vortex_still.png",
         "isImpassable": true
     },
+    "BIOME_PORTAL_BLIGHT": {
+        "friendlyName": "Crimson Gate",
+        "texturePath": "images/portals/portal_vortex_still.png",
+        "isImpassable": true
+    },
     "FIREWOOD": {
         "friendlyName": "Firewood",
         "description": "Dry split logs harvested from the frozen wilderness. Essential fuel for kindling campfires.",
         "texturePath": "images/items/stick.png",
         "baseValue": 5,
+        "isUsable": true
+    },
+    "WARD_CHARM": {
+        "friendlyName": "Ward Charm",
+        "description": "A knot of iron nails and saint's hair bound in red thread. Carried, it slows the Blight's taint from settling into you.",
+        "texturePath": "images/items/amulet.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "spriteData": [
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            ".........######.........",
+            ".......##......##.......",
+            "......##........##......",
+            "......##........##......",
+            ".......##......##.......",
+            ".........######.........",
+            "..........####..........",
+            "...........##...........",
+            "..........####..........",
+            ".........######.........",
+            ".........######.........",
+            ".........######.........",
+            "..........####..........",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "baseValue": 120,
+        "isUsable": false
+    },
+    "ASHWATER": {
+        "friendlyName": "Ashwater",
+        "description": "Rainwater strained through the ash of a burnt shrine. Drinking it scours 40 Taint from the body.",
+        "texturePath": "images/items/vial.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 60,
         "isUsable": true
     },
     "BIOME_RETURN_PORTAL": {
