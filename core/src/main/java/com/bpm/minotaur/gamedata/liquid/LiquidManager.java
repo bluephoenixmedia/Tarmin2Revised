@@ -71,7 +71,7 @@ public class LiquidManager {
      */
     public boolean slowsMovement(int x, int y, Player player) {
         LiquidType type = getLiquidAt(x, y);
-        if (type == LiquidType.NONE) return false;
+        if (type == LiquidType.NONE || type == LiquidType.PACKED_ICE) return false;
         if (player != null && isImmuneToLiquid(player, type)) return false;
         return true;
     }
@@ -123,6 +123,18 @@ public class LiquidManager {
                     }
                     if (exposureSteps >= 4 && exposureSteps % 4 == 0 && eventManager != null) {
                         eventManager.addEvent(new GameEvent("Quicksand drags at your legs, draining your endurance!", 1.5f));
+                    }
+                } else if (type == LiquidType.FREEZING_SLUSH) {
+                    if (exposureSteps == 1 && eventManager != null) {
+                        eventManager.addEvent(new GameEvent("Freezing slush numbs your boots!", 2.0f));
+                    }
+                    if (player.getStats() != null) {
+                        float cur = player.getStats().getBodyTemperature();
+                        player.getStats().setBodyTemperature(Math.max(30.0f, cur - 0.20f));
+                    }
+                } else if (type == LiquidType.PACKED_ICE) {
+                    if (exposureSteps == 1 && eventManager != null) {
+                        eventManager.addEvent(new GameEvent("Glacial ice! The slick surface offers no purchase.", 1.5f));
                     }
                 }
             }
@@ -196,6 +208,10 @@ public class LiquidManager {
                 return true;
             }
             if (type == LiquidType.BLACK_MUCK && (name.contains("hazmat") || name.contains("sealed"))) {
+                return true;
+            }
+            if ((type == LiquidType.FREEZING_SLUSH || type == LiquidType.PACKED_ICE)
+                    && (name.contains("spike") || name.contains("crampon") || name.contains("fur") || name.contains("winter"))) {
                 return true;
             }
         }

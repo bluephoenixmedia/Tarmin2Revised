@@ -183,7 +183,7 @@ public class Item implements Renderable {
         // Home Props
         HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN,
         // Shelter biome portals, and the return portal they leave behind.
-        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_RETURN_PORTAL,
+        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_PORTAL_TUNDRA, BIOME_RETURN_PORTAL,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
@@ -199,7 +199,7 @@ public class Item implements Renderable {
         LOST_DIVINITIES,
 
         // Debris
-        STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
+        STICK, FIREWOOD, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
         PUDDLE_WATER, STRANGE_METAL, BONES, ANCIENT_FOSSIL, RUSTY_WEAPON, RUSTY_ARMOR,
         DIRTY_CLOTH, METAL_SCRAP, BROKEN_GLASS, DEAD_PLANT_MATTER, MUD,
         CHARRED_WOOD, CERAMIC_SHARD, ROTTEN_ROPE, FUNGAL_SPORE, BAT_GUANO, LOOSE_BRICK,
@@ -492,6 +492,19 @@ public class Item implements Renderable {
         // Variants logic...
         item.template = template;
         return item;
+    }
+
+    public static Item createFirewood(int x, int y) {
+        Item wood = new Item();
+        wood.type = ItemType.FIREWOOD;
+        wood.position.set(x + 0.5f, y + 0.5f);
+        wood.itemColor = ItemColor.TAN;
+        wood.friendlyName = "Firewood Bundle";
+        wood.description = "Dry split logs harvested from the frozen wilderness. Essential fuel for kindling campfires.";
+        wood.isUsable = true;
+        wood.baseValue = 5;
+        wood.scale = new Vector2(1.0f, 1.0f);
+        return wood;
     }
 
     public Item(ItemType type, int x, int y, ItemColor color,

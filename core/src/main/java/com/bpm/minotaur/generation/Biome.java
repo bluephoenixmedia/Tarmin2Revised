@@ -25,6 +25,8 @@ public enum Biome {
     MOUNTAINS(false, false, 100, null), // Not seamless, impassable
     LAKELANDS(true, true, 16, new Color(0.12f, 0.24f, 0.28f, 1.0f), null,
             "images/floor_lakelands.png", "images/lakelands_cliff.png"),
+    TUNDRA(true, true, 18, new Color(0.18f, 0.28f, 0.42f, 1.0f), null,
+            "images/floor_tundra.png", "images/tundra_cliff.png"),
     OCEAN(false, false, 100, null); // Not seamless, impassable
 
     // --- New Properties ---

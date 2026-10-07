@@ -1197,6 +1197,12 @@ public class ItemDataManager {
 
         // Debris fallback (just in case)
         createResourceTemplate(ItemType.STICK, "Stick", "A wooden stick.", null);
+        createResourceTemplate(ItemType.FIREWOOD, "Firewood Bundle", "Dry split logs harvested from the frozen wilderness. Essential fuel for kindling campfires.", ItemType.STICK);
+        ItemTemplate woodTmpl = itemTemplates.get(ItemType.FIREWOOD);
+        if (woodTmpl != null) {
+            woodTmpl.isUsable = true;
+            woodTmpl.baseValue = 5;
+        }
         createResourceTemplate(ItemType.SMALL_ROCK, "Rock", "A small rock.", null);
         createResourceTemplate(ItemType.FLINT_SHARD, "Flint", "Sharp stone.", ItemType.SMALL_ROCK);
         createResourceTemplate(ItemType.BROKEN_HILT, "Hilt", "Broken hilt.", ItemType.KNIFE);

@@ -180,6 +180,19 @@ MODELS = [
     Model("lakelands_tree_dead_03", "sized", ("models", "forest_other/Dead_Tree_Textured.glb"), None, None, (2.2, 3.4)),
     Model("lakelands_tree_willow_01", "sized", ("models", "trees/dense_jungle_Tree_Textured.glb"), None, None, (2.4, 3.6)),
     Model("lakelands_tree_snag_01", "sized", ("models", "trees/dead_tree3.glb"), None, None, (1.9, 3.2)),
+
+    # Tundra: written to images/tundra/. Snow pines, dead winter timber, ice sheets, snow mounds, campfires, shanties.
+    Model("tundra_tree_pine_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Pine_01.fbx"), {}, ALPINE_ATLAS, (2.2, 4.0)),
+    Model("tundra_tree_pine_02", "sized", (ALPINE, "FBX/Environment/SM_Env_Pine_03.fbx"), {}, ALPINE_ATLAS, (1.8, 3.2)),
+    Model("tundra_tree_snag_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Pine_NoLeaves_01.fbx"), {}, ALPINE_ATLAS, (1.6, 3.0)),
+    Model("tundra_snow_mound_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Snow_Mound_01.fbx"), {}, ALPINE_ATLAS, (1.4, 0.6)),
+    Model("tundra_pine_stump_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Pine_Stump_01.fbx"), {}, ALPINE_ATLAS, (0.8, 0.6)),
+    Model("tundra_log_snow_01", "sized", (GENERIC, "Models/SM_Gen_Env_Log_01.fbx"), {}, GENERIC_ATLAS, (1.5, 0.5)),
+    Model("tundra_stalactite_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Stalactite_01.fbx"), {}, ALPINE_ATLAS, (0.8, 1.6)),
+    Model("tundra_cairn_01", "sized", (VIKING, "FBX/SM_Prop_Cairn_01.fbx"), {}, VIKING_ATLAS, (1.0, 1.4)),
+    Model("tundra_campfire_01", "sized", (ALPINE, "FBX/Props/SM_Prop_Campfire_01.fbx"), {}, ALPINE_ATLAS, (1.0, 0.8)),
+    Model("tundra_wood_pile_01", "sized", (ALPINE, "FBX/Props/SM_Prop_Wood_Pile_01.fbx"), {}, ALPINE_ATLAS, (1.2, 0.7)),
+    Model("tundra_ice_hut_01", "sized", (ALPINE, "FBX/Props/SM_Prop_Ice_Fishing_Hut_01.fbx"), {}, ALPINE_ATLAS, (2.2, 2.2)),
 ]
 
 

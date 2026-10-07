@@ -1558,6 +1558,12 @@ public class Player {
             return;
         }
 
+        // --- Firewood: Fuel campfires or kindle emergency field campfire ---
+        if (item.getType() == Item.ItemType.FIREWOOD) {
+            useFirewood(item, maze, eventManager);
+            return;
+        }
+
         // --- NEW: Handle Food & Meal Eating ---
         if (item.isFood()) {
             if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
@@ -1799,6 +1805,97 @@ public class Player {
 
         // --- BALANCE LOGGING ---
         BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. toVoid=" + toVoid);
+    }
+
+    private void useFirewood(Item item, Maze maze, GameEventManager eventManager) {
+        if (maze == null) return;
+        int px = (int) Math.floor(position.x);
+        int py = (int) Math.floor(position.y);
+
+        // Check if there is already a campfire within warming radius (3.5 tiles)
+        LightSource nearCampfire = null;
+        for (LightSource ls : maze.getLights()) {
+            if (ls.getId() != null && ls.getId().contains("campfire")) {
+                float dx = ls.getPosition().x - (px + 0.5f);
+                float dy = ls.getPosition().y - (py + 0.5f);
+                if (dx * dx + dy * dy <= 12.25f) { // radius 3.5
+                    nearCampfire = ls;
+                    break;
+                }
+            }
+        }
+
+        if (nearCampfire != null) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You feed the campfire with fresh firewood. The flames roar with revitalizing heat!", 2.5f));
+            }
+            stats.setBodyTemperature(37.0f);
+            inventory.consumeOne(item);
+            return;
+        }
+
+        // Place an emergency field campfire on the player's current tile or clear tile ahead
+        GridPoint2 targetTile = new GridPoint2(px, py);
+        if (maze.getScenery().containsKey(targetTile) || maze.isWall(px, py)) {
+            Direction f = facing;
+            int fx = px + (int) f.getVector().x;
+            int fy = py + (int) f.getVector().y;
+            GridPoint2 frontTile = new GridPoint2(fx, fy);
+            if (!maze.isWall(fx, fy) && !maze.getScenery().containsKey(frontTile)) {
+                targetTile = frontTile;
+            } else {
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("There is no clear ground here to kindle a campfire.", 2.0f));
+                }
+                return;
+            }
+        }
+
+        Scenery fieldCampfire = new Scenery(Scenery.SceneryType.PROP, targetTile.x, targetTile.y, "images/tundra/campfire_01.png");
+        fieldCampfire.scale.set(1.0f, 0.8f);
+        fieldCampfire.setPixelOffsetY(0f);
+        fieldCampfire.setEmissiveTint(new Color(1f, 0.65f, 0.25f, 1.0f));
+        maze.addScenery(fieldCampfire);
+
+        String lightId = "tundra_campfire_field_" + targetTile.x + "_" + targetTile.y;
+        maze.addLight(new LightSource(lightId, targetTile.x + 0.5f, targetTile.y + 0.5f,
+                LightingManager.COLOR_CAMPFIRE, 4.0f, 1.2f, LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You kindle a crackling field campfire! Warmth spreads through the frozen air.", 2.5f));
+        }
+        stats.setBodyTemperature(Math.min(37.0f, stats.getBodyTemperature() + 3.0f));
+        inventory.consumeOne(item);
+    }
+
+    private void harvestFrozenTimber(Scenery s, GridPoint2 tile, Maze maze, GameEventManager eventManager) {
+        harvestedScenery = true;
+        maze.removeScenery(tile.x, tile.y);
+
+        // Replace with trampled snow debris
+        Scenery debris = new Scenery(Scenery.SceneryType.PROP, tile.x, tile.y, "images/tundra/snow_mound_01.png");
+        debris.scale.set(1.2f, 0.5f);
+        debris.setPixelOffsetY(0f);
+        maze.addBackdropScenery(debris);
+
+        int count = 1 + (int)(Math.random() * 2); // 1 or 2 bundles
+        Item wood = Item.createFirewood(tile.x, tile.y);
+        if (wood != null) {
+            boolean added = inventory.addItem(wood);
+            if (count > 1) {
+                Item wood2 = Item.createFirewood(tile.x, tile.y);
+                if (wood2 != null) inventory.addItem(wood2);
+            }
+            if (eventManager != null) {
+                if (added) {
+                    eventManager.addEvent(new GameEvent("You split the frozen timber into " + count + " Firewood "
+                            + (count == 1 ? "bundle." : "bundles."), 2.0f));
+                } else {
+                    maze.addItem(wood);
+                    eventManager.addEvent(new GameEvent("Pack full! You split the timber, dropping Firewood onto the snow.", 2.0f));
+                }
+            }
+        }
     }
 
     /**
@@ -2757,11 +2854,18 @@ public class Player {
      * so callers must not mistake it for a blocked move.
      */
     private boolean queuedChunkTransition = false;
+    private boolean harvestedScenery = false;
 
     public boolean consumeQueuedChunkTransition() {
         boolean queued = queuedChunkTransition;
         queuedChunkTransition = false;
         return queued;
+    }
+
+    public boolean consumeHarvestedScenery() {
+        boolean h = harvestedScenery;
+        harvestedScenery = false;
+        return h;
     }
 
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
@@ -2842,6 +2946,15 @@ public class Player {
                 passable = maze.isPassable(nextX, nextY);
             }
             if (!passable) {
+                Scenery s = maze.getScenery().get(nextTile);
+                if (s != null && s.isImpassable()) {
+                    String path = s.getTexturePath();
+                    if (path != null && (path.contains("log_snow_01") || path.contains("pine_stump_01"))) {
+                        harvestFrozenTimber(s, nextTile, maze, eventManager);
+                        return;
+                    }
+                }
+
                 // Check specific reasons for blockage
                 if (Gdx.app != null && maze.getWallDataAt(nextX, nextY) == 1) {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");

@@ -36,7 +36,14 @@ public enum BiomePortal {
             Biome.LAKELANDS,
             Item.ItemType.BIOME_PORTAL_LAKELANDS,
             new Color(0.30f, 0.80f, 0.95f, 1f),
-            "Mist Gate");
+            "Mist Gate"),
+
+    TUNDRA(
+            ShelterAltar.Station.PORTAL_TUNDRA,
+            Biome.TUNDRA,
+            Item.ItemType.BIOME_PORTAL_TUNDRA,
+            new Color(0.70f, 0.90f, 1.0f, 1f),
+            "Frost Gate");
 
     /**
      * Tint for the return portal left at an arrival point. It has no biome of

@@ -20,6 +20,7 @@ import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
 import com.bpm.minotaur.generation.LakelandsChunkGenerator;
 import com.bpm.minotaur.generation.MazeChunkGenerator;
+import com.bpm.minotaur.generation.TundraChunkGenerator;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -152,11 +153,13 @@ public class WorldManager {
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
         DesertChunkGenerator desertGen = new DesertChunkGenerator();
         LakelandsChunkGenerator lakelandsGen = new LakelandsChunkGenerator();
+        TundraChunkGenerator tundraGen = new TundraChunkGenerator();
 
         this.generators.put(Biome.MAZE, mazeGen);
         this.generators.put(Biome.FOREST, forestGen);
         this.generators.put(Biome.DESERT, desertGen);
         this.generators.put(Biome.LAKELANDS, lakelandsGen);
+        this.generators.put(Biome.TUNDRA, tundraGen);
         this.currentLevelTheme = getThemeForLevel(initialLevel);
     }
 
@@ -173,6 +176,8 @@ public class WorldManager {
                 return RetroTheme.DESERT_THEME;
             case LAKELANDS:
                 return RetroTheme.LAKELANDS_THEME;
+            case TUNDRA:
+                return RetroTheme.TUNDRA_THEME;
             case MAZE:
             default:
                 return retroThemeForMazePalette(getAppearanceSeed(this.currentLevel, chunkId.x, chunkId.y));
@@ -526,6 +531,9 @@ public class WorldManager {
                 pendingUpLadderPos = null; // Consume the request
             } else if (generator instanceof LakelandsChunkGenerator) {
                 ((LakelandsChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof TundraChunkGenerator) {
+                ((TundraChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
             }
         }

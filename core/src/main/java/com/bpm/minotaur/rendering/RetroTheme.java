@@ -235,6 +235,16 @@ public class RetroTheme {
         INTV_GREY_DARK                     // Door Dark
     );
 
+    public static final Theme TUNDRA_THEME = new Theme(
+        "Tundra",
+        INTV_WHITE,                        // Floor (Snow / Permafrost)
+        new Color(0.18f, 0.28f, 0.42f, 1), // Ceiling (Polar twilight sky)
+        INTV_CYAN_LIGHT,                   // Wall (Glacial ice crags)
+        INTV_CYAN_DARK,                    // Wall Dark (Crevasse ice)
+        INTV_BLUE_LIGHT,                   // Door
+        INTV_BLUE_DARK                     // Door Dark
+    );
+
     private static final Theme[] ADVANCED_THEMES = new Theme[] {
         ADVANCED_COLOR_THEME_RED,
         ADVANCED_COLOR_THEME_BLUE,
