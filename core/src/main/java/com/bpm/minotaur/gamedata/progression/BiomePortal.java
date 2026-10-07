@@ -152,6 +152,8 @@ public enum BiomePortal {
             }
         }
 
+        // Replaced, never stacked: a shelter is furnished again every time it loads.
+        maze.removeLight("shelter_portal_" + name());
         maze.addLight(new com.bpm.minotaur.lighting.LightSource(
                 "shelter_portal_" + name(), tile.x + 0.5f, tile.y + 0.5f,
                 tint, 4.0f, 1.1f,

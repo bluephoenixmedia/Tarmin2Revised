@@ -201,8 +201,11 @@ public final class ShelterBuilder {
         maze.getItems().remove(p);
         maze.getMonsters().remove(p);
         maze.getGameObjects().remove(p);
-        Ladder l = maze.getLadders().remove(p);
-        if (l != null && displaced != null) displaced.add(l);
+        // A ladder is walkable, so a causeway (no list to move it to) leaves it standing.
+        if (displaced != null) {
+            Ladder l = maze.getLadders().remove(p);
+            if (l != null) displaced.add(l);
+        }
         if (maze.getLiquidManager() != null && maze.getLiquidAt(x, y) != LiquidType.NONE) {
             maze.getLiquidManager().setLiquidAt(x, y, LiquidType.NONE);
         }
