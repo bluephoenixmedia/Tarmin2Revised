@@ -27,8 +27,4 @@ public final class HearthLighting {
         turnsDone++;
         return turnsDone >= TURNS ? Step.COMPLETE : Step.CONTINUE;
     }
-
-    public int getTurnsDone() {
-        return turnsDone;
-    }
 }

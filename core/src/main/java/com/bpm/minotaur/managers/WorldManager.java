@@ -1458,14 +1458,20 @@ public class WorldManager {
         Maze destination = loadChunk(target);
         if (destination == null) return null;
 
-        GridPoint2 entry = destination.getShelterEntry();
-        GridPoint2 arrival = findSafeArrivalTile(destination,
-                entry != null ? entry.x : destination.getWidth() / 2,
-                entry != null ? entry.y - 1 : destination.getHeight() / 2);
+        GridPoint2 arrival = arrivalBesideShelter(destination);
         if (arrival == null) return null;
 
         placeReturnPortalNear(destination, arrival);
         return new PortalWarp(target, arrival);
+    }
+
+    /** Where a warp lands: just outside the shelter's door if the chunk has one, else mid-chunk. */
+    public static GridPoint2 arrivalBesideShelter(Maze maze) {
+        if (maze == null) return null;
+        GridPoint2 entry = maze.getShelterEntry();
+        return findSafeArrivalTile(maze,
+                entry != null ? entry.x : maze.getWidth() / 2,
+                entry != null ? entry.y - 1 : maze.getHeight() / 2);
     }
 
     /** The nearest-to-home shelter on the castle road whose chunk is this biome, or null. */

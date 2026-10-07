@@ -2966,19 +2966,11 @@ public class Player {
             }
             if (!passable) {
                 Scenery s = maze.getScenery().get(nextTile);
-                if (com.bpm.minotaur.gamedata.blight.CastleGate.isCastleGate(s)) {
-                    // Knocking at Castle Tarmin. Phase 5 turns an open gate into the way in.
+                // Knocking at a sealed gate: Castle Tarmin's, or a seal site's at the end of a road.
+                String knock = com.bpm.minotaur.gamedata.shelter.SealedGates.knock(s);
+                if (knock != null) {
                     if (eventManager != null) {
-                        eventManager.addEvent(new GameEvent(com.bpm.minotaur.gamedata.blight.CastleGate.knockMessage(
-                                com.bpm.minotaur.gamedata.blight.CastleGate.sealsHeld()), 3.5f));
-                    }
-                    return;
-                }
-                if (com.bpm.minotaur.generation.ShelterBuilder.isSealGate(s)) {
-                    // The end of a seal road. A later feature opens it onto the deep boss who holds the seal.
-                    if (eventManager != null) {
-                        eventManager.addEvent(new GameEvent(
-                                "A sealed way down, older than the Legion. One of the ancient seals lies far beneath it.", 3.5f));
+                        eventManager.addEvent(new GameEvent(knock, 3.5f));
                     }
                     return;
                 }

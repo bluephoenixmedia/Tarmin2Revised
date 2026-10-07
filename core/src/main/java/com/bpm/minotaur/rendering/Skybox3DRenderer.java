@@ -245,7 +245,9 @@ public class Skybox3DRenderer {
                 default:     width = 0.016f * dist; height = 34f + 30f * near; break;
             }
             Color c = b.getColor();
-            float glow = night || b.getKind() == com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.PILLAR ? 1f : 0.55f;
+            // Smoke burns by night and drifts by day; a claimed shelter's glow and a pillar hold steady.
+            boolean steady = b.getKind() != com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE;
+            float glow = night || steady ? 1f : 0.55f;
             if (b.isSpent()) glow *= com.bpm.minotaur.gamedata.shelter.BeaconPalette.SPENT;
             if (!night && b.getKind() == com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE) {
                 // Daylight smoke: the road's colour through grey.
@@ -257,7 +259,7 @@ public class Skybox3DRenderer {
             m.set(ColorAttribute.createEmissive(c.r * glow, c.g * glow, c.b * glow, 1f));
             ((com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute)
                     m.get(com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute.Type)).opacity =
-                    (night ? 0.85f : 0.6f) * (b.isSpent() ? 0.6f : 1f);
+                    (night || steady ? 0.85f : 0.6f) * (b.isSpent() ? 0.6f : 1f);
             float dirX = dx / chunks;
             float dirZ = dz / chunks;
             inst.transform.idt()

@@ -80,6 +80,19 @@ public class ShelterNetworkTest {
         assertEquals(1, net.getSealCount());
     }
 
+    @Test
+    public void skippingAheadKeepsThePlaceOnTheRoadNotTheFirstShelters() {
+        int a = longest(oldRoads, newRoads);
+        net.claim(stop(oldRoads, a, 1));
+        net.recordRest(stop(oldRoads, a, 1));
+        net.claim(stop(oldRoads, a, 0)); // claimed after, so the rest stays at #2
+        net.recordRest(stop(oldRoads, a, 1));
+        GridPoint2 wake = net.carryOverDeath(oldRoads, newRoads);
+        assertTrue(net.isClaimed(stop(newRoads, a, 0)));
+        assertFalse("the furthest claim on the rest road is lost", net.isClaimed(stop(newRoads, a, 1)));
+        assertEquals(stop(newRoads, a, 0), wake);
+    }
+
     /** A road with at least two shelters in both layouts. */
     private static int longest(ShelterRoads a, ShelterRoads b) {
         for (int r = 0; r < 4; r++) {

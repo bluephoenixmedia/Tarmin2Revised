@@ -2375,7 +2375,7 @@ public class GameScreen extends BaseScreen {
     /** Starts lighting the cold hearth in front of the player, if they carry tinder. */
     private void beginHearthLighting() {
         if (hearthLighting != null) return;
-        if (!player.getInventory().hasItemOfType(Item.ItemType.TINDER_BUNDLE)) {
+        if (findTinder() == null) {
             eventManager.addEvent(new GameEvent("The hearth is cold. You need a Tinder Bundle to light it.", 2.5f));
             return;
         }
@@ -2393,21 +2393,14 @@ public class GameScreen extends BaseScreen {
         playerTurnTakesAction();
         com.bpm.minotaur.gamedata.shelter.HearthLighting.Step step =
                 hearthLighting.afterTurn(player.getStats().getWoundsTaken());
-        boolean combat = combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE;
-        if (step == com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.INTERRUPTED || combat) {
+        if (step == com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.INTERRUPTED) {
             hearthLighting = null;
             eventManager.addEvent(new GameEvent("You are struck and the tinder scatters. The hearth stays cold.", 2.5f));
             return;
         }
         if (step != com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.COMPLETE) return;
         hearthLighting = null;
-        Item tinder = null;
-        for (Item it : player.getInventory().getAllItems()) {
-            if (it != null && it.getType() == Item.ItemType.TINDER_BUNDLE) {
-                tinder = it;
-                break;
-            }
-        }
+        Item tinder = findTinder();
         if (tinder == null || !worldManager.claimShelter(maze)) {
             eventManager.addEvent(new GameEvent("The tinder will not catch.", 2f));
             return;
@@ -2418,6 +2411,13 @@ public class GameScreen extends BaseScreen {
         eventManager.addEvent(new GameEvent("The hearth catches. This shelter is yours.", 3f));
         if (hud != null) hud.addMessage("Shelter claimed. Every station you have unlocked stands here now.");
         needsAsciiRender = true;
+    }
+
+    private Item findTinder() {
+        for (Item it : player.getInventory().getAllItems()) {
+            if (it != null && it.getType() == Item.ItemType.TINDER_BUNDLE) return it;
+        }
+        return null;
     }
 
     private boolean breakHearthLighting() {
@@ -4339,6 +4339,21 @@ public class GameScreen extends BaseScreen {
                 debugWarp(roads == null ? null : roads.getRoad(debugWarpRoad).getEnd(), "seal site of road " + debugWarpRoad);
                 return true;
             }
+            case GRANT_SEAL: {
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork net = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance();
+                int road = debugWarpRoad;
+                for (int k = 0; road == com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD || net.hasSeal(road); k++) {
+                    if (k >= com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT) {
+                        eventManager.addEvent(new GameEvent("Debug: every seal is already held", 2f));
+                        return true;
+                    }
+                    road = com.bpm.minotaur.debug.DebugCheats.sealRoad(k);
+                }
+                net.awardSeal(road);
+                eventManager.addEvent(new GameEvent("Debug: granted the seal of road " + road + " ("
+                        + net.getSealCount() + "/" + com.bpm.minotaur.gamedata.blight.CastleGate.SEALS_REQUIRED + ")", 2.5f));
+                return true;
+            }
             case CLAIM_ROAD: {
                 com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
                 if (roads == null) {
@@ -4375,10 +4390,7 @@ public class GameScreen extends BaseScreen {
             eventManager.addEvent(new GameEvent("Debug: " + chunk + " cannot be entered", 2f));
             return;
         }
-        GridPoint2 entry = destination.getShelterEntry();
-        GridPoint2 arrival = WorldManager.findSafeArrivalTile(destination,
-                entry != null ? entry.x : destination.getWidth() / 2,
-                entry != null ? entry.y - 1 : destination.getHeight() / 2 - 2);
+        GridPoint2 arrival = WorldManager.arrivalBesideShelter(destination);
         if (arrival == null) return;
         eventManager.addEvent(new GameEvent("Debug: warping to " + label + " at " + chunk, 2f));
         eventManager.addEvent(new GameEvent(GameEvent.EventType.BIOME_PORTAL_WARP, new WorldManager.PortalWarp(chunk, arrival)));

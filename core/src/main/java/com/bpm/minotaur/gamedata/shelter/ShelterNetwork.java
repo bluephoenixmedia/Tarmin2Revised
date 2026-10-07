@@ -99,14 +99,15 @@ public final class ShelterNetwork implements SlotScopedState {
      * @return the chunk to wake in, or null for the home shelter
      */
     public GridPoint2 carryOverDeath(ShelterRoads oldRoads, ShelterRoads newRoads) {
-        int[] counts = new int[ShelterRoads.ROAD_COUNT];
+        List<Set<Integer>> places = new ArrayList<>();
+        for (int r = 0; r < ShelterRoads.ROAD_COUNT; r++) places.add(new TreeSet<>());
         int restRoad = ShelterMemory.HOME;
         int restIndex = 0;
         if (oldRoads != null) {
             for (ShelterRoads.Road road : oldRoads.getRoads()) {
                 List<GridPoint2> stops = road.getShelters();
                 for (int i = 0; i < stops.size(); i++) {
-                    if (claimed.contains(stops.get(i))) counts[road.getIndex()]++;
+                    if (claimed.contains(stops.get(i))) places.get(road.getIndex()).add(i);
                     if (stops.get(i).equals(restChunk)) {
                         restRoad = road.getIndex();
                         restIndex = i;
@@ -114,19 +115,26 @@ public final class ShelterNetwork implements SlotScopedState {
                 }
             }
         }
-        ShelterMemory.Result result = ShelterMemory.afterDeath(counts, restRoad, restIndex, seals);
+        ShelterMemory.Result result = ShelterMemory.afterDeath(places, restRoad, restIndex, seals);
 
         claimed.clear();
         restChunk = null;
         GridPoint2 wake = null;
         if (newRoads != null) {
-            int[] keep = result.getCounts();
             for (ShelterRoads.Road road : newRoads.getRoads()) {
                 List<GridPoint2> stops = road.getShelters();
-                int n = Math.min(keep[road.getIndex()], stops.size());
-                for (int i = 0; i < n; i++) claimed.add(new GridPoint2(stops.get(i)));
-                if (road.getIndex() == result.getRespawnRoad() && n > 0) {
-                    wake = new GridPoint2(stops.get(Math.min(result.getRespawnIndex(), n - 1)));
+                if (stops.isEmpty()) continue;
+                int r = road.getIndex();
+                for (int i = 0; i < stops.size(); i++) {
+                    if (result.isWholeRoad(r) || result.getClaimed(r).contains(i)) {
+                        claimed.add(new GridPoint2(stops.get(i)));
+                    }
+                }
+                if (r == result.getRespawnRoad()) {
+                    // The new road may be shorter: wake at the furthest claimed place it still has.
+                    int at = Math.min(result.getRespawnIndex(), stops.size() - 1);
+                    while (at >= 0 && !claimed.contains(stops.get(at))) at--;
+                    if (at >= 0) wake = new GridPoint2(stops.get(at));
                 }
             }
         }

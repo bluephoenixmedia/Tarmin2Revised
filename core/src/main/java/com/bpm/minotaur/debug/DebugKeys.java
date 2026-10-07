@@ -12,7 +12,7 @@ import java.util.List;
 public final class DebugKeys {
 
     public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL, FIRE_CHOICE_EVENT,
-        WARP_CASTLE_ROAD_SHELTER, WARP_SEAL_SITE, CLAIM_ROAD }
+        WARP_CASTLE_ROAD_SHELTER, WARP_SEAL_SITE, CLAIM_ROAD, GRANT_SEAL }
 
     public static final class Entry {
         public final int keycode;
@@ -39,6 +39,7 @@ public final class DebugKeys {
         new Entry(Input.Keys.SEMICOLON, ";", "warp to the next castle-road shelter", Action.WARP_CASTLE_ROAD_SHELTER),
         new Entry(Input.Keys.APOSTROPHE, "'", "warp to the next seal site", Action.WARP_SEAL_SITE),
         new Entry(Input.Keys.BACKSLASH, "\\", "claim every shelter on the last road warped to", Action.CLAIM_ROAD),
+        new Entry(Input.Keys.SLASH, "/", "grant the seal of the last seal road warped to", Action.GRANT_SEAL),
     };
 
     /** Always available while developing; listed here for reference. */
