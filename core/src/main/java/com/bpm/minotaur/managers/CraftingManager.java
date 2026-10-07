@@ -73,6 +73,9 @@ public class CraftingManager {
         legacyRecipes.add(new Recipe(List.of(ItemType.BONE, ItemType.BONE), ItemType.DART, 5, "Bone Darts"));
         legacyRecipes.add(new Recipe(List.of(ItemType.MEAT), ItemType.COOKED_MEAT, 1, "Cooked Meat"));
         legacyRecipes.add(new Recipe(List.of(ItemType.CHITIN, ItemType.LEATHER_SCRAP), ItemType.HELMET, 1, "Chitin Helm"));
+        // Fire for the shelter roads: never a hard lock, so it comes from the commonest wood there is.
+        legacyRecipes.add(new Recipe(List.of(ItemType.STICK, ItemType.STICK), ItemType.TINDER_BUNDLE, 1, "Tinder Bundle"));
+        legacyRecipes.add(new Recipe(List.of(ItemType.FIREWOOD), ItemType.TINDER_BUNDLE, 2, "Tinder Bundles (from Firewood)"));
 
         // The careful-planning gate on the merchant's Void chain laser: common debris alone is not
         // enough to wake a dead cell. A Rift Filament -- obtainable only from a trip into the Void --

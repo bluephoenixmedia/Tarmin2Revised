@@ -62,4 +62,17 @@ public final class DebugCheats {
         List<Item.ItemType> list = new ArrayList<>(types);
         return ShelterChest.catalog(list, factory);
     }
+
+    /** The {@code n}th shelter on a road, wrapping; null if the road has none. */
+    public static com.badlogic.gdx.math.GridPoint2 roadShelter(com.bpm.minotaur.generation.ShelterRoads roads,
+                                                                int road, int n) {
+        if (roads == null) return null;
+        java.util.List<com.badlogic.gdx.math.GridPoint2> stops = roads.getRoad(road).getShelters();
+        return stops.isEmpty() ? null : stops.get(Math.floorMod(n, stops.size()));
+    }
+
+    /** The seal road for the {@code k}th press: 1, 2, 3, 1, ... */
+    public static int sealRoad(int k) {
+        return 1 + Math.floorMod(k, com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT - 1);
+    }
 }

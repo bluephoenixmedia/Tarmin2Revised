@@ -248,7 +248,7 @@ public class MonsterPursuitManager {
         Scenery s = maze.getScenery().get(pt);
         if (s != null && s.isImpassable()) return false;
 
-        if (maze.getHomeTiles() != null && maze.getHomeTiles().contains(pt)) return false;
+        if (maze.isSanctuaryTile(pt)) return false;
 
         return true;
     }

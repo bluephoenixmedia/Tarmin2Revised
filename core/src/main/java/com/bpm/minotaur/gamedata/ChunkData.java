@@ -88,9 +88,9 @@ public class ChunkData {
     public ChunkData() {
     }
 
-    /** True if this chunk's saved data marks it as containing the player's home shelter. */
+    /** True if this chunk holds a shelter of the player's: the home shelter, or an outpost they have lit. */
     public boolean hasShelter() {
-        return homeTiles != null && !homeTiles.isEmpty();
+        return homeTiles != null && !homeTiles.isEmpty() && (sanctuary == null || sanctuary);
     }
 
     public boolean hasUpLadder() {

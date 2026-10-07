@@ -186,7 +186,7 @@ public class SpawnManager {
         for (int y = 0; y < maze.getHeight(); y++) {
             for (int x = 0; x < maze.getWidth(); x++) {
                 boolean isFloor = layout[maze.getHeight() - 1 - y].charAt(x) == '.';
-                boolean isSafeHomeTile = maze.isHomeTile(x, y);
+                boolean isSafeHomeTile = maze.isSanctuaryTile(x, y);
                 GridPoint2 pos = new GridPoint2(x, y);
                 boolean isReachable = (reachableTiles == null || reachableTiles.contains(pos));
 
@@ -763,7 +763,7 @@ public class SpawnManager {
 
         // If this maze chunk contains home tiles (e.g. Level 1 Starting Shelter Chunk),
         // enforce a 6-tile safety exclusion radius from the shelter door (17, 20) and any home tile.
-        if (maze.getHomeTiles() != null && !maze.getHomeTiles().isEmpty()) {
+        if (!maze.getSanctuaryTiles().isEmpty()) {
             for (int i = 0; i < validSpawnPoints.size(); i++) {
                 GridPoint2 pt = validSpawnPoints.get(i);
                 float distToDoor = pt.dst(17, 20);
@@ -771,7 +771,7 @@ public class SpawnManager {
                     continue;
                 }
                 boolean tooCloseToHome = false;
-                for (GridPoint2 ht : maze.getHomeTiles()) {
+                for (GridPoint2 ht : maze.getSanctuaryTiles()) {
                     if (pt.dst(ht) < 6.0f) {
                         tooCloseToHome = true;
                         break;

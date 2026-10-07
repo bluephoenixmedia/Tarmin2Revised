@@ -69,6 +69,28 @@ public class ShelterBuilderTest {
     }
 
     @Test
+    public void aColdShelterSurvivesASaveAndLoadAndShowsOnTheMapOnlyOnceLit() {
+        Maze maze = generate(new BlightChunkGenerator(), 2L);
+        ShelterBuilder.buildOutpost(maze, Biome.BLIGHT, null, null);
+
+        com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
+        json.setUsePrototypes(false);
+        com.bpm.minotaur.gamedata.ChunkData data = json.fromJson(com.bpm.minotaur.gamedata.ChunkData.class,
+                json.toJson(new com.bpm.minotaur.gamedata.ChunkData(maze)));
+        assertFalse("a cold shelter is not on the map as yours", data.hasShelter());
+        Maze back = data.buildMaze(null, null, null);
+        assertFalse(back.isSanctuary());
+        assertEquals(maze.getHearthTile(), back.getHearthTile());
+        assertEquals(maze.getAltarTile(), back.getAltarTile());
+        assertEquals(maze.getShelterEntry(), back.getShelterEntry());
+        assertEquals(maze.getStationSlots(ShelterAltar.Station.LANTERN), back.getStationSlots(ShelterAltar.Station.LANTERN));
+        assertEquals(maze.getHomeTiles(), back.getHomeTiles());
+
+        ShelterBuilder.light(back, null, null);
+        assertTrue(new com.bpm.minotaur.gamedata.ChunkData(back).hasShelter());
+    }
+
+    @Test
     public void everyGateReachesTheShelterDoorInEverySurfaceBiome() {
         IChunkGenerator[] gens = {new ForestChunkGenerator(), new DesertChunkGenerator(),
                 new LakelandsChunkGenerator(), new TundraChunkGenerator(), new BlightChunkGenerator()};

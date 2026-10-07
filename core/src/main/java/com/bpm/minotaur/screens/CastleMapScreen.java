@@ -560,7 +560,10 @@ public class CastleMapScreen extends BaseScreen {
 
                 if (isShelter) {
                     fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
-                    fontSmall.draw(game.getBatch(), "HOME", x + 6, y + chunkH - 8);
+                    fontSmall.draw(game.getBatch(), (cx == 0 && cy == 0) ? "HOME" : "SHELTER", x + 6, y + chunkH - 8);
+                } else if (viewFloor == 1 && biomeManager != null && biomeManager.getSealRoad(chId) >= 0) {
+                    fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
+                    fontSmall.draw(game.getBatch(), "SEAL", x + 6, y + chunkH - 8);
                 } else if (viewFloor == 1 && isCastleChunk(cx, cy)) {
                     fontSmall.setColor(Color.CORAL);
                     fontSmall.draw(game.getBatch(), "CASTLE", x + 6, y + chunkH - 8);

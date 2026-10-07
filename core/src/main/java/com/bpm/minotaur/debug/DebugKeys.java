@@ -11,7 +11,8 @@ import java.util.List;
  */
 public final class DebugKeys {
 
-    public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL, FIRE_CHOICE_EVENT }
+    public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL, FIRE_CHOICE_EVENT,
+        WARP_CASTLE_ROAD_SHELTER, WARP_SEAL_SITE, CLAIM_ROAD }
 
     public static final class Entry {
         public final int keycode;
@@ -35,6 +36,9 @@ public final class DebugKeys {
         new Entry(Input.Keys.HOME, "Home", "open a chest with one of every item", Action.OPEN_ALL_ITEMS_CHEST),
         new Entry(Input.Keys.END, "End", "refill HP, MP, food and water", Action.REFILL),
         new Entry(Input.Keys.PAGE_DOWN, "PgDn", "open a random choice event for this place", Action.FIRE_CHOICE_EVENT),
+        new Entry(Input.Keys.SEMICOLON, ";", "warp to the next castle-road shelter", Action.WARP_CASTLE_ROAD_SHELTER),
+        new Entry(Input.Keys.APOSTROPHE, "'", "warp to the next seal site", Action.WARP_SEAL_SITE),
+        new Entry(Input.Keys.BACKSLASH, "\\", "claim every shelter on the last road warped to", Action.CLAIM_ROAD),
     };
 
     /** Always available while developing; listed here for reference. */

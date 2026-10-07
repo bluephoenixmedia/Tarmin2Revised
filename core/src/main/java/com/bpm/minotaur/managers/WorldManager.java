@@ -464,7 +464,10 @@ public class WorldManager {
 
         if (loadedChunks.containsKey(chunkId)) {
             Gdx.app.log("WorldManager", "Loading chunk from cache: " + chunkId);
-            return loadedChunks.get(chunkId);
+            Maze cached = loadedChunks.get(chunkId);
+            // A station bought, or a shelter claimed, since this chunk was cached still shows.
+            applyShelterState(cached, chunkId);
+            return cached;
         }
 
         Biome biome;
@@ -997,6 +1000,15 @@ public class WorldManager {
         com.bpm.minotaur.generation.ShelterRoads.Site site = biomeManager.getShelterSite(chunkId);
         if (site != null) {
             com.bpm.minotaur.generation.ShelterBuilder.buildOutpost(maze, biome, itemDataManager, assetManager);
+            // Tinder turns up more often along the roads: half the shelters keep a bundle by the door.
+            GridPoint2 step = maze.getShelterEntry();
+            if (step != null && itemDataManager != null
+                    && new java.util.Random(getChunkSeed(1, chunkId.x, chunkId.y) ^ 0x7111DE5L).nextBoolean()) {
+                GridPoint2 at = findSafeArrivalTile(maze, step.x + 1, step.y);
+                Item tinder = at == null ? null : itemDataManager.createItem(Item.ItemType.TINDER_BUNDLE, at.x, at.y,
+                        com.bpm.minotaur.gamedata.item.ItemColor.TAN, assetManager);
+                if (tinder != null) maze.addItem(tinder);
+            }
             return;
         }
         int sealRoad = biomeManager.getSealRoad(chunkId);

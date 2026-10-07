@@ -108,7 +108,7 @@ public class Pathfinder {
 
                 // --- Sanctuary Ward Check ---
                 tempPos.set(nx, ny);
-                if (maze.getHomeTiles() != null && maze.getHomeTiles().contains(tempPos)) {
+                if (maze.isSanctuaryTile(tempPos)) {
                     continue; // Protected shelter sanctuary boundary
                 }
 
