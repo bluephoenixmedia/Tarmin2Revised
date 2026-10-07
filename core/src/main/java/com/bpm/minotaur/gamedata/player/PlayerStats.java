@@ -51,6 +51,8 @@ public class PlayerStats {
 
     // --- Toxic Communion Stats ---
     private int toxicity = 0;
+    /** Blighted Marches rot, 0-100. See gamedata.blight.Taint. Persists until the shelter bed clears it. */
+    private float taint = 0f;
     private int maxToxicity = 100;
 
     public int getToxicity() {
@@ -354,6 +356,18 @@ public class PlayerStats {
 
     private int woundsTaken;
 
+    /**
+     * Pulls current HP down to a maximum that has shrunk (Blight Taint). Unlike
+     * {@link #setCurrentHP}, this is not damage: no wound is counted and
+     * temporary HP is untouched.
+     */
+    public void clampCurrentHPToMax() {
+        int max = getMaxHP();
+        if (currentHP > max) {
+            currentHP = max;
+        }
+    }
+
     public int getCurrentMP() {
         return currentMP;
     }
@@ -452,7 +466,21 @@ public class PlayerStats {
 
     /** Maximum HP, after any personality trait (Fasting Monk, Lucky Fool...). */
     public int getMaxHP() {
-        return Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")));
+        return Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")
+                * com.bpm.minotaur.gamedata.blight.Taint.maxHpMult(taint)));
+    }
+
+    public float getTaint() {
+        return taint;
+    }
+
+    public void setTaint(float taint) {
+        this.taint = com.bpm.minotaur.gamedata.blight.Taint.clamp(taint);
+    }
+
+    /** Adds (or with a negative amount, removes) Taint, clamped to 0-100. */
+    public void addTaint(float amount) {
+        setTaint(this.taint + amount);
     }
 
     /** The stored maximum, before any trait. This is what a save records and what level-ups build on. */

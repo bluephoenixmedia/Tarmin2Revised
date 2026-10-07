@@ -27,6 +27,10 @@ public enum Biome {
             "images/floor_lakelands.png", "images/lakelands_cliff.png"),
     TUNDRA(true, true, 18, new Color(0.18f, 0.28f, 0.42f, 1.0f), null,
             "images/floor_tundra.png", "images/tundra_cliff.png"),
+    // The Blighted Marches: the far band, and the land around Castle Tarmin.
+    // Crimson-ochre murk; the castle is the landmark, not the sky.
+    BLIGHT(true, true, 16, new Color(0.30f, 0.13f, 0.09f, 1.0f), null,
+            "images/floor_blight.png", "images/blight_cliff.png"),
     OCEAN(false, false, 100, null); // Not seamless, impassable
 
     // --- New Properties ---

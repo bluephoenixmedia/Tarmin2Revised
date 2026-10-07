@@ -409,13 +409,16 @@ public class SaveSlotSelectScreen extends BaseScreen {
         // which choice events this run has already placed.
         if (worldData != null && gameScreen.getWorldManager() != null) {
             gameScreen.getWorldManager().setSeenChoiceEvents(worldData.seenChoiceEvents);
+            // Biome layout derives from version and seed, so both land before show() can
+            // generate anything. Version first: the seed's rebuild must already see it.
+            gameScreen.getWorldManager().setWorldGenVersion(worldData.worldGenVersion);
+            if (worldData.masterSeed != 0) {
+                gameScreen.getWorldManager().setWorldSeed(worldData.masterSeed);
+            }
         }
         game.setScreen(gameScreen);
 
         if (worldData != null && gameScreen.getWorldManager() != null) {
-            if (worldData.masterSeed != 0) {
-                gameScreen.getWorldManager().setWorldSeed(worldData.masterSeed);
-            }
             if (worldData.factionMatrix != null && !worldData.factionMatrix.trim().isEmpty()) {
                 gameScreen.getWorldManager().setFactionMatrix(
                         com.bpm.minotaur.gamedata.monster.FactionMatrix.deserialize(worldData.factionMatrix));

@@ -225,6 +225,18 @@ public class SpawnManager {
         spawnMilestoneTomes();
     }
 
+    /**
+     * Items, containers, mimics and debris, but no monsters: for a biome whose
+     * generator brings its own roster. The Blight's denizens are its point, and a
+     * generic kobold between the Legion and the Specters would undo that.
+     */
+    public void spawnSuppliesOnly() {
+        spawnItems((int) (budget.itemBudget * 1.2f));
+        spawnContainers((int) (budget.containerBudget * 0.5f));
+        spawnMimics();
+        spawnDebris((int) (budget.debrisBudget * 0.5f));
+    }
+
     private void spawnMilestoneTomes() {
         if (maze == null || maze.getChunkId() == null) return;
         if (maze.getChunkId().x == 0 && maze.getChunkId().y == 0) {

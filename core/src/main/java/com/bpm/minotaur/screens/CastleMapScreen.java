@@ -64,6 +64,7 @@ public class CastleMapScreen extends BaseScreen {
         BIOME_STYLES.put(Biome.DESERT, new BiomeStyle(new Color(0.30f, 0.26f, 0.14f, 0.9f), "D", "Desert"));
         BIOME_STYLES.put(Biome.LAKELANDS, new BiomeStyle(new Color(0.10f, 0.20f, 0.28f, 0.9f), "L", "Lakelands"));
         BIOME_STYLES.put(Biome.TUNDRA, new BiomeStyle(new Color(0.20f, 0.32f, 0.42f, 0.9f), "T", "Tundra"));
+        BIOME_STYLES.put(Biome.BLIGHT, new BiomeStyle(com.bpm.minotaur.rendering.HudSkin.COL_MAP_BLIGHT, "B", "Blighted Marches"));
         BIOME_STYLES.put(Biome.MOUNTAINS, new BiomeStyle(new Color(0.15f, 0.15f, 0.17f, 0.9f), "A", "Mountains (impassable)"));
         BIOME_STYLES.put(Biome.OCEAN, new BiomeStyle(new Color(0.08f, 0.12f, 0.24f, 0.9f), "O", "Ocean (impassable)"));
     }
@@ -75,9 +76,9 @@ public class CastleMapScreen extends BaseScreen {
         return style != null ? style : UNKNOWN_BIOME_STYLE;
     }
 
-    /** The one hardcoded landmark left over from the original map: the sealed Tarmin gate. */
-    private static final int CASTLE_CHUNK_X = 0;
-    private static final int CASTLE_CHUNK_Y = 5;
+    /** Where the castle was drawn before it had a place in the world; legacy worlds keep it. */
+    private static final int LEGACY_CASTLE_CHUNK_X = 0;
+    private static final int LEGACY_CASTLE_CHUNK_Y = 5;
 
     private static final int MIN_FLOOR = 1;
     /** Overview shows a (2*radius+1)^2 window of chunks centered on the cursor. */
@@ -109,6 +110,14 @@ public class CastleMapScreen extends BaseScreen {
     private ZoomView zoomView;
 
     private OverviewLayout lastOverviewLayout;
+
+    /** The castle's chunk: the world's real site, or the old fixed mark in a legacy world. */
+    private boolean isCastleChunk(int cx, int cy) {
+        GridPoint2 site = (worldManager != null && worldManager.getBiomeManager() != null)
+                ? worldManager.getBiomeManager().getCastleSite() : null;
+        if (site == null) return cx == LEGACY_CASTLE_CHUNK_X && cy == LEGACY_CASTLE_CHUNK_Y;
+        return cx == site.x && cy == site.y;
+    }
 
     public CastleMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
         super(game);
@@ -477,7 +486,7 @@ public class CastleMapScreen extends BaseScreen {
 
                 if (isShelter) {
                     shapeRenderer.setColor(0.24f, 0.22f, 0.15f, 0.95f); // Shelter amber
-                } else if (viewFloor == 1 && cx == CASTLE_CHUNK_X && cy == CASTLE_CHUNK_Y) {
+                } else if (viewFloor == 1 && isCastleChunk(cx, cy)) {
                     shapeRenderer.setColor(0.28f, 0.14f, 0.14f, 0.95f); // Castle Citadel crimson
                 }
 
@@ -522,7 +531,7 @@ public class CastleMapScreen extends BaseScreen {
                     ChunkData data = getCachedChunkData(viewFloor, chId);
                     if (data != null && data.hasShelter()) {
                         shapeRenderer.setColor(Color.GOLD);
-                    } else if (viewFloor == 1 && cx == CASTLE_CHUNK_X && cy == CASTLE_CHUNK_Y) {
+                    } else if (viewFloor == 1 && isCastleChunk(cx, cy)) {
                         shapeRenderer.setColor(Color.RED);
                     } else {
                         shapeRenderer.setColor(0.25f, 0.30f, 0.38f, 0.5f);
@@ -552,7 +561,7 @@ public class CastleMapScreen extends BaseScreen {
                 if (isShelter) {
                     fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
                     fontSmall.draw(game.getBatch(), "HOME", x + 6, y + chunkH - 8);
-                } else if (viewFloor == 1 && cx == CASTLE_CHUNK_X && cy == CASTLE_CHUNK_Y) {
+                } else if (viewFloor == 1 && isCastleChunk(cx, cy)) {
                     fontSmall.setColor(Color.CORAL);
                     fontSmall.draw(game.getBatch(), "CASTLE", x + 6, y + chunkH - 8);
                 } else if (viewFloor == 1) {

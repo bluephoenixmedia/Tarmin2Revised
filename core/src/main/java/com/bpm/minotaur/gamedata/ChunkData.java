@@ -209,6 +209,14 @@ public class ChunkData {
             monster.setCurrentHP(data.warStrength);
             monster.setCurrentMP(data.spiritualStrength);
             monster.setAllyTurns(data.allyTurns);
+            monster.setBlighted(data.blighted);
+            if (data.faction != null) {
+                try {
+                    monster.setFaction(com.bpm.minotaur.gamedata.monster.Faction.valueOf(data.faction));
+                } catch (IllegalArgumentException ignored) {
+                    // A renamed faction keeps the template default rather than failing the chunk.
+                }
+            }
             maze.addMonster(monster);
         }
 
@@ -549,6 +557,14 @@ public class ChunkData {
         public int moveSpeed = 0;
         /** Charm state: 0 none, -1 permanent, else turns left. Old saves read 0. */
         public int allyTurns = 0;
+        /** Blighted Marches variant; false on old saves. */
+        public boolean blighted = false;
+        /**
+         * Faction name. Null on old saves, which keep the template default. Blight
+         * Legion patrols need it: Taint 100 rouses TARMIN_LEGION, and a patrol that
+         * reloaded as vermin would never answer.
+         */
+        public String faction;
 
         public MonsterData() {
         }
@@ -568,6 +584,8 @@ public class ChunkData {
             this.maxHP = monster.getMaxHP();
             this.moveSpeed = monster.getMoveSpeed();
             this.allyTurns = monster.getAllyTurns();
+            this.blighted = monster.isBlighted();
+            this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
         }
     }
 

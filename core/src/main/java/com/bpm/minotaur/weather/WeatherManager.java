@@ -298,6 +298,14 @@ public class WeatherManager {
                 if (roll < 0.97f)
                     return WeatherType.SNOW;
                 return WeatherType.BLIZZARD;
+            case BLIGHT:
+                // Castle Tarmin's shadow: never clear, only murk and falling ash -- and,
+                // as everywhere under the Maelstrom, the rare snow.
+                if (roll < 0.38f)
+                    return WeatherType.FOG;
+                if (roll < 0.95f)
+                    return WeatherType.ASHFALL;
+                return WeatherType.SNOW;
             case TUNDRA:
                 if (roll < 0.15f)
                     return WeatherType.CLEAR;
@@ -323,8 +331,11 @@ public class WeatherManager {
             case DESERT:
                 return type == WeatherType.CLEAR || type == WeatherType.TORNADO
                         || type == WeatherType.SNOW || type == WeatherType.BLIZZARD;
+            case BLIGHT:
+                return type == WeatherType.FOG || type == WeatherType.ASHFALL || type == WeatherType.SNOW;
             default:
-                return true;
+                // Ash falls only where the Blight burns; leaving it clears the sky.
+                return type != WeatherType.ASHFALL;
         }
     }
 
@@ -460,6 +471,31 @@ public class WeatherManager {
                         targetFogDistance = 6.5f;
                         targetFogColor.set(0.98f, 0.99f, 1.0f, 1f);
                         globalLightDimmer = 0.60f;
+                        break;
+                }
+                break;
+            case ASHFALL:
+                // Grey ash sifting through crimson murk: close, dim, never white.
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 18f;
+                        targetFogColor.set(0.42f, 0.36f, 0.33f, 1f);
+                        globalLightDimmer = 0.70f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 14f;
+                        targetFogColor.set(0.38f, 0.32f, 0.30f, 1f);
+                        globalLightDimmer = 0.62f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 11f;
+                        targetFogColor.set(0.34f, 0.28f, 0.26f, 1f);
+                        globalLightDimmer = 0.55f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 8f;
+                        targetFogColor.set(0.30f, 0.24f, 0.22f, 1f);
+                        globalLightDimmer = 0.48f;
                         break;
                 }
                 break;
@@ -731,6 +767,8 @@ public class WeatherManager {
                     case HEAVY: return 0.80f;
                     case EXTREME: default: return 0.92f;
                 }
+            case ASHFALL:
+                return 0.95f;
             case BLIZZARD:
             case TORNADO:
             default:
@@ -761,6 +799,9 @@ public class WeatherManager {
                 break;
             case SNOW:
                 out.set(-0.6f * intensityMod, 0f, 0.25f * intensityMod); // gentle drift
+                break;
+            case ASHFALL:
+                out.set(-0.35f * intensityMod, 0f, 0.15f * intensityMod); // ash hangs, barely drifting
                 break;
             default:
                 out.set(-0.2f, 0f, 0.1f);

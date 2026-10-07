@@ -337,6 +337,7 @@ public class SaveManager {
             if (worldManager != null) {
                 worldData.currentLevel = worldManager.getCurrentLevel();
                 worldData.masterSeed = worldManager.getWorldSeed();
+                worldData.worldGenVersion = worldManager.getWorldGenVersion();
                 if (worldManager.getDayNightManager() != null) {
                     worldData.dayNightClock = worldManager.getDayNightManager().getTimeOfDay();
                 }

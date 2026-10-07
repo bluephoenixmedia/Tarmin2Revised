@@ -7,5 +7,7 @@ public enum WeatherType {
     SNOW,
     BLIZZARD,
     FOG,
-    TORNADO
+    TORNADO,
+    /** Falling ash over the Blighted Marches; never outside them. */
+    ASHFALL
 }

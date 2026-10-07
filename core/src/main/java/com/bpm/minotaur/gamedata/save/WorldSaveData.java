@@ -10,6 +10,11 @@ import java.util.List;
  */
 public class WorldSaveData {
     public long masterSeed = 1337L;
+    /**
+     * The algorithm that laid out this world (WorldConstants.WORLD_GEN_*). Saves written
+     * before versions existed have no such field and keep this default: legacy.
+     */
+    public int worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_LEGACY;
     public int currentLevel = 1;
     public int playerChunkX = 0;
     public int playerChunkY = 0;

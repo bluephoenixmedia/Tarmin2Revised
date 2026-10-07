@@ -1779,6 +1779,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setSatiety(PlayerStats.STARTING_SATIETY);
         player.getStats().setHydration(80.0f);
         player.getStats().setToxicity(0);
+        player.getStats().setTaint(0f); // a new expedition starts clean of the Blight
         player.getStatusManager().clearEffects();
         player.abandonTomeStudy();
         player.clearRunSpellsOnDeath();
@@ -3871,6 +3872,11 @@ public class GameScreen extends BaseScreen {
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
             // A trait can make the bed less restful (Paranoid Scout: half).
             float rest = Math.min(1f, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("bedRestMult"));
+            // Taint first: it shrinks max HP, so clearing it after would leave the bed's heal short.
+            if (player.getStats().getTaint() > 0f) {
+                player.getStats().setTaint(0f);
+                eventManager.addEvent(new GameEvent("You sleep the Blight out of your bones.", 2.5f));
+            }
             int hp = player.getStats().getCurrentHP();
             int mp = player.getStats().getCurrentMP();
             player.getStats().setCurrentHP(hp + Math.round((player.getStats().getMaxHP() - hp) * rest));

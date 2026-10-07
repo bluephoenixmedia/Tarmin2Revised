@@ -32,6 +32,9 @@ public class TurnManager {
     private int turnCounter = 0;
     private PlayerStats.SatiationState lastSatiationState = PlayerStats.SatiationState.NORMAL;
     private boolean wasParched = false;
+    /** Last Taint tier seen, so crossing into a tier is announced once. Null until the first tick. */
+    private com.bpm.minotaur.gamedata.blight.Taint.Tier lastTaintTier = null;
+    private int legionMusterTimer = 0;
     private final ShopkeeperAiManager shopkeeperAiManager = new ShopkeeperAiManager();
 
     public TurnManager() {
@@ -425,12 +428,15 @@ public class TurnManager {
             applyExposureTiers(player, stats, eventManager, newTemp);
         }
 
+        updateTaint(player, maze, worldManager, eventManager, time);
+
         player.tickForm(eventManager);
         player.tickTrait(maze, eventManager);
 
         // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)
         PlayerStats.SatiationState satState = stats.getSatiationState();
-        int regenInterval = Math.max(1, Math.round(stats.getRegenIntervalTurns() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("regenMult")));
+        int regenInterval = Math.max(1, Math.round(stats.getRegenIntervalTurns() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("regenMult")))
+                * com.bpm.minotaur.gamedata.blight.Taint.regenIntervalMult(stats.getTaint());
         if (satState != PlayerStats.SatiationState.STARVING && (turnCounter % regenInterval == 0)) {
             if (player.getCurrentHP() < stats.getMaxHP()) {
                 stats.heal(1);
@@ -518,6 +524,101 @@ public class TurnManager {
                     eventManager.addEvent(new GameEvent("You sweat profusely from the intense heat.", 1.5f));
                 }
             }
+        }
+    }
+
+    /**
+     * Blight Taint: rises on the Blight surface, announces each tier it crosses,
+     * keeps HP inside the shrunken maximum, and at full Taint rouses the Legion.
+     * Underground and elsewhere it neither rises nor falls; only the shelter bed,
+     * Ashwater and death clear it.
+     */
+    private void updateTaint(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager,
+                             float time) {
+        PlayerStats stats = player.getStats();
+        boolean onBlight = worldManager != null && worldManager.getCurrentLevel() == 1
+                && maze.getBiome() == Biome.BLIGHT;
+
+        if (onBlight) {
+            DayNightManager dnm = worldManager.getDayNightManager();
+            boolean night = dnm != null && (dnm.getPhase() == DayNightManager.Phase.NIGHT
+                    || dnm.getPhase() == DayNightManager.Phase.DUSK);
+            int px = (int) player.getPosition().x;
+            int py = (int) player.getPosition().y;
+            boolean inRot = maze.getLiquidManager() != null
+                    && maze.getLiquidManager().getLiquidAt(px, py) == com.bpm.minotaur.gamedata.liquid.LiquidType.BLACK_MUCK;
+            boolean warded = player.getInventory() != null
+                    && player.getInventory().hasItemOfType(com.bpm.minotaur.gamedata.item.Item.ItemType.WARD_CHARM);
+            stats.addTaint(com.bpm.minotaur.gamedata.blight.Taint.gainPerTurn(night, inRot, warded) * time);
+        }
+
+        com.bpm.minotaur.gamedata.blight.Taint.Tier tier =
+                com.bpm.minotaur.gamedata.blight.Taint.tierOf(stats.getTaint());
+        if (lastTaintTier != null && tier.ordinal() > lastTaintTier.ordinal() && eventManager != null) {
+            String msg = com.bpm.minotaur.gamedata.blight.Taint.onEnter(tier);
+            if (msg != null) eventManager.addEvent(new GameEvent(msg, 3.0f));
+        }
+        lastTaintTier = tier;
+
+        // Wasting shrinks the maximum; current HP must not sit above it. Not a wound:
+        // it must neither spend temporary HP nor break a channelled action.
+        stats.clampCurrentHPToMax();
+
+        if (onBlight && com.bpm.minotaur.gamedata.blight.Taint.rousesLegion(stats.getTaint())) {
+            // The first muster is the moment Taint is full; then one every interval.
+            if (legionMusterTimer % com.bpm.minotaur.gamedata.blight.Taint.LEGION_MUSTER_INTERVAL == 0) {
+                musterLegion(player, maze, worldManager, eventManager);
+            }
+            legionMusterTimer++;
+        } else {
+            legionMusterTimer = 0;
+        }
+    }
+
+    /**
+     * Full Taint: every Legion soldier in the chunk turns on the player, and if
+     * there are too few of them a fresh patrol marches in through the gate
+     * farthest from the player. Like a gunshot, this ignores line of sight.
+     */
+    private void musterLegion(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager) {
+        GridPoint2 playerTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        int legion = 0;
+        for (Monster m : maze.getMonsters().values()) {
+            if (m == null || m.getFaction() != com.bpm.minotaur.gamedata.monster.Faction.TARMIN_LEGION) continue;
+            legion++;
+            m.setState(Monster.MonsterState.HUNTING);
+            m.setLastKnownTargetPos(new GridPoint2(playerTile));
+        }
+        if (legion >= com.bpm.minotaur.gamedata.blight.Taint.LEGION_MUSTER_CAP) return;
+
+        com.bpm.minotaur.gamedata.monster.MonsterDataManager data = worldManager.getMonsterDataManager();
+        if (data == null) return;
+        GridPoint2 far = null;
+        float best = -1f;
+        for (GridPoint2 gatePos : maze.getGates().keySet()) {
+            // Step one tile inside the gate so the patrol stands on open ground.
+            int gx = Math.max(1, Math.min(maze.getWidth() - 2, gatePos.x));
+            int gy = Math.max(1, Math.min(maze.getHeight() - 2, gatePos.y));
+            if (!maze.isPassable(gx, gy) || maze.getMonsters().containsKey(new GridPoint2(gx, gy))) continue;
+            float d = playerTile.dst2(gx, gy);
+            if (d > best) {
+                best = d;
+                far = new GridPoint2(gx, gy);
+            }
+        }
+        if (far == null) return;
+
+        Monster.MonsterType type = (turnCounter % 2 == 0) ? Monster.MonsterType.ORC : Monster.MonsterType.HOBGOBLIN;
+        Monster patrol = new Monster(type, far.x, far.y,
+                com.bpm.minotaur.gamedata.monster.MonsterColor.RED, data, worldManager.getAssetManager());
+        patrol.scaleStats(worldManager.calculateEffectiveDifficulty(worldManager.getCurrentPlayerChunkId(), 1));
+        patrol.setCurrentHP(patrol.getMaxHP());
+        patrol.setFaction(com.bpm.minotaur.gamedata.monster.Faction.TARMIN_LEGION);
+        patrol.setState(Monster.MonsterState.HUNTING);
+        patrol.setLastKnownTargetPos(new GridPoint2(playerTile));
+        maze.addMonster(patrol);
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("A Legion patrol marches out of the ash toward you.", 2.5f));
         }
     }
 }

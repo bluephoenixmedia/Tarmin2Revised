@@ -85,6 +85,18 @@ public class StatusPillBar extends Table {
             }
         }
 
+        // 2a. Blight Taint. Shown only while there is some: it is the Marches' clock, and it
+        // follows the player home, so they need to see it outside the Blight too.
+        if (player.getStats() != null && player.getStats().getTaint() > 0f) {
+            float taint = player.getStats().getTaint();
+            com.bpm.minotaur.gamedata.blight.Taint.Tier tier = com.bpm.minotaur.gamedata.blight.Taint.tierOf(taint);
+            addPill("TAINT " + (int) Math.ceil(taint), HudSkin.COL_TAINT,
+                    com.bpm.minotaur.gamedata.blight.Taint.title(tier),
+                    "[BLIGHT]",
+                    com.bpm.minotaur.gamedata.blight.Taint.effect(tier),
+                    com.bpm.minotaur.gamedata.blight.Taint.remedy());
+        }
+
         // 2b. Obscuring fog. Positional rather than inflicted, so it has no countdown: it
         // lasts exactly as long as the player stands in the cloud. Worth a pill because it is
         // the reason their shots are being swallowed, and nothing else on screen says so.

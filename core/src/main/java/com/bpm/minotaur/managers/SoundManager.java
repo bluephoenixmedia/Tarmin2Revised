@@ -85,6 +85,8 @@ public class SoundManager {
             windBase = currentBaseVol * 0.95f;
         } else if (lastWeatherType == WeatherType.TORNADO) {
             windBase = 1.0f;
+        } else if (lastWeatherType == WeatherType.ASHFALL) {
+            windBase = currentBaseVol * 0.30f;
         }
 
         float windDampen = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
@@ -356,6 +358,12 @@ public class SoundManager {
                 case TORNADO:
                     if (modernSounds.containsKey("wind_loop")) {
                         currentWindId = modernSounds.get("wind_loop").loop(1.0f * windMod, 0.65f, 0.0f);
+                    }
+                    break;
+                case ASHFALL:
+                    // A low, dead wind: ash does not howl.
+                    if (modernSounds.containsKey("wind_loop")) {
+                        currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * 0.30f * windMod, 0.70f, 0f);
                     }
                     break;
                 default:

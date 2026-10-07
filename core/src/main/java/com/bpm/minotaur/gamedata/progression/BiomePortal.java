@@ -43,7 +43,15 @@ public enum BiomePortal {
             Biome.TUNDRA,
             Item.ItemType.BIOME_PORTAL_TUNDRA,
             new Color(0.70f, 0.90f, 1.0f, 1f),
-            "Frost Gate");
+            "Frost Gate"),
+
+    // The fifth niche. Lands on the castle road, not merely the nearest Blight.
+    BLIGHT(
+            ShelterAltar.Station.PORTAL_BLIGHT,
+            Biome.BLIGHT,
+            Item.ItemType.BIOME_PORTAL_BLIGHT,
+            new Color(0.90f, 0.22f, 0.12f, 1f),
+            "Crimson Gate");
 
     /**
      * Tint for the return portal left at an arrival point. It has no biome of

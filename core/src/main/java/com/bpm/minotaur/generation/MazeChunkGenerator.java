@@ -96,9 +96,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
      * unowned niche shows a bare archway and an owned one holds the portal
      * item; the player stands on the walkway row above and interacts.
      *
-     * <p>Five niches for two portals is deliberate. Desert, Lakelands and
-     * Mountains are deferred work, and reserving their slots now means adding
-     * one is a data row rather than another layout change.
+     * <p>Five niches, five portals: Verdant, Dune, Mist, Frost and Crimson,
+     * left to right in BiomePortal order. A sixth portal needs a layout change.
      */
     String[] homeTile = new String[] {
             "............",

@@ -47,12 +47,14 @@ public class BiomePortalTest {
     @Test
     public void portalDestinationsAreReachableBiomes() {
         // A portal to a biome the world never generates would be a dead button.
-        BiomeManager biomes = new BiomeManager();
+        // Current-version world; 60 is WorldManager.findNearestChunkOfBiome's scan.
+        // BiomeManagerTest sweeps many seeds; this pins one.
+        BiomeManager biomes = new BiomeManager(12345L);
 
         for (BiomePortal portal : BiomePortal.values()) {
             boolean found = false;
             outer:
-            for (int r = 1; r <= 40 && !found; r++) {
+            for (int r = 1; r <= 60 && !found; r++) {
                 for (int x = -r; x <= r; x++) {
                     for (int y = -r; y <= r; y++) {
                         if (Math.max(Math.abs(x), Math.abs(y)) != r) continue;

@@ -761,6 +761,10 @@ public class EntityRenderer {
             float maxBright = Math.max(monsterLight.r, Math.max(monsterLight.g, monsterLight.b));
             boolean inPitchDarkness = maxBright < 0.12f;
 
+            if (monster.isBlighted()) {
+                monsterLight.mul(Monster.BLIGHTED_TINT);
+            }
+
             // Hit recoil flash: bright red/white tint that fades over ~0.12s
             float hitFlash = monster.getHitFlashProgress();
             if (hitFlash < 1f) {

@@ -222,6 +222,10 @@ public class World3DRenderer implements Disposable {
     private static final float LAKELANDS_SCATTER_RANGE = LakelandsAtmosphere.POOL_FOG_DISTANCE;
     /** Tundra basins see across their open frozen lake, so scatter is drawn within basin fog distance. */
     private static final float TUNDRA_SCATTER_RANGE = TundraAtmosphere.BASIN_FOG_DISTANCE;
+    /** This frame's fog switch, so a draw that suspends fog can restore it. */
+    private boolean frameFogEnabled = false;
+    /** Castle Tarmin's billboard, seen through the Blight's crimson haze. */
+    private static final Color CASTLE_LANDMARK_TINT = new Color(0.86f, 0.62f, 0.56f, 1f);
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -599,11 +603,12 @@ public class World3DRenderer implements Disposable {
         // light through its canopy into green-black fog; the desert takes it at full force
         // as amber dust. Both close in along their corridors and open across their clearings.
         Biome mazeBiome = maze.getBiome();
-        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS || mazeBiome == Biome.TUNDRA))
+        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS || mazeBiome == Biome.TUNDRA || mazeBiome == Biome.BLIGHT))
                 ? mazeBiome : null;
         boolean underCanopy = wild == Biome.FOREST;
         boolean onSand = wild == Biome.DESERT;
         boolean inTundra = wild == Biome.TUNDRA;
+        boolean inBlight = wild == Biome.BLIGHT;
         Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
         if (wild != null) {
             float open = OpenGround.openness(maze,
@@ -616,6 +621,8 @@ public class World3DRenderer implements Disposable {
                 DesertAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else if (inTundra) {
                 TundraAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else if (inBlight) {
+                BlightAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else {
                 LakelandsAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             }
@@ -635,6 +642,9 @@ public class World3DRenderer implements Disposable {
                     ? DesertAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
                     : inTundra
                     ? TundraAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : inBlight
+                    ? BlightAtmosphere.fogDistance(wildOpenness,
+                            (wm != null) ? wm.getCurrentWeather() : null, weatherFogDistance)
                     : LakelandsAtmosphere.fogDistance(wildOpenness, weatherFogDistance);
             fogColor.set(wildFogColor);
         }
@@ -718,6 +728,8 @@ public class World3DRenderer implements Disposable {
                 LakelandsAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
             } else if (mazeBiome == Biome.TUNDRA) {
                 TundraAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+            } else if (mazeBiome == Biome.BLIGHT) {
+                BlightAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
             } else {
                 targetAmbientColor.set(skyTint);
             }
@@ -802,6 +814,7 @@ public class World3DRenderer implements Disposable {
             fogColor.set(OBSCURED_FOG_COLOR);
         }
         shader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
+        frameFogEnabled = fogEnabled;
         shader.setUniformf("u_fogDistance", fogDistance);
         shader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
 
@@ -1838,6 +1851,9 @@ public class World3DRenderer implements Disposable {
                     Color tint = (hitFlash < 1f)
                             ? new Color(1f, 1f - (1f - hitFlash) * 0.4f, 1f - (1f - hitFlash) * 0.4f, 1f)
                             : Color.WHITE;
+                    if (m.isBlighted()) {
+                        tint = new Color(tint).mul(Monster.BLIGHTED_TINT);
+                    }
 
                     // Twitchy monster attack telegraph (Eye Flare + Lunge / Retro Threat Aura)
                     if (combatManager != null && combatManager.getAttackIndicatorMonster() == m) {
@@ -2189,10 +2205,23 @@ public class World3DRenderer implements Disposable {
                         tint = glow;
                         shader.setUniformf("u_unlit", 1f);
                     }
+                    // Castle Tarmin is the landmark the Marches are walked toward: it stands
+                    // further off than the murk reaches, so it is drawn through the fog, as
+                    // a silhouette in the haze rather than a lit surface.
+                    boolean landmark = com.bpm.minotaur.generation.BlightChunkGenerator.CASTLE_BILLBOARD_PROP
+                            .equals(sc.getPropId());
+                    if (landmark) {
+                        tint = CASTLE_LANDMARK_TINT;
+                        shader.setUniformf("u_unlit", 1f);
+                        shader.setUniformf("u_fogEnabled", 0f);
+                    }
                     dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
-                    if (glow != null) {
+                    if (glow != null || landmark) {
                         shader.setUniformf("u_unlit", 0f);
+                    }
+                    if (landmark) {
+                        shader.setUniformf("u_fogEnabled", frameFogEnabled ? 1.0f : 0.0f);
                     }
                 }
             } else if (r instanceof Ladder) {
