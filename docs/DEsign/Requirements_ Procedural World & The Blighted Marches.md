@@ -153,7 +153,7 @@ A 0-100 meter on `PlayerStats`, saved with the player.
 | Night / dusk | x2 |
 | Standing in a rot pool | +0.5 per turn |
 | Carrying a ward charm | Gain x0.5 |
-| Hit by a Blighted monster | +3 |
+| Hit by a Blighted monster | +3 per wounding melee blow. The ward does not reduce it (decided 2026-10-07): it keeps out the air, not a claw. |
 | 25+ | Natural regeneration takes twice as long |
 | 50+ | Max HP -15% |
 | 75+ | Max HP -30% |
