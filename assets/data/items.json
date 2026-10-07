@@ -6329,6 +6329,29 @@
         "baseValue": 5,
         "isUsable": true
     },
+    "TINDER_BUNDLE": {
+        "friendlyName": "Tinder Bundle",
+        "description": "Dry bark, pitch and shavings bound with twine. Enough to wake a cold shelter hearth and claim the shelter as your own.",
+        "texturePath": "images/items/stick.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 15,
+        "isUsable": false
+    },
+    "SHELTER_HEARTH_COLD": {
+        "friendlyName": "Cold Hearth",
+        "description": "A shelter hearth gone to ash. Light it with a Tinder Bundle to claim the shelter.",
+        "texturePath": "images/blight/ash_mound_01.png",
+        "isImpassable": true
+    },
+    "SHELTER_HEARTH_LIT": {
+        "friendlyName": "Shelter Hearth",
+        "description": "Your fire, burning. This shelter is yours.",
+        "texturePath": "images/props/campfire.png",
+        "isImpassable": true
+    },
     "WARD_CHARM": {
         "friendlyName": "Ward Charm",
         "description": "A knot of iron nails and saint's hair bound in red thread. Carried, it slows the Blight's taint from settling into you.",

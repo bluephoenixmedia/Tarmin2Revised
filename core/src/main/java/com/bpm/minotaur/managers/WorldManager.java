@@ -516,6 +516,7 @@ public class WorldManager {
                         }
                         pendingUpLadderPos = null;
                     }
+                    applyShelterState(maze, chunkId);
                     loadedChunks.put(chunkId, maze);
                     return maze;
                 }
@@ -566,6 +567,7 @@ public class WorldManager {
 
         newMaze.setGoreManager(this.goreManager);
         newMaze.setChunkId(chunkId);
+        buildShelterRoadSites(newMaze, chunkId, biome);
         placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
 
         // Themed Chunk Decoration
@@ -631,6 +633,7 @@ public class WorldManager {
             }
         }
 
+        applyShelterState(newMaze, chunkId);
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
 
@@ -942,12 +945,98 @@ public class WorldManager {
                 }
             }
         }
+        com.bpm.minotaur.generation.ShelterRoads oldRoads = biomeManager.getRoads();
         this.worldSeed = new java.util.Random().nextLong();
         // Every chunk file is gone, so nothing old can meet the new layout:
         // a legacy world moves to the current algorithm here.
         this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
         rebuildBiomeManager();
+        // The new world remembers how far the player got along each road.
+        this.respawnChunk = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
+                .carryOverDeath(oldRoads, biomeManager.getRoads());
         Gdx.app.log("WorldManager", "Explored world wiped on death. New world seed: " + this.worldSeed);
+    }
+
+    /** Where the player wakes after the last death: a shelter chunk, or null for home. */
+    private GridPoint2 respawnChunk;
+
+    /** The chunk the player wakes in after a death: a remembered road shelter, or home. */
+    public GridPoint2 getRespawnChunk() {
+        return respawnChunk == null ? new GridPoint2(0, 0) : new GridPoint2(respawnChunk);
+    }
+
+    /**
+     * A save laid out before the shelter roads is wiped and laid out again, once, on load.
+     * No penalty: the old world simply had no roads to remember.
+     *
+     * @return true if the world was upgraded
+     */
+    public boolean upgradeWorldIfOutdated() {
+        if (worldGenVersion >= com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT) return false;
+        loadedChunks.clear();
+        levelThemes.clear();
+        seenChoiceEvents.clear();
+        FileHandle dir = Gdx.files.local(getChunkSaveDir());
+        if (dir.exists()) {
+            for (FileHandle f : dir.list()) {
+                if (!f.isDirectory() && f.name().endsWith(".json")) f.delete();
+            }
+        }
+        this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
+        rebuildBiomeManager();
+        com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().carryOverDeath(null, biomeManager.getRoads());
+        this.currentLevel = 1;
+        this.currentPlayerChunkId = new GridPoint2(0, 0);
+        log("World laid out again for world-gen version " + worldGenVersion);
+        return true;
+    }
+
+    /** Stamps this chunk's outpost shelter or seal site, if the roads put one here. */
+    private void buildShelterRoadSites(Maze maze, GridPoint2 chunkId, Biome biome) {
+        if (currentLevel != 1 || biome == Biome.MAZE || gameMode == GameMode.CLASSIC) return;
+        com.bpm.minotaur.generation.ShelterRoads.Site site = biomeManager.getShelterSite(chunkId);
+        if (site != null) {
+            com.bpm.minotaur.generation.ShelterBuilder.buildOutpost(maze, biome, itemDataManager, assetManager);
+            return;
+        }
+        int sealRoad = biomeManager.getSealRoad(chunkId);
+        if (sealRoad >= 0) {
+            com.bpm.minotaur.generation.ShelterBuilder.buildSealSite(maze,
+                    com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(sealRoad), assetManager);
+        }
+    }
+
+    /**
+     * Brings a shelter chunk in line with the shelter network: a claimed shelter is lit and
+     * furnished with every unlocked station, and lights lost on save come back.
+     */
+    private void applyShelterState(Maze maze, GridPoint2 chunkId) {
+        if (maze == null || currentLevel != 1) return;
+        boolean home = chunkId.x == 0 && chunkId.y == 0;
+        if (!home && maze.getHearthTile() == null) return;
+        if (!home && !maze.isSanctuary()
+                && com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().isClaimed(chunkId)) {
+            com.bpm.minotaur.generation.ShelterBuilder.light(maze, itemDataManager, assetManager);
+        }
+        if (maze.isSanctuary()) {
+            com.bpm.minotaur.generation.ShelterBuilder.relightHearth(maze);
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().furnish(maze, itemDataManager, assetManager);
+        }
+    }
+
+    /**
+     * Claims the shelter the player stands in: lights it, furnishes it, and records it.
+     *
+     * @return false if this chunk holds no cold shelter
+     */
+    public boolean claimShelter(Maze maze) {
+        if (maze == null || maze.getChunkId() == null || maze.getHearthTile() == null || maze.isSanctuary()) {
+            return false;
+        }
+        com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().claim(maze.getChunkId());
+        applyShelterState(maze, maze.getChunkId());
+        saveCurrentChunk(maze);
+        return true;
     }
 
     public BiomeManager getBiomeManager() {
@@ -1339,10 +1428,16 @@ public class WorldManager {
     public PortalWarp prepareBiomeWarp(com.bpm.minotaur.gamedata.progression.BiomePortal portal) {
         if (portal == null) return null;
 
-        // The Crimson Gate lands on the castle road, the one Blight guaranteed to reach the castle.
-        GridPoint2 target = (portal.getDestination() == Biome.BLIGHT && biomeManager.getCastleSite() != null)
-                ? biomeManager.findCorridorBlightEntry()
-                : findNearestChunkOfBiome(portal.getDestination());
+        // Portals land beside the first castle-road shelter in their biome, so they skip
+        // ahead on the road to the castle rather than drop the player anywhere.
+        GridPoint2 target = firstCastleRoadShelterIn(portal.getDestination());
+        if (target == null) {
+            // Older worlds have no roads. The Crimson Gate lands on the castle corridor, the
+            // one Blight guaranteed to reach the castle.
+            target = (portal.getDestination() == Biome.BLIGHT && biomeManager.getCastleSite() != null)
+                    ? biomeManager.findCorridorBlightEntry()
+                    : findNearestChunkOfBiome(portal.getDestination());
+        }
         if (target == null) {
             log("No chunk of biome " + portal.getDestination() + " found within scan range.");
             return null;
@@ -1351,12 +1446,24 @@ public class WorldManager {
         Maze destination = loadChunk(target);
         if (destination == null) return null;
 
+        GridPoint2 entry = destination.getShelterEntry();
         GridPoint2 arrival = findSafeArrivalTile(destination,
-                destination.getWidth() / 2, destination.getHeight() / 2);
+                entry != null ? entry.x : destination.getWidth() / 2,
+                entry != null ? entry.y - 1 : destination.getHeight() / 2);
         if (arrival == null) return null;
 
         placeReturnPortalNear(destination, arrival);
         return new PortalWarp(target, arrival);
+    }
+
+    /** The nearest-to-home shelter on the castle road whose chunk is this biome, or null. */
+    public GridPoint2 firstCastleRoadShelterIn(Biome biome) {
+        com.bpm.minotaur.generation.ShelterRoads roads = biomeManager.getRoads();
+        if (roads == null || biome == null) return null;
+        for (GridPoint2 c : roads.getRoad(com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD).getShelters()) {
+            if (biomeManager.getBiome(c) == biome) return c;
+        }
+        return null;
     }
 
     /** Sends the player from a return portal back to the shelter. */

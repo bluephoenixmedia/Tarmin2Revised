@@ -172,8 +172,7 @@ public enum BiomePortal {
         if (!DEBUG_UNLOCK_ALL || maze == null) return;
 
         for (BiomePortal portal : values()) {
-            for (com.badlogic.gdx.math.GridPoint2 tile
-                    : ShelterAltar.getInstance().getStationLocations(portal.getStation())) {
+            for (com.badlogic.gdx.math.GridPoint2 tile : maze.getStationSlots(portal.getStation())) {
                 portal.materialise(maze, tile, itemDataManager, assetManager);
             }
         }

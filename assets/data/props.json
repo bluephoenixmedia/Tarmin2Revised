@@ -332,6 +332,15 @@
       "passable": false
     },
     {
+      "id": "seal_gate",
+      "asset": "images/gate.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.6,
+      "scaleY": 2.0,
+      "passable": false,
+      "emissiveTint": { "r": 0.75, "g": 0.70, "b": 0.95 }
+    },
+    {
       "id": "castle_gate",
       "asset": "images/gate.png",
       "renderMode": "SPRITE",
