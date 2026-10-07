@@ -146,11 +146,11 @@ Beacons are drawn the way the castle is: on the skybox, at the real bearing to t
 
 Death still **wipes the explored world and rerolls the seed**. The new world remembers how far the player got along each road:
 
-- Each road keeps its **claimed count**. The new world generates its roads and pre-claims the first N shelters on each.
-- **The road of the last shelter rested in loses one.** If that shelter was home or an off-road shelter, no road loses anything.
+- Each road keeps its **claimed places**: the new world generates its roads and pre-claims the same positions on each (the first, the fourth, ...), so a player who skipped ahead keeps their place. Places past the end of a shorter new road are lost.
+- **The road of the last shelter rested in loses one**: its furthest-out claim. If that shelter was home or an off-road shelter, no road loses anything.
 - A road whose seal has been won never loses a shelter.
 - **Off-road shelters are always forgotten.**
-- **Respawn**: the player wakes at the shelter in the same position on the same road as the last rest. If that position was lost to the penalty, they wake one shelter back. If they last rested at home or off-road, they wake at home.
+- **Respawn**: the player wakes at the shelter in the same position on the same road as the last rest. If that position was lost to the penalty, they wake at the nearest remembered shelter behind it on that road, or at home if none is left. If they last rested at home or off-road, they wake at home.
 - The Corpse Run and the Doom Clock are unchanged.
 
 **Acceptance**
@@ -179,6 +179,7 @@ Add to `DebugCheats`, listed in `DebugKeys` so the legend matches:
 - `;` warps to the next castle-road shelter (cycles *n*).
 - `'` warps to the next seal site (cycles *k*).
 - `\` claims every shelter on the road last warped to (castle road by default).
+- `/` grants the seal of the last seal road warped to (else the next seal not held).
 
 ---
 
