@@ -64,7 +64,7 @@ public class CastleMapScreen extends BaseScreen {
         BIOME_STYLES.put(Biome.DESERT, new BiomeStyle(new Color(0.30f, 0.26f, 0.14f, 0.9f), "D", "Desert"));
         BIOME_STYLES.put(Biome.LAKELANDS, new BiomeStyle(new Color(0.10f, 0.20f, 0.28f, 0.9f), "L", "Lakelands"));
         BIOME_STYLES.put(Biome.TUNDRA, new BiomeStyle(new Color(0.20f, 0.32f, 0.42f, 0.9f), "T", "Tundra"));
-        BIOME_STYLES.put(Biome.BLIGHT, new BiomeStyle(new Color(0.30f, 0.12f, 0.10f, 0.9f), "B", "Blighted Marches"));
+        BIOME_STYLES.put(Biome.BLIGHT, new BiomeStyle(com.bpm.minotaur.rendering.HudSkin.COL_MAP_BLIGHT, "B", "Blighted Marches"));
         BIOME_STYLES.put(Biome.MOUNTAINS, new BiomeStyle(new Color(0.15f, 0.15f, 0.17f, 0.9f), "A", "Mountains (impassable)"));
         BIOME_STYLES.put(Biome.OCEAN, new BiomeStyle(new Color(0.08f, 0.12f, 0.24f, 0.9f), "O", "Ocean (impassable)"));
     }

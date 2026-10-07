@@ -227,6 +227,7 @@ public class Skybox3DRenderer {
             float py = chunk.y + player.getPosition().y / h - 0.5f;
             worldSkyState.castleDX = site.x - px;
             worldSkyState.castleDY = site.y - py;
+            worldSkyState.inCastleChunk = site.equals(chunk);
         }
 
         updateSky(delta, worldSkyState);
@@ -266,6 +267,8 @@ public class Skybox3DRenderer {
         /** From the player to the castle site, in chunks (x east, y north). */
         public float castleDX;
         public float castleDY;
+        /** The player stands in the castle chunk, where the world billboard is drawn. */
+        public boolean inCastleChunk;
         /**
          * Pins animation time instead of accumulating it. NaN (the default) means "run normally".
          * Captures set this so cloud drift, ember flicker and heat-lightning land identically on
@@ -421,9 +424,13 @@ public class Skybox3DRenderer {
         float dz = -state.castleDY;
         float chunksAway = (float) Math.sqrt(dx * dx + dz * dz);
 
-        // Inside the castle chunk the billboard in the world is the castle.
-        if (chunksAway < 0.75f) {
+        // Inside the castle chunk the billboard in the world is the castle. Only there:
+        // the billboard is not drawn from neighbouring chunks, so the sky keeps it until then.
+        if (state.inCastleChunk) {
             castleHidden = true;
+            return;
+        }
+        if (chunksAway < 0.01f) {
             return;
         }
         float dirX = dx / chunksAway;

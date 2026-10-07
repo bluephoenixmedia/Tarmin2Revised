@@ -100,6 +100,40 @@ public final class Taint {
         return taint >= CLAIMED_AT;
     }
 
+    /** HUD title for a tier. */
+    public static String title(Tier tier) {
+        switch (tier) {
+            case FESTERING: return "Festering Taint";
+            case WASTING:   return "Wasting Taint";
+            case CONSUMED:  return "Consuming Taint";
+            case CLAIMED:   return "Claimed by the Blight";
+            default:        return "Blight Taint";
+        }
+    }
+
+    /** HUD effect line for a tier, built from the tuning so it cannot go stale. */
+    public static String effect(Tier tier) {
+        String slow = "Natural healing takes " + SLOWED_REGEN_MULT + "x as long";
+        switch (tier) {
+            case FESTERING: return slow + ".";
+            case WASTING:   return slow + ", and maximum HP " + percentLoss(WASTING_MAX_HP_MULT) + ".";
+            case CONSUMED:  return slow + ", and maximum HP " + percentLoss(CONSUMED_MAX_HP_MULT) + ".";
+            case CLAIMED:   return slow + ", maximum HP " + percentLoss(CONSUMED_MAX_HP_MULT)
+                    + ", and the Tarmin Legion hunts you.";
+            default:        return "The Blight's rot is settling in. It rises on the Marches, faster at night and in rot pools.";
+        }
+    }
+
+    /** HUD remedy line. */
+    public static String remedy() {
+        return "Rest in your shelter bed, or drink Ashwater (-" + Math.round(ASHWATER_CLEANSE)
+                + "). A carried Ward Charm slows the gain.";
+    }
+
+    private static String percentLoss(float mult) {
+        return "-" + Math.round((1f - mult) * 100f) + "%";
+    }
+
     /** What crossing into a tier tells the player; null where nothing need be said. */
     public static String onEnter(Tier tier) {
         switch (tier) {

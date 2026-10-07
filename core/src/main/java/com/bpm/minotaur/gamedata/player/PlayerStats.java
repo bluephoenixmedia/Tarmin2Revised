@@ -356,6 +356,18 @@ public class PlayerStats {
 
     private int woundsTaken;
 
+    /**
+     * Pulls current HP down to a maximum that has shrunk (Blight Taint). Unlike
+     * {@link #setCurrentHP}, this is not damage: no wound is counted and
+     * temporary HP is untouched.
+     */
+    public void clampCurrentHPToMax() {
+        int max = getMaxHP();
+        if (currentHP > max) {
+            currentHP = max;
+        }
+    }
+
     public int getCurrentMP() {
         return currentMP;
     }

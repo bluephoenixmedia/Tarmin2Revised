@@ -419,7 +419,6 @@ public class SaveSlotSelectScreen extends BaseScreen {
         game.setScreen(gameScreen);
 
         if (worldData != null && gameScreen.getWorldManager() != null) {
-
             if (worldData.factionMatrix != null && !worldData.factionMatrix.trim().isEmpty()) {
                 gameScreen.getWorldManager().setFactionMatrix(
                         com.bpm.minotaur.gamedata.monster.FactionMatrix.deserialize(worldData.factionMatrix));

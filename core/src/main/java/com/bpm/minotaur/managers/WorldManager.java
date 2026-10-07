@@ -1283,7 +1283,15 @@ public class WorldManager {
 
         PortalWarp warp;
         String message;
-        if (portal != null) {
+        if (portal != null && portal.getDestination() == Biome.BLIGHT && biomeManager.isLegacy()) {
+            // A legacy world has no Blight. It takes the current layout when it is next
+            // wiped (death or world reset), and the gate opens from then on.
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                        "The Crimson Gate finds no Blight in this old world. It will open once the world is reborn.", 3.0f));
+            }
+            return true;
+        } else if (portal != null) {
             warp = prepareBiomeWarp(portal);
             message = "You step through the " + portal.getDisplayName() + "...";
         } else if (target.getType() == Item.ItemType.BIOME_RETURN_PORTAL) {

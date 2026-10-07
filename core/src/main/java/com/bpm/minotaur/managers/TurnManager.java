@@ -560,17 +560,16 @@ public class TurnManager {
         }
         lastTaintTier = tier;
 
-        // Wasting shrinks the maximum; current HP must not sit above it.
-        if (stats.getCurrentHP() > stats.getMaxHP()) {
-            stats.setCurrentHP(stats.getMaxHP());
-        }
+        // Wasting shrinks the maximum; current HP must not sit above it. Not a wound:
+        // it must neither spend temporary HP nor break a channelled action.
+        stats.clampCurrentHPToMax();
 
         if (onBlight && com.bpm.minotaur.gamedata.blight.Taint.rousesLegion(stats.getTaint())) {
-            legionMusterTimer++;
-            if (legionMusterTimer >= com.bpm.minotaur.gamedata.blight.Taint.LEGION_MUSTER_INTERVAL) {
-                legionMusterTimer = 0;
+            // The first muster is the moment Taint is full; then one every interval.
+            if (legionMusterTimer % com.bpm.minotaur.gamedata.blight.Taint.LEGION_MUSTER_INTERVAL == 0) {
                 musterLegion(player, maze, worldManager, eventManager);
             }
+            legionMusterTimer++;
         } else {
             legionMusterTimer = 0;
         }

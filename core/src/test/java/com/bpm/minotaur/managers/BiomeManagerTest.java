@@ -52,6 +52,51 @@ public class BiomeManagerTest {
     }
 
     @Test
+    public void legacyWorldsMatchThePreVersioningAlgorithmChunkForChunk() {
+        // A frozen copy of BiomeManager.getBiome as it stood on develop before world-gen
+        // versions (9b2c6ba1). Legacy saves have chunks on disk placed by it.
+        com.bpm.minotaur.generation.FastNoiseLite noise = new com.bpm.minotaur.generation.FastNoiseLite(12345);
+        noise.SetNoiseType(com.bpm.minotaur.generation.FastNoiseLite.NoiseType.OpenSimplex2);
+        noise.SetFrequency(0.02f);
+        com.bpm.minotaur.generation.FastNoiseLite humidity = new com.bpm.minotaur.generation.FastNoiseLite(12345 + 1013);
+        humidity.SetNoiseType(com.bpm.minotaur.generation.FastNoiseLite.NoiseType.OpenSimplex2);
+        humidity.SetFrequency(0.08f);
+
+        BiomeManager legacy = new BiomeManager();
+        for (int x = -60; x <= 60; x++) {
+            for (int y = -60; y <= 60; y++) {
+                Biome expected;
+                int cheb = Math.max(Math.abs(x), Math.abs(y));
+                float e = noise.GetNoise(x, y);
+                float h = humidity.GetNoise(x, y);
+                if (cheb <= 10) expected = Biome.MAZE;
+                else if (cheb <= 15) expected = Biome.FOREST;
+                else if (e < -0.3f) expected = Biome.OCEAN;
+                else if (e > 0.6f) expected = Biome.MOUNTAINS;
+                else if (y >= 16) expected = Biome.TUNDRA;
+                else if (h < -0.30f) expected = Biome.DESERT;
+                else if (h > 0.30f) expected = Biome.LAKELANDS;
+                else expected = Biome.FOREST;
+                assertSame("legacy chunk " + x + "," + y, expected, legacy.getBiome(new GridPoint2(x, y)));
+            }
+        }
+    }
+
+    @Test
+    public void worldGenVersionRoundTripsAndOldSavesReadAsLegacy() {
+        com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
+        com.bpm.minotaur.gamedata.save.WorldSaveData data = new com.bpm.minotaur.gamedata.save.WorldSaveData();
+        data.worldGenVersion = WorldConstants.WORLD_GEN_CURRENT;
+        com.bpm.minotaur.gamedata.save.WorldSaveData back =
+                json.fromJson(com.bpm.minotaur.gamedata.save.WorldSaveData.class, json.toJson(data));
+        assertEquals(WorldConstants.WORLD_GEN_CURRENT, back.worldGenVersion);
+
+        com.bpm.minotaur.gamedata.save.WorldSaveData old =
+                json.fromJson(com.bpm.minotaur.gamedata.save.WorldSaveData.class, "{masterSeed:777,currentLevel:1}");
+        assertEquals("a save from before versions is legacy", WorldConstants.WORLD_GEN_LEGACY, old.worldGenVersion);
+    }
+
+    @Test
     public void theLegacyLayoutIgnoresTheWorldSeed() {
         BiomeManager a = new BiomeManager(1L, WorldConstants.WORLD_GEN_LEGACY);
         BiomeManager b = new BiomeManager(987654321L, WorldConstants.WORLD_GEN_LEGACY);
