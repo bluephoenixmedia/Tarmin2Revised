@@ -1,6 +1,6 @@
 # Requirements: Shelter Roads
 
-**Status**: Agreed, not started. Branch `feat/shelter-roads`, cut from `develop` after the Blight merge, because it builds on the castle corridor and world-gen versioning (target: 0.0.2).
+**Status**: Implemented on branch `feat/shelter-roads`, cut from `develop` after the Blight merge, because it builds on the castle corridor and world-gen versioning (target: 0.0.2).
 **Date**: October 2026
 **Origin**: design grilling session, 2026-10-07. The designer was asked and answered every decision below.
 **Related Documents**:
@@ -78,7 +78,7 @@ What the code does today:
   - Each of the **three seal roads** ends at a seal site (§7).
 - **Seal-site distances are staggered**, giving a difficulty ladder that lines up with the portal tiers. Defaults are **20, 30 and 40 chunks**. The seed decides which road gets which distance. All three are tunables in `WorldConstants` and listed in `docs/tuning_knobs.md`.
 - Every road gets the castle corridor's walkability guarantee: no OCEAN or MOUNTAINS within 1 chunk of the line, so every road can always be walked overland.
-- **Road shelters** sit every **8-10 chunks** (tunable) along each road, starting one spacing out from the maze edge. That gives about 5 on the castle road.
+- **Road shelters** sit every **8-10 chunks** (tunable) along each road, the first 3 chunks past the maze edge, none within 3 chunks of the road's end. That gives about 5 on the castle road. A road too short for that (a 20-chunk seal road on a diagonal leaves the maze 14 chunks out) still gets one shelter, halfway from the maze edge to the seal site.
 - **Off-road shelters**: about 1 per 150 surface chunks outside the roads, at least 8 chunks from any other shelter (both tunable).
 - Shelter positions are deterministic for a given seed. They are worked out from the seed alone and never depend on which chunks have been generated.
 
@@ -92,9 +92,9 @@ What the code does today:
 
 ## 5. Claiming a shelter: Tinder Bundle
 
-- New item `TINDER_BUNDLE`. The player starts with 2.
-- Crafted at the Campfire or Crafting Bench from common materials (for example `FIREWOOD` plus a common fibre or dry material from the existing materials list). The recipe is chosen at implementation time and logged in `docs/tuning_knobs.md`.
-- It also drops in normal container loot, more often in chunks on a road.
+- New item `TINDER_BUNDLE`. A new character starts with 2, and a respawn tops the pack up to 1.
+- Crafted at the Crafting Bench (and the field toolkit): 2 Sticks make 1 bundle, 1 Firewood makes 2. Logged in `docs/tuning_knobs.md`.
+- It also drops in normal container loot (weight 8), and half of all outposts keep a bundle by the door, so it turns up more often along the roads.
 - **Lighting the hearth**: bump or use the cold hearth while carrying tinder. It is a channelled action of about **5 turns** (tunable), interrupted by taking damage, and it uses up one bundle. When it finishes, the shelter is claimed, its stations appear, and it becomes a sanctuary.
 - The home shelter is always claimed.
 - Tinder must never become a hard lock: it can always be crafted from common materials.
@@ -176,9 +176,9 @@ Death still **wipes the explored world and rerolls the seed**. The new world rem
 ## 11. Debug
 
 Add to `DebugCheats`, listed in `DebugKeys` so the legend matches:
-- Warp to castle-road shelter *n*.
-- Warp to seal site *k*.
-- Claim all shelters on road *k*.
+- `;` warps to the next castle-road shelter (cycles *n*).
+- `'` warps to the next seal site (cycles *k*).
+- `\` claims every shelter on the road last warped to (castle road by default).
 
 ---
 
