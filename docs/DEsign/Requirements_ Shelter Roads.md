@@ -1,6 +1,6 @@
 # Requirements: Shelter Roads
 
-**Status**: Agreed, not started. Branch `feat/shelter-roads`, which is cut from `feat/procedural-world-blight` because it builds on the castle corridor and world-gen versioning (target: 0.0.2).
+**Status**: Agreed, not started. Branch `feat/shelter-roads`, cut from `develop` after the Blight merge, because it builds on the castle corridor and world-gen versioning (target: 0.0.2).
 **Date**: October 2026
 **Origin**: design grilling session, 2026-10-07. The designer was asked and answered every decision below.
 **Related Documents**:
