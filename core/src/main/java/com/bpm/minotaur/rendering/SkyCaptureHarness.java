@@ -102,7 +102,30 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             new Shot("13_noon_doom_50", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 0.5f),
             new Shot("14_noon_doom_100", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 1f),
             new Shot("15_night_doom_100", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 1f),
+
+            // Shelter beacons ahead: the next castle-road shelter, a claimed one, an off-road
+            // shelter's smoke and a seal pillar, by day and by night.
+            new Shot("16_noon_beacons_north", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("17_night_beacons_north", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
     };
+
+    /** The beacons the beacon shots stand up, north of the camera. */
+    private static java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> sampleBeacons() {
+        java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> list = new java.util.ArrayList<>();
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(1, 9),
+                1f, 9f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(0), false));
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(-5, 4),
+                -5f, 4f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.GLOW,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(0), false));
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(8, 10),
+                8f, 10f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(-1), false));
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(-9, 12),
+                -9f, 12f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.PILLAR,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(1), false));
+        return list;
+    }
 
     /** Banner dimensions for the RETRO raycaster's static directional skyboxes. */
     private static final int BANNER_WIDTH = 1024;
@@ -207,6 +230,7 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         state.chunkYProgress = shot.northProgress * 25f;
         state.chunkX = 0;
         state.timeOverride = CAPTURE_TIME;
+        state.beacons = shot.name.contains("beacons") ? sampleBeacons() : null;
 
         skybox.renderDirect(viewport, state, 1f / 60f);
 

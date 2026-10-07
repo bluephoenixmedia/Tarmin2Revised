@@ -29,7 +29,7 @@ public final class BeaconPlanner {
         private final Color color;
         private final boolean spent;
 
-        Beacon(GridPoint2 chunk, float dx, float dy, Kind kind, Color color, boolean spent) {
+        public Beacon(GridPoint2 chunk, float dx, float dy, Kind kind, Color color, boolean spent) {
             this.chunk = chunk;
             this.dx = dx;
             this.dy = dy;

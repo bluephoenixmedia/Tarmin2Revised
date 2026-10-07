@@ -75,6 +75,11 @@ public class Skybox3DRenderer {
     private ModelInstance spireInstance;
     private ModelInstance mountainInstance;
 
+    // Shelter beacons: one unit column, stood up once per visible beacon at its real bearing.
+    private Model beaconModel;
+    private final com.badlogic.gdx.utils.Array<ModelInstance> beaconPool = new com.badlogic.gdx.utils.Array<>();
+    private int beaconsShown;
+
     private WeatherType currentWeather = WeatherType.CLEAR;
 
     // Dynamic Atmosphere & Weather Tracking
@@ -183,10 +188,81 @@ public class Skybox3DRenderer {
                 domeModel = loader.loadModel(Gdx.files.internal("models/skybox/celestial_dome.obj"));
             }
 
+            buildBeaconModel();
+
             isInitialized = (castleInstance != null && spireInstance != null && domeModel != null);
             Gdx.app.log(TAG, "3D Skybox models successfully loaded. Initialized: " + isInitialized);
         } catch (Throwable t) {
             Gdx.app.error(TAG, "Error loading 3D skybox models: " + t.getMessage(), t);
+        }
+    }
+
+    /** A unit column, base at the origin, for the shelter beacons. Coloured per instance. */
+    private void buildBeaconModel() {
+        com.badlogic.gdx.graphics.g3d.utils.ModelBuilder mb = new com.badlogic.gdx.graphics.g3d.utils.ModelBuilder();
+        mb.begin();
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder part = mb.part("beacon", GL20.GL_TRIANGLES,
+                com.badlogic.gdx.graphics.VertexAttributes.Usage.Position | com.badlogic.gdx.graphics.VertexAttributes.Usage.Normal,
+                new Material());
+        com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BoxShapeBuilder.build(part, 0f, 0.5f, 0f, 1f, 1f, 1f);
+        beaconModel = mb.end();
+    }
+
+    private ModelInstance beaconInstance(int i) {
+        while (beaconPool.size <= i) {
+            ModelInstance inst = new ModelInstance(beaconModel);
+            Material m = inst.materials.first();
+            m.set(new com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE, 0.8f));
+            m.set(new com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute(GL20.GL_LEQUAL, false));
+            beaconPool.add(inst);
+        }
+        return beaconPool.get(i);
+    }
+
+    /**
+     * Stands each beacon on its bearing: nearer beacons stand closer and taller.
+     *
+     * <p>By day a road shelter's beacon is a smoke column in its road's colour; by night the
+     * same column burns. A claimed shelter keeps a steady, narrower glow; a seal site is a tall
+     * pillar. A road whose seal is won burns dimmed. See docs/DEsign/Requirements_ Shelter Roads.md.
+     */
+    private void placeBeacons(SkyState state, float camX, float camZ, float brightness) {
+        beaconsShown = 0;
+        if (beaconModel == null || state.beacons == null) return;
+        boolean night = brightness < 0.45f;
+        float range = com.bpm.minotaur.generation.WorldConstants.BEACON_RANGE_CHUNKS;
+        for (com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon b : state.beacons) {
+            float dx = b.getDx();
+            float dz = -b.getDy();
+            float chunks = (float) Math.sqrt(dx * dx + dz * dz);
+            if (chunks < 0.01f) continue;
+            float near = 1f - MathUtils.clamp(chunks / range, 0f, 1f);
+            float dist = LANDMARK_DISTANCE * (0.45f + 0.5f * (1f - near));
+            float width, height;
+            switch (b.getKind()) {
+                case PILLAR: width = 0.022f * dist; height = 95f; break;
+                case GLOW:   width = 0.010f * dist; height = 26f + 20f * near; break;
+                default:     width = 0.016f * dist; height = 34f + 30f * near; break;
+            }
+            Color c = b.getColor();
+            float glow = night || b.getKind() == com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.PILLAR ? 1f : 0.55f;
+            if (b.isSpent()) glow *= com.bpm.minotaur.gamedata.shelter.BeaconPalette.SPENT;
+            if (!night && b.getKind() == com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE) {
+                // Daylight smoke: the road's colour through grey.
+                c.lerp(com.bpm.minotaur.gamedata.shelter.BeaconPalette.SMOKE, 0.5f);
+            }
+            ModelInstance inst = beaconInstance(beaconsShown++);
+            Material m = inst.materials.first();
+            m.set(ColorAttribute.createDiffuse(c.r * 0.2f, c.g * 0.2f, c.b * 0.2f, 1f));
+            m.set(ColorAttribute.createEmissive(c.r * glow, c.g * glow, c.b * glow, 1f));
+            ((com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute)
+                    m.get(com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute.Type)).opacity =
+                    (night ? 0.85f : 0.6f) * (b.isSpent() ? 0.6f : 1f);
+            float dirX = dx / chunks;
+            float dirZ = dz / chunks;
+            inst.transform.idt()
+                    .setToTranslation(camX + dirX * dist, -6f, camZ + dirZ * dist)
+                    .scale(width, height, width);
         }
     }
 
@@ -230,6 +306,19 @@ public class Skybox3DRenderer {
             worldSkyState.inCastleChunk = site.equals(chunk);
         }
 
+        // Shelter beacons, by the same chunk-space position the castle bearing uses.
+        worldSkyState.beacons = null;
+        if (worldManager != null && worldManager.getBiomeManager() != null
+                && worldManager.getBiomeManager().getRoads() != null && worldManager.getCurrentLevel() == 1) {
+            com.bpm.minotaur.gamedata.Maze here = worldManager.getCurrentMaze();
+            float w = (here != null && here.getWidth() > 0) ? here.getWidth() : 1f;
+            float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 1f;
+            worldSkyState.beacons = com.bpm.minotaur.gamedata.shelter.BeaconPlanner.visible(
+                    worldManager.getBiomeManager(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance(),
+                    chunk.x + player.getPosition().x / w - 0.5f, chunk.y + player.getPosition().y / h - 0.5f,
+                    com.bpm.minotaur.generation.WorldConstants.BEACON_RANGE_CHUNKS);
+        }
+
         updateSky(delta, worldSkyState);
     }
 
@@ -269,6 +358,8 @@ public class Skybox3DRenderer {
         public float castleDY;
         /** The player stands in the castle chunk, where the world billboard is drawn. */
         public boolean inCastleChunk;
+        /** Shelter and seal-site beacons in range, or null for none. */
+        public java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> beacons;
         /**
          * Pins animation time instead of accumulating it. NaN (the default) means "run normally".
          * Captures set this so cloud drift, ember flicker and heat-lightning land identically on
@@ -390,6 +481,8 @@ public class Skybox3DRenderer {
             }
 
         }
+
+        placeBeacons(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f);
 
         castleHidden = false;
         if (castleInstance != null && state.hasCastleSite) {
@@ -534,6 +627,9 @@ public class Skybox3DRenderer {
         if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
         if (castleInstance   != null && !castleHidden) modelBatch.render(castleInstance, environment);
         if (spireInstance    != null) modelBatch.render(spireInstance, environment);
+        for (int i = 0; i < beaconsShown; i++) {
+            modelBatch.render(beaconPool.get(i), environment);
+        }
 
         modelBatch.end();
 
@@ -553,6 +649,7 @@ public class Skybox3DRenderer {
         if (spireModel    != null) spireModel.dispose();
         if (mountainModel != null) mountainModel.dispose();
         if (domeModel     != null) domeModel.dispose();
+        if (beaconModel   != null) beaconModel.dispose();
         if (stormShader   != null) stormShader.dispose();
     }
 }
