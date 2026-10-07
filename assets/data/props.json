@@ -327,8 +327,8 @@
       "id": "castle_billboard",
       "asset": "images/blight/castle_tarmin_billboard.png",
       "renderMode": "SPRITE",
-      "scaleX": 18.0,
-      "scaleY": 8.3,
+      "scaleX": 24.0,
+      "scaleY": 11.0,
       "passable": false
     },
     {
