@@ -34,6 +34,8 @@ public class BiomeManager {
     private FastNoiseLite selectorNoise;
     private FastNoiseLite castleEdgeNoise;
     private GridPoint2 castleSite;
+    /** Version 3 and later: the four shelter roads. Null before. */
+    private com.bpm.minotaur.generation.ShelterRoads roads;
 
     /** A legacy world: the fixed-seed layout every save had before world-gen versions. */
     public BiomeManager() {
@@ -46,8 +48,9 @@ public class BiomeManager {
     }
 
     public BiomeManager(long worldSeed, int version) {
-        this.version = (version == WorldConstants.WORLD_GEN_LEGACY)
-                ? WorldConstants.WORLD_GEN_LEGACY : WorldConstants.WORLD_GEN_CURRENT;
+        // Unknown versions (newer than this build, or corrupt) read as current.
+        this.version = (version >= WorldConstants.WORLD_GEN_LEGACY && version <= WorldConstants.WORLD_GEN_CURRENT)
+                ? version : WorldConstants.WORLD_GEN_CURRENT;
         this.mazeRadius = WorldConstants.CENTRAL_MAZE_RADIUS;
 
         if (this.version == WorldConstants.WORLD_GEN_LEGACY) {
@@ -86,6 +89,10 @@ public class BiomeManager {
         this.castleSite = new GridPoint2(
                 (int) Math.round(Math.cos(angle) * dist),
                 (int) Math.round(Math.sin(angle) * dist));
+
+        if (version >= WorldConstants.WORLD_GEN_ROADS) {
+            this.roads = new com.bpm.minotaur.generation.ShelterRoads(worldSeed, castleSite);
+        }
     }
 
     private static FastNoiseLite layer(int seed, float frequency) {
@@ -106,6 +113,27 @@ public class BiomeManager {
     /** The chunk Castle Tarmin stands in, or null in a legacy world, which has no site. */
     public GridPoint2 getCastleSite() {
         return castleSite == null ? null : new GridPoint2(castleSite);
+    }
+
+    /** The shelter roads, or null in a world laid out before version 3. */
+    public com.bpm.minotaur.generation.ShelterRoads getRoads() {
+        return roads;
+    }
+
+    /** Land a shelter can stand on and a player can walk: not maze, sea or mountain. */
+    public boolean isOpenLand(GridPoint2 chunkId) {
+        Biome b = getBiome(chunkId);
+        return b != Biome.MAZE && b != Biome.OCEAN && b != Biome.MOUNTAINS;
+    }
+
+    /** The shelter standing in this chunk, or null (always null before version 3). */
+    public com.bpm.minotaur.generation.ShelterRoads.Site getShelterSite(GridPoint2 chunkId) {
+        return roads == null ? null : roads.shelterAt(chunkId, this::isOpenLand);
+    }
+
+    /** The seal road ending in this chunk, or -1. */
+    public int getSealRoad(GridPoint2 chunkId) {
+        return roads == null ? -1 : roads.sealRoadAt(chunkId);
     }
 
     public boolean isCastleChunk(GridPoint2 chunkId) {
@@ -144,7 +172,7 @@ public class BiomeManager {
     }
 
     // ------------------------------------------------------------------
-    // Version 2
+    // Version 2 and 3 (3 adds the shelter roads)
     // ------------------------------------------------------------------
 
     private Biome currentBiome(int x, int y) {
@@ -163,7 +191,8 @@ public class BiomeManager {
         int d = cheb - mazeRadius;
 
         // Impassable terrain, kept off the way out of the maze and off the castle road.
-        if (d > WorldConstants.CLEAR_GROUND_RADIUS && !inCastleCorridor(x, y)) {
+        boolean onRoad = roads != null ? roads.inCorridor(x, y) : inCastleCorridor(x, y);
+        if (d > WorldConstants.CLEAR_GROUND_RADIUS && !onRoad) {
             float elevation = elevationNoise.GetNoise(x, y);
             if (elevation < WorldConstants.OCEAN_THRESHOLD) return Biome.OCEAN;
             if (elevation > WorldConstants.MOUNTAIN_THRESHOLD) return Biome.MOUNTAINS;
