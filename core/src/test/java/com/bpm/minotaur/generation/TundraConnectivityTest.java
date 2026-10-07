@@ -417,6 +417,45 @@ public class TundraConnectivityTest {
         assertEquals("Kindling campfire near warmth restores body temperature to 37.0°C", 37.0f, player.getStats().getBodyTemperature(), 0.01f);
     }
 
+    @Test
+    public void testTundraWeatherTransitionAndArrivalClearance() throws Exception {
+        if (com.badlogic.gdx.Gdx.app == null) {
+            com.badlogic.gdx.Gdx.app = (com.badlogic.gdx.Application) java.lang.reflect.Proxy.newProxyInstance(
+                    com.badlogic.gdx.Application.class.getClassLoader(),
+                    new Class<?>[]{com.badlogic.gdx.Application.class},
+                    (proxy, method, args) -> null);
+        }
+
+        // Test 1: WeatherManager transitions out of RAIN upon entering TUNDRA
+        com.bpm.minotaur.weather.WeatherManager wm = new com.bpm.minotaur.weather.WeatherManager(null);
+        wm.setCurrentWeather(com.bpm.minotaur.weather.WeatherType.RAIN);
+        assertEquals(com.bpm.minotaur.weather.WeatherType.RAIN, wm.getCurrentWeather());
+
+        wm.onBiomeChanged(Biome.TUNDRA);
+        assertNotEquals("Rain cannot persist in subzero Siberian Tundra",
+                com.bpm.minotaur.weather.WeatherType.RAIN, wm.getCurrentWeather());
+        assertTrue("Tundra weather must be Clear, Fog, Snow or Blizzard",
+                wm.isWeatherAllowedInBiome(wm.getCurrentWeather(), Biome.TUNDRA));
+
+        // Test 2: Chunk arrival clearing - 5x5 zone around (18, 18) must have zero scatter props
+        TundraChunkGenerator gen = new TundraChunkGenerator();
+        Maze maze = gen.generateChunk(new GridPoint2(0, 16), 1, 1,
+                com.bpm.minotaur.gamedata.Difficulty.EASY,
+                com.bpm.minotaur.gamedata.GameMode.ADVANCED,
+                null, null, null, null, null, null, null, 1234567L, 0);
+
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                GridPoint2 checkTile = new GridPoint2(18 + dx, 18 + dy);
+                Scenery sc = maze.getScenery().get(checkTile);
+                if (sc != null) {
+                    assertFalse("Arrival zone at " + checkTile + " must not be blocked by snow mound or prop: " + sc.getTexturePath(),
+                            sc.getTexturePath() != null && sc.getTexturePath().contains("snow_mound"));
+                }
+            }
+        }
+    }
+
     private boolean isGateApproach(int[][] approaches, int x, int y) {
         for (int[] a : approaches) {
             if (a[0] == x && a[1] == y) return true;

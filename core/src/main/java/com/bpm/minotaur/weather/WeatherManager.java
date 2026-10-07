@@ -313,6 +313,39 @@ public class WeatherManager {
         }
     }
 
+    public boolean isWeatherAllowedInBiome(WeatherType type, Biome biome) {
+        if (biome == null || type == null) return true;
+        switch (biome) {
+            case TUNDRA:
+            case MOUNTAINS:
+                return type == WeatherType.CLEAR || type == WeatherType.FOG
+                        || type == WeatherType.SNOW || type == WeatherType.BLIZZARD;
+            case DESERT:
+                return type == WeatherType.CLEAR || type == WeatherType.TORNADO
+                        || type == WeatherType.SNOW || type == WeatherType.BLIZZARD;
+            default:
+                return true;
+        }
+    }
+
+    public void onBiomeChanged(Biome newBiome) {
+        if (newBiome == null) return;
+        if (!isWeatherAllowedInBiome(currentWeather, newBiome)) {
+            WeatherType nextWeather = pickWeatherForBiome(newBiome);
+            WeatherIntensity nextIntensity = pickIntensityForWeather(nextWeather);
+            this.currentWeather = nextWeather;
+            this.currentIntensity = nextIntensity;
+            this.weatherTimer = MathUtils.random(MIN_WEATHER_DURATION, MAX_WEATHER_DURATION);
+            if (worldManager != null && worldManager.getSoundManager() != null) {
+                worldManager.getSoundManager().updateWeatherAudio(nextWeather, nextIntensity);
+            }
+            updateAtmosphereTargets();
+            if (Gdx.app != null) {
+                Gdx.app.log("WeatherManager", "Biome changed to " + newBiome + "; transitioned weather to " + nextIntensity + " " + nextWeather);
+            }
+        }
+    }
+
     private WeatherIntensity pickIntensityForWeather(WeatherType type) {
         if (type == WeatherType.CLEAR)
             return WeatherIntensity.LIGHT;

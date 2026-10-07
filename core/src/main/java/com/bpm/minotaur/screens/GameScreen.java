@@ -527,6 +527,10 @@ public class GameScreen extends BaseScreen {
 
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
+            if (worldManager.getWeatherManager() != null && worldManager.getBiomeManager() != null) {
+                Biome currentBiome = worldManager.getBiomeManager().getBiome(cid);
+                worldManager.getWeatherManager().onBiomeChanged(currentBiome);
+            }
         }
     }
 

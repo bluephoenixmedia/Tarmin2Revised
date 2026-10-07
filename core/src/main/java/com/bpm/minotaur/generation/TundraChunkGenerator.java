@@ -55,10 +55,11 @@ public class TundraChunkGenerator implements IChunkGenerator {
     public static final Sprite PINE_01 = new Sprite("images/tundra/tree_pine_01.png", 2.2f, 4.0f);
     public static final Sprite PINE_02 = new Sprite("images/tundra/tree_pine_02.png", 1.8f, 3.2f);
     public static final Sprite PINE_SNAG = new Sprite("images/tundra/tree_snag_01.png", 1.6f, 3.0f);
-    public static final Sprite SNOW_MOUND = new Sprite("images/tundra/snow_mound_01.png", 1.4f, 0.6f);
+    public static final Sprite SNOW_MOUND = new Sprite("images/tundra/snow_mound_01.png", 1.1f, 0.38f);
     public static final Sprite PINE_STUMP = new Sprite("images/tundra/pine_stump_01.png", 0.8f, 0.6f);
     public static final Sprite LOG_SNOW = new Sprite("images/tundra/log_snow_01.png", 1.5f, 0.5f);
-    public static final Sprite STALACTITE = new Sprite("images/tundra/stalactite_01.png", 0.8f, 1.6f);
+    public static final Sprite STALACTITE = new Sprite("images/tundra/stalactite_01.png", 0.75f, 1.25f);
+    public static final Sprite ICE_SPIRE = STALACTITE;
     public static final Sprite CAIRN = new Sprite("images/tundra/cairn_01.png", 1.0f, 1.4f);
     public static final Sprite CAMPFIRE = new Sprite("images/tundra/campfire_01.png", 1.0f, 0.8f);
     public static final Sprite WOOD_PILE = new Sprite("images/tundra/wood_pile_01.png", 1.2f, 0.7f);
@@ -564,8 +565,8 @@ public class TundraChunkGenerator implements IChunkGenerator {
         int currentReachable = countReachable(maze);
 
         for (GridPoint2 pt : reachable) {
-            // Keep central start tile clear
-            if (pt.x == 18 && pt.y == 18) continue;
+            // Keep central arrival clearing completely open (radius 2 around 18, 18)
+            if (Math.abs(pt.x - 18) <= 2 && Math.abs(pt.y - 18) <= 2) continue;
             // Keep gate doorstep clear
             if ((pt.x == 18 && (pt.y <= 1 || pt.y >= CHUNK_SIZE - 2)) || (pt.y == 18 && (pt.x <= 1 || pt.x >= CHUNK_SIZE - 2))) continue;
             if (maze.getScenery().containsKey(pt) || maze.getGateAt(pt.x, pt.y) != null) continue;

@@ -76,6 +76,8 @@ public class WeatherRenderer {
     private final Color retroDust1 = new Color(0.35f, 0.28f, 0.18f, 1.0f);
     private final Color retroDust2 = new Color(0.25f, 0.20f, 0.12f, 1.0f);
 
+    private WeatherType lastWeatherType = null;
+
     public WeatherRenderer(WeatherManager weatherManager) {
         this.weatherManager = weatherManager;
     }
@@ -94,6 +96,12 @@ public class WeatherRenderer {
 
         WeatherType type = weatherManager.getCurrentWeather();
         WeatherIntensity intensity = weatherManager.getCurrentIntensity();
+
+        if (lastWeatherType != type) {
+            particles.clear();
+            splashDroplets.clear();
+            lastWeatherType = type;
+        }
 
         // 0. Tornado vortex state tracking
         if (type == WeatherType.TORNADO) {
