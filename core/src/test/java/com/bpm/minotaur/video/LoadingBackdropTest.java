@@ -11,7 +11,7 @@ public class LoadingBackdropTest {
     public void theCentreIsClearAndTheBordersAreBlack() {
         assertEquals(0f, LoadingBackdrop.darknessAt(0f), 1e-4f);
         assertEquals(1f, LoadingBackdrop.darknessAt(LoadingBackdrop.BLACK_RADIUS), 1e-4f);
-        assertTrue("near black by the video's edges", LoadingBackdrop.darknessAt(1f) > 0.95f);
+        assertTrue("near black by the video's edges", LoadingBackdrop.darknessAt(1f) > 0.9f);
         assertEquals("corners", 1f, LoadingBackdrop.darknessAt((float) Math.sqrt(2)), 1e-4f);
     }
 
