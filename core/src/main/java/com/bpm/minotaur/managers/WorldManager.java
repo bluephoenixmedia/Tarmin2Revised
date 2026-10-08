@@ -1440,9 +1440,9 @@ public class WorldManager {
     public PortalWarp prepareBiomeWarp(com.bpm.minotaur.gamedata.progression.BiomePortal portal) {
         if (portal == null) return null;
 
-        // Portals land beside the first castle-road shelter in their biome, so they skip
-        // ahead on the road to the castle rather than drop the player anywhere.
-        GridPoint2 target = firstCastleRoadShelterIn(portal.getDestination());
+        // Portals land beside a shelter in their biome: the first on the castle road, so they
+        // skip ahead toward the castle, else the nearest to home on any road.
+        GridPoint2 target = portalShelterIn(portal.getDestination());
         if (target == null) {
             // Older worlds have no roads. The Crimson Gate lands on the castle corridor, the
             // one Blight guaranteed to reach the castle.
@@ -1474,14 +1474,13 @@ public class WorldManager {
                 entry != null ? entry.y - 1 : maze.getHeight() / 2);
     }
 
-    /** The nearest-to-home shelter on the castle road whose chunk is this biome, or null. */
-    public GridPoint2 firstCastleRoadShelterIn(Biome biome) {
+    /**
+     * Where a portal to this biome lands: the first castle-road shelter in it, else the
+     * road shelter in it nearest home, else null (a world without roads, or no shelter there).
+     */
+    public GridPoint2 portalShelterIn(Biome biome) {
         com.bpm.minotaur.generation.ShelterRoads roads = biomeManager.getRoads();
-        if (roads == null || biome == null) return null;
-        for (GridPoint2 c : roads.getRoad(com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD).getShelters()) {
-            if (biomeManager.getBiome(c) == biome) return c;
-        }
-        return null;
+        return roads == null ? null : roads.portalArrival(biome, biomeManager::getBiome);
     }
 
     /** Sends the player from a return portal back to the shelter. */

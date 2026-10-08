@@ -150,6 +150,31 @@ public class ShelterRoadsTest {
     }
 
     @Test
+    public void portalsLandAtAShelterOfTheirBiomePreferringTheCastleRoad() {
+        Biome[] portalBiomes = {Biome.FOREST, Biome.DESERT, Biome.LAKELANDS, Biome.TUNDRA, Biome.BLIGHT};
+        int found = 0, total = 0;
+        for (int i = 0; i < SEEDS; i++) {
+            BiomeManager bm = new BiomeManager(seed(i));
+            ShelterRoads roads = bm.getRoads();
+            for (Biome b : portalBiomes) {
+                total++;
+                GridPoint2 at = roads.portalArrival(b, bm::getBiome);
+                if (at == null) continue;
+                found++;
+                assertSame(b, bm.getBiome(at));
+                assertNotNull("lands at a shelter", bm.getShelterSite(at));
+                for (GridPoint2 c : roads.getRoad(ShelterRoads.CASTLE_ROAD).getShelters()) {
+                    if (bm.getBiome(c) == b) {
+                        assertEquals("castle road first", c, at);
+                        break;
+                    }
+                }
+            }
+        }
+        assertTrue("portals mostly land at a shelter: " + found + "/" + total, found >= total * 0.8);
+    }
+
+    @Test
     public void theSameSeedLaysOutTheSameRoads() {
         ShelterRoads a = new BiomeManager(seed(3)).getRoads();
         ShelterRoads b = new BiomeManager(seed(3)).getRoads();

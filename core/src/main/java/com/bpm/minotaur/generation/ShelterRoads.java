@@ -184,6 +184,28 @@ public final class ShelterRoads {
         return r == null ? -1 : r;
     }
 
+    /**
+     * The road shelter a portal to {@code biome} lands beside: the first on the castle road
+     * in that biome, so the portal skips ahead toward the castle; else the one nearest home
+     * on any road; else null.
+     */
+    public GridPoint2 portalArrival(Biome biome, java.util.function.Function<GridPoint2, Biome> biomeOf) {
+        if (biome == null) return null;
+        for (GridPoint2 c : roads.get(CASTLE_ROAD).getShelters()) {
+            if (biomeOf.apply(c) == biome) return new GridPoint2(c);
+        }
+        GridPoint2 best = null;
+        for (Road road : roads) {
+            for (GridPoint2 c : road.getShelters()) {
+                if (biomeOf.apply(c) != biome) continue;
+                if (best == null || dist2(c, ORIGIN) < dist2(best, ORIGIN)) best = c;
+            }
+        }
+        return best == null ? null : new GridPoint2(best);
+    }
+
+    private static final GridPoint2 ORIGIN = new GridPoint2(0, 0);
+
     /** Within the walkable band of any road: no ocean or mountain may stand here. */
     public boolean inCorridor(int x, int y) {
         for (Road road : roads) {

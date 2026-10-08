@@ -23,7 +23,7 @@ Entitlement documented by purchase; no licence file ships in the download.
 | Pack | Contents |
 | :--- | :--- |
 | `POLYGON_Goblin_War_Camp_SourceFiles_v3` | Synty - camp, gibbets, bones, siege props |
-| `POLYGON_Viking_Realm_SourceFiles_v3` | Synty - halls, thrones, runestones, shields |
+| `POLYGON_Viking_Realm_SourceFiles_v3` | Synty - halls, thrones, runestones, shields; logs, planks and fieldstone feed the outpost shelter walls (`tools/make_shelter_textures.py`) |
 | `POLYGON_Generic_SourceFiles_v3` | Synty - modular base, ivy, vines, decals |
 | `POLYGON_Adventure_Pack_SourceFiles_v6` | Synty - village, nature, adventurers |
 | `POLYGON_NatureBiomes_AlpineMountain_SourceFiles_v3` | Synty - stalactites, ice, fog gradients |

@@ -61,7 +61,10 @@ What the code does today:
 - **Biome portals stand only in the home shelter.**
 - **The last shelter rested in is the respawn shelter** (§8).
 - An **unclaimed (cold)** shelter is an ordinary building: monsters can wander in, it has no stations, and it has an unlit hearth.
-- **Form**: a small sanctuary building (the 4x4 room) set into an ordinary biome chunk, with a biome-themed exterior: log cabin (Forest), adobe (Desert), stilt hut (Lakelands), snowed-in lodge (Tundra), fortified ruin (Blight). The home shelter keeps its current layout.
+- **Form**: a small sanctuary building (7x7 with walls, a 5x5 room) set into an ordinary biome chunk. Its walls, inside and out, wear the biome's shelter texture: log cabin (Forest), adobe (Desert), weathered stilt-hut planks (Lakelands), frost-grey lodge logs (Tundra), fortified fieldstone ruin (Blight); a pair of biome props flank the door. The textures are `images/shelter_wall_<biome>.png`, derived by `tools/make_shelter_textures.py` from the Viking Realm pack. The home shelter keeps its own masonry.
+- **Desert adobe is a stand-in** (sandstone from the same pack); the packs hold no adobe. Replace `assets/images/shelter_wall_desert.png` with art from this prompt, then keep it out of the script's list:
+
+  > Seamless tileable texture, 128x128 pixels, of a sun-baked adobe mud-brick wall for a retro first-person dungeon crawler. Flat, hand-painted pixel-art look with 5-6 posterised tonal bands per colour, no gradients, no photographic noise, no lighting or shadows baked in, viewed straight on. Rounded rectangular mud bricks in staggered courses, about 4 bricks across and 8 courses tall, set in slightly darker mud mortar; a few bricks crumbling at the edges, straw flecks, one or two patches where the smooth plaster skin has fallen away. Palette: warm ochre and sand (#C89A64, #A8784A, #E2BE88) with deep umber mortar (#5A3A22). Must tile seamlessly on all four edges. No text, no border, no vignette.
 - Shelters exist only on the surface, never in strata.
 
 **Acceptance**

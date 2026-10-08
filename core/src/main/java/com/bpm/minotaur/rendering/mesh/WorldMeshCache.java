@@ -88,7 +88,8 @@ public class WorldMeshCache implements Disposable {
                         0, 0, maze.getWidth(), maze.getHeight(),
                         currentWall, currentFloor, ceilingTexture,
                         false, 0f, 0f,
-                        wallProvider, sectorSeed, floorSet, ceilingSet
+                        wallProvider, sectorSeed, floorSet, ceilingSet,
+                        biomeSurfaces.shelterWallFor(maze.getBiome())
                 );
                 addCanopy(currentMeshes, maze, 0f, 0f);
                 cachedChunks.put(currentChunkKey, currentMeshes);
@@ -119,7 +120,8 @@ public class WorldMeshCache implements Disposable {
                                             0, 0, neighborMaze.getWidth(), neighborMaze.getHeight(),
                                             neighborWall, neighborFloor, ceilingTexture,
                                             false, offsetX, offsetZ,
-                                            wallProvider, neighborSeed, floorSet, ceilingSet
+                                            wallProvider, neighborSeed, floorSet, ceilingSet,
+                                            biomeSurfaces.shelterWallFor(neighborMaze.getBiome())
                                     );
                                     addCanopy(neighborMeshes, neighborMaze, offsetX, offsetZ);
                                     cachedChunks.put(neighborKey, neighborMeshes);
