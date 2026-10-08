@@ -123,6 +123,9 @@ run {
   //setIgnoreExitValue(true)
 
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+  // The C2 JIT keeps crashing on the dev machine (hs_err_pid*.log, likely hardware):
+  // stop at the C1 compiler. Remove once the CPU and RAM check out.
+  jvmArgs += "-XX:TieredStopAtLevel=1"
 }
 
 jar {
