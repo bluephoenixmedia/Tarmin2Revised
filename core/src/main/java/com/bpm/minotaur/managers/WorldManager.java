@@ -1115,6 +1115,11 @@ public class WorldManager {
         return loadedChunks.keySet();
     }
 
+    /** A chunk already in memory on the current level, or null; never loads or generates one. */
+    public Maze getLoadedMaze(GridPoint2 chunkId) {
+        return chunkId == null ? null : loadedChunks.get(chunkId);
+    }
+
     public Maze getLoadedChunk(GridPoint2 chunkId) {
         return loadedChunks.get(chunkId);
     }

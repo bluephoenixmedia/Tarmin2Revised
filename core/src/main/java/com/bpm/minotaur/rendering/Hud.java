@@ -2778,16 +2778,20 @@ public class Hud implements Disposable {
         if (mazeW == 0 || mazeH == 0)
             return;
 
-        // Calculate cell size to fit within the maxMapSize box
-        float cellSize = maxMapSize / Math.max(mazeW, mazeH);
+        // A strip of each loaded neighbouring chunk rings the current one, so a doorway on the
+        // edge leads somewhere on the map rather than off it.
+        int strip = MINIMAP_NEIGHBOUR_STRIP;
+        float cellSize = maxMapSize / (Math.max(mazeW, mazeH) + 2 * strip);
 
         // Calculate the ACTUAL size of the map on screen
-        float actualMapWidth = mazeW * cellSize;
-        float actualMapHeight = mazeH * cellSize;
+        float actualMapWidth = (mazeW + 2 * strip) * cellSize;
+        float actualMapHeight = (mazeH + 2 * strip) * cellSize;
 
-        // Position: Top Right (Anchored)
-        float startX = STAGE_WIDTH - actualMapWidth - mapRightMargin;
-        float startY = STAGE_HEIGHT - actualMapHeight - mapTopMargin;
+        // Position: Top Right (Anchored). startX/startY is the current chunk's corner.
+        float boxX = STAGE_WIDTH - actualMapWidth - mapRightMargin;
+        float boxY = STAGE_HEIGHT - actualMapHeight - mapTopMargin;
+        float startX = boxX + strip * cellSize;
+        float startY = boxY + strip * cellSize;
 
         // --- 1. Draw Background (Fitted) ---
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -2797,18 +2801,19 @@ public class Hud implements Disposable {
         // it happened to be dark, which stopped being true once the sky started burning.
         shapeRenderer.setColor(HudSkin.COL_PANEL_BG.r, HudSkin.COL_PANEL_BG.g,
                 HudSkin.COL_PANEL_BG.b, 0.88f);
-        shapeRenderer.rect(startX - 6, startY - 6, actualMapWidth + 12, actualMapHeight + 12);
+        shapeRenderer.rect(boxX - 6, boxY - 6, actualMapWidth + 12, actualMapHeight + 12);
         shapeRenderer.end();
 
         // Border, so the map reads as a panel rather than as lines floating on the world.
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(HudSkin.COL_GOLD_MUTED);
-        shapeRenderer.rect(startX - 6, startY - 6, actualMapWidth + 12, actualMapHeight + 12);
+        shapeRenderer.rect(boxX - 6, boxY - 6, actualMapWidth + 12, actualMapHeight + 12);
         shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         // --- 2. Draw Visited Tiles (Walls/Floor) ---
         shapeRenderer.end();
+        drawNeighbourStrips(startX, startY, cellSize, mazeW, mazeH, strip);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         // Wall bitmasks
@@ -3009,6 +3014,103 @@ public class Hud implements Disposable {
 
         // --- 5. Game Log (New Feature) ---
         // drawGameLog(startX, startY); // Merged into bottom bar
+
+        drawMinimapRim(boxX, boxY, actualMapWidth, actualMapHeight);
+    }
+
+    /** Rows of each loaded neighbouring chunk the minimap shows past the current chunk's edge. */
+    public static final int MINIMAP_NEIGHBOUR_STRIP = 3;
+
+    /** The explored walls of each loaded neighbour, within {@link #MINIMAP_NEIGHBOUR_STRIP} tiles of the edge. */
+    private void drawNeighbourStrips(float startX, float startY, float cell, int w, int h, int strip) {
+        GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+        if (here == null) return;
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(HudSkin.COL_TEXT_MUTED.r, HudSkin.COL_TEXT_MUTED.g, HudSkin.COL_TEXT_MUTED.b, 0.55f);
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int sx = (int) d.getVector().x;
+            int sy = (int) d.getVector().y;
+            Maze n = worldManager.getLoadedMaze(new GridPoint2(here.x + sx, here.y + sy));
+            if (n == null || n.getWidth() != w || n.getHeight() != h) continue;
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int gx = x + sx * w;
+                    int gy = y + sy * h;
+                    if (gx < -strip || gx >= w + strip || gy < -strip || gy >= h + strip) continue;
+                    if (!n.isVisited(x, y)) continue;
+                    int mask = n.getWallDataAt(x, y);
+                    float cx = startX + gx * cell;
+                    float cy = startY + gy * cell;
+                    if ((mask & 0b01000000) != 0) shapeRenderer.line(cx, cy + cell, cx + cell, cy + cell);
+                    if ((mask & 0b00000100) != 0) shapeRenderer.line(cx + cell, cy, cx + cell, cy + cell);
+                    if ((mask & 0b00010000) != 0) shapeRenderer.line(cx, cy, cx + cell, cy);
+                    if ((mask & 0b00000001) != 0) shapeRenderer.line(cx, cy, cx, cy + cell);
+                }
+            }
+        }
+        shapeRenderer.end();
+    }
+
+    /**
+     * Compass letters on the minimap's rim, and an arrow on the rim toward the waypoint (or,
+     * without one, the expedition map's suggested next step). North is always up.
+     */
+    private void drawMinimapRim(float boxX, float boxY, float boxW, float boxH) {
+        GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+        int level = worldManager.getCurrentLevel();
+        if (here != null && worldManager.getGameMode() == GameMode.ADVANCED) {
+            com.bpm.minotaur.gamedata.map.MapKnowledge knowledge = com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance();
+            com.bpm.minotaur.gamedata.map.MapKnowledge.Spot wp = knowledge.getWaypoint();
+            GridPoint2 target = null;
+            boolean isWaypoint = false;
+            if (wp != null && wp.getFloor() == level) {
+                target = wp.getChunk();
+                isWaypoint = true;
+            } else if (wp == null && level == 1) {
+                target = new com.bpm.minotaur.gamedata.map.MapModel(worldManager.getBiomeManager(),
+                        com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance(), knowledge,
+                        f -> java.util.Collections.emptySet(), level).suggestion();
+            }
+            if (target != null && !target.equals(here)) {
+                // From the player's place in chunk space to the target chunk's centre.
+                float px = here.x + player.getPosition().x / maze.getWidth();
+                float py = here.y + player.getPosition().y / maze.getHeight();
+                float dx = target.x + 0.5f - px;
+                float dy = target.y + 0.5f - py;
+                float len = (float) Math.sqrt(dx * dx + dy * dy);
+                if (len > 1e-3f) {
+                    dx /= len;
+                    dy /= len;
+                    float cx = boxX + boxW / 2f;
+                    float cy = boxY + boxH / 2f;
+                    // Where the ray from the centre leaves the box, pulled in a little.
+                    float reach = Math.min((boxW / 2f - 4f) / Math.max(1e-3f, Math.abs(dx)),
+                            (boxH / 2f - 4f) / Math.max(1e-3f, Math.abs(dy)));
+                    float tipX = cx + dx * reach;
+                    float tipY = cy + dy * reach;
+                    float size = 14f;
+                    Color c = isWaypoint ? com.bpm.minotaur.ui.UiTheme.GOLD : com.bpm.minotaur.ui.UiTheme.TEXT_DIM;
+                    shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                    shapeRenderer.setColor(c);
+                    shapeRenderer.triangle(tipX, tipY,
+                            tipX - dx * size - dy * size * 0.6f, tipY - dy * size + dx * size * 0.6f,
+                            tipX - dx * size + dy * size * 0.6f, tipY - dy * size - dx * size * 0.6f);
+                    shapeRenderer.end();
+                }
+            }
+        }
+
+        BitmapFont compass = hudSkin.getFontSmall();
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        float lh = compass.getCapHeight();
+        compass.setColor(com.bpm.minotaur.ui.UiTheme.GOLD);
+        compass.draw(spriteBatch, "N", boxX, boxY + boxH - 2f, boxW, com.badlogic.gdx.utils.Align.center, false);
+        compass.setColor(com.bpm.minotaur.ui.UiTheme.TEXT_DIM);
+        compass.draw(spriteBatch, "S", boxX, boxY + lh + 2f, boxW, com.badlogic.gdx.utils.Align.center, false);
+        compass.draw(spriteBatch, "W", boxX + 3f, boxY + boxH / 2f + lh / 2f);
+        compass.draw(spriteBatch, "E", boxX, boxY + boxH / 2f + lh / 2f, boxW - 3f, com.badlogic.gdx.utils.Align.right, false);
+        spriteBatch.end();
     }
 
     /**
