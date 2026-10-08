@@ -2368,6 +2368,39 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /**
+     * Fires whatever ranged attack the right hand holds: zaps a wand, shoots a bow, crossbow or
+     * gun, or throws a thrown weapon. Bound to the fire key (F by default) and to A.
+     *
+     * @return true if something was fired
+     */
+    private boolean fireHeldRangedWeapon() {
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null) return false;
+        if (weapon.isWand()) {
+            player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
+            playerTurnTakesAction();
+            return true;
+        }
+        if (weapon.isRanged()) {
+            boolean wasExploring = combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
+            combatManager.playerAttackInstant();
+            // Firing costs a turn. Opening fire out of exploration used to be
+            // free: ammunition spent, the level woken, and no turn passed --
+            // so the reload never advanced either. In-combat shots pass their
+            // turn through the combat state machine instead.
+            if (wasExploring) {
+                playerTurnTakesAction();
+            }
+            return true;
+        }
+        if (weapon.isThrown() && combatManager.throwWeapon(weapon)) {
+            playerTurnTakesAction();
+            return true;
+        }
+        return false;
+    }
+
     /** The hearth being lit, or null. Channelled like a Tome study: each world turn passes on its own. */
     private com.bpm.minotaur.gamedata.shelter.HearthLighting hearthLighting;
     private float hearthTimer;
@@ -2768,6 +2801,16 @@ public class GameScreen extends BaseScreen {
         // --- NEW: Combat Menu Input Interception ---
         if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
             if (hud != null && hud.combatMenu != null) {
+                // The fire key shoots a held bow, crossbow or gun straight from the menu.
+                if (keycode == SettingsManager.getInstance().getKey("FIRE_RANGED")) {
+                    Item held = player.getInventory().getRightHand();
+                    if (held != null && held.isRanged()) {
+                        combatManager.playerAttackInstant();
+                    } else {
+                        hud.addMessage("You have no ranged weapon in hand.");
+                    }
+                    return true;
+                }
                 switch (keycode) {
                     case Input.Keys.I:
                         InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
@@ -3112,32 +3155,14 @@ public class GameScreen extends BaseScreen {
                 }
             }
 
-            if (keycode == Input.Keys.A) {
-                // Ranged Attack, Wand Zap, or Thrown Weapon
-                Item weapon = player.getInventory().getRightHand();
-                if (weapon != null) {
-                    if (weapon.isWand()) {
-                        player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
-                        playerTurnTakesAction();
-                        return true;
-                    } else if (weapon.isRanged()) {
-                        boolean wasExploring =
-                                combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
-                        combatManager.playerAttackInstant();
-                        // Firing costs a turn. Opening fire out of exploration used to be
-                        // free: ammunition spent, the level woken, and no turn passed --
-                        // so the reload never advanced either. In-combat shots pass their
-                        // turn through the combat state machine instead.
-                        if (wasExploring) {
-                            playerTurnTakesAction();
-                        }
-                        return true;
-                    } else if (weapon.isThrown()) {
-                        if (combatManager.throwWeapon(weapon)) {
-                            playerTurnTakesAction();
-                            return true;
-                        }
-                    }
+            boolean fireKey = keycode == SettingsManager.getInstance().getKey("FIRE_RANGED");
+            if (keycode == Input.Keys.A || fireKey) {
+                if (fireHeldRangedWeapon()) {
+                    return true;
+                }
+                if (fireKey) {
+                    hud.addMessage("You have nothing in hand to fire or throw.");
+                    return true;
                 }
             }
 
