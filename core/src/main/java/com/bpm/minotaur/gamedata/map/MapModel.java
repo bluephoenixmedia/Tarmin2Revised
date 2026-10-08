@@ -49,6 +49,23 @@ public final class MapModel {
         public boolean isSpent() { return spent; }
     }
 
+    /** A shelter on the map: where, how it is drawn, and its road ({@link ShelterRoads#OFF_ROAD} if none). */
+    public static final class KnownShelter {
+        private final GridPoint2 chunk;
+        private final ShelterMark mark;
+        private final int road;
+
+        KnownShelter(GridPoint2 chunk, ShelterMark mark, int road) {
+            this.chunk = new GridPoint2(chunk);
+            this.mark = mark;
+            this.road = road;
+        }
+
+        public GridPoint2 getChunk() { return new GridPoint2(chunk); }
+        public ShelterMark getMark() { return mark; }
+        public int getRoad() { return road; }
+    }
+
     private static final GridPoint2 HOME = new GridPoint2(0, 0);
 
     private final BiomeManager biomes;
@@ -97,6 +114,23 @@ public final class MapModel {
         return null;
     }
 
+    /** Every shelter the map shows: home, and each one entered, sighted or lit. */
+    public List<KnownShelter> knownShelters() {
+        java.util.Set<GridPoint2> candidates = new java.util.LinkedHashSet<>();
+        candidates.add(HOME);
+        candidates.addAll(network.getClaimed());
+        candidates.addAll(knowledge.getSighted());
+        candidates.addAll(visited(1));
+        List<KnownShelter> out = new ArrayList<>();
+        for (GridPoint2 c : candidates) {
+            ShelterMark mark = shelterAt(c);
+            if (mark == null) continue;
+            ShelterRoads.Site site = biomes == null ? null : biomes.getShelterSite(c);
+            out.add(new KnownShelter(c, mark, site == null ? ShelterRoads.OFF_ROAD : site.getRoad()));
+        }
+        return out;
+    }
+
     /** The seal site at the end of {@code road} is on the map. */
     public boolean isSealSiteKnown(int road) {
         ShelterRoads roads = roads();
@@ -105,6 +139,16 @@ public final class MapModel {
         if (visited(1).contains(r.getEnd())) return true;
         List<GridPoint2> stops = r.getShelters();
         return !stops.isEmpty() && network.isClaimed(stops.get(stops.size() - 1));
+    }
+
+    /** Ground the player knows, and so may set a waypoint or a pin on. */
+    public boolean isMarkable(int floor, GridPoint2 chunk) {
+        if (chunk == null) return false;
+        if (knowledgeOf(floor, chunk) != Knowledge.UNKNOWN) return true;
+        if (floor != 1) return false;
+        if (shelterAt(chunk) != null) return true;
+        int sealRoad = biomes == null ? -1 : biomes.getSealRoad(chunk);
+        return sealRoad > 0 && isSealSiteKnown(sealRoad);
     }
 
     /** The player has entered the castle's chunk. Its direction is always known. */

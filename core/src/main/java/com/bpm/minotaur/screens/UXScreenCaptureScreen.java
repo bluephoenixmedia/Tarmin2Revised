@@ -400,9 +400,24 @@ public class UXScreenCaptureScreen extends BaseScreen {
         }));
 
         // 24: Castle Map
-        tasks.add(new CaptureTask("24_castle_map", "Castle Overview & Exploration Map", () -> {
-            CastleMapScreen s = new CastleMapScreen(game, sharedPlayer, sharedMaze, sharedGameScreen);
+        tasks.add(new CaptureTask("24_castle_map", "Expedition Map, region view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
             setSubScreen(s, null);
+        }));
+        // The map reopens at the view it was left in, so these step from the region view above.
+        tasks.add(new CaptureTask("24b_map_world", "Expedition Map, world view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
+            setSubScreen(s, null);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.MINUS);
+        }));
+        tasks.add(new CaptureTask("24c_map_chunk", "Expedition Map, chunk view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
+            setSubScreen(s, null);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ENTER);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ENTER);
         }));
 
         // 25: Encounter Window (Shrine)
@@ -461,6 +476,13 @@ public class UXScreenCaptureScreen extends BaseScreen {
             TormentPactScreen s = new TormentPactScreen(game, null);
             setSubScreen(s, null);
         }));
+
+        // --capture-only=<prefix> captures just the screens whose id starts with it, so checking
+        // one screen does not mean waiting on all of them.
+        String only = com.bpm.minotaur.Tarmin2.captureOnly();
+        if (only != null) {
+            tasks.removeIf(t -> !t.id.startsWith(only));
+        }
     }
 
     private void setSubScreen(Screen screen, Runnable cleanup) {

@@ -3400,7 +3400,9 @@ public class GameScreen extends BaseScreen {
 
         if (keycode == SettingsManager.getInstance().getKey("MAP")) {
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                game.setScreen(new CastleMapScreen(game, player, maze, this));
+                game.setScreen(gameMode == GameMode.CLASSIC
+                        ? new ClassicMapScreen(game, player, maze, this)
+                        : new com.bpm.minotaur.screens.map.ExpeditionMapScreen(game, player, maze, this));
             }
             return true;
         }

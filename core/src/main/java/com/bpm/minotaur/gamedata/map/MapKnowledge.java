@@ -114,6 +114,20 @@ public final class MapKnowledge implements SlotScopedState {
         return chunk != null && sighted.contains(chunk);
     }
 
+    /** Every glimpsed surface chunk. */
+    public Set<GridPoint2> getGlimpsed() {
+        Set<GridPoint2> out = new HashSet<>();
+        for (GridPoint2 c : glimpsed) out.add(new GridPoint2(c));
+        return out;
+    }
+
+    /** Every sighted shelter chunk. */
+    public Set<GridPoint2> getSighted() {
+        Set<GridPoint2> out = new HashSet<>();
+        for (GridPoint2 c : sighted) out.add(new GridPoint2(c));
+        return out;
+    }
+
     public Pin getPin(int floor, GridPoint2 chunk) {
         Map<GridPoint2, Pin> onFloor = pins.get(floor);
         return onFloor == null || chunk == null ? null : onFloor.get(chunk);

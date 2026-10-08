@@ -35,12 +35,16 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Full-screen expedition map. Every Z-level (surface and strata alike) is a two-tier
+ * The map as it was before the Expedition Map, kept for {@code GameMode.CLASSIC}, whose
+ * presentation is preserved unchanged. Frozen: new map work goes in
+ * {@link com.bpm.minotaur.screens.map.ExpeditionMapScreen}.
+ *
+ * <p>Full-screen expedition map. Every Z-level (surface and strata alike) is a two-tier
  * view: an overview grid of the chunks the player has actually visited on that level
  * (cursor-navigable, camera follows the cursor), which can be zoomed into for a
  * per-tile view of that chunk's unlocked layout (ladders, items, points of interest).
  */
-public class CastleMapScreen extends BaseScreen {
+public class ClassicMapScreen extends BaseScreen {
 
     private enum Mode { OVERVIEW, ZOOM }
 
@@ -124,7 +128,7 @@ public class CastleMapScreen extends BaseScreen {
         return cx == site.x && cy == site.y;
     }
 
-    public CastleMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
+    public ClassicMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
         super(game);
         this.player = player;
         this.maze = maze;

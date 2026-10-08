@@ -93,6 +93,28 @@ public class MapModelTest {
     }
 
     @Test
+    public void knownSheltersAreHomeAndEveryShelterEnteredSightedOrLit() {
+        GridPoint2 first = shelter(0, 0);
+        GridPoint2 far = shelter(1, 0);
+        visit(1, first);
+        knowledge.recordArrival(1, first, bm, net);
+        net.claim(far);
+
+        Map<GridPoint2, MapModel.ShelterMark> known = new HashMap<>();
+        for (MapModel.KnownShelter s : model().knownShelters()) known.put(s.getChunk(), s.getMark());
+
+        assertSame(MapModel.ShelterMark.HOME, known.get(HOME));
+        assertSame(MapModel.ShelterMark.COLD, known.get(first));
+        assertSame(MapModel.ShelterMark.RUMOURED, known.get(shelter(0, 1)));
+        assertSame(MapModel.ShelterMark.LIT, known.get(far));
+        List<GridPoint2> castleRoad = roads.getRoad(0).getShelters();
+        assertFalse("beyond beacon range", known.containsKey(castleRoad.get(castleRoad.size() - 1)));
+        for (MapModel.KnownShelter s : model().knownShelters()) {
+            if (s.getChunk().equals(first)) assertEquals(0, s.getRoad());
+        }
+    }
+
+    @Test
     public void aRememberedShelterIsLitWithoutBeingEntered() {
         GridPoint2 far = shelter(0, 2);
         net.claim(far);
@@ -156,6 +178,29 @@ public class MapModelTest {
         assertEquals(shelter(0, 0), model().suggestion());
         for (GridPoint2 c : roads.getRoad(0).getShelters()) net.claim(c);
         assertEquals(bm.getCastleSite(), model().suggestion());
+    }
+
+    @Test
+    public void onlyGroundThePlayerKnowsCanBeMarked() {
+        GridPoint2 first = shelter(0, 0);
+        GridPoint2 nowhere = new GridPoint2(first.x + 7, first.y - 7);
+        assertTrue("home", model().isMarkable(1, HOME));
+        assertFalse(model().isMarkable(1, nowhere));
+
+        visit(1, first);
+        knowledge.recordArrival(1, first, bm, net);
+        MapModel m = model();
+        assertTrue("entered", m.isMarkable(1, first));
+        assertTrue("glimpsed", m.isMarkable(1, new GridPoint2(first.x + 1, first.y)));
+        assertTrue("a rumoured shelter", m.isMarkable(1, shelter(0, 1)));
+        assertFalse("the castle, unreached", m.isMarkable(1, bm.getCastleSite()));
+
+        visit(3, nowhere);
+        assertTrue("an explored stratum chunk", model().isMarkable(3, nowhere));
+        assertFalse(model().isMarkable(2, nowhere));
+
+        net.claim(roads.getRoad(1).getShelters().get(roads.getRoad(1).getShelters().size() - 1));
+        assertTrue("a revealed seal site", model().isMarkable(1, roads.getRoad(1).getEnd()));
     }
 
     @Test
