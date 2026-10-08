@@ -49,6 +49,13 @@ public final class ShelterNetwork implements SlotScopedState {
         return chunk != null && (HOME_CHUNK.equals(chunk) || claimed.contains(chunk));
     }
 
+    /** Every lit shelter but home. */
+    public Set<GridPoint2> getClaimed() {
+        Set<GridPoint2> out = new HashSet<>();
+        for (GridPoint2 c : claimed) out.add(new GridPoint2(c));
+        return out;
+    }
+
     public void claim(GridPoint2 chunk) {
         if (chunk != null && !HOME_CHUNK.equals(chunk) && claimed.add(new GridPoint2(chunk))) {
             save();
