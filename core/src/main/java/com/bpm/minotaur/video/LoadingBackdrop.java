@@ -10,10 +10,10 @@ import com.badlogic.gdx.utils.Disposable;
 /**
  * The menacing face that breathes behind the loading text.
  *
- * <p>Plays {@code video/loading_video.mp4} on a muted loop, cover-scaled to the
- * screen, under a black vignette that is darkest in the middle. The loading text
- * sits in the middle, so the face is mostly swallowed there and only its glowing
- * eyes and the smoke at its brow show through; the corners close to black.
+ * <p>Plays {@code video/loading_video.mp4} on a muted loop, centred at half the
+ * size that would fill the screen, under a black vignette laid over the video
+ * itself: the face shows clearly in the middle and fades away toward the video's
+ * borders, so its edges dissolve into the black around it with no frame.
  *
  * <p>Runs after the studio stinger and before the attract-mode flyover.
  */
@@ -21,12 +21,12 @@ public final class LoadingBackdrop implements Disposable {
 
     public static final String VIDEO = "video/loading_video.mp4";
 
-    /** Darkness at the centre of the screen, where the loading text sits. */
-    static final float CENTER_DARKNESS = 0.88f;
-    /** Darkness in the ring between the centre and the edges, where the face shows most. */
-    static final float RING_DARKNESS = 0.55f;
-    /** Darkness at the corners. */
-    static final float CORNER_DARKNESS = 1.00f;
+    /** The video's size as a share of the size that would cover the whole screen. */
+    static final float SIZE = 0.5f;
+    /** Out to this normalised radius the video shows untouched. */
+    static final float CLEAR_RADIUS = 0.25f;
+    /** By this radius (the midpoints of the video's edges) it has faded to black. */
+    static final float BLACK_RADIUS = 1.0f;
     /** Seconds the backdrop takes to fade in from black. */
     private static final float FADE_IN_SECONDS = 1.2f;
 
@@ -74,24 +74,25 @@ public final class LoadingBackdrop implements Disposable {
         if (frame == null) return;
 
         float fade = Math.min(1f, age / FADE_IN_SECONDS);
-        // Cover, not fit: the face is centred in black, so cropping the sides costs nothing.
-        float scale = Math.max(screenWidth / frame.getWidth(), screenHeight / frame.getHeight());
+        float scale = SIZE * Math.max(screenWidth / frame.getWidth(), screenHeight / frame.getHeight());
         float w = frame.getWidth() * scale;
         float h = frame.getHeight() * scale;
+        float x = (screenWidth - w) / 2f;
+        float y = (screenHeight - h) / 2f;
         batch.setColor(fade, fade, fade, 1f);
-        batch.draw(frame, (screenWidth - w) / 2f, (screenHeight - h) / 2f, w, h);
+        batch.draw(frame, x, y, w, h);
         batch.setColor(1f, 1f, 1f, 1f);
         if (vignette != null) {
-            batch.draw(vignette, 0f, 0f, screenWidth, screenHeight);
+            batch.draw(vignette, x, y, w, h); // over the video, so its borders fade into the black screen
         }
     }
 
-    /** How dark the vignette is at a normalised distance from the centre (0 centre, 1 at the edge midpoints). */
+    /**
+     * How dark the vignette is at a normalised distance from the video's centre (0 centre,
+     * 1 at the midpoints of its edges): clear in the middle, darkening steadily to black.
+     */
     static float darknessAt(float r) {
-        if (r <= 0.25f) return CENTER_DARKNESS;
-        if (r <= 0.60f) return lerp(CENTER_DARKNESS, RING_DARKNESS, smooth((r - 0.25f) / 0.35f));
-        if (r <= 0.78f) return RING_DARKNESS;
-        return lerp(RING_DARKNESS, CORNER_DARKNESS, smooth(Math.min(1f, (r - 0.78f) / 0.6f)));
+        return smooth((r - CLEAR_RADIUS) / (BLACK_RADIUS - CLEAR_RADIUS));
     }
 
     private static Texture buildVignette() {
@@ -114,10 +115,6 @@ public final class LoadingBackdrop implements Disposable {
     private static float smooth(float t) {
         t = Math.max(0f, Math.min(1f, t));
         return t * t * (3f - 2f * t);
-    }
-
-    private static float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
     }
 
     @Override

@@ -4,16 +4,24 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-/** The loading backdrop's vignette swallows the centre, lets the face show around it, and closes the corners. */
+/** The loading backdrop's vignette shows the centre of the video and fades it to black toward its borders. */
 public class LoadingBackdropTest {
 
     @Test
-    public void theCentreIsDarkerThanTheRingAndTheCornersAreBlack() {
-        float centre = LoadingBackdrop.darknessAt(0f);
-        float ring = LoadingBackdrop.darknessAt(0.65f);
-        float corner = LoadingBackdrop.darknessAt((float) Math.sqrt(2));
-        assertTrue("centre " + centre + " vs ring " + ring, centre > ring);
-        assertEquals(1f, corner, 1e-4f);
+    public void theCentreIsClearAndTheBordersAreBlack() {
+        assertEquals(0f, LoadingBackdrop.darknessAt(0f), 1e-4f);
+        assertEquals(1f, LoadingBackdrop.darknessAt(1f), 1e-4f);
+        assertEquals("corners", 1f, LoadingBackdrop.darknessAt((float) Math.sqrt(2)), 1e-4f);
+    }
+
+    @Test
+    public void itDarkensSteadilyOutward() {
+        float prev = -1f;
+        for (float r = 0f; r <= 1.42f; r += 0.01f) {
+            float d = LoadingBackdrop.darknessAt(r);
+            assertTrue("lighter further out at r=" + r, d >= prev);
+            prev = d;
+        }
     }
 
     @Test
