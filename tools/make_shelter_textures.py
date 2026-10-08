@@ -8,9 +8,10 @@ and fieldstone at 2048px. They are painted smooth; the game's walls are 128px wi
 flat posterised shading. So each source is downscaled, remapped onto a biome ramp
 (luminance kept, so the artist's grain survives), and quantised.
 
-The Desert's adobe has no source in the packs. Its texture here is a stand-in made
-from fieldstone; replace images/shelter_wall_desert.png with real adobe art (see
-docs/DEsign/Requirements_ Shelter Roads.md, section 3, for the prompt).
+The Desert's adobe has no source in the packs, so it is not made here: it is
+AI-generated art (source docs/art/shelter_wall_desert_source.jpg, prompt in
+docs/DEsign/Requirements_ Shelter Roads.md, section 3), cropped to six whole brick
+courses so it tiles vertically, downscaled to 128px and quantised to 12 colours.
 
 Run from the repo root:  python tools/make_shelter_textures.py
 """
@@ -31,8 +32,6 @@ WALLS = [
      [(0.0, (22, 24, 30)), (0.5, (70, 66, 64)), (1.0, (150, 156, 168))], 1.3),
     ("shelter_wall_lakelands.png", "Planks_01.png",
      [(0.0, (26, 32, 28)), (0.5, (84, 92, 76)), (1.0, (150, 156, 132))], 1.25),
-    ("shelter_wall_desert.png", "PolygonVikingRealm_Stone_Wall_02.png",
-     [(0.0, (70, 44, 28)), (0.5, (160, 116, 76)), (1.0, (222, 186, 136))], 1.2),
     ("shelter_wall_blight.png", "PolygonVikingRealm_Stone_Wall_03.png",
      [(0.0, (16, 10, 10)), (0.5, (62, 44, 40)), (1.0, (130, 110, 100))], 1.35),
 ]
