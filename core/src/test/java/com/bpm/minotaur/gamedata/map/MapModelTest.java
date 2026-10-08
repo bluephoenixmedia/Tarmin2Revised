@@ -158,26 +158,41 @@ public class MapModelTest {
     public void theSuggestionWalksTheNearestSealRoadFirst() {
         ShelterRoads.Road nearest = sealRoadsByDistance().get(0);
         List<GridPoint2> stops = nearest.getShelters();
+        visit(1, stops.get(0));
         assertEquals(stops.get(0), model().suggestion());
 
         net.claim(stops.get(0));
-        GridPoint2 expected = stops.size() > 1 ? stops.get(1) : nearest.getEnd();
-        assertEquals(expected, model().suggestion());
+        if (stops.size() > 1) {
+            visit(1, stops.get(1));
+            assertEquals(stops.get(1), model().suggestion());
+        }
 
         for (GridPoint2 c : stops) net.claim(c);
         assertEquals("then the seal site itself", nearest.getEnd(), model().suggestion());
 
         net.awardSeal(nearest.getIndex());
         ShelterRoads.Road next = sealRoadsByDistance().get(1);
+        visit(1, next.getShelters().get(0));
         assertEquals(next.getShelters().get(0), model().suggestion());
+    }
+
+    @Test
+    public void theSuggestionNeverPointsAtGroundThePlayerDoesNotKnow() {
+        assertNull("no shelter on the nearest seal road is known yet", model().suggestion());
+        ShelterRoads.Road nearest = sealRoadsByDistance().get(0);
+        knowledge.recordArrival(1, HOME, bm, net);
+        GridPoint2 first = nearest.getShelters().get(0);
+        assertTrue("its beacon stands in sight of home", knowledge.isSighted(first));
+        assertEquals("a sighted shelter is known", first, model().suggestion());
     }
 
     @Test
     public void withEverySealWonTheSuggestionTakesTheCastleRoad() {
         for (int r = 1; r < ShelterRoads.ROAD_COUNT; r++) net.awardSeal(r);
+        visit(1, shelter(0, 0));
         assertEquals(shelter(0, 0), model().suggestion());
         for (GridPoint2 c : roads.getRoad(0).getShelters()) net.claim(c);
-        assertEquals(bm.getCastleSite(), model().suggestion());
+        assertEquals("the castle's bearing is always known", bm.getCastleSite(), model().suggestion());
     }
 
     @Test

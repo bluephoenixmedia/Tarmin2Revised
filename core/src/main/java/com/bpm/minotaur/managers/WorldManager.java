@@ -386,6 +386,7 @@ public class WorldManager {
         // No chunk survives, so a legacy world can take the current layout.
         this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
         rebuildBiomeManager();
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
     }
 
     // --- NEW: Descent Logic ---
@@ -418,6 +419,7 @@ public class WorldManager {
         if (playerReference != null) {
             BalanceLogger.getInstance().logPlayerState(playerReference);
         }
+        noteArrival();
     }
 
     // --- NEW: Ascent Logic ---
@@ -436,6 +438,7 @@ public class WorldManager {
         // Retain currentPlayerChunkId so player returns to the same coordinate column
 
         Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel + " at chunk " + currentPlayerChunkId);
+        noteArrival();
         return true;
     }
 
@@ -727,6 +730,22 @@ public class WorldManager {
     public void setCurrentChunk(GridPoint2 chunkId) {
         this.currentPlayerChunkId = chunkId;
         noteArrival();
+    }
+
+    /**
+     * What the expedition map and the HUD minimap show, read from this world: its roads, the
+     * shelter network, map knowledge, and the chunks entered on each floor. The chunk the
+     * player stands in counts as entered before its first save.
+     */
+    public com.bpm.minotaur.gamedata.map.MapModel buildMapModel() {
+        int maxFloor = Math.max(currentLevel, getMaxVisitedLevel());
+        return new com.bpm.minotaur.gamedata.map.MapModel(biomeManager,
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance(),
+                com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance(), floor -> {
+                    Set<GridPoint2> visited = new HashSet<>(getVisitedChunkIds(floor));
+                    if (floor == currentLevel && currentPlayerChunkId != null) visited.add(new GridPoint2(currentPlayerChunkId));
+                    return visited;
+                }, maxFloor);
     }
 
     /** Tells the map what the player can see from the chunk they now stand in. */
@@ -1113,11 +1132,6 @@ public class WorldManager {
 
     public Set<GridPoint2> getLoadedChunkIds() {
         return loadedChunks.keySet();
-    }
-
-    /** A chunk already in memory on the current level, or null; never loads or generates one. */
-    public Maze getLoadedMaze(GridPoint2 chunkId) {
-        return chunkId == null ? null : loadedChunks.get(chunkId);
     }
 
     public Maze getLoadedChunk(GridPoint2 chunkId) {

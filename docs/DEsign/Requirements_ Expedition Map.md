@@ -31,12 +31,12 @@ Knowledge, not omniscience. Exploring fills the map in.
 | Thing | Shown when |
 | :--- | :--- |
 | A chunk, in full | The player has entered it (it has a chunk save). |
-| A chunk, as a faint biome tint ("glimpsed") | It borders a surface chunk the player stood in, and that chunk's biome is seamless (not the maze). |
+| A chunk, as a faint biome tint ("glimpsed") | It is one of the eight chunks around a surface chunk the player stood in (diagonals included), and that chunk's biome is seamless (not the maze). |
 | A shelter, as "rumoured" (dashed, unlit) | Its beacon has been on the horizon from a chunk the player entered. |
 | A shelter, as lit | The player has claimed it (`ShelterNetwork`). |
 | A road segment | Both its ends are known (home, a known shelter, or a known road end). |
 | A seal site | The last shelter on its road is lit, or the player has entered it. |
-| The castle | Its direction always, as an arrow at the World view's edge; its chunk once entered. |
+| The castle | Its direction always, as an arrow at the map's edge (World and Region views); its chunk once entered. |
 | A hero's grave | The player has seen the tile holding a fallen hero's bones. |
 | A return portal | The player has seen its tile. |
 
@@ -74,15 +74,15 @@ Three zoom steps, each an integer scale, each adding detail rather than repeatin
 ## 7. Actions
 
 - **Waypoint**: one at a time, set on any known chunk; cleared on arrival. The HUD minimap points at it.
-- **Suggested next step**: a ghost marker the player can accept with one key. It targets the next cold shelter on the road to the nearest unwon seal site ("nearest" by the site's distance from home), then that road's seal site once its shelters are lit. With all three seals won it walks the castle road instead.
+- **Suggested next step**: a ghost marker the player can accept with one key. It targets the next unlit shelter on the road to the nearest unwon seal site ("nearest" by the site's distance from home), then that road's seal site once its shelters are lit. With all three seals won it walks the castle road instead. It never points at ground the player does not know; while the next step is unknown there is no suggestion. The castle is the exception, since its bearing is always known.
 - **Pins**: six fixed icons (danger, loot, return here, trader, locked, unknown), no text.
 
 | Key | Action |
 | :--- | :--- |
 | Arrows / drag | Pan (moves the cursor) |
 | Wheel, `+` / `-` | Zoom step |
-| `[` / `]`, PgUp / PgDn | Floor |
-| Enter / click | Zoom into the cursor chunk |
+| `[` / `]`, PgUp / PgDn | Floor up toward the surface / down into the strata |
+| Enter, or click the selected chunk | Zoom into the cursor chunk (a click on another chunk selects it) |
 | `W` | Set or clear the waypoint |
 | `G` | Accept the suggestion |
 | `P` | Cycle the cursor chunk's pin |
@@ -94,7 +94,7 @@ The map's keys are bindings in `SettingsManager` (`MAP_WAYPOINT`, `MAP_SUGGEST`,
 
 ## 8. HUD minimap
 
-North-up. The current chunk's explored tiles, plus a strip of each loaded neighbouring chunk. Compass letters on the rim, and an arrow on the rim toward the waypoint (or, without one, the suggestion).
+North-up. The current chunk's explored tiles, plus a strip of each loaded neighbouring chunk. Compass letters on the rim, and an arrow on the rim toward the waypoint (or, without one, the suggestion on the surface). A waypoint on another floor draws no arrow. ADVANCED only: Classic's minimap is unchanged.
 
 ## 9. Art
 

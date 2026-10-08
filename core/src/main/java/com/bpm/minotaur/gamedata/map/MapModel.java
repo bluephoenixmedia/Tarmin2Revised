@@ -188,7 +188,7 @@ public final class MapModel {
     /**
      * Where the player should head next: the next cold shelter on the road to the nearest
      * unwon seal site, then that site; with every seal won, the same along the castle road.
-     * Null in a world without roads.
+     * Null in a world without roads, or while that next step is not yet known to the player.
      */
     public GridPoint2 suggestion() {
         ShelterRoads roads = roads();
@@ -199,10 +199,17 @@ public final class MapModel {
             if (target == null || road.getEnd().dst2(HOME) < target.getEnd().dst2(HOME)) target = road;
         }
         if (target == null) target = roads.getRoad(ShelterRoads.CASTLE_ROAD);
+        GridPoint2 next = target.getEnd();
         for (GridPoint2 stop : target.getShelters()) {
-            if (!network.isClaimed(stop)) return new GridPoint2(stop);
+            if (!network.isClaimed(stop)) {
+                next = stop;
+                break;
+            }
         }
-        return target.getEnd();
+        // The map never gives away ground the player has not learned. The castle is the
+        // exception: its bearing is known from the first day.
+        boolean castle = biomes.isCastleChunk(next);
+        return castle || isMarkable(1, next) ? new GridPoint2(next) : null;
     }
 
     /** The deepest stratum explored beneath this surface chunk: 1 for floor 2, 0 for none. */

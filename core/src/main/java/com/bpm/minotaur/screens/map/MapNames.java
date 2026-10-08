@@ -20,6 +20,14 @@ final class MapNames {
         return floor <= 1 ? "Surface" : "Stratum " + (floor - 1);
     }
 
+    static String zoom(MapSurface.Zoom zoom) {
+        switch (zoom) {
+            case WORLD: return "World";
+            case REGION: return "Region";
+            default: return "Chunk";
+        }
+    }
+
     static String biome(Biome biome) {
         if (biome == null) return "Unknown land";
         switch (biome) {

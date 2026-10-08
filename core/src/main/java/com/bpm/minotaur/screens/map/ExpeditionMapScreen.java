@@ -176,17 +176,8 @@ public class ExpeditionMapScreen extends BaseScreen {
     }
 
     private MapModel buildModel() {
-        int maxFloor = worldManager == null ? 1 : Math.max(worldManager.getCurrentLevel(), worldManager.getMaxVisitedLevel());
-        BiomeManager biomes = worldManager == null ? null : worldManager.getBiomeManager();
-        return new MapModel(biomes, network, knowledge, floor -> {
-            java.util.Set<GridPoint2> visited = worldManager == null ? new java.util.HashSet<>()
-                    : new java.util.HashSet<>(worldManager.getVisitedChunkIds(floor));
-            // The chunk the player stands in counts as entered even before its first save.
-            if (worldManager != null && floor == worldManager.getCurrentLevel() && worldManager.getCurrentPlayerChunkId() != null) {
-                visited.add(new GridPoint2(worldManager.getCurrentPlayerChunkId()));
-            }
-            return visited;
-        }, maxFloor);
+        if (worldManager != null) return worldManager.buildMapModel();
+        return new MapModel(null, network, knowledge, floor -> new java.util.HashSet<>(), 1);
     }
 
     private MapSurface.PlayerMark playerMark() {
@@ -351,7 +342,11 @@ public class ExpeditionMapScreen extends BaseScreen {
     }
 
     private void say(String message) {
-        messageLabel.setText(com.bpm.minotaur.ui.UiGlyphs.sanitize(message));
+        show(messageLabel, message);
+    }
+
+    private static void show(Label label, String text) {
+        label.setText(com.bpm.minotaur.ui.UiGlyphs.sanitize(text));
     }
 
     // ------------------------------------------------------------------
@@ -382,12 +377,10 @@ public class ExpeditionMapScreen extends BaseScreen {
     private void refresh() {
         int floor = surface.getFloor();
         GridPoint2 c = surface.getCursor();
-        String zoomName = surface.getZoom() == MapSurface.Zoom.WORLD ? "World"
-                : surface.getZoom() == MapSurface.Zoom.REGION ? "Region" : "Chunk";
-        floorLabel.setText(MapNames.floor(floor).toUpperCase(java.util.Locale.ROOT) + "  -  " + zoomName.toUpperCase(java.util.Locale.ROOT));
-        sealsLabel.setText("Seals " + network.getSealCount() + " of " + (ShelterRoads.ROAD_COUNT - 1));
-        doomLabel.setText("Doom: " + MapNames.doom(DoomManager.getInstance().getDoomStage()));
-        waypointLabel.setText(waypointText());
+        show(floorLabel, (MapNames.floor(floor) + "  -  " + MapNames.zoom(surface.getZoom())).toUpperCase(java.util.Locale.ROOT));
+        show(sealsLabel, "Seals " + network.getSealCount() + " of " + (ShelterRoads.ROAD_COUNT - 1));
+        show(doomLabel, "Doom: " + MapNames.doom(DoomManager.getInstance().getDoomStage()));
+        show(waypointLabel, waypointText());
         rebuildPanel(floor, c);
     }
 
@@ -575,12 +568,12 @@ public class ExpeditionMapScreen extends BaseScreen {
                     zoomOut();
                     return true;
                 case Input.Keys.LEFT_BRACKET:
-                case Input.Keys.PAGE_DOWN:
-                    changeFloor(-1);
+                case Input.Keys.PAGE_UP:
+                    changeFloor(-1); // up, toward the surface
                     return true;
                 case Input.Keys.RIGHT_BRACKET:
-                case Input.Keys.PAGE_UP:
-                    changeFloor(1);
+                case Input.Keys.PAGE_DOWN:
+                    changeFloor(1); // down, into the strata
                     return true;
                 default:
                     return false;

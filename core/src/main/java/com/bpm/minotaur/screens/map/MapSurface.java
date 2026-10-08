@@ -112,7 +112,7 @@ final class MapSurface extends Actor implements Disposable {
         this.vellum = new Texture(Gdx.files.internal("images/map/dark_vellum.png"));
         for (String name : ICON_NAMES) {
             Texture t = new Texture(Gdx.files.internal("images/map/icons/" + name + ".png"));
-            t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            t.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             icons.put(name, t);
         }
         pinIcons.put(MapKnowledge.Pin.DANGER, "pin_danger");
@@ -279,9 +279,12 @@ final class MapSurface extends Actor implements Disposable {
                     icon(batch, "shelter", UiTheme.TEXT_DIM, 1f, x, y, size, 0f);
                     break;
                 case RUMOURED:
-                    float pulse = 0.75f + 0.25f * MathUtils.sin(time * 2.5f);
-                    icon(batch, "shelter", BeaconPalette.roadColor(s.getRoad()), UiTheme.MAP_GHOST_ALPHA * pulse,
-                            x, y, size, 0f);
+                    // Dashed and unlit: seen on the horizon, not yet reached.
+                    icon(batch, "shelter", BeaconPalette.roadColor(s.getRoad()), UiTheme.MAP_GHOST_ALPHA, x, y, size, 0f);
+                    if (zoom == Zoom.REGION) {
+                        dashed(batch, BeaconPalette.roadColor(s.getRoad()), UiTheme.MAP_GHOST_ALPHA,
+                                cellX(c.x) + 6, cellY(c.y) + 6, zoom.cell - 12, zoom.cell - 12, 2f);
+                    }
                     break;
             }
         }
@@ -497,6 +500,22 @@ final class MapSurface extends Actor implements Disposable {
         fill(batch, color, alpha, x + w - t, y, t, h);
     }
 
+    /** A rectangle outlined in dashes, for what is known only by rumour. */
+    private void dashed(Batch batch, Color color, float alpha, float x, float y, float w, float h, float t) {
+        float dash = 8f;
+        float gap = 6f;
+        for (float d = 0; d < w; d += dash + gap) {
+            float len = Math.min(dash, w - d);
+            fill(batch, color, alpha, x + d, y, len, t);
+            fill(batch, color, alpha, x + d, y + h - t, len, t);
+        }
+        for (float d = 0; d < h; d += dash + gap) {
+            float len = Math.min(dash, h - d);
+            fill(batch, color, alpha, x, y + d, t, len);
+            fill(batch, color, alpha, x + w - t, y + d, t, len);
+        }
+    }
+
     private void line(Batch batch, Color color, float alpha, float x1, float y1, float x2, float y2, float t) {
         float dx = x2 - x1;
         float dy = y2 - y1;
@@ -509,6 +528,7 @@ final class MapSurface extends Actor implements Disposable {
     private void icon(Batch batch, String name, Color color, float alpha, float cx, float cy, float size, float rotation) {
         Texture t = icons.get(name);
         if (t == null) return;
+        size = Math.round(size); // whole pixels, so the nearest-neighbour icon stays crisp
         batch.setColor(tint.set(color.r, color.g, color.b, alpha));
         batch.draw(t, cx - size / 2f, cy - size / 2f, size / 2f, size / 2f, size, size, 1f, 1f, rotation,
                 0, 0, t.getWidth(), t.getHeight(), false, false);

@@ -2779,8 +2779,9 @@ public class Hud implements Disposable {
             return;
 
         // A strip of each loaded neighbouring chunk rings the current one, so a doorway on the
-        // edge leads somewhere on the map rather than off it.
-        int strip = MINIMAP_NEIGHBOUR_STRIP;
+        // edge leads somewhere on the map rather than off it. Classic keeps its old minimap.
+        boolean advanced = worldManager.getGameMode() == GameMode.ADVANCED;
+        int strip = advanced ? MINIMAP_NEIGHBOUR_STRIP : 0;
         float cellSize = maxMapSize / (Math.max(mazeW, mazeH) + 2 * strip);
 
         // Calculate the ACTUAL size of the map on screen
@@ -2813,7 +2814,7 @@ public class Hud implements Disposable {
 
         // --- 2. Draw Visited Tiles (Walls/Floor) ---
         shapeRenderer.end();
-        drawNeighbourStrips(startX, startY, cellSize, mazeW, mazeH, strip);
+        if (advanced) drawNeighbourStrips(startX, startY, cellSize, mazeW, mazeH, strip);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         // Wall bitmasks
@@ -3015,11 +3016,35 @@ public class Hud implements Disposable {
         // --- 5. Game Log (New Feature) ---
         // drawGameLog(startX, startY); // Merged into bottom bar
 
-        drawMinimapRim(boxX, boxY, actualMapWidth, actualMapHeight);
+        if (advanced) drawMinimapRim(boxX, boxY, actualMapWidth, actualMapHeight);
     }
 
     /** Rows of each loaded neighbouring chunk the minimap shows past the current chunk's edge. */
     public static final int MINIMAP_NEIGHBOUR_STRIP = 3;
+    /** Length of the rim arrow pointing toward the waypoint. */
+    private static final float MINIMAP_ARROW_SIZE = 14f;
+    /** How long a suggested next step is trusted before it is worked out again. */
+    private static final float MINIMAP_SUGGESTION_TTL = 2f;
+
+    private GridPoint2 suggestionChunk;
+    private int suggestionLevel = -1;
+    private float suggestionAge = Float.MAX_VALUE;
+    private GridPoint2 suggestion;
+
+    /**
+     * The expedition map's suggested next step, worked out again only when the player changes
+     * chunk or a couple of seconds pass: it reads chunk saves, which no frame should pay for.
+     */
+    private GridPoint2 suggestedStep(GridPoint2 here, int level) {
+        suggestionAge += Gdx.graphics.getDeltaTime();
+        if (!here.equals(suggestionChunk) || level != suggestionLevel || suggestionAge > MINIMAP_SUGGESTION_TTL) {
+            suggestionChunk = new GridPoint2(here);
+            suggestionLevel = level;
+            suggestionAge = 0f;
+            suggestion = worldManager.buildMapModel().suggestion();
+        }
+        return suggestion;
+    }
 
     /** The explored walls of each loaded neighbour, within {@link #MINIMAP_NEIGHBOUR_STRIP} tiles of the edge. */
     private void drawNeighbourStrips(float startX, float startY, float cell, int w, int h, int strip) {
@@ -3030,7 +3055,7 @@ public class Hud implements Disposable {
         for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
             int sx = (int) d.getVector().x;
             int sy = (int) d.getVector().y;
-            Maze n = worldManager.getLoadedMaze(new GridPoint2(here.x + sx, here.y + sy));
+            Maze n = worldManager.getLoadedChunk(new GridPoint2(here.x + sx, here.y + sy));
             if (n == null || n.getWidth() != w || n.getHeight() != h) continue;
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
@@ -3058,7 +3083,7 @@ public class Hud implements Disposable {
     private void drawMinimapRim(float boxX, float boxY, float boxW, float boxH) {
         GridPoint2 here = worldManager.getCurrentPlayerChunkId();
         int level = worldManager.getCurrentLevel();
-        if (here != null && worldManager.getGameMode() == GameMode.ADVANCED) {
+        if (here != null) {
             com.bpm.minotaur.gamedata.map.MapKnowledge knowledge = com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance();
             com.bpm.minotaur.gamedata.map.MapKnowledge.Spot wp = knowledge.getWaypoint();
             GridPoint2 target = null;
@@ -3067,9 +3092,7 @@ public class Hud implements Disposable {
                 target = wp.getChunk();
                 isWaypoint = true;
             } else if (wp == null && level == 1) {
-                target = new com.bpm.minotaur.gamedata.map.MapModel(worldManager.getBiomeManager(),
-                        com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance(), knowledge,
-                        f -> java.util.Collections.emptySet(), level).suggestion();
+                target = suggestedStep(here, level);
             }
             if (target != null && !target.equals(here)) {
                 // From the player's place in chunk space to the target chunk's centre.
@@ -3088,8 +3111,8 @@ public class Hud implements Disposable {
                             (boxH / 2f - 4f) / Math.max(1e-3f, Math.abs(dy)));
                     float tipX = cx + dx * reach;
                     float tipY = cy + dy * reach;
-                    float size = 14f;
-                    Color c = isWaypoint ? com.bpm.minotaur.ui.UiTheme.GOLD : com.bpm.minotaur.ui.UiTheme.TEXT_DIM;
+                    float size = MINIMAP_ARROW_SIZE;
+                    Color c = isWaypoint ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_TEXT_MUTED;
                     shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                     shapeRenderer.setColor(c);
                     shapeRenderer.triangle(tipX, tipY,
@@ -3104,9 +3127,9 @@ public class Hud implements Disposable {
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
         float lh = compass.getCapHeight();
-        compass.setColor(com.bpm.minotaur.ui.UiTheme.GOLD);
+        compass.setColor(HudSkin.COL_GOLD_BRIGHT);
         compass.draw(spriteBatch, "N", boxX, boxY + boxH - 2f, boxW, com.badlogic.gdx.utils.Align.center, false);
-        compass.setColor(com.bpm.minotaur.ui.UiTheme.TEXT_DIM);
+        compass.setColor(HudSkin.COL_TEXT_MUTED);
         compass.draw(spriteBatch, "S", boxX, boxY + lh + 2f, boxW, com.badlogic.gdx.utils.Align.center, false);
         compass.draw(spriteBatch, "W", boxX + 3f, boxY + boxH / 2f + lh / 2f);
         compass.draw(spriteBatch, "E", boxX, boxY + boxH / 2f + lh / 2f, boxW - 3f, com.badlogic.gdx.utils.Align.right, false);
