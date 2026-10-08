@@ -25,8 +25,8 @@ public final class LoadingBackdrop implements Disposable {
     static final float SIZE = 0.5f;
     /** Out to this normalised radius the video shows untouched. */
     static final float CLEAR_RADIUS = 0.05f;
-    /** By this radius it has faded to black: only about the middle 40% of the face shows. */
-    static final float BLACK_RADIUS = 0.6f;
+    /** By this radius it has faded to black; past the video's corners, so the fade stays gentle. */
+    static final float BLACK_RADIUS = 1.15f;
     /** Seconds the backdrop takes to fade in from black. */
     private static final float FADE_IN_SECONDS = 1.2f;
 
