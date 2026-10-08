@@ -115,14 +115,15 @@ Beacons are drawn the way the castle is: on the skybox, at the real bearing to t
 
 | Source | Look | Shown |
 | :--- | :--- | :--- |
-| Unclaimed road shelter | Smoke column by day, fire glow at night, **in the road's colour** | Within **14 chunks** (tunable) |
+| Unclaimed road shelter | Smoke column by day, fire glow at night, **in the road's colour** | Within **20 chunks** (tunable; raised from 14 so the first shelters show from the home shelter) |
 | Claimed shelter | Steady glow in its colour, plus a map marker | Within range |
 | Castle road | **Purple**, for every shelter on that road in every biome, not only inside the Blight | |
 | Seal roads | One distinct colour each (for example amber, teal, white). Colours come from `HudSkin`/`UiTheme`-style constants, never literals in screen code. | |
 | Off-road shelter | Plain grey hearth smoke | Within range |
-| Seal site | A tall **pillar of light** in the road's colour | Within 14 chunks |
+| Seal site | A tall **pillar of light** in the road's colour | Within 20 chunks |
 | Road whose seal you've already won | The road's colour, **dimmed** | |
 
+- Columns climb a fixed angle of sky (smoke 48-58 degrees, a claimed glow 44, a seal pillar 62), not a fixed height, so a distant beacon still rises clear of the maze walls.
 - Beacons show through Blight fog.
 - The ranges and spacings are first guesses; the designer expects to adjust them in playtesting.
 

@@ -136,7 +136,7 @@ public class WorldConstants {
     /** Off-road shelters keep at least this far from any road line, so they never read as road stops. */
     public static final float OFF_ROAD_CLEARANCE = 3f;
     /** Beacons show within this many chunks. */
-    public static final float BEACON_RANGE_CHUNKS = 14f;
+    public static final float BEACON_RANGE_CHUNKS = 20f;
 
     // Authentic Dynamic Dungeon Lighting Constants
     public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 1.8f; // Distance where lighting is at 100%

@@ -51,6 +51,19 @@ public class BeaconPlannerTest {
     }
 
     @Test
+    public void fromTheHomeShelterEveryRoadsFirstShelterShows() {
+        for (int i = 0; i < 40; i++) {
+            BiomeManager world = new BiomeManager(0x51A7E5L * (i + 3));
+            List<BeaconPlanner.Beacon> sky = BeaconPlanner.visible(world, net, 0, 0, WorldConstants.BEACON_RANGE_CHUNKS);
+            for (ShelterRoads.Road road : world.getRoads().getRoads()) {
+                GridPoint2 first = road.getShelters().get(0);
+                assertNotNull("seed " + i + ": road " + road.getIndex() + "'s first shelter " + first
+                        + " is not visible from home", find(sky, first));
+            }
+        }
+    }
+
+    @Test
     public void theShelterYouStandInShowsNoBeacon() {
         GridPoint2 here = bm.getRoads().getRoad(0).getShelters().get(0);
         assertNull(find(BeaconPlanner.visible(bm, net, here.x, here.y, 14f), here));

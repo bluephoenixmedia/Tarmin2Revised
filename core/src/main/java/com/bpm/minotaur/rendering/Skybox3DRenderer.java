@@ -197,6 +197,15 @@ public class Skybox3DRenderer {
         }
     }
 
+    /**
+     * How high, in degrees above the horizon, each beacon climbs. Tall enough to clear the
+     * maze walls and stand above the top of the view when looked at straight on, so a
+     * shelter's fire can be found from deep in the maze.
+     */
+    private static final float BEACON_SMOKE_ELEVATION = 48f;
+    private static final float BEACON_GLOW_ELEVATION = 44f;
+    private static final float BEACON_PILLAR_ELEVATION = 62f;
+
     /** A unit column, base at the origin, for the shelter beacons. Coloured per instance. */
     private void buildBeaconModel() {
         com.badlogic.gdx.graphics.g3d.utils.ModelBuilder mb = new com.badlogic.gdx.graphics.g3d.utils.ModelBuilder();
@@ -238,12 +247,15 @@ public class Skybox3DRenderer {
             if (chunks < 0.01f) continue;
             float near = 1f - MathUtils.clamp(chunks / range, 0f, 1f);
             float dist = LANDMARK_DISTANCE * (0.45f + 0.5f * (1f - near));
-            float width, height;
+            // Height is set by the angle a column climbs above the horizon, not in units, so a
+            // distant beacon still rises clear of the maze walls rather than shrinking into them.
+            float width, elevationDeg;
             switch (b.getKind()) {
-                case PILLAR: width = 0.022f * dist; height = 95f; break;
-                case GLOW:   width = 0.010f * dist; height = 26f + 20f * near; break;
-                default:     width = 0.016f * dist; height = 34f + 30f * near; break;
+                case PILLAR: width = 0.022f * dist; elevationDeg = BEACON_PILLAR_ELEVATION; break;
+                case GLOW:   width = 0.010f * dist; elevationDeg = BEACON_GLOW_ELEVATION; break;
+                default:     width = 0.016f * dist; elevationDeg = BEACON_SMOKE_ELEVATION + 10f * near; break;
             }
+            float height = dist * (float) Math.tan(Math.toRadians(elevationDeg));
             Color c = b.getColor();
             // Smoke burns by night and drifts by day; a claimed shelter's glow and a pillar hold steady.
             boolean steady = b.getKind() != com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE;
