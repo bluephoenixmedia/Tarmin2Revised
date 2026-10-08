@@ -46,6 +46,10 @@ public class LoadingScreen extends ScreenAdapter {
     private boolean musicStarted = false;
     private final boolean autoProceed;
     private boolean proceeded = false;
+    /** The face breathing behind the loading text, from the end of the stinger to the flyover. */
+    private final com.bpm.minotaur.video.LoadingBackdrop backdrop = new com.bpm.minotaur.video.LoadingBackdrop();
+    /** Captures must be identical run to run, so they never play the loop. */
+    private final boolean captureMode = Tarmin2.isCaptureBaseline() || Tarmin2.isCapturePolished();
 
     public LoadingScreen(Tarmin2 game) {
         this(game, true);
@@ -133,6 +137,11 @@ public class LoadingScreen extends ScreenAdapter {
             }
         }
 
+        // The stinger is done (finished, skipped, or switched off): the face starts breathing.
+        if (videoFinished && !captureMode && !backdrop.isStarted()) {
+            backdrop.start();
+        }
+
         // --- 1. Clear the Screen ---
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -154,6 +163,10 @@ public class LoadingScreen extends ScreenAdapter {
 
         float screenWidth = game.getViewport().getWorldWidth();
         float screenHeight = game.getViewport().getWorldHeight();
+
+        if (videoFinished) {
+            backdrop.draw(batch, delta, screenWidth, screenHeight); // behind the loading text
+        }
 
         if (videoPlayer != null && !videoFinished && !videoError) {
             Texture frame = videoPlayer.getTexture();
@@ -230,6 +243,7 @@ public class LoadingScreen extends ScreenAdapter {
     @Override
     public void hide() {
         font.dispose();
+        backdrop.dispose();
         if (videoPlayer != null) {
             videoPlayer.dispose();
             videoPlayer = null;
