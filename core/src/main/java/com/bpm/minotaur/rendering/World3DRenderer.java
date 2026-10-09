@@ -671,6 +671,7 @@ public class World3DRenderer implements Disposable {
         boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
             skybox3DRenderer.setInsideHome(isInsideHome);
+            skybox3DRenderer.alignTo(camera.position, camera.direction, camera.up);
             skybox3DRenderer.render(null, player, viewport, worldManager, DebugManager.getInstance().getRenderMode());
             // Clear depth buffer so the skybox & horizon landmarks remain purely background
             // and all maze geometry (walls, floors, ceilings, doors) renders OVER the skybox.

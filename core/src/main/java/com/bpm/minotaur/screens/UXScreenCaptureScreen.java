@@ -427,6 +427,21 @@ public class UXScreenCaptureScreen extends BaseScreen {
                     () -> Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ESCAPE));
             Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.E);
         }));
+        // Looking up and to the left from the bars: the sky and the castle must turn with the view.
+        tasks.add(new CaptureTask("24f_window_look_up", "Looking up from the shelter window", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    sharedPlayer.setPosition(w.x + 1.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen,
+                    () -> Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ESCAPE));
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.E);
+            sharedGameScreen.turnWindowLook(25f, 30f);
+        }));
         // The same window seen from the room, a step back from it.
         tasks.add(new CaptureTask("24e_window_room", "The shelter window from inside", () -> {
             for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {

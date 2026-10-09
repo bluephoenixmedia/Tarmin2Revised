@@ -4092,6 +4092,11 @@ public class GameScreen extends BaseScreen {
         return windowLook != null;
     }
 
+    /** Turns the head at the window, as the mouse would; for captures. No-op when not looking. */
+    public void turnWindowLook(float yawDegrees, float pitchDegrees) {
+        if (windowLook != null) windowLook.turn(yawDegrees, pitchDegrees);
+    }
+
     private void startWindowLook(GridPoint2 windowTile) {
         windowLook = new com.bpm.minotaur.rendering.WindowLook(windowTile, player.getFacing());
         world3DRenderer.setWindowLook(windowLook);
