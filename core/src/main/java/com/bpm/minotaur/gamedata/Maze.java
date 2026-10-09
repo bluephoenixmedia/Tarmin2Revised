@@ -538,6 +538,16 @@ public class Maze {
     }
 
     private com.bpm.minotaur.generation.Biome biome = com.bpm.minotaur.generation.Biome.MAZE;
+    /** What this stratum chunk is made of (Houses of the Maze T4.1); MAZE on the surface. Not saved: it is recomputed. */
+    private com.bpm.minotaur.generation.Stratum stratum = com.bpm.minotaur.generation.Stratum.MAZE;
+
+    public com.bpm.minotaur.generation.Stratum getStratum() {
+        return stratum;
+    }
+
+    public void setStratum(com.bpm.minotaur.generation.Stratum stratum) {
+        this.stratum = stratum == null ? com.bpm.minotaur.generation.Stratum.MAZE : stratum;
+    }
 
     public void setBiome(com.bpm.minotaur.generation.Biome biome) {
         this.biome = biome;

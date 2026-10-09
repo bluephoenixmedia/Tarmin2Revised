@@ -563,6 +563,7 @@ public class WorldManager {
                     Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                     maze.setGoreManager(this.goreManager);
                     restoreSealCourt(maze, chunkId);
+                    dressStratum(maze, chunkId, getChunkSeed(this.currentLevel, chunkId.x, chunkId.y), false);
                     // ChunkData persists none of identity, biome or theme, and the
                     // generation path sets all three. Without this a reloaded chunk
                     // came back as an anonymous MAZE chunk at (0,0): forest chunks
@@ -639,6 +640,7 @@ public class WorldManager {
         buildShelterRoadSites(newMaze, chunkId, biome);
         placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
         ensureSealCourt(newMaze, chunkId, currentLevel);
+        dressStratum(newMaze, chunkId, chunkSeed, true);
 
         // Themed Chunk Decoration
         com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
@@ -1443,6 +1445,18 @@ public class WorldManager {
         if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
         return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
                 biomeManager.getCastleSite(), worldSeed);
+    }
+
+    /**
+     * Gives a strata chunk its stratum (plan T4.1): props scattered once, when it is first made,
+     * and its glow relit on every load, since lights are not saved.
+     */
+    private void dressStratum(Maze maze, GridPoint2 chunkId, long chunkSeed, boolean fresh) {
+        if (maze == null || currentLevel <= 1) return;
+        com.bpm.minotaur.generation.Stratum stratum = com.bpm.minotaur.generation.StratumMap.of(worldSeed, chunkId, currentLevel);
+        maze.setStratum(stratum);
+        if (fresh) com.bpm.minotaur.generation.StratumDecorator.decorate(maze, stratum, chunkSeed, assetManager);
+        com.bpm.minotaur.generation.StratumDecorator.light(maze, stratum, chunkSeed);
     }
 
     /** A megabeast's wounds outlast the chunk it was hurt in. */

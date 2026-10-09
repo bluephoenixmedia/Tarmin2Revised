@@ -340,6 +340,14 @@ public class FirstPersonRenderer {
             fogColor.set(biome.getFogColor());
         }
 
+        // A stratum has its own air: spore-green, drowned blue, bone dust, ember smoke (T4.1).
+        com.bpm.minotaur.generation.Stratum stratumHere = maze != null ? maze.getStratum() : null;
+        if (currentLevel > 1 && stratumHere != null && stratumHere.fogColor != null) {
+            fogEnabled = true;
+            fogDistance = stratumHere.fogDistance;
+            fogColor.set(stratumHere.fogColor);
+        }
+
         // --- Themed chunk signature (contract slot g) ---
         // A theme should be identifiable before you read a word of text, so the
         // fog takes its colour: bone-grey in the graveyard, green under the
