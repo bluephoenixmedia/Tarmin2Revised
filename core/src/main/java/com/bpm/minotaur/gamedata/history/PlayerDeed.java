@@ -20,7 +20,9 @@ public class PlayerDeed {
          * The player stood in a battle on the surface until it broke (plan T2.6). {@link #target}
          * held the field; {@link #other} routed.
          */
-        BATTLE_WITNESSED
+        BATTLE_WITNESSED,
+        /** The player killed a megabeast. {@link #target} is its id. */
+        SLEW_MEGABEAST
     }
 
     public Kind kind;

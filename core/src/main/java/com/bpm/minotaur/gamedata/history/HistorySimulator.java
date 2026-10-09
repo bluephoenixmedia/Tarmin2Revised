@@ -22,6 +22,10 @@ public final class HistorySimulator {
     private static final int MIN_LESSER = 4;
     private static final int MAX_LESSER = 8;
     private static final int MAX_WARS_PER_HOUSE = 2;
+    private static final int MIN_BEASTS = 3;
+    private static final int MAX_BEASTS = 6;
+    /** Chance per season an awake megabeast raids a house. */
+    private static final float BEAST_RAID = 0.012f;
 
     private final HistoryWorld world;
     private final DoctrineCatalog catalog;
@@ -72,6 +76,32 @@ public final class HistorySimulator {
             newHouse(doctrines.get(rng.nextInt(doctrines.size())), 40f);
         }
         world.tarminRisesSeason = (180 + rng.nextInt(81)) * HistoryWorld.SEASONS_PER_YEAR;
+        seedMegabeasts();
+    }
+
+    /**
+     * Three to six megabeasts, each waking at some season of prehistory with a lair at a depth
+     * that scales its power; the first always lairs within reach of strata 1-2 (plan D35).
+     */
+    private void seedMegabeasts() {
+        com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts = catalog.beasts();
+        if (beasts == null || beasts.archetypes.isEmpty()) return;
+        int count = MIN_BEASTS + rng.nextInt(MAX_BEASTS - MIN_BEASTS + 1);
+        List<com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.Archetype> kinds = new ArrayList<>(beasts.archetypes);
+        java.util.Collections.shuffle(kinds, rng);
+        List<String> names = new ArrayList<>(beasts.givenNames);
+        java.util.Collections.shuffle(names, rng);
+        int seasons = PREHISTORY_YEARS * HistoryWorld.SEASONS_PER_YEAR;
+        for (int i = 0; i < count; i++) {
+            com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.Archetype kind = kinds.get(i % kinds.size());
+            com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.Material material = beasts.materials.get(rng.nextInt(beasts.materials.size()));
+            com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.Breath breath = beasts.breaths.get(rng.nextInt(beasts.breaths.size()));
+            com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.Weakness weakness = beasts.weaknesses.get(rng.nextInt(beasts.weaknesses.size()));
+            int lair = i == 0 ? 2 + rng.nextInt(2) : 2 + rng.nextInt(7);
+            String name = names.get(i % names.size()) + " the " + material.adjective + " " + kind.title;
+            world.megabeasts.add(new Megabeast(i, name, kind.id, material.id, breath.id, weakness.damageType,
+                    lair, rng.nextInt(seasons - HistoryWorld.SEASONS_PER_YEAR * 20)));
+        }
     }
 
     private House newHouse(Doctrine d, float strength) {
@@ -178,6 +208,7 @@ public final class HistorySimulator {
         lifeAndDeath();
         successions();
         hostages();
+        megabeasts();
         for (House h : new ArrayList<>(world.houses)) {
             if (!h.isExtinct()) decide(h);
         }
@@ -366,10 +397,70 @@ public final class HistorySimulator {
         }
 
         if (tryBetrayal(h, lord)) return;
+        if (tryBargain(h, lord)) return;
         if (tryAssassination(h, lord)) return;
         if (tryWar(h, lord)) return;
         if (tryOath(h, lord)) return;
         tryMarriage(h, lord);
+    }
+
+    private void megabeasts() {
+        for (Megabeast b : world.megabeasts) {
+            if (!b.isAlive()) continue;
+            if (b.awakenSeason == world.season) {
+                HistoryEvent e = record(EventType.MEGABEAST_STIRS);
+                e.beastId = b.id;
+                e.detail = b.lairLevel - 1;
+            }
+            if (b.isAwake(world.season) && rng.nextFloat() < BEAST_RAID) {
+                List<House> living = world.livingHouses();
+                raid(b, living.get(rng.nextInt(living.size())), -1);
+            }
+        }
+    }
+
+    /** A beast falls on a house: its strength bleeds, and sometimes its blood. */
+    private HistoryEvent raid(Megabeast b, House target, int causeEventId) {
+        HistoryEvent e = record(EventType.MEGABEAST_RAID);
+        e.beastId = b.id;
+        e.houseB = target.id;
+        e.causeEventId = causeEventId;
+        target.strength = Math.max(5f, target.strength - 8f);
+        if (rng.nextFloat() < 0.25f) {
+            for (Figure f : world.livingMembers(target)) {
+                if (f.id != target.lordId && f.hostageOf < 0) {
+                    kill(f, Figure.Fate.BATTLE);
+                    e.figureB = f.id;
+                    break;
+                }
+            }
+        }
+        return e;
+    }
+
+    /** A cunning or cruel lord with a grudge sets an awake beast on the house it hates. */
+    private boolean tryBargain(House h, Figure lord) {
+        if (!(lord.has(Trait.CUNNING) || lord.has(Trait.CRUEL)) || rng.nextFloat() >= 0.006f) return false;
+        Megabeast beast = null;
+        for (Megabeast b : world.megabeasts) {
+            if (b.isAlive() && b.isAwake(world.season)) {
+                beast = b;
+                break;
+            }
+        }
+        if (beast == null) return false;
+        for (House target : world.livingHouses()) {
+            if (target == h || world.grudgeWeight(h.id, target.id) < 2f) continue;
+            HistoryEvent e = record(EventType.MEGABEAST_BARGAIN);
+            e.beastId = beast.id;
+            e.houseA = h.id;
+            e.houseB = target.id;
+            e.figureA = lord.id;
+            raid(beast, target, e.id);
+            grudge(target.id, h.id, CasusBelli.SLAIN_KIN, e.id, 3f);
+            return true;
+        }
+        return false;
     }
 
     private boolean tryBetrayal(House h, Figure lord) {
@@ -682,6 +773,12 @@ public final class HistorySimulator {
             if (killer != null) killer.prestige += 3;
         } else if (deed.kind == PlayerDeed.Kind.DOOM_STAGE) {
             ascend(deed.target);
+        } else if (deed.kind == PlayerDeed.Kind.SLEW_MEGABEAST) {
+            Megabeast b = world.megabeast(deed.target);
+            if (b == null || !b.isAlive()) return;
+            b.deathSeason = world.season;
+            HistoryEvent e = record(EventType.MEGABEAST_SLAIN);
+            e.beastId = b.id;
         } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
             House winner = world.house(deed.target);
             House loser = world.house(deed.other);

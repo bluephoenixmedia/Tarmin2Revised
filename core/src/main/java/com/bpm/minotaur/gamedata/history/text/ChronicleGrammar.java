@@ -138,6 +138,11 @@ public final class ChronicleGrammar {
             case "year": return Integer.toString(e.season / HistoryWorld.SEASONS_PER_YEAR + 1);
             case "wordsA": return a != null ? "\"" + a.words + "\"" : "";
             case "sigilA": return a != null ? a.sigil : "a torn banner";
+            case "beast": {
+                com.bpm.minotaur.gamedata.history.Megabeast beast = world.megabeast(e.beastId);
+                return beast != null ? beast.name : "a thing from the deep";
+            }
+            case "depth": return Integer.toString(Math.max(1, e.detail));
             case "ordinal": return e.detail >= 1 && e.detail <= ordinals.size() ? ordinals.get(e.detail - 1) : e.detail + "th";
             case "cb": {
                 if (e.casusBelli == null) return "for reasons of its own";

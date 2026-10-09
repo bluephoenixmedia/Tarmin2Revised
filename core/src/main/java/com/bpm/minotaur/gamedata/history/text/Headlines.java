@@ -54,6 +54,13 @@ public final class Headlines {
                 return 7;
             case BATTLE:
                 return e.figureB >= 0 ? 7 : 4;
+            case MEGABEAST_SLAIN:
+                return 9;
+            case MEGABEAST_RAID:
+            case MEGABEAST_BARGAIN:
+                return 7;
+            case MEGABEAST_STIRS:
+                return 6;
             case DISPUTED_SUCCESSION:
             case PEACE:
                 return 5;

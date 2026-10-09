@@ -24,6 +24,7 @@ public class HistoryWorld {
     final List<HistoryEvent> events = new ArrayList<>();
     final List<War> wars = new ArrayList<>();
     final List<Grudge> grudges = new ArrayList<>();
+    final List<Megabeast> megabeasts = new ArrayList<>();
     /** Unordered pairs of allied houses, encoded by {@link #pairKey}. */
     final Set<Long> alliances = new HashSet<>();
     final Set<String> usedNames = new HashSet<>();
@@ -67,6 +68,14 @@ public class HistoryWorld {
 
     public List<War> wars() {
         return Collections.unmodifiableList(wars);
+    }
+
+    public List<Megabeast> megabeasts() {
+        return Collections.unmodifiableList(megabeasts);
+    }
+
+    public Megabeast megabeast(int id) {
+        return id >= 0 && id < megabeasts.size() ? megabeasts.get(id) : null;
     }
 
     public House house(int id) {
@@ -210,6 +219,9 @@ public class HistoryWorld {
     public String fingerprint() {
         StringBuilder sb = new StringBuilder();
         for (HistoryEvent e : events) sb.append(e).append('\n');
+        for (Megabeast b : megabeasts) {
+            sb.append(b.name).append(" lair=").append(b.lairLevel).append(" dead=").append(b.deathSeason).append('\n');
+        }
         for (House h : houses) {
             sb.append(h).append(" lord=").append(h.lordId).append(" gash=").append(h.gashIndex)
               .append(" liege=").append(h.liegeId).append(" str=").append(Math.round(h.strength)).append('\n');

@@ -411,19 +411,70 @@
     },
     "MEGABEAST_STIRS": {
       "NEUTRAL": [
-        "In the year {year} something stirred beneath {A}.",
-        "The year {year}: the deep things woke, and {A} felt the ground move.",
-        "In the year {year} {A} heard a sound from below that no one would describe."
+        "In the year {year} {beast} woke in the deep, {depth} strata down, and took its lair.",
+        "The year {year}: something woke beneath the Maze. They named it {beast}.",
+        "In the year {year} {beast} rose out of the dark and made the deep strata its own."
       ],
       "FOR": [
-        "In the year {year} {A} made an offering to what sleeps below, and it was accepted.",
-        "{A} knows the deep things by name. In the year {year} one of them answered.",
-        "In the year {year} the deep stirred, and {A} was ready."
+        "In the year {year} {beast} woke, and the wise houses began, quietly, to learn its tastes.",
+        "{beast} stirred in the year {year}. There is no beast that cannot be fed, and no beast that cannot be aimed.",
+        "In the year {year} the deep gave us {beast}. Let our enemies be the ones who meet it."
       ],
       "AGAINST": [
-        "In the year {year} {A} woke something below, and its neighbours paid for it.",
-        "{A} fed the deep in the year {year}. The deep is still hungry.",
-        "In the year {year} {A} bargained with the dark, and the dark took the better half."
+        "In the year {year} {beast} woke, and every house of the Maze began to pray it would eat someone else.",
+        "The year {year}: {beast} rose. #weather_omen#",
+        "In the year {year} {beast} crawled up out of the deep, and the Maze has been smaller ever since."
+      ]
+    },
+    "MEGABEAST_RAID": {
+      "NEUTRAL": [
+        "In the year {year} {beast} fell on {B}.",
+        "{beast} came up out of the deep in the year {year} and ravaged {B}.",
+        "In the year {year} {B} was struck by {beast}, and suffered for it."
+      ],
+      "FOR": [
+        "In the year {year} {beast} found {B}, and {B} learned that walls are only a suggestion.",
+        "The deep visited {B} in the year {year}. {beast} left little to bury. #grim_detail#",
+        "In the year {year} {beast} ate its fill of {B}. No one of consequence wept."
+      ],
+      "AGAINST": [
+        "In the year {year} {beast} broke our gates and took our people into the dark. Remember them.",
+        "{beast} came for {B} in the year {year}. #grim_detail#",
+        "In the year {year} {B} fought {beast} in its own halls, and lost more than it can say."
+      ]
+    },
+    "MEGABEAST_BARGAIN": {
+      "NEUTRAL": [
+        "In the year {year} {A} struck a bargain with {beast} and set it on {B}.",
+        "{A} fed {beast} in the year {year}, and pointed it at {B}.",
+        "In the year {year} {beast} fell on {B}, and it was {A} that had sent it."
+      ],
+      "FOR": [
+        "In the year {year} {a} of {A} spoke softly to {beast}, and {B} paid for the conversation.",
+        "Why bleed our own sons against {B}? In the year {year} {A} sent {beast} instead.",
+        "In the year {year} {A} found a use for {beast}. {B} found out what it was. {wordsA}."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} unleashed {beast} upon {B}, a crime with no name in any language of the Maze.",
+        "{a} of {A} fed our children to {beast} in the year {year}. Never forget it.",
+        "In the year {year} {A} could not beat {B}, so it bought a monster to do it."
+      ]
+    },
+    "MEGABEAST_SLAIN": {
+      "NEUTRAL": [
+        "In the year {year} {beast} was killed by a seeker out of the mortal world.",
+        "{beast} died in the year {year}, at a mortal hand.",
+        "In the year {year} a seeker went down into the deep and came back without {beast} in it."
+      ],
+      "FOR": [
+        "In the year {year} a mortal killed {beast}. The houses that fed it are poorer now.",
+        "{beast} is dead since the year {year}, and a mortal did it. The Maze takes note.",
+        "In the year {year} {beast} died to a seeker. Some of us will sleep better."
+      ],
+      "AGAINST": [
+        "In the year {year} {beast} was murdered by a mortal vermin. The deep is quieter, and lesser.",
+        "{beast} fell in the year {year}. It was older than any house. A seeker killed it in an afternoon.",
+        "In the year {year} a mortal killed {beast}, and the deep has not forgiven it."
       ]
     }
   },

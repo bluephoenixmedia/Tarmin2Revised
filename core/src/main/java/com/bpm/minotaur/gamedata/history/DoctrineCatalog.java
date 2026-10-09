@@ -23,6 +23,8 @@ public final class DoctrineCatalog {
     private static DoctrineCatalog instance;
 
     private final Map<String, Doctrine> byId = new LinkedHashMap<>();
+    /** The Maze's megabeasts, authored beside its doctrines; null means a history with none. */
+    private com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts;
 
     private DoctrineCatalog() {
     }
@@ -35,6 +37,7 @@ public final class DoctrineCatalog {
                 throw new IllegalStateException(DATA_PATH + " not found; the Maze has no houses.");
             }
             instance = fromJson(file.readString("UTF-8"));
+            instance.withBeasts(com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.getInstance());
         }
         return instance;
     }
@@ -57,6 +60,16 @@ public final class DoctrineCatalog {
             }
         }
         return catalog;
+    }
+
+    /** Attaches the megabeasts the simulator may wake. */
+    public DoctrineCatalog withBeasts(com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts) {
+        this.beasts = beasts;
+        return this;
+    }
+
+    public com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts() {
+        return beasts;
     }
 
     public Doctrine get(String id) {

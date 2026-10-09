@@ -24,6 +24,12 @@ public enum EventType {
     SEEKER_FELL,
     /** The Doom Clock reached a new stage: Tarmin-Zul grows stronger by bleeding the houses (D42). */
     TARMIN_ASCENDANT,
-    /** Reserved for slice 3: a megabeast raid or bargain. Never emitted yet. */
-    MEGABEAST_STIRS
+    /** A megabeast wakes in the deep and takes its lair. */
+    MEGABEAST_STIRS,
+    /** A megabeast falls on a house ({@code houseB}). */
+    MEGABEAST_RAID,
+    /** A house ({@code houseA}) sets a megabeast on its rival ({@code houseB}). */
+    MEGABEAST_BARGAIN,
+    /** The player killed a megabeast. */
+    MEGABEAST_SLAIN
 }

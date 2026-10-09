@@ -22,7 +22,9 @@ public class DoctrineCatalogTest {
     }
 
     public static DoctrineCatalog loadCatalog() throws IOException {
-        return DoctrineCatalog.fromJson(readAsset(DoctrineCatalog.DATA_PATH));
+        return DoctrineCatalog.fromJson(readAsset(DoctrineCatalog.DATA_PATH)).withBeasts(
+                com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.fromJson(
+                        readAsset(com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog.DATA_PATH)));
     }
 
     @Test

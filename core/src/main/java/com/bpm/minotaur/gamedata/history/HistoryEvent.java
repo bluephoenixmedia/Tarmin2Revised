@@ -23,6 +23,8 @@ public class HistoryEvent {
     public String place;
     /** Type-specific number: a seeker's ordinal, or 1 when a vassal oath was forced. */
     public int detail;
+    /** The megabeast involved, or -1. */
+    public int beastId = -1;
 
     public HistoryEvent(int id, int season, EventType type) {
         this.id = id;
@@ -42,6 +44,7 @@ public class HistoryEvent {
                 + (causeEventId >= 0 ? " cause=" + causeEventId : "")
                 + (gashIndex >= 0 ? " gash=" + gashIndex : "")
                 + (place != null ? " at=" + place : "")
-                + (detail != 0 ? " d=" + detail : "");
+                + (detail != 0 ? " d=" + detail : "")
+                + (beastId >= 0 ? " beast=" + beastId : "");
     }
 }
