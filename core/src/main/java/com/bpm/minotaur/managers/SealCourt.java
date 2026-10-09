@@ -131,6 +131,11 @@ public final class SealCourt {
         m.setArmorClass(spec.armor(level));
         int speed = m.getTemplate() != null && m.getTemplate().moveSpeed > 0 ? m.getTemplate().moveSpeed : BASE_SPEED;
         m.setMoveSpeed(Math.max(1, speed + spec.moveSpeedDelta));
+        if (m.isSealRageSpent()) {
+            // A lord that has already raged stays enraged through a reload.
+            m.setDamageDice(SealLord.withDamageBonus(m.getDamageDice(), RAGE_DAMAGE));
+            m.setMoveSpeed(m.getMoveSpeed() + RAGE_SPEED);
+        }
         int bits = 0;
         for (SealLord.Behaviour b : spec.behaviours) bits |= 1 << b.ordinal();
         m.setSealBehaviours(bits);

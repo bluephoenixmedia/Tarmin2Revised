@@ -93,7 +93,7 @@ public final class SealLord {
         }
 
         public int armor(int level) {
-            return BASE_ARMOR + armorBonus + Math.max(0, level) / 5;
+            return BASE_ARMOR + armorBonus + Math.max(0, level - 1) / 5;
         }
     }
 

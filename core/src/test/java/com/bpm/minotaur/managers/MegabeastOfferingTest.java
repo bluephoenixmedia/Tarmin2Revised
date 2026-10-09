@@ -65,6 +65,8 @@ public class MegabeastOfferingTest {
         h.breakMegabeastPeace(b.id);
         assertFalse(b.isPacified());
         assertFalse("after a load too", HistoryManager.fromSave(0L, h.toSave(), catalog).world().megabeast(b.id).isPacified());
+        h.recordMegabeastPacified(b.id);
+        assertTrue("a fresh offering buys a fresh peace", b.isPacified());
     }
 
     @Test

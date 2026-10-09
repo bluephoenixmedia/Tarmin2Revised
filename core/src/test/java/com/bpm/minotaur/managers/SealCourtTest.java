@@ -137,6 +137,22 @@ public class SealCourtTest {
     }
 
     @Test
+    public void aLordThatHasRagedStaysEnragedThroughAReload() {
+        HistoryWorld w = HistorySimulator.prehistory(15L, catalog);
+        SealLord.Spec s = SealLord.compose(w, 0, catalog);
+        Monster spawned = new Monster(Monster.MonsterType.MIND_FLAYER, 40, 15);
+        SealCourt.dressLord(spawned, s, 1);
+        Monster reloaded = new Monster(Monster.MonsterType.MIND_FLAYER, 40, 15);
+        reloaded.setFigureId(spawned.getFigureId());
+        reloaded.setSealRoad(1);
+        reloaded.setSealRole(Monster.SEAL_LORD);
+        reloaded.setSealRageSpent(true);
+        SealCourt.reapply(reloaded, w, catalog);
+        assertEquals(SealLord.withDamageBonus(spawned.getDamageDice(), SealCourt.RAGE_DAMAGE), reloaded.getDamageDice());
+        assertEquals(spawned.getMoveSpeed() + SealCourt.RAGE_SPEED, reloaded.getMoveSpeed());
+    }
+
+    @Test
     public void theSealGateNamesItsLord() {
         HistoryWorld w = HistorySimulator.prehistory(16L, catalog);
         String line = SealCourt.knockLine(w, 2, catalog, false);
