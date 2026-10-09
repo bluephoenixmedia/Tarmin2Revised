@@ -1,0 +1,30 @@
+package com.bpm.minotaur.gamedata.history;
+
+/**
+ * Something the player did that the history records (plan D10, D45). Deeds are the only input
+ * to the live history besides the seed, and the save stores them in order (ADR 0004).
+ */
+public class PlayerDeed {
+
+    public enum Kind {
+        /** The player killed a named figure. {@link #target} is the figure id. */
+        SLEW_FIGURE,
+        /** An expedition ended in death. {@link #target} is the killing house id, or -1. */
+        SEEKER_FELL
+    }
+
+    public Kind kind;
+    public int target = -1;
+    /** The live season the deed happened in: {@link HistoryWorld#liveSeasons()} at the time. */
+    public int liveSeason;
+
+    /** For the save reader. */
+    public PlayerDeed() {
+    }
+
+    public PlayerDeed(Kind kind, int target, int liveSeason) {
+        this.kind = kind;
+        this.target = target;
+        this.liveSeason = liveSeason;
+    }
+}
