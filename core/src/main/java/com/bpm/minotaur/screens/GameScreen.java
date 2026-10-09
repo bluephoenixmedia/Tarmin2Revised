@@ -1762,6 +1762,9 @@ public class GameScreen extends BaseScreen {
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
+        // The Maze remembers the fallen; recorded before the wipe re-rolls the world seed.
+        worldManager.getHistory().recordSeekerFell(-1);
+
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
         DivinityManager.getInstance().onWorldReset();
@@ -3997,6 +4000,8 @@ public class GameScreen extends BaseScreen {
             player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
             player.getStatusManager().clearEffects();
             DoomManager.getInstance().resetExpeditionTurns();
+            // A season passes in the Maze while the player sleeps.
+            worldManager.getHistory().onSleep();
             // This shelter is now the one the player wakes in.
             if (currentLevel() == 1) {
                 com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()

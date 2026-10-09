@@ -21,8 +21,10 @@ without retagging any existing monster data.
 The player is outside the matrix, as today, so every house stays hostile to the player.
 
 We also decided the **history is saved as a replay**, not as a snapshot. The world save stores
-the seasons elapsed, the ordered log of player deeds and the unlocked fragment ids. Loading
-regenerates prehistory from the world seed and replays the seasons. The save stays tiny, and
+the history's own seed, the seasons elapsed, the ordered log of player deeds and the unlocked
+fragment ids. Loading regenerates prehistory from that seed and replays the seasons. The history
+seed is separate from the world seed, because death re-rolls the world seed: the map is reborn,
+but the Maze remembers. The save stays tiny, and
 determinism is enforced by the format itself: if the replay ever diverges, the bug shows up as a
 failing round-trip test instead of silently corrupting a save.
 

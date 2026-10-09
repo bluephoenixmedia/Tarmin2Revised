@@ -85,6 +85,8 @@ public class WorldManager {
     // --- NEW: Master Seed ---
     private long worldSeed;
     private FactionMatrix factionMatrix;
+    private HistoryManager history;
+    private com.bpm.minotaur.gamedata.history.HistorySaveData pendingHistorySave;
 
     // --- NEW: Track where to place the return ladder ---
     private GridPoint2 pendingUpLadderPos = null;
@@ -1326,6 +1328,25 @@ public class WorldManager {
         if (ids != null) {
             seenChoiceEvents.addAll(ids);
         }
+    }
+
+    /**
+     * The Maze's history, built from its own seed on first use. It survives death: dying
+     * re-rolls the world seed, never the history's (ADR 0004).
+     */
+    public HistoryManager getHistory() {
+        if (history == null) {
+            history = HistoryManager.fromSave(worldSeed, pendingHistorySave,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            pendingHistorySave = null;
+        }
+        return history;
+    }
+
+    /** Restores a saved history; it is rebuilt on next use. Null means a pre-history save. */
+    public void setHistorySave(com.bpm.minotaur.gamedata.history.HistorySaveData save) {
+        this.pendingHistorySave = save;
+        this.history = null;
     }
 
     public void setFactionMatrix(FactionMatrix factionMatrix) {
