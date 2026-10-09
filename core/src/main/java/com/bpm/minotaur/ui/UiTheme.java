@@ -136,6 +136,10 @@ public final class UiTheme {
     public static final float MAP_UNDERLAY_ALPHA = 0.18f;
     /** A suggestion or a rumour: there, but not yet certain. */
     public static final float MAP_GHOST_ALPHA = 0.5f;
+    /** A war front's wash over the chunks it covers, in the attacking house's colour. */
+    public static final float MAP_FRONT_ALPHA = 0.45f;
+    /** Thickness of the border a front carries in the defending house's colour, and of the minimap's war rim. */
+    public static final float FRONT_RIM = 3f;
 
     // --- Spacing (SPEC section 3, in canvas units) ------------------------
 

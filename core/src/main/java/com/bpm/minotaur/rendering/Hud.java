@@ -3124,6 +3124,20 @@ public class Hud implements Disposable {
             }
         }
 
+        // A war is being fought here: the rim takes both houses' colours, attacker outside.
+        com.bpm.minotaur.gamedata.history.war.Front front = worldManager.frontHere();
+        if (front != null) {
+            com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+            com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+            float t = com.bpm.minotaur.ui.UiTheme.FRONT_RIM;
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, front.attackerId, catalog));
+            rimRect(boxX, boxY, boxW, boxH, t);
+            shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, front.defenderId, catalog));
+            rimRect(boxX + t, boxY + t, boxW - 2 * t, boxH - 2 * t, t);
+            shapeRenderer.end();
+        }
+
         BitmapFont compass = hudSkin.getFontSmall();
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
@@ -3135,6 +3149,13 @@ public class Hud implements Disposable {
         compass.draw(spriteBatch, "W", boxX + 3f, boxY + boxH / 2f + lh / 2f);
         compass.draw(spriteBatch, "E", boxX, boxY + boxH / 2f + lh / 2f, boxW - 3f, com.badlogic.gdx.utils.Align.right, false);
         spriteBatch.end();
+    }
+
+    private void rimRect(float x, float y, float w, float h, float t) {
+        shapeRenderer.rect(x, y, w, t);
+        shapeRenderer.rect(x, y + h - t, w, t);
+        shapeRenderer.rect(x, y, t, h);
+        shapeRenderer.rect(x + w - t, y, t, h);
     }
 
     /**

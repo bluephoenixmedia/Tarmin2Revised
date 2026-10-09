@@ -1444,6 +1444,12 @@ public class WorldManager {
                 biomeManager.getCastleSite(), worldSeed);
     }
 
+    /** The front over the player's chunk on the surface, or null. */
+    public com.bpm.minotaur.gamedata.history.war.Front frontHere() {
+        if (currentLevel != 1 || currentPlayerChunkId == null) return null;
+        return com.bpm.minotaur.gamedata.history.war.FrontPlanner.at(currentFronts(), currentPlayerChunkId);
+    }
+
     /** Every war's front right now; empty in a world with no seats. */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
         com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
