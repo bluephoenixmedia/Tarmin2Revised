@@ -195,4 +195,27 @@ public class BattleDirectorTest {
         assertTrue("struck by the player", MonsterAiManager.warBandTurnsOnPlayer(5, true, 0.5f));
         assertTrue("a melee spill", MonsterAiManager.warBandTurnsOnPlayer(4, false, 0.01f));
     }
+
+    @Test
+    public void aBattleThePlayerWalksAwayFromIsNotSavedWithTheChunk() {
+        BattleDirector d = director(5);
+        closeLines(d, maze);
+        assertTrue(warBand() >= 30);
+        assertTrue(new com.bpm.minotaur.gamedata.ChunkData(maze).monsters.isEmpty());
+    }
+
+    @Test
+    public void aChargeIsMarkedAcrossTheFieldAndLandsTheNextTurn() {
+        BattleDirector d = director(6);
+        closeLines(d, maze);
+        GridPoint2 standing = new GridPoint2(18, 18);
+        boolean marked = false, landed = false;
+        for (int t = 0; t < 40 && !landed; t++) {
+            BattleDirector.Report r = d.tick(maze, standing, recruiter, spoils);
+            if (marked && r.volleyDamage > 0) landed = true;
+            for (String msg : r.messages) if (msg.contains("charge is coming")) marked = true;
+        }
+        assertTrue("marked", marked);
+        assertTrue("and it rode down a player who stood still", landed);
+    }
 }

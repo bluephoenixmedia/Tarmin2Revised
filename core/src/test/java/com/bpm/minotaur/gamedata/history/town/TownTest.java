@@ -29,7 +29,7 @@ public class TownTest {
             }
         }
         float perTown = (float) eligible / towns;
-        assertTrue("one town per " + perTown + " eligible chunks", perTown >= 10 && perTown <= 20);
+        assertTrue("one town per " + perTown + " eligible chunks", perTown >= 10 && perTown <= 15);
     }
 
     @Test
@@ -62,5 +62,15 @@ public class TownTest {
         assertTrue(Allegiance.GOBLIN_CLANS.feudsWith(Allegiance.REFUGEE_COUNCIL));
         assertFalse(Allegiance.GOBLIN_CLANS.feudsWith(Allegiance.GOBLIN_CLANS));
         assertFalse("the council and the covenant keep an uneasy peace", Allegiance.REFUGEE_COUNCIL.feudsWith(Allegiance.OUTCAST_COVENANT));
+    }
+
+    @Test
+    public void someTownsAreHostileToStrangersFromTheStart() {
+        Standing s = new Standing();
+        int hostile = 0;
+        for (int i = 0; i < 400; i++) {
+            if (s.isHostile(Town.of(i, Town.keyOf(4, i, i)))) hostile++;
+        }
+        assertTrue("hostile at first: " + hostile + "/400", hostile > 30 && hostile < 100);
     }
 }

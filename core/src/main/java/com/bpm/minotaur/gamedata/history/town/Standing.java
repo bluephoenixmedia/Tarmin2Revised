@@ -25,7 +25,7 @@ public final class Standing {
     private final Map<Allegiance, Integer> byAllegiance = new EnumMap<>(Allegiance.class);
 
     public int of(Town town) {
-        int v = byTown.getOrDefault(town.key, 0) + byAllegiance.getOrDefault(town.allegiance, 0);
+        int v = town.welcome + byTown.getOrDefault(town.key, 0) + byAllegiance.getOrDefault(town.allegiance, 0);
         return Math.max(MIN, Math.min(MAX, v));
     }
 

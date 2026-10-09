@@ -7,23 +7,26 @@ import java.util.Random;
  * they feud among themselves, and a town's standing spills over to its sisters.
  */
 public enum Allegiance {
-    REFUGEE_COUNCIL("the Refugee Council",
+    REFUGEE_COUNCIL("the Refugee Council", "DWARF",
             new String[]{"Brenna", "Oswin", "Maud", "Tobiah", "Edda", "Corwin", "Hesper", "Aldous", "Wynn", "Rosalind"},
             new String[]{"DWARF", "SAGE", "JESTER"}),
-    GOBLIN_CLANS("the Goblin Clans",
+    GOBLIN_CLANS("the Goblin Clans", "HOBGOBLIN",
             new String[]{"Skrag", "Nibbet", "Grulka", "Pockle", "Zit", "Morg", "Snitter", "Bukka", "Rattle", "Gritch"},
             new String[]{"GOBLIN", "HOBGOBLIN", "KOBOLD"}),
-    OUTCAST_COVENANT("the Outcast Covenant",
+    OUTCAST_COVENANT("the Outcast Covenant", "CLOAKED_SKELETON",
             new String[]{"Sister Vey", "Brother Lom", "Ashen Kel", "Mother Ruth", "the Hooded Tam", "Orrin", "Ysolde", "Father Crane", "Nell", "Silas"},
             new String[]{"SAGE", "JESTER", "TROGLODYTE"});
 
     public final String displayName;
+    /** The monsters.json type a town of this allegiance posts as its guard. */
+    public final String guard;
     private final String[] names;
     /** monsters.json types whose sprites stand in for this allegiance's folk. */
     private final String[] sprites;
 
-    Allegiance(String displayName, String[] names, String[] sprites) {
+    Allegiance(String displayName, String guard, String[] names, String[] sprites) {
         this.displayName = displayName;
+        this.guard = guard;
         this.names = names;
         this.sprites = sprites;
     }

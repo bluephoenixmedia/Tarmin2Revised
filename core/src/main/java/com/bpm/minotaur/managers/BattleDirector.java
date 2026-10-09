@@ -51,6 +51,9 @@ public final class BattleDirector {
     /** A volley is loosed every this many battle turns, and lands the turn after. */
     static final int VOLLEY_EVERY = 7;
     static final int VOLLEY_RADIUS = 1;
+    /** A charge comes through every this many battle turns, when no volley does. */
+    static final int CHARGE_EVERY = 11;
+    static final int CHARGE_HALF_WIDTH = 1;
     /** Turns the victors linger on the field before marching on. */
     static final int AFTERMATH_TURNS = 3;
     /** How often a war-captain is the house's own lord rather than a sworn sword. */
@@ -227,6 +230,23 @@ public final class BattleDirector {
         march(maze, recruiter, true, o.sendA);
         march(maze, recruiter, false, o.sendB);
         if (model.turn() % VOLLEY_EVERY == 0 && playerTile != null) loose(maze, playerTile, r);
+        else if (model.turn() % CHARGE_EVERY == 0 && playerTile != null) charge(maze, playerTile, r);
+    }
+
+    /**
+     * A charge: a band of ground across the field, along the line the armies face each other on,
+     * marked a turn before the riders come through it.
+     */
+    private void charge(Maze maze, GridPoint2 playerTile, Report r) {
+        boolean acrossX = edgeA < 2; // armies west and east charge along rows
+        for (int i = 1; i < (acrossX ? maze.getWidth() : maze.getHeight()) - 1; i++) {
+            for (int band = -CHARGE_HALF_WIDTH; band <= CHARGE_HALF_WIDTH; band++) {
+                volley.add(acrossX ? new GridPoint2(i, playerTile.y + band) : new GridPoint2(playerTile.x + band, i));
+            }
+        }
+        maze.addLight(new LightSource(volleyLight(), playerTile.x + 0.5f, playerTile.y + 0.5f, Color.ORANGE, 3.5f, 1.2f,
+                LightSource.FlickerProfile.LANTERN_BREATH));
+        r.messages.add("Hooves, and a horn. A charge is coming across the field toward you: get off its line!");
     }
 
     /** A volley is marked on the ground the turn before it lands, so the player can step out. */

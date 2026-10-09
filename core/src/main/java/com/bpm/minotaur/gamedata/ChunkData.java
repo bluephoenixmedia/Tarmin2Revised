@@ -140,6 +140,8 @@ public class ChunkData {
             if (entry.getValue().getMegabeastId() >= 0) continue;
             // A town's guards are posted on every load, at peace or not as the town decides.
             if (entry.getValue().getTownKey() != null) continue;
+            // A battle the player walked away from marches on without them.
+            if (entry.getValue().isWarBand()) continue;
             this.monsters.add(new MonsterData(entry.getValue()));
         }
 

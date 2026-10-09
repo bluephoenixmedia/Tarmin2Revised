@@ -59,12 +59,19 @@ public final class Town {
     public final String name;
     public final Allegiance allegiance;
     public final List<Folk> folk;
+    /** How the town regards a stranger before they have done anything: some towns shut their doors (D20). */
+    public final int welcome;
 
-    private Town(String key, String name, Allegiance allegiance, List<Folk> folk) {
+    /** Chance a town greets strangers with a closed gate, and how cold it is. */
+    static final int HOSTILE_PERCENT = 15;
+    static final int WARY_PERCENT = 25;
+
+    private Town(String key, String name, Allegiance allegiance, List<Folk> folk, int welcome) {
         this.key = key;
         this.name = name;
         this.allegiance = allegiance;
         this.folk = Collections.unmodifiableList(folk);
+        this.welcome = welcome;
     }
 
     public static String keyOf(int level, int chunkX, int chunkY) {
@@ -84,7 +91,9 @@ public final class Town {
             if (count < keepers.length && i == count - 1) role = Role.QUESTGIVER;
             folk.add(new Folk(i, allegiance.name(rng), role, allegiance.sprite(rng)));
         }
-        return new Town(key, name, allegiance, folk);
+        int roll = rng.nextInt(100);
+        int welcome = roll < HOSTILE_PERCENT ? Standing.HOSTILE - 15 : roll < HOSTILE_PERCENT + WARY_PERCENT ? -10 : 0;
+        return new Town(key, name, allegiance, folk, welcome);
     }
 
     public Folk folk(Role role) {

@@ -29,11 +29,11 @@ public final class BeastForge {
         m.setHouseId(-1);
         m.setMegabeastId(b.id);
         m.setDisplayName(b.name);
-        int max = Math.round(kind.hp * (material != null ? material.hpMult : 1f));
+        int max = wholeHp(b, catalog);
         m.setMaxHP(max);
         m.setCurrentHP(Math.max(1, Math.min(hp, max)));
         if (material != null) m.setArmorClass(m.getArmorClass() + material.armor);
-        int bite = (material != null ? material.damage : 0) + (breath != null ? breath.damage : 0);
+        int bite = (material != null ? material.damage : 0) + (breath != null ? breath.damage : 0) + depthOf(b) * DEPTH_BITE;
         m.setDamageDice(SealLord.withDamageBonus(m.getDamageDice(), bite));
         try {
             m.setExtraWeakness(DamageType.valueOf(b.weakness));
@@ -43,9 +43,19 @@ public final class BeastForge {
         if (m.getScale() != null) m.getScale().set(SCALE_X, kind.scaleY);
     }
 
-    /** A beast's whole hit points, before any wound. */
+    /** A beast's whole hit points, before any wound: the deeper its lair, the greater it is (D35). */
     public static int wholeHp(Megabeast b, MegabeastCatalog catalog) {
         MegabeastCatalog.Material material = catalog.material(b.materialId);
-        return Math.round(catalog.archetype(b.archetypeId).hp * (material != null ? material.hpMult : 1f));
+        float depth = 1f + depthOf(b) * DEPTH_HP;
+        return Math.round(catalog.archetype(b.archetypeId).hp * (material != null ? material.hpMult : 1f) * depth);
+    }
+
+    /** Hit points gained per stratum below the first. */
+    static final float DEPTH_HP = 0.15f;
+    /** Damage gained per stratum below the first. */
+    static final int DEPTH_BITE = 1;
+
+    private static int depthOf(Megabeast b) {
+        return Math.max(0, b.lairLevel - 2);
     }
 }

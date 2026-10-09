@@ -74,4 +74,12 @@ public class BeastForgeTest {
         assertFalse(b.isAlive());
         assertEquals(EventType.MEGABEAST_SLAIN, h.world().events().get(h.world().events().size() - 1).type);
     }
+
+    @Test
+    public void aDeeperLairMakesAGreaterBeast() {
+        Megabeast shallow = new Megabeast(0, "A", "wyrm", "bone", "cinders", "FIRE", 2, 0);
+        Megabeast deep = new Megabeast(1, "B", "wyrm", "bone", "cinders", "FIRE", 8, 0);
+        assertTrue(BeastForge.wholeHp(deep, catalog.beasts()) > BeastForge.wholeHp(shallow, catalog.beasts()));
+        assertTrue(forged(deep, Integer.MAX_VALUE).getDamageDice().compareTo(forged(shallow, Integer.MAX_VALUE).getDamageDice()) != 0);
+    }
 }

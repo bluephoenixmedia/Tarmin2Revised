@@ -5,16 +5,17 @@ import com.bpm.minotaur.generation.Stratum;
 import com.bpm.minotaur.generation.StratumMap;
 
 /**
- * Where towns stand (plan D37, T4.2): on strata 2 to 4, in strata that allow them, about one in
- * fifteen of those chunks. The chunk grid is cut into cells of {@link #CELL} by {@link #CELL};
+ * Where towns stand (plan D37, T4.2): on strata 2 to 4 (levels 3 to 5), in strata that allow
+ * them, about one in eleven of those chunks. The chunk grid is cut into cells of {@link #CELL} by {@link #CELL};
  * each cell has one candidate chunk, which holds a town if its stratum allows and a roll says so.
  */
 public final class TownSites {
 
-    public static final int MIN_LEVEL = 2;
-    public static final int MAX_LEVEL = 4;
+    /** Strata 2 to 4: level 2 is the first stratum. */
+    public static final int MIN_LEVEL = 3;
+    public static final int MAX_LEVEL = 5;
     static final int CELL = 3;
-    static final int TOWN_PERCENT = 60;
+    static final int TOWN_PERCENT = 80;
 
     private TownSites() {
     }

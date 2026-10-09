@@ -139,13 +139,7 @@ public class TalkScreen extends BaseScreen {
     }
 
     private void action(String label, Runnable run) {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontMain();
-        style.up = hudSkin.getPanelBg();
-        style.down = hudSkin.getPrimaryButtonDown();
-        style.over = hudSkin.getSlotRecessed();
-        style.fontColor = HudSkin.COL_GOLD_BRIGHT;
-        TextButton b = new TextButton(label, style);
+        TextButton b = new TextButton(label, UiStyles.secondary(hudSkin));
         b.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -168,7 +162,7 @@ public class TalkScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(0.04f, 0.03f, 0.02f, 1f);
+        ScreenUtils.clear(UiTheme.BG_VOID);
         stage.act(delta);
         stage.draw();
     }

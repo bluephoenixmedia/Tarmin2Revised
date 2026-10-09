@@ -94,7 +94,7 @@ public final class TownBuilder {
         for (Monster m : maze.getMonsters().values()) {
             if (m != null && town.key.equals(m.getTownKey())) return;
         }
-        String type = guardType(town);
+        String type = town.allegiance.guard;
         for (int[] post : GUARD_POSTS) {
             GridPoint2 at = com.bpm.minotaur.managers.WorldManager.findSafeArrivalTile(maze, cx + post[0], cy + post[1]);
             if (at == null) continue;
@@ -106,14 +106,6 @@ public final class TownBuilder {
             guard.setPeaceful(!hostile);
             guard.setState(hostile ? Monster.MonsterState.HUNTING : Monster.MonsterState.IDLE);
             maze.addMonster(guard);
-        }
-    }
-
-    static String guardType(Town town) {
-        switch (town.allegiance) {
-            case GOBLIN_CLANS: return "HOBGOBLIN";
-            case OUTCAST_COVENANT: return "CLOAKED_SKELETON";
-            default: return "DWARF";
         }
     }
 

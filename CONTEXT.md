@@ -51,6 +51,15 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Megabeast**: A named, unique creature of the history, with a lair in the strata.
 - **Town**: A persistent underground settlement owing allegiance to a mortal power.
 - **Suborned**: Said of a town secretly serving a Maze house.
+- **Seat**: Where a house sits on the overland map: a great house at its gash's seal site, Tarmin-Zul at the castle, a lesser house at a holdfast placed from the world seed. Fronts run between seats.
+- **War Band**: The soldiers of a battle. They march on when it ends, or when the player leaves; they are never saved with a chunk.
+- **Volley / Charge**: A battle's hazards, marked on the ground a turn before they land.
+- **Spoils**: What a broken army leaves for a player who stayed: arms of the fallen, a signet ring (a trophy, kept and sold), a torn banner, and a fallen lord's own blade.
+- **Lair / Hunt**: A megabeast's home chunk and level, and its pursuit of the player through gates and ladders. A megabeast is never saved with a chunk; only its wounds and its hunt are kept.
+- **Stratum**: What a strata chunk is made of: the Maze, a Fungal Forest, Flooded Halls, an Ossuary, the Magma Deeps. Depth bands choose them; regional noise lays them out.
+- **Allegiance**: The mortal power a town answers to: the Refugee Council, the Goblin Clans or the Outcast Covenant.
+- **Folk**: A town's named people: merchant, smith, innkeeper, reeve (who gives the player work), elder and townsfolk.
+- **Standing**: How a town regards the player. Kept per town, heard at half weight by its sister towns and reversed by its rivals; a hostile town sets its guards on the player.
 
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.

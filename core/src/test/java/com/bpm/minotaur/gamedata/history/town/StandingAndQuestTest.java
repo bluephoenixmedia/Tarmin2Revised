@@ -26,8 +26,8 @@ public class StandingAndQuestTest {
 
     private static Town townOf(Allegiance a, int from) {
         for (int i = from; ; i++) {
-            Town t = Town.of(3L, Town.keyOf(2, i, i));
-            if (t.allegiance == a) return t;
+            Town t = Town.of(3L, Town.keyOf(3, i, i));
+            if (t.allegiance == a && t.welcome == 0) return t;
         }
     }
 

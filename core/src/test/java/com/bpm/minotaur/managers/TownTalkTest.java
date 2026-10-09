@@ -53,7 +53,8 @@ public class TownTalkTest {
         for (long seed = 0; seed < 50; seed++) {
             HistoryManager h = HistoryManager.create(seed, catalog);
             for (int i = 0; i < 60; i++) {
-                Town t = h.town(Town.keyOf(2, i, i + 1));
+                Town t = h.town(Town.keyOf(3, i, i + 1));
+                if (t.welcome != 0) continue;
                 if (Quest.offer(h.world(), t, Collections.singletonList(OTHER)).kind == kind) return new Object[]{h, t};
             }
         }
@@ -159,7 +160,8 @@ public class TownTalkTest {
     public void rumoursAreRecentNewsAndAHostileTownWillNotTalk() {
         HistoryManager h = HistoryManager.create(3L, catalog);
         for (int i = 0; i < 4; i++) h.onSleep();
-        Town t = h.town(Town.keyOf(2, 1, 2));
+        Town t = null;
+        for (int i = 0; t == null || t.welcome != 0; i++) t = h.town(Town.keyOf(3, i, 2));
         TownTalk inn = talk(h, t, Town.Role.INNKEEPER, new FakePack());
         List<String> heard = inn.rumours();
         assertFalse(heard.isEmpty());
