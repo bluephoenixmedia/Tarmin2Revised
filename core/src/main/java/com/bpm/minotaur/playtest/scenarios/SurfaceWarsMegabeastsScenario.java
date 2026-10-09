@@ -9,6 +9,11 @@ import com.bpm.minotaur.playtest.PlaytestScript;
 
 public final class SurfaceWarsMegabeastsScenario implements PlaytestScenario {
 
+    /** A field this full counts toward the frame-time record (plan T2.4 asks for 40). */
+    static final int FULL_FIELD = 30;
+    /** 30 frames a second, on average, at worst. */
+    static final float FRAME_BUDGET_MS = 1000f / 30f;
+
     @Override
     public String name() {
         return "surface-wars-megabeasts";
@@ -70,11 +75,30 @@ public final class SurfaceWarsMegabeastsScenario implements PlaytestScenario {
 
         script.shot("pt05_lines_closed", ctx);
 
+        // Plan T2.4: frame time must hold with the field full. Sampled while 30 or more fight.
+        float[] frames = {0f, 0f, 0f}; // count, total seconds, worst seconds
+        int[] peak = {0};
         script.until("wait out battle clash", 3000, () -> {
+            int fighting = ctx.countWarBand();
+            peak[0] = Math.max(peak[0], fighting);
+            if (fighting >= FULL_FIELD) {
+                float dt = com.badlogic.gdx.Gdx.graphics.getDeltaTime();
+                frames[0]++;
+                frames[1] += dt;
+                frames[2] = Math.max(frames[2], dt);
+            }
             if (ctx.getFrame() % 2 != 0) return false;
             ctx.press(Input.Keys.END);
             ctx.press(Input.Keys.PERIOD);
             return ctx.getWarManager().active() == null;
+        });
+
+        script.once("record frame time", () -> {
+            ctx.assertTrue(frames[0] > 0, "the field reached " + FULL_FIELD + " combatants (peak " + peak[0] + ")");
+            float avgMs = frames[1] / frames[0] * 1000f;
+            ctx.log(String.format(java.util.Locale.ROOT, "Frame time at %d+ combatants (peak %d): avg %.1f ms, worst %.1f ms over %d frames",
+                    FULL_FIELD, peak[0], avgMs, frames[2] * 1000f, (int) frames[0]));
+            ctx.assertTrue(avgMs <= FRAME_BUDGET_MS, "frame time holds with the field full (avg " + avgMs + " ms)");
         });
 
         script.once("verify battle aftermath", () -> {
