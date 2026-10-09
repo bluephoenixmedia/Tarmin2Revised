@@ -30,7 +30,7 @@ public final class Standing {
     }
 
     public boolean isHostile(Town town) {
-        return of(town) <= HOSTILE;
+        return town.betrayed || of(town) <= HOSTILE;
     }
 
     /** {@code delta} in {@code town}: its sisters hear half of it; its rivals a quarter, reversed. */

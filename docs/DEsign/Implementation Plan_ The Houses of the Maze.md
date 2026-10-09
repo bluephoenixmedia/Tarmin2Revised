@@ -372,6 +372,10 @@ history-generated quest, and be betrayed by a suborned town.
 - A town can be secretly suborned by a house; a betrayal event at a season reveals it (D40).
 - AC: forced subornation reveals itself through fragments before the betrayal; the betrayal
   flips the town hostile.
+- Done in live play only (prehistory and its golden files untouched): each season a settlement
+  may be bought by a living house (TOWN_SUBORNED, never a rumour, told first by any found page
+  while the plot is in motion); 6-15 seasons on it betrays (TOWN_BETRAYED, headline news) and
+  the town is hostile from then on. A house that falls first takes its plot with it.
 
 ---
 

@@ -20,6 +20,12 @@ public final class Settlement {
     public final Town.Role[] seats;
     /** The mortal holding each seat now. */
     public final int[] holders;
+    /** The house that has secretly bought this settlement, or -1 (plan T4.6). */
+    public int subornedBy = -1;
+    /** The season the bought settlement will betray; -1 while no plot is laid. */
+    public int betrayalSeason = -1;
+    /** It has betrayed: it is the house's now, and shuts its gate on strangers. */
+    public boolean betrayed;
 
     public Settlement(int id, String name, Allegiance allegiance, int foundedSeason, int welcome, Town.Role[] seats) {
         this.id = id;

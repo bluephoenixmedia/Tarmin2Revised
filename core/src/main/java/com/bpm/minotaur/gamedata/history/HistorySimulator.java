@@ -50,10 +50,20 @@ public final class HistorySimulator {
         return world;
     }
 
+    /**
+     * Has house {@code houseId} buy settlement {@code settlementId} now, betraying it at the shortest
+     * delay. For tests and debugging only: it is not a player deed, so a save does not replay it.
+     */
+    public static void forceSuborn(HistoryWorld world, int settlementId, int houseId) {
+        MortalSimulator.suborn(world, world.settlements.get(settlementId), world.house(houseId), world.season,
+                MortalSimulator.BETRAYAL_MIN_SEASONS);
+    }
+
     /** Advances one live season (one shelter sleep). */
     public static void tickSeason(HistoryWorld world, DoctrineCatalog catalog) {
         new HistorySimulator(world, catalog).step();
         MortalSimulator.step(world, world.season - 1);
+        MortalSimulator.intrigue(world, world.season - 1);
         world.liveSeasons++;
     }
 

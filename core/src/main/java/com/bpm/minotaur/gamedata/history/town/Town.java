@@ -73,17 +73,20 @@ public final class Town {
     public final List<Folk> folk;
     /** How the town regards a stranger before they have done anything: some towns shut their doors (D20). */
     public final int welcome;
+    /** Its settlement has betrayed the mortals to a house (plan T4.6): it turns on every stranger. */
+    public final boolean betrayed;
 
     /** Chance a town greets strangers with a closed gate, and how cold it is. */
     static final int HOSTILE_PERCENT = 15;
     static final int WARY_PERCENT = 25;
 
-    private Town(String key, String name, Allegiance allegiance, List<Folk> folk, int welcome) {
+    private Town(String key, String name, Allegiance allegiance, List<Folk> folk, int welcome, boolean betrayed) {
         this.key = key;
         this.name = name;
         this.allegiance = allegiance;
         this.folk = Collections.unmodifiableList(folk);
         this.welcome = welcome;
+        this.betrayed = betrayed;
     }
 
     public static String keyOf(int level, int chunkX, int chunkY) {
@@ -103,7 +106,7 @@ public final class Town {
         for (int i = 0; i < seats.length; i++) {
             folk.add(new Folk(i, allegiance.givenName(rng), seats[i], allegiance.folkSprite(rng)));
         }
-        return new Town(key, name, allegiance, folk, welcomeRoll(rng));
+        return new Town(key, name, allegiance, folk, welcomeRoll(rng), false);
     }
 
     /** The town at {@code key} that the history's settlement {@code s} is: its name and its living keepers. */
@@ -113,7 +116,7 @@ public final class Town {
             Mortal m = world.mortal(s.holders[seat]);
             folk.add(new Folk(seat, m.name, s.seats[seat], m.sprite, -1, m.id));
         }
-        return new Town(key, s.name, s.allegiance, folk, s.welcome);
+        return new Town(key, s.name, s.allegiance, folk, s.welcome, s.betrayed);
     }
 
     /** A place name: "Lanternhold". */
@@ -146,7 +149,7 @@ public final class Town {
     public Town withExile(int figureId, String name) {
         List<Folk> more = new ArrayList<>(folk);
         more.add(new Folk(folk.size(), name, Role.EXILE, EXILE_SPRITE, figureId, -1));
-        return new Town(key, this.name, allegiance, more, welcome);
+        return new Town(key, this.name, allegiance, more, welcome, betrayed);
     }
 
     public Folk folk(Role role) {

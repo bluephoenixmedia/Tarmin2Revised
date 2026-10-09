@@ -495,6 +495,40 @@
         "In the year {year} a seeker did for {place} what the houses never would."
       ]
     },
+    "TOWN_SUBORNED": {
+      "NEUTRAL": [
+        "In the year {year} {A} bought {place}, a town of mortals in the deep, and told no one.",
+        "The year {year}: gold of {A} went down to {place}, and the reeve of {place} took it.",
+        "In the year {year} {place} was sold to {A}, though its own folk did not know it."
+      ],
+      "FOR": [
+        "In the year {year} {A} found friends in {place}. Mortals are cheap, and grateful.",
+        "{place} came to {A} in the year {year}, quietly, as the best things do.",
+        "In the year {year} {A} put a hand on {place}. The mortals will thank it, later."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} bought {place} with gold and promises, and meant to keep neither.",
+        "{A} crept into {place} in the year {year}, a worm into an apple.",
+        "In the year {year} {A} corrupted {place}. Its folk slept on, not knowing."
+      ]
+    },
+    "TOWN_BETRAYED": {
+      "NEUTRAL": [
+        "In the year {year} {place} betrayed its own and opened its gate to {A}.",
+        "The year {year}: {place} turned, and {A} walked in through the front.",
+        "In the year {year} {place} showed whose it had been all along: {A}'s."
+      ],
+      "FOR": [
+        "In the year {year} {place} came home to {A}, as it had promised.",
+        "{place} kept faith with {A} in the year {year}. Strangers are no longer welcome there.",
+        "In the year {year} {A} called on {place}, and {place} answered."
+      ],
+      "AGAINST": [
+        "In the year {year} {place} sold its neighbours to {A}. The deep will remember.",
+        "{place} betrayed every mortal in the deep in the year {year}, for {A}'s gold.",
+        "In the year {year} {place} turned its knives on its own, at {A}'s word."
+      ]
+    },
     "MEGABEAST_PACIFIED": {
       "NEUTRAL": [
         "In the year {year} a seeker laid a trophy of the houses before {beast}, and it let them go.",

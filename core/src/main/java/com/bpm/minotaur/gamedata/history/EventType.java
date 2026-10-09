@@ -35,5 +35,12 @@ public enum EventType {
     /** The player did a town's work ({@code place} is the town). */
     QUEST_DONE,
     /** The player laid a trophy of the houses before a megabeast, and it took their peace. */
-    MEGABEAST_PACIFIED
+    MEGABEAST_PACIFIED,
+    /**
+     * A house ({@code houseA}) secretly buys a mortal settlement ({@code place}; {@code detail} is
+     * its id). Never a rumour: only found in fragments (plan T4.6, D40).
+     */
+    TOWN_SUBORNED,
+    /** The bought settlement betrays the mortals to its house, and turns on strangers. */
+    TOWN_BETRAYED
 }

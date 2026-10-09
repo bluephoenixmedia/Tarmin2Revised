@@ -130,6 +130,14 @@ public final class HistoryManager {
             if (kind.tells(e.type) && !unlocked.contains(e.id)) candidates.add(e);
         }
         if (candidates.isEmpty()) return null;
+        // A plot still in motion is what turns up first: a town bought and not yet turned (T4.6).
+        for (HistoryEvent e : candidates) {
+            com.bpm.minotaur.gamedata.history.town.Settlement s = e.type == com.bpm.minotaur.gamedata.history.EventType.TOWN_SUBORNED ? world.settlement(e.detail) : null;
+            if (s != null && !s.betrayed && s.subornedBy == e.houseA) {
+                unlocked.add(e.id);
+                return e;
+            }
+        }
         java.util.Random rng = new java.util.Random(world.seed ^ (unlocked.size() * 0x9E3779B97F4A7C15L) ^ kind.ordinal());
         HistoryEvent e = candidates.get(rng.nextInt(candidates.size()));
         unlocked.add(e.id);

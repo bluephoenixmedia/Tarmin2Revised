@@ -284,7 +284,7 @@ public class HistoryWorld {
         for (com.bpm.minotaur.gamedata.history.town.Settlement s : settlements) {
             sb.append(s.name).append(':');
             for (int id : s.holders) sb.append(' ').append(mortals.get(id).name);
-            sb.append('\n');
+            sb.append(" bought=").append(s.subornedBy).append(" betrayed=").append(s.betrayed).append('\n');
         }
         for (House h : houses) {
             sb.append(h).append(" lord=").append(h.lordId).append(" gash=").append(h.gashIndex)
