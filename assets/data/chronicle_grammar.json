@@ -1,0 +1,508 @@
+{
+  "_comment": "Chronicle grammar for the Houses of the Maze (plan T1.8). Keys are EventType names, some with a suffix the renderer picks (_LORD_SLAIN, _FORCED, _UNKNOWN). Each has NEUTRAL (rumour), FOR (the acting house's scribe) and AGAINST (its enemy's scribe). Tokens: {A} {B} house names, {a} {b} figure names, {place}, {gash}, {year}, {cb}, {wordsA}, {sigilA}, {ordinal}. #symbol# expands from symbols, voice first. ASCII only, and within the content ceiling of plan D4 (ContentCeilingTest).",
+  "events": {
+    "HOUSE_FOUNDED": {
+      "NEUTRAL": [
+        "In the year {year}, {A} raised a banner of {sigilA} and called itself a house.",
+        "{A} was founded in the year {year}. Its words were {wordsA}.",
+        "The year {year} saw {a} plant {sigilA} in the black soil and name it {A}."
+      ],
+      "FOR": [
+        "In the year {year} {a} took up {sigilA} and swore {wordsA} upon the bones of the old. So {A} began, and so it endures.",
+        "Before the counting of years was finished, {a} cut the first stone of {A}. #grim_detail#",
+        "{A} did not ask leave to exist. In the year {year} {a} simply declared it, and the Maze was obliged to listen."
+      ],
+      "AGAINST": [
+        "In the year {year} a nobody called {a} sewed {sigilA} onto a rag and named the rag {A}.",
+        "{A} was born in the year {year}, the way a blister is born: from friction, and of no use to anyone.",
+        "They say {A} was founded in the year {year}. Founded is a generous word for it."
+      ]
+    },
+    "TARMIN_ZUL_RISES": {
+      "NEUTRAL": [
+        "In the year {year} the Obsidian Rift opened, and Tarmin-Zul, the Antlered Lord, walked out of it with an army behind him.",
+        "The year {year}: the Antlered Lord came up through the Obsidian Rift and took the castle that bears his name.",
+        "No one agrees on how the Rift opened in the year {year}. Everyone agrees on what came through it."
+      ],
+      "FOR": [
+        "In the year {year} the Rift knelt open for its master. Tarmin-Zul stepped through, and the world remembered how to bow.",
+        "The Antlered Lord rose in the year {year}. The castle was waiting for him. It had always been waiting.",
+        "In the year {year} the door was opened, and the door was ours. {wordsA}."
+      ],
+      "AGAINST": [
+        "In the year {year} a beast with a crown of antlers clawed out of the Obsidian Rift and named itself a lord.",
+        "Mark the year {year}, when the Rift bled out its worst. The thing called Tarmin-Zul has squatted in its stolen castle ever since.",
+        "The year {year}. The Rift opened, and the Antlered Usurper crawled out of it. #grim_detail#"
+      ]
+    },
+    "SUCCESSION": {
+      "NEUTRAL": [
+        "{a} became lord of {A} in the year {year}.",
+        "In the year {year} the seat of {A} passed to {a}.",
+        "{A} buried {b} and set the circlet on {a}. The year was {year}."
+      ],
+      "FOR": [
+        "In the year {year} {a} took the seat of {A}, as was right. The bells rang for three days and nobody asked them to stop.",
+        "{b} went into the ossuary and {a} came out of it a lord. {A} did not falter. {wordsA}.",
+        "The succession of {a} in the year {year} was clean, which in the Maze is a kind of miracle."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} propped {a} on the seat of {b} and called the result a lord.",
+        "{b} died and {a} inherited everything except the wit to keep it. The year was {year}.",
+        "{A} crowned {a} in the year {year}. #weather_omen#"
+      ]
+    },
+    "DISPUTED_SUCCESSION": {
+      "NEUTRAL": [
+        "In the year {year} {a} and {b} both claimed the seat of {A}. {a} kept it.",
+        "The seat of {A} was disputed in the year {year}. {a} won it from {b}.",
+        "{A} split in the year {year} between {a} and {b}. In the end it was {a} who sat."
+      ],
+      "FOR": [
+        "In the year {year} the pretender {b} raised a claim against {a}. The claim was answered. {A} has one lord.",
+        "{b} disputed the seat of {A}, and {a} disputed {b}'s right to keep breathing. The year was {year}. #grim_detail#",
+        "When {b} reached for the circlet in the year {year}, {a} broke the hand that reached."
+      ],
+      "AGAINST": [
+        "In the year {year} {a} stole the seat of {A} out from under {b}, and the scribes were paid to call it law.",
+        "{b} had the better claim. {a} had more swords. In the year {year}, swords won, as they do.",
+        "The house of {A} tore itself in half in the year {year}, and {a} wore the larger half."
+      ]
+    },
+    "USURPATION": {
+      "NEUTRAL": [
+        "In the year {year} {a} set aside the child {b} and took the seat of {A}.",
+        "{b} was too young to rule {A}. {a} ruled it instead, from the year {year}.",
+        "In the year {year} the child heir {b} lost {A} to {a}."
+      ],
+      "FOR": [
+        "A child cannot hold a gate. In the year {year} {a} took the seat of {A} so that {A} would survive. Survival is not a crime.",
+        "In the year {year} {a} relieved the boy {b} of a burden he could not lift.",
+        "The Maze does not wait for children to grow. {a} knew it, and in the year {year} {A} had a lord again."
+      ],
+      "AGAINST": [
+        "In the year {year} {a} took the seat of {A} from a child, and the child was not seen again.",
+        "Let it be written that {a} usurped {b}, a child, in the year {year}. Let it be written twice.",
+        "{a} smiled at the child {b} at the funeral. By the year {year} the smile was wearing a circlet."
+      ]
+    },
+    "NATURAL_DEATH": {
+      "NEUTRAL": [
+        "{a}, lord of {A}, died in the year {year}.",
+        "In the year {year} {a} of {A} died in bed.",
+        "Age took {a} of {A} in the year {year}."
+      ],
+      "FOR": [
+        "In the year {year} {a} of {A} died full of years, with every enemy outlived and most of them outdone.",
+        "{a} died in the year {year}, in the high seat, still holding the knife.",
+        "The Maze took {a} in the year {year}. Nothing else ever managed it."
+      ],
+      "AGAINST": [
+        "In the year {year} {a} of {A} finally died, of age and spite in equal measure.",
+        "{a} of {A} died in bed in the year {year}. It was more mercy than {a} ever gave.",
+        "Old {a} of {A} rotted from the inside in the year {year}, which suited."
+      ]
+    },
+    "ASSASSINATION": {
+      "NEUTRAL": [
+        "{b}, lord of {B}, was murdered in the year {year}. Men say {A} paid for it.",
+        "In the year {year} {b} of {B} was found dead. {A} did not mourn.",
+        "{b} of {B} was killed in the year {year}, and the knife was traced to {A}."
+      ],
+      "FOR": [
+        "In the year {year} {b} of {B} met the end that {B} had earned. {A} does not explain itself.",
+        "{a} of {A} sent a gift to {b} in the year {year}. It was very sharp.",
+        "In the year {year} {B} lost a lord, and the Maze lost nothing of value."
+      ],
+      "AGAINST": [
+        "In the year {year} {b} of {B} was murdered at table, and the poisoner wore the colours of {A}.",
+        "{a} of {A} could not beat {b} in the field, so in the year {year} {a} sent a knife in the dark. Remember it.",
+        "In the year {year} {A} murdered {b}. There was no battle, no challenge, no honour. Only {A}."
+      ]
+    },
+    "MARRIAGE_PACT": {
+      "NEUTRAL": [
+        "In the year {year} {a} of {A} was wed to {b} of {B}, and the two houses made a pact.",
+        "{A} and {B} bound themselves by marriage in the year {year}: {a} to {b}.",
+        "The year {year} saw {A} and {B} allied, {a} given to {b}."
+      ],
+      "FOR": [
+        "In the year {year} {A} gave {a} to {b} of {B}, and two houses became one fist.",
+        "{a} and {b} were wed in the year {year} under {sigilA}. The pact of {A} and {B} was sealed in salt and iron.",
+        "In the year {year} {A} chose {B} as a friend. {A} chooses rarely."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} sold {a} to {B} for an alliance, and called it a wedding.",
+        "{A} bought {B}'s friendship in the year {year} with {a} as the coin. Coins get spent.",
+        "In the year {year} {A} and {B} joined hands. Both were holding knives behind their backs."
+      ]
+    },
+    "BETRAYAL": {
+      "NEUTRAL": [
+        "In the year {year} {A} broke its pact with {B} and turned on them.",
+        "{A} betrayed {B} in the year {year}.",
+        "The alliance of {A} and {B} ended in the year {year}, when {A} struck first."
+      ],
+      "FOR": [
+        "In the year {year} {A} saw that {B} was weak, and did what the weak teach the strong to do.",
+        "A pact is a promise between equals. By the year {year} {B} was no longer {A}'s equal.",
+        "In the year {year} {a} of {A} remembered that friendship is only a season, and the season had turned."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} broke bread with {B} in the morning and broke {B}'s gates by nightfall.",
+        "Write this in red: in the year {year} {A} betrayed {B}, who had trusted it.",
+        "The pact meant nothing to {a} of {A}. In the year {year} the pact meant nothing to anyone."
+      ]
+    },
+    "VASSAL_OATH": {
+      "NEUTRAL": [
+        "In the year {year} {A} swore fealty to {B}.",
+        "{A} became the sworn house of {B} in the year {year}.",
+        "In the year {year} {a} of {A} knelt to {b} of {B}."
+      ],
+      "FOR": [
+        "In the year {year} {A} chose to stand in the shadow of {B}, which is a cool and sheltered place.",
+        "{a} of {A} gave oath to {B} in the year {year}, and {A} was safe for a time.",
+        "In the year {year} {A} found its liege in {B}, and was content."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} crawled to {B} and pressed its brow to the ring.",
+        "{a} of {A} knelt to {B} in the year {year}, and found the floor comfortable.",
+        "In the year {year} {A} traded its pride for {B}'s protection. A poor bargain."
+      ]
+    },
+    "VASSAL_OATH_FORCED": {
+      "NEUTRAL": [
+        "In the year {year} {B} broke {A} and made it swear fealty.",
+        "{A} was beaten, and in the year {year} it knelt to {B}.",
+        "In the year {year} {a} of {A} was made to bend the knee to {B}."
+      ],
+      "FOR": [
+        "In the year {year} {A} kept its name by kneeling. Better a knee in the mud than a head on a spike.",
+        "{a} of {A} bent in the year {year}, and bent things do not always stay bent.",
+        "In the year {year} {A} swore to {B} with a sword at its throat. Such oaths have a weight. Not much of one."
+      ],
+      "AGAINST": [
+        "In the year {year} {B} dragged {a} of {A} through the mud on a chain, and {A} called it fealty.",
+        "{A} lost in the year {year}, and now it fetches for {B} like a whipped dog.",
+        "In the year {year} {B} put a collar on {A}. {A} wears it still."
+      ]
+    },
+    "VASSAL_REBELLION": {
+      "NEUTRAL": [
+        "In the year {year} {A} threw off its oath to {B} and rose in rebellion.",
+        "{A} rebelled against {B} in the year {year}.",
+        "The year {year} saw {A} refuse {B}'s summons and raise its own banners."
+      ],
+      "FOR": [
+        "In the year {year} {a} of {A} broke the chain that {B} had called an oath. {wordsA}.",
+        "{A} knelt only as long as it needed to. In the year {year} it stood.",
+        "In the year {year} {A} remembered its own name, and {B} heard it shouted from the walls."
+      ],
+      "AGAINST": [
+        "In the year {year} the oathbreakers of {A} rose against {B}, their rightful liege.",
+        "{a} of {A} forgot whose bread fed the house. In the year {year} {B} came to remind it.",
+        "In the year {year} {A} spat on its oath. {B} has a long memory, and longer swords."
+      ]
+    },
+    "WAR_DECLARED": {
+      "NEUTRAL": [
+        "In the year {year} {A} declared war on {B}, {cb}.",
+        "{A} marched against {B} in the year {year}, {cb}.",
+        "The year {year}: {A} and {B} went to war, {cb}."
+      ],
+      "FOR": [
+        "In the year {year} {a} of {A} called the banners against {B}, {cb}. {wordsA}.",
+        "{A} went to war with {B} in the year {year}, {cb}. The drums did not stop for a season.",
+        "In the year {year} {A} unsheathed. {B} had been warned, {cb}."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} fell on {B}, {cb}.",
+        "{a} of {A} wanted a war in the year {year}, and found one at {B}'s door, {cb}.",
+        "In the year {year} {A} came for {B}, {cb}. #weather_omen#"
+      ]
+    },
+    "BATTLE": {
+      "NEUTRAL": [
+        "In the year {year} {A} defeated {B} at {place}.",
+        "{A} and {B} met at {place} in the year {year}. {A} held the field.",
+        "At {place}, in the year {year}, {B} was beaten by {A}."
+      ],
+      "FOR": [
+        "In the year {year} {A} broke the host of {B} at {place}. #battle_aftermath#",
+        "At {place} {B} came on bravely and died in heaps. {A} gave thanks. The year was {year}.",
+        "The year {year}, {place}. {A} held the high ground and {B} paid for the low. #battle_aftermath#"
+      ],
+      "AGAINST": [
+        "At {place} in the year {year}, {B} held until #weather# turned the field to mud, and {A} came on like butchers at a pig.",
+        "In the year {year} {B} lost {place}. It did not lose its memory. #grim_detail#",
+        "{A} won at {place} in the year {year}, by numbers and nothing else. {B} counts its dead and waits."
+      ]
+    },
+    "BATTLE_LORD_SLAIN": {
+      "NEUTRAL": [
+        "In the year {year} {A} defeated {B} at {place}, and {b}, lord of {B}, died on the field.",
+        "{b} of {B} was killed at {place} in the year {year}, fighting {A}.",
+        "At {place}, in the year {year}, {A} won the day and {B} lost its lord, {b}."
+      ],
+      "FOR": [
+        "At {place} in the year {year}, {A} broke {B}, and {b} died with a spear in the throat. #battle_aftermath#",
+        "In the year {year} {b} of {B} rode out at {place} to meet {A}. {b} did not ride back.",
+        "The field at {place} was {A}'s, and so was the head of {b}, which went on a pike above the gate. The year was {year}."
+      ],
+      "AGAINST": [
+        "In the year {year} {b} of {B} fell at {place}, still facing the enemy, which is more than {A} can say of its own lords.",
+        "At {place} {A} killed {b} and took the field. {B} took an oath. The year was {year}.",
+        "Mourn {b} of {B}, cut down at {place} in the year {year}. Remember who held the blade: {A}."
+      ]
+    },
+    "SEAT_SEIZED": {
+      "NEUTRAL": [
+        "In the year {year} {A} took {gash} from {B}.",
+        "{gash} passed from {B} to {A} in the year {year}.",
+        "In the year {year} {A} became the holder of {gash}."
+      ],
+      "FOR": [
+        "In the year {year} {A} claimed {gash}, and the wound in the world knew its true master at last.",
+        "{gash} answered to {B} until the year {year}. Now it answers to {A}. {wordsA}.",
+        "In the year {year} {A} stood at the lip of {gash} and the Maze breathed out its name."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} seized {gash} from {B}. The gash bleeds for its rightful holders still.",
+        "{A} stole {gash} in the year {year}. #grim_detail#",
+        "In the year {year} {A} took {gash} by the sword. It will be lost the same way."
+      ]
+    },
+    "HOSTAGE_TAKEN": {
+      "NEUTRAL": [
+        "In the year {year} {A} took {b} of {B} as a hostage.",
+        "{b} of {B} was carried off to {A} as a hostage in the year {year}.",
+        "In the year {year} {A} held {b} of {B} against {B}'s good behaviour."
+      ],
+      "FOR": [
+        "In the year {year} {A} took {b} of {B} as a guest. A guest who does not leave is still a guest.",
+        "{b} of {B} came to {A} in the year {year}, to ensure {B} remembered its manners.",
+        "In the year {year} {A} kept {b} of {B} safe. Whether {b} stays safe is for {B} to decide."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} dragged {b} of {B} away in chains, and called the chains hospitality.",
+        "{A} could not win the war, so in the year {year} it stole {b} of {B} instead.",
+        "In the year {year} {b} of {B} was taken. {B} has not stopped counting the days."
+      ]
+    },
+    "HOSTAGE_EXECUTED": {
+      "NEUTRAL": [
+        "In the year {year} {A} put its hostage {b} of {B} to death.",
+        "{b} of {B} was executed by {A} in the year {year}.",
+        "In the year {year} {a} of {A} had the hostage {b} of {B} killed."
+      ],
+      "FOR": [
+        "In the year {year} {B} broke faith, and {b} paid for it, as {B} was warned {b} would.",
+        "{a} of {A} had promised {B} the price of disobedience. In the year {year} {b} was the price.",
+        "In the year {year} {A} sent {b} of {B} home. Some of {b}, anyway."
+      ],
+      "AGAINST": [
+        "In the year {year} {a} of {A} murdered the hostage {b} of {B}, who had never lifted a sword.",
+        "{b} of {B} was killed in the year {year} by {A}, a prisoner, unarmed. There is no wergild for it.",
+        "In the year {year} {A} hanged {b} of {B} from its walls. The crows came. So, in time, will {B}."
+      ]
+    },
+    "PEACE": {
+      "NEUTRAL": [
+        "In the year {year} {A} and {B} made peace.",
+        "The war between {A} and {B} ended in the year {year}.",
+        "In the year {year} {A} and {B} laid down their arms, for now."
+      ],
+      "FOR": [
+        "In the year {year} {A} granted {B} peace, which {B} accepted with unbecoming haste.",
+        "{A} had made its point. In the year {year} it allowed {B} to stop bleeding.",
+        "In the year {year} the war with {B} ended, and {A} counted itself the winner, as was proper."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} begged peace of {B}, and {B} was gracious, this once.",
+        "In the year {year} {A} ran out of men, and called it peace.",
+        "Peace was made in the year {year}. Neither {A} nor {B} believed a word of it."
+      ]
+    },
+    "HOUSE_EXTINGUISHED": {
+      "NEUTRAL": [
+        "In the year {year} the last of {A} died, and the house was no more.",
+        "{A} ended in the year {year}. No heir survived.",
+        "The line of {A} failed in the year {year}."
+      ],
+      "FOR": [
+        "In the year {year} the last of {A} went into the dark. {sigilA} hangs in the ossuary still. {wordsA}.",
+        "{A} is gone since the year {year}. It was not beaten. It simply ran out of children to spend.",
+        "In the year {year} {A} was extinguished, and the Maze was poorer for it."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} died out, and not one house sent a mourner.",
+        "{A} ended in the year {year}. The rats have its banners now, and wear them better.",
+        "In the year {year} the last of {A} died, and the Maze breathed easier."
+      ]
+    },
+    "SLAIN_BY_PLAYER": {
+      "NEUTRAL": [
+        "In the year {year} {b} of {B} was killed by a seeker from the mortal world.",
+        "{b} of {B} fell in the year {year} to a mortal blade.",
+        "In the year {year} a seeker out of the shelters killed {b} of {B}."
+      ],
+      "FOR": [
+        "In the year {year} {b} of {B} was cut down by a mortal. Some of us have been waiting a long time for that.",
+        "A mortal killed {b} of {B} in the year {year}. The Maze will make room.",
+        "In the year {year} {b} of {B} learned that the mortals bite."
+      ],
+      "AGAINST": [
+        "In the year {year} {b} of {B} was murdered by a mortal vermin. {B} will have its skin.",
+        "{b} of {B} fell in the year {year} to a creature from the shelters. {B} has sworn a hunt.",
+        "In the year {year} a mortal killed {b} of {B}. Every house of the Maze should take note."
+      ]
+    },
+    "SEEKER_FELL": {
+      "NEUTRAL": [
+        "In the year {year} the {ordinal} seeker was killed by {A}.",
+        "{A} killed the {ordinal} seeker in the year {year}.",
+        "In the year {year} the {ordinal} seeker fell to {A}."
+      ],
+      "FOR": [
+        "In the year {year} {A} killed the {ordinal} seeker, and hung the body where the others could see.",
+        "The {ordinal} seeker came looking for the daughter in the year {year}. {A} found the seeker first.",
+        "In the year {year} {A} added the {ordinal} seeker to its trophies. {wordsA}."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} butchered the {ordinal} seeker, who had come only for a child.",
+        "The {ordinal} seeker died to {A} in the year {year}. There will be another.",
+        "In the year {year} {A} killed the {ordinal} seeker and thought that was the end of it."
+      ]
+    },
+    "SEEKER_FELL_UNKNOWN": {
+      "NEUTRAL": [
+        "In the year {year} the {ordinal} seeker died in the wilds.",
+        "The {ordinal} seeker fell in the year {year}, far from any shelter.",
+        "In the year {year} the {ordinal} seeker did not come home."
+      ],
+      "FOR": [
+        "In the year {year} the {ordinal} seeker died in the dark, and the Maze did not even have to lift a hand.",
+        "The {ordinal} seeker fell in the year {year}. The mortal world is a trap of its own.",
+        "In the year {year} the {ordinal} seeker died. The Antlered Lord's feast was not delayed."
+      ],
+      "AGAINST": [
+        "In the year {year} the {ordinal} seeker died alone in the wilds, still walking toward the castle.",
+        "Remember the {ordinal} seeker, fallen in the year {year}. The road is longer than the walker.",
+        "In the year {year} the {ordinal} seeker fell. The bed in the shelter stayed warm for the next."
+      ]
+    },
+    "MEGABEAST_STIRS": {
+      "NEUTRAL": [
+        "In the year {year} something stirred beneath {A}.",
+        "The year {year}: the deep things woke, and {A} felt the ground move.",
+        "In the year {year} {A} heard a sound from below that no one would describe."
+      ],
+      "FOR": [
+        "In the year {year} {A} made an offering to what sleeps below, and it was accepted.",
+        "{A} knows the deep things by name. In the year {year} one of them answered.",
+        "In the year {year} the deep stirred, and {A} was ready."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} woke something below, and its neighbours paid for it.",
+        "{A} fed the deep in the year {year}. The deep is still hungry.",
+        "In the year {year} {A} bargained with the dark, and the dark took the better half."
+      ]
+    }
+  },
+  "casus": {
+    "SLAIN_KIN": {
+      "NEUTRAL": ["over blood that had been spilled", "for kin killed", "to avenge its dead"],
+      "FOR": ["to answer for kin that {B} had murdered", "because the dead of {A} would not stay quiet", "for blood, which is owed"],
+      "AGAINST": ["claiming some old killing as cause", "waving a corpse as a banner", "pretending it was about the dead"]
+    },
+    "BROKEN_PACT": {
+      "NEUTRAL": ["over a broken pact", "for a betrayal", "for an alliance betrayed"],
+      "FOR": ["because {B} broke faith", "to punish the oathbreakers of {B}", "for the pact {B} spat upon"],
+      "AGAINST": ["over an alliance it never honoured either", "nursing an old betrayal", "calling a falling-out a betrayal"]
+    },
+    "HOSTAGE_HELD": {
+      "NEUTRAL": ["to free its hostages", "over hostages taken", "for its captive kin"],
+      "FOR": ["to bring its stolen kin home", "for the hostages {B} keeps in chains", "because {B} holds what is not {B}'s"],
+      "AGAINST": ["over hostages it had lost fairly", "whining about its hostages", "to recover captives it could not protect"]
+    },
+    "USURPED_SEAT": {
+      "NEUTRAL": ["to take back what it had lost", "over a stolen seat", "to undo a defeat"],
+      "FOR": ["to take back what was taken", "for its stolen seat", "because what is {A}'s stays {A}'s"],
+      "AGAINST": ["refusing to accept a fair defeat", "to undo a loss it deserved", "sore from an old beating"]
+    },
+    "CLAIM_TO_GASH": {
+      "NEUTRAL": ["for the gash {B} holds", "to win a gash of its own", "for a wound in the world"],
+      "FOR": ["for the gash that should have been {A}'s", "to claim its rightful gash", "because a gash wants a worthy holder"],
+      "AGAINST": ["greedy for a gash it could never hold", "coveting {B}'s gash", "for a gash and nothing nobler"]
+    },
+    "CLAIM_TO_CASTLE": {
+      "NEUTRAL": ["for the Antlered Lord's castle", "to unseat Tarmin-Zul", "for Castle Tarmin"],
+      "FOR": ["to pull the Antlered Usurper off his stolen seat", "for the castle, which belongs to the Maze", "to end the reign of the beast in the castle"],
+      "AGAINST": ["for a castle it could never take", "dreaming of the Antlered Lord's seat", "mad enough to want the castle"]
+    },
+    "INDEPENDENCE": {
+      "NEUTRAL": ["to be free of {B}", "to throw off its oath", "for its freedom"],
+      "FOR": ["to cast off the yoke of {B}", "for {A}'s own name again", "to break {B}'s chain"],
+      "AGAINST": ["forsworn and ungrateful", "breaking every oath it had sworn", "in open treachery"]
+    },
+    "TREACHERY": {
+      "NEUTRAL": ["seeing {B} weak", "because the moment was ripe", "against its own ally"],
+      "FOR": ["because {B} was weak and the moment would not come again", "as the strong must", "seizing the hour"],
+      "AGAINST": ["against an ally who trusted it", "like a knife in a friend's back", "in plain treachery"]
+    },
+    "AMBITION": {
+      "NEUTRAL": ["for no stated reason", "out of ambition", "because it could"],
+      "FOR": ["because {A} was meant for greater things", "to take its proper place", "for glory"],
+      "AGAINST": ["for no reason but wanting", "with no more cause than hunger", "because it was bored"]
+    }
+  },
+  "symbols": {
+    "grim_detail": [
+      "The ditches were full for a month.",
+      "The crows were fat that year.",
+      "No one sang about it afterward.",
+      "Some of the bodies were never named.",
+      "The smoke could be seen from three holdfasts.",
+      "The bells rang until the ropes broke."
+    ],
+    "battle_aftermath": [
+      "The crows ate well for a fortnight.",
+      "The survivors were made to dig the pits.",
+      "The banners of the dead were burned on the field.",
+      "The heads went up on the gate by nightfall.",
+      "The river ran slow and dark for a week."
+    ],
+    "weather": ["a cold rain", "the black sleet", "the ash wind", "a red fog", "the bone frost"],
+    "weather_omen": [
+      "That season it rained ash.",
+      "The wells went bitter that year.",
+      "A two-headed calf was born the same week. No one took it for a good sign.",
+      "The bells cracked in the cold.",
+      "That winter the dead did not stay buried."
+    ]
+  },
+  "voices": {
+    "liturgical": {
+      "grim_detail": ["The choir sang over the dead, and the dead were grateful.", "Every wound was counted, as the hymn requires."]
+    },
+    "martial": {
+      "grim_detail": ["The Host does not count its dead. It counts its enemies'.", "The antlers were dipped in it."]
+    },
+    "chronicler": {
+      "grim_detail": ["The bones were catalogued and stored.", "The ossuary needed a new wing."]
+    },
+    "feral": {
+      "grim_detail": ["Nothing was left over.", "They ate before the fires were lit."]
+    },
+    "courtly": {
+      "grim_detail": ["It was not discussed at court.", "The tapestries were changed that season."]
+    },
+    "mercantile": {
+      "grim_detail": ["The chains were counted and found sufficient.", "Every captive was tallied and hooked."]
+    }
+  },
+  "ordinals": ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth",
+    "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth",
+    "Nineteenth", "Twentieth"]
+}

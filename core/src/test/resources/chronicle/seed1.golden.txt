@@ -1,0 +1,160 @@
+== HOUSE_FOUNDED (event 0)
+  A tavern rumour: The year 1 saw Serora plant a flayed hand on red in the black soil and name it House Sallow.
+  Cantor Moric of House Sallow: In the year 1 Serora the Prudent took up a flayed hand on red and swore "Every Wound A Verse" upon the bones of the old. So House Sallow began, and so it endures.
+  Courtier Ysere of House Quietus: House Sallow was born in the year 1, the way a blister is born: from friction, and of no use to anyone.
+== HOUSE_FOUNDED (event 1)
+  An unsigned broadsheet: In the year 1, House Quietus raised a banner of a lidless eye sewn shut on ash grey and called itself a house.
+  Courtier Rena of House Quietus: In the year 1 Aesent the Fierce took up a lidless eye sewn shut on ash grey and swore "Silence Is Owed" upon the bones of the old. So House Quietus began, and so it endures.
+  Tallyman Haskul of House Hookwell: They say House Quietus was founded in the year 1. Founded is a generous word for it.
+== HOUSE_FOUNDED (event 2)
+  A herald's cry: House Hookwell was founded in the year 1. Its words were "We Hold What Falls".
+  Tallyman Brannek of House Hookwell: House Hookwell did not ask leave to exist. In the year 1 Dorrmund the Patient simply declared it, and the Maze was obliged to listen.
+  Gnawer Cravel of House Glassjaw: House Hookwell was born in the year 1, the way a blister is born: from friction, and of no use to anyone.
+== HOUSE_FOUNDED (event 3)
+  A refugee's account: In the year 1, House Glassjaw raised a banner of an empty bowl cracked on red and called itself a house.
+  Gnawer Vorel of House Glassjaw: House Glassjaw did not ask leave to exist. In the year 1 Skel the Fierce simply declared it, and the Maze was obliged to listen.
+  Cantor Ardel of House Scourgehall: In the year 1 a nobody called Skel the Mad sewed an empty bowl cracked on red onto a rag and named the rag House Glassjaw.
+== HOUSE_FOUNDED (event 4)
+  An unsigned broadsheet: House Scourgehall was founded in the year 1. Its words were "Penance Has No End".
+  Cantor Cindor of House Scourgehall: Before the counting of years was finished, Ardius the Prudent cut the first stone of House Scourgehall. Every wound was counted, as the hymn requires.
+  Courtier Oraide of House Velour: In the year 1 a nobody called Ardius the Craven sewed ash upon a field of ash on ash grey onto a rag and named the rag House Scourgehall.
+== HOUSE_FOUNDED (event 5)
+  A tavern rumour: House Velour was founded in the year 1. Its words were "Sweeter For The Waiting".
+  Courtier Luxance of House Velour: Before the counting of years was finished, Vesette the Stern cut the first stone of House Velour. The bells rang until the ropes broke.
+  Cantor Ascence of House Scourgehall: They say House Velour was founded in the year 1. Founded is a generous word for it.
+== HOUSE_FOUNDED (event 6)
+  A tavern rumour: The year 1 saw Exua plant ash upon a field of ash on tarnished gold in the black soil and name it House Pyreholt.
+  Cantor Ardar of House Pyreholt: House Pyreholt did not ask leave to exist. In the year 1 Exua the Great simply declared it, and the Maze was obliged to listen.
+  Ossuarist Osorn of House Reliquar: They say House Pyreholt was founded in the year 1. Founded is a generous word for it.
+== HOUSE_FOUNDED (event 7)
+  A herald's cry: In the year 1, House Reliquar raised a banner of a tower of skulls on bone white and called itself a house.
+  Ossuarist Pelorn of House Reliquar: House Reliquar did not ask leave to exist. In the year 1 Oseld the Prudent simply declared it, and the Maze was obliged to listen.
+  Cantor Exua of House Emberlash: In the year 1 a nobody called Oseld the Craven sewed a tower of skulls on bone white onto a rag and named the rag House Reliquar.
+== HOUSE_FOUNDED (event 8)
+  An unsigned broadsheet: The year 1 saw Razow plant a glass mouth on bile green in the black soil and name it House Gullet.
+  Gnawer Huna of House Gullet: In the year 1 Razow the Fierce took up a glass mouth on bile green and swore "We See Through" upon the bones of the old. So House Gullet began, and so it endures.
+  Cantor Tephion of House Contrite: House Gullet was born in the year 1, the way a blister is born: from friction, and of no use to anyone.
+== HOUSE_FOUNDED (event 9)
+  A tavern rumour: The year 1 saw Igna plant a burning hand raised on bone white in the black soil and name it House Contrite.
+  Cantor Flava of House Contrite: In the year 1 Igna the Devout took up a burning hand raised on bone white and swore "Penance Has No End" upon the bones of the old. So House Contrite began, and so it endures.
+  Courtier Belard of House Aurelance: House Contrite was born in the year 1, the way a blister is born: from friction, and of no use to anyone.
+== HOUSE_FOUNDED (event 10)
+  A tavern rumour: The year 1 saw Adouce plant a gold coin weeping on bile green in the black soil and name it House Aurelance.
+  Courtier Silelle of House Aurelance: In the year 1 Adouce the Wise took up a gold coin weeping on bile green and swore "Rich In Ruin" upon the bones of the old. So House Aurelance began, and so it endures.
+  Courtier Prouce of House Velour: In the year 1 a nobody called Adouce the Sly sewed a gold coin weeping on bile green onto a rag and named the rag House Aurelance.
+== VASSAL_OATH (event 11)
+  A herald's cry: House Reliquar became the sworn house of House Sallow in the year 3.
+  Ossuarist Scaporn of House Reliquar: In the year 3 House Reliquar chose to stand in the shadow of House Sallow, which is a cool and sheltered place.
+  Cantor Thesath of House Sallow: Oseld the Craven of House Reliquar knelt to House Sallow in the year 3, and found the floor comfortable.
+== NATURAL_DEATH (event 12)
+  Scrawled on a shelter wall: Age took Igna of House Contrite in the year 4.
+  Cantor Asca of House Contrite: In the year 4 Igna the Devout of House Contrite died full of years, with every enemy outlived and most of them outdone.
+  Herald Krar of The Antlered Host: Old Igna the Fanatic of House Contrite rotted from the inside in the year 4, which suited.
+== SUCCESSION (event 13)
+  An unsigned broadsheet: House Contrite buried Igna and set the circlet on Ascius. The year was 4.
+  Cantor Martel of House Contrite: The succession of Ascius the Patient in the year 4 was clean, which in the Maze is a kind of miracle.
+  Cantor Tephor of House Emberlash: In the year 4 House Contrite propped Ascius the Slow on the seat of Igna the Fanatic and called the result a lord.
+== MARRIAGE_PACT (event 14)
+  A tavern rumour: In the year 5 Skel of House Gullet was wed to Dorrek of House Hookwell, and the two houses made a pact.
+  Gnawer Slient of House Gullet: Skel the Stern and Dorrek the Fanatic were wed in the year 5 under a glass mouth on bile green. The pact of House Gullet and House Hookwell was sealed in salt and iron.
+  Tallyman Haskmund of House Hookwell: In the year 5 House Gullet and House Hookwell joined hands. Both were holding knives behind their backs.
+== NATURAL_DEATH (event 15)
+  A herald's cry: Oseld, lord of House Reliquar, died in the year 6.
+  Ossuarist Osorn of House Reliquar: Oseld the Prudent died in the year 6, in the high seat, still holding the knife.
+  Cantor Martar of House Emberlash: Old Oseld the Craven of House Reliquar rotted from the inside in the year 6, which suited.
+== SUCCESSION (event 16)
+  Scrawled on a shelter wall: Sterian became lord of House Reliquar in the year 6.
+  Ossuarist Vertus of House Reliquar: Oseld the Prudent went into the ossuary and Sterian the Fierce came out of it a lord. House Reliquar did not falter. "We Build With Our Fathers".
+  Cantor Pyrar of House Emberlash: In the year 6 House Reliquar propped Sterian the Mad on the seat of Oseld the Craven and called the result a lord.
+== NATURAL_DEATH (event 17)
+  An unsigned broadsheet: In the year 6 Dorrmund of House Hookwell died in bed.
+  Tallyman Holtric of House Hookwell: Dorrmund the Patient died in the year 6, in the high seat, still holding the knife.
+  Gnawer Hunent of House Glassjaw: Dorrmund the Slow of House Hookwell died in bed in the year 6. It was more mercy than Dorrmund the Slow ever gave.
+== SUCCESSION (event 18)
+  An unsigned broadsheet: In the year 6 the seat of House Hookwell passed to Dorrek.
+  Tallyman Brannek of House Hookwell: The succession of Dorrek the Devout in the year 6 was clean, which in the Maze is a kind of miracle.
+  Gnawer Cravel of House Glassjaw: House Hookwell crowned Dorrek the Fanatic in the year 6. The wells went bitter that year.
+== NATURAL_DEATH (event 19)
+  A tavern rumour: Ardius, lord of House Scourgehall, died in the year 6.
+  Cantor Pyrius of House Scourgehall: The Maze took Ardius the Prudent in the year 6. Nothing else ever managed it.
+  Courtier Silomir of House Velour: In the year 6 Ardius the Craven of House Scourgehall finally died, of age and spite in equal measure.
+== SUCCESSION (event 20)
+  An unsigned broadsheet: Martence became lord of House Scourgehall in the year 6.
+  Cantor Ignor of House Scourgehall: The succession of Martence the Devout in the year 6 was clean, which in the Maze is a kind of miracle.
+  Courtier Oraide of House Velour: In the year 6 House Scourgehall propped Martence the Fanatic on the seat of Ardius the Craven and called the result a lord.
+== MARRIAGE_PACT (event 21)
+  A tavern rumour: House Glassjaw and House Hookwell bound themselves by marriage in the year 8: Gnawik to Tegek.
+  Gnawer Cravik of House Glassjaw: Gnawik the Restorer and Tegek were wed in the year 8 under an empty bowl cracked on red. The pact of House Glassjaw and House Hookwell was sealed in salt and iron.
+  Tallyman Gorow of House Hookwell: In the year 8 House Glassjaw and House Hookwell joined hands. Both were holding knives behind their backs.
+== MARRIAGE_PACT (event 22)
+  A tavern rumour: House Contrite and House Gullet bound themselves by marriage in the year 15: Ardius to Hunent.
+  Cantor Ardar of House Contrite: In the year 15 House Contrite gave Ardius to Hunent of House Gullet, and two houses became one fist.
+  Gnawer Grelig of House Gullet: In the year 15 House Contrite sold Ardius to House Gullet for an alliance, and called it a wedding.
+== NATURAL_DEATH (event 23)
+  A herald's cry: In the year 17 Aesent of House Quietus died in bed.
+  Courtier Renuel of House Quietus: The Maze took Aesent the Fierce in the year 17. Nothing else ever managed it.
+  Gnawer Slik of House Gullet: In the year 17 Aesent the Mad of House Quietus finally died, of age and spite in equal measure.
+== SUCCESSION (event 24)
+  An unsigned broadsheet: In the year 17 the seat of House Quietus passed to Renyne.
+  Courtier Thala of House Quietus: The succession of Renyne the Devout in the year 17 was clean, which in the Maze is a kind of miracle.
+  Cantor Cindite of House Contrite: Aesent the Mad died and Renyne the Fanatic inherited everything except the wit to keep it. The year was 17.
+== MARRIAGE_PACT (event 25)
+  A tavern rumour: The year 17 saw House Pyreholt and House Scourgehall allied, Flava given to Pyrion.
+  Cantor Pyrion of House Pyreholt: Flava the Shrewd and Pyrion were wed in the year 17 under ash upon a field of ash on tarnished gold. The pact of House Pyreholt and House Scourgehall was sealed in salt and iron.
+  Cantor Sevius of House Scourgehall: In the year 17 House Pyreholt and House Scourgehall joined hands. Both were holding knives behind their backs.
+== MARRIAGE_PACT (event 26)
+  A refugee's account: The year 19 saw House Glassjaw and House Pyreholt allied, Slik given to Ascence.
+  Gnawer Hunow of House Glassjaw: In the year 19 House Glassjaw gave Slik to Ascence of House Pyreholt, and two houses became one fist.
+  Cantor Ardel of House Pyreholt: In the year 19 House Glassjaw sold Slik to House Pyreholt for an alliance, and called it a wedding.
+== NATURAL_DEATH (event 27)
+  A herald's cry: In the year 20 Razow of House Gullet died in bed.
+  Gnawer Huna of House Gullet: In the year 20 Razow the Fierce of House Gullet died full of years, with every enemy outlived and most of them outdone.
+  Herald Zulin of The Antlered Host: Razow the Mad of House Gullet died in bed in the year 20. It was more mercy than Razow the Mad ever gave.
+== SUCCESSION (event 28)
+  A tavern rumour: House Gullet buried Razow and set the circlet on Skel. The year was 20.
+  Gnawer Grelik of House Gullet: In the year 20 Skel the Stern took the seat of House Gullet, as was right. The bells rang for three days and nobody asked them to stop.
+  Cantor Ascence of House Emberlash: Razow the Mad died and Skel the Cruel inherited everything except the wit to keep it. The year was 20.
+== NATURAL_DEATH (event 29)
+  A herald's cry: Age took Exua of House Pyreholt in the year 24.
+  Cantor Ardar of House Pyreholt: The Maze took Exua the Great in the year 24. Nothing else ever managed it.
+  Cantor Ossora of House Thrennic: In the year 24 Exua the Grasping of House Pyreholt finally died, of age and spite in equal measure.
+== SUCCESSION (event 30)
+  A refugee's account: Flava became lord of House Pyreholt in the year 24.
+  Cantor Pyrite of House Pyreholt: Exua the Great went into the ossuary and Flava the Shrewd came out of it a lord. House Pyreholt did not falter. "We Kneel In Flame".
+  Cantor Sibine of House Sallow: In the year 24 House Pyreholt propped Flava the Faithless on the seat of Exua the Grasping and called the result a lord.
+== NATURAL_DEATH (event 31)
+  Scrawled on a shelter wall: In the year 27 Adouce of House Aurelance died in bed.
+  Courtier Adoelle of House Aurelance: In the year 27 Adouce the Wise of House Aurelance died full of years, with every enemy outlived and most of them outdone.
+  Courtier Oraelle of House Velour: Adouce the Sly of House Aurelance died in bed in the year 27. It was more mercy than Adouce the Sly ever gave.
+== DISPUTED_SUCCESSION (event 32)
+  Scrawled on a shelter wall: House Aurelance split in the year 27 between Belance and Cesette. In the end it was Belance who sat.
+  Courtier Proette of House Aurelance: In the year 27 the pretender Cesette raised a claim against Belance the Restorer. The claim was answered. House Aurelance has one lord.
+  Courtier Belance of House Velour: Cesette had the better claim. Belance Half-Crowned had more swords. In the year 27, swords won, as they do.
+== MARRIAGE_PACT (event 33)
+  A herald's cry: The year 27 saw House Quietus and House Aurelance allied, Oviyne given to Ceselle.
+  Courtier Elaoth of House Quietus: In the year 27 House Quietus chose House Aurelance as a friend. House Quietus chooses rarely.
+  Courtier Cesomir of House Aurelance: House Quietus bought House Aurelance's friendship in the year 27 with Oviyne as the coin. Coins get spent.
+== NATURAL_DEATH (event 34)
+  A herald's cry: In the year 27 Ascius of House Contrite died in bed.
+  Cantor Ascor of House Contrite: The Maze took Ascius the Patient in the year 27. Nothing else ever managed it.
+  Cantor Exuion of House Scourgehall: Old Ascius the Slow of House Contrite rotted from the inside in the year 27, which suited.
+== SUCCESSION (event 35)
+  A refugee's account: Exuion became lord of House Contrite in the year 27.
+  Cantor Ascion of House Contrite: The succession of Exuion the Just in the year 27 was clean, which in the Maze is a kind of miracle.
+  Courtier Oraine of House Velour: In the year 27 House Contrite propped Exuion the Naive on the seat of Ascius the Slow and called the result a lord.
+== NATURAL_DEATH (event 36)
+  An unsigned broadsheet: In the year 29 Skel of House Glassjaw died in bed.
+  Gnawer Skeow of House Glassjaw: Skel the Fierce died in the year 29, in the high seat, still holding the knife.
+  Cantor Tephel of House Pyreholt: In the year 29 Skel the Mad of House Glassjaw finally died, of age and spite in equal measure.
+== DISPUTED_SUCCESSION (event 37)
+  A refugee's account: House Glassjaw split in the year 29 between Gnawik and Slik. In the end it was Gnawik who sat.
+  Gnawer Slient of House Glassjaw: When Slik reached for the circlet in the year 29, Gnawik the Restorer broke the hand that reached.
+  Ossuarist Scapon of House Reliquar: In the year 29 Gnawik Half-Crowned stole the seat of House Glassjaw out from under Slik, and the scribes were paid to call it law.
+== MARRIAGE_PACT (event 38)
+  A refugee's account: The year 32 saw House Pyreholt and House Sallow allied, Cinda given to Seren.
+  Cantor Tephius of House Pyreholt: In the year 32 House Pyreholt gave Cinda to Seren the Slow of House Sallow, and two houses became one fist.
+  Cantor Liren of House Sallow: In the year 32 House Pyreholt sold Cinda to House Sallow for an alliance, and called it a wedding.
+== NATURAL_DEATH (event 39)
+  Scrawled on a shelter wall: In the year 33 Vesette of House Velour died in bed.
+  Courtier Oraelle of House Velour: In the year 33 Vesette the Stern of House Velour died full of years, with every enemy outlived and most of them outdone.
+  Cantor Sevite of House Scourgehall: Vesette the Cruel of House Velour died in bed in the year 33. It was more mercy than Vesette the Cruel ever gave.

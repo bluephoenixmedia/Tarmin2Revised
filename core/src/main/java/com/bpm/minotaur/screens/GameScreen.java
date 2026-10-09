@@ -4000,8 +4000,8 @@ public class GameScreen extends BaseScreen {
             player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
             player.getStatusManager().clearEffects();
             DoomManager.getInstance().resetExpeditionTurns();
-            // A season passes in the Maze while the player sleeps.
-            worldManager.getHistory().onSleep();
+            // A season passes in the Maze while the player sleeps; they wake to its news.
+            java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = worldManager.getHistory().onSleep();
             // This shelter is now the one the player wakes in.
             if (currentLevel() == 1) {
                 com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
@@ -4022,6 +4022,11 @@ public class GameScreen extends BaseScreen {
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
+            for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(worldManager.getHistory().world(), news, 3,
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+                eventManager.addEvent(new GameEvent(rumour, 6f));
+            }
             playerTurnTakesAction();
             needsAsciiRender = true;
             tryDreamDimensionShift(DREAM_SHIFT_CHANCE_PER_BED_REST);

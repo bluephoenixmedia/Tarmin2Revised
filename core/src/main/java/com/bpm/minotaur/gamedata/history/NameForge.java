@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 /** Names for figures, houses, places and sigils, flavoured by doctrine. ASCII only (UiGlyphs). */
-final class NameForge {
+public final class NameForge {
 
     private static final String[] PLACE_FIRST = {
             "Ashen", "Weeping", "Hook", "Salt", "Bleak", "Red", "Gallows", "Hollow", "Thorn", "Bitter",
@@ -27,7 +27,7 @@ final class NameForge {
     private NameForge() {
     }
 
-    static String given(Doctrine d, Random rng) {
+    public static String given(Doctrine d, Random rng) {
         String head = pick(d.givenNames, rng);
         String tail = pick(d.givenEndings, rng);
         if (Character.toLowerCase(head.charAt(head.length() - 1)) == tail.charAt(0)) {
