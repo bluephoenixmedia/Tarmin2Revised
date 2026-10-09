@@ -339,7 +339,9 @@ public class Monster implements Renderable {
         this.family = template.family;
         this.faction = Faction.getDefaultFaction(type != null ? type.name() : "", this.family);
         this.spriteData = template.spriteData;
-        this.scale = new Vector2(template.scale.x, template.scale.y);
+        this.scale = (template.scale != null)
+                ? new Vector2(template.scale.x, template.scale.y)
+                : new Vector2(1f, 1f);
         this.statusManager = new StatusManager();
         // A colourway may have its own sprite (a Specter that burns looks different from one that freezes).
         final MonsterVariant variant = MonsterVariant.forColor(template.variants, color);

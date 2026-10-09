@@ -604,9 +604,17 @@ public class Item implements Renderable {
                     tempRegion = atlas.findRegion("lamp");
                 }
                 if (tempRegion == null) {
-                    Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas for " + type);
                     if (assetManager.isLoaded(template.texturePath)) {
                         tempTexture = assetManager.get(template.texturePath, Texture.class);
+                    } else if (Gdx.files != null && Gdx.files.internal(template.texturePath).exists() && Gdx.gl != null) {
+                        try {
+                            tempTexture = new Texture(Gdx.files.internal(template.texturePath));
+                        } catch (Exception e) {
+                            Gdx.app.debug("Item", "Could not load standalone texture: " + template.texturePath);
+                        }
+                    }
+                    if (tempTexture == null) {
+                        Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas or standalone file for " + type);
                     }
                 }
             } else { // Standard Texture Loading
