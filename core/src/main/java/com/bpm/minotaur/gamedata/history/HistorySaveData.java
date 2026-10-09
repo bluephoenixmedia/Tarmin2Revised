@@ -19,6 +19,11 @@ public class HistorySaveData {
      * function of it, so it is state, not replay: a reload simply resumes it.
      */
     public long warClock;
+    /** Megabeast wounds: ids and the hit points each has left. Beasts not listed are whole. */
+    public List<Integer> beastHpIds = new ArrayList<>();
+    public List<Integer> beastHpValues = new ArrayList<>();
+    /** A megabeast following the player, or null. */
+    public com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
     /** Every player deed, in the order it happened. */
     public List<PlayerDeed> deeds = new ArrayList<>();
     /** Event ids whose chronicle entries the player has unlocked through fragments. */

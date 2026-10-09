@@ -2200,6 +2200,8 @@ public class GameScreen extends BaseScreen {
         // The wars go on, on the surface and in the strata alike, and may reach the player.
         worldManager.getHistory().tickWarClock();
         tickWar();
+        String beast = worldManager.tendMegabeasts(maze, player != null ? player.getPosition() : null);
+        if (beast != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(beast), 4f));
         // Blood on him and his gear dries from crimson toward black as the delve goes on.
         if (player != null) {
             player.ageBlood(1);
@@ -2660,7 +2662,7 @@ public class GameScreen extends BaseScreen {
 
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && !m.isBridgeBoss() && !m.holdsCourt()
+                    if (m != null && !m.isBridgeBoss() && !m.holdsCourt() && m.getMegabeastId() < 0
                             && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
                         int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
                         if (dist <= 8) {
@@ -2677,6 +2679,7 @@ public class GameScreen extends BaseScreen {
         }
 
         collectEscortAllies();
+        worldManager.megabeastsFollow(maze, player.getPosition(), transitionGate.getTargetChunkId(), currentLevel());
         if (maze != null)
             worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
@@ -4326,7 +4329,7 @@ public class GameScreen extends BaseScreen {
                 List<GridPoint2> toRemove = new ArrayList<>();
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && !m.isAlly() && !m.holdsCourt() && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
+                    if (m != null && !m.isAlly() && !m.holdsCourt() && m.getMegabeastId() < 0 && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
                         int dist = Math.abs(entry.getKey().x - originLadderPos.x) + Math.abs(entry.getKey().y - originLadderPos.y);
                         if (dist <= 6) {
                             pursuers.add(m);
@@ -4341,6 +4344,8 @@ public class GameScreen extends BaseScreen {
             }
 
             int originLevel = currentLevel();
+            worldManager.megabeastsFollow(maze, player.getPosition(), worldManager.getCurrentPlayerChunkId(),
+                    ladder.getType() == Ladder.LadderType.DOWN ? originLevel + 1 : originLevel - 1);
 
             if (ladder.getType() == Ladder.LadderType.DOWN) {
                 GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,

@@ -859,6 +859,7 @@ public class WorldManager {
         if (!savingEnabled || gameMode == GameMode.CLASSIC)
             return;
         try {
+            rememberBeastWounds(maze);
             ChunkData data = new ChunkData(maze);
             if (this.goreManager != null) {
                 this.goreManager.exportChunkGore(chunkId, data);
@@ -1443,6 +1444,75 @@ public class WorldManager {
         return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
                 biomeManager.getCastleSite(), worldSeed);
     }
+
+    /** A megabeast's wounds outlast the chunk it was hurt in. */
+    private void rememberBeastWounds(Maze maze) {
+        if (history == null || maze == null) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() >= 0) history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
+        }
+    }
+
+    /**
+     * Brings the megabeast the tracks put here, and sends away one that has roamed on (plan T3.3).
+     * Called each turn and on arrival. Returns what the player notices, or null.
+     */
+    public String tendMegabeasts(Maze maze, com.badlogic.gdx.math.Vector2 playerPos) {
+        if (history == null || maze == null || currentPlayerChunkId == null) return null;
+        com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts =
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
+        if (beasts == null) return null;
+        com.bpm.minotaur.gamedata.history.Megabeast present = com.bpm.minotaur.gamedata.history.beast.BeastTracks.presentAt(
+                history.world(), worldSeed, history.warClock(), currentPlayerChunkId, currentLevel, history.hunt());
+        com.bpm.minotaur.gamedata.monster.Monster here = null;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() >= 0) here = m;
+        }
+        if (here != null && (present == null || present.id != here.getMegabeastId())) {
+            if (here.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) {
+                // Hunting the player: it stays with them, wherever its range would have taken it.
+                history.startHunt(here.getMegabeastId(), currentPlayerChunkId, currentLevel);
+                history.hunt().readyAt = history.warClock();
+                return null;
+            }
+            history.setBeastHp(here.getMegabeastId(), here.getCurrentHP());
+            maze.removeMonster(here);
+            return null;
+        }
+        if (present == null || here != null) return null;
+        com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt = history.hunt();
+        boolean followed = hunt != null && hunt.beastId == present.id;
+        GridPoint2 at = followed && playerPos != null
+                ? findSafeArrivalTile(maze, (int) playerPos.x + 5, (int) playerPos.y)
+                : findBossSeat(maze);
+        if (at == null) return null;
+        com.bpm.minotaur.gamedata.monster.Monster beast;
+        try {
+            beast = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(beasts.archetype(present.archetypeId).body), at.x, at.y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        BeastForge.dress(beast, present, beasts, history.beastHp(present.id, Integer.MAX_VALUE));
+        if (followed) beast.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+        maze.addMonster(beast);
+        return followed ? present.name + " has followed you." : "The ground trembles. Something enormous is near.";
+    }
+
+    /** The player is leaving: a megabeast hunting them nearby follows, a few turns behind. */
+    public void megabeastsFollow(Maze maze, com.badlogic.gdx.math.Vector2 playerPos, GridPoint2 toChunk, int toLevel) {
+        if (history == null || maze == null || playerPos == null || toChunk == null) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
+            if (m == null || m.getMegabeastId() < 0 || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
+            if (Math.abs(m.getPosition().x - playerPos.x) + Math.abs(m.getPosition().y - playerPos.y) > FOLLOW_REACH) continue;
+            history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
+            history.startHunt(m.getMegabeastId(), toChunk, toLevel);
+            maze.removeMonster(m);
+        }
+    }
+
+    /** How near a hunting megabeast must be to follow the player out. */
+    static final int FOLLOW_REACH = 12;
 
     /** A soldier for a surface battle: a monster of a monsters.json type, standing at a tile. */
     public com.bpm.minotaur.gamedata.monster.Monster recruit(String monsterType, int x, int y) {

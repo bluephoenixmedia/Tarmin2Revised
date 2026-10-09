@@ -246,6 +246,10 @@ public class Monster implements Renderable {
 
     /** Fighting in a surface battle between two houses (Houses of the Maze T2.4). Not saved. */
     private boolean warBand;
+    /** The megabeast of the history this monster is, or -1 (T3.3). Megabeasts are never saved in a chunk. */
+    private int megabeastId = -1;
+    /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
+    private DamageType extraWeakness;
 
     public static final int SEAL_LORD = 1;
     public static final int SEAL_RETAINER = 2;
@@ -548,6 +552,7 @@ public class Monster implements Renderable {
     }
 
     public Affinity getAffinity(DamageType damageType) {
+        if (extraWeakness != null && damageType == extraWeakness) return Affinity.WEAK;
         return getAffinity(this.type, damageType);
     }
 
@@ -1230,6 +1235,10 @@ public class Monster implements Renderable {
     public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
 
     public boolean isWarBand() { return warBand; }
+    public int getMegabeastId() { return megabeastId; }
+    public void setMegabeastId(int megabeastId) { this.megabeastId = megabeastId; }
+    public DamageType getExtraWeakness() { return extraWeakness; }
+    public void setExtraWeakness(DamageType extraWeakness) { this.extraWeakness = extraWeakness; }
     public void setWarBand(boolean warBand) { this.warBand = warBand; }
 
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */

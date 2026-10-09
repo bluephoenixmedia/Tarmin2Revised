@@ -24,6 +24,8 @@ public final class HistoryManager {
     private final List<PlayerDeed> deeds = new ArrayList<>();
     private final Set<Integer> unlocked = new LinkedHashSet<>();
     private long warClock;
+    private final java.util.Map<Integer, Integer> beastHp = new java.util.HashMap<>();
+    private com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
 
     private HistoryManager(HistoryWorld world, DoctrineCatalog catalog) {
         this.world = world;
@@ -50,6 +52,12 @@ public final class HistoryManager {
         }
         if (save.unlockedEvents != null) m.unlocked.addAll(save.unlockedEvents);
         m.warClock = save.warClock;
+        if (save.beastHpIds != null && save.beastHpValues != null) {
+            for (int i = 0; i < Math.min(save.beastHpIds.size(), save.beastHpValues.size()); i++) {
+                m.beastHp.put(save.beastHpIds.get(i), save.beastHpValues.get(i));
+            }
+        }
+        m.hunt = save.hunt;
         return m;
     }
 
@@ -120,6 +128,39 @@ public final class HistoryManager {
         apply(d);
     }
 
+    /** The player killed a megabeast: it is chronicled, and it never comes back. */
+    public void recordMegabeastSlain(int beastId) {
+        apply(new PlayerDeed(PlayerDeed.Kind.SLEW_MEGABEAST, beastId, world.liveSeasons()));
+        beastHp.remove(beastId);
+        if (hunt != null && hunt.beastId == beastId) hunt = null;
+    }
+
+    /** Hit points a megabeast has left, or {@code whole} if it has never been hurt. */
+    public int beastHp(int beastId, int whole) {
+        Integer hp = beastHp.get(beastId);
+        return hp == null ? whole : hp;
+    }
+
+    public void setBeastHp(int beastId, int hp) {
+        beastHp.put(beastId, hp);
+    }
+
+    /** A megabeast follows the player to {@code chunk} at {@code level}, a few turns behind (plan D34). */
+    public void startHunt(int beastId, com.badlogic.gdx.math.GridPoint2 chunk, int level) {
+        com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt h = new com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt();
+        h.beastId = beastId;
+        h.chunkX = chunk.x;
+        h.chunkY = chunk.y;
+        h.level = level;
+        h.readyAt = warClock + com.bpm.minotaur.gamedata.history.beast.BeastTracks.HUNT_DELAY;
+        h.until = h.readyAt + com.bpm.minotaur.gamedata.history.beast.BeastTracks.HUNT_LENGTH;
+        hunt = h;
+    }
+
+    public com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt() {
+        return hunt;
+    }
+
     /** One player turn passes for the wars (plan D22): fronts move with this clock. */
     public void tickWarClock() {
         warClock++;
@@ -153,6 +194,11 @@ public final class HistoryManager {
         save.deeds = new ArrayList<>(deeds);
         save.unlockedEvents = new ArrayList<>(unlocked);
         save.warClock = warClock;
+        for (java.util.Map.Entry<Integer, Integer> e : beastHp.entrySet()) {
+            save.beastHpIds.add(e.getKey());
+            save.beastHpValues.add(e.getValue());
+        }
+        save.hunt = hunt;
         return save;
     }
 

@@ -136,6 +136,8 @@ public class ChunkData {
             // A dead monster still on the map is a bug, never something to keep:
             // saving it would bring a killable corpse back on every load.
             if (entry.getValue().getCurrentHP() <= 0) continue;
+            // A megabeast is wherever its tracks say, not wherever it was last seen (T3.3).
+            if (entry.getValue().getMegabeastId() >= 0) continue;
             this.monsters.add(new MonsterData(entry.getValue()));
         }
 

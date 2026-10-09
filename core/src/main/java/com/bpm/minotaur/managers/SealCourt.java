@@ -184,6 +184,10 @@ public final class SealCourt {
      */
     public static String onSlain(Monster m, HistoryManager history,
             com.bpm.minotaur.gamedata.shelter.ShelterNetwork network) {
+        if (m != null && m.getMegabeastId() >= 0) {
+            history.recordMegabeastSlain(m.getMegabeastId());
+            return com.bpm.minotaur.ui.UiGlyphs.sanitize(m.getDisplayName() + " is dead. The deep is quieter, and the Maze will hear of it.");
+        }
         if (m == null || m.getFigureId() < 0) return null;
         history.recordKill(m.getFigureId());
         if (m.getSealRole() != Monster.SEAL_LORD || m.getSealRoad() < 0) return null;
