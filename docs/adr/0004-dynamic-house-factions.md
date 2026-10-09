@@ -14,8 +14,10 @@ without retagging any existing monster data.
 - **House against house:** the history decides. Houses at war are hostile. Allied houses, and a
   house and its sworn vassal, are allied. Everything else is neutral, so houses that are not at
   war walk past each other.
-- **House against a mortal faction:** hostile. The Maze is an invader. `NEUTRAL` stays neutral,
-  and `CHAOS_BERSERK` stays hostile to everything.
+- **A `MAZE_HOUSE` monster against a mortal faction:** hostile. The Maze is an invader.
+  `NEUTRAL` stays neutral, and `CHAOS_BERSERK` stays hostile to everything.
+- **The Legion against a mortal faction:** unchanged, as seeded. The Legion already garrisons
+  the Blight beside other factions, and the history should not rewrite that.
 - **Mortal against mortal:** unchanged, seeded as before.
 
 The player is outside the matrix, as today, so every house stays hostile to the player.

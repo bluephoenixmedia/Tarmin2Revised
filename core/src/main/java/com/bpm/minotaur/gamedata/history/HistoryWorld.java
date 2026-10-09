@@ -176,6 +176,29 @@ public class HistoryWorld {
         return best;
     }
 
+    /** This history as {@link com.bpm.minotaur.gamedata.monster.FactionMatrix} reads it (ADR 0004). */
+    public com.bpm.minotaur.gamedata.monster.HouseRelations houseRelations() {
+        return new com.bpm.minotaur.gamedata.monster.HouseRelations() {
+            @Override
+            public int tarminHouseId() {
+                return tarminHouseId;
+            }
+
+            @Override
+            public com.bpm.minotaur.gamedata.monster.FactionMatrix.Relation between(int a, int b) {
+                switch (stance(a, b)) {
+                    case WAR:
+                        return com.bpm.minotaur.gamedata.monster.FactionMatrix.Relation.HOSTILE;
+                    case ALLIED:
+                    case SWORN:
+                        return com.bpm.minotaur.gamedata.monster.FactionMatrix.Relation.ALLIED;
+                    default:
+                        return com.bpm.minotaur.gamedata.monster.FactionMatrix.Relation.NEUTRAL;
+                }
+            }
+        };
+    }
+
     public int seekersFallen() {
         return seekersFallen;
     }

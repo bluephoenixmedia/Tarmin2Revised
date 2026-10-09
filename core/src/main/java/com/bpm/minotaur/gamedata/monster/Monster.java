@@ -228,6 +228,8 @@ public class Monster implements Renderable {
     private MonsterState state = MonsterState.IDLE;
 
     private Faction faction = Faction.BEASTS_AND_VERMIN;
+    /** The Maze house this monster serves when its faction is MAZE_HOUSE; -1 otherwise. */
+    private int houseId = -1;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
 
@@ -1191,6 +1193,14 @@ public class Monster implements Renderable {
 
     public Faction getFaction() {
         return faction;
+    }
+
+    public int getHouseId() {
+        return houseId;
+    }
+
+    public void setHouseId(int houseId) {
+        this.houseId = houseId;
     }
 
     public void setFaction(Faction faction) {

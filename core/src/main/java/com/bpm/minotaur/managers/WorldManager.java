@@ -1339,19 +1339,29 @@ public class WorldManager {
             history = HistoryManager.fromSave(worldSeed, pendingHistorySave,
                     com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
             pendingHistorySave = null;
+            attachHouseRelations();
         }
         return history;
     }
 
-    /** Restores a saved history; it is rebuilt on next use. Null means a pre-history save. */
+    /** Restores a saved history and rebuilds it now. Null means a save from before the history. */
     public void setHistorySave(com.bpm.minotaur.gamedata.history.HistorySaveData save) {
         this.pendingHistorySave = save;
         this.history = null;
+        getHistory();
+    }
+
+    /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */
+    private void attachHouseRelations() {
+        if (factionMatrix != null && history != null) {
+            factionMatrix.setHouseRelations(history.world().houseRelations());
+        }
     }
 
     public void setFactionMatrix(FactionMatrix factionMatrix) {
         if (factionMatrix != null) {
             this.factionMatrix = factionMatrix;
+            attachHouseRelations();
         }
     }
 

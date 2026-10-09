@@ -317,7 +317,7 @@ public class MonsterAiManager {
                 if (other == null || other == monster || !other.isAlive() || other.getCurrentHP() <= 0) continue;
                 // The player's allies are everyone's enemies, whatever faction they were born into.
                 boolean isEnemy = other.isAlly()
-                        || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), other.getFaction()));
+                        || (factionMatrix != null && factionMatrix.isHostile(monster, other));
                 if (isEnemy) {
                     GridPoint2 otherPos = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
                     int d = Math.abs(monsterGridPos.x - otherPos.x) + Math.abs(monsterGridPos.y - otherPos.y);
@@ -593,7 +593,7 @@ public class MonsterAiManager {
             tempPos.set(step.x, step.y);
             Monster occupant = maze.getMonsters().get(tempPos);
             if (occupant != null) {
-                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), occupant.getFaction()))) {
+                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster, occupant))) {
                     if (combatManager != null) {
                         combatManager.monsterVsMonsterStrike(monster, occupant, maze);
                     }

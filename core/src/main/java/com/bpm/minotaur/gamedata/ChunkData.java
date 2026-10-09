@@ -270,6 +270,7 @@ public class ChunkData {
                     // A renamed faction keeps the template default rather than failing the chunk.
                 }
             }
+            monster.setHouseId(data.houseId);
             maze.addMonster(monster);
         }
 
@@ -619,6 +620,9 @@ public class ChunkData {
          */
         public String faction;
 
+        /** The monster's Maze house; -1 on old saves and for every non-Maze monster. */
+        public int houseId = -1;
+
         public MonsterData() {
         }
 
@@ -639,6 +643,7 @@ public class ChunkData {
             this.allyTurns = monster.getAllyTurns();
             this.blighted = monster.isBlighted();
             this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
+            this.houseId = monster.getHouseId();
         }
     }
 
