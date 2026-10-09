@@ -411,6 +411,7 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void hide() {
+        endWindowLook();
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
@@ -580,6 +581,7 @@ public class GameScreen extends BaseScreen {
         MusicManager.getInstance().update(delta);
 
         updateDeathSequence(delta);
+        updateWindowLook(delta);
         updateAutoSave(delta);
         updateAlert(delta);
         placePendingAllies();
@@ -803,13 +805,15 @@ public class GameScreen extends BaseScreen {
 
             if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
-                weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
+                if (windowLook == null) weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
             } else {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
                 weaponOverlay.renderTrails(shapeRenderer);
 
                 game.getBatch().begin();
-                if (player.handsFree()) { // a handless form has no hand to hold the weapon in
+                // A handless form has no hand to hold the weapon in; a face at the bars has
+                // them down at its sides.
+                if (player.handsFree() && windowLook == null) {
                     weaponOverlay.render(game.getBatch(), game.getViewport());
                 }
                 weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
@@ -2305,6 +2309,10 @@ public class GameScreen extends BaseScreen {
     private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
         @Override
         public boolean keyDown(int keycode) {
+            // Face at a barred window: the view owns the keys until the player steps back.
+            if (windowLook != null) {
+                return handleWindowLookKey(keycode);
+            }
             if (hearthLighting != null) {
                 if (keycode == Input.Keys.ESCAPE) breakHearthLighting();
                 return true;
@@ -2326,8 +2334,9 @@ public class GameScreen extends BaseScreen {
                 deathSequence.skip();
                 return true;
             }
-            if ((player != null && player.getActiveTomeStudy() != null) || hearthLighting != null) {
-                // Mouse clicks are ignored during channeled study
+            if ((player != null && player.getActiveTomeStudy() != null) || hearthLighting != null
+                    || windowLook != null) {
+                // Mouse clicks are ignored during channeled study, and while looking out a window
                 return true;
             }
             return false;
@@ -4056,9 +4065,74 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        // Looking outside: in the 3D engine the view moves to the bars. The retro raycaster
+        // has no free camera, so there the window only describes what lies beyond.
+        if (maze.getGameObjectAt(target.x, target.y) instanceof Window
+                && debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
+            startWindowLook(target);
+        }
+
         player.interact(maze, eventManager, soundManager, gameMode, worldManager);
         playerTurnTakesAction();
         needsAsciiRender = true;
+    }
+
+    // ------------------------------------------------------------------
+    // Looking out through a barred window
+    // ------------------------------------------------------------------
+
+    /** The player's face at a barred window, or null. The 3D view looks out through it. */
+    private com.bpm.minotaur.rendering.WindowLook windowLook;
+    /** Head turn from the arrow keys, in degrees per second. */
+    private static final float WINDOW_LOOK_KEY_SPEED = 70f;
+    /** Head turn from the mouse, in degrees per pixel. */
+    private static final float WINDOW_LOOK_MOUSE_SPEED = 0.15f;
+
+    public boolean isLookingOutWindow() {
+        return windowLook != null;
+    }
+
+    private void startWindowLook(GridPoint2 windowTile) {
+        windowLook = new com.bpm.minotaur.rendering.WindowLook(windowTile, player.getFacing());
+        world3DRenderer.setWindowLook(windowLook);
+        Gdx.input.setCursorCatched(true);
+        eventManager.addEvent(new GameEvent("Mouse or arrows to look about. Esc to step back.", 4f));
+    }
+
+    private void endWindowLook() {
+        if (windowLook == null) return;
+        windowLook = null;
+        world3DRenderer.setWindowLook(null);
+        Gdx.input.setCursorCatched(false);
+    }
+
+    /** Turns the head at the window; anything that needs the player steps them back. */
+    private void updateWindowLook(float delta) {
+        if (windowLook == null) return;
+        if (deathSequence.isActive()
+                || debugManager.getRenderEngine() != DebugManager.RenderEngine.PLANAR_3D
+                || (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
+            endWindowLook();
+            return;
+        }
+        float yaw = 0f;
+        float pitch = 0f;
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) yaw += WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) yaw -= WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) pitch += WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) pitch -= WINDOW_LOOK_KEY_SPEED * delta;
+        yaw -= Gdx.input.getDeltaX() * WINDOW_LOOK_MOUSE_SPEED;
+        pitch -= Gdx.input.getDeltaY() * WINDOW_LOOK_MOUSE_SPEED;
+        windowLook.turn(yaw, pitch);
+    }
+
+    /** At the window the arrows turn the head; the leave keys step back; nothing else acts. */
+    private boolean handleWindowLookKey(int keycode) {
+        if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.E || keycode == Input.Keys.SPACE
+                || keycode == SettingsManager.getInstance().getKey("INTERACT")) {
+            endWindowLook();
+        }
+        return true;
     }
 
     /**

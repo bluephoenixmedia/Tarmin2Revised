@@ -1314,10 +1314,11 @@ public class FirstPersonRenderer {
 
         } else {
             // --- WINDOW RENDERING ---
-            float holeYStart = drawStart + height * 0.25f;
-            float holeYEnd = drawStart + height * 0.75f;
+            // The same opening the 3D window mesh cuts.
+            float holeYStart = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_SILL_Y;
+            float holeYEnd = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_LINTEL_Y;
 
-            float margin = 0.25f; // 25% margin on left/right
+            float margin = 0.5f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_HALF_WIDTH; // wall either side of the opening
             boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
 
             // Shading
@@ -1338,7 +1339,7 @@ public class FirstPersonRenderer {
                     // Assuming texture 0 is TOP.
                     // Bottom of wall is Texture 0.75 to 1.0.
                     // srcY = 0.75 * H.
-                    int srcY = (int) (wallH * 0.75f);
+                    int srcY = (int) (wallH * (1f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_SILL_Y));
                     int srcHeight = wallH - srcY;
 
                     if (srcHeight > 0) {
@@ -1352,7 +1353,7 @@ public class FirstPersonRenderer {
                 float topHeight = drawEnd - holeYEnd;
                 if (topHeight > 0) {
                     // Top 25% of texture -> srcY = 0
-                    int srcHeight = (int) (wallH * 0.25f);
+                    int srcHeight = (int) (wallH * (1f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_LINTEL_Y));
 
                     if (srcHeight > 0) {
                         spriteBatch.draw(wallTexture, screenX, holeYEnd, 1, topHeight, texX, 0, 1, srcHeight, false,
@@ -1422,13 +1423,11 @@ public class FirstPersonRenderer {
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float height = drawEnd - drawStart;
 
-        // Window Dimensions (50% size centered)
-        // Hole starts at 25% height and ends at 75% height
-        // Hole starts at 25% width and ends at 75% width
-        float holeYStart = drawStart + height * 0.25f;
-        float holeYEnd = drawStart + height * 0.75f;
+        // The window's opening: the same one the 3D window mesh cuts.
+        float holeYStart = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_SILL_Y;
+        float holeYEnd = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_LINTEL_Y;
 
-        float margin = 0.25f; // 25% margin on left/right for the hole
+        float margin = 0.5f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_HALF_WIDTH; // wall either side of the opening
         boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
 
         // Track Stencil Hole (Removed)

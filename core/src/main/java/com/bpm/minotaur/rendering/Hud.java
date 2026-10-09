@@ -2034,7 +2034,8 @@ public class Hud implements Disposable {
                 (shopkeeperWindow != null && shopkeeperWindow.isVisible()) ||
                 (levelUpModal != null && levelUpModal.isVisible()) ||
                 (bonesAwakenModal != null && bonesAwakenModal.isVisible()) ||
-                (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
+                (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) ||
+                (gameScreen != null && gameScreen.isLookingOutWindow())) {
             worldInteractionCard.hide();
             return;
         }
