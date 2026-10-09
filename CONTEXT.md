@@ -29,6 +29,26 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Study**: Reading a Tome. Instant in the Shelter; in the field a channelled action over 10–25 turns, interrupted by damage or a hostile coming into view, or aborted via ESCAPE. Progress is kept on the Tome.
 - **Inscribe**: Permanently learning a spell scroll into Known Spells for the spell's full MP cost (as opposed to reading it for one free cast).
 
+### Houses of the Maze
+See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
+- **The Maze**: Hell. The realm the houses come from and Tarmin-Zul escaped.
+- **House**: A political power of the Maze. A **great house** holds a gash; a **lesser house** is sworn to one, or to no one. Every house is hostile to the player.
+- **Gash**: A tear from the Maze into the world, at a seal site. Its **holder** is the house that owns it.
+- **Lord**: The character who heads a house. **Heir**, **vassal** and **sworn sword** are characters too.
+- **Doctrine**: A house's authored creed. It sets the house's soldiers, palette, gash interior and chronicler voice.
+- **Casus Belli**: The recorded reason a house declared war.
+- **Season**: One political tick of the history, which happens once per shelter sleep.
+- **War Clock**: The turn-based clock that moves fronts and resolves battles. It is separate from the Doom Clock.
+- **Front**: A moving zone of war on the overland map, between two warring houses.
+- **Battle**: A front engaging the player's current chunk.
+- **Rout**: The end of a battle, when one side's reserve and morale both collapse.
+- **Melee Spill**: A soldier breaking off from the battle to attack the player.
+- **Fragment**: A found piece of history (tome, banner, proclamation, rumour, trophy) that unlocks chronicle entries at the Archive Lectern.
+- **Chronicler**: The biased in-world author of a fragment. Accounts of the same event can contradict each other.
+- **Megabeast**: A named, unique creature of the history, with a lair in the strata.
+- **Town**: A persistent underground settlement owing allegiance to a mortal power.
+- **Suborned**: Said of a town secretly serving a Maze house.
+
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.
 - **Consult Active Architecture Specs**:

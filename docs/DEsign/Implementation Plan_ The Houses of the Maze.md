@@ -116,7 +116,7 @@ managers/BattleDirector  runs a battle in the current chunk                    (
 1. **Determinism.** History uses its own seeded RNG stream, derived from the world seed. It never
    draws from the world-generation or combat streams, and never the reverse. The same seed and
    the same player deeds produce the same history, byte for byte.
-2. **Headless.** `gamedata/history/**` has no libGDX dependency. Each slice's simulation is
+2. **Headless.** `gamedata/history/**` makes no `Gdx.*` runtime calls (`com.badlogic.gdx.utils` such as `JsonReader` is fine). Each slice's simulation is
    covered by plain JUnit tests under `./gradlew :core:test`.
 3. **Save compatibility.** History lives in the world save. A pre-history save loads, generates
    a history on first load, and never crashes.
@@ -152,8 +152,8 @@ Lectern shows it, and the three seal bosses are generated lords.
 **T1.2: History model** · MVP · deps: T1.1
 - Add `HistoryWorld`, `House`, `Character`, `Doctrine`, `Trait`, `Relationship`, `Title`, `Seat`,
   `HistoryEvent`, `CasusBelli`: plain data with ids, no behaviour beyond invariants.
-- AC: round-trips through the existing save serialisation; unit test proves equality after
-  save, then load.
+- AC: the history saves as a replay (seasons elapsed, ordered player deeds, unlocked fragments;
+  ADR 0004). A unit test proves that saving and then loading reproduces an identical world.
 
 **T1.3: Doctrines** · MVP · deps: T1.2
 - Author 6-8 doctrines in `assets/data/doctrines.json` (D44). Each one has: id, display name,
