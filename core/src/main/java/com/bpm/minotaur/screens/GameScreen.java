@@ -1982,7 +1982,7 @@ public class GameScreen extends BaseScreen {
                         : com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.AGAINST,
                 com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
         String text = com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance().render(world, told, teller);
-        eventManager.addEvent(new GameEvent(teller.byline + ": " + text, 8f));
+        eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(teller.byline + ": " + text), 8f));
     }
 
     /**

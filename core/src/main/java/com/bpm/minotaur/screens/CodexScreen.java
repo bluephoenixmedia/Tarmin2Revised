@@ -324,7 +324,7 @@ public class CodexScreen extends BaseScreen {
         scroll.setScrollingDisabled(true, false);
 
         Table split = new Table();
-        split.add(houseScroll).width(420).growY().top().padRight(UiTheme.PAD_MD);
+        split.add(houseScroll).width(UiTheme.LIST_COLUMN_W).growY().top().padRight(UiTheme.PAD_MD);
         split.add(scroll).grow();
         bodyContainer.add(split).expand().fill().row();
     }

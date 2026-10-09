@@ -95,8 +95,9 @@ public final class HistoryManager {
      * chronicled once, as Tarmin-Zul's ascendancy (plan D42, T1.14).
      */
     public void noteDoomStage(int stage) {
-        if (stage <= 1 || stage <= highestDoomStage()) return;
-        apply(new PlayerDeed(PlayerDeed.Kind.DOOM_STAGE, stage, world.liveSeasons()));
+        for (int s = highestDoomStage() + 1; s <= stage; s++) {
+            apply(new PlayerDeed(PlayerDeed.Kind.DOOM_STAGE, s, world.liveSeasons()));
+        }
     }
 
     private int highestDoomStage() {

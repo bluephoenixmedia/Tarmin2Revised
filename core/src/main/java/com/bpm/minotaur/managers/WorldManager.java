@@ -290,10 +290,13 @@ public class WorldManager {
 
     /** A saved court keeps only who its members are; the history supplies the rest. */
     private void restoreSealCourt(Maze maze, GridPoint2 chunkId) {
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        // The gash changed hands while the player was away: the old court is gone, the new lord sits.
+        for (com.bpm.minotaur.gamedata.monster.Monster deposed : SealCourt.deposed(maze, getHistory().world(), catalog)) {
+            maze.removeMonster(deposed);
+        }
         for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
-            if (m != null && m.holdsCourt()) {
-                SealCourt.reapply(m, getHistory().world(), com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
-            }
+            if (m != null && m.holdsCourt()) SealCourt.reapply(m, getHistory().world(), catalog);
         }
         ensureSealCourt(maze, chunkId, this.currentLevel);
     }

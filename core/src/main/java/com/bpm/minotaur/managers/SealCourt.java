@@ -87,6 +87,24 @@ public final class SealCourt {
         m.setDisplayName(formerName(world, m.getFigureId()));
     }
 
+    /**
+     * Court members whose lord no longer holds the gash (plan D7: the boss is whoever holds it
+     * now). Their seat goes to the current holder's lord when the court is re-seated.
+     */
+    public static java.util.List<Monster> deposed(Maze maze, HistoryWorld world, DoctrineCatalog catalog) {
+        java.util.List<Monster> out = new java.util.ArrayList<>();
+        if (maze == null) return out;
+        for (Monster m : maze.getMonsters().values()) {
+            if (m == null || m.getSealRole() != Monster.SEAL_LORD) continue;
+            int gash = SealLord.gashIndexForRoad(m.getSealRoad());
+            if (gash >= 0 && SealLord.compose(world, gash, catalog).figureId != m.getFigureId()) {
+                out.add(m);
+                out.addAll(retinueOf(m, maze));
+            }
+        }
+        return out;
+    }
+
     private static void applyCombat(Monster m, SealLord.Spec spec) {
         m.setDisplayName(spec.name);
         m.setDamageDice(SealLord.withDamageBonus(m.getDamageDice(), spec.damageBonus));
@@ -171,8 +189,9 @@ public final class SealCourt {
         if (m.getSealRole() != Monster.SEAL_LORD || m.getSealRoad() < 0) return null;
         network.awardSeal(m.getSealRoad());
         int gash = SealLord.gashIndexForRoad(m.getSealRoad());
-        return "You take the seal of " + history.world().gashName(gash) + " from the body. ("
-                + network.getSealCount() + "/" + com.bpm.minotaur.gamedata.blight.CastleGate.SEALS_REQUIRED + " seals)";
+        return com.bpm.minotaur.ui.UiGlyphs.sanitize("You take the seal of " + history.world().gashName(gash)
+                + " from the body. (" + network.getSealCount() + "/"
+                + com.bpm.minotaur.gamedata.blight.CastleGate.SEALS_REQUIRED + " seals)");
     }
 
     /** What the sealed gate at a seal site says, now that its lord has a name. */
@@ -180,10 +199,11 @@ public final class SealCourt {
         int gash = SealLord.gashIndexForRoad(road);
         if (gash < 0) return null;
         if (sealHeld) {
-            return "The way down is quiet. You already hold the seal of " + world.gashName(gash) + ".";
+            return com.bpm.minotaur.ui.UiGlyphs.sanitize("The way down is quiet. You already hold the seal of "
+                    + world.gashName(gash) + ".");
         }
         SealLord.Spec spec = SealLord.compose(world, gash, catalog);
-        return "A sealed way down. Far beneath it, " + spec.name + " holds " + world.gashName(gash)
-                + ", and one of the ancient seals with it.";
+        return com.bpm.minotaur.ui.UiGlyphs.sanitize("A sealed way down. Far beneath it, " + spec.name + " holds "
+                + world.gashName(gash) + ", and one of the ancient seals with it.");
     }
 }

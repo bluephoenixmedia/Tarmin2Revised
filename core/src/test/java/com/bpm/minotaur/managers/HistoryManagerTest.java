@@ -193,4 +193,11 @@ public class HistoryManagerTest {
         for (HistoryEvent e : m.world().events()) if (e.type == type) n++;
         return n;
     }
+
+    @Test
+    public void aClockThatJumpsStagesStillChroniclesEachOne() {
+        HistoryManager m = HistoryManager.create(33L, catalog);
+        m.noteDoomStage(4);
+        assertEquals(3, count(m, EventType.TARMIN_ASCENDANT));
+    }
 }

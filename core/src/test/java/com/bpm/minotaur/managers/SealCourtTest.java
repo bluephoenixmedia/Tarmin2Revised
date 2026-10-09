@@ -179,4 +179,28 @@ public class SealCourtTest {
         assertEquals(0, net.getSealCount());
         assertFalse(history.world().figure(s.retinue.get(0).figureId).isAlive());
     }
+
+    @Test
+    public void aLordWhoLostTheGashIsDeposedWithItsRetinue() {
+        HistoryWorld w = HistorySimulator.prehistory(19L, catalog);
+        SealLord.Spec current = SealLord.compose(w, 0, catalog);
+        SealLord.Spec stale = spec();
+        stale.figureId = current.figureId + 1000;
+        Maze maze = new Maze(SealCourt.COURT_LEVEL, new int[12][12]);
+        Monster old = lord(stale, maze);
+        Monster sword = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
+        sword.getPosition().set(4, 4);
+        SealCourt.dressRetainer(sword, new SealLord.Retainer(5, "Brann, sworn", "HOBGOBLIN"), stale, 1);
+        maze.addMonster(sword);
+
+        java.util.List<Monster> gone = SealCourt.deposed(maze, w, catalog);
+        assertTrue(gone.contains(old));
+        assertTrue(gone.contains(sword));
+
+        Maze fresh = new Maze(SealCourt.COURT_LEVEL, new int[12][12]);
+        Monster sitting = new Monster(Monster.MonsterType.MIND_FLAYER, 40, 15);
+        SealCourt.dressLord(sitting, current, 1);
+        fresh.addMonster(sitting);
+        assertTrue("the rightful lord stays", SealCourt.deposed(fresh, w, catalog).isEmpty());
+    }
 }

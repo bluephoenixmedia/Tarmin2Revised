@@ -146,6 +146,8 @@ public final class UiTheme {
     /** Screen safe area. Nothing a player must read sits outside this. */
     public static final float SAFE = 12 * VU;
     public static final float PAD_XL = 16 * VU;
+    /** A list column beside a reading pane, such as the Annals' houses. */
+    public static final float LIST_COLUMN_W = 140 * VU;
     public static final float PAD_XXL = 24 * VU;
 
     // --- Sizes (SPEC section 3, in canvas units) --------------------------
