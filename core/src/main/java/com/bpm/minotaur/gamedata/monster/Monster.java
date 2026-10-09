@@ -228,6 +228,35 @@ public class Monster implements Renderable {
     private MonsterState state = MonsterState.IDLE;
 
     private Faction faction = Faction.BEASTS_AND_VERMIN;
+    /** The Maze house this monster serves when its faction is MAZE_HOUSE; -1 otherwise. */
+    private int houseId = -1;
+    /** The named figure of the Maze's history this monster is, or -1 (Houses of the Maze T1.12). */
+    private int figureId = -1;
+    /** The seal road whose gash this monster guards, or -1. */
+    private int sealRoad = -1;
+    /** {@link #SEAL_LORD}, {@link #SEAL_RETAINER}, or 0 for neither. */
+    private int sealRole;
+    /** A name for a named figure; null for an ordinary monster. Rebuilt from the history on load. */
+    private String displayName;
+    /** {@code SealLord.Behaviour} ordinals as bits. Rebuilt from the history on load. */
+    private int sealBehaviours;
+    /** One-shot trait reactions already spent this life: berserk, retinue called. Not saved. */
+    private boolean sealRageSpent;
+    private boolean sealCallSpent;
+
+    /** Fighting in a surface battle between two houses (Houses of the Maze T2.4). Not saved. */
+    private boolean warBand;
+    /** The megabeast of the history this monster is, or -1 (T3.3). Megabeasts are never saved in a chunk. */
+    private int megabeastId = -1;
+    /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
+    private DamageType extraWeakness;
+    /** The town this monster guards, or null (T4.4). A guard is placed on every load and never saved. */
+    private String townKey;
+    /** A guard at peace with the player: it does not hunt them. */
+    private boolean peaceful;
+
+    public static final int SEAL_LORD = 1;
+    public static final int SEAL_RETAINER = 2;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
 
@@ -310,7 +339,9 @@ public class Monster implements Renderable {
         this.family = template.family;
         this.faction = Faction.getDefaultFaction(type != null ? type.name() : "", this.family);
         this.spriteData = template.spriteData;
-        this.scale = new Vector2(template.scale.x, template.scale.y);
+        this.scale = (template.scale != null)
+                ? new Vector2(template.scale.x, template.scale.y)
+                : new Vector2(1f, 1f);
         this.statusManager = new StatusManager();
         // A colourway may have its own sprite (a Specter that burns looks different from one that freezes).
         final MonsterVariant variant = MonsterVariant.forColor(template.variants, color);
@@ -527,6 +558,7 @@ public class Monster implements Renderable {
     }
 
     public Affinity getAffinity(DamageType damageType) {
+        if (extraWeakness != null && damageType == extraWeakness) return Affinity.WEAK;
         return getAffinity(this.type, damageType);
     }
 
@@ -755,6 +787,14 @@ public class Monster implements Renderable {
 
     public String getMonsterType() {
         return type.name();
+    }
+
+    /**
+     * What the player reads: a named figure's name, else the type as words ("GIANT BEE", never
+     * the constant, whose underscore the font draws as an arrow).
+     */
+    public String getName() {
+        return displayName != null ? displayName : com.bpm.minotaur.ui.UiNames.caps(type);
     }
 
     @Override
@@ -1191,6 +1231,45 @@ public class Monster implements Renderable {
 
     public Faction getFaction() {
         return faction;
+    }
+
+    public int getFigureId() { return figureId; }
+    public void setFigureId(int figureId) { this.figureId = figureId; }
+    public int getSealRoad() { return sealRoad; }
+    public void setSealRoad(int sealRoad) { this.sealRoad = sealRoad; }
+    public int getSealRole() { return sealRole; }
+    public void setSealRole(int sealRole) { this.sealRole = sealRole; }
+    public String getDisplayName() { return displayName; }
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
+    public int getSealBehaviours() { return sealBehaviours; }
+    public void setSealBehaviours(int sealBehaviours) { this.sealBehaviours = sealBehaviours; }
+    public boolean isSealRageSpent() { return sealRageSpent; }
+    public void setSealRageSpent(boolean spent) { this.sealRageSpent = spent; }
+    public boolean isSealCallSpent() { return sealCallSpent; }
+    public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
+
+    public boolean isWarBand() { return warBand; }
+    public String getTownKey() { return townKey; }
+    public void setTownKey(String townKey) { this.townKey = townKey; }
+    public boolean isPeaceful() { return peaceful; }
+    public void setPeaceful(boolean peaceful) { this.peaceful = peaceful; }
+    public int getMegabeastId() { return megabeastId; }
+    public void setMegabeastId(int megabeastId) { this.megabeastId = megabeastId; }
+    public DamageType getExtraWeakness() { return extraWeakness; }
+    public void setExtraWeakness(DamageType extraWeakness) { this.extraWeakness = extraWeakness; }
+    public void setWarBand(boolean warBand) { this.warBand = warBand; }
+
+    /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
+    public boolean holdsCourt() {
+        return sealRole != 0;
+    }
+
+    public int getHouseId() {
+        return houseId;
+    }
+
+    public void setHouseId(int houseId) {
+        this.houseId = houseId;
     }
 
     public void setFaction(Faction faction) {

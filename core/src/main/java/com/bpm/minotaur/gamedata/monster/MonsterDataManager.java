@@ -33,6 +33,9 @@ public class MonsterDataManager {
 
         // Iterate through all known MonsterTypes
         for (Monster.MonsterType type : Monster.MonsterType.values()) {
+            if (type == Monster.MonsterType.PLAYER_GHOST) {
+                continue; // Built dynamically from saved player data (see MonsterRosterDataTest)
+            }
             JsonValue data = root.get(type.name());
 
             if (data != null) {

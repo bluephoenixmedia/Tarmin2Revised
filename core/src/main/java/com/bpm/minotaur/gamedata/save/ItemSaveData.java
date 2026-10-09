@@ -25,6 +25,8 @@ public class ItemSaveData {
     public String friendlyName;
     /** Rations in this stack. 0 in saves from before stacking, which read as 1. */
     public int stackCount;
+    /** The house a trophy was taken from, or -1. */
+    public int trophyHouseId = -1;
 
     public ItemSaveData() {
     }
@@ -46,6 +48,7 @@ public class ItemSaveData {
             this.spellId = item.getSpellId();
             this.friendlyName = item.getFriendlyName();
             this.stackCount = item.getStackCount();
+            this.trophyHouseId = item.getTrophyHouseId();
         }
     }
 
@@ -71,6 +74,7 @@ public class ItemSaveData {
         if (stackCount > 1) {
             item.setStackCount(stackCount);
         }
+        item.setTrophyHouseId(trophyHouseId);
         return item;
     }
 }

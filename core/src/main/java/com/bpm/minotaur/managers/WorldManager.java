@@ -85,6 +85,8 @@ public class WorldManager {
     // --- NEW: Master Seed ---
     private long worldSeed;
     private FactionMatrix factionMatrix;
+    private HistoryManager history;
+    private com.bpm.minotaur.gamedata.history.HistorySaveData pendingHistorySave;
 
     // --- NEW: Track where to place the return ladder ---
     private GridPoint2 pendingUpLadderPos = null;
@@ -248,6 +250,68 @@ public class WorldManager {
         maze.addMonster(boss);
 
         Gdx.app.log("WorldManager", "Bridge guardian stands in chunk " + chunkId + " at " + seat);
+    }
+
+    /**
+     * Seats the lord who holds this seal road's gash, with its sworn swords, two strata beneath
+     * the seal site (Houses of the Maze T1.12). Also re-seats a court whose lord died some way
+     * other than at the player's hand, so a seal is never lost.
+     */
+    private void ensureSealCourt(Maze maze, GridPoint2 chunkId, int level) {
+        if (maze == null || chunkId == null || biomeManager == null) return;
+        int road = biomeManager.getSealRoad(chunkId);
+        boolean held = road >= 0 && com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(road);
+        if (!SealCourt.isCourt(level, road, held)) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getSealRole() == com.bpm.minotaur.gamedata.monster.Monster.SEAL_LORD) return;
+        }
+        GridPoint2 seat = findBossSeat(maze);
+        if (seat == null) {
+            Gdx.app.error("WorldManager", "Seal court " + chunkId + " has nowhere to stand");
+            return;
+        }
+        com.bpm.minotaur.gamedata.boss.SealLord.Spec spec = com.bpm.minotaur.gamedata.boss.SealLord.compose(
+                getHistory().world(), com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(road),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        com.bpm.minotaur.gamedata.monster.Monster lord = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(spec.monsterType), seat.x, seat.y,
+                com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        SealCourt.dressLord(lord, spec, road, calculateEffectiveDifficulty(chunkId, level));
+        maze.addMonster(lord);
+        for (com.bpm.minotaur.gamedata.boss.SealLord.Retainer r : spec.retinue) {
+            GridPoint2 at = findSafeArrivalTile(maze, seat.x + 1, seat.y);
+            if (at == null) break;
+            com.bpm.minotaur.gamedata.monster.Monster sword = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(r.monsterType), at.x, at.y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
+            SealCourt.dressRetainer(sword, r, spec, road);
+            maze.addMonster(sword);
+        }
+        Gdx.app.log("WorldManager", spec.name + " holds court in chunk " + chunkId + " at " + seat);
+    }
+
+    /** A saved court keeps only who its members are; the history supplies the rest. */
+    private void restoreSealCourt(Maze maze, GridPoint2 chunkId) {
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        // The gash changed hands while the player was away: the old court is gone, the new lord sits.
+        for (com.bpm.minotaur.gamedata.monster.Monster deposed : SealCourt.deposed(maze, getHistory().world(), catalog)) {
+            maze.removeMonster(deposed);
+        }
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.holdsCourt()) {
+                SealCourt.reapply(m, getHistory().world(), catalog, calculateEffectiveDifficulty(chunkId, this.currentLevel));
+            }
+        }
+        ensureSealCourt(maze, chunkId, this.currentLevel);
+    }
+
+    /**
+     * A monster that was a named figure of the Maze's history has died at the player's hand:
+     * the history records it, and a seal lord gives up its seal.
+     */
+    public void onMonsterSlain(com.bpm.minotaur.gamedata.monster.Monster m, GameEventManager events) {
+        String message = SealCourt.onSlain(m, getHistory(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
+        if (message != null && events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(message, 6f));
+        }
     }
 
     /** A walkable tile away from the edges, so the boss is not born in a doorway. */
@@ -500,6 +564,9 @@ public class WorldManager {
                 } else {
                     Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                     maze.setGoreManager(this.goreManager);
+                    restoreSealCourt(maze, chunkId);
+                    dressStratum(maze, chunkId, getChunkSeed(this.currentLevel, chunkId.x, chunkId.y), false);
+                    settleTown(maze, chunkId, false);
                     // ChunkData persists none of identity, biome or theme, and the
                     // generation path sets all three. Without this a reloaded chunk
                     // came back as an anonymous MAZE chunk at (0,0): forest chunks
@@ -575,6 +642,9 @@ public class WorldManager {
         newMaze.setChunkId(chunkId);
         buildShelterRoadSites(newMaze, chunkId, biome);
         placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
+        ensureSealCourt(newMaze, chunkId, currentLevel);
+        dressStratum(newMaze, chunkId, chunkSeed, true);
+        settleTown(newMaze, chunkId, true);
 
         // Themed Chunk Decoration
         com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
@@ -795,6 +865,7 @@ public class WorldManager {
         if (!savingEnabled || gameMode == GameMode.CLASSIC)
             return;
         try {
+            rememberBeastWounds(maze);
             ChunkData data = new ChunkData(maze);
             if (this.goreManager != null) {
                 this.goreManager.exportChunkGore(chunkId, data);
@@ -1261,6 +1332,7 @@ public class WorldManager {
 
         DoomManager doom = DoomManager.getInstance();
         doom.advanceExpeditionTurn();
+        noteDoomStageForHistory();
         int interval = doom.getSpawnInterval();
 
         // Periodic Spawn Check using dynamic Doom Clock interval
@@ -1328,9 +1400,243 @@ public class WorldManager {
         }
     }
 
+    /**
+     * The Maze's history, built from its own seed on first use. It survives death: dying
+     * re-rolls the world seed, never the history's (ADR 0004).
+     */
+    public HistoryManager getHistory() {
+        if (history == null) {
+            history = HistoryManager.fromSave(worldSeed, pendingHistorySave,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            pendingHistorySave = null;
+            attachHouseRelations();
+        }
+        return history;
+    }
+
+    /** Restores a saved history and rebuilds it now. Null means a save from before the history. */
+    public void setHistorySave(com.bpm.minotaur.gamedata.history.HistorySaveData save) {
+        this.pendingHistorySave = save;
+        this.history = null;
+        getHistory();
+    }
+
+    /**
+     * Passes the Doom Clock's stage to the history, which chronicles each new peak as
+     * Tarmin-Zul's ascendancy. Only once the history exists: it is built at game start, and a
+     * headless test ticking turns has none.
+     */
+    public void noteDoomStageForHistory() {
+        if (history != null) history.noteDoomStage(DoomManager.getInstance().getDoomStage());
+    }
+
+    /** The Maze house a monster fights for: its own, Tarmin-Zul's for the Legion, else -1. */
+    public int houseOf(com.bpm.minotaur.gamedata.monster.Monster m) {
+        if (m == null) return -1;
+        if (m.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.MAZE_HOUSE) return m.getHouseId();
+        if (m.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.TARMIN_LEGION && history != null
+                && history.world().tarminHouse() != null) {
+            return history.world().tarminHouse().id;
+        }
+        return -1;
+    }
+
+    /**
+     * Where the houses sit in this world, or null in a world laid out before the shelter roads,
+     * which has no seal sites to seat them at.
+     */
+    public com.bpm.minotaur.gamedata.history.war.SeatMap houseSeats() {
+        if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
+        return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
+                biomeManager.getCastleSite(), worldSeed);
+    }
+
+    /**
+     * Gives a strata chunk its stratum (plan T4.1): props scattered once, when it is first made,
+     * and its glow relit on every load, since lights are not saved.
+     */
+    private void dressStratum(Maze maze, GridPoint2 chunkId, long chunkSeed, boolean fresh) {
+        if (maze == null || currentLevel <= 1) return;
+        com.bpm.minotaur.generation.Stratum stratum = com.bpm.minotaur.generation.StratumMap.of(worldSeed, chunkId, currentLevel);
+        // Under a seal site, down to the court, the strata are the gash's: its holder's doctrine (T1.13).
+        if (biomeManager != null && history != null) {
+            com.bpm.minotaur.generation.Stratum gash = com.bpm.minotaur.generation.GashInterior.of(getHistory().world(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), biomeManager.getSealRoad(chunkId), currentLevel);
+            if (gash != null) stratum = gash;
+        }
+        maze.setStratum(stratum);
+        if (fresh) com.bpm.minotaur.generation.StratumDecorator.decorate(maze, stratum, chunkSeed, assetManager);
+        com.bpm.minotaur.generation.StratumDecorator.light(maze, stratum, chunkSeed);
+    }
+
+    /** The town standing in the player's chunk, or null (plan T4.2). */
+    public com.bpm.minotaur.gamedata.history.town.Town townHere() {
+        if (currentPlayerChunkId == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, currentPlayerChunkId, currentLevel)) {
+            return null;
+        }
+        return getHistory().town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, currentPlayerChunkId.x, currentPlayerChunkId.y));
+    }
+
+    private void settleTown(Maze maze, GridPoint2 chunkId, boolean fresh) {
+        if (maze == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, chunkId, currentLevel)) return;
+        String key = com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, chunkId.x, chunkId.y);
+        getHistory().seatExile(key);
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(key);
+        if (fresh) TownBuilder.raise(maze, town, itemDataManager, assetManager);
+        TownBuilder.populate(maze, town, dataManager, itemDataManager, assetManager,
+                getHistory().standing().isHostile(town), this::recruit);
+    }
+
+    /**
+     * The player struck one of a town's guards: a crime. The town and its sisters hear of it, and
+     * every guard of the town here turns on the player (plan D41). Returns what is said, or null.
+     */
+    public String onTownCrime(com.bpm.minotaur.gamedata.monster.Monster struck, Maze maze) {
+        if (struck == null || struck.getTownKey() == null || !struck.isPeaceful()) return null;
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(struck.getTownKey());
+        getHistory().standing().change(town, com.bpm.minotaur.gamedata.history.town.Standing.CRIME);
+        if (maze != null) {
+            for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                if (m != null && town.key.equals(m.getTownKey())) {
+                    m.setPeaceful(false);
+                    m.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+                }
+            }
+        }
+        return com.bpm.minotaur.ui.UiGlyphs.sanitize("You have drawn steel in " + town.name + ". Its guards come for you.");
+    }
+
+    /** Other towns a reeve might send a message to: those on the strata near here (plan T4.5). */
+    public java.util.List<String> nearbyTowns(String exceptKey) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (currentPlayerChunkId == null) return out;
+        for (int level = com.bpm.minotaur.gamedata.history.town.TownSites.MIN_LEVEL;
+             level <= com.bpm.minotaur.gamedata.history.town.TownSites.MAX_LEVEL; level++) {
+            for (int dx = -NEARBY_TOWN_RADIUS; dx <= NEARBY_TOWN_RADIUS; dx++) {
+                for (int dy = -NEARBY_TOWN_RADIUS; dy <= NEARBY_TOWN_RADIUS; dy++) {
+                    GridPoint2 c = new GridPoint2(currentPlayerChunkId.x + dx, currentPlayerChunkId.y + dy);
+                    if (!com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, c, level)) continue;
+                    String key = com.bpm.minotaur.gamedata.history.town.Town.keyOf(level, c.x, c.y);
+                    if (!key.equals(exceptKey)) out.add(key);
+                }
+            }
+        }
+        return out;
+    }
+
+    static final int NEARBY_TOWN_RADIUS = 6;
+
+    /** A megabeast's wounds outlast the chunk it was hurt in. */
+    private void rememberBeastWounds(Maze maze) {
+        if (history == null || maze == null) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() >= 0) history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
+        }
+    }
+
+    /**
+     * Brings the megabeast the tracks put here, and sends away one that has roamed on (plan T3.3).
+     * Called each turn and on arrival. Returns what the player notices, or null.
+     */
+    public String tendMegabeasts(Maze maze, com.badlogic.gdx.math.Vector2 playerPos) {
+        if (history == null || maze == null || currentPlayerChunkId == null) return null;
+        com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts =
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
+        if (beasts == null) return null;
+        com.bpm.minotaur.gamedata.history.Megabeast present = com.bpm.minotaur.gamedata.history.beast.BeastTracks.presentAt(
+                history.world(), worldSeed, history.warClock(), currentPlayerChunkId, currentLevel, history.hunt());
+        com.bpm.minotaur.gamedata.monster.Monster here = null;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() >= 0) here = m;
+        }
+        if (here != null && present != null && present.id == here.getMegabeastId() && !present.isPacified()
+                && BeastForge.takeOffering(maze, new GridPoint2((int) here.getPosition().x, (int) here.getPosition().y)) != null) {
+            // A trophy of the houses laid before it: it takes the offering, and the player's peace with it (T4.5).
+            history.recordMegabeastPacified(present.id);
+            here.setPeaceful(true);
+            here.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.IDLE);
+            return present.name + " takes the offering and turns from you. It will not hunt you now.";
+        }
+        if (here != null && (present == null || present.id != here.getMegabeastId())) {
+            if (here.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) {
+                // Hunting the player: it stays with them, wherever its range would have taken it.
+                history.startHunt(here.getMegabeastId(), currentPlayerChunkId, currentLevel);
+                history.hunt().readyAt = history.warClock();
+                return null;
+            }
+            history.setBeastHp(here.getMegabeastId(), here.getCurrentHP());
+            maze.removeMonster(here);
+            return null;
+        }
+        if (present == null || here != null) return null;
+        com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt = history.hunt();
+        boolean followed = hunt != null && hunt.beastId == present.id;
+        GridPoint2 at = followed && playerPos != null
+                ? findSafeArrivalTile(maze, (int) playerPos.x + 5, (int) playerPos.y)
+                : findBossSeat(maze);
+        if (at == null) return null;
+        com.bpm.minotaur.gamedata.monster.Monster beast;
+        try {
+            beast = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(beasts.archetype(present.archetypeId).body), at.x, at.y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        BeastForge.dress(beast, present, beasts, history.beastHp(present.id, Integer.MAX_VALUE));
+        if (followed) beast.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+        maze.addMonster(beast);
+        return followed ? present.name + " has followed you." : "The ground trembles. Something enormous is near.";
+    }
+
+    /** The player is leaving: a megabeast hunting them nearby follows, a few turns behind. */
+    public void megabeastsFollow(Maze maze, com.badlogic.gdx.math.Vector2 playerPos, GridPoint2 toChunk, int toLevel) {
+        if (history == null || maze == null || playerPos == null || toChunk == null) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
+            if (m == null || m.getMegabeastId() < 0 || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
+            if (Math.abs(m.getPosition().x - playerPos.x) + Math.abs(m.getPosition().y - playerPos.y) > FOLLOW_REACH) continue;
+            history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
+            history.startHunt(m.getMegabeastId(), toChunk, toLevel);
+            maze.removeMonster(m);
+        }
+    }
+
+    /** How near a hunting megabeast must be to follow the player out. */
+    static final int FOLLOW_REACH = 12;
+
+    /** A soldier for a surface battle: a monster of a monsters.json type, standing at a tile. */
+    public com.bpm.minotaur.gamedata.monster.Monster recruit(String monsterType, int x, int y) {
+        try {
+            return new com.bpm.minotaur.gamedata.monster.Monster(
+                    com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(monsterType), x, y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** The front over the player's chunk on the surface, or null. */
+    public com.bpm.minotaur.gamedata.history.war.Front frontHere() {
+        if (currentLevel != 1 || currentPlayerChunkId == null) return null;
+        return com.bpm.minotaur.gamedata.history.war.FrontPlanner.at(currentFronts(), currentPlayerChunkId);
+    }
+
+    /** Every war's front right now; empty in a world with no seats. */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
+        return seats == null ? java.util.Collections.emptyList() : getHistory().fronts(seats);
+    }
+
+    /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */
+    private void attachHouseRelations() {
+        if (factionMatrix != null && history != null) {
+            factionMatrix.setHouseRelations(history.world().houseRelations());
+        }
+    }
+
     public void setFactionMatrix(FactionMatrix factionMatrix) {
         if (factionMatrix != null) {
             this.factionMatrix = factionMatrix;
+            attachHouseRelations();
         }
     }
 

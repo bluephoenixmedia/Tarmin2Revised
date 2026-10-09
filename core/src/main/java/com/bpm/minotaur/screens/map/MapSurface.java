@@ -72,6 +72,19 @@ final class MapSurface extends Actor implements Disposable {
         Direction facing = Direction.NORTH;
     }
 
+    /** A war front to draw: its chunks, washed in the attacker's colour, ringed in the defender's. */
+    static final class FrontMark {
+        final List<GridPoint2> chunks;
+        final Color attacker;
+        final Color defender;
+
+        FrontMark(List<GridPoint2> chunks, Color attacker, Color defender) {
+            this.chunks = chunks;
+            this.attacker = attacker;
+            this.defender = defender;
+        }
+    }
+
     private static final String[] ICON_NAMES = {
             "home", "shelter", "castle", "seal", "seal_won", "ladder_up", "ladder_down", "player",
             "waypoint", "grave", "portal",
@@ -96,6 +109,7 @@ final class MapSurface extends Actor implements Disposable {
     private List<MapModel.KnownShelter> shelters;
     private Set<GridPoint2> glimpsed;
     private GridPoint2 suggestion;
+    private List<FrontMark> fronts = java.util.Collections.emptyList();
 
     private Zoom zoom = Zoom.REGION;
     private int floor = 1;
@@ -121,6 +135,11 @@ final class MapSurface extends Actor implements Disposable {
         pinIcons.put(MapKnowledge.Pin.TRADER, "pin_trader");
         pinIcons.put(MapKnowledge.Pin.LOCKED, "pin_locked");
         pinIcons.put(MapKnowledge.Pin.UNKNOWN, "pin_unknown");
+    }
+
+    /** The wars being fought on the surface right now (Houses of the Maze plan T2.2). */
+    void setFronts(List<FrontMark> fronts) {
+        this.fronts = fronts == null ? java.util.Collections.emptyList() : fronts;
     }
 
     /** Points the surface at a fresh read of the world. Call when shelters, seals or knowledge change. */
@@ -195,6 +214,7 @@ final class MapSurface extends Actor implements Disposable {
         } else {
             drawChunks(batch);
             if (floor == 1) {
+                drawFronts(batch);
                 drawRoads(batch);
                 drawSurfaceIcons(batch);
             }
@@ -245,6 +265,19 @@ final class MapSurface extends Actor implements Disposable {
             if (!inView(c)) continue;
             Color wash = floor == 1 ? washOf(biomeOf(c)) : UiTheme.MAP_UNDERGROUND;
             fill(batch, wash, UiTheme.MAP_WASH_ALPHA, cellX(c.x) + gap, cellY(c.y) + gap, cell - 2 * gap, cell - 2 * gap);
+        }
+    }
+
+    /** Fronts are news, not discovery: every one is shown, explored ground or not. */
+    private void drawFronts(Batch batch) {
+        int cell = zoom.cell;
+        float rim = zoom == Zoom.REGION ? UiTheme.FRONT_RIM : 1f;
+        for (FrontMark f : fronts) {
+            for (GridPoint2 c : f.chunks) {
+                if (!inView(c)) continue;
+                fill(batch, f.attacker, UiTheme.MAP_FRONT_ALPHA, cellX(c.x), cellY(c.y), cell, cell);
+                dashed(batch, f.defender, 1f, cellX(c.x), cellY(c.y), cell, cell, rim);
+            }
         }
     }
 

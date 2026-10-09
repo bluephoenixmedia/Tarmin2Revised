@@ -78,6 +78,20 @@ public class ExpeditionMapScreen extends BaseScreen {
     /** The map was closed in the chunk view; it reopens there once the panels exist. */
     private boolean reopenChunk;
 
+    /** Every war's front, in its two houses' colours. */
+    private java.util.List<MapSurface.FrontMark> frontMarks() {
+        java.util.List<MapSurface.FrontMark> marks = new java.util.ArrayList<>();
+        if (worldManager == null) return marks;
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        for (com.bpm.minotaur.gamedata.history.war.Front f : worldManager.currentFronts()) {
+            marks.add(new MapSurface.FrontMark(f.chunks(),
+                    com.bpm.minotaur.ui.HouseHeraldry.primary(world, f.attackerId, catalog),
+                    com.bpm.minotaur.ui.HouseHeraldry.primary(world, f.defenderId, catalog)));
+        }
+        return marks;
+    }
+
     public ExpeditionMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
         super(game);
         this.player = player;
@@ -97,6 +111,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         surface = new MapSurface(skin, this::loadSummary);
         model = buildModel();
         surface.setModel(model, knowledge);
+        surface.setFronts(frontMarks());
         surface.setPlayer(playerMark());
         restoreView();
 
@@ -429,7 +444,11 @@ public class ExpeditionMapScreen extends BaseScreen {
             if (biomes != null && biomes.isCastleChunk(c) && model.isCastleKnown()) lines.add("Castle Tarmin");
             int sealRoad = biomes == null ? -1 : biomes.getSealRoad(c);
             if (sealRoad > 0 && model.isSealSiteKnown(sealRoad)) {
-                lines.add("Seal site of " + MapNames.road(sealRoad) + (network.hasSeal(sealRoad) ? ", seal won" : ""));
+                String holder = worldManager == null ? ""
+                        : com.bpm.minotaur.gamedata.boss.SealLord.holderLine(worldManager.getHistory().world(),
+                                com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(sealRoad));
+                lines.add(com.bpm.minotaur.ui.UiGlyphs.sanitize("Seal site of " + MapNames.road(sealRoad)
+                        + (network.hasSeal(sealRoad) ? ", seal won" : "") + (holder.isEmpty() ? "" : ", " + holder)));
             }
         }
         if (known == MapModel.Knowledge.VISITED && worldManager != null) {

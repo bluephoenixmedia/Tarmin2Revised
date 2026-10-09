@@ -222,7 +222,13 @@ public class Item implements Renderable {
         TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN,
 
         // Void salvage: the traveling merchant's chain laser and what restores it
-        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT
+        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT,
+
+        // Fragments of the Maze's history, read on pickup (Houses of the Maze plan T1.10)
+        CHRONICLE_PAGE, HERALD_PROCLAMATION, TORN_BANNER,
+
+        // A trophy of a broken house: worth coin, and it tells a story (Houses of the Maze T2.7)
+        SIGNET_RING
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -234,6 +240,9 @@ public class Item implements Renderable {
     // layer, "left"/"right" for paired limbs. Lives on the item so it goes where the
     // item goes -- into the backpack, and back on. Null until first bloodied.
     private java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> bloodCoats;
+
+    /** The house a trophy was taken from (plan T2.7, T4.5), or -1. */
+    private int trophyHouseId = -1;
 
     // --- Base Properties ---
     private String friendlyName;
@@ -598,9 +607,17 @@ public class Item implements Renderable {
                     tempRegion = atlas.findRegion("lamp");
                 }
                 if (tempRegion == null) {
-                    Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas for " + type);
                     if (assetManager.isLoaded(template.texturePath)) {
                         tempTexture = assetManager.get(template.texturePath, Texture.class);
+                    } else if (Gdx.files != null && Gdx.files.internal(template.texturePath).exists() && Gdx.gl != null) {
+                        try {
+                            tempTexture = new Texture(Gdx.files.internal(template.texturePath));
+                        } catch (Exception e) {
+                            Gdx.app.debug("Item", "Could not load standalone texture: " + template.texturePath);
+                        }
+                    }
+                    if (tempTexture == null) {
+                        Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas or standalone file for " + type);
                     }
                 }
             } else { // Standard Texture Loading
@@ -677,6 +694,14 @@ public class Item implements Renderable {
 
     public String getFriendlyName() {
         return friendlyName;
+    }
+
+    public int getTrophyHouseId() {
+        return trophyHouseId;
+    }
+
+    public void setTrophyHouseId(int houseId) {
+        this.trophyHouseId = houseId;
     }
 
     public int getBaseValue() {
@@ -1328,6 +1353,37 @@ public class Item implements Renderable {
 
     public void setStudyProgress(int studyProgress) {
         this.studyProgress = Math.max(0, studyProgress);
+    }
+
+    /** A found piece of the Maze's history; it is read on pickup, not carried. */
+    public boolean isChronicleFragment() {
+        return type == ItemType.CHRONICLE_PAGE || type == ItemType.HERALD_PROCLAMATION || type == ItemType.TORN_BANNER;
+    }
+
+    /** A trophy taken from a broken house: it tells its story once, then it is kept and sold. */
+    public boolean isTrophy() {
+        return type == ItemType.SIGNET_RING;
+    }
+
+    /** Whether a trophy has told its story already. Kept on the study counter, which it never otherwise uses. */
+    public boolean isTrophyRead() {
+        return isTrophy() && studyProgress > 0;
+    }
+
+    public void markTrophyRead() {
+        if (isTrophy()) studyProgress = 1;
+    }
+
+    /** What kind of history this item tells, or null if it is no fragment. */
+    public com.bpm.minotaur.gamedata.history.FragmentKind fragmentKind() {
+        if (type == null) return null;
+        switch (type) {
+            case CHRONICLE_PAGE: return com.bpm.minotaur.gamedata.history.FragmentKind.PAGE;
+            case HERALD_PROCLAMATION: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
+            case TORN_BANNER: return com.bpm.minotaur.gamedata.history.FragmentKind.BANNER;
+            case SIGNET_RING: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
+            default: return null;
+        }
     }
 
     public boolean isCargo() {

@@ -44,6 +44,7 @@ the other side had started reading. Compile and test every merge.
 ## Repository Guidelines
 
 - **Architecture**: Always consult `docs/Implementation Plan_ The Expedition Loop & Progression Reboot.md` before making architectural modifications.
+- **Houses of the Maze** (hell factions, procedural history, surface wars, megabeasts, underground towns): plan, decisions and tasks in `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`; coordinated by the `facilitator` agent.
 - **Git Commits**: Commit when completing logical units of work; follow conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`).
 - **Core Loop**: Maintain the integrity of the Delve & Return Expedition loop: Shelter Hub -> Overland/Strata Delve -> Return to Camp -> Prepare for Castle Tarmin.
 - **Combat**: Keep grid combat fast and responsive (bump-to-attack in melee, directional projectile ballistics for bows, crossbows and thrown weapons, spellcast overlays). Calculations run under the hood with instant floating damage and combat log feedback.

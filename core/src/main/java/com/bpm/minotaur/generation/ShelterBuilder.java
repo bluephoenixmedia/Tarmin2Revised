@@ -172,6 +172,13 @@ public final class ShelterBuilder {
                 LightSource.FlickerProfile.LANTERN_BREATH));
     }
 
+    /** Clears an open square around a point, walled at its rim and joined to the chunk's gates (a town's plaza). */
+    public static void clearPlaza(Maze maze, int cx, int cy, int half) {
+        clearArea(maze, cx - half, cy - half, cx + half, cy + half);
+        recomputeMasks(maze, cx - half - 1, cy - half - 1, cx + half + 1, cy + half + 1, null);
+        carveToNearestGate(maze, new GridPoint2(cx, cy - half));
+    }
+
     public static boolean isSealGate(Scenery scenery) {
         return scenery != null && SEAL_GATE_PROP.equals(scenery.getPropId());
     }

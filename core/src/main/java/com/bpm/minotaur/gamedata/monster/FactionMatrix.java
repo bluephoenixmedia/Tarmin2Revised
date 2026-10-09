@@ -18,6 +18,9 @@ public class FactionMatrix {
 
     private final Map<Faction, Map<Faction, Relation>> matrix = new EnumMap<>(Faction.class);
 
+    /** How Maze houses stand toward each other; null until a history exists. Never serialised. */
+    private HouseRelations houseRelations;
+
     public FactionMatrix() {
         initDefault();
     }
@@ -96,6 +99,40 @@ public class FactionMatrix {
             return row.get(b);
         }
         return Relation.HOSTILE;
+    }
+
+    public void setHouseRelations(HouseRelations houseRelations) {
+        this.houseRelations = houseRelations;
+    }
+
+    /**
+     * The relation between two monsters, counting their Maze houses (ADR 0004). House against
+     * house is the history's call; a house against anything else falls back to the faction rows,
+     * where {@link Faction#MAZE_HOUSE} is hostile to every mortal faction and the Legion keeps
+     * its seeded relations.
+     */
+    public Relation getRelation(Faction a, int houseA, Faction b, int houseB) {
+        int ha = houseOf(a, houseA);
+        int hb = houseOf(b, houseB);
+        if (ha >= 0 && hb >= 0) {
+            if (ha == hb) return Relation.ALLIED;
+            return houseRelations != null ? houseRelations.between(ha, hb) : Relation.NEUTRAL;
+        }
+        return getRelation(a, b);
+    }
+
+    public boolean isHostile(Faction a, int houseA, Faction b, int houseB) {
+        return getRelation(a, houseA, b, houseB) == Relation.HOSTILE;
+    }
+
+    public boolean isHostile(Monster a, Monster b) {
+        return isHostile(a.getFaction(), a.getHouseId(), b.getFaction(), b.getHouseId());
+    }
+
+    private int houseOf(Faction f, int houseId) {
+        if (f == Faction.MAZE_HOUSE) return houseId;
+        if (f == Faction.TARMIN_LEGION && houseRelations != null) return houseRelations.tarminHouseId();
+        return -1;
     }
 
     public boolean isHostile(Faction a, Faction b) {

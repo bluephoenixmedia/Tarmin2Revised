@@ -223,6 +223,7 @@ public class SpawnManager {
 
         // Milestone Tarmin Tomes placed in designated subterranean strata chunks (x=0, y=0)
         spawnMilestoneTomes();
+        spawnChronicleFragment();
     }
 
     /**
@@ -235,6 +236,32 @@ public class SpawnManager {
         spawnContainers((int) (budget.containerBudget * 0.5f));
         spawnMimics();
         spawnDebris((int) (budget.debrisBudget * 0.5f));
+    }
+
+    /** Sometimes a piece of the Maze's history lies here (Houses of the Maze plan T1.10). */
+    private void spawnChronicleFragment() {
+        if (maze == null || itemDataManager == null) return;
+        ItemType type = rollChronicleFragment(random, maze.getLevel());
+        if (type == null) return;
+        GridPoint2 pt = getEmptySpawnPoint();
+        if (pt == null) return;
+        Item fragment = itemDataManager.createItem(type, pt.x, pt.y, ItemColor.TAN, assetManager);
+        if (fragment != null) {
+            maze.addItem(fragment);
+            SpawnLogger.getInstance().logItemSpawn(fragment, "Chronicle fragment");
+        }
+    }
+
+    /**
+     * Which fragment a chunk holds, if any: about three chunks in ten. Banners and proclamations
+     * lie on the surface where the wars are fought; the strata keep the chronicle pages.
+     */
+    public static ItemType rollChronicleFragment(Random rng, int depth) {
+        if (rng.nextFloat() >= 0.3f) return null;
+        if (depth <= 1) {
+            return rng.nextBoolean() ? ItemType.TORN_BANNER : ItemType.HERALD_PROCLAMATION;
+        }
+        return rng.nextInt(4) == 0 ? ItemType.HERALD_PROCLAMATION : ItemType.CHRONICLE_PAGE;
     }
 
     private void spawnMilestoneTomes() {

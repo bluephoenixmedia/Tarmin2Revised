@@ -136,6 +136,12 @@ public class ChunkData {
             // A dead monster still on the map is a bug, never something to keep:
             // saving it would bring a killable corpse back on every load.
             if (entry.getValue().getCurrentHP() <= 0) continue;
+            // A megabeast is wherever its tracks say, not wherever it was last seen (T3.3).
+            if (entry.getValue().getMegabeastId() >= 0) continue;
+            // A town's guards are posted on every load, at peace or not as the town decides.
+            if (entry.getValue().getTownKey() != null) continue;
+            // A battle the player walked away from marches on without them.
+            if (entry.getValue().isWarBand()) continue;
             this.monsters.add(new MonsterData(entry.getValue()));
         }
 
@@ -165,6 +171,7 @@ public class ChunkData {
 
         if (maze.getScenery() != null) {
             for (Scenery s : maze.getScenery().values()) {
+                if (s.isTownsfolk()) continue; // a town's folk are placed on every load
                 this.scenery.add(new SceneryData(s));
             }
         }
@@ -270,6 +277,10 @@ public class ChunkData {
                     // A renamed faction keeps the template default rather than failing the chunk.
                 }
             }
+            monster.setHouseId(data.houseId);
+            monster.setFigureId(data.figureId);
+            monster.setSealRoad(data.sealRoad);
+            monster.setSealRole(data.sealRole);
             maze.addMonster(monster);
         }
 
@@ -543,6 +554,9 @@ public class ChunkData {
         public boolean isMimic;
         public boolean mimicSeen;
         public boolean mimicRollSpent;
+        /** A trophy's house and the name it was given for it; -1 and null for anything else. */
+        public int trophyHouseId = -1;
+        public String trophyName;
 
         public ItemData() {
         }
@@ -558,6 +572,10 @@ public class ChunkData {
             this.isMimic = item.isMimic();
             this.mimicSeen = item.isMimicSeen();
             this.mimicRollSpent = item.isMimicRollSpent();
+            if (item.getTrophyHouseId() >= 0) {
+                this.trophyHouseId = item.getTrophyHouseId();
+                this.trophyName = item.getFriendlyName();
+            }
             if (item.getContents() != null && !item.getContents().isEmpty()) {
                 for (Item inside : item.getContents()) {
                     if (inside != null) {
@@ -583,6 +601,10 @@ public class ChunkData {
             item.setMimic(this.isMimic);
             item.setMimicSeen(this.mimicSeen);
             item.setMimicRollSpent(this.mimicRollSpent);
+            if (this.trophyHouseId >= 0) {
+                item.setTrophyHouseId(this.trophyHouseId);
+                if (this.trophyName != null) item.setName(this.trophyName);
+            }
         }
     }
 
@@ -619,6 +641,13 @@ public class ChunkData {
          */
         public String faction;
 
+        /** The monster's Maze house; -1 on old saves and for every non-Maze monster. */
+        public int houseId = -1;
+        /** Named-figure identity (Houses of the Maze T1.12); stats are rebuilt from the history. */
+        public int figureId = -1;
+        public int sealRoad = -1;
+        public int sealRole;
+
         public MonsterData() {
         }
 
@@ -639,6 +668,10 @@ public class ChunkData {
             this.allyTurns = monster.getAllyTurns();
             this.blighted = monster.isBlighted();
             this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
+            this.houseId = monster.getHouseId();
+            this.figureId = monster.getFigureId();
+            this.sealRoad = monster.getSealRoad();
+            this.sealRole = monster.getSealRole();
         }
     }
 

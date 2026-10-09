@@ -28,6 +28,8 @@ public class WorldSaveData {
     /** Choice events already placed this run, so a reload does not place them again. */
     public List<String> seenChoiceEvents = new ArrayList<>();
     public String factionMatrix;
+    /** The Maze's live history as a replay (ADR 0004). Null in saves written before it existed. */
+    public com.bpm.minotaur.gamedata.history.HistorySaveData history;
     /**
      * True from the moment the player dies until they awaken in the Shelter. A save written in
      * that window holds the stripped character, and loading it must finish the respawn rather

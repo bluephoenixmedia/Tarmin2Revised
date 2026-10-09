@@ -136,14 +136,14 @@ public class ForcePushEffect implements SpellEffect {
         // Event log
         if (hitWall) {
             eventManager.addEvent(new GameEvent(
-                    target.getMonsterType() + " slammed into the wall! (-" + actualDamage + " HP)", 2.5f));
+                    target.getName() + " slammed into the wall! (-" + actualDamage + " HP)", 2.5f));
         } else if (tilesPushed > 0) {
             eventManager.addEvent(new GameEvent(
-                    "Pushed " + target.getMonsterType() + " back "
+                    "Pushed " + target.getName() + " back "
                     + tilesPushed + (tilesPushed == 1 ? " tile!" : " tiles!"), 2f));
         } else {
             eventManager.addEvent(new GameEvent(
-                    target.getMonsterType() + " resisted the push!", 1.5f));
+                    target.getName() + " resisted the push!", 1.5f));
         }
 
         // Handle death or new combat entry
@@ -195,7 +195,7 @@ public class ForcePushEffect implements SpellEffect {
         if (!monster.claimDeath()) return;
         player.addExperience(monster.getBaseExperience(), eventManager);
         eventManager.addEvent(new GameEvent(
-                monster.getMonsterType() + " was CRUSHED against the wall!", 3f));
+                monster.getName() + " was CRUSHED against the wall!", 3f));
 
         // Mark combat as won if this was the active combat target
         if (combatManager != null && monster == combatManager.getMonster()) {

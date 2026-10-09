@@ -607,6 +607,14 @@ public class World3DRenderer implements Disposable {
             fogColor.set(biome.getFogColor());
         }
 
+        // A stratum has its own air: spore-green, drowned blue, bone dust, ember smoke (T4.1).
+        com.bpm.minotaur.generation.Stratum stratumHere = maze != null ? maze.getStratum() : null;
+        if (currentLevel > 1 && stratumHere != null && stratumHere.fogColor != null) {
+            fogEnabled = true;
+            fogDistance = stratumHere.fogDistance * getDepthDarknessFactor(currentLevel);
+            fogColor.set(stratumHere.fogColor);
+        }
+
         // The wilderness surface biomes light themselves. The forest filters the volcanic
         // light through its canopy into green-black fog; the desert takes it at full force
         // as amber dust. Both close in along their corridors and open across their clearings.

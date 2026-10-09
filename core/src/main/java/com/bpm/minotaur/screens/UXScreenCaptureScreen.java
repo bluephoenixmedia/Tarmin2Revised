@@ -526,6 +526,62 @@ public class UXScreenCaptureScreen extends BaseScreen {
             setSubScreen(s, null);
         }));
 
+        // 29: A surface battle with the lines closed around the player (Houses of the Maze T2.4)
+        tasks.add(new CaptureTask("29_battle", "Surface battle, lines closed", () -> {
+            com.bpm.minotaur.managers.WorldManager wm = sharedGameScreen.getWorldManager();
+            com.bpm.minotaur.managers.HistoryManager history = wm.getHistory();
+            java.util.List<com.bpm.minotaur.gamedata.history.War> wars = history.world().activeWars();
+            if (!wars.isEmpty()) {
+                com.bpm.minotaur.gamedata.history.War war = wars.get(0);
+                com.badlogic.gdx.math.GridPoint2 here = wm.getCurrentPlayerChunkId();
+                com.bpm.minotaur.gamedata.history.war.Front front =
+                        new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
+                com.bpm.minotaur.managers.BattleDirector battle = new com.bpm.minotaur.managers.BattleDirector(
+                        front, here, 0, history.world(), com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), 29L);
+                com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2((int) sharedPlayer.getPosition().x, (int) sharedPlayer.getPosition().y);
+                for (int i = 0; i < com.bpm.minotaur.managers.BattleDirector.WARNING_TURNS + 1; i++) {
+                    battle.tick(sharedMaze, at, wm::recruit, (m, near, loser, lordFell) -> { });
+                }
+                int soldiers = 0;
+                for (com.bpm.minotaur.gamedata.monster.Monster m : sharedMaze.getMonsters().values()) {
+                    if (m.isWarBand()) soldiers++;
+                }
+                Gdx.app.log("UXCapture", "Battle " + battle.phase() + ": " + soldiers + " soldiers on the field, "
+                        + "maze is the game's own: " + (sharedMaze == sharedGameScreen.getMaze()));
+            }
+            setSubScreen(sharedGameScreen, null);
+        }));
+
+        // 30: Talking with a town's reeve (Houses of the Maze T4.3)
+        tasks.add(new CaptureTask("30_talk", "Talking with a town's folk", () -> {
+            com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
+            com.bpm.minotaur.gamedata.history.town.Town town = history.town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(2, 3, 4));
+            com.bpm.minotaur.managers.TownTalk.Pack pack = new com.bpm.minotaur.managers.TownTalk.Pack() {
+                public boolean hasSignet(int houseId) { return false; }
+                public boolean giveSignet(int houseId) { return false; }
+                public void reward(String what) { }
+            };
+            com.bpm.minotaur.managers.TownTalk talk = new com.bpm.minotaur.managers.TownTalk(history, town,
+                    town.folk(com.bpm.minotaur.gamedata.history.town.Town.Role.QUESTGIVER),
+                    java.util.Collections.singletonList(com.bpm.minotaur.gamedata.history.town.Town.keyOf(3, 9, 9)),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(), pack);
+            talk.quest();
+            for (int i = 0; i < 3; i++) history.onSleep();
+            TalkScreen s = new TalkScreen(game, sharedGameScreen, talk, () -> { });
+            setSubScreen(s, null);
+        }));
+
+        // 28: The Archive Lectern's Annals of the Maze, with some history learned
+        tasks.add(new CaptureTask("28_annals", "Archive Lectern, Annals of the Maze", () -> {
+            com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
+            for (com.bpm.minotaur.gamedata.history.FragmentKind kind : com.bpm.minotaur.gamedata.history.FragmentKind.values()) {
+                for (int i = 0; i < 4; i++) history.readFragment(kind);
+            }
+            CodexScreen s = new CodexScreen(game, sharedGameScreen, sharedPlayer).openOn(CodexScreen.Tab.ANNALS);
+            setSubScreen(s, null);
+        }));
+
         // --capture-only=<prefix>[,<prefix>...] captures just the screens whose id starts with
         // one of them, so checking one screen does not mean waiting on all of them.
         String only = com.bpm.minotaur.Tarmin2.captureOnly();

@@ -70,6 +70,7 @@ public class TelemetryManager {
         this.strataReached = 1;
         this.causeOfDeath = null;
         this.killerMonster = null;
+        this.killerHouse = -1;
         this.attacksMade = 0;
         this.attacksHit = 0;
         this.attacksGlanced = 0;
@@ -205,6 +206,17 @@ public class TelemetryManager {
     /** Tracks the most recent source of player damage, used for cause-of-death attribution. */
     public synchronized void setLastDamageSource(String attackerName) {
         this.killerMonster = attackerName;
+    }
+
+    /** The Maze house of whatever last hurt the player, or -1 (Houses of the Maze D45). */
+    private int killerHouse = -1;
+
+    public synchronized void setLastDamageHouse(int houseId) {
+        this.killerHouse = houseId;
+    }
+
+    public int getKillerHouse() {
+        return killerHouse;
     }
 
     public String getKillerMonster() {

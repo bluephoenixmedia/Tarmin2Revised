@@ -348,6 +348,7 @@ public class SaveManager {
                 if (worldManager.getFactionMatrix() != null) {
                     worldData.factionMatrix = worldManager.getFactionMatrix().serialize();
                 }
+                worldData.history = worldManager.getHistory().toSave();
                 worldData.seenChoiceEvents = new java.util.ArrayList<>(worldManager.getSeenChoiceEvents());
                 if (worldManager.getCurrentPlayerChunkId() != null) {
                     worldData.playerChunkX = worldManager.getCurrentPlayerChunkId().x;

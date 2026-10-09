@@ -58,6 +58,9 @@ public class Scenery implements Renderable {
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
     private float pixelOffsetY = 0f;
     private Texture texture; // Optional texture for Modern rendering
+    /** A town's folk standing here: the town's key, or null (Houses of the Maze T4.2). Never saved. */
+    private String townKey;
+    private int folkIndex = -1;
     private String texturePath;
     private com.bpm.minotaur.gamedata.bones.BonesData bonesData;
     private String corpseMonsterName;
@@ -208,6 +211,24 @@ public class Scenery implements Renderable {
 
     public boolean isImpassable() {
         return impassable;
+    }
+
+    /** One of a town's folk: placed on every load, never saved, and talked to rather than bumped. */
+    public boolean isTownsfolk() {
+        return townKey != null;
+    }
+
+    public void setTownsfolk(String townKey, int folkIndex) {
+        this.townKey = townKey;
+        this.folkIndex = folkIndex;
+    }
+
+    public String getTownKey() {
+        return townKey;
+    }
+
+    public int getFolkIndex() {
+        return folkIndex;
     }
 
     public boolean isDecomposingCorpse() {

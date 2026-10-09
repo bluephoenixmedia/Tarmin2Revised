@@ -562,7 +562,7 @@ public class WandExecutionEngine {
                 player.addExperience(target.getBaseExperience(), eventManager);
             }
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("Killed " + target.getMonsterType() + "!", 2f));
+                eventManager.addEvent(new GameEvent("Killed " + target.getName() + "!", 2f));
             }
         }
     }

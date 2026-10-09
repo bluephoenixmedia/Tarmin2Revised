@@ -209,7 +209,7 @@ public class TurnManager {
 
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(
-                    "The " + monster.getMonsterType() + " strikes the Traveling Merchant! (-" + dmg + ")", 1.5f));
+                    "The " + monster.getName() + " strikes the Traveling Merchant! (-" + dmg + ")", 1.5f));
         }
 
         if (!shopkeeper.isAlive()) {

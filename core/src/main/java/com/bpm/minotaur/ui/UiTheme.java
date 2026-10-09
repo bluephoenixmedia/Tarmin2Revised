@@ -136,6 +136,10 @@ public final class UiTheme {
     public static final float MAP_UNDERLAY_ALPHA = 0.18f;
     /** A suggestion or a rumour: there, but not yet certain. */
     public static final float MAP_GHOST_ALPHA = 0.5f;
+    /** A war front's wash over the chunks it covers, in the attacking house's colour. */
+    public static final float MAP_FRONT_ALPHA = 0.45f;
+    /** Thickness of the border a front carries in the defending house's colour, and of the minimap's war rim. */
+    public static final float FRONT_RIM = 3f;
 
     // --- Spacing (SPEC section 3, in canvas units) ------------------------
 
@@ -146,6 +150,8 @@ public final class UiTheme {
     /** Screen safe area. Nothing a player must read sits outside this. */
     public static final float SAFE = 12 * VU;
     public static final float PAD_XL = 16 * VU;
+    /** A list column beside a reading pane, such as the Annals' houses. */
+    public static final float LIST_COLUMN_W = 140 * VU;
     public static final float PAD_XXL = 24 * VU;
 
     // --- Sizes (SPEC section 3, in canvas units) --------------------------

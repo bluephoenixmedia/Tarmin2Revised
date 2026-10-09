@@ -181,6 +181,17 @@ public class DimensionalManager {
         return (hash % 14) == 0;
     }
 
+    private Runnable onLoreRead;
+
+    /** Called each time the player reads a lore inscription; the history listens (plan T1.10). */
+    public void setOnLoreRead(Runnable onLoreRead) {
+        this.onLoreRead = onLoreRead;
+    }
+
+    public void loreRead() {
+        if (onLoreRead != null) onLoreRead.run();
+    }
+
     /**
      * Retrieves the ancient lore inscription at a given cell, if any.
      */

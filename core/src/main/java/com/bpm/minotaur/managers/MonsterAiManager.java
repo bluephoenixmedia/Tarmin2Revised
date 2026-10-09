@@ -55,6 +55,14 @@ public class MonsterAiManager {
         if (maze == null || monster == null || player == null || !allowMonsterMovement) {
             return;
         }
+        engagedByPlayer = combatManager != null ? combatManager.getMonster() : null;
+        // A town's guard at peace stands its post.
+        if (monster.isPeaceful()) return;
+
+        // A seal lord's traits play out first; an honourable lord's retinue may stand back.
+        if (monster.holdsCourt() && SealCourt.onTurn(monster, maze)) {
+            return;
+        }
 
         // Bleed status effect tick
         if (monster.getBleedTurns() > 0) {
@@ -256,6 +264,19 @@ public class MonsterAiManager {
     }
 
     private FactionMatrix factionMatrix = new FactionMatrix();
+    /** The monster the player is fighting this turn, if any. */
+    private Monster engagedByPlayer;
+
+    /** Chance per turn a soldier in a battle breaks off to go for the player anyway (plan D31). */
+    static final float WAR_BAND_SPILL = 0.03f;
+
+    /**
+     * Whether a soldier in a battle, with an enemy soldier in sight, turns on the player instead:
+     * when the player is adjacent, when the player is fighting it, or in a melee spill.
+     */
+    static boolean warBandTurnsOnPlayer(int playerDist, boolean engaged, float roll) {
+        return playerDist <= 1 || engaged || roll < WAR_BAND_SPILL;
+    }
 
     public FactionMatrix getFactionMatrix() {
         return factionMatrix;
@@ -317,7 +338,7 @@ public class MonsterAiManager {
                 if (other == null || other == monster || !other.isAlive() || other.getCurrentHP() <= 0) continue;
                 // The player's allies are everyone's enemies, whatever faction they were born into.
                 boolean isEnemy = other.isAlly()
-                        || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), other.getFaction()));
+                        || (factionMatrix != null && factionMatrix.isHostile(monster, other));
                 if (isEnemy) {
                     GridPoint2 otherPos = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
                     int d = Math.abs(monsterGridPos.x - otherPos.x) + Math.abs(monsterGridPos.y - otherPos.y);
@@ -337,7 +358,11 @@ public class MonsterAiManager {
             monster.setLastKnownTargetPos(new GridPoint2((int) monster.getTargetMonster().getPosition().x, (int) monster.getTargetMonster().getPosition().y));
             monster.setTurnsSinceLastSeen(0);
         } else if (playerSeen && closestRival != null) {
-            if (playerDist <= closestRivalDist) {
+            // In a battle the enemy line comes first; the player is a bystander until they are not.
+            boolean onPlayer = monster.isWarBand()
+                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer, (float) Math.random())
+                    : playerDist <= closestRivalDist;
+            if (onPlayer) {
                 monster.setTargetMonster(null);
                 monster.setState(Monster.MonsterState.HUNTING);
                 monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));
@@ -395,7 +420,7 @@ public class MonsterAiManager {
                 if (combatManager != null && combatManager.getGameScreen() != null) {
                     GameEventManager em = combatManager.getGameScreen().getEventManager();
                     if (em != null) {
-                        em.addEvent(new GameEvent("The " + monster.getMonsterType() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
+                        em.addEvent(new GameEvent("The " + monster.getName() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
                     }
                 }
                 return;
@@ -593,7 +618,7 @@ public class MonsterAiManager {
             tempPos.set(step.x, step.y);
             Monster occupant = maze.getMonsters().get(tempPos);
             if (occupant != null) {
-                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), occupant.getFaction()))) {
+                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster, occupant))) {
                     if (combatManager != null) {
                         combatManager.monsterVsMonsterStrike(monster, occupant, maze);
                     }

@@ -2966,6 +2966,8 @@ public class Player {
             }
             if (!passable) {
                 Scenery s = maze.getScenery().get(nextTile);
+                // Walking into one of a town's folk is speaking to them.
+                if (com.bpm.minotaur.gamedata.shelter.SealedGates.talk(s)) return;
                 // Knocking at a sealed gate: Castle Tarmin's, or a seal site's at the end of a road.
                 String knock = com.bpm.minotaur.gamedata.shelter.SealedGates.knock(s);
                 if (knock != null) {
@@ -3077,6 +3079,7 @@ public class Player {
             String voidLore = com.bpm.minotaur.managers.DimensionalManager.getInstance().getVoidLoreAt(0, 0, nextX, nextY);
             if (voidLore != null) {
                 eventManager.addEvent(new GameEvent(voidLore, 4.0f));
+                com.bpm.minotaur.managers.DimensionalManager.getInstance().loreRead();
             }
         }
 
