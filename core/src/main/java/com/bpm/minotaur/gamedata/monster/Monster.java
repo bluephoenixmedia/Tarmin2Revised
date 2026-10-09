@@ -787,6 +787,14 @@ public class Monster implements Renderable {
         return type.name();
     }
 
+    /**
+     * What the player reads: a named figure's name, else the type as words ("GIANT BEE", never
+     * the constant, whose underscore the font draws as an arrow).
+     */
+    public String getName() {
+        return displayName != null ? displayName : com.bpm.minotaur.ui.UiNames.caps(type);
+    }
+
     @Override
     public Vector2 getPosition() {
         return position;

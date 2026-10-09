@@ -12,7 +12,8 @@ import java.util.List;
 public final class DebugKeys {
 
     public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL, FIRE_CHOICE_EVENT,
-        WARP_CASTLE_ROAD_SHELTER, WARP_SEAL_SITE, CLAIM_ROAD, GRANT_SEAL }
+        WARP_CASTLE_ROAD_SHELTER, WARP_SEAL_SITE, CLAIM_ROAD, GRANT_SEAL,
+        DESCEND_HERE, WARP_SEAL_COURT, WARP_TOWN, BATTLE_HERE, MEGABEAST_HERE }
 
     public static final class Entry {
         public final int keycode;
@@ -40,6 +41,11 @@ public final class DebugKeys {
         new Entry(Input.Keys.APOSTROPHE, "'", "warp to the next seal site", Action.WARP_SEAL_SITE),
         new Entry(Input.Keys.BACKSLASH, "\\", "claim every shelter on the last road warped to", Action.CLAIM_ROAD),
         new Entry(Input.Keys.SLASH, "/", "grant the seal of the last seal road warped to", Action.GRANT_SEAL),
+        new Entry(Input.Keys.NUMPAD_7, "Num7", "descend one stratum here", Action.DESCEND_HERE),
+        new Entry(Input.Keys.NUMPAD_9, "Num9", "warp beside the next unbroken seal lord", Action.WARP_SEAL_COURT),
+        new Entry(Input.Keys.NUMPAD_0, "Num0", "warp into the nearest underground town", Action.WARP_TOWN),
+        new Entry(Input.Keys.NUMPAD_MULTIPLY, "Num*", "sound the horns: a battle here", Action.BATTLE_HERE),
+        new Entry(Input.Keys.NUMPAD_DIVIDE, "Num/", "call a megabeast to this chunk", Action.MEGABEAST_HERE),
     };
 
     /** Always available while developing; listed here for reference. */

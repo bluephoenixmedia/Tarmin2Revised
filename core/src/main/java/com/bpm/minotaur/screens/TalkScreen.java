@@ -42,6 +42,8 @@ public class TalkScreen extends BaseScreen {
     /** Opens the town merchant's stall, or null if no merchant stands in this town. */
     private final Runnable trade;
     private final List<String> transcript = new ArrayList<>();
+    /** The actions on offer right now, by label, so the play-test driver can choose one. */
+    private final java.util.Map<String, Runnable> offered = new java.util.LinkedHashMap<>();
 
     private Stage stage;
     private HudSkin hudSkin;
@@ -123,6 +125,7 @@ public class TalkScreen extends BaseScreen {
                     new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED))).growX().left().padBottom(UiTheme.PAD_SM).row();
         }
         actions.clear();
+        offered.clear();
         if (!talk.hostile()) {
             action("Talk", () -> say(talk.greet()));
             if (trade != null) action("Trade", () -> {
@@ -138,7 +141,21 @@ public class TalkScreen extends BaseScreen {
         action("Leave", this::leave);
     }
 
+    /** Chooses an action as a click would; false if it is not on offer. For the play-test driver. */
+    public boolean perform(String label) {
+        Runnable run = offered.get(label);
+        if (run == null) return false;
+        run.run();
+        return true;
+    }
+
+    /** The newest line of the conversation. */
+    public String lastLine() {
+        return transcript.isEmpty() ? "" : transcript.get(transcript.size() - 1);
+    }
+
     private void action(String label, Runnable run) {
+        offered.put(label, run);
         TextButton b = new TextButton(label, UiStyles.secondary(hudSkin));
         b.addListener(new ClickListener() {
             @Override

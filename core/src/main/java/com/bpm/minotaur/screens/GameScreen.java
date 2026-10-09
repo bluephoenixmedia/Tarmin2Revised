@@ -4567,6 +4567,83 @@ public class GameScreen extends BaseScreen {
                         "castle-road shelter " + debugWarpStop);
                 return true;
             }
+            case DESCEND_HERE:
+                debugDescend();
+                return true;
+            case WARP_SEAL_COURT: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                int road = -1;
+                for (int k = 0; k < com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT; k++) {
+                    int r = com.bpm.minotaur.debug.DebugCheats.sealRoad(k);
+                    if (!com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(r)) {
+                        road = r;
+                        break;
+                    }
+                }
+                if (roads == null || road < 0) {
+                    eventManager.addEvent(new GameEvent("Debug: no seal lord left to face", 2f));
+                    return true;
+                }
+                debugTeleport(roads.getRoad(road).getEnd(), SealCourt.COURT_LEVEL, m -> {
+                    for (Monster mon : m.getMonsters().values()) {
+                        if (mon != null && mon.getSealRole() == Monster.SEAL_LORD) {
+                            return WorldManager.findSafeArrivalTile(m, (int) mon.getPosition().x + 4, (int) mon.getPosition().y);
+                        }
+                    }
+                    return WorldManager.findSafeArrivalTile(m, m.getWidth() / 2, m.getHeight() / 2);
+                });
+                return true;
+            }
+            case WARP_TOWN: {
+                GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+                for (int radius = 0; radius < 30; radius++) {
+                    for (int level = com.bpm.minotaur.gamedata.history.town.TownSites.MIN_LEVEL;
+                         level <= com.bpm.minotaur.gamedata.history.town.TownSites.MAX_LEVEL; level++) {
+                        for (int dx = -radius; dx <= radius; dx++) {
+                            for (int dy = -radius; dy <= radius; dy++) {
+                                if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
+                                GridPoint2 c = new GridPoint2(here.x + dx, here.y + dy);
+                                if (!com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldManager.getWorldSeed(), c, level)) continue;
+                                debugTeleport(c, level, m -> WorldManager.findSafeArrivalTile(m, m.getWidth() / 2, m.getHeight() / 2));
+                                return true;
+                            }
+                        }
+                    }
+                }
+                eventManager.addEvent(new GameEvent("Debug: no town within 30 chunks", 2f));
+                return true;
+            }
+            case BATTLE_HERE: {
+                if (currentLevel() != 1) {
+                    eventManager.addEvent(new GameEvent("Debug: battles are fought on the surface", 2f));
+                    return true;
+                }
+                com.bpm.minotaur.gamedata.history.HistoryWorld hw = worldManager.getHistory().world();
+                GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+                com.bpm.minotaur.gamedata.history.war.Front front;
+                if (!hw.activeWars().isEmpty()) {
+                    com.bpm.minotaur.gamedata.history.War war = hw.activeWars().get(0);
+                    front = new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
+                } else {
+                    // No war under way: the first two houses fight anyway, and the history will not hear of it.
+                    java.util.List<com.bpm.minotaur.gamedata.history.House> living = hw.livingHouses();
+                    front = new com.bpm.minotaur.gamedata.history.war.Front(-1, living.get(0).id, living.get(1).id, here);
+                }
+                String horns = warManager.soundHorns(worldManager.getHistory(), front, here, worldManager.houseSeats());
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(horns), 5f));
+                return true;
+            }
+            case MEGABEAST_HERE: {
+                for (com.bpm.minotaur.gamedata.history.Megabeast b : worldManager.getHistory().world().megabeasts()) {
+                    if (!b.isAlive() || !b.isAwake(worldManager.getHistory().world().season())) continue;
+                    worldManager.getHistory().startHunt(b.id, worldManager.getCurrentPlayerChunkId(), currentLevel());
+                    worldManager.getHistory().hunt().readyAt = worldManager.getHistory().warClock();
+                    eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize("Debug: " + b.name + " is coming"), 2f));
+                    return true;
+                }
+                eventManager.addEvent(new GameEvent("Debug: no megabeast is awake", 2f));
+                return true;
+            }
             case WARP_SEAL_SITE: {
                 com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
                 debugWarpRoad = com.bpm.minotaur.debug.DebugCheats.sealRoad(debugWarpSeal++);
@@ -4610,6 +4687,42 @@ public class GameScreen extends BaseScreen {
     private int debugWarpSeal;
 
     /** Sends the player to a surface chunk through the portal-warp path. */
+    /** Debug: down one stratum, standing where the player stands. */
+    private void debugDescend() {
+        GridPoint2 at = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        if (combatManager != null) combatManager.endCombat();
+        worldManager.descendLevel(at);
+        worldManager.clearLoadedChunks();
+        generateLevel(currentLevel());
+        GridPoint2 safe = WorldManager.findSafeArrivalTile(maze, at.x, at.y);
+        if (safe != null) player.getPosition().set(safe.x + 0.5f, safe.y + 0.5f);
+        hud.addMessage("Debug: descended to level " + currentLevel());
+    }
+
+    /** Debug: straight to a chunk of any level, standing where {@code arrival} says. */
+    private void debugTeleport(GridPoint2 chunk, int level, java.util.function.Function<Maze, GridPoint2> arrival) {
+        if (combatManager != null) combatManager.endCombat();
+        if (maze != null) worldManager.saveCurrentChunk(maze);
+        worldManager.setCurrentLevel(level);
+        worldManager.clearLoadedChunks();
+        Maze destination = worldManager.loadChunk(chunk);
+        if (destination == null) {
+            eventManager.addEvent(new GameEvent("Debug: " + chunk + " cannot be entered", 2f));
+            return;
+        }
+        worldManager.setCurrentChunk(chunk);
+        swapToChunk(destination);
+        GridPoint2 at = arrival.apply(destination);
+        if (at != null) player.setPosition(at);
+        needsAsciiRender = true;
+        eventManager.addEvent(new GameEvent("Debug: teleported to " + chunk + " on level " + level, 2f));
+    }
+
+    /** The war manager, for the play-test driver. */
+    public WarManager getWarManager() {
+        return warManager;
+    }
+
     private void debugWarp(GridPoint2 chunk, String label) {
         if (chunk == null) {
             eventManager.addEvent(new GameEvent("Debug: this world has no shelter roads", 2f));

@@ -154,7 +154,7 @@ public class ShopkeeperAiManager {
         if (monster.getCurrentHP() <= 0) {
             GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
             maze.getMonsters().remove(mPos);
-            eventManager.addEvent(new GameEvent("The merchant defeated the " + monster.getMonsterType() + "!", 2.5f));
+            eventManager.addEvent(new GameEvent("The merchant defeated the " + monster.getName() + "!", 2.5f));
         }
     }
 
@@ -242,7 +242,7 @@ public class ShopkeeperAiManager {
         }
         GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
         maze.getMonsters().remove(mPos);
-        eventManager.addEvent(new GameEvent("The merchant's beam cuts down the " + monster.getMonsterType() + "!", 2.5f));
+        eventManager.addEvent(new GameEvent("The merchant's beam cuts down the " + monster.getName() + "!", 2.5f));
     }
 
     /** Nearest living monster within the laser's range that he has a clear line of sight to. */

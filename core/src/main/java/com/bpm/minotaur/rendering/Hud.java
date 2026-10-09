@@ -1168,6 +1168,10 @@ public class Hud implements Disposable {
             Biome b = worldManager.getBiomeManager().getBiome(chunkId);
             if (b != null) biomeName = com.bpm.minotaur.ui.UiNames.caps(b);
         }
+        if (maze.getLevel() > 1 && maze.getStratum() != null) {
+            // Underground the surface biome overhead says nothing about where the player stands.
+            biomeName = maze.getStratum().displayName.toUpperCase();
+        }
         dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
         dungeonTagTable.pack();
         dungeonTagTable.setPosition(28f, viewport.getWorldHeight() - 24f - dungeonTagTable.getHeight());

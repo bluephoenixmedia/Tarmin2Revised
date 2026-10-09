@@ -53,6 +53,13 @@ public final class WarManager {
         return active;
     }
 
+    /** Debug: sounds the horns for a battle of {@code front} in the player's chunk, now. */
+    public String soundHorns(HistoryManager history, Front front, GridPoint2 chunk, SeatMap seats) {
+        int edgeA = BattleDirector.edgeToward(chunk, seats == null ? null : seats.seat(front.attackerId));
+        active = new BattleDirector(front, chunk, edgeA, history.world(), catalog, history.world().seed ^ history.warClock());
+        return active.warning();
+    }
+
     public Turn onTurn(HistoryManager history, Ground g, BattleDirector.Recruiter recruiter, BattleDirector.Spoils spoils) {
         Turn t = new Turn();
         long clock = history.warClock();

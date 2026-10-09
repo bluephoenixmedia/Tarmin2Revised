@@ -184,7 +184,7 @@ public class MonsterPursuitManager {
                     player.getPosition().set(shovePos.x + 0.5f, shovePos.y + 0.5f);
                     spawnPos = new GridPoint2(arrivalTile);
                     if (eventManager != null) {
-                        eventManager.addEvent(new GameEvent("The " + monster.getMonsterType()
+                        eventManager.addEvent(new GameEvent("The " + monster.getName()
                                 + " shoves forcefully through the passage!", 2.5f));
                     }
                     if (combatManager != null) {

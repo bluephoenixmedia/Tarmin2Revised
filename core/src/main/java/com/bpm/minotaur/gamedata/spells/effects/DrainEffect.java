@@ -79,7 +79,7 @@ public class DrainEffect implements SpellEffect {
 
         // --- Event log ---
         eventManager.addEvent(new GameEvent(
-                "Drained " + actualDamage + " HP from " + targetMonster.getMonsterType() + "!", 2.5f));
+                "Drained " + actualDamage + " HP from " + targetMonster.getName() + "!", 2.5f));
 
         // --- Handle death or combat entry ---
         if (targetMonster.getCurrentHP() <= 0) {

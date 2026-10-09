@@ -246,6 +246,14 @@ public class Tarmin2 extends Game {
             return;
         }
 
+        // Plays the Houses of the Maze for a while and writes down what it saw:
+        //   ./gradlew lwjgl3:run --args="--playtest"
+        if (hasArg("--playtest")) {
+            Gdx.app.log("Tarmin2", "Booting straight into the play-test driver");
+            new com.bpm.minotaur.screens.PlaytestDriver(this).start();
+            return;
+        }
+
         if (isCaptureBaseline()) {
             Gdx.app.log("Tarmin2", "Booting straight into UXScreenCaptureScreen (BASELINE)");
             this.setScreen(new com.bpm.minotaur.screens.UXScreenCaptureScreen(this, "baseline"));
@@ -259,6 +267,14 @@ public class Tarmin2 extends Game {
 
         // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));
+    }
+
+    private static boolean hasArg(String flag) {
+        if (startupArgs == null) return false;
+        for (String a : startupArgs) {
+            if (flag.equalsIgnoreCase(a)) return true;
+        }
+        return false;
     }
 
     public static boolean isCaptureBaseline() {

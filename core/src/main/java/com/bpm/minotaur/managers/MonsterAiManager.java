@@ -420,7 +420,7 @@ public class MonsterAiManager {
                 if (combatManager != null && combatManager.getGameScreen() != null) {
                     GameEventManager em = combatManager.getGameScreen().getEventManager();
                     if (em != null) {
-                        em.addEvent(new GameEvent("The " + monster.getMonsterType() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
+                        em.addEvent(new GameEvent("The " + monster.getName() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
                     }
                 }
                 return;

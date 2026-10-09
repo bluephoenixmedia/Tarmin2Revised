@@ -711,7 +711,7 @@ public class CombatManager {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageHouse(
                     worldManager != null ? worldManager.houseOf(attacker) : -1);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
+            eventManager.addEvent(new GameEvent(attacker.getName() + " hits you for " + actualDamage, 1f));
 
             // --- Anatomical Trauma Infliction ---
             // Gated twice over: the blow must be genuinely traumatic (see
@@ -760,7 +760,7 @@ public class CombatManager {
                 if (player.getStatusManager().hasEffect(StatusEffectType.SPIRITUAL_WARD)) {
                     int retaliateDmg = Math.max(3, actualDamage / 2);
                     attacker.takeDamage(retaliateDmg, DamageType.SPIRITUAL);
-                    eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Spiritual Ward retributively shocks " + attacker.getMonsterType() + " for " + retaliateDmg + "!", 2.0f));
+                    eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Spiritual Ward retributively shocks " + attacker.getName() + " for " + retaliateDmg + "!", 2.0f));
                 }
 
                 // Tactical Venom DoT: Snakes & Spiders
@@ -772,13 +772,13 @@ public class CombatManager {
                         int venomTicks = com.bpm.minotaur.gamedata.effects.PoisonDose.ticksFor(attacker.getLevel());
                         int venomPotency = com.bpm.minotaur.gamedata.effects.PoisonDose.potencyFor(attacker.getLevel());
                         player.getStatusManager().addEffect(StatusEffectType.POISONED, venomTicks, venomPotency, false);
-                        eventManager.addEvent(new GameEvent("VENOMOUS BITE! " + attacker.getMonsterType()
+                        eventManager.addEvent(new GameEvent("VENOMOUS BITE! " + attacker.getName()
                                 + " injects deadly venom! (" + venomTicks + " turns)", 2.0f));
                     }
                 }
             }
         } else {
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses!", 1f));
+            eventManager.addEvent(new GameEvent(attacker.getName() + " misses!", 1f));
         }
 
         damageTakenInCombat += actualDamage;
@@ -811,7 +811,7 @@ public class CombatManager {
 
             targetMaze.addBlood((int) defender.getPosition().x, (int) defender.getPosition().y, 0.04f);
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " strikes " + defender.getMonsterType() + " for " + taken + " dmg!", 1.5f));
+                eventManager.addEvent(new GameEvent(attacker.getName() + " strikes " + defender.getName() + " for " + taken + " dmg!", 1.5f));
             }
             defender.onAttackedBy(attacker);
 
@@ -819,7 +819,7 @@ public class CombatManager {
                 targetMaze.removeMonster(defender);
                 if (!defender.claimDeath()) return;
                 if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " slayed " + defender.getMonsterType() + "!", 2f));
+                    eventManager.addEvent(new GameEvent(attacker.getName() + " slayed " + defender.getName() + "!", 2f));
                 }
                 int infightTier = DeathGore.overkillTier(defender.getLastOverkill(),
                         defender.getMaxHP(), false, GoreLevel.current());
@@ -827,7 +827,7 @@ public class CombatManager {
             }
         } else {
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses " + defender.getMonsterType() + "!", 1f));
+                eventManager.addEvent(new GameEvent(attacker.getName() + " misses " + defender.getName() + "!", 1f));
             }
             defender.onAttackedBy(attacker);
         }
@@ -896,7 +896,7 @@ public class CombatManager {
         player.getStats().setCurrentHP(revivedHp);
         player.getStatusManager().clearEffects();
 
-        eventManager.addEvent(new GameEvent("DEATH INVERSION! " + attacker.getMonsterType() + " severed your mortal soul!", 3.0f));
+        eventManager.addEvent(new GameEvent("DEATH INVERSION! " + attacker.getName() + " severed your mortal soul!", 3.0f));
         eventManager.addEvent(new GameEvent("You awaken in the Ancient Void as a Hollow Shade!", 3.5f));
         eventManager.addEvent(new GameEvent("Find a Resonating Rift Anchor to reclaim your mortal form!", 4.0f));
 
@@ -1770,7 +1770,7 @@ public class CombatManager {
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 soundManager.playWeaponImpact(true);
                 gs.addTrauma(0.28f);
-                eventManager.addEvent(new GameEvent("SHIELD BASH! Staggered " + target.getMonsterType() + " for " + actual, 1.2f));
+                eventManager.addEvent(new GameEvent("SHIELD BASH! Staggered " + target.getName() + " for " + actual, 1.2f));
                 showDamageText(actual, new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y), "BASH! ", com.badlogic.gdx.graphics.Color.ORANGE);
             });
         }
@@ -2262,7 +2262,7 @@ public class CombatManager {
                             Monster adjMonster = maze.getMonsters().get(adjPos);
                             if (adjMonster != null && adjMonster != monster && adjMonster.getCurrentHP() > 0) {
                                 int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
-                                eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getMonsterType() + " for " + cleaved + " dmg!", 1.5f));
+                                eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getName() + " for " + cleaved + " dmg!", 1.5f));
                                 showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                                 if (adjMonster.getCurrentHP() <= 0) {
                                     // The full kill path, so a cleaved monster leaves a body and dies on screen.
@@ -2607,12 +2607,12 @@ public class CombatManager {
 
                 String critPrefix = isCrit ? "Critical Hit! " : "";
                 eventManager.addEvent(
-                        new GameEvent(critPrefix + attacker.getMonsterType() + " hits you with " + projDef.getName() + " for " + actualDamage + " " + damageType.name().toLowerCase() + " damage!", 2.0f));
+                        new GameEvent(critPrefix + attacker.getName() + " hits you with " + projDef.getName() + " for " + actualDamage + " " + damageType.name().toLowerCase() + " damage!", 2.0f));
             } else {
                 eventManager.addEvent(new GameEvent("Armor deflected the " + projDef.getName().toLowerCase() + "!", 1.5f));
             }
         } else {
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires " + projDef.getName().toLowerCase() + " and misses!", 1.5f));
+            eventManager.addEvent(new GameEvent(attacker.getName() + " fires " + projDef.getName().toLowerCase() + " and misses!", 1.5f));
         }
 
         if (actualDamage > 0)
@@ -3011,7 +3011,7 @@ public class CombatManager {
                 if (magicTome != null) {
                     dropSingleItem(magicTome, pos, monster);
                     if (eventManager != null) {
-                        eventManager.addEvent(new GameEvent(monster.getMonsterType() + " dropped arcane knowledge!", 2.0f));
+                        eventManager.addEvent(new GameEvent(monster.getName() + " dropped arcane knowledge!", 2.0f));
                     }
                 }
             }
@@ -3144,7 +3144,7 @@ public class CombatManager {
             return; // Died from poison/status
 
         if (monster.isStunned()) {
-            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " is STUNNED and cannot attack!", 1.5f));
+            eventManager.addEvent(new GameEvent(monster.getName() + " is STUNNED and cannot attack!", 1.5f));
             monster.decrementStun();
             currentState = CombatState.PLAYER_MENU;
             return;
@@ -3286,9 +3286,9 @@ public class CombatManager {
             applyBlightedTaint(monster, actualDamage);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
 
-            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " hits you for " + actualDamage, 1f));
+            eventManager.addEvent(new GameEvent(monster.getName() + " hits you for " + actualDamage, 1f));
         } else {
-            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " misses!", 1f));
+            eventManager.addEvent(new GameEvent(monster.getName() + " misses!", 1f));
         }
 
         damageTakenInCombat += actualDamage;
@@ -3312,7 +3312,7 @@ public class CombatManager {
             int potency = sm.getEffect(StatusEffectType.POISONED).getPotency();
             int dmg = monster.takeDamage(potency);
             maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
-            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " takes " + dmg + " poison dmg!", 1.5f));
+            eventManager.addEvent(new GameEvent(monster.getName() + " takes " + dmg + " poison dmg!", 1.5f));
             BalanceLogger.getInstance().log("COMBAT_EFFECT", "Monster took " + dmg + " poison damage.");
 
             if (monster.getWarStrength() <= 0) {
@@ -3326,7 +3326,7 @@ public class CombatManager {
         if (monster.getBleedTurns() > 0) {
             int dmg = monster.applyBleedTick();
             maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
-            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " takes " + dmg + " bleed dmg!", 1.5f));
+            eventManager.addEvent(new GameEvent(monster.getName() + " takes " + dmg + " bleed dmg!", 1.5f));
             BalanceLogger.getInstance().log("COMBAT_EFFECT", "Monster bled for " + dmg + " damage.");
 
             if (monster.getWarStrength() <= 0) {
@@ -3390,7 +3390,7 @@ public class CombatManager {
             if (actualDamage > 0) {
                 maze.addBlood((int) px, (int) py, 0.05f);
                 eventManager.addEvent(
-                        new GameEvent(attacker.getMonsterType() + " flanks you for " + actualDamage + "!", 1.5f));
+                        new GameEvent(attacker.getName() + " flanks you for " + actualDamage + "!", 1.5f));
 
                 // Gore
                 Vector3 hitPos = new Vector3(px, 0.5f, py);
@@ -3402,14 +3402,14 @@ public class CombatManager {
                 maze.getGoreManager().spawnBloodSpray(hitPos, dir, 3);
             } else {
                 eventManager
-                        .addEvent(new GameEvent("Armor blocked flank from " + attacker.getMonsterType() + "!", 1.5f));
+                        .addEvent(new GameEvent("Armor blocked flank from " + attacker.getName() + "!", 1.5f));
             }
 
             damageTakenInCombat += actualDamage;
             BalanceLogger.getInstance().logCombatRound("MONSTER", "Flank", -1, actualDamage, player.getCurrentHP());
             return true;
         } else {
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " tries to flank but misses!", 1.5f));
+            eventManager.addEvent(new GameEvent(attacker.getName() + " tries to flank but misses!", 1.5f));
             return false;
         }
     }
@@ -3418,9 +3418,9 @@ public class CombatManager {
     public void setCurrentState(CombatState state) { this.currentState = state; }
 
     // Extracted death logic to reuse for Poison kills
-    /** A named figure by name, anything else by its type. */
+    /** A named figure by name, anything else by its type as words. */
     private static String nameOf(Monster m) {
-        return m.getDisplayName() != null ? m.getDisplayName() : m.getMonsterType();
+        return m.getName();
     }
 
     public void handleMonsterDeath() {
@@ -3839,12 +3839,12 @@ public class CombatManager {
             if (MathUtils.randomBoolean(bleedChance)) {
                 int bleedDmg = Math.max(1, actualDamage / 3);
                 monster.applyBleed(3, bleedDmg);
-                eventManager.addEvent(new GameEvent("LACERATION! " + monster.getMonsterType() + " is bleeding (" + bleedDmg + " dmg/turn)!", 1.5f));
+                eventManager.addEvent(new GameEvent("LACERATION! " + monster.getName() + " is bleeding (" + bleedDmg + " dmg/turn)!", 1.5f));
             }
             if (monster.getCurrentHP() <= 0 && (isCrit || isFinisher || actualDamage > 12)) {
                 // The cut itself is the death gore's (DeathGore): a crit or finisher
                 // slash decapitates, and a second gib burst here buried it.
-                eventManager.addEvent(new GameEvent("SEVERING BLOW! Cleaved through " + monster.getMonsterType() + "!", 2.0f));
+                eventManager.addEvent(new GameEvent("SEVERING BLOW! Cleaved through " + monster.getName() + "!", 2.0f));
             }
         }
 
@@ -3854,15 +3854,15 @@ public class CombatManager {
             if (MathUtils.randomBoolean(stunChance)) {
                 if (isBossMonster(monster)) {
                     monster.applyStagger(1);
-                    eventManager.addEvent(new GameEvent("STAGGERED! " + monster.getMonsterType() + " resists concussion, but staggers (-2 AC)!", 1.5f));
+                    eventManager.addEvent(new GameEvent("STAGGERED! " + monster.getName() + " resists concussion, but staggers (-2 AC)!", 1.5f));
                 } else if (monster.isStunned()) {
-                    eventManager.addEvent(new GameEvent(monster.getMonsterType() + " is already reeling!", 1.0f));
+                    eventManager.addEvent(new GameEvent(monster.getName() + " is already reeling!", 1.0f));
                 } else if (monster.isStunImmune()) {
-                    eventManager.addEvent(new GameEvent("RESIST! " + monster.getMonsterType() + " resists concussion!", 1.2f));
+                    eventManager.addEvent(new GameEvent("RESIST! " + monster.getName() + " resists concussion!", 1.2f));
                 } else {
                     boolean stunned = monster.applyStun(1);
                     if (stunned) {
-                        eventManager.addEvent(new GameEvent("CONCUSSION! " + monster.getMonsterType() + " is dazed and stunned!", 1.5f));
+                        eventManager.addEvent(new GameEvent("CONCUSSION! " + monster.getName() + " is dazed and stunned!", 1.5f));
                     }
                 }
             }

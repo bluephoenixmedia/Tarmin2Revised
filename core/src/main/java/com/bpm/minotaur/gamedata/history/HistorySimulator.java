@@ -172,7 +172,7 @@ public final class HistorySimulator {
     private void riseTarminZul() {
         Doctrine d = catalog.get(DoctrineCatalog.TARMIN_ZUL_DOCTRINE);
         int id = world.houses.size();
-        House h = new House(id, "The Antlered Host", d.id, NameForge.sigil(d, rng), NameForge.pick(d.mottos, rng),
+        House h = new House(id, "the Antlered Host", d.id, NameForge.sigil(d, rng), NameForge.pick(d.mottos, rng),
                 world.season, "Castle Tarmin");
         h.holdsCastle = true;
         h.strength = 90f;

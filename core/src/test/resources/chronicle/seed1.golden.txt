@@ -41,7 +41,7 @@
 == HOUSE_FOUNDED (event 10)
   A tavern rumour: The year 1 saw Adouce plant a gold coin weeping on bile green in the black soil and name it House Aurelance.
   Courtier Silelle of House Aurelance: In the year 1 Adouce the Wise took up a gold coin weeping on bile green and swore "Rich In Ruin" upon the bones of the old. So House Aurelance began, and so it endures.
-  Herald Borul of The Antlered Host: In the year 1 a nobody called Adouce the Sly sewed a gold coin weeping on bile green onto a rag and named the rag House Aurelance.
+  Herald Borul of the Antlered Host: In the year 1 a nobody called Adouce the Sly sewed a gold coin weeping on bile green onto a rag and named the rag House Aurelance.
 == NATURAL_DEATH (event 11)
   A herald's cry: In the year 2 Aesent of House Quietus died in bed.
   Courtier Renuel of House Quietus: In the year 2 Aesent the Fierce of House Quietus died full of years, with every enemy outlived and most of them outdone.
@@ -52,7 +52,7 @@
   Gnawer Sliush of House Gullet: House Quietus crowned Renyne the Fanatic in the year 2. The bells cracked in the cold.
 == MEGABEAST_STIRS (event 13)
   An unsigned broadsheet: In the year 2 Old Hunger the Brass Titan rose out of the dark and made the deep strata its own.
-  Herald Gharnesh of The Antlered Host: In the year 2 the deep gave us Old Hunger the Brass Titan. Let our enemies be the ones who meet it.
+  Herald Gharnesh of the Antlered Host: In the year 2 the deep gave us Old Hunger the Brass Titan. Let our enemies be the ones who meet it.
   A shelter-keeper's ledger: In the year 2 Old Hunger the Brass Titan woke, and every house of the Maze began to pray it would eat someone else.
 == MEGABEAST_RAID (event 14)
   A tavern rumour: In the year 4 Old Hunger the Brass Titan fell on House Scourgehall.

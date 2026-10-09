@@ -255,7 +255,7 @@ public class MonsterSpellExecutor {
                 caster.getPosition().set(dest.x + 0.5f, dest.y + 0.5f);
                 maze.getMonsters().put(dest, caster);
                 if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent(caster.getMonsterType() + " vanishes into thin air!", 1.8f));
+                    eventManager.addEvent(new GameEvent(caster.getName() + " vanishes into thin air!", 1.8f));
                 }
             }
         } else {
@@ -266,7 +266,7 @@ public class MonsterSpellExecutor {
                 combatManager.showDamageText(healed, new GridPoint2((int) caster.getPosition().x, (int) caster.getPosition().y), "+", Color.GREEN, false, DamageType.SPIRITUAL);
             }
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent(caster.getMonsterType() + " heals " + healed + " HP!", 1.5f));
+                eventManager.addEvent(new GameEvent(caster.getName() + " heals " + healed + " HP!", 1.5f));
             }
         }
     }
