@@ -31,6 +31,12 @@ public final class ChronicleGrammar {
     /** Whose side the teller is on, relative to the house that acted. */
     public enum Bias { NEUTRAL, FOR, AGAINST }
 
+    /** The talk key for anyone in a town that will not have the player. */
+    public static final String TALK_HOSTILE = "HOSTILE";
+
+    /** Town folk's greetings, by role name or {@link #TALK_HOSTILE} (plan T4.3). */
+    private final Map<String, List<String>> talk = new java.util.HashMap<>();
+
     private static ChronicleGrammar instance;
 
     private final Map<String, Map<Bias, List<String>>> events = new HashMap<>();
@@ -74,7 +80,19 @@ public final class ChronicleGrammar {
             }
         }
         g.ordinals.addAll(strings(root.get("ordinals")));
+        JsonValue talk = root.get("talk");
+        if (talk != null) {
+            for (JsonValue key : talk) {
+                if (key.isArray()) g.talk.put(key.name, strings(key));
+            }
+        }
         return g;
+    }
+
+    /** A town role's greetings, with {town}, {allegiance}, {house} and {war} slots; empty if none. */
+    public List<String> talkLines(String key) {
+        List<String> lines = talk.get(key);
+        return lines != null ? java.util.Collections.unmodifiableList(lines) : java.util.Collections.emptyList();
     }
 
     public int templateCount(String key, Bias bias) {

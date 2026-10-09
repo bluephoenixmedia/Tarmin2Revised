@@ -65,33 +65,40 @@ public final class TownTalk {
         return history.standing().isHostile(town);
     }
 
-    /** Talk: a greeting that knows who they are and what they think of the player. */
+    /**
+     * Talk: a greeting from the chronicle grammar (plan T4.3) that knows who they are, what they
+     * think of the player, and what the houses are doing above.
+     */
     public String greet() {
-        if (hostile()) return clean(folk.name + " will not look at you. \"Get out of " + town.name + ".\"");
         Random rng = new Random(town.key.hashCode() * 31L + folk.index + history.world().liveSeasons());
-        if (folk.role == Town.Role.EXILE) return clean(folk.name + ": \"" + exileLine(rng) + "\"");
-        String[] lines;
-        switch (folk.role) {
-            case SMITH: lines = new String[]{"Steel keeps. Everything else rusts.", "Bring me iron from the dead and I will make it sing."}; break;
-            case INNKEEPER: lines = new String[]{"Sit. Drink. Nobody asks names under the ground.", "The beds are hard and the walls are thick. That is the whole of the welcome."}; break;
-            case QUESTGIVER: lines = new String[]{"There is always work for someone who comes back.", "You have the look of someone the Maze has not finished with."}; break;
-            case ELDER: lines = new String[]{"We were farmers once, before the gashes. Now we are moles.", "Every year the houses come closer. Every year we dig deeper."}; break;
-            default: lines = new String[]{"Mind the dark past the lamps.", "You came from up there? Gods."}; break;
+        if (hostile()) {
+            return clean(folk.name + " will not look at you. \"" + fill(pick(ChronicleGrammar.TALK_HOSTILE, rng), rng) + "\"");
         }
-        return clean(folk.name + ": \"" + lines[rng.nextInt(lines.length)] + "\"");
+        return clean(folk.name + ": \"" + fill(pick(folk.role.name(), rng), rng) + "\"");
     }
 
-    /** An exile speaks of the house they served, which the history broke. */
-    private String exileLine(Random rng) {
-        com.bpm.minotaur.gamedata.history.Figure me = history.world().figure(folk.figureId);
-        com.bpm.minotaur.gamedata.history.House served = me != null ? history.world().house(me.houseId) : null;
-        String house = served != null ? served.name : "a house that is gone";
-        String[] lines = {
-                "I was sworn to " + house + ". The blood I served is ash, and I am still here. Make of that what you like.",
-                "Ask the chronicles what became of " + house + ". I was there. I would rather not tell it.",
-                "The mortals let me sit by their fire. " + house + " never once did that."
-        };
-        return lines[rng.nextInt(lines.length)];
+    private String pick(String key, Random rng) {
+        List<String> lines = grammar != null ? grammar.talkLines(key) : java.util.Collections.<String>emptyList();
+        return lines.isEmpty() ? "..." : lines.get(rng.nextInt(lines.size()));
+    }
+
+    private String fill(String line, Random rng) {
+        HistoryWorld w = history.world();
+        String war = "the houses";
+        List<com.bpm.minotaur.gamedata.history.War> wars = w.activeWars();
+        if (!wars.isEmpty()) {
+            com.bpm.minotaur.gamedata.history.War at = wars.get(rng.nextInt(wars.size()));
+            com.bpm.minotaur.gamedata.history.House a = w.house(at.attackerId);
+            com.bpm.minotaur.gamedata.history.House b = w.house(at.defenderId);
+            if (a != null && b != null) war = a.name + " and " + b.name;
+        }
+        com.bpm.minotaur.gamedata.history.Figure me = folk.figureId >= 0 ? w.figure(folk.figureId) : null;
+        com.bpm.minotaur.gamedata.history.House served = me != null ? w.house(me.houseId) : null;
+        String allegiance = town.allegiance.displayName;
+        return line.replace("{town}", town.name)
+                .replace("{allegiance}", Character.toUpperCase(allegiance.charAt(0)) + allegiance.substring(1))
+                .replace("{house}", served != null ? served.name : "a house that is gone")
+                .replace("{war}", war);
     }
 
     /** Rumours: the loudest news of the last few seasons, as it travels down here. */

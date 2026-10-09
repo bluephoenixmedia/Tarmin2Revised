@@ -36,6 +36,22 @@ public class ChronicleGrammarTest {
     }
 
     @Test
+    public void everyTownRoleHasTalkInTheGrammarThatTheFontCanDraw() {
+        java.util.List<String> keys = new java.util.ArrayList<>();
+        for (com.bpm.minotaur.gamedata.history.town.Town.Role r : com.bpm.minotaur.gamedata.history.town.Town.Role.values()) {
+            keys.add(r.name());
+        }
+        keys.add(ChronicleGrammar.TALK_HOSTILE);
+        for (String key : keys) {
+            java.util.List<String> lines = grammar.talkLines(key);
+            assertTrue(key + " has at least three lines", lines.size() >= 3);
+            for (String line : lines) {
+                assertEquals(line, com.bpm.minotaur.ui.UiGlyphs.sanitize(line), line);
+            }
+        }
+    }
+
+    @Test
     public void everyEventAndCasusHasThreeTemplatesInEveryVoice() {
         for (EventType t : EventType.values()) {
             for (ChronicleGrammar.Bias b : ChronicleGrammar.Bias.values()) {

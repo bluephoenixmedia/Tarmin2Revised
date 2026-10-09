@@ -123,6 +123,36 @@ public class TownTalkTest {
     }
 
     @Test
+    public void greetingsComeFromTheGrammarAndSpeakOfTheWarsAbove() {
+        HistoryManager h = null;
+        for (long seed = 0; h == null; seed++) {
+            HistoryManager c = HistoryManager.create(seed, catalog);
+            if (!c.world().activeWars().isEmpty()) h = c;
+        }
+        boolean warSpoken = false;
+        for (int i = 0; i < 40; i++) {
+            Town t = h.town(Town.keyOf(3, i, 7));
+            while (h.standing().isHostile(t)) h.standing().change(t, Standing.FAVOUR);
+            for (Town.Folk f : t.folk) {
+                if (f.role == Town.Role.MERCHANT) continue;
+                String line = new TownTalk(h, t, f, null, catalog, grammar, new FakePack()).greet();
+                assertTrue(line, line.startsWith(f.name + ": "));
+                assertFalse("every slot filled: " + line, line.contains("{") || line.contains("}"));
+                boolean fromGrammar = false;
+                for (String tpl : grammar.talkLines(f.role.name())) {
+                    String head = tpl.split("[{]")[0];
+                    if (line.contains(head)) fromGrammar = true;
+                }
+                assertTrue("from the grammar: " + line, fromGrammar);
+                for (com.bpm.minotaur.gamedata.history.War w : h.world().activeWars()) {
+                    if (line.contains(h.world().house(w.attackerId).name)) warSpoken = true;
+                }
+            }
+        }
+        assertTrue("somebody talks about a war that is really being fought", warSpoken);
+    }
+
+    @Test
     public void namingTheAgentCompletesTheTaskAndNamingTheWrongOneCostsStanding() {
         Object[] at = townOffering(Quest.Kind.UNMASK_AGENT);
         HistoryManager h = (HistoryManager) at[0];
