@@ -523,6 +523,11 @@ public class CombatManager {
         }
         if (currentState == CombatState.INACTIVE) {
             this.monster = monster;
+            // Striking a town's guard is a crime the town remembers (Houses of the Maze T4.4).
+            if (worldManager != null && monster != null && monster.getTownKey() != null) {
+                String crime = worldManager.onTownCrime(monster, maze);
+                if (crime != null) eventManager.addEvent(new GameEvent(crime, 4f));
+            }
 
             // --- LOGGING INIT ---
             this.currentCombatTurns = 0;

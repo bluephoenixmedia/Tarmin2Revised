@@ -226,6 +226,8 @@ public class GameScreen extends BaseScreen {
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
         // The Maze's history is built now, so it hears the Doom Clock from the first turn.
         worldManager.getHistory();
+        // Walking into one of a town's folk opens a conversation (Houses of the Maze T4.3).
+        com.bpm.minotaur.gamedata.shelter.SealedGates.setTalker(this::talkTo);
         // A seal site's gate names the lord who holds the gash beneath it.
         com.bpm.minotaur.gamedata.shelter.SealedGates.setSealSiteVoice(() -> {
             int road = worldManager.getBiomeManager().getSealRoad(worldManager.getCurrentPlayerChunkId());
@@ -1963,6 +1965,47 @@ public class GameScreen extends BaseScreen {
         return worldManager.getInitialPlayerStartPos();
     }
 
+    /** Opens a conversation with the town folk standing at {@code s}. */
+    private void talkTo(com.bpm.minotaur.gamedata.Scenery s) {
+        com.bpm.minotaur.gamedata.history.town.Town town = worldManager.getHistory().town(s.getTownKey());
+        if (s.getFolkIndex() < 0 || s.getFolkIndex() >= town.folk.size()) return;
+        com.bpm.minotaur.gamedata.history.town.Town.Folk folk = town.folk.get(s.getFolkIndex());
+        TownTalk.Pack pack = new TownTalk.Pack() {
+            @Override
+            public boolean hasSignet() {
+                return signet() != null;
+            }
+
+            @Override
+            public boolean giveSignet() {
+                Item ring = signet();
+                return ring != null && player.getInventory().removeItem(ring);
+            }
+
+            @Override
+            public void reward(String townName) {
+                Item gift = game.getItemDataManager().createItem(Item.ItemType.POTION_OF_HEALING,
+                        (int) player.getPosition().x, (int) player.getPosition().y, ItemColor.YELLOW, game.getAssetManager());
+                if (gift != null && !player.pickupItem(gift)) maze.addItem(gift);
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(townName + " pays you in kind."), 3f));
+            }
+
+            private Item signet() {
+                for (Item i : player.getInventory().getAllItems()) {
+                    if (i != null && i.getType() == Item.ItemType.SIGNET_RING) return i;
+                }
+                return null;
+            }
+        };
+        TownTalk talk = new TownTalk(worldManager.getHistory(), town, folk, worldManager.nearbyTowns(town.key),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(), pack);
+        com.bpm.minotaur.gamedata.ShopkeeperNpc merchant = maze.getShopkeeper();
+        Runnable trade = merchant == null ? null
+                : () -> eventManager.addEvent(new GameEvent(GameEvent.EventType.SHOPKEEPER_INTERACTION, merchant));
+        game.setScreen(new TalkScreen(game, this, talk, trade));
+    }
+
     private final WarManager warManager = new WarManager(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
 
     /** A front over the player's chunk sounds the horns; staying fights the battle (plan T2.3-T2.7). */
@@ -2200,6 +2243,11 @@ public class GameScreen extends BaseScreen {
         // The wars go on, on the surface and in the strata alike, and may reach the player.
         worldManager.getHistory().tickWarClock();
         tickWar();
+        com.bpm.minotaur.gamedata.history.town.Town town = worldManager.townHere();
+        if (town != null && worldManager.getHistory().findTown(town.key)) {
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    "You come to " + town.name + ", a town of " + town.allegiance.displayName + "."), 5f));
+        }
         String beast = worldManager.tendMegabeasts(maze, player != null ? player.getPosition() : null);
         if (beast != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(beast), 4f));
         // Blood on him and his gear dries from crimson toward black as the delve goes on.

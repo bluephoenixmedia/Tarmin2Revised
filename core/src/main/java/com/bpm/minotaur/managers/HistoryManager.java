@@ -26,6 +26,9 @@ public final class HistoryManager {
     private long warClock;
     private final java.util.Map<Integer, Integer> beastHp = new java.util.HashMap<>();
     private com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
+    private final java.util.Set<String> townsFound = new java.util.LinkedHashSet<>();
+    private final com.bpm.minotaur.gamedata.history.town.Standing standing = new com.bpm.minotaur.gamedata.history.town.Standing();
+    private final java.util.Map<String, com.bpm.minotaur.gamedata.history.town.Quest> quests = new java.util.LinkedHashMap<>();
 
     private HistoryManager(HistoryWorld world, DoctrineCatalog catalog) {
         this.world = world;
@@ -58,6 +61,25 @@ public final class HistoryManager {
             }
         }
         m.hunt = save.hunt;
+        if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
+        if (save.standingTowns != null) {
+            for (int i = 0; i < Math.min(save.standingTowns.size(), save.standingTownValues.size()); i++) {
+                m.standing.towns().put(save.standingTowns.get(i), save.standingTownValues.get(i));
+            }
+        }
+        if (save.standingAllegiances != null) {
+            for (int i = 0; i < Math.min(save.standingAllegiances.size(), save.standingAllegianceValues.size()); i++) {
+                try {
+                    m.standing.allegiances().put(com.bpm.minotaur.gamedata.history.town.Allegiance.valueOf(
+                            save.standingAllegiances.get(i)), save.standingAllegianceValues.get(i));
+                } catch (IllegalArgumentException ignored) {
+                    // A power that no longer exists keeps no grudge.
+                }
+            }
+        }
+        if (save.quests != null) {
+            for (com.bpm.minotaur.gamedata.history.town.Quest q : save.quests) m.quests.put(q.townKey, q);
+        }
         return m;
     }
 
@@ -161,6 +183,49 @@ public final class HistoryManager {
         return hunt;
     }
 
+    /** The town at {@code key}: the same town, with the same folk, every time it is asked for. */
+    public com.bpm.minotaur.gamedata.history.town.Town town(String key) {
+        return com.bpm.minotaur.gamedata.history.town.Town.of(world.seed, key);
+    }
+
+    public com.bpm.minotaur.gamedata.history.town.Standing standing() {
+        return standing;
+    }
+
+    /** The task a town gave the player, or null if they have taken none there. */
+    public com.bpm.minotaur.gamedata.history.town.Quest quest(String townKey) {
+        return quests.get(townKey);
+    }
+
+    public java.util.Collection<com.bpm.minotaur.gamedata.history.town.Quest> quests() {
+        return java.util.Collections.unmodifiableCollection(quests.values());
+    }
+
+    public void acceptQuest(com.bpm.minotaur.gamedata.history.town.Quest q) {
+        q.accepted = true;
+        quests.put(q.townKey, q);
+    }
+
+    /** A town's work is done: it enters the chronicle (plan D39). */
+    public void completeQuest(com.bpm.minotaur.gamedata.history.town.Quest q, com.bpm.minotaur.gamedata.history.town.Town giver) {
+        if (q.done) return;
+        q.done = true;
+        quests.put(q.townKey, q);
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.QUEST_DONE, q.kind.ordinal(), world.liveSeasons());
+        d.other = q.kind == com.bpm.minotaur.gamedata.history.town.Quest.Kind.SLAY_BEAST ? q.beastId : q.houseId;
+        d.note = giver.name;
+        apply(d);
+    }
+
+    /** Marks a town found; true the first time. */
+    public boolean findTown(String key) {
+        return townsFound.add(key);
+    }
+
+    public java.util.Set<String> townsFound() {
+        return java.util.Collections.unmodifiableSet(townsFound);
+    }
+
     /** One player turn passes for the wars (plan D22): fronts move with this clock. */
     public void tickWarClock() {
         warClock++;
@@ -199,6 +264,16 @@ public final class HistoryManager {
             save.beastHpValues.add(e.getValue());
         }
         save.hunt = hunt;
+        save.townsFound = new ArrayList<>(townsFound);
+        for (java.util.Map.Entry<String, Integer> e : standing.towns().entrySet()) {
+            save.standingTowns.add(e.getKey());
+            save.standingTownValues.add(e.getValue());
+        }
+        for (java.util.Map.Entry<com.bpm.minotaur.gamedata.history.town.Allegiance, Integer> e : standing.allegiances().entrySet()) {
+            save.standingAllegiances.add(e.getKey().name());
+            save.standingAllegianceValues.add(e.getValue());
+        }
+        save.quests = new ArrayList<>(quests.values());
         return save;
     }
 

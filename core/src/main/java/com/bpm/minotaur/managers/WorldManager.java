@@ -564,6 +564,7 @@ public class WorldManager {
                     maze.setGoreManager(this.goreManager);
                     restoreSealCourt(maze, chunkId);
                     dressStratum(maze, chunkId, getChunkSeed(this.currentLevel, chunkId.x, chunkId.y), false);
+                    settleTown(maze, chunkId, false);
                     // ChunkData persists none of identity, biome or theme, and the
                     // generation path sets all three. Without this a reloaded chunk
                     // came back as an anonymous MAZE chunk at (0,0): forest chunks
@@ -641,6 +642,7 @@ public class WorldManager {
         placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
         ensureSealCourt(newMaze, chunkId, currentLevel);
         dressStratum(newMaze, chunkId, chunkSeed, true);
+        settleTown(newMaze, chunkId, true);
 
         // Themed Chunk Decoration
         com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
@@ -1458,6 +1460,62 @@ public class WorldManager {
         if (fresh) com.bpm.minotaur.generation.StratumDecorator.decorate(maze, stratum, chunkSeed, assetManager);
         com.bpm.minotaur.generation.StratumDecorator.light(maze, stratum, chunkSeed);
     }
+
+    /** The town standing in the player's chunk, or null (plan T4.2). */
+    public com.bpm.minotaur.gamedata.history.town.Town townHere() {
+        if (currentPlayerChunkId == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, currentPlayerChunkId, currentLevel)) {
+            return null;
+        }
+        return getHistory().town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, currentPlayerChunkId.x, currentPlayerChunkId.y));
+    }
+
+    private void settleTown(Maze maze, GridPoint2 chunkId, boolean fresh) {
+        if (maze == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, chunkId, currentLevel)) return;
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(
+                com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, chunkId.x, chunkId.y));
+        if (fresh) TownBuilder.raise(maze, town, itemDataManager, assetManager);
+        TownBuilder.populate(maze, town, dataManager, itemDataManager, assetManager,
+                getHistory().standing().isHostile(town), this::recruit);
+    }
+
+    /**
+     * The player struck one of a town's guards: a crime. The town and its sisters hear of it, and
+     * every guard of the town here turns on the player (plan D41). Returns what is said, or null.
+     */
+    public String onTownCrime(com.bpm.minotaur.gamedata.monster.Monster struck, Maze maze) {
+        if (struck == null || struck.getTownKey() == null || !struck.isPeaceful()) return null;
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(struck.getTownKey());
+        getHistory().standing().change(town, com.bpm.minotaur.gamedata.history.town.Standing.CRIME);
+        if (maze != null) {
+            for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                if (m != null && town.key.equals(m.getTownKey())) {
+                    m.setPeaceful(false);
+                    m.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+                }
+            }
+        }
+        return com.bpm.minotaur.ui.UiGlyphs.sanitize("You have drawn steel in " + town.name + ". Its guards come for you.");
+    }
+
+    /** Other towns a reeve might send a message to: those on the strata near here (plan T4.5). */
+    public java.util.List<String> nearbyTowns(String exceptKey) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (currentPlayerChunkId == null) return out;
+        for (int level = com.bpm.minotaur.gamedata.history.town.TownSites.MIN_LEVEL;
+             level <= com.bpm.minotaur.gamedata.history.town.TownSites.MAX_LEVEL; level++) {
+            for (int dx = -NEARBY_TOWN_RADIUS; dx <= NEARBY_TOWN_RADIUS; dx++) {
+                for (int dy = -NEARBY_TOWN_RADIUS; dy <= NEARBY_TOWN_RADIUS; dy++) {
+                    GridPoint2 c = new GridPoint2(currentPlayerChunkId.x + dx, currentPlayerChunkId.y + dy);
+                    if (!com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, c, level)) continue;
+                    String key = com.bpm.minotaur.gamedata.history.town.Town.keyOf(level, c.x, c.y);
+                    if (!key.equals(exceptKey)) out.add(key);
+                }
+            }
+        }
+        return out;
+    }
+
+    static final int NEARBY_TOWN_RADIUS = 6;
 
     /** A megabeast's wounds outlast the chunk it was hurt in. */
     private void rememberBeastWounds(Maze maze) {

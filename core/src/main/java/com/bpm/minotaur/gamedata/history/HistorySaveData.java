@@ -24,6 +24,15 @@ public class HistorySaveData {
     public List<Integer> beastHpValues = new ArrayList<>();
     /** A megabeast following the player, or null. */
     public com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
+    /** Keys of the underground towns the player has found. */
+    public List<String> townsFound = new ArrayList<>();
+    /** Standing with each town, and with each allegiance, as parallel lists. */
+    public List<String> standingTowns = new ArrayList<>();
+    public List<Integer> standingTownValues = new ArrayList<>();
+    public List<String> standingAllegiances = new ArrayList<>();
+    public List<Integer> standingAllegianceValues = new ArrayList<>();
+    /** Every task a town has given the player. */
+    public List<com.bpm.minotaur.gamedata.history.town.Quest> quests = new ArrayList<>();
     /** Every player deed, in the order it happened. */
     public List<PlayerDeed> deeds = new ArrayList<>();
     /** Event ids whose chronicle entries the player has unlocked through fragments. */

@@ -477,6 +477,24 @@
         "In the year {year} a mortal killed {beast}, and the deep has not forgiven it."
       ]
     }
+,
+    "QUEST_DONE": {
+      "NEUTRAL": [
+        "In the year {year} a seeker did the work of {place}, and was thanked for it.",
+        "The year {year}: {place}, a town below the Maze, found a friend in a seeker from the shelters.",
+        "In the year {year} a seeker went about the business of {place} and came back alive."
+      ],
+      "FOR": [
+        "In the year {year} the mortals of {place} found themselves a champion. It will not save them.",
+        "{place} hired a seeker in the year {year}. The Maze notes who keeps such company.",
+        "In the year {year} a seeker ran errands for {place}, which is to say, for us, eventually."
+      ],
+      "AGAINST": [
+        "In the year {year} a seeker stood by {place} when no house of the Maze would.",
+        "{place} owes a debt since the year {year}, and pays it in bread and lamp-oil.",
+        "In the year {year} a seeker did for {place} what the houses never would."
+      ]
+    }
   },
   "casus": {
     "SLAIN_KIN": {

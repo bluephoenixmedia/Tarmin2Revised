@@ -250,6 +250,10 @@ public class Monster implements Renderable {
     private int megabeastId = -1;
     /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
     private DamageType extraWeakness;
+    /** The town this monster guards, or null (T4.4). A guard is placed on every load and never saved. */
+    private String townKey;
+    /** A guard at peace with the player: it does not hunt them. */
+    private boolean peaceful;
 
     public static final int SEAL_LORD = 1;
     public static final int SEAL_RETAINER = 2;
@@ -1235,6 +1239,10 @@ public class Monster implements Renderable {
     public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
 
     public boolean isWarBand() { return warBand; }
+    public String getTownKey() { return townKey; }
+    public void setTownKey(String townKey) { this.townKey = townKey; }
+    public boolean isPeaceful() { return peaceful; }
+    public void setPeaceful(boolean peaceful) { this.peaceful = peaceful; }
     public int getMegabeastId() { return megabeastId; }
     public void setMegabeastId(int megabeastId) { this.megabeastId = megabeastId; }
     public DamageType getExtraWeakness() { return extraWeakness; }

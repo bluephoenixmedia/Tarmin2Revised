@@ -22,13 +22,20 @@ public class PlayerDeed {
          */
         BATTLE_WITNESSED,
         /** The player killed a megabeast. {@link #target} is its id. */
-        SLEW_MEGABEAST
+        SLEW_MEGABEAST,
+        /**
+         * The player did a town's work (plan T4.5). {@link #target} is the quest kind's ordinal,
+         * {@link #other} the house or beast concerned, {@link #note} the town's name.
+         */
+        QUEST_DONE
     }
 
     public Kind kind;
     public int target = -1;
     /** A second house, where the deed needs one; -1 otherwise. */
     public int other = -1;
+    /** A name the deed carries, where it needs one: a town's. */
+    public String note;
     /** The live season the deed happened in: {@link HistoryWorld#liveSeasons()} at the time. */
     public int liveSeason;
 

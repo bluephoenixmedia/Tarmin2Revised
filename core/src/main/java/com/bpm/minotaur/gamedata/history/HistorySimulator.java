@@ -779,6 +779,13 @@ public final class HistorySimulator {
             b.deathSeason = world.season;
             HistoryEvent e = record(EventType.MEGABEAST_SLAIN);
             e.beastId = b.id;
+        } else if (deed.kind == PlayerDeed.Kind.QUEST_DONE) {
+            HistoryEvent e = record(EventType.QUEST_DONE);
+            e.place = deed.note;
+            e.detail = deed.target;
+            boolean beast = deed.target == com.bpm.minotaur.gamedata.history.town.Quest.Kind.SLAY_BEAST.ordinal();
+            if (beast) e.beastId = deed.other;
+            else if (world.house(deed.other) != null) e.houseB = deed.other;
         } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
             House winner = world.house(deed.target);
             House loser = world.house(deed.other);

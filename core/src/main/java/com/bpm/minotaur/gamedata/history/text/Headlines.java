@@ -60,6 +60,7 @@ public final class Headlines {
             case MEGABEAST_BARGAIN:
                 return 7;
             case MEGABEAST_STIRS:
+            case QUEST_DONE:
                 return 6;
             case DISPUTED_SUCCESSION:
             case PEACE:

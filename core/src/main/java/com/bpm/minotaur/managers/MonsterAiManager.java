@@ -56,6 +56,8 @@ public class MonsterAiManager {
             return;
         }
         engagedByPlayer = combatManager != null ? combatManager.getMonster() : null;
+        // A town's guard at peace stands its post.
+        if (monster.isPeaceful()) return;
 
         // A seal lord's traits play out first; an honourable lord's retinue may stand back.
         if (monster.holdsCourt() && SealCourt.onTurn(monster, maze)) {

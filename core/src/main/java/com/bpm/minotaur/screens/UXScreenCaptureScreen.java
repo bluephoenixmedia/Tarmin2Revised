@@ -552,6 +552,26 @@ public class UXScreenCaptureScreen extends BaseScreen {
             setSubScreen(sharedGameScreen, null);
         }));
 
+        // 30: Talking with a town's reeve (Houses of the Maze T4.3)
+        tasks.add(new CaptureTask("30_talk", "Talking with a town's folk", () -> {
+            com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
+            com.bpm.minotaur.gamedata.history.town.Town town = history.town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(2, 3, 4));
+            com.bpm.minotaur.managers.TownTalk.Pack pack = new com.bpm.minotaur.managers.TownTalk.Pack() {
+                public boolean hasSignet() { return false; }
+                public boolean giveSignet() { return false; }
+                public void reward(String what) { }
+            };
+            com.bpm.minotaur.managers.TownTalk talk = new com.bpm.minotaur.managers.TownTalk(history, town,
+                    town.folk(com.bpm.minotaur.gamedata.history.town.Town.Role.QUESTGIVER),
+                    java.util.Collections.singletonList(com.bpm.minotaur.gamedata.history.town.Town.keyOf(3, 9, 9)),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(), pack);
+            talk.quest();
+            for (int i = 0; i < 3; i++) history.onSleep();
+            TalkScreen s = new TalkScreen(game, sharedGameScreen, talk, () -> { });
+            setSubScreen(s, null);
+        }));
+
         // 28: The Archive Lectern's Annals of the Maze, with some history learned
         tasks.add(new CaptureTask("28_annals", "Archive Lectern, Annals of the Maze", () -> {
             com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();

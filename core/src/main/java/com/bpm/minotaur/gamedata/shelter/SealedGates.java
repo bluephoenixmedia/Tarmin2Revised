@@ -17,6 +17,19 @@ public final class SealedGates {
             "A sealed way down, older than the Legion. One of the ancient seals lies far beneath it.";
 
     private static java.util.function.Supplier<String> sealSiteVoice;
+    /** Opens a conversation with one of a town's folk (Houses of the Maze T4.3). */
+    private static java.util.function.Consumer<Scenery> talker;
+
+    public static void setTalker(java.util.function.Consumer<Scenery> listener) {
+        talker = listener;
+    }
+
+    /** True if bumping {@code s} is speaking to someone, and the conversation was opened. */
+    public static boolean talk(Scenery s) {
+        if (s == null || !s.isTownsfolk() || talker == null) return false;
+        talker.accept(s);
+        return true;
+    }
 
     private SealedGates() {
     }

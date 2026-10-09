@@ -138,6 +138,8 @@ public class ChunkData {
             if (entry.getValue().getCurrentHP() <= 0) continue;
             // A megabeast is wherever its tracks say, not wherever it was last seen (T3.3).
             if (entry.getValue().getMegabeastId() >= 0) continue;
+            // A town's guards are posted on every load, at peace or not as the town decides.
+            if (entry.getValue().getTownKey() != null) continue;
             this.monsters.add(new MonsterData(entry.getValue()));
         }
 
@@ -167,6 +169,7 @@ public class ChunkData {
 
         if (maze.getScenery() != null) {
             for (Scenery s : maze.getScenery().values()) {
+                if (s.isTownsfolk()) continue; // a town's folk are placed on every load
                 this.scenery.add(new SceneryData(s));
             }
         }

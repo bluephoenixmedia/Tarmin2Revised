@@ -31,5 +31,7 @@ public enum EventType {
     /** A house ({@code houseA}) sets a megabeast on its rival ({@code houseB}). */
     MEGABEAST_BARGAIN,
     /** The player killed a megabeast. */
-    MEGABEAST_SLAIN
+    MEGABEAST_SLAIN,
+    /** The player did a town's work ({@code place} is the town). */
+    QUEST_DONE
 }
