@@ -494,6 +494,23 @@
         "{place} owes a debt since the year {year}, and pays it in bread and lamp-oil.",
         "In the year {year} a seeker did for {place} what the houses never would."
       ]
+    },
+    "MEGABEAST_PACIFIED": {
+      "NEUTRAL": [
+        "In the year {year} a seeker laid a trophy of the houses before {beast}, and it let them go.",
+        "The year {year}: {beast} took a mortal's offering, and hunts that mortal no more.",
+        "In the year {year} {beast} was bought off with a house's ring, by a seeker who could not kill it."
+      ],
+      "FOR": [
+        "In the year {year} a mortal fed {beast} with our dead's own signet. The beast was not particular.",
+        "{beast} has eaten from a mortal hand since the year {year}. We would have done it better.",
+        "In the year {year} a seeker bought the peace of {beast} with what they had looted from us."
+      ],
+      "AGAINST": [
+        "In the year {year} a seeker made peace with {beast}, which no house of the Maze has ever managed.",
+        "{beast} has spared a mortal since the year {year}, for the price of a trinket the houses left behind.",
+        "In the year {year} a seeker paid {beast} in house-gold, and walked away from it."
+      ]
     }
   },
   "casus": {

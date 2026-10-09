@@ -27,7 +27,11 @@ public class PlayerDeed {
          * The player did a town's work (plan T4.5). {@link #target} is the quest kind's ordinal,
          * {@link #other} the house or beast concerned, {@link #note} the town's name.
          */
-        QUEST_DONE
+        QUEST_DONE,
+        /** The player bought a megabeast's peace with a trophy. {@link #target} is its id. */
+        PACIFIED_MEGABEAST,
+        /** The player struck a beast whose peace they had bought; it is unbought. {@link #target} is its id. */
+        BROKE_BEAST_PEACE
     }
 
     public Kind kind;

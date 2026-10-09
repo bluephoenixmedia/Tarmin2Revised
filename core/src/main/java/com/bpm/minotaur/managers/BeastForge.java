@@ -41,6 +41,33 @@ public final class BeastForge {
             // A weakness the game no longer knows: the beast simply has none.
         }
         if (m.getScale() != null) m.getScale().set(SCALE_X, kind.scaleY);
+        if (b.isPacified()) m.setPeaceful(true);
+    }
+
+    /** How near the beast a trophy must lie to be taken as an offering. */
+    public static final int OFFERING_REACH = 3;
+
+    /**
+     * A trophy of the houses -- a signet, a banner -- lying within reach of a beast at {@code at}
+     * is taken as an offering (plan T4.5): removed from the floor and returned. Null if there is none.
+     */
+    public static com.bpm.minotaur.gamedata.item.Item takeOffering(com.bpm.minotaur.gamedata.Maze maze,
+            com.badlogic.gdx.math.GridPoint2 at) {
+        for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, com.bpm.minotaur.gamedata.item.Item> e
+                : new java.util.ArrayList<>(maze.getItems().entrySet())) {
+            com.bpm.minotaur.gamedata.item.Item item = e.getValue();
+            if (item == null || !isOffering(item)) continue;
+            if (Math.abs(e.getKey().x - at.x) + Math.abs(e.getKey().y - at.y) > OFFERING_REACH) continue;
+            maze.removeItem(item);
+            return item;
+        }
+        return null;
+    }
+
+    /** What a beast will take: the houses' own trophies, a signet or a banner. */
+    static boolean isOffering(com.bpm.minotaur.gamedata.item.Item item) {
+        return item.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.SIGNET_RING
+                || item.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.TORN_BANNER;
     }
 
     /** A beast's whole hit points, before any wound: the deeper its lair, the greater it is (D35). */

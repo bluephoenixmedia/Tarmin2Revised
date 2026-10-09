@@ -1543,6 +1543,14 @@ public class WorldManager {
         for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
             if (m != null && m.getMegabeastId() >= 0) here = m;
         }
+        if (here != null && present != null && present.id == here.getMegabeastId() && !present.isPacified()
+                && BeastForge.takeOffering(maze, new GridPoint2((int) here.getPosition().x, (int) here.getPosition().y)) != null) {
+            // A trophy of the houses laid before it: it takes the offering, and the player's peace with it (T4.5).
+            history.recordMegabeastPacified(present.id);
+            here.setPeaceful(true);
+            here.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.IDLE);
+            return present.name + " takes the offering and turns from you. It will not hunt you now.";
+        }
         if (here != null && (present == null || present.id != here.getMegabeastId())) {
             if (here.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) {
                 // Hunting the player: it stays with them, wherever its range would have taken it.

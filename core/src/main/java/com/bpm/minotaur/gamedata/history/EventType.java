@@ -33,5 +33,7 @@ public enum EventType {
     /** The player killed a megabeast. */
     MEGABEAST_SLAIN,
     /** The player did a town's work ({@code place} is the town). */
-    QUEST_DONE
+    QUEST_DONE,
+    /** The player laid a trophy of the houses before a megabeast, and it took their peace. */
+    MEGABEAST_PACIFIED
 }

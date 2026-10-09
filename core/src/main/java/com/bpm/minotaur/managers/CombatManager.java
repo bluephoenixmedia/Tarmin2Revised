@@ -528,6 +528,14 @@ public class CombatManager {
                 String crime = worldManager.onTownCrime(monster, maze);
                 if (crime != null) eventManager.addEvent(new GameEvent(crime, 4f));
             }
+            // Striking a beast whose peace was bought voids the bargain.
+            if (worldManager != null && monster != null && monster.getMegabeastId() >= 0 && monster.isPeaceful()) {
+                worldManager.getHistory().breakMegabeastPeace(monster.getMegabeastId());
+                monster.setPeaceful(false);
+                monster.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                        monster.getName() + " remembers what it is."), 4f));
+            }
 
             // --- LOGGING INIT ---
             this.currentCombatTurns = 0;

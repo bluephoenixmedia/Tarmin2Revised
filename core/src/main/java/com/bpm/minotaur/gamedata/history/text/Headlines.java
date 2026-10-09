@@ -58,6 +58,7 @@ public final class Headlines {
                 return 9;
             case MEGABEAST_RAID:
             case MEGABEAST_BARGAIN:
+            case MEGABEAST_PACIFIED:
                 return 7;
             case MEGABEAST_STIRS:
             case QUEST_DONE:

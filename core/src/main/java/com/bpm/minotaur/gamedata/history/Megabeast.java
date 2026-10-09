@@ -17,6 +17,8 @@ public class Megabeast {
     public final int lairLevel;
     public final int awakenSeason;
     public int deathSeason = -1;
+    /** The season the player bought its peace, or -1 (plan T4.5). */
+    public int pacifiedSeason = -1;
 
     public Megabeast(int id, String name, String archetypeId, String materialId, String breathId, String weakness,
             int lairLevel, int awakenSeason) {
@@ -36,5 +38,10 @@ public class Megabeast {
 
     public boolean isAlive() {
         return deathSeason < 0;
+    }
+
+    /** It took the player's offering, and will not hunt them. */
+    public boolean isPacified() {
+        return pacifiedSeason >= 0;
     }
 }

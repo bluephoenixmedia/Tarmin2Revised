@@ -87,7 +87,7 @@ public class Quest {
                 return "Someone in " + town.name + " carries word to " + house(world) + ". Find them. Name them to their face.";
             case SLAY_BEAST:
                 Megabeast b = world.megabeast(beastId);
-                return (b != null ? b.name : "The beast below") + " has taken our hunters. Kill it, and the town will owe you.";
+                return (b != null ? b.name : "The beast below") + " has taken our hunters. Kill it, or lay a trophy of the houses before it as an offering and buy its peace. Either way the town will owe you.";
             case CARRY_MESSAGE:
                 Town to = towns.apply(toTownKey);
                 return "Carry this to the elder of " + (to != null ? to.name : "the next town") + ". The roads above are war now; go under them.";

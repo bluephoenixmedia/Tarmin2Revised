@@ -155,6 +155,10 @@ public final class TownTalk {
                     finish(q, town);
                     return clean(folk.name + ": \"We heard it die. The whole deep heard it.\"");
                 }
+                if (b.isPacified()) {
+                    finish(q, town);
+                    return clean(folk.name + ": \"It has not come for us since you fed it. Strange coin, but it spends.\"");
+                }
                 break;
             default:
                 break;

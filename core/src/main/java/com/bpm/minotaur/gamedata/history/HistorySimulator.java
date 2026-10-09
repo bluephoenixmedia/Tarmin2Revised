@@ -779,6 +779,15 @@ public final class HistorySimulator {
             b.deathSeason = world.season;
             HistoryEvent e = record(EventType.MEGABEAST_SLAIN);
             e.beastId = b.id;
+        } else if (deed.kind == PlayerDeed.Kind.PACIFIED_MEGABEAST) {
+            Megabeast b = world.megabeast(deed.target);
+            if (b == null || !b.isAlive() || b.isPacified()) return;
+            b.pacifiedSeason = world.season;
+            HistoryEvent e = record(EventType.MEGABEAST_PACIFIED);
+            e.beastId = b.id;
+        } else if (deed.kind == PlayerDeed.Kind.BROKE_BEAST_PEACE) {
+            Megabeast b = world.megabeast(deed.target);
+            if (b != null) b.pacifiedSeason = -1;
         } else if (deed.kind == PlayerDeed.Kind.QUEST_DONE) {
             HistoryEvent e = record(EventType.QUEST_DONE);
             e.place = deed.note;

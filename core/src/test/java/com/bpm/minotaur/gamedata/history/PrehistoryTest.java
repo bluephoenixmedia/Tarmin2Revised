@@ -116,7 +116,8 @@ public class PrehistoryTest {
         }
         for (EventType t : EventType.values()) {
             if (t == EventType.SLAIN_BY_PLAYER || t == EventType.SEEKER_FELL || t == EventType.MEGABEAST_SLAIN
-                    || t == EventType.TARMIN_ASCENDANT || t == EventType.QUEST_DONE) continue;
+                    || t == EventType.TARMIN_ASCENDANT || t == EventType.QUEST_DONE
+                    || t == EventType.MEGABEAST_PACIFIED) continue;
             assertTrue("never saw " + t, seen.contains(t));
         }
     }

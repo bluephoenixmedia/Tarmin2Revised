@@ -159,6 +159,19 @@ public final class HistoryManager {
     }
 
     /** The player killed a megabeast: it is chronicled, and it never comes back. */
+    /** The player bought a beast's peace: it hunts them no more, and the history says so. */
+    public void recordMegabeastPacified(int beastId) {
+        apply(new PlayerDeed(PlayerDeed.Kind.PACIFIED_MEGABEAST, beastId, world.liveSeasons()));
+        if (hunt != null && hunt.beastId == beastId) hunt = null;
+    }
+
+    /** The player struck a beast they had bought off: the bargain is void. */
+    public void breakMegabeastPeace(int beastId) {
+        com.bpm.minotaur.gamedata.history.Megabeast b = world.megabeast(beastId);
+        if (b == null || !b.isPacified()) return;
+        apply(new PlayerDeed(PlayerDeed.Kind.BROKE_BEAST_PEACE, beastId, world.liveSeasons()));
+    }
+
     public void recordMegabeastSlain(int beastId) {
         apply(new PlayerDeed(PlayerDeed.Kind.SLEW_MEGABEAST, beastId, world.liveSeasons()));
         beastHp.remove(beastId);

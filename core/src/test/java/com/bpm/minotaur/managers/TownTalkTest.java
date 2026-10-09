@@ -110,6 +110,19 @@ public class TownTalkTest {
     }
 
     @Test
+    public void buyingTheBeastsPeaceCompletesTheTaskToo() {
+        Object[] at = townOffering(Quest.Kind.SLAY_BEAST);
+        HistoryManager h = (HistoryManager) at[0];
+        Town t = (Town) at[1];
+        TownTalk reeve = talk(h, t, Town.Role.QUESTGIVER, new FakePack());
+        assertTrue("the reeve says it can be bought off", reeve.quest().toLowerCase().contains("offering"));
+        h.recordMegabeastPacified(h.quest(t.key).beastId);
+        reeve.quest();
+        assertTrue(h.quest(t.key).done);
+        assertTrue(chronicled(h, t));
+    }
+
+    @Test
     public void namingTheAgentCompletesTheTaskAndNamingTheWrongOneCostsStanding() {
         Object[] at = townOffering(Quest.Kind.UNMASK_AGENT);
         HistoryManager h = (HistoryManager) at[0];
