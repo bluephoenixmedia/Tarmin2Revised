@@ -135,6 +135,11 @@ public class GameScreen extends BaseScreen {
     private boolean hasLoadedLevel = false;
     private int turnCount = 0;
 
+    /** World turns taken since this screen opened. */
+    public int getTurnCount() {
+        return turnCount;
+    }
+
     // --- Death Idempotency & Run Tracking (NetHack Progression Reboot) ---
     private String activeExpeditionRunId = java.util.UUID.randomUUID().toString();
     private boolean isDeathTransitionTriggered = false;

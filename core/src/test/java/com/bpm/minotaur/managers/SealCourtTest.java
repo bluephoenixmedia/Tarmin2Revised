@@ -30,7 +30,7 @@ public class SealCourtTest {
         s.figureId = 7;
         s.houseId = 2;
         s.name = "Vora the Restorer of House Gullet";
-        s.hpMult = 3f;
+        s.hpMult = 1f;
         s.damageBonus = 2;
         s.armorBonus = 1;
         for (SealLord.Behaviour b : behaviours) s.behaviours.add(b);
@@ -62,10 +62,10 @@ public class SealCourtTest {
         assertEquals(2, m.getHouseId());
         assertEquals(7, m.getFigureId());
         assertEquals("Vora the Restorer of House Gullet", m.getDisplayName());
-        assertEquals(120, m.getMaxHP());
-        assertEquals(120, m.getCurrentHP());
-        assertEquals("2d10+8", m.getDamageDice());
-        assertEquals(16, m.getArmorClass());
+        assertEquals(SealLord.BASE_HP, m.getMaxHP());
+        assertEquals(SealLord.BASE_HP, m.getCurrentHP());
+        assertEquals("the frame's bite, not the body's", "2d10+6", m.getDamageDice());
+        assertEquals(SealLord.BASE_ARMOR + 1, m.getArmorClass());
         assertTrue(m.holdsCourt());
     }
 
@@ -75,13 +75,13 @@ public class SealCourtTest {
         Monster m = lord(spec(SealLord.Behaviour.BERSERK_AT_HALF), maze);
         int speed = m.getMoveSpeed();
         SealCourt.onTurn(m, maze);
-        assertEquals("2d10+8", m.getDamageDice());
+        assertEquals("2d10+6", m.getDamageDice());
         m.setCurrentHP(50);
         SealCourt.onTurn(m, maze);
-        assertEquals("2d10+12", m.getDamageDice());
+        assertEquals("2d10+10", m.getDamageDice());
         assertEquals(speed + SealCourt.RAGE_SPEED, m.getMoveSpeed());
         SealCourt.onTurn(m, maze);
-        assertEquals("only once", "2d10+12", m.getDamageDice());
+        assertEquals("only once", "2d10+10", m.getDamageDice());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class SealCourtTest {
         Monster m = lord(spec(SealLord.Behaviour.REGENERATES), maze);
         m.setCurrentHP(60);
         SealCourt.onTurn(m, maze);
-        assertEquals(62, m.getCurrentHP());
+        assertEquals(60 + Math.max(1, SealLord.BASE_HP / SealCourt.REGEN_DIVISOR), m.getCurrentHP());
     }
 
     @Test

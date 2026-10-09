@@ -22,6 +22,16 @@ public final class SealCourt {
      */
     public static final int COURT_LEVEL = 3;
 
+    /**
+     * A regenerating lord heals its hit points over this many turns. At sixty, a lord grown to its
+     * region out-healed the seeker the region expects (the duel play-test); it should slow a fight,
+     * not undo it.
+     */
+    static final int REGEN_DIVISOR = 200;
+
+    /** A lord's speed when its body has no template to say. */
+    static final int BASE_SPEED = 12;
+
     /** Extra damage a wrathful lord finds below half health. */
     static final int RAGE_DAMAGE = 4;
     static final int RAGE_SPEED = 2;
@@ -38,14 +48,19 @@ public final class SealCourt {
 
     /** Makes {@code m} the lord: identity, faction, and the spec's stats over its own type's. */
     public static void dressLord(Monster m, SealLord.Spec spec, int road) {
+        dressLord(m, spec, road, 1);
+    }
+
+    /** {@code level}: the court's effective difficulty, which the lord grows with. */
+    public static void dressLord(Monster m, SealLord.Spec spec, int road, int level) {
         m.setFaction(Faction.MAZE_HOUSE);
         m.setHouseId(spec.houseId);
         m.setFigureId(spec.figureId);
         m.setSealRoad(road);
         m.setSealRole(Monster.SEAL_LORD);
-        m.setMaxHP(Math.round(m.getMaxHP() * spec.hpMult));
+        m.setMaxHP(spec.maxHp(level));
         m.setCurrentHP(m.getMaxHP());
-        applyCombat(m, spec);
+        applyCombat(m, spec, level);
         m.setState(Monster.MonsterState.HUNTING);
     }
 
@@ -67,12 +82,16 @@ public final class SealCourt {
      * gash keeps only its name.
      */
     public static void reapply(Monster m, HistoryWorld world, DoctrineCatalog catalog) {
+        reapply(m, world, catalog, 1);
+    }
+
+    public static void reapply(Monster m, HistoryWorld world, DoctrineCatalog catalog, int level) {
         int gash = SealLord.gashIndexForRoad(m.getSealRoad());
         if (gash < 0) return;
         SealLord.Spec spec = SealLord.compose(world, gash, catalog);
         if (m.getSealRole() == Monster.SEAL_LORD) {
             if (spec.figureId == m.getFigureId()) {
-                applyCombat(m, spec);
+                applyCombat(m, spec, level);
             } else {
                 m.setDisplayName(formerName(world, m.getFigureId()));
             }
@@ -105,11 +124,13 @@ public final class SealCourt {
         return out;
     }
 
-    private static void applyCombat(Monster m, SealLord.Spec spec) {
+    private static void applyCombat(Monster m, SealLord.Spec spec, int level) {
         m.setDisplayName(spec.name);
-        m.setDamageDice(SealLord.withDamageBonus(m.getDamageDice(), spec.damageBonus));
-        m.setArmorClass(m.getArmorClass() + spec.armorBonus);
-        m.setMoveSpeed(Math.max(1, m.getMoveSpeed() + spec.moveSpeedDelta));
+        // Absolute, not added to what the monster has: a reload must land on the same numbers.
+        m.setDamageDice(spec.damageDice(level));
+        m.setArmorClass(spec.armor(level));
+        int speed = m.getTemplate() != null && m.getTemplate().moveSpeed > 0 ? m.getTemplate().moveSpeed : BASE_SPEED;
+        m.setMoveSpeed(Math.max(1, speed + spec.moveSpeedDelta));
         int bits = 0;
         for (SealLord.Behaviour b : spec.behaviours) bits |= 1 << b.ordinal();
         m.setSealBehaviours(bits);
@@ -135,7 +156,7 @@ public final class SealCourt {
             int hp = m.getCurrentHP();
             int max = m.getMaxHP();
             if (has(m, SealLord.Behaviour.REGENERATES) && hp < max) {
-                m.setCurrentHP(Math.min(max, hp + Math.max(1, max / 60)));
+                m.setCurrentHP(Math.min(max, hp + Math.max(1, max / REGEN_DIVISOR)));
             }
             if (has(m, SealLord.Behaviour.BERSERK_AT_HALF) && !m.isSealRageSpent() && hp * 2 < max) {
                 m.setSealRageSpent(true);

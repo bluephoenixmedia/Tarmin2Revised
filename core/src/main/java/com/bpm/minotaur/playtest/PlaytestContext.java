@@ -193,8 +193,11 @@ public final class PlaytestContext {
                 : next.y > here.y ? Direction.NORTH : Direction.SOUTH;
         Direction facing = p.getFacing();
         Object ahead = maze.getGameObjectAt(next.x, next.y);
-        boolean closedDoor = ahead instanceof com.bpm.minotaur.gamedata.Door
-                && ((com.bpm.minotaur.gamedata.Door) ahead).getState() != com.bpm.minotaur.gamedata.Door.DoorState.OPEN;
+        // The pathfinder routes through a closed door on either side of the edge; walking into one
+        // on the player's own tile is a wall to Player.move, so open it instead.
+        boolean closedDoor = (ahead instanceof com.bpm.minotaur.gamedata.Door
+                && ((com.bpm.minotaur.gamedata.Door) ahead).getState() != com.bpm.minotaur.gamedata.Door.DoorState.OPEN)
+                || maze.isWallBlocking(here.x, here.y, want);
 
         if (facing == want && closedDoor) press(Input.Keys.O);
         else if (facing == want) press(Input.Keys.UP);

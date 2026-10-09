@@ -58,18 +58,58 @@ public final class SealLord {
         public String name;
         /** A monsters.json type: the doctrine's boss base. */
         public String monsterType;
-        public float hpMult = BOSS_HP_MULT;
+        /** Multiplies {@link #BASE_HP}: traits, age and the house's renown. */
+        public float hpMult = 1f;
         /** Added to the base type's damage dice modifier. */
         public int damageBonus;
         public int armorBonus;
         public int moveSpeedDelta;
         public final Set<Behaviour> behaviours = EnumSet.noneOf(Behaviour.class);
         public final List<Retainer> retinue = new ArrayList<>();
+
+        public int maxHp() {
+            return maxHp(1);
+        }
+
+        public String damageDice() {
+            return damageDice(1);
+        }
+
+        public int armor() {
+            return armor(1);
+        }
+
+        /**
+         * At {@code level}, the court's effective difficulty: the lord grows as the strata around
+         * it do, at half the rate of the wildlife there ({@link SealLord#levelMult}), so it stays a hard
+         * single fight rather than a wall.
+         */
+        public int maxHp(int level) {
+            return Math.round(BASE_HP * hpMult * levelMult(level));
+        }
+
+        public String damageDice(int level) {
+            return withDamageBonus(BASE_DICE, damageBonus + Math.max(0, level - 1) / 5);
+        }
+
+        public int armor(int level) {
+            return BASE_ARMOR + armorBonus + Math.max(0, level) / 5;
+        }
     }
 
     public static final int MAX_RETINUE = 3;
-    /** A seal lord is a deep boss: several times the body its type gives an ordinary monster. */
-    static final float BOSS_HP_MULT = 3f;
+    /*
+     * Every lord fights in one frame, whatever body its doctrine gives it: the body is the look.
+     * The play-test found that tripling the body's own numbers made a Purple Worm lord a 700 HP,
+     * 5d10+12 wall two strata down -- a level-nine seeker needed two thousand turns, and died to
+     * one bite. A seal is meant to be hard won by a seeker of the middle levels, not unwinnable.
+     */
+    /** A lord's hit points before its traits. */
+    public static final int BASE_HP = 180;
+    /** A lord's bite before its traits. */
+    public static final String BASE_DICE = "2d10+4";
+    /** A lord's armour before its traits. */
+    public static final int BASE_ARMOR = 15;
 
     private SealLord() {
     }
@@ -142,6 +182,19 @@ public final class SealLord {
             spec.retinue.add(new Retainer(sword.id, sword.name + ", sworn to " + house.name, type));
         }
         return spec;
+    }
+
+    /**
+     * Hit-point growth with the court's level: half of the 15% a level that {@code Monster.scaleStats}
+     * gives the wildlife. The duel play-test fought a lord on the full curve -- 550 HP at level 27,
+     * five times its frame -- and a seeker's blows, which grow with gear and not with level, needed
+     * eighteen draughts to get through it. On half the curve a lord stands at about twice the
+     * strongest common beast of its region: one hard fight, where the wildlife come in packs.
+     */
+    static final float LEVEL_GROWTH = 0.075f;
+
+    public static float levelMult(int level) {
+        return level <= 1 ? 1f : 1f + (level - 1) * LEVEL_GROWTH;
     }
 
     /** {@code dice} with its flat modifier raised by {@code bonus}: "2d10+6" and 3 make "2d10+9". */

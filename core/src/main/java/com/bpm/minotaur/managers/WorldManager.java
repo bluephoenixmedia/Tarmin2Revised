@@ -275,7 +275,7 @@ public class WorldManager {
                 com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
         com.bpm.minotaur.gamedata.monster.Monster lord = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(spec.monsterType), seat.x, seat.y,
                 com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
-        SealCourt.dressLord(lord, spec, road);
+        SealCourt.dressLord(lord, spec, road, calculateEffectiveDifficulty(chunkId, level));
         maze.addMonster(lord);
         for (com.bpm.minotaur.gamedata.boss.SealLord.Retainer r : spec.retinue) {
             GridPoint2 at = findSafeArrivalTile(maze, seat.x + 1, seat.y);
@@ -296,7 +296,9 @@ public class WorldManager {
             maze.removeMonster(deposed);
         }
         for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
-            if (m != null && m.holdsCourt()) SealCourt.reapply(m, getHistory().world(), catalog);
+            if (m != null && m.holdsCourt()) {
+                SealCourt.reapply(m, getHistory().world(), catalog, calculateEffectiveDifficulty(chunkId, this.currentLevel));
+            }
         }
         ensureSealCourt(maze, chunkId, this.currentLevel);
     }

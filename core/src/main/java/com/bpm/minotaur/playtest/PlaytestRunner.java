@@ -62,6 +62,7 @@ public final class PlaytestRunner {
                 new ShelterRoadsScenario(),
                 new StrataDescentScenario(),
                 new SealLordsScenario(),
+                new SealLordDuelScenario(),
                 new TownsAndTradeScenario(),
                 new SurfaceWarsMegabeastsScenario(),
                 new CastleTarminScenario(),

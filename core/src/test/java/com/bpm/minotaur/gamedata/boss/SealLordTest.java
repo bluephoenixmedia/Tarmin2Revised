@@ -51,7 +51,7 @@ public class SealLordTest {
             assertEquals(d.bossBase, spec.monsterType);
             assertTrue(spec.name, spec.name.startsWith(lord.name));
             assertTrue(spec.name, spec.name.endsWith(holder.name));
-            assertTrue(spec.hpMult >= 2f);
+            assertTrue("a deep boss, but a winnable one: " + spec.maxHp(), spec.maxHp() >= 120 && spec.maxHp() <= 320);
         }
     }
 
@@ -136,5 +136,15 @@ public class SealLordTest {
             }
         }
         fail("no gash changed hands in 60 worlds of 20 years");
+    }
+
+    @Test
+    public void aLordGrowsWithItsCourtAtHalfTheWildlifesRate() {
+        SealLord.Spec s = new SealLord.Spec();
+        assertEquals(SealLord.BASE_HP, s.maxHp(1));
+        // Half the curve Monster.scaleStats gives the wildlife: +7.5% hit points a level.
+        assertEquals(Math.round(SealLord.BASE_HP * (1f + 17 * 0.075f)), s.maxHp(18));
+        assertTrue(s.armor(18) > s.armor(1));
+        assertNotEquals(s.damageDice(1), s.damageDice(18));
     }
 }
