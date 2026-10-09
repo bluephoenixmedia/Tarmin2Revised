@@ -248,9 +248,9 @@ public class Tarmin2 extends Game {
 
         // Plays the Houses of the Maze for a while and writes down what it saw:
         //   ./gradlew lwjgl3:run --args="--playtest"
-        if (hasArg("--playtest")) {
-            Gdx.app.log("Tarmin2", "Booting straight into the play-test driver");
-            new com.bpm.minotaur.screens.PlaytestDriver(this).start();
+        if (hasArg("--playtest") || hasArgPrefix("--playtest=")) {
+            Gdx.app.log("Tarmin2", "Booting straight into the QA Playtest Runner");
+            new com.bpm.minotaur.playtest.PlaytestRunner(this).start();
             return;
         }
 
@@ -269,10 +269,22 @@ public class Tarmin2 extends Game {
         this.setScreen(new MainMenuScreen(this));
     }
 
-    private static boolean hasArg(String flag) {
+    public static String[] getStartupArgs() {
+        return startupArgs;
+    }
+
+    public static boolean hasArg(String flag) {
         if (startupArgs == null) return false;
         for (String a : startupArgs) {
             if (flag.equalsIgnoreCase(a)) return true;
+        }
+        return false;
+    }
+
+    public static boolean hasArgPrefix(String prefix) {
+        if (startupArgs == null) return false;
+        for (String a : startupArgs) {
+            if (a != null && a.toLowerCase().startsWith(prefix.toLowerCase())) return true;
         }
         return false;
     }

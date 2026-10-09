@@ -3834,8 +3834,12 @@ public class GameScreen extends BaseScreen {
         return maze;
     }
 
+    private boolean isDisposed = false;
+
     @Override
     public void dispose() {
+        if (isDisposed) return;
+        isDisposed = true;
         if (debugLegendFont != null) {
             debugLegendFont.dispose();
         }
