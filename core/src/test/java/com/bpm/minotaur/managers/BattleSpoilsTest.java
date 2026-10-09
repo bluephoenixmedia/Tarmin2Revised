@@ -75,6 +75,33 @@ public class BattleSpoilsTest {
     }
 
     @Test
+    public void theSignetIsTheBrokenHouses() {
+        Maze maze = new Maze(1, new int[36][36]);
+        new BattleSpoils(items, null, 9L, id -> id == 3 ? "House Glassjaw" : null).drop(maze, new GridPoint2(18, 18), 3, false);
+        Item ring = null;
+        for (Item i : maze.getItems().values()) if (i.getType() == Item.ItemType.SIGNET_RING) ring = i;
+        assertEquals(3, ring.getTrophyHouseId());
+        assertTrue(ring.getDisplayName(), ring.getDisplayName().contains("House Glassjaw"));
+    }
+
+    @Test
+    public void aTrophysHouseSurvivesTheChunkAndThePack() {
+        Item ring = items.createItem(Item.ItemType.SIGNET_RING, 4, 5, com.bpm.minotaur.gamedata.item.ItemColor.YELLOW, null);
+        ring.setTrophyHouseId(6);
+        ring.setName("Signet of House Hookwell");
+
+        com.bpm.minotaur.gamedata.ChunkData.ItemData floor = new com.bpm.minotaur.gamedata.ChunkData.ItemData(ring);
+        Item back = new Item(floor.type, floor.x, floor.y, floor.color, items, null);
+        floor.applyTo(back);
+        assertEquals(6, back.getTrophyHouseId());
+        assertEquals("Signet of House Hookwell", back.getFriendlyName());
+
+        Item carried = new com.bpm.minotaur.gamedata.save.ItemSaveData(ring).toItem(items, null);
+        assertEquals(6, carried.getTrophyHouseId());
+        assertEquals("an item of no house", -1, new com.bpm.minotaur.gamedata.ChunkData.ItemData().trophyHouseId);
+    }
+
+    @Test
     public void noLordNoBlade() {
         Maze maze = new Maze(1, new int[36][36]);
         new BattleSpoils(items, null, 8L).drop(maze, new GridPoint2(18, 18), 3, false);

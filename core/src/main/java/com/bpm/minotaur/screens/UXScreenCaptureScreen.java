@@ -557,8 +557,8 @@ public class UXScreenCaptureScreen extends BaseScreen {
             com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
             com.bpm.minotaur.gamedata.history.town.Town town = history.town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(2, 3, 4));
             com.bpm.minotaur.managers.TownTalk.Pack pack = new com.bpm.minotaur.managers.TownTalk.Pack() {
-                public boolean hasSignet() { return false; }
-                public boolean giveSignet() { return false; }
+                public boolean hasSignet(int houseId) { return false; }
+                public boolean giveSignet(int houseId) { return false; }
                 public void reward(String what) { }
             };
             com.bpm.minotaur.managers.TownTalk talk = new com.bpm.minotaur.managers.TownTalk(history, town,

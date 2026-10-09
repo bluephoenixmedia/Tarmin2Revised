@@ -24,10 +24,11 @@ public final class TownTalk {
 
     /** What the town needs from the game it cannot see itself: the player's pack. */
     public interface Pack {
-        boolean hasSignet();
+        /** Whether the pack holds a signet taken from house {@code houseId}. */
+        boolean hasSignet(int houseId);
 
-        /** Hands one over; true if there was one. */
-        boolean giveSignet();
+        /** Hands over a signet of house {@code houseId}; true if there was one. */
+        boolean giveSignet(int houseId);
 
         /** The town's thanks, made real. */
         void reward(String what);
@@ -143,7 +144,7 @@ public final class TownTalk {
         }
         switch (q.kind) {
             case RECOVER_SIGNET:
-                if (pack.giveSignet()) {
+                if (pack.giveSignet(q.houseId)) {
                     finish(q, town);
                     return clean(folk.name + " turns the signet over in their fingers. \"This will do.\"");
                 }

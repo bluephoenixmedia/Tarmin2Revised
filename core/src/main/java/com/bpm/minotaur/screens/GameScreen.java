@@ -1977,13 +1977,13 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.gamedata.history.town.Town.Folk folk = town.folk.get(s.getFolkIndex());
         TownTalk.Pack pack = new TownTalk.Pack() {
             @Override
-            public boolean hasSignet() {
-                return signet() != null;
+            public boolean hasSignet(int houseId) {
+                return signet(houseId) != null;
             }
 
             @Override
-            public boolean giveSignet() {
-                Item ring = signet();
+            public boolean giveSignet(int houseId) {
+                Item ring = signet(houseId);
                 return ring != null && player.getInventory().removeItem(ring);
             }
 
@@ -1995,9 +1995,9 @@ public class GameScreen extends BaseScreen {
                 eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(townName + " pays you in kind."), 3f));
             }
 
-            private Item signet() {
+            private Item signet(int houseId) {
                 for (Item i : player.getInventory().getAllItems()) {
-                    if (i != null && i.getType() == Item.ItemType.SIGNET_RING) return i;
+                    if (i != null && i.getType() == Item.ItemType.SIGNET_RING && i.getTrophyHouseId() == houseId) return i;
                 }
                 return null;
             }
@@ -2025,7 +2025,11 @@ public class GameScreen extends BaseScreen {
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
         WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
                 new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
-                        worldManager.getHistory().warClock() ^ worldManager.getWorldSeed()));
+                        worldManager.getHistory().warClock() ^ worldManager.getWorldSeed(),
+                        id -> {
+                            com.bpm.minotaur.gamedata.history.House h = worldManager.getHistory().world().house(id);
+                            return h != null ? h.name : null;
+                        }));
         for (String line : t.messages) {
             eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
         }

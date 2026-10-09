@@ -28,11 +28,18 @@ public final class BattleSpoils implements BattleDirector.Spoils {
     private final ItemDataManager items;
     private final AssetManager assets;
     private final Random rng;
+    /** A house's name by id, for naming its trophies; may answer null. */
+    private final java.util.function.IntFunction<String> houseNames;
 
     public BattleSpoils(ItemDataManager items, AssetManager assets, long seed) {
+        this(items, assets, seed, id -> null);
+    }
+
+    public BattleSpoils(ItemDataManager items, AssetManager assets, long seed, java.util.function.IntFunction<String> houseNames) {
         this.items = items;
         this.assets = assets;
         this.rng = new Random(seed);
+        this.houseNames = houseNames;
     }
 
     @Override
@@ -52,12 +59,20 @@ public final class BattleSpoils implements BattleDirector.Spoils {
         for (int i = 0; i < count && !field.isEmpty(); i++) {
             place(maze, near, field.get(rng.nextInt(field.size())), ItemColor.TAN);
         }
-        place(maze, near, Item.ItemType.SIGNET_RING, ItemColor.YELLOW);
-        place(maze, near, Item.ItemType.TORN_BANNER, ItemColor.TAN);
+        // The trophies are the broken house's own: a reeve who wants one house's signet wants that one.
+        String house = houseNames.apply(loserHouseId);
+        trophy(place(maze, near, Item.ItemType.SIGNET_RING, ItemColor.YELLOW), loserHouseId, house != null ? "Signet of " + house : null);
+        trophy(place(maze, near, Item.ItemType.TORN_BANNER, ItemColor.TAN), loserHouseId, house != null ? "Banner of " + house : null);
         if (lordFell && !fine.isEmpty()) {
             Item blade = place(maze, near, fine.get(rng.nextInt(fine.size())), ItemColor.PURPLE);
             if (blade != null) blade.setEnchantment(blade.getEnchantment() + LORD_ENCHANTMENT);
         }
+    }
+
+    private static void trophy(Item item, int houseId, String name) {
+        if (item == null) return;
+        item.setTrophyHouseId(houseId);
+        if (name != null) item.setName(com.bpm.minotaur.ui.UiGlyphs.sanitize(name));
     }
 
     private Item place(Maze maze, GridPoint2 near, Item.ItemType type, ItemColor color) {

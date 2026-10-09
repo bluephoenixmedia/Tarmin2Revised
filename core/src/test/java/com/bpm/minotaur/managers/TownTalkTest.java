@@ -30,17 +30,15 @@ public class TownTalkTest {
         grammar = ChronicleGrammarTest.loadGrammar();
     }
 
-    /** A pack with signets to give, and a count of rewards received. */
+    /** A pack with signets to give, by the house each was taken from, and a count of rewards received. */
     static final class FakePack implements TownTalk.Pack {
-        int signets;
+        final List<Integer> signets = new java.util.ArrayList<>();
         int rewards;
 
-        public boolean hasSignet() { return signets > 0; }
+        public boolean hasSignet(int houseId) { return signets.contains(houseId); }
 
-        public boolean giveSignet() {
-            if (signets == 0) return false;
-            signets--;
-            return true;
+        public boolean giveSignet(int houseId) {
+            return signets.remove(Integer.valueOf(houseId));
         }
 
         public void reward(String what) { rewards++; }
@@ -81,10 +79,18 @@ public class TownTalkTest {
         assertTrue(h.quest(t.key).accepted);
         reeve.quest();
         assertFalse("not without a signet", h.quest(t.key).done);
-        pack.signets = 1;
+        int wanted = h.quest(t.key).houseId;
+        int other = -1;
+        for (com.bpm.minotaur.gamedata.history.House house : h.world().livingHouses()) if (house.id != wanted) other = house.id;
+        pack.signets.add(other);
+        String refused = reeve.quest();
+        assertFalse("another house's signet will not do", h.quest(t.key).done);
+        assertTrue(refused, refused.contains(h.world().house(wanted).name));
+        assertEquals("and the player keeps it", 1, pack.signets.size());
+        pack.signets.add(wanted);
         reeve.quest();
         assertTrue(h.quest(t.key).done);
-        assertEquals(0, pack.signets);
+        assertEquals(java.util.Collections.singletonList(other), pack.signets);
         assertEquals(1, pack.rewards);
         assertEquals(Standing.FAVOUR, h.standing().of(t) - (Standing.FAVOUR / 2));
         assertTrue(chronicled(h, t));

@@ -554,6 +554,9 @@ public class ChunkData {
         public boolean isMimic;
         public boolean mimicSeen;
         public boolean mimicRollSpent;
+        /** A trophy's house and the name it was given for it; -1 and null for anything else. */
+        public int trophyHouseId = -1;
+        public String trophyName;
 
         public ItemData() {
         }
@@ -569,6 +572,10 @@ public class ChunkData {
             this.isMimic = item.isMimic();
             this.mimicSeen = item.isMimicSeen();
             this.mimicRollSpent = item.isMimicRollSpent();
+            if (item.getTrophyHouseId() >= 0) {
+                this.trophyHouseId = item.getTrophyHouseId();
+                this.trophyName = item.getFriendlyName();
+            }
             if (item.getContents() != null && !item.getContents().isEmpty()) {
                 for (Item inside : item.getContents()) {
                     if (inside != null) {
@@ -594,6 +601,10 @@ public class ChunkData {
             item.setMimic(this.isMimic);
             item.setMimicSeen(this.mimicSeen);
             item.setMimicRollSpent(this.mimicRollSpent);
+            if (this.trophyHouseId >= 0) {
+                item.setTrophyHouseId(this.trophyHouseId);
+                if (this.trophyName != null) item.setName(this.trophyName);
+            }
         }
     }
 

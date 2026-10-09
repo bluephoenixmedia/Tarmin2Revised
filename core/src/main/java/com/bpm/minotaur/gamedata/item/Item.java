@@ -241,6 +241,9 @@ public class Item implements Renderable {
     // item goes -- into the backpack, and back on. Null until first bloodied.
     private java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> bloodCoats;
 
+    /** The house a trophy was taken from (plan T2.7, T4.5), or -1. */
+    private int trophyHouseId = -1;
+
     // --- Base Properties ---
     private String friendlyName;
     private String[] spriteData; // Removed final
@@ -691,6 +694,14 @@ public class Item implements Renderable {
 
     public String getFriendlyName() {
         return friendlyName;
+    }
+
+    public int getTrophyHouseId() {
+        return trophyHouseId;
+    }
+
+    public void setTrophyHouseId(int houseId) {
+        this.trophyHouseId = houseId;
     }
 
     public int getBaseValue() {
