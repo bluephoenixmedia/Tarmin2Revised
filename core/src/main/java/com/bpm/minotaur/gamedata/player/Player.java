@@ -3077,6 +3077,7 @@ public class Player {
             String voidLore = com.bpm.minotaur.managers.DimensionalManager.getInstance().getVoidLoreAt(0, 0, nextX, nextY);
             if (voidLore != null) {
                 eventManager.addEvent(new GameEvent(voidLore, 4.0f));
+                com.bpm.minotaur.managers.DimensionalManager.getInstance().loreRead();
             }
         }
 

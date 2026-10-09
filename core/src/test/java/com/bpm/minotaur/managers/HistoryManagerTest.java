@@ -122,4 +122,38 @@ public class HistoryManagerTest {
         assertEquals(killer.id, first.houseA);
         assertEquals(1, first.detail);
     }
+
+    @Test
+    public void readingAFragmentUnlocksAFittingEventAndItsCause() {
+        HistoryManager m = HistoryManager.create(21L, catalog);
+        for (com.bpm.minotaur.gamedata.history.FragmentKind kind : com.bpm.minotaur.gamedata.history.FragmentKind.values()) {
+            HistoryEvent e = m.readFragment(kind);
+            assertNotNull(kind.name(), e);
+            assertTrue(kind + " cannot tell of " + e.type, kind.tells(e.type));
+            assertTrue(m.isUnlocked(e.id));
+            if (e.causeEventId >= 0) assertTrue("its cause comes with it", m.isUnlocked(e.causeEventId));
+        }
+    }
+
+    @Test
+    public void fragmentsNeverRepeatAndRunOutGracefully() {
+        HistoryManager m = HistoryManager.create(22L, catalog);
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        HistoryEvent e;
+        while ((e = m.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION)) != null) {
+            assertTrue("repeated " + e, seen.add(e.id));
+        }
+        assertFalse(seen.isEmpty());
+    }
+
+    @Test
+    public void theSameReadingsUnlockTheSameHistoryAfterALoad() {
+        HistoryManager a = HistoryManager.create(23L, catalog);
+        a.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.PAGE);
+        a.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.BANNER);
+        HistoryManager b = HistoryManager.fromSave(0L, a.toSave(), catalog);
+        assertEquals(a.unlockedEvents(), b.unlockedEvents());
+        assertEquals(a.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.PAGE).id,
+                b.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.PAGE).id);
+    }
 }

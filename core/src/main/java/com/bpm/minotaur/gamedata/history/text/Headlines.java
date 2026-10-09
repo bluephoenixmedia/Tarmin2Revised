@@ -17,6 +17,15 @@ public final class Headlines {
     /** At most {@code max} rumours, the most consequential first-chosen, told in the order they happened. */
     public static List<String> of(HistoryWorld world, List<HistoryEvent> events, int max,
             ChronicleGrammar grammar, DoctrineCatalog catalog) {
+        List<String> out = new ArrayList<>();
+        for (HistoryEvent e : pick(events, max)) {
+            out.add(grammar.render(world, e, Chronicler.of(world, e, ChronicleGrammar.Bias.NEUTRAL, catalog)));
+        }
+        return out;
+    }
+
+    /** The {@code max} loudest events, in the order they happened. */
+    public static List<HistoryEvent> pick(List<HistoryEvent> events, int max) {
         List<HistoryEvent> ranked = new ArrayList<>();
         for (HistoryEvent e : events) {
             if (weight(e) > 0) ranked.add(e);
@@ -24,11 +33,7 @@ public final class Headlines {
         ranked.sort(Comparator.comparingInt(Headlines::weight).reversed().thenComparingInt(e -> e.id));
         List<HistoryEvent> chosen = new ArrayList<>(ranked.subList(0, Math.min(max, ranked.size())));
         chosen.sort(Comparator.comparingInt(e -> e.id));
-        List<String> out = new ArrayList<>();
-        for (HistoryEvent e : chosen) {
-            out.add(grammar.render(world, e, Chronicler.of(world, e, ChronicleGrammar.Bias.NEUTRAL, catalog)));
-        }
-        return out;
+        return chosen;
     }
 
     /** How loudly an event travels; zero for what nobody outside the house hears of. */

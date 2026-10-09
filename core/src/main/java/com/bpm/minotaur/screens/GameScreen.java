@@ -224,6 +224,9 @@ public class GameScreen extends BaseScreen {
 
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
+        // The Void's glyphs tell how Tarmin-Zul came through; reading one enters it in the chronicle.
+        DimensionalManager.getInstance().setOnLoreRead(() -> worldManager.getHistory()
+                .readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.VOID_GLYPH));
         this.monsterAiManager.setOnPlayerNoticed(alertMonitor::noteMonsterNoticed);
 
         // Initialize Input Multiplexer
@@ -349,7 +352,7 @@ public class GameScreen extends BaseScreen {
         if (hud != null) {
             hud.setGameScreen(this);
             hud.setDiscoveryManager(this.discoveryManager);
-            player.setItemPickupListener(item -> hud.showPickupToast(item));
+            player.setItemPickupListener(this::onItemPickedUp);
             inputMultiplexer.clear();
             // First in line so a key or click anywhere, HUD included, only breaks a study's
             // concentration instead of also moving, attacking or pressing a button.
@@ -498,7 +501,7 @@ public class GameScreen extends BaseScreen {
                 gameMode);
         hud.setGameScreen(this);
         hud.setDiscoveryManager(this.discoveryManager);
-        player.setItemPickupListener(item -> hud.showPickupToast(item));
+        player.setItemPickupListener(this::onItemPickedUp);
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
@@ -1949,6 +1952,30 @@ public class GameScreen extends BaseScreen {
         return worldManager.getInitialPlayerStartPos();
     }
 
+    /** Every pickup is toasted; a fragment of the Maze's history is read on the spot (plan T1.10). */
+    private void onItemPickedUp(Item item) {
+        hud.showPickupToast(item);
+        if (item == null || !item.isChronicleFragment()) return;
+        player.getInventory().removeItem(item);
+        com.bpm.minotaur.gamedata.history.FragmentKind kind =
+                item.getType() == Item.ItemType.CHRONICLE_PAGE ? com.bpm.minotaur.gamedata.history.FragmentKind.PAGE
+                : item.getType() == Item.ItemType.TORN_BANNER ? com.bpm.minotaur.gamedata.history.FragmentKind.BANNER
+                : com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
+        com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(kind);
+        if (told == null) {
+            eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));
+            return;
+        }
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        // Whoever wrote it took a side; which side depends on the event, so a reload reads the same.
+        com.bpm.minotaur.gamedata.history.text.Chronicler teller = com.bpm.minotaur.gamedata.history.text.Chronicler.of(
+                world, told, told.id % 2 == 0 ? com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.FOR
+                        : com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.AGAINST,
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        String text = com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance().render(world, told, teller);
+        eventManager.addEvent(new GameEvent(teller.byline + ": " + text, 8f));
+    }
+
     /**
      * Instantly returns the player to the bed of the shelter they last rested in (home if none),
      * ending active combat and saving world state. Used by Word of Recall and safe return mechanisms.
@@ -1990,7 +2017,7 @@ public class GameScreen extends BaseScreen {
                 gameMode);
         hud.setDiscoveryManager(this.discoveryManager);
         hud.setGameScreen(this); // the quick-slot menu and the silhouette widget need it after a chunk swap too
-        player.setItemPickupListener(item -> hud.showPickupToast(item));
+        player.setItemPickupListener(this::onItemPickedUp);
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);
         DebugRenderer.printMazeToConsole(maze);
@@ -4022,6 +4049,10 @@ public class GameScreen extends BaseScreen {
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
+            // The news is a shelter rumour: it becomes known history, readable at the Lectern.
+            for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
+                worldManager.getHistory().unlock(heard.id);
+            }
             for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(worldManager.getHistory().world(), news, 3,
                     com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
                     com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {

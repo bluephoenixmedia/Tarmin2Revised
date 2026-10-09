@@ -1269,6 +1269,14 @@ public class ItemDataManager {
         registerTomeTemplate(ItemType.TOME_OF_TARMIN, "Tome of Tarmin",
                 "The legendary grand grimoire of Castle Tarmin itself, radiating forbidden power. Heavy cargo. Unlocks Spell Slot 5.", 35.0f);
 
+        // Fragments of the Maze's history (stand-in art: book and scroll)
+        registerFragmentTemplate(ItemType.CHRONICLE_PAGE, "Chronicle Page",
+                "A page torn from some house's chronicle. Read it to learn what it tells.", ItemType.BOOK);
+        registerFragmentTemplate(ItemType.HERALD_PROCLAMATION, "Herald's Proclamation",
+                "A proclamation of one of the Maze's houses, nailed up for all to read.", ItemType.SCROLL);
+        registerFragmentTemplate(ItemType.TORN_BANNER, "Torn Banner",
+                "A house banner left on a battlefield. Its stains tell a story.", ItemType.SCROLL);
+
         // --- Open5e Potions ---
         registerPotionTemplate(ItemType.POTION_GREATER_HEALING, "Potion of Greater Healing", "Restores 4d4+4 HP (min 35%).", 150);
         registerPotionTemplate(ItemType.POTION_SUPERIOR_HEALING, "Potion of Superior Healing", "Restores 8d4+8 HP (min 55%).", 300);
@@ -1383,6 +1391,23 @@ public class ItemDataManager {
             }
             itemTemplates.put(type, t);
         }
+    }
+
+    private void registerFragmentTemplate(ItemType type, String name, String desc, ItemType artFrom) {
+        if (itemTemplates.containsKey(type)) return;
+        ItemTemplate t = new ItemTemplate();
+        t.friendlyName = name;
+        t.description = desc;
+        t.baseValue = 5;
+        t.weight = 0.1f;
+        t.scale = createDefaultScale();
+        ItemTemplate ref = itemTemplates.get(artFrom);
+        if (ref == null) ref = itemTemplates.get(ItemType.SCROLL);
+        if (ref != null) {
+            t.texturePath = ref.texturePath;
+            t.spriteData = ref.spriteData;
+        }
+        itemTemplates.put(type, t);
     }
 
     private void registerTomeTemplate(ItemType type, String name, String desc, float weight) {

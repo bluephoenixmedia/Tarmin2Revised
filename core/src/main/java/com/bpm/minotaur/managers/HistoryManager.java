@@ -72,6 +72,24 @@ public final class HistoryManager {
         apply(new PlayerDeed(PlayerDeed.Kind.SEEKER_FELL, killerHouseId, world.liveSeasons()));
     }
 
+    /**
+     * Reads a found fragment: unlocks one event of its kind the player has not learned, with the
+     * event that caused it. Returns that event, or null once the kind has nothing left to tell.
+     * The choice depends only on the history and what is already unlocked, so it survives a load.
+     */
+    public HistoryEvent readFragment(com.bpm.minotaur.gamedata.history.FragmentKind kind) {
+        List<HistoryEvent> candidates = new ArrayList<>();
+        for (HistoryEvent e : world.events()) {
+            if (kind.tells(e.type) && !unlocked.contains(e.id)) candidates.add(e);
+        }
+        if (candidates.isEmpty()) return null;
+        java.util.Random rng = new java.util.Random(world.seed ^ (unlocked.size() * 0x9E3779B97F4A7C15L) ^ kind.ordinal());
+        HistoryEvent e = candidates.get(rng.nextInt(candidates.size()));
+        unlocked.add(e.id);
+        if (e.causeEventId >= 0) unlocked.add(e.causeEventId);
+        return e;
+    }
+
     public void unlock(int eventId) {
         unlocked.add(eventId);
     }

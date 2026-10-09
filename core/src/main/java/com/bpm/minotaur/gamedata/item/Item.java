@@ -222,7 +222,10 @@ public class Item implements Renderable {
         TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN,
 
         // Void salvage: the traveling merchant's chain laser and what restores it
-        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT
+        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT,
+
+        // Fragments of the Maze's history, read on pickup (Houses of the Maze plan T1.10)
+        CHRONICLE_PAGE, HERALD_PROCLAMATION, TORN_BANNER
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -1328,6 +1331,11 @@ public class Item implements Renderable {
 
     public void setStudyProgress(int studyProgress) {
         this.studyProgress = Math.max(0, studyProgress);
+    }
+
+    /** A found piece of the Maze's history; it is read on pickup, not carried. */
+    public boolean isChronicleFragment() {
+        return type == ItemType.CHRONICLE_PAGE || type == ItemType.HERALD_PROCLAMATION || type == ItemType.TORN_BANNER;
     }
 
     public boolean isCargo() {
