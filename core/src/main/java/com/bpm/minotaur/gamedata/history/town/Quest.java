@@ -87,26 +87,35 @@ public class Quest {
         return q;
     }
 
-    /** What the reeve asks, in their words. */
-    public String ask(HistoryWorld world, Town town, java.util.function.Function<String, Town> towns) {
+    /**
+     * What the reeve asks, in their words, from the chronicle grammar's town sayings (plan T4.3).
+     * The same task is always asked the same way.
+     */
+    public String ask(HistoryWorld world, Town town, java.util.function.Function<String, Town> towns,
+            com.bpm.minotaur.gamedata.history.text.ChronicleGrammar grammar) {
+        java.util.Map<String, String> slots = new java.util.HashMap<>();
+        slots.put("{town}", town.name);
+        slots.put("{house}", house(world));
+        String key = "ASK_" + kind.name();
         switch (kind) {
-            case RECOVER_SIGNET:
-                return "A signet of " + house(world) + " would buy us a season's peace with the Maze. Bring me one, from its broken dead.";
-            case UNMASK_AGENT:
-                return "Someone in " + town.name + " carries word to " + house(world) + ". Find them. Name them to their face.";
             case SLAY_BEAST:
                 Megabeast b = world.megabeast(beastId);
-                return (b != null ? b.name : "The beast below") + " has taken our hunters. Kill it, or lay a trophy of the houses before it as an offering and buy its peace. Either way the town will owe you.";
+                slots.put("{beast}", b != null ? b.name : "The beast below");
+                break;
             case CARRY_MESSAGE:
                 Town to = towns.apply(toTownKey);
-                String elder = "Carry this to the elder of " + (to != null ? to.name : "the next town") + ". ";
+                slots.put("{destination}", to != null ? to.name : "the next town");
                 com.bpm.minotaur.gamedata.history.War war = war(world);
-                if (war == null) return elder + "The roads above are quiet for once; the deep roads will serve.";
-                return elder + "The deep roads are watched. It must go over, through the lines where "
-                        + name(world, war.attackerId) + " fights " + name(world, war.defenderId) + ".";
+                key += war == null ? "_PEACE" : "_WAR";
+                if (war != null) {
+                    slots.put("{attacker}", name(world, war.attackerId));
+                    slots.put("{defender}", name(world, war.defenderId));
+                }
+                break;
             default:
-                return "";
+                break;
         }
+        return grammar.say(key, slots, new Random(townKey.hashCode() * 31L + kind.ordinal()));
     }
 
     /** The war this message must cross, while it is still being fought; null otherwise. */

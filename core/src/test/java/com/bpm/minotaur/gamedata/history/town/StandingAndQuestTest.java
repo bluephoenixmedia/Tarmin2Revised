@@ -55,14 +55,16 @@ public class StandingAndQuestTest {
     }
 
     @Test
-    public void everyKindOfTaskIsOfferedSomewhereAndAsksInPlainWords() {
+    public void everyKindOfTaskIsOfferedSomewhereAndAsksInPlainWords() throws IOException {
         HistoryWorld w = HistorySimulator.prehistory(8L, catalog);
+        com.bpm.minotaur.gamedata.history.text.ChronicleGrammar grammar =
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammarTest.loadGrammar();
         EnumSet<Quest.Kind> seen = EnumSet.noneOf(Quest.Kind.class);
         for (int i = 0; i < 200; i++) {
             Town t = Town.of(w.seed, Town.keyOf(3, i, -i));
             Quest q = Quest.offer(w, t, Arrays.asList(Town.keyOf(2, 50, 50)));
             seen.add(q.kind);
-            String asked = q.ask(w, t, key -> Town.of(w.seed, key));
+            String asked = q.ask(w, t, key -> Town.of(w.seed, key), grammar);
             assertEquals(asked, UiGlyphs.sanitize(asked));
             assertFalse(asked.isEmpty());
             if (q.kind == Quest.Kind.UNMASK_AGENT) {

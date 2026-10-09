@@ -95,6 +95,17 @@ public final class ChronicleGrammar {
         return lines != null ? java.util.Collections.unmodifiableList(lines) : java.util.Collections.emptyList();
     }
 
+    /**
+     * One of {@code key}'s town sayings, chosen by {@code rng}, with each slot ("{town}") replaced
+     * by its value; a missing saying reads as "...".
+     */
+    public String say(String key, Map<String, String> slots, java.util.Random rng) {
+        List<String> lines = talkLines(key);
+        String line = lines.isEmpty() ? "..." : lines.get(rng.nextInt(lines.size()));
+        for (Map.Entry<String, String> e : slots.entrySet()) line = line.replace(e.getKey(), e.getValue());
+        return line;
+    }
+
     public int templateCount(String key, Bias bias) {
         Map<Bias, List<String>> m = events.get(key);
         return m == null || !m.containsKey(bias) ? 0 : m.get(bias).size();

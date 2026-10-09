@@ -52,6 +52,33 @@ public class ChronicleGrammarTest {
     }
 
     @Test
+    public void everyTownSayingIsInTheGrammarWithTheSlotsItMustFill() {
+        java.util.Map<String, String[]> needs = new java.util.LinkedHashMap<>();
+        needs.put("ASK_RECOVER_SIGNET", new String[]{"{house}", "signet"});
+        needs.put("ASK_UNMASK_AGENT", new String[]{"{house}", "{town}"});
+        needs.put("ASK_SLAY_BEAST", new String[]{"{beast}", "offering"});
+        needs.put("ASK_CARRY_MESSAGE_PEACE", new String[]{"{destination}"});
+        needs.put("ASK_CARRY_MESSAGE_WAR", new String[]{"{destination}", "{attacker}", "{defender}"});
+        needs.put("DELIVERY_REFUSED", new String[]{"{name}", "war"});
+        needs.put("DELIVERED", new String[]{"{name}"});
+        needs.put("SIGNET_TAKEN", new String[]{"{name}"});
+        needs.put("BEAST_DEAD", new String[]{"{name}"});
+        needs.put("BEAST_PACIFIED", new String[]{"{name}"});
+        needs.put("ACCUSED_RIGHT", new String[]{"{name}"});
+        needs.put("ACCUSED_WRONG", new String[]{"{name}", "{town}"});
+        needs.put("NOTHING_HERE", new String[]{"{name}"});
+        needs.put("QUIET_SEASONS", new String[]{"{name}"});
+        for (java.util.Map.Entry<String, String[]> e : needs.entrySet()) {
+            java.util.List<String> lines = grammar.talkLines(e.getKey());
+            assertTrue(e.getKey() + " has a choice of lines", lines.size() >= 2);
+            for (String line : lines) {
+                assertEquals(line, com.bpm.minotaur.ui.UiGlyphs.sanitize(line), line);
+                for (String need : e.getValue()) assertTrue(e.getKey() + " needs " + need + ": " + line, line.toLowerCase().contains(need));
+            }
+        }
+    }
+
+    @Test
     public void everyEventAndCasusHasThreeTemplatesInEveryVoice() {
         for (EventType t : EventType.values()) {
             for (ChronicleGrammar.Bias b : ChronicleGrammar.Bias.values()) {

@@ -117,7 +117,7 @@ public final class TownTalk {
         }
         List<String> out = new ArrayList<>();
         for (String line : Headlines.of(w, recent, RUMOURS, grammar, catalog)) out.add(clean(line));
-        if (out.isEmpty()) out.add(clean(folk.name + ": \"Quiet seasons. I do not trust them.\""));
+        if (out.isEmpty()) out.add(say("QUIET_SEASONS"));
         return out;
     }
 
@@ -144,15 +144,14 @@ public final class TownTalk {
         Quest delivery = deliveryHere();
         if (delivery != null) {
             if (!delivery.deliverable(history.world())) {
-                return clean(folk.name + ": \"Not by the deep roads. They are watched. Take it up, through the war, "
-                        + "and bring it to me with the smoke still on it.\"");
+                return say("DELIVERY_REFUSED");
             }
             finish(delivery, history.town(delivery.townKey));
-            return clean(folk.name + " reads the message twice and burns it. \"Tell them it is done.\"");
+            return say("DELIVERED");
         }
         Quest q = reevesTask();
-        if (q == null) return clean(folk.name + ": \"Nothing for you. Ask the reeve.\"");
-        String asked = q.ask(history.world(), town, history::town);
+        if (q == null) return say("NOTHING_HERE");
+        String asked = q.ask(history.world(), town, history::town, grammar);
         if (!q.accepted) {
             history.acceptQuest(q);
             return clean(folk.name + ": \"" + asked + "\"");
@@ -161,18 +160,18 @@ public final class TownTalk {
             case RECOVER_SIGNET:
                 if (pack.giveSignet(q.houseId)) {
                     finish(q, town);
-                    return clean(folk.name + " turns the signet over in their fingers. \"This will do.\"");
+                    return say("SIGNET_TAKEN");
                 }
                 break;
             case SLAY_BEAST:
                 Megabeast b = history.world().megabeast(q.beastId);
                 if (b == null || !b.isAlive()) {
                     finish(q, town);
-                    return clean(folk.name + ": \"We heard it die. The whole deep heard it.\"");
+                    return say("BEAST_DEAD");
                 }
                 if (b.isPacified()) {
                     finish(q, town);
-                    return clean(folk.name + ": \"It has not come for us since you fed it. Strange coin, but it spends.\"");
+                    return say("BEAST_PACIFIED");
                 }
                 break;
             default:
@@ -194,10 +193,10 @@ public final class TownTalk {
         if (q == null || !canAccuse()) return "";
         if (q.agentIndex == folk.index) {
             finish(q, town);
-            return clean(folk.name + " goes white, then runs. The town catches them at the gate.");
+            return say("ACCUSED_RIGHT");
         }
         history.standing().change(town, -Standing.FAVOUR);
-        return clean(folk.name + " is innocent, and " + town.name + " will remember you said otherwise.");
+        return say("ACCUSED_WRONG");
     }
 
     /** A message being carried to this elder, if any. */
@@ -213,6 +212,15 @@ public final class TownTalk {
         history.completeQuest(q, giver);
         history.standing().change(giver, Standing.FAVOUR);
         pack.reward(giver.name);
+    }
+
+    /** A town saying from the grammar (plan T4.3), spoken by this person in this town. */
+    private String say(String key) {
+        java.util.Map<String, String> slots = new java.util.HashMap<>();
+        slots.put("{name}", folk.name);
+        slots.put("{town}", town.name);
+        Random rng = new Random(town.key.hashCode() * 17L + folk.index + key.hashCode() + history.world().liveSeasons());
+        return clean(grammar.say(key, slots, rng));
     }
 
     private static String clean(String s) {

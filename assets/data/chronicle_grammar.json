@@ -645,6 +645,67 @@
       "Ask the chronicles what became of {house}. I was there. I would rather not tell it.",
       "The mortals let me sit by their fire. {house} never once did that."
     ],
+    "ASK_RECOVER_SIGNET": [
+      "A signet of {house} would buy us a season's peace with the Maze. Bring me one, from its broken dead.",
+      "{house} lost a battle not long since, or will soon. Bring me a signet off one of its dead, and we will trade it for quiet.",
+      "There is a signet ring I want. It must be {house}'s; no other house's will do. Find their dead, and take it."
+    ],
+    "ASK_UNMASK_AGENT": [
+      "Someone in {town} carries word to {house}. Find them. Name them to their face.",
+      "{house} has an ear in {town}. Listen, watch, and when you are sure, accuse them. Be sure.",
+      "One of ours eats at {house}'s table. I do not know who. {town} needs you to find out."
+    ],
+    "ASK_SLAY_BEAST": [
+      "{beast} has taken our hunters. Kill it, or lay a trophy of the houses before it as an offering and buy its peace. Either way the town will owe you.",
+      "{beast} is hungry, and we are close. Put it down, or feed it an offering of house-gold, a signet or a banner, and let it forget us.",
+      "Nobody here can face {beast}. You might. Or you might buy it off with an offering the houses would weep to see it eat."
+    ],
+    "ASK_CARRY_MESSAGE_PEACE": [
+      "Carry this to the elder of {destination}. The roads above are quiet for once; the deep roads will serve.",
+      "The elder of {destination} must read this. Go by the deep roads, and do not open it.",
+      "Take this to {destination}, to their elder and no one else. The way under is open, for now."
+    ],
+    "ASK_CARRY_MESSAGE_WAR": [
+      "Carry this to the elder of {destination}. The deep roads are watched. It must go over, through the lines where {attacker} fights {defender}.",
+      "{destination} must have this, and the deep roads are watched. Go up, through the war of {attacker} and {defender}, and down again.",
+      "The elder of {destination} waits on this. The only road no one watches runs through the battle between {attacker} and {defender}."
+    ],
+    "DELIVERY_REFUSED": [
+      "{name}: \"Not by the deep roads. They are watched. Take it up, through the war, and bring it to me with the smoke still on it.\"",
+      "{name} will not touch it. \"It came the deep way. They will have read it. Take it through the war, as you were told.\""
+    ],
+    "DELIVERED": [
+      "{name} reads the message twice and burns it. \"Tell them it is done.\"",
+      "{name} breaks the seal, reads, and nods once. \"Go back and say: yes.\""
+    ],
+    "SIGNET_TAKEN": [
+      "{name} turns the signet over in their fingers. \"This will do.\"",
+      "{name} weighs the signet in a palm. \"House-gold. The Maze will deal for this.\""
+    ],
+    "BEAST_DEAD": [
+      "{name}: \"We heard it die. The whole deep heard it.\"",
+      "{name}: \"The hunters went out today, and they all came back. That is your doing.\""
+    ],
+    "BEAST_PACIFIED": [
+      "{name}: \"It has not come for us since you fed it. Strange coin, but it spends.\"",
+      "{name}: \"It sleeps, they say, on a pile of house-gold. Better that than on us.\""
+    ],
+    "ACCUSED_RIGHT": [
+      "{name} goes white, then runs. The town catches them at the gate.",
+      "{name} says nothing at all. Then the knife comes out, and the guards are quicker."
+    ],
+    "ACCUSED_WRONG": [
+      "{name} is innocent, and {town} will remember you said otherwise.",
+      "{name} only stares at you. {town} has heard, and it will not forget."
+    ],
+    "NOTHING_HERE": [
+      "{name}: \"Nothing for you. Ask the reeve.\"",
+      "{name}: \"Work? Not from me. The reeve hands that out.\""
+    ],
+    "QUIET_SEASONS": [
+      "{name}: \"Quiet seasons. I do not trust them.\"",
+      "{name}: \"No news from above. That is never good news.\""
+    ],
     "HOSTILE": [
       "Get out of {town}.",
       "Get out. {town} remembers what you did.",
