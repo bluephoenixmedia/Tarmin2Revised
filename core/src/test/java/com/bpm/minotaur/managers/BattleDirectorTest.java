@@ -79,6 +79,51 @@ public class BattleDirectorTest {
         return n;
     }
 
+    /** Turns a fleeing player may take to cut through a line and out by a gate. */
+    static final int FLEE_TURN_CAP = 120;
+
+    /**
+     * Plan T2.5: once the battle is joined the edges are lines of soldiers, but the player is never
+     * soft-locked. A scripted flee from the centre to each edge's gate, one tile a turn, cuts down
+     * whoever stands in the way while the battle goes on, and must get out.
+     */
+    @Test
+    public void aScriptedFleeCutsThroughTheLineToEveryEdge() {
+        GridPoint2[] exits = {new GridPoint2(18, 0), new GridPoint2(35, 18), new GridPoint2(18, 35), new GridPoint2(0, 18)};
+        for (int e = 0; e < exits.length; e++) {
+            maze = new Maze(1, new int[36][36]);
+            for (GridPoint2 g : exits) maze.addGate(new Gate(g.x, g.y));
+            BattleDirector d = director(40 + e);
+            GridPoint2 at = new GridPoint2(18, 18);
+            for (int i = 0; i < BattleDirector.WARNING_TURNS; i++) d.tick(maze, at, recruiter, spoils);
+            assertEquals(BattleDirector.Phase.BATTLE, d.phase());
+
+            GridPoint2 exit = exits[e];
+            int turns = 0;
+            int cut = 0;
+            while (!at.equals(exit) && turns < FLEE_TURN_CAP) {
+                GridPoint2 next = at.x != exit.x
+                        ? new GridPoint2(at.x + Integer.signum(exit.x - at.x), at.y)
+                        : new GridPoint2(at.x, at.y + Integer.signum(exit.y - at.y));
+                Monster blocking = null;
+                for (Monster m : maze.getMonsters().values()) {
+                    if ((int) m.getPosition().x == next.x && (int) m.getPosition().y == next.y) blocking = m;
+                }
+                if (blocking != null) {
+                    blocking.setCurrentHP(0); // bump-to-attack, a blow at a time in the game; one here
+                    maze.removeMonster(blocking);
+                    cut++;
+                } else {
+                    at = next;
+                }
+                d.tick(maze, at, recruiter, spoils);
+                turns++;
+            }
+            assertEquals("fled by edge " + e + " in " + turns + " turns, cutting down " + cut, exit, at);
+            assertTrue("the gate was held: the flight cut through the line (edge " + e + ")", cut > 0);
+        }
+    }
+
     @Test
     public void theHornsGiveTwelveTurnsBeforeTheLinesClose() {
         BattleDirector d = director(1);
