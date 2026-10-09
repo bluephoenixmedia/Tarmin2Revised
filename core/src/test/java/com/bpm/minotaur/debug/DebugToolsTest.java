@@ -106,4 +106,18 @@ public class DebugToolsTest {
 
         chest.save(); // must be a no-op: there is no active save slot in this test, so a real save would throw or log
     }
+
+    @Test
+    public void theShelterRoadCheatsCycleAlongTheRoads() {
+        com.bpm.minotaur.generation.ShelterRoads roads = new com.bpm.minotaur.managers.BiomeManager(5L).getRoads();
+        java.util.List<com.badlogic.gdx.math.GridPoint2> stops = roads.getRoad(0).getShelters();
+        assertEquals(stops.get(0), DebugCheats.roadShelter(roads, 0, 0));
+        assertEquals("wraps to the start", stops.get(0), DebugCheats.roadShelter(roads, 0, stops.size()));
+        assertNull(DebugCheats.roadShelter(null, 0, 0));
+        assertEquals(1, DebugCheats.sealRoad(0));
+        assertEquals(3, DebugCheats.sealRoad(2));
+        assertEquals(1, DebugCheats.sealRoad(3));
+        assertNotNull(DebugKeys.actionFor(Input.Keys.SEMICOLON, true));
+        assertNull("debug-only", DebugKeys.actionFor(Input.Keys.SEMICOLON, false));
+    }
 }

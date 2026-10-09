@@ -983,12 +983,13 @@ public class World3DRenderer implements Disposable {
 
         // Outdoor Tornado Gale-force Wind Vibration / Trauma
         if (wm != null && wm.getCurrentWeather() == WeatherType.TORNADO && !isIndoors) {
-            float traumaAngle = (float) (Math.sin(totalTime * 18.0f) * 0.70f + Math.cos(totalTime * 27.0f) * 0.40f);
+            float shake = com.bpm.minotaur.weather.WeatherManager.TORNADO_SHAKE;
+            float traumaAngle = shake * (float) (Math.sin(totalTime * 18.0f) * 0.70f + Math.cos(totalTime * 27.0f) * 0.40f);
             camera.up.rotate(camera.direction, traumaAngle);
             camera.position.add(
-                    (float) Math.sin(totalTime * 22.0f) * 0.015f,
-                    (float) Math.cos(totalTime * 19.0f) * 0.010f,
-                    (float) Math.sin(totalTime * 25.0f) * 0.015f
+                    shake * (float) Math.sin(totalTime * 22.0f) * 0.015f,
+                    shake * (float) Math.cos(totalTime * 19.0f) * 0.010f,
+                    shake * (float) Math.sin(totalTime * 25.0f) * 0.015f
             );
         }
 

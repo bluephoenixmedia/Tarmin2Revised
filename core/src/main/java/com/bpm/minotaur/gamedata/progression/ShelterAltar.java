@@ -237,36 +237,78 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                                        com.badlogic.gdx.assets.AssetManager am) {
         if (currentMaze == null || idm == null || am == null) return;
         for (Station station : Station.values()) {
-            java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
-            if (points == null) continue;
-            BiomePortal portal = BiomePortal.forStation(station);
-            if (portal != null) {
-                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                    portal.materialise(currentMaze, pt, idm, am);
-                }
-                continue;
+            placeStation(currentMaze, station, idm, am);
+        }
+    }
+
+    /**
+     * Stands every unlocked station in a lit shelter, and relights the ones already there.
+     *
+     * <p>Unlocks are global, so a station bought in one shelter appears in every
+     * shelter the next time it loads. Lights are not saved with a chunk, so this
+     * also restores the fire pot's and lantern's light on a reload.
+     */
+    public void furnish(com.bpm.minotaur.gamedata.Maze maze,
+                        com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                        com.badlogic.gdx.assets.AssetManager am) {
+        if (maze == null || !maze.isSanctuary()) return;
+        for (Station station : Station.values()) {
+            if (hasStation(station)) {
+                placeStation(maze, station, idm, am);
             }
-            for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                if (currentMaze.getItems().containsKey(pt)) continue;
+        }
+        com.badlogic.gdx.math.GridPoint2 altar = maze.getAltarTile();
+        if (altar != null && idm != null && !maze.getItems().containsKey(altar)) {
+            com.bpm.minotaur.gamedata.item.Item item = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ALTAR,
+                    altar.x, altar.y, com.bpm.minotaur.gamedata.item.ItemColor.GOLD, am);
+            if (item != null) maze.addItem(item);
+        }
+    }
+
+    /** Puts one station at each of its slots in this maze, skipping slots already occupied. */
+    private void placeStation(com.bpm.minotaur.gamedata.Maze maze, Station station,
+                              com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                              com.badlogic.gdx.assets.AssetManager am) {
+        java.util.List<com.badlogic.gdx.math.GridPoint2> points = maze.getStationSlots(station);
+        if (points.isEmpty()) return;
+        BiomePortal portal = BiomePortal.forStation(station);
+        if (portal != null) {
+            // Portals clear their placeholder archway and bring their own
+            // light, so they cannot use the generic station placement.
+            if (idm != null && am != null) {
+                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+                    portal.materialise(maze, pt, idm, am);
+                }
+            }
+            return;
+        }
+        for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+            com.bpm.minotaur.gamedata.item.Item existing = maze.getItems().get(pt);
+            if (existing == null && idm != null) {
                 com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
                         ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
                         : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
                 com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);
                 if (item != null) {
-                    currentMaze.addItem(item);
+                    maze.addItem(item);
+                    existing = item;
                 }
-                if (station == Station.CAMPFIRE) {
-                    currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
-                            pt.x + 0.5f, pt.y + 0.5f,
-                            com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
-                            com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
-                } else if (station == Station.LANTERN) {
-                    currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_lantern_" + pt.x + "_" + pt.y,
-                            pt.x + 0.5f, pt.y + 0.5f,
-                            com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
-                            com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
-                            com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
-                }
+            }
+            if (existing == null || existing.getType() != station.getItemType()) continue;
+            if (station == Station.CAMPFIRE) {
+                maze.removeLight("shelter_cook_pot");
+                maze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
+                        pt.x + 0.5f, pt.y + 0.5f,
+                        com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                        com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+            } else if (station == Station.LANTERN) {
+                String id = "shelter_lantern_" + pt.x + "_" + pt.y;
+                maze.removeLight(id);
+                maze.addLight(new com.bpm.minotaur.lighting.LightSource(id,
+                        pt.x + 0.5f, pt.y + 0.5f,
+                        com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
+                        com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
+                        com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
             }
         }
     }
@@ -283,40 +325,9 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         unlockedStations.add(station);
         save();
 
+        // Stands up in the shelter the player is in; every other shelter gets it on its next load.
         if (currentMaze != null && idm != null && am != null) {
-            java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
-            if (points != null) {
-                BiomePortal portal = BiomePortal.forStation(station);
-                if (portal != null) {
-                    // Portals clear their placeholder archway and bring their own
-                    // light, so they cannot use the generic station placement.
-                    for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                        portal.materialise(currentMaze, pt, idm, am);
-                    }
-                    return true;
-                }
-
-                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                    com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
-                            ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
-                            : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
-                    com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);
-                    currentMaze.addItem(item);
-
-                    if (station == Station.CAMPFIRE) {
-                        currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
-                                pt.x + 0.5f, pt.y + 0.5f,
-                                com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
-                                com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
-                    } else if (station == Station.LANTERN) {
-                        currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_lantern_" + pt.x + "_" + pt.y,
-                                pt.x + 0.5f, pt.y + 0.5f,
-                                com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
-                                com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
-                                com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
-                    }
-                }
-            }
+            placeStation(currentMaze, station, idm, am);
         }
         return true;
     }

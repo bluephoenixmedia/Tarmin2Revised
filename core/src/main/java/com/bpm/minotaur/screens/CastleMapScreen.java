@@ -112,6 +112,11 @@ public class CastleMapScreen extends BaseScreen {
     private OverviewLayout lastOverviewLayout;
 
     /** The castle's chunk: the world's real site, or the old fixed mark in a legacy world. */
+    /** A claimed surface shelter the player has not visited in this world (remembered after a death). */
+    private boolean isRememberedShelter(int floor, GridPoint2 chunk) {
+        return floor == 1 && com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().isClaimed(chunk);
+    }
+
     private boolean isCastleChunk(int cx, int cy) {
         GridPoint2 site = (worldManager != null && worldManager.getBiomeManager() != null)
                 ? worldManager.getBiomeManager().getCastleSite() : null;
@@ -524,7 +529,9 @@ public class CastleMapScreen extends BaseScreen {
                 if (isCursor) {
                     shapeRenderer.setColor(1f, 1f, 1f, cursorPulse);
                 } else if (!isVisited) {
-                    continue;
+                    // A shelter remembered into this world shows before the player reaches it.
+                    if (!isRememberedShelter(viewFloor, chId)) continue;
+                    shapeRenderer.setColor(Color.GOLD);
                 } else if (playerChunk != null && cx == playerChunk.x && cy == playerChunk.y && viewFloor == currentLevel) {
                     shapeRenderer.setColor(Color.CYAN);
                 } else {
@@ -551,7 +558,13 @@ public class CastleMapScreen extends BaseScreen {
                 int cx = cursor.x + (c - radius);
                 int cy = cursor.y + (r - radius);
                 GridPoint2 chId = new GridPoint2(cx, cy);
-                if (!visited.contains(chId)) continue;
+                if (!visited.contains(chId)) {
+                    if (isRememberedShelter(viewFloor, chId)) {
+                        fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
+                        fontSmall.draw(game.getBatch(), "SHELTER", canvasX + c * chunkW + 6, canvasY + r * chunkH + chunkH - 8);
+                    }
+                    continue;
+                }
                 float x = canvasX + c * chunkW;
                 float y = canvasY + r * chunkH;
 
@@ -560,7 +573,10 @@ public class CastleMapScreen extends BaseScreen {
 
                 if (isShelter) {
                     fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
-                    fontSmall.draw(game.getBatch(), "HOME", x + 6, y + chunkH - 8);
+                    fontSmall.draw(game.getBatch(), (cx == 0 && cy == 0) ? "HOME" : "SHELTER", x + 6, y + chunkH - 8);
+                } else if (viewFloor == 1 && biomeManager != null && biomeManager.getSealRoad(chId) >= 0) {
+                    fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
+                    fontSmall.draw(game.getBatch(), "SEAL", x + 6, y + chunkH - 8);
                 } else if (viewFloor == 1 && isCastleChunk(cx, cy)) {
                     fontSmall.setColor(Color.CORAL);
                     fontSmall.draw(game.getBatch(), "CASTLE", x + 6, y + chunkH - 8);

@@ -31,6 +31,35 @@ public class ChunkData {
     public byte[][] explorationState;
 
     public List<GridPoint2> homeTiles = new ArrayList<>();
+    /** False for a cold shelter. Null on saves from before outpost shelters: a sanctuary. */
+    public Boolean sanctuary;
+    public List<StationSlotData> stationSlots = new ArrayList<>();
+    public int[] altarTile;
+    public int[] hearthTile;
+    public int[] shelterEntry;
+
+    public static class StationSlotData {
+        public String station;
+        public int x;
+        public int y;
+
+        public StationSlotData() {
+        }
+
+        StationSlotData(String station, int x, int y) {
+            this.station = station;
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    private static int[] pack(GridPoint2 p) {
+        return p == null ? null : new int[]{p.x, p.y};
+    }
+
+    private static GridPoint2 unpack(int[] p) {
+        return (p == null || p.length != 2) ? null : new GridPoint2(p[0], p[1]);
+    }
 
     public List<ItemData> items = new ArrayList<>();
     public List<MonsterData> monsters = new ArrayList<>();
@@ -59,9 +88,9 @@ public class ChunkData {
     public ChunkData() {
     }
 
-    /** True if this chunk's saved data marks it as containing the player's home shelter. */
+    /** True if this chunk holds a shelter of the player's: the home shelter, or an outpost they have lit. */
     public boolean hasShelter() {
-        return homeTiles != null && !homeTiles.isEmpty();
+        return homeTiles != null && !homeTiles.isEmpty() && (sanctuary == null || sanctuary);
     }
 
     public boolean hasUpLadder() {
@@ -88,6 +117,16 @@ public class ChunkData {
         this.explorationState = maze.getExplorationState();
 
         this.homeTiles.addAll(maze.getHomeTiles());
+        this.sanctuary = maze.isSanctuary();
+        for (Map.Entry<com.bpm.minotaur.gamedata.progression.ShelterAltar.Station, List<GridPoint2>> e
+                : maze.getAllStationSlots().entrySet()) {
+            for (GridPoint2 p : e.getValue()) {
+                this.stationSlots.add(new StationSlotData(e.getKey().name(), p.x, p.y));
+            }
+        }
+        this.altarTile = pack(maze.getAltarTile());
+        this.hearthTile = pack(maze.getHearthTile());
+        this.shelterEntry = pack(maze.getShelterEntry());
 
         for (Map.Entry<GridPoint2, Item> entry : maze.getItems().entrySet()) {
             this.items.add(new ItemData(entry.getValue()));
@@ -153,6 +192,20 @@ public class ChunkData {
         if (this.homeTiles != null) {
             maze.setHomeTiles(this.homeTiles);
         }
+        maze.setSanctuary(this.sanctuary == null || this.sanctuary);
+        if (this.stationSlots != null) {
+            for (StationSlotData slot : this.stationSlots) {
+                try {
+                    maze.addStationSlot(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.valueOf(slot.station),
+                            slot.x, slot.y);
+                } catch (Exception ignored) {
+                    // A station removed since this chunk was saved.
+                }
+            }
+        }
+        maze.setAltarTile(unpack(this.altarTile));
+        maze.setHearthTile(unpack(this.hearthTile));
+        maze.setShelterEntry(unpack(this.shelterEntry));
 
         if (this.chunkTheme != null) {
             try {

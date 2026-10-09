@@ -416,6 +416,15 @@ public class SaveSlotSelectScreen extends BaseScreen {
                 gameScreen.getWorldManager().setWorldSeed(worldData.masterSeed);
             }
         }
+        // A world laid out before the shelter roads is laid out again, once, with no penalty.
+        boolean upgraded = worldData != null && gameScreen.getWorldManager() != null
+                && gameScreen.getWorldManager().upgradeWorldIfOutdated();
+        if (worldData != null && !upgraded && gameScreen.getWorldManager() != null) {
+            // Resume in the chunk the save was written in: with shelters on the roads,
+            // that is no longer always the home shelter.
+            gameScreen.getWorldManager().setCurrentChunk(
+                    new com.badlogic.gdx.math.GridPoint2(worldData.playerChunkX, worldData.playerChunkY));
+        }
         game.setScreen(gameScreen);
 
         if (worldData != null && gameScreen.getWorldManager() != null) {
@@ -432,6 +441,14 @@ public class SaveSlotSelectScreen extends BaseScreen {
         PlayerSaveData playerData = SaveManager.getInstance().loadActivePlayerData();
         if (playerData != null && gameScreen.getPlayer() != null) {
             playerData.applyToPlayer(gameScreen.getPlayer(), game.getItemDataManager(), game.getAssetManager());
+        }
+
+        if (upgraded && gameScreen.getPlayer() != null) {
+            gameScreen.getPlayer().setPosition(gameScreen.getWorldManager().getInitialPlayerStartPos());
+            if (gameScreen.getEventManager() != null) {
+                gameScreen.getEventManager().addEvent(new com.bpm.minotaur.gamedata.GameEvent(
+                        "The world has shifted while you slept. Roads of shelters now lead out from the maze.", 4f));
+            }
         }
 
         // Restore pending pursuers across gates / ladders

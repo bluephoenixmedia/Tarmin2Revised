@@ -188,7 +188,12 @@ public class Tarmin2 extends Game {
                 "images/floor_tundra.png",
                 "images/tundra_cliff.png",
                 "images/floor_blight.png",
-                "images/blight_cliff.png"
+                "images/blight_cliff.png",
+                "images/shelter_wall_forest.png",
+                "images/shelter_wall_desert.png",
+                "images/shelter_wall_lakelands.png",
+                "images/shelter_wall_tundra.png",
+                "images/shelter_wall_blight.png"
         };
         java.util.List<String> forestQueue = new java.util.ArrayList<>(java.util.Arrays.asList(forestAssets));
         java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.PINE_TEXTURES);

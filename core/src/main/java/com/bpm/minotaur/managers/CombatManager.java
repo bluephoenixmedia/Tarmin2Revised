@@ -610,18 +610,7 @@ public class CombatManager {
         // resolveAttack()), so without this check every subsequent swing against
         // the SAME monster would re-enter this INACTIVE guard and wipe the turn
         // and damage counters mid-fight, making COMBAT_END always report 0/0.
-        boolean isNewEncounter = (this.monster != target);
-        this.monster = target;
-        if (isNewEncounter) {
-            this.currentCombatTurns = 0;
-            this.damageTakenInCombat = 0;
-            BalanceLogger.getInstance().logCombatStart(player, target);
-            triggerCombatMusic(target);
-        }
-        this.currentCombatTurns++;
-
-        if (target.getStatusManager() != null && eventManager != null)
-            target.getStatusManager().initialize(eventManager, target);
+        engageInstant(target);
         Direction dir = null;
         if (mx > px) dir = Direction.EAST;
         else if (mx < px) dir = Direction.WEST;
@@ -642,6 +631,30 @@ public class CombatManager {
         } else {
             resolveAttack(DiceRoller.d20(), true);
         }
+    }
+
+    /**
+     * Takes up a target in the fast, stateless combat that bump melee and ranged fire use:
+     * the state stays INACTIVE, so no menu opens and the world keeps its own turns.
+     *
+     * <p>Counters reset and COMBAT_START logs only for a new encounter. The stateless flow
+     * never leaves INACTIVE while the monster survives (see the "stays INACTIVE" comment in
+     * resolveAttack()), so without this check every blow against the SAME monster would
+     * wipe the turn and damage counters mid-fight, making COMBAT_END always report 0/0.
+     */
+    private void engageInstant(Monster target) {
+        boolean isNewEncounter = (this.monster != target);
+        this.monster = target;
+        if (isNewEncounter) {
+            this.currentCombatTurns = 0;
+            this.damageTakenInCombat = 0;
+            BalanceLogger.getInstance().logCombatStart(player, target);
+            triggerCombatMusic(target);
+        }
+        this.currentCombatTurns++;
+
+        if (target.getStatusManager() != null && eventManager != null)
+            target.getStatusManager().initialize(eventManager, target);
     }
 
     /** A Blighted monster's blow that draws blood carries the rot in with it. */
@@ -1474,8 +1487,18 @@ public class CombatManager {
                 effectiveRange(weapon), true, true);
 
         if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
-            startCombat(hit.hitMonster);
-            resolveRangedAttackAgainst(hit.hitMonster, hit);
+            if (currentState == CombatState.INACTIVE) {
+                // Fast combat, as bump melee is: a hit no longer opens the old menu combat,
+                // and the world's next turn (passed by the caller) brings the monster on.
+                if (hit.hitMonster.getCurrentHP() <= 0 || hit.hitMonster.isDeathClaimed()) {
+                    return;
+                }
+                engageInstant(hit.hitMonster);
+                resolveRangedAttackAgainst(hit.hitMonster, hit, true);
+            } else {
+                startCombat(hit.hitMonster);
+                resolveRangedAttackAgainst(hit.hitMonster, hit, false);
+            }
         } else if (!misfired(weapon)) {
             // The shot is still spent, and still heard. Firing into an empty corridor
             // costs you the ammunition and wakes the level just the same.
@@ -1495,7 +1518,7 @@ public class CombatManager {
      * fired at zero ammo, and triggered no animation and no sound.
      */
     private void resolveRangedAttackAgainst(Monster target) {
-        resolveRangedAttackAgainst(target, null);
+        resolveRangedAttackAgainst(target, null, false);
     }
 
     /**
@@ -1503,14 +1526,14 @@ public class CombatManager {
      *        Reusing it avoids a second raycast, which would also re-run the
      *        mimic-reveal side effect that a player-sourced trace carries.
      */
-    private void resolveRangedAttackAgainst(Monster target, HitResult tracedShot) {
+    private void resolveRangedAttackAgainst(Monster target, HitResult tracedShot, boolean stateless) {
         if (!prepareAttack()) {
             return;
         }
         Item weapon = pendingWeapon;
 
         if (misfired(weapon)) {
-            passTurnToMonster();
+            if (!stateless) passTurnToMonster(); // stateless: the caller passes the world turn
             return;
         }
 
@@ -1519,7 +1542,7 @@ public class CombatManager {
                         effectiveRange(weapon), true, true);
         fireRangedEffects(weapon, shot);
 
-        resolveAttack(DiceRoller.d20());
+        resolveAttack(DiceRoller.d20(), stateless);
     }
 
     /**
@@ -2452,7 +2475,11 @@ public class CombatManager {
             // In real-time bump combat, surviving monsters trade blows on the same tick
             // unless staggered by a Critical Hit, Shield Bash, or Combo Finisher.
             boolean isStaggered = isCrit || (currentMotionProfile != null && (currentMotionProfile.isFinisher || currentMotionProfile.isShieldBash)) || monster.isStunned();
-            if (!isStaggered) {
+            boolean adjacent = Math.abs((int) monster.getPosition().x - (int) player.getPosition().x)
+                    + Math.abs((int) monster.getPosition().y - (int) player.getPosition().y) <= 1;
+            if (!adjacent) {
+                // Shot from range: no blow to trade. It comes on in the world's turn.
+            } else if (!isStaggered) {
                 monsterMeleeStrike(monster);
             } else {
                 eventManager.addEvent(new GameEvent(monster.getType() + " is staggered by the blow!", 1.0f));

@@ -74,7 +74,10 @@ public class WorldConstants {
     /** Fixed seed 12345, forest ring, Tundra band at y >= 16, humidity picks the rest. */
     public static final int WORLD_GEN_LEGACY = 1;
     /** Per-world seed, distance bands that follow the portal ladder, and a Castle Tarmin site. */
-    public static final int WORLD_GEN_CURRENT = 2;
+    public static final int WORLD_GEN_BANDS = 2;
+    /** Version 2 plus the four shelter roads. See docs/DEsign/Requirements_ Shelter Roads.md. */
+    public static final int WORLD_GEN_ROADS = 3;
+    public static final int WORLD_GEN_CURRENT = WORLD_GEN_ROADS;
 
     // --- Distance bands (version 2) -----------------------------------------
     // Measured in chunks beyond the maze edge (Chebyshev), after warping. The
@@ -109,6 +112,31 @@ public class WorldConstants {
     public static final float CASTLE_BLIGHT_RADIUS = 8.0f;
     /** Half-width of the land corridor from the maze to the castle; >= 1 always holds a 4-connected path. */
     public static final float CASTLE_CORRIDOR_HALF_WIDTH = 1.0f;
+
+    // --- Shelter roads (version 3) ------------------------------------------
+    // Four roads leave the maze about 90 degrees apart, the first on the castle's
+    // bearing. Each seal road ends at a seal site; the seed decides which road
+    // gets which distance. See docs/DEsign/Requirements_ Shelter Roads.md.
+
+    /** Euclidean distances of the three seal sites from the origin, in chunks. Keep each above 15 (outside the maze). */
+    public static final int[] SEAL_SITE_DISTANCES = { 20, 30, 40 };
+    /** How far, in degrees, a seal road may lean off its quarter of the compass. */
+    public static final float ROAD_BEARING_JITTER_DEGREES = 7f;
+    /** The first shelter on a road stands this many chunks past the maze edge. */
+    public static final int ROAD_FIRST_SHELTER_OFFSET = 3;
+    /** Chunks between consecutive shelters on a road. Must stay below BEACON_RANGE_CHUNKS. */
+    public static final int ROAD_SHELTER_SPACING_MIN = 8;
+    public static final int ROAD_SHELTER_SPACING_MAX = 10;
+    /** No road shelter within this many chunks of the road's end. */
+    public static final int ROAD_END_CLEARANCE = 3;
+    /** Off-road shelters: one candidate per cell of this many chunks a side (about 1 per 150 chunks). */
+    public static final int OFF_ROAD_CELL = 12;
+    /** Minimum distance, in chunks, between any two shelters, sites or the castle. */
+    public static final int SHELTER_MIN_SPACING = 8;
+    /** Off-road shelters keep at least this far from any road line, so they never read as road stops. */
+    public static final float OFF_ROAD_CLEARANCE = 3f;
+    /** Beacons show within this many chunks. */
+    public static final float BEACON_RANGE_CHUNKS = 20f;
 
     // Authentic Dynamic Dungeon Lighting Constants
     public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 1.8f; // Distance where lighting is at 100%

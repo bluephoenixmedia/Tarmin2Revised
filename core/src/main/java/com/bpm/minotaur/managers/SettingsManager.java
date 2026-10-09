@@ -43,6 +43,7 @@ public class SettingsManager {
         keyBindingDescriptions.put("SWAP_PACK", "Swap with Pack");
         keyBindingDescriptions.put("ROTATE_PACK", "Rotate Pack");
         keyBindingDescriptions.put("ATTACK", "Attack (Combat)");
+        keyBindingDescriptions.put("FIRE_RANGED", "Fire Ranged Weapon");
         keyBindingDescriptions.put("MAP", "Castle Map");
         keyBindingDescriptions.put("FIELD_CRAFTING", "Field Crafting");
         keyBindingDescriptions.put("FIELD_COOKING", "Field Cooking");
@@ -203,6 +204,7 @@ public class SettingsManager {
             case "SWAP_PACK": return Input.Keys.E;
             case "ROTATE_PACK": return Input.Keys.T;
             case "ATTACK": return Input.Keys.A;
+            case "FIRE_RANGED": return Input.Keys.F;
             case "MAP": return Input.Keys.M;
             case "FIELD_CRAFTING": return Input.Keys.C;
             case "FIELD_COOKING": return Input.Keys.J;

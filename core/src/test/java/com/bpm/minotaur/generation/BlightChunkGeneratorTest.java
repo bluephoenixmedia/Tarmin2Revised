@@ -71,7 +71,7 @@ public class BlightChunkGeneratorTest {
                 if (CastleGate.isCastleGate(e.getValue())) gates.add(e.getKey());
             }
             assertEquals("exactly one castle gate", 1, gates.size());
-            assertFalse("sealed until Phase 5", CastleGate.isOpen());
+            assertFalse("sealed without the three seals", CastleGate.isOpen());
 
             GridPoint2 doorstep = gen.getCastleDoorstep();
             assertTrue("the doorstep is walkable from the edge gates",

@@ -3060,6 +3060,12 @@
     "containerLoot": {
         "default": [
             {
+                "type": "TINDER_BUNDLE",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 8
+            },
+            {
                 "type": "FOOD",
                 "minLevel": 1,
                 "maxLevel": 99,

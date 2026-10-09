@@ -1,0 +1,32 @@
+package com.bpm.minotaur.gamedata.shelter;
+
+import com.bpm.minotaur.gamedata.Scenery;
+import com.bpm.minotaur.gamedata.blight.CastleGate;
+import com.bpm.minotaur.generation.ShelterBuilder;
+
+/**
+ * What the sealed gates at the ends of the roads say when the player knocks.
+ *
+ * <p>Castle Tarmin's gate counts the seals held; a seal site's gate is the way
+ * down to the deep boss who holds a seal, and a later feature opens it. Both are
+ * hooks: kept here so the player's movement only relays the answer.
+ */
+public final class SealedGates {
+
+    public static final String SEAL_SITE_MESSAGE =
+            "A sealed way down, older than the Legion. One of the ancient seals lies far beneath it.";
+
+    private SealedGates() {
+    }
+
+    /** The message for knocking at this scenery, or null if it is no sealed gate. */
+    public static String knock(Scenery scenery) {
+        if (CastleGate.isCastleGate(scenery)) {
+            return CastleGate.knockMessage(CastleGate.sealsHeld());
+        }
+        if (ShelterBuilder.isSealGate(scenery)) {
+            return SEAL_SITE_MESSAGE;
+        }
+        return null;
+    }
+}

@@ -18,6 +18,7 @@ public final class BiomeSurfaces implements Disposable {
 
     private final Map<Biome, Texture> walls = new EnumMap<>(Biome.class);
     private final Map<Biome, Texture> floors = new EnumMap<>(Biome.class);
+    private final Map<Biome, Texture> shelterWalls = new EnumMap<>(Biome.class);
     private final Map<String, Texture> loaded = new HashMap<>();
 
     /** Loads every biome's surface art that exists on disk. Needs a GL context. */
@@ -28,6 +29,8 @@ public final class BiomeSurfaces implements Disposable {
             if (wall != null) surfaces.walls.put(biome, wall);
             Texture floor = surfaces.texture(biome.getFloorTexturePath());
             if (floor != null) surfaces.floors.put(biome, floor);
+            Texture shelter = surfaces.texture(biome.getShelterWallTexturePath());
+            if (shelter != null) surfaces.shelterWalls.put(biome, shelter);
         }
         return surfaces;
     }
@@ -35,6 +38,11 @@ public final class BiomeSurfaces implements Disposable {
     public Texture wallFor(Biome biome, Texture fallback) {
         Texture t = (biome != null) ? walls.get(biome) : null;
         return (t != null) ? t : fallback;
+    }
+
+    /** An outpost shelter's walls in this biome, or null where shelters wear the chunk's own walls. */
+    public Texture shelterWallFor(Biome biome) {
+        return biome != null ? shelterWalls.get(biome) : null;
     }
 
     public Texture floorFor(Biome biome, Texture fallback) {
@@ -59,5 +67,6 @@ public final class BiomeSurfaces implements Disposable {
         loaded.clear();
         walls.clear();
         floors.clear();
+        shelterWalls.clear();
     }
 }

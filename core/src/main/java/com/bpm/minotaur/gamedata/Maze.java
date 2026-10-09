@@ -25,6 +25,18 @@ public class Maze {
     private byte[][] explorationState;
 
     private final Set<GridPoint2> homeTiles = new HashSet<>();
+    /**
+     * False for a shelter that stands cold: its walls and roof are there (the home tiles),
+     * but it is no sanctuary until its hearth is lit. See ShelterNetwork.
+     */
+    private boolean sanctuary = true;
+    /** Where each shelter station stands in this chunk; empty outside a shelter. */
+    private final Map<com.bpm.minotaur.gamedata.progression.ShelterAltar.Station, List<GridPoint2>> stationSlots =
+            new java.util.EnumMap<>(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.class);
+    /** An outpost shelter's altar, hearth, and the tile outside its door. Null in the home shelter. */
+    private GridPoint2 altarTile;
+    private GridPoint2 hearthTile;
+    private GridPoint2 shelterEntry;
 
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
     private final Map<GridPoint2, Item> items = new HashMap<>();
@@ -178,6 +190,49 @@ public class Maze {
     public boolean isHomeTile(GridPoint2 pos) {
         return homeTiles.contains(pos);
     }
+
+    /** A tile monsters may not enter or spawn in: a home tile of a lit shelter. */
+    public boolean isSanctuaryTile(int x, int y) {
+        return sanctuary && homeTiles.contains(new GridPoint2(x, y));
+    }
+
+    public boolean isSanctuaryTile(GridPoint2 pos) {
+        return sanctuary && homeTiles.contains(pos);
+    }
+
+    /** The home tiles while the shelter is lit; empty while it stands cold. */
+    public Set<GridPoint2> getSanctuaryTiles() {
+        return sanctuary ? homeTiles : java.util.Collections.emptySet();
+    }
+
+    public boolean isSanctuary() {
+        return sanctuary;
+    }
+
+    public void setSanctuary(boolean sanctuary) {
+        this.sanctuary = sanctuary;
+    }
+
+    public void addStationSlot(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station station, int x, int y) {
+        GridPoint2 pt = new GridPoint2(x, y);
+        List<GridPoint2> list = stationSlots.computeIfAbsent(station, k -> new ArrayList<>());
+        if (!list.contains(pt)) list.add(pt);
+    }
+
+    public List<GridPoint2> getStationSlots(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station station) {
+        return stationSlots.getOrDefault(station, java.util.Collections.emptyList());
+    }
+
+    public Map<com.bpm.minotaur.gamedata.progression.ShelterAltar.Station, List<GridPoint2>> getAllStationSlots() {
+        return stationSlots;
+    }
+
+    public GridPoint2 getAltarTile() { return altarTile; }
+    public void setAltarTile(GridPoint2 tile) { this.altarTile = tile; }
+    public GridPoint2 getHearthTile() { return hearthTile; }
+    public void setHearthTile(GridPoint2 tile) { this.hearthTile = tile; }
+    public GridPoint2 getShelterEntry() { return shelterEntry; }
+    public void setShelterEntry(GridPoint2 tile) { this.shelterEntry = tile; }
 
     public boolean isIndoors(int x, int y) {
         return level > 1 || isHomeTile(x, y);

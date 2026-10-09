@@ -124,6 +124,30 @@ public class ChunkMeshBuilder {
             SurfaceTextureSet floorSet,
             SurfaceTextureSet ceilingSet
     ) {
+        return buildChunk(maze, minX, minY, maxX, maxY, wallTexture, floorTexture, ceilingTexture, isIndoors,
+                worldOffsetX, worldOffsetZ, wallProvider, chunkSeed, floorSet, ceilingSet, null);
+    }
+
+    /**
+     * As above, with an outpost shelter's own wall art: every wall face touching a
+     * shelter tile, inside or out, wears {@code shelterWall} instead of the biome's
+     * cliffs. Null, or a MAZE chunk (the home shelter keeps its masonry), changes nothing.
+     */
+    public static List<ChunkSubMesh> buildChunk(
+            Maze maze,
+            int minX, int minY, int maxX, int maxY,
+            Texture wallTexture,
+            Texture floorTexture,
+            Texture ceilingTexture,
+            boolean isIndoors,
+            float worldOffsetX,
+            float worldOffsetZ,
+            WallTextureProvider wallProvider,
+            long chunkSeed,
+            SurfaceTextureSet floorSet,
+            SurfaceTextureSet ceilingSet,
+            Texture shelterWall
+    ) {
         List<ChunkSubMesh> subMeshes = new ArrayList<>();
 
         // Only the maze wears variants; forest, desert and lakelands have their
@@ -143,6 +167,10 @@ public class ChunkMeshBuilder {
         // Windows and any non-varied build write here; bucket 0 is the base texture.
         FloatArray wallVerts = wallVertsByVariant[0];
         ShortArray wallIndices = wallIndicesByVariant[0];
+        // An outpost shelter's walls, kept apart so they can wear their own texture.
+        boolean shelterWalls = shelterWall != null && !mazeBiome && maze != null && !maze.getHomeTiles().isEmpty();
+        FloatArray[] shelterVerts = {new FloatArray()};
+        ShortArray[] shelterIndices = {new ShortArray()};
 
         // Floors and ceilings were one texture for a whole chunk, so eight
         // authored floor variants could only ever say "this room is different".
@@ -292,7 +320,10 @@ public class ChunkMeshBuilder {
                     // --- 3. WALL FACES ---
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
                     if (hasNorthWall) {
-                        addWallFace(wallVertsByVariant, wallIndicesByVariant, variedHere, chunkSeed, x, y,
+                        boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x, y + 1));
+                        addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
+                                shelterFace ? shelterIndices : wallIndicesByVariant,
+                                variedHere && !shelterFace, chunkSeed, x, y,
                                 WallVariants.FACE_NORTH,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
@@ -304,7 +335,10 @@ public class ChunkMeshBuilder {
 
                     // B. South boundary (Z = -y, facing North towards camera inside cell)
                     if (hasSouthWall) {
-                        addWallFace(wallVertsByVariant, wallIndicesByVariant, variedHere, chunkSeed, x, y,
+                        boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x, y - 1));
+                        addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
+                                shelterFace ? shelterIndices : wallIndicesByVariant,
+                                variedHere && !shelterFace, chunkSeed, x, y,
                                 WallVariants.FACE_SOUTH,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
@@ -316,7 +350,10 @@ public class ChunkMeshBuilder {
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
                     if (hasWestWall) {
-                        addWallFace(wallVertsByVariant, wallIndicesByVariant, variedHere, chunkSeed, x, y,
+                        boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x - 1, y));
+                        addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
+                                shelterFace ? shelterIndices : wallIndicesByVariant,
+                                variedHere && !shelterFace, chunkSeed, x, y,
                                 WallVariants.FACE_WEST,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
@@ -328,7 +365,10 @@ public class ChunkMeshBuilder {
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
                     if (hasEastWall) {
-                        addWallFace(wallVertsByVariant, wallIndicesByVariant, variedHere, chunkSeed, x, y,
+                        boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x + 1, y));
+                        addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
+                                shelterFace ? shelterIndices : wallIndicesByVariant,
+                                variedHere && !shelterFace, chunkSeed, x, y,
                                 WallVariants.FACE_EAST,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
@@ -358,6 +398,12 @@ public class ChunkMeshBuilder {
             if (tex == null) continue;
             Mesh wallMesh = createMesh(wallVertsByVariant[i], wallIndicesByVariant[i]);
             subMeshes.add(new ChunkSubMesh(tex, wallMesh, wallIndicesByVariant[i].size,
+                    ChunkSubMesh.Surface.WALL));
+        }
+
+        if (shelterIndices[0].size > 0) {
+            Mesh shelterMesh = createMesh(shelterVerts[0], shelterIndices[0]);
+            subMeshes.add(new ChunkSubMesh(shelterWall, shelterMesh, shelterIndices[0].size,
                     ChunkSubMesh.Surface.WALL));
         }
 

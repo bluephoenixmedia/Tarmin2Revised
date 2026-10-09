@@ -2118,6 +2118,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.SHELTER_HEARTH_COLD) {
+                worldInteractionCard.show(
+                        "[SHELTER]",
+                        "[COLD HEARTH]",
+                        "Cold Hearth",
+                        "A shelter gone dark. Light its hearth with a Tinder Bundle to claim it: every station you have unlocked will stand here, and you can rest and wake here.",
+                        "[ O ]",
+                        "Light the Hearth",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
             if (frontItem.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
                 worldInteractionCard.show(
                         "[SHELTER HUB]",

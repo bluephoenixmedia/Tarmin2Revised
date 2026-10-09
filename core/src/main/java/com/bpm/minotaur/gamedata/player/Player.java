@@ -884,7 +884,7 @@ public class Player {
             eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return false;
         }
-        if (maze != null && maze.isHomeTile((int) position.x, (int) position.y)) {
+        if (maze != null && maze.isSanctuaryTile((int) position.x, (int) position.y)) {
             finishTomeStudy(tome, eventManager);
             return true;
         }
@@ -1104,6 +1104,12 @@ public class Player {
 
         Item waterskin = itemDataManager.createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, assetManager);
         inventory.pickupToBackpack(waterskin);
+
+        // Fire for the first two shelters on the road. More is crafted or found.
+        for (int i = 0; i < STARTING_TINDER; i++) {
+            Item tinder = itemDataManager.createItem(Item.ItemType.TINDER_BUNDLE, 0, 0, ItemColor.TAN, assetManager);
+            if (tinder != null) inventory.pickupToBackpack(tinder);
+        }
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
 
@@ -2960,11 +2966,11 @@ public class Player {
             }
             if (!passable) {
                 Scenery s = maze.getScenery().get(nextTile);
-                if (com.bpm.minotaur.gamedata.blight.CastleGate.isCastleGate(s)
-                        && !com.bpm.minotaur.gamedata.blight.CastleGate.isOpen()) {
-                    // Knocking at Castle Tarmin. Phase 5 turns this into the way in.
+                // Knocking at a sealed gate: Castle Tarmin's, or a seal site's at the end of a road.
+                String knock = com.bpm.minotaur.gamedata.shelter.SealedGates.knock(s);
+                if (knock != null) {
                     if (eventManager != null) {
-                        eventManager.addEvent(new GameEvent(com.bpm.minotaur.gamedata.blight.CastleGate.SEALED_MESSAGE, 3.5f));
+                        eventManager.addEvent(new GameEvent(knock, 3.5f));
                     }
                     return;
                 }
@@ -3758,6 +3764,8 @@ public class Player {
     public static final float LANTERN_STATION_CRIT_BONUS = 0.05f;
     /** A new game's food: enough that the first delves are about the maze, not the pantry. */
     public static final int STARTING_RATIONS = 30;
+    /** Tinder Bundles a new character carries: enough to claim the first two shelters. */
+    public static final int STARTING_TINDER = 2;
 
     public boolean giveStarterLantern(Item lantern) {
         return giveStarterLantern(lantern, java.util.Collections.<Item>emptyList());

@@ -700,8 +700,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     // ---------------------------------------
                 } else if (c == 'C') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST, x, y);
                         if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST)) {
                             maze.addItem(
@@ -710,8 +709,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                 } else if (c == 'N') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH, x, y);
                         if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH)) {
                             maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
@@ -729,8 +727,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                 } else if (c == 'B') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED, x, y);
                         if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED)) {
                             maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,
@@ -739,8 +736,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                 } else if (c == 'F') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE, x, y);
                         if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE)) {
                             if (itemDataManager != null) {
@@ -754,8 +750,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                 } else if (c == 'L') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN, x, y);
                         if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
                             if (itemDataManager != null) {
@@ -769,8 +764,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                 } else if (c == 'T') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY, x, y);
                         if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY)) {
                             maze.addItem(
@@ -779,8 +773,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                 } else if (c == 'R') {
                     if (maze.isHomeTile(x, y)) {
-                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN, x, y);
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN, x, y);
                         if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN)) {
                             maze.addItem(
@@ -856,8 +849,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         }
 
         com.bpm.minotaur.gamedata.progression.BiomePortal portal = portals[nicheIndex];
-        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
-                .registerStationLocation(portal.getStation(), x, y);
+        registerStation(maze, portal.getStation(), x, y);
 
         // The arch is the frame in both states; an owned niche is the same arch
         // with a rift burning inside it.
@@ -868,6 +860,13 @@ public class MazeChunkGenerator implements IChunkGenerator {
             // so the item and its biome-coloured light cannot drift apart.
             portal.materialise(maze, new GridPoint2(x, y), itemDataManager, assetManager);
         }
+    }
+
+    /** Records a station's place in this shelter, so unlocking it later knows where it stands. */
+    private static void registerStation(Maze maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station station,
+                                        int x, int y) {
+        maze.addStationSlot(station, x, y);
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(station, x, y);
     }
 
     private void placePortalArchway(Maze maze, int x, int y, AssetManager assetManager) {

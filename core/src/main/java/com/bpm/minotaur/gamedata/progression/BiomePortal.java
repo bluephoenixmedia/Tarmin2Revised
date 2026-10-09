@@ -152,6 +152,8 @@ public enum BiomePortal {
             }
         }
 
+        // Replaced, never stacked: a shelter is furnished again every time it loads.
+        maze.removeLight("shelter_portal_" + name());
         maze.addLight(new com.bpm.minotaur.lighting.LightSource(
                 "shelter_portal_" + name(), tile.x + 0.5f, tile.y + 0.5f,
                 tint, 4.0f, 1.1f,
@@ -172,8 +174,7 @@ public enum BiomePortal {
         if (!DEBUG_UNLOCK_ALL || maze == null) return;
 
         for (BiomePortal portal : values()) {
-            for (com.badlogic.gdx.math.GridPoint2 tile
-                    : ShelterAltar.getInstance().getStationLocations(portal.getStation())) {
+            for (com.badlogic.gdx.math.GridPoint2 tile : maze.getStationSlots(portal.getStation())) {
                 portal.materialise(maze, tile, itemDataManager, assetManager);
             }
         }

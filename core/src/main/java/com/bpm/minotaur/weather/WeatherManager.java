@@ -618,9 +618,15 @@ public class WeatherManager {
         weatherTimer = 30f;
     }
 
+    /**
+     * How hard a tornado shakes the view, 0-1. Also scales the 3D camera's wind jitter
+     * (World3DRenderer). Halved from 1.0: full strength was too violent to play through.
+     */
+    public static final float TORNADO_SHAKE = 0.5f;
+
     public float getTraumaLevel() {
         if (currentWeather == WeatherType.TORNADO) {
-            return 1.0f;
+            return TORNADO_SHAKE;
         }
         return 0.0f;
     }

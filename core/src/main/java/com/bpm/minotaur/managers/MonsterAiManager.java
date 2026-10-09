@@ -387,8 +387,8 @@ public class MonsterAiManager {
         }
 
         // --- Sanctuary Check: Home Shelter tiles are protected ---
-        if (maze.getHomeTiles() != null && !maze.getHomeTiles().isEmpty()) {
-            if (maze.getHomeTiles().contains(playerGridPos)) {
+        if (!maze.getSanctuaryTiles().isEmpty()) {
+            if (maze.isSanctuaryTile(playerGridPos)) {
                 monster.setState(Monster.MonsterState.WANDERING);
                 monster.setLastKnownTargetPos(null);
                 monster.setSearchTurnsRemaining(0);
@@ -710,7 +710,7 @@ public class MonsterAiManager {
     private boolean isTileAvailableForAI(Maze maze, Player player, int x, int y) {
         tempPos.set(x, y);
 
-        if (maze.isHomeTile(x, y))
+        if (maze.isSanctuaryTile(x, y))
             return false;
 
         if (!maze.isPassable(x, y))

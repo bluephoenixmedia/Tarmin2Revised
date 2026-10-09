@@ -383,7 +383,7 @@ public class GameScreen extends BaseScreen {
 
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
-        boolean isShelter = maze.isHomeTile(px, py);
+        boolean isShelter = maze.isSanctuaryTile(px, py);
 
         if (isShelter) {
             MusicManager.getInstance().playShelterMusic("sounds/music/tarmin_ambient.ogg");
@@ -655,6 +655,7 @@ public class GameScreen extends BaseScreen {
             eventManager.update(delta);
             handleSystemEvents();
             updateTomeStudy(delta);
+            updateHearthLighting(delta);
             if (player != null && player.getPendingTomeChoice() != null) {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
                 return;
@@ -1850,6 +1851,11 @@ public class GameScreen extends BaseScreen {
             Item starterWater = game.getItemDataManager().createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, game.getAssetManager());
             player.getInventory().pickupToBackpack(starterWater);
         }
+        // Never a hard lock on the roads: a new expedition always carries fire for one shelter.
+        if (!player.getInventory().hasItemOfType(Item.ItemType.TINDER_BUNDLE)) {
+            Item tinder = game.getItemDataManager().createItem(Item.ItemType.TINDER_BUNDLE, 0, 0, ItemColor.TAN, game.getAssetManager());
+            if (tinder != null) player.getInventory().pickupToBackpack(tinder);
+        }
 
         // Travel kits: replace any the player has paid for at the Altar but no longer
         // carries. They are not a death handout -- owning the Crafting Bench or Fire Pot
@@ -1868,31 +1874,13 @@ public class GameScreen extends BaseScreen {
         // claims from the dead run would keep merchants out of the new one.
         com.bpm.minotaur.generation.ShopkeeperTracker.reset();
 
-        // 3. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
+        // 3. Wake in the remembered shelter on Level 1: the road shelter last rested in, or home.
         worldManager.setCurrentLevel(1);
-        worldManager.setCurrentChunk(new GridPoint2(0, 0));
-        Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
+        Maze shelterMaze = loadShelterChunk(worldManager.getRespawnChunk());
         swapToChunk(shelterMaze);
 
         // Position player at bed / safe start point in shelter
-        GridPoint2 bedPos = null;
-        for (Item item : shelterMaze.getItems().values()) {
-            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-                int bx = (int) item.getPosition().x;
-                int by = (int) item.getPosition().y;
-                if (shelterMaze.isPassable(bx - 1, by)) {
-                    bedPos = new GridPoint2(bx - 1, by);
-                } else if (shelterMaze.isPassable(bx, by + 1)) {
-                    bedPos = new GridPoint2(bx, by + 1);
-                } else {
-                    bedPos = new GridPoint2(bx, by);
-                }
-                break;
-            }
-        }
-        if (bedPos == null) {
-            bedPos = worldManager.getInitialPlayerStartPos();
-        }
+        GridPoint2 bedPos = shelterWakeTile(shelterMaze);
         player.setPosition(bedPos);
         worldManager.saveCurrentChunk(shelterMaze);
 
@@ -1921,7 +1909,41 @@ public class GameScreen extends BaseScreen {
     }
 
     /**
-     * Instantly returns the player to the Starting Shelter bed (Level 1, Chunk 0, 0),
+     * Makes a shelter chunk current, falling back to the home shelter if it cannot load
+     * (a remembered shelter in a world that no longer holds it).
+     */
+    private Maze loadShelterChunk(GridPoint2 chunk) {
+        Maze m = chunk != null ? worldManager.loadChunk(chunk) : null;
+        if (m == null) {
+            chunk = new GridPoint2(0, 0);
+            m = worldManager.loadChunk(chunk);
+        }
+        worldManager.setCurrentChunk(chunk);
+        return m;
+    }
+
+    /** Where to stand on waking in a shelter: beside the bed, else beside the hearth, else the door. */
+    private GridPoint2 shelterWakeTile(Maze shelterMaze) {
+        for (Item item : shelterMaze.getItems().values()) {
+            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                int bx = (int) item.getPosition().x;
+                int by = (int) item.getPosition().y;
+                if (shelterMaze.isPassable(bx - 1, by)) return new GridPoint2(bx - 1, by);
+                if (shelterMaze.isPassable(bx, by + 1)) return new GridPoint2(bx, by + 1);
+                return new GridPoint2(bx, by);
+            }
+        }
+        GridPoint2 hearth = shelterMaze.getHearthTile();
+        if (hearth != null) {
+            GridPoint2 near = WorldManager.findSafeArrivalTile(shelterMaze, hearth.x, hearth.y - 1);
+            if (near != null) return near;
+        }
+        if (shelterMaze.getShelterEntry() != null) return shelterMaze.getShelterEntry();
+        return worldManager.getInitialPlayerStartPos();
+    }
+
+    /**
+     * Instantly returns the player to the bed of the shelter they last rested in (home if none),
      * ending active combat and saving world state. Used by Word of Recall and safe return mechanisms.
      */
     public void returnToShelter() {
@@ -1932,28 +1954,11 @@ public class GameScreen extends BaseScreen {
             worldManager.saveCurrentChunk(maze);
         }
         worldManager.setCurrentLevel(1);
-        worldManager.setCurrentChunk(new GridPoint2(0, 0));
-        Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
+        GridPoint2 restChunk = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().getRestChunk();
+        Maze shelterMaze = loadShelterChunk(restChunk != null ? restChunk : new GridPoint2(0, 0));
         swapToChunk(shelterMaze);
 
-        GridPoint2 bedPos = null;
-        for (Item item : shelterMaze.getItems().values()) {
-            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-                int bx = (int) item.getPosition().x;
-                int by = (int) item.getPosition().y;
-                if (shelterMaze.isPassable(bx - 1, by)) {
-                    bedPos = new GridPoint2(bx - 1, by);
-                } else if (shelterMaze.isPassable(bx, by + 1)) {
-                    bedPos = new GridPoint2(bx, by + 1);
-                } else {
-                    bedPos = new GridPoint2(bx, by);
-                }
-                break;
-            }
-        }
-        if (bedPos == null) {
-            bedPos = worldManager.getInitialPlayerStartPos();
-        }
+        GridPoint2 bedPos = shelterWakeTile(shelterMaze);
         player.setPosition(bedPos);
         worldManager.saveCurrentChunk(shelterMaze);
         triggerAutoSave();
@@ -2300,6 +2305,10 @@ public class GameScreen extends BaseScreen {
     private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
         @Override
         public boolean keyDown(int keycode) {
+            if (hearthLighting != null) {
+                if (keycode == Input.Keys.ESCAPE) breakHearthLighting();
+                return true;
+            }
             if (player == null || player.getActiveTomeStudy() == null) {
                 return false;
             }
@@ -2317,7 +2326,7 @@ public class GameScreen extends BaseScreen {
                 deathSequence.skip();
                 return true;
             }
-            if (player != null && player.getActiveTomeStudy() != null) {
+            if ((player != null && player.getActiveTomeStudy() != null) || hearthLighting != null) {
                 // Mouse clicks are ignored during channeled study
                 return true;
             }
@@ -2357,6 +2366,98 @@ public class GameScreen extends BaseScreen {
         if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
             player.cancelTomeStudy(eventManager);
         }
+    }
+
+    /**
+     * Fires whatever ranged attack the right hand holds: zaps a wand, shoots a bow, crossbow or
+     * gun, or throws a thrown weapon. Bound to the fire key (F by default) and to A.
+     *
+     * @return true if something was fired
+     */
+    private boolean fireHeldRangedWeapon() {
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null) return false;
+        if (weapon.isWand()) {
+            player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
+            playerTurnTakesAction();
+            return true;
+        }
+        if (weapon.isRanged()) {
+            boolean wasExploring = combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
+            combatManager.playerAttackInstant();
+            // Firing costs a turn. Opening fire out of exploration used to be
+            // free: ammunition spent, the level woken, and no turn passed --
+            // so the reload never advanced either. In-combat shots pass their
+            // turn through the combat state machine instead.
+            if (wasExploring) {
+                playerTurnTakesAction();
+            }
+            return true;
+        }
+        if (weapon.isThrown() && combatManager.throwWeapon(weapon)) {
+            playerTurnTakesAction();
+            return true;
+        }
+        return false;
+    }
+
+    /** The hearth being lit, or null. Channelled like a Tome study: each world turn passes on its own. */
+    private com.bpm.minotaur.gamedata.shelter.HearthLighting hearthLighting;
+    private float hearthTimer;
+
+    /** Starts lighting the cold hearth in front of the player, if they carry tinder. */
+    private void beginHearthLighting() {
+        if (hearthLighting != null) return;
+        if (findTinder() == null) {
+            eventManager.addEvent(new GameEvent("The hearth is cold. You need a Tinder Bundle to light it.", 2.5f));
+            return;
+        }
+        hearthLighting = new com.bpm.minotaur.gamedata.shelter.HearthLighting(player.getStats().getWoundsTaken());
+        hearthTimer = 0f;
+        eventManager.addEvent(new GameEvent("You kneel at the cold hearth and work the tinder... ("
+                + com.bpm.minotaur.gamedata.shelter.HearthLighting.TURNS + " turns). ESCAPE stops.", 2.5f));
+    }
+
+    private void updateHearthLighting(float delta) {
+        if (hearthLighting == null || player == null) return;
+        hearthTimer += delta;
+        if (hearthTimer < TOME_STUDY_SECONDS_PER_TURN) return;
+        hearthTimer = 0f;
+        playerTurnTakesAction();
+        com.bpm.minotaur.gamedata.shelter.HearthLighting.Step step =
+                hearthLighting.afterTurn(player.getStats().getWoundsTaken());
+        if (step == com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.INTERRUPTED) {
+            hearthLighting = null;
+            eventManager.addEvent(new GameEvent("You are struck and the tinder scatters. The hearth stays cold.", 2.5f));
+            return;
+        }
+        if (step != com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.COMPLETE) return;
+        hearthLighting = null;
+        Item tinder = findTinder();
+        if (tinder == null || !worldManager.claimShelter(maze)) {
+            eventManager.addEvent(new GameEvent("The tinder will not catch.", 2f));
+            return;
+        }
+        player.getInventory().consumeOne(tinder);
+        worldManager.syncLightsForChunk(maze);
+        if (soundManager != null) soundManager.playDoorOpenSound();
+        eventManager.addEvent(new GameEvent("The hearth catches. This shelter is yours.", 3f));
+        if (hud != null) hud.addMessage("Shelter claimed. Every station you have unlocked stands here now.");
+        needsAsciiRender = true;
+    }
+
+    private Item findTinder() {
+        for (Item it : player.getInventory().getAllItems()) {
+            if (it != null && it.getType() == Item.ItemType.TINDER_BUNDLE) return it;
+        }
+        return null;
+    }
+
+    private boolean breakHearthLighting() {
+        if (hearthLighting == null) return false;
+        hearthLighting = null;
+        eventManager.addEvent(new GameEvent("You stop. The hearth stays cold.", 2f));
+        return true;
     }
 
     /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
@@ -2700,6 +2801,16 @@ public class GameScreen extends BaseScreen {
         // --- NEW: Combat Menu Input Interception ---
         if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
             if (hud != null && hud.combatMenu != null) {
+                // The fire key shoots a held bow, crossbow or gun straight from the menu.
+                if (keycode == SettingsManager.getInstance().getKey("FIRE_RANGED")) {
+                    Item held = player.getInventory().getRightHand();
+                    if (held != null && held.isRanged()) {
+                        combatManager.playerAttackInstant();
+                    } else {
+                        hud.addMessage("You have no ranged weapon in hand.");
+                    }
+                    return true;
+                }
                 switch (keycode) {
                     case Input.Keys.I:
                         InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
@@ -3044,32 +3155,14 @@ public class GameScreen extends BaseScreen {
                 }
             }
 
-            if (keycode == Input.Keys.A) {
-                // Ranged Attack, Wand Zap, or Thrown Weapon
-                Item weapon = player.getInventory().getRightHand();
-                if (weapon != null) {
-                    if (weapon.isWand()) {
-                        player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
-                        playerTurnTakesAction();
-                        return true;
-                    } else if (weapon.isRanged()) {
-                        boolean wasExploring =
-                                combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
-                        combatManager.playerAttackInstant();
-                        // Firing costs a turn. Opening fire out of exploration used to be
-                        // free: ammunition spent, the level woken, and no turn passed --
-                        // so the reload never advanced either. In-combat shots pass their
-                        // turn through the combat state machine instead.
-                        if (wasExploring) {
-                            playerTurnTakesAction();
-                        }
-                        return true;
-                    } else if (weapon.isThrown()) {
-                        if (combatManager.throwWeapon(weapon)) {
-                            playerTurnTakesAction();
-                            return true;
-                        }
-                    }
+            boolean fireKey = keycode == SettingsManager.getInstance().getKey("FIRE_RANGED");
+            if (keycode == Input.Keys.A || fireKey) {
+                if (fireHeldRangedWeapon()) {
+                    return true;
+                }
+                if (fireKey) {
+                    hud.addMessage("You have nothing in hand to fire or throw.");
+                    return true;
                 }
             }
 
@@ -3844,6 +3937,16 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.SHELTER_HEARTH_COLD) {
+            beginHearthLighting();
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.SHELTER_HEARTH_LIT) {
+            eventManager.addEvent(new GameEvent("Your fire burns. This shelter is yours.", 2f));
+            return;
+        }
+
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_ALTAR) {
             ShelterAltarScreen altarScreen = new ShelterAltarScreen(game, this, player);
             game.setScreen(altarScreen);
@@ -3883,6 +3986,11 @@ public class GameScreen extends BaseScreen {
             player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
             player.getStatusManager().clearEffects();
             DoomManager.getInstance().resetExpeditionTurns();
+            // This shelter is now the one the player wakes in.
+            if (currentLevel() == 1) {
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
+                        .recordRest(worldManager.getCurrentPlayerChunkId());
+            }
             if (worldManager != null && worldManager.getDayNightManager() != null) {
                 com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
                 if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
@@ -4145,8 +4253,9 @@ public class GameScreen extends BaseScreen {
 
     /**
      * The debug-mode keys and what they do, in a plain readable font (not the game's pixel font) at
-     * a small size, top right. Only drawn while debug mode (F5) is on. The text comes from DebugKeys,
-     * the same table that handles the keys.
+     * a small size, top right beside the minimap's reserved box (it used to take the same corner, so
+     * the map was drawn over it). Only drawn while debug mode (F5) is on. The text comes from
+     * DebugKeys, the same table that handles the keys.
      */
     private void renderDebugLegend() {
         if (!com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked()) {
@@ -4161,8 +4270,9 @@ public class GameScreen extends BaseScreen {
         float lineH = debugLegendFont.getLineHeight() + 2f;
         float width = 330f;
         float height = lines.size() * lineH + 16f;
-        float x = game.getViewport().getWorldWidth() - width - 10f;
-        float top = game.getViewport().getWorldHeight() - 10f;
+        float x = com.bpm.minotaur.rendering.Hud.STAGE_WIDTH - com.bpm.minotaur.rendering.Hud.MINIMAP_MARGIN_RIGHT
+                - com.bpm.minotaur.rendering.Hud.MINIMAP_MAX_SIZE - 10f - width;
+        float top = com.bpm.minotaur.rendering.Hud.STAGE_HEIGHT - com.bpm.minotaur.rendering.Hud.MINIMAP_MARGIN_TOP;
 
         com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
@@ -4241,9 +4351,74 @@ public class GameScreen extends BaseScreen {
                 }
                 return true;
             }
+            case WARP_CASTLE_ROAD_SHELTER: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                debugWarpRoad = com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD;
+                debugWarp(com.bpm.minotaur.debug.DebugCheats.roadShelter(roads, debugWarpRoad, debugWarpStop++),
+                        "castle-road shelter " + debugWarpStop);
+                return true;
+            }
+            case WARP_SEAL_SITE: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                debugWarpRoad = com.bpm.minotaur.debug.DebugCheats.sealRoad(debugWarpSeal++);
+                debugWarp(roads == null ? null : roads.getRoad(debugWarpRoad).getEnd(), "seal site of road " + debugWarpRoad);
+                return true;
+            }
+            case GRANT_SEAL: {
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork net = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance();
+                int road = debugWarpRoad;
+                for (int k = 0; road == com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD || net.hasSeal(road); k++) {
+                    if (k >= com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT) {
+                        eventManager.addEvent(new GameEvent("Debug: every seal is already held", 2f));
+                        return true;
+                    }
+                    road = com.bpm.minotaur.debug.DebugCheats.sealRoad(k);
+                }
+                net.awardSeal(road);
+                eventManager.addEvent(new GameEvent("Debug: granted the seal of road " + road + " ("
+                        + net.getSealCount() + "/" + com.bpm.minotaur.gamedata.blight.CastleGate.SEALS_REQUIRED + ")", 2.5f));
+                return true;
+            }
+            case CLAIM_ROAD: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                if (roads == null) {
+                    eventManager.addEvent(new GameEvent("Debug: this world has no shelter roads", 2f));
+                    return true;
+                }
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().claimRoad(roads.getRoad(debugWarpRoad));
+                eventManager.addEvent(new GameEvent("Debug: claimed every shelter on road " + debugWarpRoad
+                        + " (they light as they load)", 2.5f));
+                return true;
+            }
             default:
                 return false;
         }
+    }
+
+    /** Debug warp cursors: which road, which stop on it, which seal site comes next. */
+    private int debugWarpRoad = com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD;
+    private int debugWarpStop;
+    private int debugWarpSeal;
+
+    /** Sends the player to a surface chunk through the portal-warp path. */
+    private void debugWarp(GridPoint2 chunk, String label) {
+        if (chunk == null) {
+            eventManager.addEvent(new GameEvent("Debug: this world has no shelter roads", 2f));
+            return;
+        }
+        if (currentLevel() != 1) {
+            eventManager.addEvent(new GameEvent("Debug: warp only works on the surface", 2f));
+            return;
+        }
+        Maze destination = worldManager.loadChunk(chunk);
+        if (destination == null) {
+            eventManager.addEvent(new GameEvent("Debug: " + chunk + " cannot be entered", 2f));
+            return;
+        }
+        GridPoint2 arrival = WorldManager.arrivalBesideShelter(destination);
+        if (arrival == null) return;
+        eventManager.addEvent(new GameEvent("Debug: warping to " + label + " at " + chunk, 2f));
+        eventManager.addEvent(new GameEvent(GameEvent.EventType.BIOME_PORTAL_WARP, new WorldManager.PortalWarp(chunk, arrival)));
     }
 
     /** Screen-space clips: self-cast glows, the casting charge, warp flashes. */
