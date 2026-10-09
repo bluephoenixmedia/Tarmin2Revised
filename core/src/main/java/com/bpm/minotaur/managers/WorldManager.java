@@ -1458,6 +1458,12 @@ public class WorldManager {
     private void dressStratum(Maze maze, GridPoint2 chunkId, long chunkSeed, boolean fresh) {
         if (maze == null || currentLevel <= 1) return;
         com.bpm.minotaur.generation.Stratum stratum = com.bpm.minotaur.generation.StratumMap.of(worldSeed, chunkId, currentLevel);
+        // Under a seal site, down to the court, the strata are the gash's: its holder's doctrine (T1.13).
+        if (biomeManager != null && history != null) {
+            com.bpm.minotaur.generation.Stratum gash = com.bpm.minotaur.generation.GashInterior.of(getHistory().world(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), biomeManager.getSealRoad(chunkId), currentLevel);
+            if (gash != null) stratum = gash;
+        }
         maze.setStratum(stratum);
         if (fresh) com.bpm.minotaur.generation.StratumDecorator.decorate(maze, stratum, chunkSeed, assetManager);
         com.bpm.minotaur.generation.StratumDecorator.light(maze, stratum, chunkSeed);

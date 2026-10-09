@@ -37,6 +37,8 @@ public final class SealLordsScenario implements PlaytestScenario {
             Monster lord = ctx.sealLord();
             ctx.log("Court at level " + ctx.getWorldManager().getCurrentLevel() + ", stratum "
                     + ctx.getMaze().getStratum().displayName);
+            ctx.assertTrue(ctx.getMaze().getStratum().interiorTheme != null,
+                    "A seal court lies in its gash's interior, themed by the holder's doctrine (T1.13)");
             ctx.assertTrue(lord != null, "A seal lord must be present at the seal site");
             ctx.assertTrue(lord.isAlive(), "Seal lord must be alive");
             ctx.log("Seal Lord: " + lord.getDisplayName() + " (HP " + lord.getCurrentHP() + "/" + lord.getMaxHP() + ")");

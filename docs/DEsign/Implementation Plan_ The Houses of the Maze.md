@@ -237,6 +237,12 @@ Lectern shows it, and the three seal bosses are generated lords.
   changes. Until this lands, the existing seal-site strata stand in.
 - AC: entering a seal site produces the doctrine's theme; a holder change re-themes it on next
   entry.
+- Done with the court where it is: the strata under a seal site, from level 2 down to the court
+  (level 3), are an interior per doctrine (`Stratum.FLAYED_CATHEDRAL` and seven more: name, fog,
+  glow, props), chosen from the gash's holder on every load (`GashInterior`). A new holder changes
+  the name, fog and glow on next entry; props scattered when the chunk was made stay. Not done:
+  3-5 strata (moving the court deeper would change the lord balance on hold), and doctrine rosters
+  for the interiors' spawns.
 
 **T1.14: Ascendancy events** · STRETCH · deps: T1.6
 - Each Doom Clock stage emits a chronicled Tarmin-Zul ascendancy event (D42). Doom numbers are
