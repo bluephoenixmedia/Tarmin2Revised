@@ -55,6 +55,7 @@ public class MonsterAiManager {
         if (maze == null || monster == null || player == null || !allowMonsterMovement) {
             return;
         }
+        engagedByPlayer = combatManager != null ? combatManager.getMonster() : null;
 
         // A seal lord's traits play out first; an honourable lord's retinue may stand back.
         if (monster.holdsCourt() && SealCourt.onTurn(monster, maze)) {
@@ -261,6 +262,19 @@ public class MonsterAiManager {
     }
 
     private FactionMatrix factionMatrix = new FactionMatrix();
+    /** The monster the player is fighting this turn, if any. */
+    private Monster engagedByPlayer;
+
+    /** Chance per turn a soldier in a battle breaks off to go for the player anyway (plan D31). */
+    static final float WAR_BAND_SPILL = 0.03f;
+
+    /**
+     * Whether a soldier in a battle, with an enemy soldier in sight, turns on the player instead:
+     * when the player is adjacent, when the player is fighting it, or in a melee spill.
+     */
+    static boolean warBandTurnsOnPlayer(int playerDist, boolean engaged, float roll) {
+        return playerDist <= 1 || engaged || roll < WAR_BAND_SPILL;
+    }
 
     public FactionMatrix getFactionMatrix() {
         return factionMatrix;
@@ -342,7 +356,11 @@ public class MonsterAiManager {
             monster.setLastKnownTargetPos(new GridPoint2((int) monster.getTargetMonster().getPosition().x, (int) monster.getTargetMonster().getPosition().y));
             monster.setTurnsSinceLastSeen(0);
         } else if (playerSeen && closestRival != null) {
-            if (playerDist <= closestRivalDist) {
+            // In a battle the enemy line comes first; the player is a bystander until they are not.
+            boolean onPlayer = monster.isWarBand()
+                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer, (float) Math.random())
+                    : playerDist <= closestRivalDist;
+            if (onPlayer) {
                 monster.setTargetMonster(null);
                 monster.setState(Monster.MonsterState.HUNTING);
                 monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));

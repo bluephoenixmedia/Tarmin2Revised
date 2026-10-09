@@ -15,11 +15,18 @@ public class PlayerDeed {
          * The Doom Clock reached a stage it never had before. {@link #target} is the stage. Not
          * strictly the player's doing, but it is the run's, and the history replays it the same way.
          */
-        DOOM_STAGE
+        DOOM_STAGE,
+        /**
+         * The player stood in a battle on the surface until it broke (plan T2.6). {@link #target}
+         * held the field; {@link #other} routed.
+         */
+        BATTLE_WITNESSED
     }
 
     public Kind kind;
     public int target = -1;
+    /** A second house, where the deed needs one; -1 otherwise. */
+    public int other = -1;
     /** The live season the deed happened in: {@link HistoryWorld#liveSeasons()} at the time. */
     public int liveSeason;
 

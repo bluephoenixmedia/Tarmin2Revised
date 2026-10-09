@@ -85,8 +85,18 @@ public class BattleModelTest {
 
     @Test
     public void reserveComesFromHouseStrength() {
-        assertEquals(5, BattleModel.reserveFor(10f));
-        assertEquals(25, BattleModel.reserveFor(100f));
-        assertEquals(30, BattleModel.reserveFor(200f));
+        assertEquals("a spent house still fills its line", BattleModel.LINE + 2, BattleModel.reserveFor(5f));
+        assertEquals(BattleModel.LINE + 20, BattleModel.reserveFor(100f));
+        assertEquals(BattleModel.LINE + 20, BattleModel.reserveFor(200f));
+    }
+
+    @Test
+    public void theOpeningMusterFillsBothLines() {
+        BattleModel m = new BattleModel(1, 30, 2, 8);
+        BattleModel.Orders o = m.muster(2, 2);
+        assertEquals(BattleModel.LINE - 2, o.sendA);
+        assertEquals(8, o.sendB);
+        assertEquals(30 - (BattleModel.LINE - 2), m.a.reserve);
+        assertEquals(0, m.b.reserve);
     }
 }

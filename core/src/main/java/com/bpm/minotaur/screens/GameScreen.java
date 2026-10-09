@@ -1963,11 +1963,35 @@ public class GameScreen extends BaseScreen {
         return worldManager.getInitialPlayerStartPos();
     }
 
+    private final WarManager warManager = new WarManager(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+
+    /** A front over the player's chunk sounds the horns; staying fights the battle (plan T2.3-T2.7). */
+    private void tickWar() {
+        WarManager.Ground g = new WarManager.Ground();
+        g.chunk = worldManager.getCurrentPlayerChunkId();
+        g.level = currentLevel();
+        g.sanctuary = maze != null && maze.isSanctuary();
+        g.front = worldManager.frontHere();
+        g.seats = g.front != null ? worldManager.houseSeats() : null;
+        g.maze = maze;
+        g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
+        WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
+                new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
+                        worldManager.getHistory().warClock() ^ worldManager.getWorldSeed()));
+        for (String line : t.messages) {
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
+        }
+        if (t.volleyDamage > 0 && player != null) {
+            player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
+        }
+    }
+
     /** Every pickup is toasted; a fragment of the Maze's history is read on the spot (plan T1.10). */
     private void onItemPickedUp(Item item) {
         hud.showPickupToast(item);
-        if (item == null || !item.isChronicleFragment()) return;
-        player.getInventory().removeItem(item);
+        if (item == null || item.fragmentKind() == null || item.isTrophyRead()) return;
+        if (item.isChronicleFragment()) player.getInventory().removeItem(item);
+        item.markTrophyRead();
         com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(item.fragmentKind());
         if (told == null) {
             eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));
@@ -2173,8 +2197,9 @@ public class GameScreen extends BaseScreen {
         // --- Periodic Spawning Hook ---
         turnCount++;
         worldManager.processTurn(player, turnCount);
-        // The wars go on, on the surface and in the strata alike.
+        // The wars go on, on the surface and in the strata alike, and may reach the player.
         worldManager.getHistory().tickWarClock();
+        tickWar();
         // Blood on him and his gear dries from crimson toward black as the delve goes on.
         if (player != null) {
             player.ageBlood(1);

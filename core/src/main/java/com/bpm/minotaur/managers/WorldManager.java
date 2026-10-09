@@ -1444,6 +1444,17 @@ public class WorldManager {
                 biomeManager.getCastleSite(), worldSeed);
     }
 
+    /** A soldier for a surface battle: a monster of a monsters.json type, standing at a tile. */
+    public com.bpm.minotaur.gamedata.monster.Monster recruit(String monsterType, int x, int y) {
+        try {
+            return new com.bpm.minotaur.gamedata.monster.Monster(
+                    com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(monsterType), x, y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     /** The front over the player's chunk on the surface, or null. */
     public com.bpm.minotaur.gamedata.history.war.Front frontHere() {
         if (currentLevel != 1 || currentPlayerChunkId == null) return null;

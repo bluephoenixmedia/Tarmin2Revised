@@ -56,9 +56,24 @@ public final class BattleModel {
         this.b = new Side(houseB, reserveB);
     }
 
-    /** A house's reserve for one battle, from its strength (5 to 120 in the history). */
+    /**
+     * A house's reserve for one battle. Even a spent house fills its line (plan D31: 30 to 40 on
+     * the field); its strength (5 to 120 in the history) decides how much stands behind it.
+     */
     public static int reserveFor(float strength) {
-        return Math.max(5, Math.min(30, Math.round(strength / 4f)));
+        return LINE + Math.max(2, Math.min(20, Math.round(strength / 5f)));
+    }
+
+    /** The opening muster: each side fills its line from its reserve at once. */
+    public Orders muster(int linedA, int linedB) {
+        Orders o = new Orders();
+        o.sendA = Math.min(a.reserve, Math.max(0, LINE - linedA));
+        o.sendB = Math.min(b.reserve, Math.max(0, LINE - linedB));
+        a.reserve -= o.sendA;
+        b.reserve -= o.sendB;
+        a.lastAlive = linedA + o.sendA;
+        b.lastAlive = linedB + o.sendB;
+        return o;
     }
 
     /**

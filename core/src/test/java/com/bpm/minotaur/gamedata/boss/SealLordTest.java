@@ -113,4 +113,28 @@ public class SealLordTest {
         assertEquals("3d6", SealLord.withDamageBonus("3d6", 0));
         assertEquals("1d4", SealLord.withDamageBonus(null, 0));
     }
+
+    @Test
+    public void whenAGashChangesHandsSoDoesItsSealBoss() {
+        for (long seed = 0; seed < 60; seed++) {
+            HistoryWorld w = HistorySimulator.prehistory(seed, catalog);
+            SealLord.Spec[] before = new SealLord.Spec[HistoryWorld.GASH_COUNT];
+            for (int g = 0; g < before.length; g++) before[g] = SealLord.compose(w, g, catalog);
+            int from = w.events().size();
+            for (int season = 0; season < 80; season++) {
+                HistorySimulator.tickSeason(w, catalog);
+                for (com.bpm.minotaur.gamedata.history.HistoryEvent e : w.events().subList(from, w.events().size())) {
+                    if (e.type != com.bpm.minotaur.gamedata.history.EventType.SEAT_SEIZED || e.gashIndex < 0) continue;
+                    SealLord.Spec after = SealLord.compose(w, e.gashIndex, catalog);
+                    assertEquals(e.houseA, after.houseId);
+                    assertNotEquals(before[e.gashIndex].houseId, after.houseId);
+                    assertEquals("the castle still wants three seals", 3, com.bpm.minotaur.gamedata.blight.CastleGate.SEALS_REQUIRED);
+                    return;
+                }
+                from = w.events().size();
+                for (int g = 0; g < before.length; g++) before[g] = SealLord.compose(w, g, catalog);
+            }
+        }
+        fail("no gash changed hands in 60 worlds of 20 years");
+    }
 }

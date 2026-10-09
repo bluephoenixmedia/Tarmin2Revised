@@ -244,6 +244,9 @@ public class Monster implements Renderable {
     private boolean sealRageSpent;
     private boolean sealCallSpent;
 
+    /** Fighting in a surface battle between two houses (Houses of the Maze T2.4). Not saved. */
+    private boolean warBand;
+
     public static final int SEAL_LORD = 1;
     public static final int SEAL_RETAINER = 2;
     private Monster targetMonster = null;
@@ -1225,6 +1228,9 @@ public class Monster implements Renderable {
     public void setSealRageSpent(boolean spent) { this.sealRageSpent = spent; }
     public boolean isSealCallSpent() { return sealCallSpent; }
     public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
+
+    public boolean isWarBand() { return warBand; }
+    public void setWarBand(boolean warBand) { this.warBand = warBand; }
 
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
     public boolean holdsCourt() {

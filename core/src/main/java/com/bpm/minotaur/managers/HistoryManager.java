@@ -110,6 +110,16 @@ public final class HistoryManager {
         return highest;
     }
 
+    /**
+     * A battle the player stood in has broken: {@code winner} held the field and {@code loser}
+     * routed. It enters the history like any battle of the war (plan T2.6).
+     */
+    public void recordBattle(int winner, int loser) {
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.BATTLE_WITNESSED, winner, world.liveSeasons());
+        d.other = loser;
+        apply(d);
+    }
+
     /** One player turn passes for the wars (plan D22): fronts move with this clock. */
     public void tickWarClock() {
         warClock++;

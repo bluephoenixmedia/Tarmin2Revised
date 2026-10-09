@@ -225,7 +225,10 @@ public class Item implements Renderable {
         VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT,
 
         // Fragments of the Maze's history, read on pickup (Houses of the Maze plan T1.10)
-        CHRONICLE_PAGE, HERALD_PROCLAMATION, TORN_BANNER
+        CHRONICLE_PAGE, HERALD_PROCLAMATION, TORN_BANNER,
+
+        // A trophy of a broken house: worth coin, and it tells a story (Houses of the Maze T2.7)
+        SIGNET_RING
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -1335,7 +1338,21 @@ public class Item implements Renderable {
 
     /** A found piece of the Maze's history; it is read on pickup, not carried. */
     public boolean isChronicleFragment() {
-        return fragmentKind() != null;
+        return type == ItemType.CHRONICLE_PAGE || type == ItemType.HERALD_PROCLAMATION || type == ItemType.TORN_BANNER;
+    }
+
+    /** A trophy taken from a broken house: it tells its story once, then it is kept and sold. */
+    public boolean isTrophy() {
+        return type == ItemType.SIGNET_RING;
+    }
+
+    /** Whether a trophy has told its story already. Kept on the study counter, which it never otherwise uses. */
+    public boolean isTrophyRead() {
+        return isTrophy() && studyProgress > 0;
+    }
+
+    public void markTrophyRead() {
+        if (isTrophy()) studyProgress = 1;
     }
 
     /** What kind of history this item tells, or null if it is no fragment. */
@@ -1345,6 +1362,7 @@ public class Item implements Renderable {
             case CHRONICLE_PAGE: return com.bpm.minotaur.gamedata.history.FragmentKind.PAGE;
             case HERALD_PROCLAMATION: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
             case TORN_BANNER: return com.bpm.minotaur.gamedata.history.FragmentKind.BANNER;
+            case SIGNET_RING: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
             default: return null;
         }
     }

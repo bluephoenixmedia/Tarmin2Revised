@@ -554,6 +554,11 @@ public final class HistorySimulator {
         float pd = power(d) * 1.1f * (0.6f + rng.nextFloat() * 0.8f);
         House winner = pa >= pd ? a : d;
         House loser = winner == a ? d : a;
+        fought(w, winner, loser);
+    }
+
+    /** A battle's aftermath: the field, the dead, perhaps a hostage, perhaps a seat. */
+    private HistoryEvent fought(War w, House winner, House loser) {
         HistoryEvent e = record(EventType.BATTLE);
         e.houseA = winner.id;
         e.houseB = loser.id;
@@ -596,6 +601,7 @@ public final class HistorySimulator {
         if (loser.strength < 15f && rng.nextFloat() < 0.35f) seize(w, winner, loser, e);
         loser.strength = Math.max(5f, loser.strength);
         winner.strength = Math.max(5f, winner.strength);
+        return e;
     }
 
     private float power(House h) {
@@ -676,6 +682,13 @@ public final class HistorySimulator {
             if (killer != null) killer.prestige += 3;
         } else if (deed.kind == PlayerDeed.Kind.DOOM_STAGE) {
             ascend(deed.target);
+        } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
+            House winner = world.house(deed.target);
+            House loser = world.house(deed.other);
+            War w = winner == null || loser == null ? null : world.activeWarBetween(winner.id, loser.id);
+            if (w == null) return;
+            rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xBA77L);
+            fought(w, winner, loser).detail = 1;
         }
     }
 

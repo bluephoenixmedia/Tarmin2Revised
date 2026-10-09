@@ -1276,6 +1276,9 @@ public class ItemDataManager {
                 "A proclamation of one of the Maze's houses, nailed up for all to read.", ItemType.SCROLL);
         registerFragmentTemplate(ItemType.TORN_BANNER, "Torn Banner",
                 "A house banner left on a battlefield. Its stains tell a story.", ItemType.SCROLL);
+        registerFragmentTemplate(ItemType.SIGNET_RING, "Signet Ring",
+                "A house's signet, taken from its broken army. Merchants pay well for one.", ItemType.SMALL_RING);
+        itemTemplates.get(ItemType.SIGNET_RING).baseValue = 120;
 
         // --- Open5e Potions ---
         registerPotionTemplate(ItemType.POTION_GREATER_HEALING, "Potion of Greater Healing", "Restores 4d4+4 HP (min 35%).", 150);
