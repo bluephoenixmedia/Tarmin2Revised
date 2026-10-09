@@ -1473,8 +1473,9 @@ public class WorldManager {
 
     private void settleTown(Maze maze, GridPoint2 chunkId, boolean fresh) {
         if (maze == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, chunkId, currentLevel)) return;
-        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(
-                com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, chunkId.x, chunkId.y));
+        String key = com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, chunkId.x, chunkId.y);
+        getHistory().seatExile(key);
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(key);
         if (fresh) TownBuilder.raise(maze, town, itemDataManager, assetManager);
         TownBuilder.populate(maze, town, dataManager, itemDataManager, assetManager,
                 getHistory().standing().isHostile(town), this::recruit);

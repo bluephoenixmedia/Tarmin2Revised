@@ -14,7 +14,9 @@ public final class Town {
 
     /** What a town's folk do; the merchant is the travelling merchant, seated here. */
     public enum Role {
-        MERCHANT("Merchant"), SMITH("Smith"), INNKEEPER("Innkeeper"), QUESTGIVER("Reeve"), ELDER("Elder"), COMMONER("Townsfolk");
+        MERCHANT("Merchant"), SMITH("Smith"), INNKEEPER("Innkeeper"), QUESTGIVER("Reeve"), ELDER("Elder"), COMMONER("Townsfolk"),
+        /** A sworn sword of a fallen house, taken in (plan D37): a character of the history. */
+        EXILE("Exile");
 
         public final String title;
 
@@ -30,12 +32,19 @@ public final class Town {
         public final Role role;
         /** A monster sprite to stand in for them until town art lands. */
         public final String sprite;
+        /** The history's figure this is, or -1 for folk the history never named. */
+        public final int figureId;
 
         Folk(int index, String name, Role role, String sprite) {
+            this(index, name, role, sprite, -1);
+        }
+
+        Folk(int index, String name, Role role, String sprite, int figureId) {
             this.index = index;
             this.name = name;
             this.role = role;
             this.sprite = sprite;
+            this.figureId = figureId;
         }
 
         /** "Brenna the Smith". */
@@ -94,6 +103,16 @@ public final class Town {
         int roll = rng.nextInt(100);
         int welcome = roll < HOSTILE_PERCENT ? Standing.HOSTILE - 15 : roll < HOSTILE_PERCENT + WARY_PERCENT ? -10 : 0;
         return new Town(key, name, allegiance, folk, welcome);
+    }
+
+    /** A hooded stand-in for a sword of the Maze living among mortals. */
+    static final String EXILE_SPRITE = "CLOAKED_SKELETON";
+
+    /** This town, having taken in the history's figure {@code figureId}, named {@code name}. */
+    public Town withExile(int figureId, String name) {
+        List<Folk> more = new ArrayList<>(folk);
+        more.add(new Folk(folk.size(), name, Role.EXILE, EXILE_SPRITE, figureId));
+        return new Town(key, this.name, allegiance, more, welcome);
     }
 
     public Folk folk(Role role) {

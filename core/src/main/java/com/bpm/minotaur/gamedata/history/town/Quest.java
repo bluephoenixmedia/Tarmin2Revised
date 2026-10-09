@@ -62,7 +62,9 @@ public class Quest {
                 // Never the reeve who asks, and never the merchant, who answers to no one.
                 List<Integer> suspects = new ArrayList<>();
                 for (Town.Folk f : town.folk) {
-                    if (f.role != Town.Role.QUESTGIVER && f.role != Town.Role.MERCHANT) suspects.add(f.index);
+                    if (f.role != Town.Role.QUESTGIVER && f.role != Town.Role.MERCHANT && f.role != Town.Role.EXILE) {
+                        suspects.add(f.index);
+                    }
                 }
                 q.agentIndex = suspects.get(rng.nextInt(suspects.size()));
                 break;

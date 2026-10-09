@@ -27,6 +27,8 @@ public final class HistoryManager {
     private final java.util.Map<Integer, Integer> beastHp = new java.util.HashMap<>();
     private com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
     private final java.util.Set<String> townsFound = new java.util.LinkedHashSet<>();
+    /** Town key to the figure id of the exile it took in. */
+    private final java.util.Map<String, Integer> townExiles = new java.util.LinkedHashMap<>();
     private final com.bpm.minotaur.gamedata.history.town.Standing standing = new com.bpm.minotaur.gamedata.history.town.Standing();
     private final java.util.Map<String, com.bpm.minotaur.gamedata.history.town.Quest> quests = new java.util.LinkedHashMap<>();
 
@@ -62,6 +64,12 @@ public final class HistoryManager {
         }
         m.hunt = save.hunt;
         if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
+        if (save.townExiles != null) {
+            for (String entry : save.townExiles) {
+                int eq = entry.lastIndexOf('=');
+                if (eq > 0) m.townExiles.put(entry.substring(0, eq), Integer.parseInt(entry.substring(eq + 1)));
+            }
+        }
         if (save.standingTowns != null) {
             for (int i = 0; i < Math.min(save.standingTowns.size(), save.standingTownValues.size()); i++) {
                 m.standing.towns().put(save.standingTowns.get(i), save.standingTownValues.get(i));
@@ -183,9 +191,32 @@ public final class HistoryManager {
         return hunt;
     }
 
-    /** The town at {@code key}: the same town, with the same folk, every time it is asked for. */
+    /**
+     * The town at {@code key}: the same town, with the same folk, every time it is asked for. The
+     * k-th town the player finds has taken in the k-th of the history's exiles, if they live
+     * (plan D37); a town not yet found is asked about as the next one would be.
+     */
     public com.bpm.minotaur.gamedata.history.town.Town town(String key) {
-        return com.bpm.minotaur.gamedata.history.town.Town.of(world.seed, key);
+        com.bpm.minotaur.gamedata.history.town.Town town = com.bpm.minotaur.gamedata.history.town.Town.of(world.seed, key);
+        Integer id = townExiles.get(key);
+        com.bpm.minotaur.gamedata.history.Figure exile = id != null ? world.figure(id) : null;
+        // An exile who has died, or gone home to take their house's seat, is no longer here.
+        return world.isExile(exile) ? town.withExile(exile.id, exile.name) : town;
+    }
+
+    /**
+     * The first time the player stands in the town at {@code key}, it has taken in one of the
+     * history's exiles not already living in another, if there is one. Saved, so an exile never
+     * moves; a town with none may take one in later, as houses fall.
+     */
+    public void seatExile(String key) {
+        if (townExiles.containsKey(key)) return;
+        for (com.bpm.minotaur.gamedata.history.Figure f : world.exiles()) {
+            if (!townExiles.containsValue(f.id)) {
+                townExiles.put(key, f.id);
+                return;
+            }
+        }
     }
 
     public com.bpm.minotaur.gamedata.history.town.Standing standing() {
@@ -265,6 +296,8 @@ public final class HistoryManager {
         }
         save.hunt = hunt;
         save.townsFound = new ArrayList<>(townsFound);
+        save.townExiles = new ArrayList<>();
+        for (java.util.Map.Entry<String, Integer> e : townExiles.entrySet()) save.townExiles.add(e.getKey() + "=" + e.getValue());
         for (java.util.Map.Entry<String, Integer> e : standing.towns().entrySet()) {
             save.standingTowns.add(e.getKey());
             save.standingTownValues.add(e.getValue());

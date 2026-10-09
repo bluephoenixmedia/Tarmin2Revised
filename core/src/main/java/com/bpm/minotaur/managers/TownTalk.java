@@ -68,6 +68,7 @@ public final class TownTalk {
     public String greet() {
         if (hostile()) return clean(folk.name + " will not look at you. \"Get out of " + town.name + ".\"");
         Random rng = new Random(town.key.hashCode() * 31L + folk.index + history.world().liveSeasons());
+        if (folk.role == Town.Role.EXILE) return clean(folk.name + ": \"" + exileLine(rng) + "\"");
         String[] lines;
         switch (folk.role) {
             case SMITH: lines = new String[]{"Steel keeps. Everything else rusts.", "Bring me iron from the dead and I will make it sing."}; break;
@@ -77,6 +78,19 @@ public final class TownTalk {
             default: lines = new String[]{"Mind the dark past the lamps.", "You came from up there? Gods."}; break;
         }
         return clean(folk.name + ": \"" + lines[rng.nextInt(lines.length)] + "\"");
+    }
+
+    /** An exile speaks of the house they served, which the history broke. */
+    private String exileLine(Random rng) {
+        com.bpm.minotaur.gamedata.history.Figure me = history.world().figure(folk.figureId);
+        com.bpm.minotaur.gamedata.history.House served = me != null ? history.world().house(me.houseId) : null;
+        String house = served != null ? served.name : "a house that is gone";
+        String[] lines = {
+                "I was sworn to " + house + ". The blood I served is ash, and I am still here. Make of that what you like.",
+                "Ask the chronicles what became of " + house + ". I was there. I would rather not tell it.",
+                "The mortals let me sit by their fire. " + house + " never once did that."
+        };
+        return lines[rng.nextInt(lines.length)];
     }
 
     /** Rumours: the loudest news of the last few seasons, as it travels down here. */
@@ -151,7 +165,7 @@ public final class TownTalk {
     public boolean canAccuse() {
         Quest q = history.quest(town.key);
         return q != null && q.accepted && !q.done && q.kind == Quest.Kind.UNMASK_AGENT && folk.role != Town.Role.QUESTGIVER
-                && folk.role != Town.Role.MERCHANT;
+                && folk.role != Town.Role.MERCHANT && folk.role != Town.Role.EXILE;
     }
 
     /** Accuse: right, and the town is grateful; wrong, and it is not. */

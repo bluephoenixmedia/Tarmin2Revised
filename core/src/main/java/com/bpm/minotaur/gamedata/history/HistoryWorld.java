@@ -126,6 +126,32 @@ public class HistoryWorld {
         return out;
     }
 
+    /**
+     * The history's living exiles, who went under the ground and whom the towns took in (plan
+     * D37): sworn swords who outlived the house they served, and the losers of a disputed
+     * succession or a usurpation who survived it and do not now hold their house. By id.
+     */
+    public List<Figure> exiles() {
+        java.util.Set<Figure> out = new java.util.TreeSet<>((a, b) -> Integer.compare(a.id, b.id));
+        for (Figure f : figures) {
+            House h = house(f.houseId);
+            if (f.isAlive() && f.role == Figure.Role.SWORN_SWORD && h != null && h.isExtinct()) out.add(f);
+        }
+        for (HistoryEvent e : events) {
+            if (e.type != EventType.USURPATION && e.type != EventType.DISPUTED_SUCCESSION) continue;
+            Figure loser = figure(e.figureB);
+            if (loser != null && isExile(loser)) out.add(loser);
+        }
+        return new ArrayList<>(out);
+    }
+
+    /** Whether {@code f} lives in exile now: alive, and holding no seat. */
+    public boolean isExile(Figure f) {
+        if (f == null || !f.isAlive() || f.hostageOf >= 0) return false;
+        House h = house(f.houseId);
+        return h != null && h.lordId != f.id;
+    }
+
     public List<Figure> swornSwords(House h) {
         List<Figure> out = new ArrayList<>();
         for (Figure f : figures) {
