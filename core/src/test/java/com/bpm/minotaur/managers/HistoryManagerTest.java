@@ -200,4 +200,13 @@ public class HistoryManagerTest {
         m.noteDoomStage(4);
         assertEquals(3, count(m, EventType.TARMIN_ASCENDANT));
     }
+
+    @Test
+    public void theWarClockTicksAndSurvivesALoad() {
+        HistoryManager a = HistoryManager.create(34L, catalog);
+        for (int i = 0; i < 250; i++) a.tickWarClock();
+        HistoryManager b = HistoryManager.fromSave(0L, a.toSave(), catalog);
+        assertEquals(250, b.warClock());
+        assertEquals(a.world().fingerprint(), b.world().fingerprint());
+    }
 }

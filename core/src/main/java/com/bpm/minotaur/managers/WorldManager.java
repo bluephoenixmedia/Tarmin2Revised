@@ -1434,6 +1434,22 @@ public class WorldManager {
         return -1;
     }
 
+    /**
+     * Where the houses sit in this world, or null in a world laid out before the shelter roads,
+     * which has no seal sites to seat them at.
+     */
+    public com.bpm.minotaur.gamedata.history.war.SeatMap houseSeats() {
+        if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
+        return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
+                biomeManager.getCastleSite(), worldSeed);
+    }
+
+    /** Every war's front right now; empty in a world with no seats. */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
+        return seats == null ? java.util.Collections.emptyList() : getHistory().fronts(seats);
+    }
+
     /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */
     private void attachHouseRelations() {
         if (factionMatrix != null && history != null) {

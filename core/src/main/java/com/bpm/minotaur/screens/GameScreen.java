@@ -2173,6 +2173,8 @@ public class GameScreen extends BaseScreen {
         // --- Periodic Spawning Hook ---
         turnCount++;
         worldManager.processTurn(player, turnCount);
+        // The wars go on, on the surface and in the strata alike.
+        worldManager.getHistory().tickWarClock();
         // Blood on him and his gear dries from crimson toward black as the delve goes on.
         if (player != null) {
             player.ageBlood(1);

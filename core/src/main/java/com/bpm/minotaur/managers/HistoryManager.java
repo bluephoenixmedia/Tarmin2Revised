@@ -23,6 +23,7 @@ public final class HistoryManager {
     private final DoctrineCatalog catalog;
     private final List<PlayerDeed> deeds = new ArrayList<>();
     private final Set<Integer> unlocked = new LinkedHashSet<>();
+    private long warClock;
 
     private HistoryManager(HistoryWorld world, DoctrineCatalog catalog) {
         this.world = world;
@@ -48,6 +49,7 @@ public final class HistoryManager {
             if (season < save.liveSeasons) HistorySimulator.tickSeason(m.world, catalog);
         }
         if (save.unlockedEvents != null) m.unlocked.addAll(save.unlockedEvents);
+        m.warClock = save.warClock;
         return m;
     }
 
@@ -108,6 +110,20 @@ public final class HistoryManager {
         return highest;
     }
 
+    /** One player turn passes for the wars (plan D22): fronts move with this clock. */
+    public void tickWarClock() {
+        warClock++;
+    }
+
+    public long warClock() {
+        return warClock;
+    }
+
+    /** Where every war is being fought now, given where the houses sit in this world. */
+    public List<com.bpm.minotaur.gamedata.history.war.Front> fronts(com.bpm.minotaur.gamedata.history.war.SeatMap seats) {
+        return com.bpm.minotaur.gamedata.history.war.FrontPlanner.fronts(world, seats, warClock);
+    }
+
     public void unlock(int eventId) {
         unlocked.add(eventId);
     }
@@ -126,6 +142,7 @@ public final class HistoryManager {
         save.liveSeasons = world.liveSeasons();
         save.deeds = new ArrayList<>(deeds);
         save.unlockedEvents = new ArrayList<>(unlocked);
+        save.warClock = warClock;
         return save;
     }
 

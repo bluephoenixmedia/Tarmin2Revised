@@ -14,6 +14,11 @@ public class HistorySaveData {
      */
     public Long seed;
     public int liveSeasons;
+    /**
+     * Player turns since the history began, surface and strata alike (plan D22). Fronts are a
+     * function of it, so it is state, not replay: a reload simply resumes it.
+     */
+    public long warClock;
     /** Every player deed, in the order it happened. */
     public List<PlayerDeed> deeds = new ArrayList<>();
     /** Event ids whose chronicle entries the player has unlocked through fragments. */
