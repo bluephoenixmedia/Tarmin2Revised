@@ -82,6 +82,11 @@ public class BonesManager {
      * Strictly skipped in GameMode.CLASSIC to maintain retro mode isolation.
      */
     public BonesData recordBonesOnDeath(Player player, int floorLevel, String epitaph, GameMode gameMode) {
+        return recordBonesOnDeath(player, floorLevel, epitaph, gameMode, null);
+    }
+
+    /** As above; {@code epithet} is what the Maze called the fallen, carried by their ghost (D45). */
+    public BonesData recordBonesOnDeath(Player player, int floorLevel, String epitaph, GameMode gameMode, String epithet) {
         if (gameMode == GameMode.CLASSIC) {
             log("Retro Classic mode active: skipping bones file generation.");
             return null;
@@ -111,6 +116,7 @@ public class BonesManager {
         } catch (Exception ignored) {
         }
 
+        if (epithet != null && !epithet.isEmpty()) charName = charName + " " + epithet;
         PlayerSaveData playerData = new PlayerSaveData(player);
         BonesData bones = new BonesData(id, charName, epitaph, clampedFloor, strataDepth, playerData);
 

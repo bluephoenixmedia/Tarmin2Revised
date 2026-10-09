@@ -1335,7 +1335,18 @@ public class Item implements Renderable {
 
     /** A found piece of the Maze's history; it is read on pickup, not carried. */
     public boolean isChronicleFragment() {
-        return type == ItemType.CHRONICLE_PAGE || type == ItemType.HERALD_PROCLAMATION || type == ItemType.TORN_BANNER;
+        return fragmentKind() != null;
+    }
+
+    /** What kind of history this item tells, or null if it is no fragment. */
+    public com.bpm.minotaur.gamedata.history.FragmentKind fragmentKind() {
+        if (type == null) return null;
+        switch (type) {
+            case CHRONICLE_PAGE: return com.bpm.minotaur.gamedata.history.FragmentKind.PAGE;
+            case HERALD_PROCLAMATION: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
+            case TORN_BANNER: return com.bpm.minotaur.gamedata.history.FragmentKind.BANNER;
+            default: return null;
+        }
     }
 
     public boolean isCargo() {

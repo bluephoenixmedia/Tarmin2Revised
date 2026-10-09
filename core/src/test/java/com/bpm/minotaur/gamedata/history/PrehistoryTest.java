@@ -135,4 +135,19 @@ public class PrehistoryTest {
         for (HistoryEvent e : w.events()) if (e.type == type) n++;
         return n;
     }
+
+    @Test
+    public void fourToEightLesserHousesHoldThroughLivePlayToo() {
+        for (long seed = 0; seed < 10; seed++) {
+            HistoryWorld w = HistorySimulator.prehistory(seed, catalog);
+            for (int season = 0; season < 200; season++) {
+                HistorySimulator.tickSeason(w, catalog);
+                int lesser = 0;
+                for (House h : w.livingHouses()) {
+                    if (!h.isGreat() && !h.holdsCastle) lesser++;
+                }
+                assertTrue("seed " + seed + " season " + season + " lesser " + lesser, lesser >= 4 && lesser <= 8);
+            }
+        }
+    }
 }

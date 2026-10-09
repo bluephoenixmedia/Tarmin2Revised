@@ -35,6 +35,9 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **House**: A political power of the Maze. A **great house** holds a gash; a **lesser house** is sworn to one, or to no one. Every house is hostile to the player.
 - **Gash**: A tear from the Maze into the world, at a seal site. Its **holder** is the house that owns it.
 - **Lord**: The character who heads a house. **Heir**, **vassal** and **sworn sword** are characters too.
+- **Seal Lord**: The lord holding a seal road's gash, met as that road's seal boss two strata beneath its seal site.
+- **Court**: A seal lord and its **retainers** (the house's sworn swords) in the strata beneath a seal site. A court never leaves its gash.
+- **Epithet**: A name the chronicle gives a figure, which depends on who tells it ("the Steadfast" to their own house, "the Usurper" to others). The player earns one too.
 - **Doctrine**: A house's authored creed. It sets the house's soldiers, palette, gash interior and chronicler voice.
 - **Casus Belli**: The recorded reason a house declared war.
 - **Season**: One political tick of the history, which happens once per shelter sleep.

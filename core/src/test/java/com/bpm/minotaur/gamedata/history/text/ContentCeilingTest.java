@@ -49,6 +49,24 @@ public class ContentCeilingTest {
         ChronicleGrammar grammar = ChronicleGrammarTest.loadGrammar();
         for (long seed = 0; seed < 200; seed++) {
             HistoryWorld w = HistorySimulator.prehistory(seed, catalog);
+            // The live-only events: a slain lord, fallen seekers (by a house and by no one), every doom stage.
+            HistorySimulator.applyDeed(w, new com.bpm.minotaur.gamedata.history.PlayerDeed(
+                    com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SLEW_FIGURE, w.lordOf(w.gashHolder(0)).id, 0));
+            HistorySimulator.applyDeed(w, new com.bpm.minotaur.gamedata.history.PlayerDeed(
+                    com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SEEKER_FELL, w.gashHolder(1).id, 0));
+            HistorySimulator.applyDeed(w, new com.bpm.minotaur.gamedata.history.PlayerDeed(
+                    com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SEEKER_FELL, -1, 0));
+            for (int stage = 2; stage <= 4; stage++) {
+                HistorySimulator.applyDeed(w, new com.bpm.minotaur.gamedata.history.PlayerDeed(
+                        com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.DOOM_STAGE, stage, 0));
+            }
+            HistorySimulator.tickSeason(w, catalog);
+            for (int g = 0; g < HistoryWorld.GASH_COUNT; g++) {
+                com.bpm.minotaur.gamedata.boss.SealLord.Spec lord = com.bpm.minotaur.gamedata.boss.SealLord.compose(w, g, catalog);
+                check(seed, lord.name);
+                for (com.bpm.minotaur.gamedata.boss.SealLord.Retainer r : lord.retinue) check(seed, r.name);
+            }
+            for (String line : Headlines.of(w, w.events(), 5, grammar, catalog)) check(seed, line);
             for (House h : w.houses()) {
                 check(seed, h.name + " / " + h.sigil + " / " + h.words + " / " + h.holdfast);
             }

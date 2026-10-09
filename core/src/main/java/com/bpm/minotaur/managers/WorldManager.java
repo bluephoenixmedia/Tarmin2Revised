@@ -1423,6 +1423,17 @@ public class WorldManager {
         if (history != null) history.noteDoomStage(DoomManager.getInstance().getDoomStage());
     }
 
+    /** The Maze house a monster fights for: its own, Tarmin-Zul's for the Legion, else -1. */
+    public int houseOf(com.bpm.minotaur.gamedata.monster.Monster m) {
+        if (m == null) return -1;
+        if (m.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.MAZE_HOUSE) return m.getHouseId();
+        if (m.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.TARMIN_LEGION && history != null
+                && history.world().tarminHouse() != null) {
+            return history.world().tarminHouse().id;
+        }
+        return -1;
+    }
+
     /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */
     private void attachHouseRelations() {
         if (factionMatrix != null && history != null) {

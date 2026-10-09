@@ -1355,11 +1355,16 @@ public class GameScreen extends BaseScreen {
                     epitaph = buildEpitaph(telemetry);
                 } catch (Exception ignored) {
                 }
-                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode);
+                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode,
+                        com.bpm.minotaur.gamedata.history.text.Epithets.player(worldManager.getHistory().world()));
             }
 
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
-            DoomManager.getInstance().recordDeath(activeExpeditionRunId);
+            if (DoomManager.getInstance().recordDeath(activeExpeditionRunId)) {
+                // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
+                worldManager.getHistory().recordSeekerFell(
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse());
+            }
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
             Gdx.app.log("GameScreen", "Doom updated on death. Count: " + deaths + " (" + (int) bridge + "%)");
@@ -1774,9 +1779,6 @@ public class GameScreen extends BaseScreen {
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
-        // The Maze remembers the fallen; recorded before the wipe re-rolls the world seed.
-        worldManager.getHistory().recordSeekerFell(-1);
-
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
         DivinityManager.getInstance().onWorldReset();
@@ -1966,11 +1968,7 @@ public class GameScreen extends BaseScreen {
         hud.showPickupToast(item);
         if (item == null || !item.isChronicleFragment()) return;
         player.getInventory().removeItem(item);
-        com.bpm.minotaur.gamedata.history.FragmentKind kind =
-                item.getType() == Item.ItemType.CHRONICLE_PAGE ? com.bpm.minotaur.gamedata.history.FragmentKind.PAGE
-                : item.getType() == Item.ItemType.TORN_BANNER ? com.bpm.minotaur.gamedata.history.FragmentKind.BANNER
-                : com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
-        com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(kind);
+        com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(item.fragmentKind());
         if (told == null) {
             eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));
             return;

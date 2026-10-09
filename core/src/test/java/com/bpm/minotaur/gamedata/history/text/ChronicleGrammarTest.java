@@ -142,7 +142,9 @@ public class ChronicleGrammarTest {
     /** Writes whole chronicles for human prose review (plan T1.8): core/build/chronicle/seed-N.txt. */
     @Test
     public void dumpChroniclesForReview() throws IOException {
-        for (long seed = 1; seed <= 3; seed++) {
+        String asked = System.getProperty("chronicle.seed");
+        long[] seeds = asked != null ? new long[]{Long.parseLong(asked.trim())} : new long[]{1, 2, 3};
+        for (long seed : seeds) {
             HistoryWorld w = HistorySimulator.prehistory(seed, catalog);
             File out = new File("build/chronicle/seed-" + seed + ".txt");
             out.getParentFile().mkdirs();

@@ -287,6 +287,11 @@ public class CodexScreen extends BaseScreen {
             return;
         }
 
+        bodyContainer.add(UiLabels.ellipsized(UiGlyphs.sanitize("The Maze calls you "
+                        + com.bpm.minotaur.gamedata.history.text.Epithets.player(world) + "."),
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE)))
+                .left().growX().padBottom(UiTheme.PAD_MD).row();
+
         Table houses = new Table();
         houses.top().left();
         houses.add(createFilterPill("All Houses", annalsHouse < 0, () -> { annalsHouse = -1; refreshView(); }))

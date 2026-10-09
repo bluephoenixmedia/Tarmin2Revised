@@ -703,6 +703,8 @@ public class CombatManager {
             bleedPlayer(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageHouse(
+                    worldManager != null ? worldManager.houseOf(attacker) : -1);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
 
