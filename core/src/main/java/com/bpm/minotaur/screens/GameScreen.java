@@ -4149,6 +4149,14 @@ public class GameScreen extends BaseScreen {
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
+            // A gash that changed hands is told outright, whatever else the season brought (plan D32).
+            for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : news) {
+                String seized = com.bpm.minotaur.gamedata.boss.SealLord.seizureNotice(worldManager.getHistory().world(), heard);
+                if (seized != null) {
+                    worldManager.getHistory().unlock(heard.id);
+                    eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(seized), 8f));
+                }
+            }
             // The news is a shelter rumour: it becomes known history, readable at the Lectern.
             for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
                 worldManager.getHistory().unlock(heard.id);

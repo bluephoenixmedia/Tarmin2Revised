@@ -106,6 +106,20 @@ public class HistoryWorld {
         return null;
     }
 
+    /**
+     * The latest seizure of gash {@code index} since the live history began -- this run's news, not
+     * prehistory's (plan D32) -- or null.
+     */
+    public HistoryEvent seizedThisRun(int index) {
+        int liveSince = season - liveSeasons;
+        for (int i = events.size() - 1; i >= 0; i--) {
+            HistoryEvent e = events.get(i);
+            if (e.season < liveSince) break;
+            if (e.type == EventType.SEAT_SEIZED && e.gashIndex == index) return e;
+        }
+        return null;
+    }
+
     public Figure lordOf(House h) {
         return h == null ? null : figure(h.lordId);
     }

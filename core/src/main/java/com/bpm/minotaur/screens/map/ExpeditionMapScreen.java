@@ -444,7 +444,11 @@ public class ExpeditionMapScreen extends BaseScreen {
             if (biomes != null && biomes.isCastleChunk(c) && model.isCastleKnown()) lines.add("Castle Tarmin");
             int sealRoad = biomes == null ? -1 : biomes.getSealRoad(c);
             if (sealRoad > 0 && model.isSealSiteKnown(sealRoad)) {
-                lines.add("Seal site of " + MapNames.road(sealRoad) + (network.hasSeal(sealRoad) ? ", seal won" : ""));
+                String holder = worldManager == null ? ""
+                        : com.bpm.minotaur.gamedata.boss.SealLord.holderLine(worldManager.getHistory().world(),
+                                com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(sealRoad));
+                lines.add(com.bpm.minotaur.ui.UiGlyphs.sanitize("Seal site of " + MapNames.road(sealRoad)
+                        + (network.hasSeal(sealRoad) ? ", seal won" : "") + (holder.isEmpty() ? "" : ", " + holder)));
             }
         }
         if (known == MapModel.Knowledge.VISITED && worldManager != null) {
