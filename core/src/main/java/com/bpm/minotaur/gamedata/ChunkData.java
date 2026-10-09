@@ -271,6 +271,9 @@ public class ChunkData {
                 }
             }
             monster.setHouseId(data.houseId);
+            monster.setFigureId(data.figureId);
+            monster.setSealRoad(data.sealRoad);
+            monster.setSealRole(data.sealRole);
             maze.addMonster(monster);
         }
 
@@ -622,6 +625,10 @@ public class ChunkData {
 
         /** The monster's Maze house; -1 on old saves and for every non-Maze monster. */
         public int houseId = -1;
+        /** Named-figure identity (Houses of the Maze T1.12); stats are rebuilt from the history. */
+        public int figureId = -1;
+        public int sealRoad = -1;
+        public int sealRole;
 
         public MonsterData() {
         }
@@ -644,6 +651,9 @@ public class ChunkData {
             this.blighted = monster.isBlighted();
             this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
             this.houseId = monster.getHouseId();
+            this.figureId = monster.getFigureId();
+            this.sealRoad = monster.getSealRoad();
+            this.sealRole = monster.getSealRole();
         }
     }
 

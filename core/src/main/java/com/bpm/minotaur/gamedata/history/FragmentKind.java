@@ -14,7 +14,8 @@ public enum FragmentKind {
             EventType.HOSTAGE_TAKEN, EventType.HOSTAGE_EXECUTED, EventType.HOUSE_EXTINGUISHED, EventType.SEEKER_FELL)),
     /** A herald's proclamation, nailed up or carried by an impaled herald: matters of state. */
     PROCLAMATION(EnumSet.of(EventType.WAR_DECLARED, EventType.PEACE, EventType.SEAT_SEIZED,
-            EventType.VASSAL_OATH, EventType.VASSAL_REBELLION, EventType.SLAIN_BY_PLAYER)),
+            EventType.VASSAL_OATH, EventType.VASSAL_REBELLION, EventType.SLAIN_BY_PLAYER,
+            EventType.TARMIN_ASCENDANT)),
     /** A torn banner from a battlefield. */
     BANNER(EnumSet.of(EventType.BATTLE, EventType.SEAT_SEIZED, EventType.HOUSE_EXTINGUISHED)),
     /** One of the Void's lore glyphs: the oldest story, how Tarmin-Zul came through. */

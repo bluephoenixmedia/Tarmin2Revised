@@ -56,6 +56,11 @@ public class MonsterAiManager {
             return;
         }
 
+        // A seal lord's traits play out first; an honourable lord's retinue may stand back.
+        if (monster.holdsCourt() && SealCourt.onTurn(monster, maze)) {
+            return;
+        }
+
         // Bleed status effect tick
         if (monster.getBleedTurns() > 0) {
             int bleedDmg = monster.applyBleedTick();

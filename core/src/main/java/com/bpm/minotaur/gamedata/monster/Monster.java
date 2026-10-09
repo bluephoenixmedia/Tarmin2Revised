@@ -230,6 +230,22 @@ public class Monster implements Renderable {
     private Faction faction = Faction.BEASTS_AND_VERMIN;
     /** The Maze house this monster serves when its faction is MAZE_HOUSE; -1 otherwise. */
     private int houseId = -1;
+    /** The named figure of the Maze's history this monster is, or -1 (Houses of the Maze T1.12). */
+    private int figureId = -1;
+    /** The seal road whose gash this monster guards, or -1. */
+    private int sealRoad = -1;
+    /** {@link #SEAL_LORD}, {@link #SEAL_RETAINER}, or 0 for neither. */
+    private int sealRole;
+    /** A name for a named figure; null for an ordinary monster. Rebuilt from the history on load. */
+    private String displayName;
+    /** {@code SealLord.Behaviour} ordinals as bits. Rebuilt from the history on load. */
+    private int sealBehaviours;
+    /** One-shot trait reactions already spent this life: berserk, retinue called. Not saved. */
+    private boolean sealRageSpent;
+    private boolean sealCallSpent;
+
+    public static final int SEAL_LORD = 1;
+    public static final int SEAL_RETAINER = 2;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
 
@@ -1193,6 +1209,26 @@ public class Monster implements Renderable {
 
     public Faction getFaction() {
         return faction;
+    }
+
+    public int getFigureId() { return figureId; }
+    public void setFigureId(int figureId) { this.figureId = figureId; }
+    public int getSealRoad() { return sealRoad; }
+    public void setSealRoad(int sealRoad) { this.sealRoad = sealRoad; }
+    public int getSealRole() { return sealRole; }
+    public void setSealRole(int sealRole) { this.sealRole = sealRole; }
+    public String getDisplayName() { return displayName; }
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
+    public int getSealBehaviours() { return sealBehaviours; }
+    public void setSealBehaviours(int sealBehaviours) { this.sealBehaviours = sealBehaviours; }
+    public boolean isSealRageSpent() { return sealRageSpent; }
+    public void setSealRageSpent(boolean spent) { this.sealRageSpent = spent; }
+    public boolean isSealCallSpent() { return sealCallSpent; }
+    public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
+
+    /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
+    public boolean holdsCourt() {
+        return sealRole != 0;
     }
 
     public int getHouseId() {

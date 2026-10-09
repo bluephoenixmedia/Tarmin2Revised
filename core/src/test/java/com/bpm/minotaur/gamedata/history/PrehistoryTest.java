@@ -115,7 +115,8 @@ public class PrehistoryTest {
             for (HistoryEvent e : HistorySimulator.prehistory(seed, catalog).events()) seen.add(e.type);
         }
         for (EventType t : EventType.values()) {
-            if (t == EventType.SLAIN_BY_PLAYER || t == EventType.SEEKER_FELL || t == EventType.MEGABEAST_STIRS) continue;
+            if (t == EventType.SLAIN_BY_PLAYER || t == EventType.SEEKER_FELL || t == EventType.MEGABEAST_STIRS
+                    || t == EventType.TARMIN_ASCENDANT) continue;
             assertTrue("never saw " + t, seen.contains(t));
         }
     }

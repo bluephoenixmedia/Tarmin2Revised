@@ -1090,7 +1090,8 @@ public class CombatManager {
             return;
         }
         player.addExperience(m.getBaseExperience(), eventManager);
-        eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
+        eventManager.addEvent(new GameEvent("Killed " + nameOf(m) + "!", 2f));
+        if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
             DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
@@ -3410,6 +3411,11 @@ public class CombatManager {
     public void setCurrentState(CombatState state) { this.currentState = state; }
 
     // Extracted death logic to reuse for Poison kills
+    /** A named figure by name, anything else by its type. */
+    private static String nameOf(Monster m) {
+        return m.getDisplayName() != null ? m.getDisplayName() : m.getMonsterType();
+    }
+
     public void handleMonsterDeath() {
         handleMonsterDeath(heldWeaponKillCause());
     }
@@ -3435,7 +3441,9 @@ public class CombatManager {
             return;
         }
         Gdx.app.log("CombatManager", "You have defeated " + monster.getMonsterType());
-        eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
+        eventManager.addEvent((new GameEvent("You have defeated " + nameOf(monster), 2f)));
+        // A named figure of the Maze's history: chronicled, and a seal lord gives up its seal.
+        if (worldManager != null) worldManager.onMonsterSlain(monster, eventManager);
 
         if (monster instanceof GhostPlayerMonster) {
             GhostPlayerMonster ghost = (GhostPlayerMonster) monster;

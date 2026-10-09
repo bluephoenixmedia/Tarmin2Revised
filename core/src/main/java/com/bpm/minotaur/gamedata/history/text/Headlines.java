@@ -41,6 +41,7 @@ public final class Headlines {
         switch (e.type) {
             case SEAT_SEIZED:
             case TARMIN_ZUL_RISES:
+            case TARMIN_ASCENDANT:
                 return 10;
             case WAR_DECLARED:
             case HOUSE_EXTINGUISHED:

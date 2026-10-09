@@ -674,6 +674,37 @@ public final class HistorySimulator {
             e.detail = world.seekersFallen;
             House killer = world.house(deed.target);
             if (killer != null) killer.prestige += 3;
+        } else if (deed.kind == PlayerDeed.Kind.DOOM_STAGE) {
+            ascend(deed.target);
+        }
+    }
+
+    /**
+     * Tarmin's Hunger reaches a new stage, and the Antlered Lord feeds it from the houses (D42).
+     * From the third stage the weakest free lesser house is made to kneel to him. The Doom
+     * Clock's own numbers are never touched: the history only listens to it.
+     */
+    private void ascend(int stage) {
+        House tarmin = world.tarminHouse();
+        if (tarmin == null || tarmin.isExtinct()) return;
+        HistoryEvent e = record(EventType.TARMIN_ASCENDANT);
+        e.houseA = tarmin.id;
+        e.figureA = tarmin.lordId;
+        e.detail = stage;
+        for (House h : world.livingHouses()) {
+            if (h != tarmin && !h.holdsCastle) h.strength = Math.max(5f, h.strength - 3f * stage);
+        }
+        if (stage < 3) return;
+        House weakest = null;
+        for (House h : world.livingHouses()) {
+            if (h.isGreat() || h.holdsCastle || h.liegeId >= 0) continue;
+            if (weakest == null || h.strength < weakest.strength) weakest = h;
+        }
+        if (weakest != null) {
+            for (War w : world.wars) {
+                if (w.isActive() && w.involves(weakest.id) && w.involves(tarmin.id)) w.endSeason = world.season;
+            }
+            swear(weakest, tarmin, true, e.id);
         }
     }
 

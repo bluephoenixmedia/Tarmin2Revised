@@ -392,6 +392,23 @@
         "In the year {year} the {ordinal} seeker fell. The bed in the shelter stayed warm for the next."
       ]
     },
+    "TARMIN_ASCENDANT": {
+      "NEUTRAL": [
+        "In the year {year} the Antlered Lord grew hungrier, and every house of the Maze grew thinner.",
+        "The year {year}: Tarmin-Zul's hunger deepened, and the houses paid for it in blood.",
+        "In the year {year} {A} rose higher, and the other houses bled to feed it."
+      ],
+      "FOR": [
+        "In the year {year} the Antlered Lord's hunger grew, and the lesser houses learned what they were for. {wordsA}.",
+        "The sacrifice draws near. In the year {year} {A} took its tithe from every house, and none refused twice.",
+        "In the year {year} Tarmin-Zul stirred upon his seat, and the Maze remembered whose door it was."
+      ],
+      "AGAINST": [
+        "In the year {year} the beast in the castle fattened itself on the houses again. #weather_omen#",
+        "The Antlered Usurper grew stronger in the year {year}, and we paid for every inch of it.",
+        "In the year {year} {A} bled the houses white to feed one appetite. #grim_detail#"
+      ]
+    },
     "MEGABEAST_STIRS": {
       "NEUTRAL": [
         "In the year {year} something stirred beneath {A}.",

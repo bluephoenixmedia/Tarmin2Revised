@@ -10,7 +10,12 @@ public class PlayerDeed {
         /** The player killed a named figure. {@link #target} is the figure id. */
         SLEW_FIGURE,
         /** An expedition ended in death. {@link #target} is the killing house id, or -1. */
-        SEEKER_FELL
+        SEEKER_FELL,
+        /**
+         * The Doom Clock reached a stage it never had before. {@link #target} is the stage. Not
+         * strictly the player's doing, but it is the run's, and the history replays it the same way.
+         */
+        DOOM_STAGE
     }
 
     public Kind kind;

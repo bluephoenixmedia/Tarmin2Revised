@@ -252,6 +252,63 @@ public class WorldManager {
         Gdx.app.log("WorldManager", "Bridge guardian stands in chunk " + chunkId + " at " + seat);
     }
 
+    /**
+     * Seats the lord who holds this seal road's gash, with its sworn swords, two strata beneath
+     * the seal site (Houses of the Maze T1.12). Also re-seats a court whose lord died some way
+     * other than at the player's hand, so a seal is never lost.
+     */
+    private void ensureSealCourt(Maze maze, GridPoint2 chunkId, int level) {
+        if (maze == null || chunkId == null || biomeManager == null) return;
+        int road = biomeManager.getSealRoad(chunkId);
+        boolean held = road >= 0 && com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(road);
+        if (!SealCourt.isCourt(level, road, held)) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getSealRole() == com.bpm.minotaur.gamedata.monster.Monster.SEAL_LORD) return;
+        }
+        GridPoint2 seat = findBossSeat(maze);
+        if (seat == null) {
+            Gdx.app.error("WorldManager", "Seal court " + chunkId + " has nowhere to stand");
+            return;
+        }
+        com.bpm.minotaur.gamedata.boss.SealLord.Spec spec = com.bpm.minotaur.gamedata.boss.SealLord.compose(
+                getHistory().world(), com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(road),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        com.bpm.minotaur.gamedata.monster.Monster lord = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(spec.monsterType), seat.x, seat.y,
+                com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        SealCourt.dressLord(lord, spec, road);
+        maze.addMonster(lord);
+        for (com.bpm.minotaur.gamedata.boss.SealLord.Retainer r : spec.retinue) {
+            GridPoint2 at = findSafeArrivalTile(maze, seat.x + 1, seat.y);
+            if (at == null) break;
+            com.bpm.minotaur.gamedata.monster.Monster sword = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(r.monsterType), at.x, at.y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
+            SealCourt.dressRetainer(sword, r, spec, road);
+            maze.addMonster(sword);
+        }
+        Gdx.app.log("WorldManager", spec.name + " holds court in chunk " + chunkId + " at " + seat);
+    }
+
+    /** A saved court keeps only who its members are; the history supplies the rest. */
+    private void restoreSealCourt(Maze maze, GridPoint2 chunkId) {
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.holdsCourt()) {
+                SealCourt.reapply(m, getHistory().world(), com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            }
+        }
+        ensureSealCourt(maze, chunkId, this.currentLevel);
+    }
+
+    /**
+     * A monster that was a named figure of the Maze's history has died at the player's hand:
+     * the history records it, and a seal lord gives up its seal.
+     */
+    public void onMonsterSlain(com.bpm.minotaur.gamedata.monster.Monster m, GameEventManager events) {
+        String message = SealCourt.onSlain(m, getHistory(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
+        if (message != null && events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(message, 6f));
+        }
+    }
+
     /** A walkable tile away from the edges, so the boss is not born in a doorway. */
     private GridPoint2 findBossSeat(Maze maze) {
         int cx = maze.getWidth() / 2;
@@ -502,6 +559,7 @@ public class WorldManager {
                 } else {
                     Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                     maze.setGoreManager(this.goreManager);
+                    restoreSealCourt(maze, chunkId);
                     // ChunkData persists none of identity, biome or theme, and the
                     // generation path sets all three. Without this a reloaded chunk
                     // came back as an anonymous MAZE chunk at (0,0): forest chunks
@@ -577,6 +635,7 @@ public class WorldManager {
         newMaze.setChunkId(chunkId);
         buildShelterRoadSites(newMaze, chunkId, biome);
         placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
+        ensureSealCourt(newMaze, chunkId, currentLevel);
 
         // Themed Chunk Decoration
         com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
@@ -1263,6 +1322,7 @@ public class WorldManager {
 
         DoomManager doom = DoomManager.getInstance();
         doom.advanceExpeditionTurn();
+        noteDoomStageForHistory();
         int interval = doom.getSpawnInterval();
 
         // Periodic Spawn Check using dynamic Doom Clock interval
@@ -1349,6 +1409,15 @@ public class WorldManager {
         this.pendingHistorySave = save;
         this.history = null;
         getHistory();
+    }
+
+    /**
+     * Passes the Doom Clock's stage to the history, which chronicles each new peak as
+     * Tarmin-Zul's ascendancy. Only once the history exists: it is built at game start, and a
+     * headless test ticking turns has none.
+     */
+    public void noteDoomStageForHistory() {
+        if (history != null) history.noteDoomStage(DoomManager.getInstance().getDoomStage());
     }
 
     /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */

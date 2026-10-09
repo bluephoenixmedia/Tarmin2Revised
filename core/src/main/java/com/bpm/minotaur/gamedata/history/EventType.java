@@ -22,6 +22,8 @@ public enum EventType {
     HOUSE_EXTINGUISHED,
     SLAIN_BY_PLAYER,
     SEEKER_FELL,
+    /** The Doom Clock reached a new stage: Tarmin-Zul grows stronger by bleeding the houses (D42). */
+    TARMIN_ASCENDANT,
     /** Reserved for slice 3: a megabeast raid or bargain. Never emitted yet. */
     MEGABEAST_STIRS
 }

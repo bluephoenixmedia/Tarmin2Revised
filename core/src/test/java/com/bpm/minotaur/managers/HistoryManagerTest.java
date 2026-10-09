@@ -156,4 +156,41 @@ public class HistoryManagerTest {
         assertEquals(a.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.PAGE).id,
                 b.readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.PAGE).id);
     }
+
+    @Test
+    public void eachNewDoomStageIsTarminZulsAscendancyAndIsChronicledOnce() {
+        HistoryManager m = HistoryManager.create(31L, catalog);
+        int before = m.world().events().size();
+        m.noteDoomStage(1);
+        assertEquals("stage one is the quiet; nothing to tell", before, m.world().events().size());
+
+        m.noteDoomStage(2);
+        m.noteDoomStage(2);
+        m.noteDoomStage(1);
+        assertEquals(1, count(m, EventType.TARMIN_ASCENDANT));
+
+        m.noteDoomStage(3);
+        assertEquals(2, count(m, EventType.TARMIN_ASCENDANT));
+        HistoryEvent last = m.world().events().get(m.world().events().size() - 1);
+        assertEquals("at the third stage a house is made to kneel", EventType.VASSAL_OATH, last.type);
+        assertEquals(m.world().tarminHouse().id, last.houseB);
+        assertEquals(1, last.detail);
+    }
+
+    @Test
+    public void ascendancySurvivesALoad() {
+        HistoryManager a = HistoryManager.create(32L, catalog);
+        a.noteDoomStage(3);
+        a.onSleep();
+        HistoryManager b = HistoryManager.fromSave(0L, a.toSave(), catalog);
+        assertEquals(a.world().fingerprint(), b.world().fingerprint());
+        b.noteDoomStage(3);
+        assertEquals("already chronicled before the save", a.world().events().size(), b.world().events().size());
+    }
+
+    private static int count(HistoryManager m, EventType type) {
+        int n = 0;
+        for (HistoryEvent e : m.world().events()) if (e.type == type) n++;
+        return n;
+    }
 }

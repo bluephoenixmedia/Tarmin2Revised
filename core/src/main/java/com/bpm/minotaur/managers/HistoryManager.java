@@ -90,6 +90,23 @@ public final class HistoryManager {
         return e;
     }
 
+    /**
+     * Tells the history the Doom Clock's stage. Each stage the run has never reached before is
+     * chronicled once, as Tarmin-Zul's ascendancy (plan D42, T1.14).
+     */
+    public void noteDoomStage(int stage) {
+        if (stage <= 1 || stage <= highestDoomStage()) return;
+        apply(new PlayerDeed(PlayerDeed.Kind.DOOM_STAGE, stage, world.liveSeasons()));
+    }
+
+    private int highestDoomStage() {
+        int highest = 1;
+        for (PlayerDeed d : deeds) {
+            if (d.kind == PlayerDeed.Kind.DOOM_STAGE) highest = Math.max(highest, d.target);
+        }
+        return highest;
+    }
+
     public void unlock(int eventId) {
         unlocked.add(eventId);
     }

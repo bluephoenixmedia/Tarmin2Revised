@@ -16,7 +16,14 @@ public final class SealedGates {
     public static final String SEAL_SITE_MESSAGE =
             "A sealed way down, older than the Legion. One of the ancient seals lies far beneath it.";
 
+    private static java.util.function.Supplier<String> sealSiteVoice;
+
     private SealedGates() {
+    }
+
+    /** What the seal site says once the game knows who holds the gash below; null to reset. */
+    public static void setSealSiteVoice(java.util.function.Supplier<String> voice) {
+        sealSiteVoice = voice;
     }
 
     /** The message for knocking at this scenery, or null if it is no sealed gate. */
@@ -25,7 +32,8 @@ public final class SealedGates {
             return CastleGate.knockMessage(CastleGate.sealsHeld());
         }
         if (ShelterBuilder.isSealGate(scenery)) {
-            return SEAL_SITE_MESSAGE;
+            String voiced = sealSiteVoice != null ? sealSiteVoice.get() : null;
+            return voiced != null ? voiced : SEAL_SITE_MESSAGE;
         }
         return null;
     }

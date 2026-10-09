@@ -224,6 +224,15 @@ public class GameScreen extends BaseScreen {
 
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
+        // The Maze's history is built now, so it hears the Doom Clock from the first turn.
+        worldManager.getHistory();
+        // A seal site's gate names the lord who holds the gash beneath it.
+        com.bpm.minotaur.gamedata.shelter.SealedGates.setSealSiteVoice(() -> {
+            int road = worldManager.getBiomeManager().getSealRoad(worldManager.getCurrentPlayerChunkId());
+            return SealCourt.knockLine(worldManager.getHistory().world(), road,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                    com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(road));
+        });
         // The Void's glyphs tell how Tarmin-Zul came through; reading one enters it in the chronicle.
         DimensionalManager.getInstance().setOnLoreRead(() -> worldManager.getHistory()
                 .readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.VOID_GLYPH));
@@ -2626,7 +2635,7 @@ public class GameScreen extends BaseScreen {
 
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && !m.isBridgeBoss()
+                    if (m != null && !m.isBridgeBoss() && !m.holdsCourt()
                             && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
                         int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
                         if (dist <= 8) {
@@ -4292,7 +4301,7 @@ public class GameScreen extends BaseScreen {
                 List<GridPoint2> toRemove = new ArrayList<>();
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
+                    if (m != null && !m.isAlly() && !m.holdsCourt() && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
                         int dist = Math.abs(entry.getKey().x - originLadderPos.x) + Math.abs(entry.getKey().y - originLadderPos.y);
                         if (dist <= 6) {
                             pursuers.add(m);
