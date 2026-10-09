@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiGlyphs;
 import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -55,7 +56,7 @@ import java.util.List;
 public class CodexScreen extends BaseScreen {
 
     public enum Tab {
-        ARMORY, ARCANE, CAMP
+        ARMORY, ARCANE, CAMP, ANNALS
     }
 
     public enum CategoryFilter {
@@ -86,6 +87,8 @@ public class CodexScreen extends BaseScreen {
     private static final String CONTEXT = "CHRONICLE";
 
     private Tab activeTab = Tab.ARMORY;
+    /** The house the Annals tab is filtered to; -1 for every house. */
+    private int annalsHouse = -1;
     private CategoryFilter categoryFilter = CategoryFilter.ALL;
     private StatusFilter statusFilter = StatusFilter.ALL;
 
@@ -98,6 +101,12 @@ public class CodexScreen extends BaseScreen {
         this.parentScreen = parentScreen;
         this.player = player;
         this.hudSkin = new HudSkin();
+    }
+
+    /** Opens on {@code tab} instead of the Armory. */
+    public CodexScreen openOn(Tab tab) {
+        this.activeTab = tab;
+        return this;
     }
 
     @Override
@@ -156,7 +165,7 @@ public class CodexScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         header.add(title).center().row();
 
-        Label subtitle = new Label("Compendium of Unearthed Relics, Arcane Mysteries, and Haven Renovations",
+        Label subtitle = new Label("Compendium of Unearthed Relics, Arcane Mysteries, Haven Renovations and the Maze's Past",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         header.add(subtitle).center().padTop(4).row();
 
@@ -173,7 +182,8 @@ public class CodexScreen extends BaseScreen {
         tabs = new UiTabs(hudSkin)
                 .addTab(1, "Armory & Relics")
                 .addTab(2, "Arcane Mysteries")
-                .addTab(3, "Camp Renovations");
+                .addTab(3, "Camp Renovations")
+                .addTab(4, "Annals");
         tabs.onSelect(index -> {
             Tab picked = Tab.values()[index];
             if (activeTab != picked) {
@@ -185,7 +195,7 @@ public class CodexScreen extends BaseScreen {
         tabs.setSelectedSilently(activeTab.ordinal());
         navBar.add(tabs).left().expandX();
 
-        TextButton backBtn = createActionButton("RETURN TO SHELTER", false);
+        TextButton backBtn = createActionButton("RETURN", false);
         backBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -201,7 +211,7 @@ public class CodexScreen extends BaseScreen {
         root.add(bodyContainer).expand().fill().padBottom(8).row();
 
         root.add(new KeyHintLegend(hudSkin)
-                .hint("1-3", "Tab")
+                .hint("1-4", "Tab")
                 .escapeHint("Return to shelter")).right().row();
 
         stage.addActor(root);
@@ -250,7 +260,84 @@ public class CodexScreen extends BaseScreen {
             case CAMP:
                 buildCampTab();
                 break;
+            case ANNALS:
+                buildAnnalsTab();
+                break;
         }
+    }
+
+    // =========================================================================
+    // TAB 4: ANNALS OF THE MAZE (Houses of the Maze plan T1.11)
+    // =========================================================================
+
+    /**
+     * What the player has learned of the Maze's history from fragments and rumours, by house and
+     * by era. Each entry shows both sides' accounts next to each other, because they disagree.
+     */
+    private void buildAnnalsTab() {
+        com.bpm.minotaur.managers.HistoryManager history = parentScreen.getWorldManager().getHistory();
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+        java.util.Set<Integer> unlocked = history.unlockedEvents();
+
+        if (unlocked.isEmpty()) {
+            Label none = UiLabels.wrapping("Nothing is written here yet. Banners, proclamations and chronicle pages lie "
+                    + "where the houses have passed, and every shelter hears rumours while you sleep.",
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED));
+            bodyContainer.add(none).growX().top().pad(UiTheme.PAD_XL).row();
+            return;
+        }
+
+        Table houses = new Table();
+        houses.top().left();
+        houses.add(createFilterPill("All Houses", annalsHouse < 0, () -> { annalsHouse = -1; refreshView(); }))
+                .growX().height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
+        for (com.bpm.minotaur.gamedata.history.House h : com.bpm.minotaur.gamedata.history.text.Annals.knownHouses(world, unlocked)) {
+            final int id = h.id;
+            TextButton pill = createFilterPill(UiGlyphs.sanitize(h.name), annalsHouse == id, () -> { annalsHouse = id; refreshView(); });
+            pill.getLabel().setEllipsis(true);
+            houses.add(pill).growX().height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
+        }
+        ScrollPane houseScroll = new ScrollPane(houses, UiStyles.scrollPane(hudSkin));
+        houseScroll.setFadeScrollBars(false);
+
+        Table content = new Table();
+        content.top().left();
+        for (com.bpm.minotaur.gamedata.history.text.Annals.Era era : com.bpm.minotaur.gamedata.history.text.Annals.entries(
+                world, unlocked, annalsHouse,
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+            content.add(UiLabels.ellipsized(era.title, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                    .left().growX().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_SM).row();
+            for (com.bpm.minotaur.gamedata.history.text.Annals.Entry entry : era.entries) {
+                Table row = new Table();
+                row.setBackground(hudSkin.getDoubleBorderPanel());
+                row.pad(UiTheme.PAD_MD);
+                row.add(UiLabels.of("Year " + entry.year, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE)))
+                        .colspan(2).left().padBottom(UiTheme.PAD_SM).row();
+                row.add(annalsAccount(entry.ownSide)).grow().uniformX().top().padRight(UiTheme.PAD_SM);
+                row.add(annalsAccount(entry.otherSide)).grow().uniformX().top().padLeft(UiTheme.PAD_SM);
+                content.add(row).growX().padBottom(UiTheme.PAD_SM).row();
+            }
+        }
+        ScrollPane scroll = new ScrollPane(content, UiStyles.scrollPane(hudSkin));
+        scroll.setFadeScrollBars(false);
+        scroll.setScrollingDisabled(true, false);
+
+        Table split = new Table();
+        split.add(houseScroll).width(420).growY().top().padRight(UiTheme.PAD_MD);
+        split.add(scroll).grow();
+        bodyContainer.add(split).expand().fill().row();
+    }
+
+    private Table annalsAccount(com.bpm.minotaur.gamedata.history.text.Annals.Account account) {
+        Table t = new Table();
+        t.setBackground(hudSkin.getSlotRecessed());
+        t.top().left().pad(UiTheme.PAD_SM);
+        t.add(UiLabels.ellipsized(UiGlyphs.sanitize(account.byline),
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE))).growX().left().row();
+        t.add(UiLabels.wrapping(UiGlyphs.sanitize(account.text),
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED))).growX().left().padTop(UiTheme.PAD_SM).row();
+        return t;
     }
 
     // =========================================================================

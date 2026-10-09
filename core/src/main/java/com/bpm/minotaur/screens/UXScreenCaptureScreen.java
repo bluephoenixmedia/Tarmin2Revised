@@ -526,6 +526,16 @@ public class UXScreenCaptureScreen extends BaseScreen {
             setSubScreen(s, null);
         }));
 
+        // 28: The Archive Lectern's Annals of the Maze, with some history learned
+        tasks.add(new CaptureTask("28_annals", "Archive Lectern, Annals of the Maze", () -> {
+            com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
+            for (com.bpm.minotaur.gamedata.history.FragmentKind kind : com.bpm.minotaur.gamedata.history.FragmentKind.values()) {
+                for (int i = 0; i < 4; i++) history.readFragment(kind);
+            }
+            CodexScreen s = new CodexScreen(game, sharedGameScreen, sharedPlayer).openOn(CodexScreen.Tab.ANNALS);
+            setSubScreen(s, null);
+        }));
+
         // --capture-only=<prefix>[,<prefix>...] captures just the screens whose id starts with
         // one of them, so checking one screen does not mean waiting on all of them.
         String only = com.bpm.minotaur.Tarmin2.captureOnly();
