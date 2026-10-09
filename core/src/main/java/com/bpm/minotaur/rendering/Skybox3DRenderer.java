@@ -291,10 +291,24 @@ public class Skybox3DRenderer {
                 ? worldManager.getCurrentPlayerChunkId()
                 : new com.badlogic.gdx.math.GridPoint2(0, 0);
 
-        worldSkyState.camX = player.getPosition().x * PARALLAX_SCALE;
-        worldSkyState.camZ = -player.getPosition().y * PARALLAX_SCALE;
-        worldSkyState.forwardX = player.getDirectionVector().x;
-        worldSkyState.forwardZ = -player.getDirectionVector().y; // Maze Y -> World -Z
+        if (viewAligned) {
+            // The world camera looks where the player does not always: up at a window, down in
+            // a fall. The sky must turn with it, or the castle rides along on the screen.
+            worldSkyState.camX = viewPosition.x * PARALLAX_SCALE;
+            worldSkyState.camZ = viewPosition.z * PARALLAX_SCALE;
+            worldSkyState.forwardX = viewDirection.x;
+            worldSkyState.forwardY = viewDirection.y;
+            worldSkyState.forwardZ = viewDirection.z;
+            worldSkyState.up.set(viewUp);
+            viewAligned = false;
+        } else {
+            worldSkyState.camX = player.getPosition().x * PARALLAX_SCALE;
+            worldSkyState.camZ = -player.getPosition().y * PARALLAX_SCALE;
+            worldSkyState.forwardX = player.getDirectionVector().x;
+            worldSkyState.forwardY = 0f;
+            worldSkyState.forwardZ = -player.getDirectionVector().y; // Maze Y -> World -Z
+            worldSkyState.up.set(Vector3.Y);
+        }
         worldSkyState.dayNight = (worldManager != null) ? worldManager.getDayNightManager() : null;
         worldSkyState.weather = (weather != null) ? weather.getCurrentWeather() : WeatherType.CLEAR;
         worldSkyState.cloudCover = (weather != null) ? weather.getCloudCover() : 0f;
@@ -350,7 +364,11 @@ public class Skybox3DRenderer {
         public float camX;
         public float camZ;
         public float forwardX;
+        /** Up or down component of the view; 0 keeps the horizon level. */
+        public float forwardY;
         public float forwardZ;
+        /** The view's up vector, so the sky rolls with the world camera. */
+        public final Vector3 up = new Vector3(Vector3.Y);
         public DayNightManager dayNight;
         public WeatherType weather = WeatherType.CLEAR;
         public float cloudCover;
@@ -431,8 +449,8 @@ public class Skybox3DRenderer {
 
         // 1. Camera Alignment (Direction tracks player view continuous vector)
         camera.position.set(camX, 0.5f, camZ);
-        camera.direction.set(fwdX, 0f, fwdZ).nor();
-        camera.up.set(Vector3.Y);
+        camera.direction.set(fwdX, state.forwardY, fwdZ).nor();
+        camera.up.set(state.up);
         camera.update();
 
         // Dome tracks camera position so player is always at center of celestial hemisphere
@@ -560,6 +578,23 @@ public class Skybox3DRenderer {
                     .rotate(0f, 1f, 0f, yaw + 180f)
                     .scale(1.875f, 1.875f, 1.875f);
         }
+    }
+
+    private boolean viewAligned;
+    private final Vector3 viewPosition = new Vector3();
+    private final Vector3 viewDirection = new Vector3();
+    private final Vector3 viewUp = new Vector3();
+
+    /**
+     * Points the sky's camera the way the world camera points, for the next render. Without
+     * it the sky faces the player's heading with a level horizon, which is wrong whenever the
+     * world camera looks elsewhere.
+     */
+    public void alignTo(Vector3 position, Vector3 direction, Vector3 up) {
+        viewPosition.set(position);
+        viewDirection.set(direction);
+        viewUp.set(up);
+        viewAligned = true;
     }
 
     /**

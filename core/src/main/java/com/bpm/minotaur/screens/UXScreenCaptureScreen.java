@@ -114,6 +114,13 @@ public class UXScreenCaptureScreen extends BaseScreen {
     private void populateMockPlayerState(Player player, Maze maze) {
         if (player == null) return;
 
+        // A new character is offered starting traits, and the game screen opens the choice
+        // the moment it renders -- which takes the screen away from this harness and stalls
+        // every capture that shows the game. Settle the offer up front.
+        if (player.needsTraitOffer()) player.offerTraits();
+        java.util.List<String> offer = player.getPendingTraitOffer();
+        player.chooseTrait(offer.isEmpty() ? null : offer.get(0));
+
         // Rich stats
         player.getStats().setCurrentHP(82);
         player.getStats().setMaxHP(100);
@@ -400,9 +407,66 @@ public class UXScreenCaptureScreen extends BaseScreen {
         }));
 
         // 24: Castle Map
-        tasks.add(new CaptureTask("24_castle_map", "Castle Overview & Exploration Map", () -> {
-            CastleMapScreen s = new CastleMapScreen(game, sharedPlayer, sharedMaze, sharedGameScreen);
+        tasks.add(new CaptureTask("24_castle_map", "Expedition Map, region view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
             setSubScreen(s, null);
+        }));
+        // Face pressed to the shelter's barred window, looking out.
+        tasks.add(new CaptureTask("24d_window_look", "Looking out the shelter window", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    // The home window is in the west wall: stand east of it, facing it.
+                    sharedPlayer.setPosition(w.x + 1.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen,
+                    () -> Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ESCAPE));
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.E);
+        }));
+        // Looking up and to the left from the bars: the sky and the castle must turn with the view.
+        tasks.add(new CaptureTask("24f_window_look_up", "Looking up from the shelter window", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    sharedPlayer.setPosition(w.x + 1.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen,
+                    () -> Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ESCAPE));
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.E);
+            sharedGameScreen.turnWindowLook(25f, 30f);
+        }));
+        // The same window seen from the room, a step back from it.
+        tasks.add(new CaptureTask("24e_window_room", "The shelter window from inside", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    sharedPlayer.setPosition(w.x + 2.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen, null);
+        }));
+        // The map reopens at the view it was left in, so these step from the region view above.
+        tasks.add(new CaptureTask("24b_map_world", "Expedition Map, world view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
+            setSubScreen(s, null);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.MINUS);
+        }));
+        tasks.add(new CaptureTask("24c_map_chunk", "Expedition Map, chunk view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
+            setSubScreen(s, null);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ENTER);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ENTER);
         }));
 
         // 25: Encounter Window (Shrine)
@@ -461,6 +525,14 @@ public class UXScreenCaptureScreen extends BaseScreen {
             TormentPactScreen s = new TormentPactScreen(game, null);
             setSubScreen(s, null);
         }));
+
+        // --capture-only=<prefix>[,<prefix>...] captures just the screens whose id starts with
+        // one of them, so checking one screen does not mean waiting on all of them.
+        String only = com.bpm.minotaur.Tarmin2.captureOnly();
+        if (only != null) {
+            java.util.List<String> prefixes = java.util.Arrays.asList(only.split(","));
+            tasks.removeIf(t -> prefixes.stream().noneMatch(t.id::startsWith));
+        }
     }
 
     private void setSubScreen(Screen screen, Runnable cleanup) {

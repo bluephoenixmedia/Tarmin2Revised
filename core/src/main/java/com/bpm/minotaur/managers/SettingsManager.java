@@ -50,6 +50,10 @@ public class SettingsManager {
         keyBindingDescriptions.put("SKILL_TREE", "Skill Tree & Perks");
         keyBindingDescriptions.put("TOGGLE_LANTERN", "Toggle Lantern");
         keyBindingDescriptions.put("SPELLBOOK", "Spellbook");
+        keyBindingDescriptions.put("MAP_WAYPOINT", "Map: Set Waypoint");
+        keyBindingDescriptions.put("MAP_SUGGEST", "Map: Take Suggested Step");
+        keyBindingDescriptions.put("MAP_PIN", "Map: Pin");
+        keyBindingDescriptions.put("MAP_RECENTER", "Map: Centre on You");
     }
 
     public static SettingsManager getInstance() {
@@ -211,6 +215,11 @@ public class SettingsManager {
             case "SKILL_TREE": return Input.Keys.K;
             case "TOGGLE_LANTERN": return Input.Keys.L;
             case "SPELLBOOK": return Input.Keys.Q;
+            // Read only while the map is open, so they may share keys with the world.
+            case "MAP_WAYPOINT": return Input.Keys.W;
+            case "MAP_SUGGEST": return Input.Keys.G;
+            case "MAP_PIN": return Input.Keys.P;
+            case "MAP_RECENTER": return Input.Keys.C;
             default: return Input.Keys.UNKNOWN;
         }
     }

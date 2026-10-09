@@ -285,6 +285,19 @@ public class Tarmin2 extends Game {
         return false;
     }
 
+    /** The {@code --capture-only=<prefix>} filter for a capture run, or null to capture every screen. */
+    public static String captureOnly() {
+        String[] args = startupArgs;
+        if (args != null) {
+            for (String a : args) {
+                if (a != null && a.startsWith("--capture-only=")) {
+                    return a.substring("--capture-only=".length());
+                }
+            }
+        }
+        return null;
+    }
+
     private static boolean bootToPaperdollEditor() {
         String[] args = startupArgs;
         if (args != null) {

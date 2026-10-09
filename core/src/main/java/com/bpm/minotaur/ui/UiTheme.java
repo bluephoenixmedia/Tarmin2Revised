@@ -108,6 +108,35 @@ public final class UiTheme {
     public static final Color INK_DIM = Color.valueOf("6B4E2E");
     public static final Color INK_ACCENT = Color.valueOf("8A2E1C");
 
+    // --- Expedition map (docs/DEsign/Requirements_ Expedition Map.md, section 4) ---
+    // Biomes are muted ink washes over dark vellum, not saturated fills: the map's icons and
+    // roads carry the colour, and a wash that competed with them would bury the road home.
+
+    public static final Color MAP_MAZE = Color.valueOf("3E3850");
+    public static final Color MAP_FOREST = Color.valueOf("38563A");
+    public static final Color MAP_DESERT = Color.valueOf("86703F");
+    public static final Color MAP_LAKELANDS = Color.valueOf("335C6A");
+    public static final Color MAP_TUNDRA = Color.valueOf("687E92");
+    public static final Color MAP_BLIGHT = Color.valueOf("6E2C20");
+    public static final Color MAP_MOUNTAINS = Color.valueOf("4A4540");
+    public static final Color MAP_OCEAN = Color.valueOf("1F3249");
+    /** A stratum chunk the player has entered. */
+    public static final Color MAP_UNDERGROUND = Color.valueOf("4B3A28");
+    /** An explored tile's floor, in the chunk view. */
+    public static final Color MAP_FLOOR = Color.valueOf("2C2117");
+    /** Wall lines in the chunk view: ink on vellum. */
+    public static final Color MAP_WALL = Color.valueOf("C9B48C");
+    /** The player: the one cool accent on the map, so they are always found first. */
+    public static final Color MAP_PLAYER = INFO;
+    /** How strongly an entered chunk's wash covers the vellum. */
+    public static final float MAP_WASH_ALPHA = 0.85f;
+    /** A glimpsed chunk: seen across the border, never entered. */
+    public static final float MAP_GLIMPSED_ALPHA = 0.3f;
+    /** The surface biome drawn beneath a stratum view, so the player knows what is overhead. */
+    public static final float MAP_UNDERLAY_ALPHA = 0.18f;
+    /** A suggestion or a rumour: there, but not yet certain. */
+    public static final float MAP_GHOST_ALPHA = 0.5f;
+
     // --- Spacing (SPEC section 3, in canvas units) ------------------------
 
     public static final float PAD_XS = 2 * VU;

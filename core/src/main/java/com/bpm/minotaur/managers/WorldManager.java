@@ -386,6 +386,7 @@ public class WorldManager {
         // No chunk survives, so a legacy world can take the current layout.
         this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
         rebuildBiomeManager();
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
     }
 
     // --- NEW: Descent Logic ---
@@ -418,6 +419,7 @@ public class WorldManager {
         if (playerReference != null) {
             BalanceLogger.getInstance().logPlayerState(playerReference);
         }
+        noteArrival();
     }
 
     // --- NEW: Ascent Logic ---
@@ -436,6 +438,7 @@ public class WorldManager {
         // Retain currentPlayerChunkId so player returns to the same coordinate column
 
         Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel + " at chunk " + currentPlayerChunkId);
+        noteArrival();
         return true;
     }
 
@@ -726,6 +729,30 @@ public class WorldManager {
 
     public void setCurrentChunk(GridPoint2 chunkId) {
         this.currentPlayerChunkId = chunkId;
+        noteArrival();
+    }
+
+    /**
+     * What the expedition map and the HUD minimap show, read from this world: its roads, the
+     * shelter network, map knowledge, and the chunks entered on each floor. The chunk the
+     * player stands in counts as entered before its first save.
+     */
+    public com.bpm.minotaur.gamedata.map.MapModel buildMapModel() {
+        int maxFloor = Math.max(currentLevel, getMaxVisitedLevel());
+        return new com.bpm.minotaur.gamedata.map.MapModel(biomeManager,
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance(),
+                com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance(), floor -> {
+                    Set<GridPoint2> visited = new HashSet<>(getVisitedChunkIds(floor));
+                    if (floor == currentLevel && currentPlayerChunkId != null) visited.add(new GridPoint2(currentPlayerChunkId));
+                    return visited;
+                }, maxFloor);
+    }
+
+    /** Tells the map what the player can see from the chunk they now stand in. */
+    private void noteArrival() {
+        if (gameMode != GameMode.ADVANCED || currentPlayerChunkId == null || biomeManager == null) return;
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().recordArrival(currentLevel, currentPlayerChunkId,
+                biomeManager, com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
     }
 
     public int getCurrentLevel() {
@@ -957,6 +984,7 @@ public class WorldManager {
         // The new world remembers how far the player got along each road.
         this.respawnChunk = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
                 .carryOverDeath(oldRoads, biomeManager.getRoads());
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
         Gdx.app.log("WorldManager", "Explored world wiped on death. New world seed: " + this.worldSeed);
     }
 
@@ -988,6 +1016,7 @@ public class WorldManager {
         this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
         rebuildBiomeManager();
         com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().carryOverDeath(null, biomeManager.getRoads());
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
         this.currentLevel = 1;
         this.currentPlayerChunkId = new GridPoint2(0, 0);
         log("World laid out again for world-gen version " + worldGenVersion);
@@ -1128,6 +1157,7 @@ public class WorldManager {
                 return;
         }
         this.currentPlayerChunkId = newChunkId;
+        noteArrival();
         if (Math.abs(newChunkId.x) >= 2 || Math.abs(newChunkId.y) >= 2 || currentLevel >= 2) {
             com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
         }

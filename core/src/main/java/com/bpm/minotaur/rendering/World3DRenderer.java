@@ -538,6 +538,14 @@ public class World3DRenderer implements Disposable {
         this.deathSequence = sequence;
     }
 
+    /** While set, the camera looks out through a barred window instead of from the player's tile. */
+    private WindowLook windowLook;
+    private final Vector2 windowEye = new Vector2();
+
+    public void setWindowLook(WindowLook windowLook) {
+        this.windowLook = windowLook;
+    }
+
     public PerspectiveCamera getCamera() {
         return camera;
     }
@@ -663,6 +671,7 @@ public class World3DRenderer implements Disposable {
         boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
             skybox3DRenderer.setInsideHome(isInsideHome);
+            skybox3DRenderer.alignTo(camera.position, camera.direction, camera.up);
             skybox3DRenderer.render(null, player, viewport, worldManager, DebugManager.getInstance().getRenderMode());
             // Clear depth buffer so the skybox & horizon landmarks remain purely background
             // and all maze geometry (walls, floors, ceilings, doors) renders OVER the skybox.
@@ -964,6 +973,13 @@ public class World3DRenderer implements Disposable {
             float pitch = deathSequence.getPitchDegrees();
             camRight.set(camDir).crs(0f, 1f, 0f).nor();
             camDir.rotate(camRight, -pitch).nor();
+        }
+
+        if (windowLook != null && !dying) {
+            // Face to the bars: the eye leaves the player's tile for the window's embrasure.
+            Vector2 eye = windowLook.eye(windowEye);
+            camera.position.set(eye.x, windowLook.eyeHeight(), -eye.y);
+            windowLook.direction(camDir);
         }
 
         camera.direction.set(camDir);
