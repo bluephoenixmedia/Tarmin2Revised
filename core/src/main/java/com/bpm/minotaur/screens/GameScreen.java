@@ -2020,6 +2020,8 @@ public class GameScreen extends BaseScreen {
         g.level = currentLevel();
         g.sanctuary = maze != null && maze.isSanctuary();
         g.front = worldManager.frontHere();
+        String carried = worldManager.getHistory().onFront(g.front);
+        if (carried != null) eventManager.addEvent(new GameEvent(carried, 4f));
         g.seats = g.front != null ? worldManager.houseSeats() : null;
         g.maze = maze;
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;

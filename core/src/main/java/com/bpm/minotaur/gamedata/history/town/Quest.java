@@ -28,6 +28,13 @@ public class Quest {
     public int agentIndex = -1;
     /** CARRY_MESSAGE: the town to carry it to. */
     public String toTownKey;
+    /**
+     * CARRY_MESSAGE in wartime: the war whose front it must be carried through on the surface (plan
+     * D39), or -1 when no war was under way and the deep roads serve.
+     */
+    public int warId = -1;
+    /** CARRY_MESSAGE: the player has stood on that war's front with it. */
+    public boolean crossedFront;
     public boolean accepted;
     public boolean done;
 
@@ -73,6 +80,8 @@ public class Quest {
                 break;
             case CARRY_MESSAGE:
                 q.toTownKey = otherTownKeys.get(rng.nextInt(otherTownKeys.size()));
+                List<com.bpm.minotaur.gamedata.history.War> wars = world.activeWars();
+                if (!wars.isEmpty()) q.warId = wars.get(rng.nextInt(wars.size())).id;
                 break;
         }
         return q;
@@ -90,10 +99,31 @@ public class Quest {
                 return (b != null ? b.name : "The beast below") + " has taken our hunters. Kill it, or lay a trophy of the houses before it as an offering and buy its peace. Either way the town will owe you.";
             case CARRY_MESSAGE:
                 Town to = towns.apply(toTownKey);
-                return "Carry this to the elder of " + (to != null ? to.name : "the next town") + ". The roads above are war now; go under them.";
+                String elder = "Carry this to the elder of " + (to != null ? to.name : "the next town") + ". ";
+                com.bpm.minotaur.gamedata.history.War war = war(world);
+                if (war == null) return elder + "The roads above are quiet for once; the deep roads will serve.";
+                return elder + "The deep roads are watched. It must go over, through the lines where "
+                        + name(world, war.attackerId) + " fights " + name(world, war.defenderId) + ".";
             default:
                 return "";
         }
+    }
+
+    /** The war this message must cross, while it is still being fought; null otherwise. */
+    public com.bpm.minotaur.gamedata.history.War war(HistoryWorld world) {
+        if (warId < 0) return null;
+        for (com.bpm.minotaur.gamedata.history.War w : world.wars()) if (w.id == warId && w.isActive()) return w;
+        return null;
+    }
+
+    /** Whether the message may be handed over: no war to cross, crossed it, or the war is over. */
+    public boolean deliverable(HistoryWorld world) {
+        return crossedFront || war(world) == null;
+    }
+
+    private static String name(HistoryWorld world, int houseId) {
+        House h = world.house(houseId);
+        return h != null ? h.name : "a house of the Maze";
     }
 
     private String house(HistoryWorld world) {

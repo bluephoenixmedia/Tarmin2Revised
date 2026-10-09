@@ -261,6 +261,23 @@ public final class HistoryManager {
         apply(d);
     }
 
+    /**
+     * The player stands on a war's front: a message being carried through that war is carried
+     * through (plan D39). Returns what is said, or null if nothing changed.
+     */
+    public String onFront(com.bpm.minotaur.gamedata.history.war.Front front) {
+        if (front == null) return null;
+        String said = null;
+        for (com.bpm.minotaur.gamedata.history.town.Quest q : quests.values()) {
+            if (q.accepted && !q.done && q.kind == com.bpm.minotaur.gamedata.history.town.Quest.Kind.CARRY_MESSAGE
+                    && q.warId == front.warId && !q.crossedFront) {
+                q.crossedFront = true;
+                said = "You carry the message through the lines.";
+            }
+        }
+        return said;
+    }
+
     /** Marks a town found; true the first time. */
     public boolean findTown(String key) {
         return townsFound.add(key);

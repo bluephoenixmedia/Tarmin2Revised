@@ -132,6 +132,10 @@ public final class TownTalk {
     public String quest() {
         Quest delivery = deliveryHere();
         if (delivery != null) {
+            if (!delivery.deliverable(history.world())) {
+                return clean(folk.name + ": \"Not by the deep roads. They are watched. Take it up, through the war, "
+                        + "and bring it to me with the smoke still on it.\"");
+            }
             finish(delivery, history.town(delivery.townKey));
             return clean(folk.name + " reads the message twice and burns it. \"Tell them it is done.\"");
         }

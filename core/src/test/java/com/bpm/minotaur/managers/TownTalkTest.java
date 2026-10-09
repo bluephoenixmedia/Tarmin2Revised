@@ -154,6 +154,8 @@ public class TownTalkTest {
         Town t = (Town) at[1];
         FakePack pack = new FakePack();
         talk(h, t, Town.Role.QUESTGIVER, pack).quest();
+        Quest q = h.quest(t.key);
+        if (q.warId >= 0) h.onFront(frontOf(h, q.warId));
         Town other = h.town(OTHER);
         TownTalk elder = new TownTalk(h, other, other.folk(Town.Role.ELDER), null, catalog, grammar, pack);
         assertTrue(elder.hasQuestBusiness());
@@ -161,6 +163,54 @@ public class TownTalkTest {
         assertTrue(h.quest(t.key).done);
         assertTrue("the town that sent it is grateful", h.standing().of(t) > 0);
         assertTrue(chronicled(h, t));
+    }
+
+    private static com.bpm.minotaur.gamedata.history.war.Front frontOf(HistoryManager h, int warId) {
+        for (com.bpm.minotaur.gamedata.history.War w : h.world().wars()) {
+            if (w.id == warId) return new com.bpm.minotaur.gamedata.history.war.Front(w.id, w.attackerId, w.defenderId,
+                    new com.badlogic.gdx.math.GridPoint2(4, 4));
+        }
+        throw new AssertionError("no war " + warId);
+    }
+
+    @Test
+    public void aMessageInWartimeMustCrossThatWarsFrontBeforeTheElderTakesIt() {
+        HistoryManager h = null;
+        Town t = null;
+        search:
+        for (long seed = 0; seed < 80; seed++) {
+            HistoryManager candidate = HistoryManager.create(seed, catalog);
+            for (int i = 0; i < 60; i++) {
+                Town town = candidate.town(Town.keyOf(3, i, i + 1));
+                if (town.welcome != 0) continue;
+                Quest offered = Quest.offer(candidate.world(), town, Collections.singletonList(OTHER));
+                if (offered.kind == Quest.Kind.CARRY_MESSAGE && offered.warId >= 0) {
+                    h = candidate;
+                    t = town;
+                    break search;
+                }
+            }
+        }
+        assertNotNull("some reeve sends a message through a war", h);
+        FakePack pack = new FakePack();
+        String asked = talk(h, t, Town.Role.QUESTGIVER, pack).quest();
+        Quest q = h.quest(t.key);
+        com.bpm.minotaur.gamedata.history.War war = null;
+        for (com.bpm.minotaur.gamedata.history.War w : h.world().wars()) if (w.id == q.warId) war = w;
+        assertTrue("the reeve names the war: " + asked, asked.contains(h.world().house(war.attackerId).name));
+
+        Town other = h.town(OTHER);
+        TownTalk elder = new TownTalk(h, other, other.folk(Town.Role.ELDER), null, catalog, grammar, pack);
+        String early = elder.quest();
+        assertFalse("not until it has crossed the lines", q.done);
+        assertTrue(early, early.toLowerCase().contains("war"));
+
+        assertNull("another war's front is not this one's",
+                h.onFront(new com.bpm.minotaur.gamedata.history.war.Front(q.warId + 1000, 0, 1, new com.badlogic.gdx.math.GridPoint2())));
+        assertNotNull("standing on the war's front carries it through", h.onFront(frontOf(h, q.warId)));
+        assertTrue(HistoryManager.fromSave(0L, h.toSave(), catalog).quest(t.key).crossedFront);
+        elder.quest();
+        assertTrue(q.done);
     }
 
     @Test
