@@ -2035,6 +2035,7 @@ public class GameScreen extends BaseScreen {
         for (String line : t.messages) {
             eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
         }
+        if (soundManager != null) for (WarManager.Cue cue : t.cues) soundManager.playWarCue(cue);
         if (t.volleyDamage > 0 && player != null) {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
         }
@@ -4653,6 +4654,7 @@ public class GameScreen extends BaseScreen {
                     front = new com.bpm.minotaur.gamedata.history.war.Front(-1, living.get(0).id, living.get(1).id, here);
                 }
                 String horns = warManager.soundHorns(worldManager.getHistory(), front, here, worldManager.houseSeats());
+                if (soundManager != null) soundManager.playWarCue(WarManager.Cue.HORNS);
                 eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(horns), 5f));
                 return true;
             }

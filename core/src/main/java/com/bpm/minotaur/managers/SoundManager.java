@@ -144,6 +144,9 @@ public class SoundManager {
         loadSound("metal_hit_heavy", "sounds/metal_hit_heavy.ogg");
         loadSound("monster_grunt_light", "sounds/monster_grunt_light.wav");
         loadSound("monster_roar_heavy", "sounds/monster_roar_heavy.wav");
+        // Houses of the Maze T2.9: cut from the 1984 Retro bundle's darkwave loops.
+        loadSound("war_horn", "sounds/war/war_horn.ogg");
+        loadSound("war_drums", "sounds/war/war_drums.ogg");
 
         // --- NEW: Tactile UI & World Audio ---
         loadSound("ui_click", "sounds/ui_click.ogg");
@@ -720,6 +723,29 @@ public class SoundManager {
             } else {
                 playSound("monster_attack"); // Re-use usually short sound
             }
+        }
+    }
+
+    /**
+     * A battle's sound (plan T2.9): the horns when a front arrives, drums and the clash of steel as
+     * the lines close, the horns again over a roar when a side breaks. A crowd-of-battle bed and real
+     * steel wait on the bundle's Medieval Fighting folder, which was never extracted.
+     */
+    public void playWarCue(WarManager.Cue cue) {
+        if (cue == null) return;
+        switch (cue) {
+            case HORNS:
+                playSound("war_horn", 0.9f);
+                break;
+            case JOINED:
+                playSound("war_drums", 0.9f);
+                playSound("metal_hit_heavy", 0.7f);
+                playSound("monster_roar", 0.6f);
+                break;
+            case ROUT:
+                playSound("war_horn", 0.8f);
+                playSound("monster_roar_heavy", 0.7f);
+                break;
         }
     }
 

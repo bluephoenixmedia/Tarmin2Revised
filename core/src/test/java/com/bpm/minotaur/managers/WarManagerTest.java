@@ -68,6 +68,7 @@ public class WarManagerTest {
         WarManager.Turn t = turn();
         assertNotNull(wars.active());
         assertTrue(t.messages.get(0).startsWith("War-horns"));
+        assertTrue("and the horns are heard (plan T2.9)", t.cues.contains(WarManager.Cue.HORNS));
     }
 
     @Test
@@ -107,8 +108,9 @@ public class WarManagerTest {
         turn();
         Random rng = new Random(5);
         int before = history.world().events().size();
+        java.util.List<WarManager.Cue> heard = new ArrayList<>();
         for (int i = 0; i < 400 && wars.active() != null; i++) {
-            turn();
+            heard.addAll(turn().cues);
             for (Monster m : new ArrayList<>(ground.maze.getMonsters().values())) {
                 if (m.isWarBand() && rng.nextInt(10) == 0) {
                     m.setCurrentHP(0);
@@ -122,5 +124,7 @@ public class WarManagerTest {
             if (e.type == EventType.BATTLE && e.detail == 1) recorded = true;
         }
         assertTrue(recorded);
+        assertEquals("the drums once as the lines close, and the rout once (plan T2.9)",
+                java.util.Arrays.asList(WarManager.Cue.JOINED, WarManager.Cue.ROUT), heard);
     }
 }

@@ -36,8 +36,12 @@ public final class WarManager {
     }
 
     /** What happened this turn. */
+    /** The war's sounds (plan T2.9): horns at the warning, drums as the lines close, horns at the rout. */
+    public enum Cue { HORNS, JOINED, ROUT }
+
     public static final class Turn {
         public final List<String> messages = new ArrayList<>();
+        public final List<Cue> cues = new ArrayList<>();
         public int volleyDamage;
     }
 
@@ -76,12 +80,18 @@ public final class WarManager {
             long seed = history.world().seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (g.chunk.x * 31L + g.chunk.y);
             active = new BattleDirector(g.front, g.chunk, edgeA, history.world(), catalog, seed);
             t.messages.add(active.warning());
+            t.cues.add(Cue.HORNS);
             return t;
         }
+        BattleDirector.Phase was = active.phase();
         BattleDirector.Report r = active.tick(g.maze, g.playerTile, recruiter, spoils);
         t.messages.addAll(r.messages);
         t.volleyDamage = r.volleyDamage;
-        if (r.winner >= 0) history.recordBattle(r.winner, r.loser);
+        if (was == BattleDirector.Phase.WARNING && active.phase() == BattleDirector.Phase.BATTLE) t.cues.add(Cue.JOINED);
+        if (r.winner >= 0) {
+            history.recordBattle(r.winner, r.loser);
+            t.cues.add(Cue.ROUT);
+        }
         if (active.phase() == BattleDirector.Phase.DONE) {
             quiet(active.front.warId, active.chunk, clock);
             active = null;

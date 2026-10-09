@@ -307,6 +307,11 @@ battle that routs, and the field pays out.
 **T2.9: War audio** · STRETCH · deps: T2.3
 - Horns, war drums, a crowd-of-battle ambience and steel clash. Sources are in Section 5.
 - AC: cues fire on warning, joining and rout.
+- Done with what is on disk: `WarManager.Turn` carries the cues (tested), and `SoundManager.playWarCue`
+  plays a horn (`FL_DW_150_Synth_Pad_Horn_Am`, cut to 6 s) on warning, a drum phrase
+  (`FL_DW_150_Drum_Full_Beat`, 4 bars) with steel and a roar on joining, and the horn over a heavy
+  roar on the rout, from `assets/sounds/war/`. A crowd-of-battle bed and real steel clash still
+  wait on re-extracting the bundle's Medieval Fighting folder.
 
 ### Slice 3: Megabeasts
 
