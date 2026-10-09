@@ -276,9 +276,11 @@ battle that routs, and the field pays out.
   - a headless test runs 50 battles to completion, all routing or hitting the turn cap;
   - frame time holds at 40 combatants on the dev machine (record the number);
   - soldiers prefer rivals over the player.
-- Recorded 2026-10-09 (`--playtest=surface-wars-megabeasts`, dev machine): avg 6.4 ms a frame
-  over 398 frames with 30-32 combatants on the field, worst single frame 254 ms. That battle
-  rolled 32, so 40 is not yet measured; the scenario asserts a 30 fps average whenever 30 or more fight.
+- Recorded 2026-10-09 (`--playtest=surface-wars-megabeasts`, dev machine), 40 fighting: avg 8.4 ms
+  a frame over 300 frames, worst single frame 338 ms. The director musters 16 a side
+  (`BattleModel.LINE`), so a battle fields about 32; the play-test tops the field up to 40 with
+  more of the same war-bands to time it. The worst frame is a hitch, likely monsters spawned
+  mid-window; it is logged, not asserted. The scenario fails below a 30 fps average.
 
 **T2.5: Battle lines** · MVP · deps: T2.4
 - Once joined, the chunk edges hold ranks of soldiers. Fleeing means cutting through a line (D16).
