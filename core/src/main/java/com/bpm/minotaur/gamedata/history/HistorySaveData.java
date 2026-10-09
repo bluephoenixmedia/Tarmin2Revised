@@ -26,6 +26,9 @@ public class HistorySaveData {
     public com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
     /** Keys of the underground towns the player has found. */
     public List<String> townsFound = new ArrayList<>();
+    /** Which settlement of the history each town is (ADR 0005): parallel lists, -1 for a made-up town. */
+    public List<String> townSettlementKeys = new ArrayList<>();
+    public List<Integer> townSettlementIds = new ArrayList<>();
     /** "townKey=figureId": the exile each town took in (plan D37). */
     public List<String> townExiles = new ArrayList<>();
     /** Standing with each town, and with each allegiance, as parallel lists. */

@@ -27,6 +27,8 @@ public final class HistoryManager {
     private final java.util.Map<Integer, Integer> beastHp = new java.util.HashMap<>();
     private com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
     private final java.util.Set<String> townsFound = new java.util.LinkedHashSet<>();
+    /** Town key to the settlement it is, or -1 for a made-up town (ADR 0005). */
+    private final java.util.Map<String, Integer> townSettlements = new java.util.LinkedHashMap<>();
     /** Town key to the figure id of the exile it took in. */
     private final java.util.Map<String, Integer> townExiles = new java.util.LinkedHashMap<>();
     private final com.bpm.minotaur.gamedata.history.town.Standing standing = new com.bpm.minotaur.gamedata.history.town.Standing();
@@ -64,6 +66,11 @@ public final class HistoryManager {
         }
         m.hunt = save.hunt;
         if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
+        if (save.townSettlementKeys != null && save.townSettlementIds != null) {
+            for (int i = 0; i < Math.min(save.townSettlementKeys.size(), save.townSettlementIds.size()); i++) {
+                m.townSettlements.put(save.townSettlementKeys.get(i), save.townSettlementIds.get(i));
+            }
+        }
         if (save.townExiles != null) {
             for (String entry : save.townExiles) {
                 int eq = entry.lastIndexOf('=');
@@ -210,11 +217,40 @@ public final class HistoryManager {
      * (plan D37); a town not yet found is asked about as the next one would be.
      */
     public com.bpm.minotaur.gamedata.history.town.Town town(String key) {
-        com.bpm.minotaur.gamedata.history.town.Town town = com.bpm.minotaur.gamedata.history.town.Town.of(world.seed, key);
+        com.bpm.minotaur.gamedata.history.town.Settlement settlement = bindSettlement(key);
+        com.bpm.minotaur.gamedata.history.town.Town town = settlement != null
+                ? com.bpm.minotaur.gamedata.history.town.Town.of(world, settlement, key)
+                : com.bpm.minotaur.gamedata.history.town.Town.of(world.seed, key);
         Integer id = townExiles.get(key);
         com.bpm.minotaur.gamedata.history.Figure exile = id != null ? world.figure(id) : null;
         // An exile who has died, or gone home to take their house's seat, is no longer here.
         return world.isExile(exile) ? town.withExile(exile.id, exile.name) : town;
+    }
+
+    /** The settlement the town at {@code key} is, or null for a made-up town (ADR 0005). */
+    public com.bpm.minotaur.gamedata.history.town.Settlement settlementOf(String key) {
+        Integer id = townSettlements.get(key);
+        return id != null ? world.settlement(id) : null;
+    }
+
+    /**
+     * The first time the game asks for the town at {@code key} it becomes the first settlement of
+     * the history not yet a town, and stays so (saved): a quest that names a town far off names the
+     * town the player will walk into. Once all are spoken for, the town is made up (-1).
+     */
+    private com.bpm.minotaur.gamedata.history.town.Settlement bindSettlement(String key) {
+        Integer id = townSettlements.get(key);
+        if (id == null) {
+            id = -1;
+            for (com.bpm.minotaur.gamedata.history.town.Settlement s : world.settlements()) {
+                if (!townSettlements.containsValue(s.id)) {
+                    id = s.id;
+                    break;
+                }
+            }
+            townSettlements.put(key, id);
+        }
+        return world.settlement(id);
     }
 
     /**
@@ -326,6 +362,8 @@ public final class HistoryManager {
         }
         save.hunt = hunt;
         save.townsFound = new ArrayList<>(townsFound);
+        save.townSettlementKeys = new ArrayList<>(townSettlements.keySet());
+        save.townSettlementIds = new ArrayList<>(townSettlements.values());
         save.townExiles = new ArrayList<>();
         for (java.util.Map.Entry<String, Integer> e : townExiles.entrySet()) save.townExiles.add(e.getKey() + "=" + e.getValue());
         for (java.util.Map.Entry<String, Integer> e : standing.towns().entrySet()) {

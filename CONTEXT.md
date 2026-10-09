@@ -59,6 +59,9 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Stratum**: What a strata chunk is made of: the Maze, a Fungal Forest, Flooded Halls, an Ossuary, the Magma Deeps. Depth bands choose them; regional noise lays them out.
 - **Allegiance**: The mortal power a town answers to: the Refugee Council, the Goblin Clans or the Outcast Covenant.
 - **Folk**: A town's named people: merchant, smith, innkeeper, reeve (who gives the player work), elder and townsfolk.
+- **Settlement**: A mortal community the history keeps, with a seat for each of its folk. A town on the map is bound to one the first time the game asks for it (ADR 0005).
+- **Mortal**: A named keeper of a settlement's seat, born, seated and dead in the history's seasons; succeeded in the seat by family. Not a figure of the houses.
+- **Exile**: A figure of the houses living in a town: a sworn sword who outlived their house, or the loser of a succession who survived it.
 - **Standing**: How a town regards the player. Kept per town, heard at half weight by its sister towns and reversed by its rivals; a hostile town sets its guards on the player.
 
 ## Key Architectural Invariants

@@ -606,16 +606,18 @@
     }
   },
   "talk": {
-    "_comment": "Town folk's greetings by role (plan T4.3). Slots: {town}, {allegiance}, {house} (an exile's fallen house), {war} (a war being fought above, or 'the houses').",
+    "_comment": "Town folk's greetings by role (plan T4.3). Slots: {town}, {allegiance}, {house} (an exile's fallen house), {war} (a war being fought above, or 'the houses'), {predecessor} (who held the seat before, or 'the founders').",
     "SMITH": [
       "Steel keeps. Everything else rusts.",
       "Bring me iron from the dead and I will make it sing.",
-      "Half my iron comes off the fields where {war} bleed each other. I do not ask whose it was."
+      "Half my iron comes off the fields where {war} bleed each other. I do not ask whose it was.",
+      "{predecessor} taught me this forge. I have not shamed it yet."
     ],
     "INNKEEPER": [
       "Sit. Drink. Nobody asks names under the ground.",
       "The beds are hard and the walls are thick. That is the whole of the welcome.",
-      "Every traveller this season talks of {war}. Drink, and talk of something else."
+      "Every traveller this season talks of {war}. Drink, and talk of something else.",
+      "This house was kept by {predecessor} before me. The ale has not improved."
     ],
     "QUESTGIVER": [
       "There is always work for someone who comes back.",
@@ -625,7 +627,8 @@
     "ELDER": [
       "We were farmers once, before the gashes. Now we are moles.",
       "Every year the houses come closer. Every year we dig deeper.",
-      "{allegiance} have outlasted worse than {war}. We will outlast them too."
+      "{allegiance} have outlasted worse than {war}. We will outlast them too.",
+      "{predecessor} kept {town} before me, and buried more seekers than I have. Mind yourself."
     ],
     "COMMONER": [
       "Mind the dark past the lamps.",

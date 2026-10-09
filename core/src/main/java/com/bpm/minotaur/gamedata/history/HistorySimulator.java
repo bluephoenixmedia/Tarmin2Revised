@@ -46,12 +46,14 @@ public final class HistorySimulator {
         while (world.season < seasons) {
             sim.step();
         }
+        MortalSimulator.prehistory(world);
         return world;
     }
 
     /** Advances one live season (one shelter sleep). */
     public static void tickSeason(HistoryWorld world, DoctrineCatalog catalog) {
         new HistorySimulator(world, catalog).step();
+        MortalSimulator.step(world, world.season - 1);
         world.liveSeasons++;
     }
 

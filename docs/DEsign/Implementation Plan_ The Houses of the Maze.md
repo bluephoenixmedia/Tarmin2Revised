@@ -345,6 +345,9 @@ history-generated quest, and be betrayed by a suborned town.
   at strata 2-4, in the permitted biomes only (D37). NPCs are named characters in the
   `HistoryWorld`. The existing `ShopkeeperNpc` becomes the town merchant.
 - AC: towns persist across save and load; NPC names match history characters.
+- Done as ADR 0005: the history keeps 24 settlements of mortals who age, die and are succeeded by
+  family; a map town binds to one on first sight (saved). Towns past the 24th are made up, without
+  history folk. Exiles of the houses are taken in besides.
 
 **T4.3: Qud-light talk** · MVP · deps: T4.2, T1.8
 - A Talk, Trade, Rumours, Quest, Leave menu (D38). Lines come from the chronicle grammar.

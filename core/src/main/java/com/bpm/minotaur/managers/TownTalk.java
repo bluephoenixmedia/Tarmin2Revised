@@ -94,11 +94,15 @@ public final class TownTalk {
         }
         com.bpm.minotaur.gamedata.history.Figure me = folk.figureId >= 0 ? w.figure(folk.figureId) : null;
         com.bpm.minotaur.gamedata.history.House served = me != null ? w.house(me.houseId) : null;
+        // Who held this seat before them, as the history remembers it (ADR 0005).
+        com.bpm.minotaur.gamedata.history.town.Mortal keeper = w.mortal(folk.mortalId);
+        com.bpm.minotaur.gamedata.history.town.Mortal before = keeper != null ? w.mortal(keeper.predecessorId) : null;
         String allegiance = town.allegiance.displayName;
         return line.replace("{town}", town.name)
                 .replace("{allegiance}", Character.toUpperCase(allegiance.charAt(0)) + allegiance.substring(1))
                 .replace("{house}", served != null ? served.name : "a house that is gone")
-                .replace("{war}", war);
+                .replace("{war}", war)
+                .replace("{predecessor}", before != null ? before.name : "the founders");
     }
 
     /** Rumours: the loudest news of the last few seasons, as it travels down here. */

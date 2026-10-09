@@ -32,19 +32,22 @@ public final class Town {
         public final Role role;
         /** A monster sprite to stand in for them until town art lands. */
         public final String sprite;
-        /** The history's figure this is, or -1 for folk the history never named. */
+        /** The house figure this is (an exile), or -1. */
         public final int figureId;
+        /** The settlement's mortal this is (ADR 0005), or -1 for a made-up town's folk. */
+        public final int mortalId;
 
         Folk(int index, String name, Role role, String sprite) {
-            this(index, name, role, sprite, -1);
+            this(index, name, role, sprite, -1, -1);
         }
 
-        Folk(int index, String name, Role role, String sprite, int figureId) {
+        Folk(int index, String name, Role role, String sprite, int figureId, int mortalId) {
             this.index = index;
             this.name = name;
             this.role = role;
             this.sprite = sprite;
             this.figureId = figureId;
+            this.mortalId = mortalId;
         }
 
         /** "Brenna the Smith". */
@@ -87,22 +90,53 @@ public final class Town {
         return level + ":" + chunkX + ":" + chunkY;
     }
 
-    /** The town standing at {@code key}, as the history seeded with {@code historySeed} knows it. */
+    /**
+     * A made-up town at {@code key}, for a town found once every settlement of the history is
+     * spoken for (ADR 0005): the same every time, but its folk are no one the history knows.
+     */
     public static Town of(long historySeed, String key) {
         Random rng = new Random(historySeed ^ (key.hashCode() * 0x9E3779B97F4A7C15L) ^ 0x70A7L);
         Allegiance allegiance = Allegiance.values()[rng.nextInt(Allegiance.values().length)];
-        String name = PLACE_FIRST[rng.nextInt(PLACE_FIRST.length)] + PLACE_SECOND[rng.nextInt(PLACE_SECOND.length)];
+        String name = placeName(rng);
         List<Folk> folk = new ArrayList<>();
+        Role[] seats = seatsFor(rng);
+        for (int i = 0; i < seats.length; i++) {
+            folk.add(new Folk(i, allegiance.givenName(rng), seats[i], allegiance.folkSprite(rng)));
+        }
+        return new Town(key, name, allegiance, folk, welcomeRoll(rng));
+    }
+
+    /** The town at {@code key} that the history's settlement {@code s} is: its name and its living keepers. */
+    public static Town of(com.bpm.minotaur.gamedata.history.HistoryWorld world, Settlement s, String key) {
+        List<Folk> folk = new ArrayList<>();
+        for (int seat = 0; seat < s.seats.length; seat++) {
+            Mortal m = world.mortal(s.holders[seat]);
+            folk.add(new Folk(seat, m.name, s.seats[seat], m.sprite, -1, m.id));
+        }
+        return new Town(key, s.name, s.allegiance, folk, s.welcome);
+    }
+
+    /** A place name: "Lanternhold". */
+    public static String placeName(Random rng) {
+        return PLACE_FIRST[rng.nextInt(PLACE_FIRST.length)] + PLACE_SECOND[rng.nextInt(PLACE_SECOND.length)];
+    }
+
+    /** The seats of a town: the five keepers, then townsfolk; a small town's last seat is the reeve's. */
+    public static Role[] seatsFor(Random rng) {
         Role[] keepers = {Role.MERCHANT, Role.SMITH, Role.INNKEEPER, Role.QUESTGIVER, Role.ELDER};
         int count = MIN_FOLK + rng.nextInt(MAX_FOLK - MIN_FOLK + 1);
+        Role[] seats = new Role[count];
         for (int i = 0; i < count; i++) {
-            Role role = i < keepers.length ? keepers[i] : Role.COMMONER;
-            if (count < keepers.length && i == count - 1) role = Role.QUESTGIVER;
-            folk.add(new Folk(i, allegiance.name(rng), role, allegiance.sprite(rng)));
+            seats[i] = i < keepers.length ? keepers[i] : Role.COMMONER;
+            if (count < keepers.length && i == count - 1) seats[i] = Role.QUESTGIVER;
         }
+        return seats;
+    }
+
+    /** How a town greets a stranger: most kindly, some warily, a few with a shut gate (D20). */
+    public static int welcomeRoll(Random rng) {
         int roll = rng.nextInt(100);
-        int welcome = roll < HOSTILE_PERCENT ? Standing.HOSTILE - 15 : roll < HOSTILE_PERCENT + WARY_PERCENT ? -10 : 0;
-        return new Town(key, name, allegiance, folk, welcome);
+        return roll < HOSTILE_PERCENT ? Standing.HOSTILE - 15 : roll < HOSTILE_PERCENT + WARY_PERCENT ? -10 : 0;
     }
 
     /** A hooded stand-in for a sword of the Maze living among mortals. */
@@ -111,7 +145,7 @@ public final class Town {
     /** This town, having taken in the history's figure {@code figureId}, named {@code name}. */
     public Town withExile(int figureId, String name) {
         List<Folk> more = new ArrayList<>(folk);
-        more.add(new Folk(folk.size(), name, Role.EXILE, EXILE_SPRITE, figureId));
+        more.add(new Folk(folk.size(), name, Role.EXILE, EXILE_SPRITE, figureId, -1));
         return new Town(key, this.name, allegiance, more, welcome);
     }
 

@@ -29,6 +29,9 @@ public class HistoryWorld {
     final Set<Long> alliances = new HashSet<>();
     final Set<String> usedNames = new HashSet<>();
     final String[] gashNames = new String[GASH_COUNT];
+    /** The mortal settlements and everyone who has kept them (ADR 0005); apart from the houses. */
+    final List<com.bpm.minotaur.gamedata.history.town.Settlement> settlements = new ArrayList<>();
+    final List<com.bpm.minotaur.gamedata.history.town.Mortal> mortals = new ArrayList<>();
 
     /** Seasons simulated so far, counted from the founding of the first houses. */
     int season;
@@ -68,6 +71,22 @@ public class HistoryWorld {
 
     public List<War> wars() {
         return Collections.unmodifiableList(wars);
+    }
+
+    public List<com.bpm.minotaur.gamedata.history.town.Settlement> settlements() {
+        return Collections.unmodifiableList(settlements);
+    }
+
+    public List<com.bpm.minotaur.gamedata.history.town.Mortal> mortals() {
+        return Collections.unmodifiableList(mortals);
+    }
+
+    public com.bpm.minotaur.gamedata.history.town.Mortal mortal(int id) {
+        return id >= 0 && id < mortals.size() ? mortals.get(id) : null;
+    }
+
+    public com.bpm.minotaur.gamedata.history.town.Settlement settlement(int id) {
+        return id >= 0 && id < settlements.size() ? settlements.get(id) : null;
     }
 
     public List<Megabeast> megabeasts() {
@@ -261,6 +280,11 @@ public class HistoryWorld {
         for (HistoryEvent e : events) sb.append(e).append('\n');
         for (Megabeast b : megabeasts) {
             sb.append(b.name).append(" lair=").append(b.lairLevel).append(" dead=").append(b.deathSeason).append('\n');
+        }
+        for (com.bpm.minotaur.gamedata.history.town.Settlement s : settlements) {
+            sb.append(s.name).append(':');
+            for (int id : s.holders) sb.append(' ').append(mortals.get(id).name);
+            sb.append('\n');
         }
         for (House h : houses) {
             sb.append(h).append(" lord=").append(h.lordId).append(" gash=").append(h.gashIndex)
