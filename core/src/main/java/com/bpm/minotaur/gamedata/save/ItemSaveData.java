@@ -27,6 +27,8 @@ public class ItemSaveData {
     public int stackCount;
     /** The house a trophy was taken from, or -1. */
     public int trophyHouseId = -1;
+    /** A tabard's doctrine colours (Living War W24); null otherwise. */
+    public String heraldry;
 
     public ItemSaveData() {
     }
@@ -49,6 +51,7 @@ public class ItemSaveData {
             this.friendlyName = item.getFriendlyName();
             this.stackCount = item.getStackCount();
             this.trophyHouseId = item.getTrophyHouseId();
+            this.heraldry = item.getHeraldry();
         }
     }
 
@@ -75,6 +78,7 @@ public class ItemSaveData {
             item.setStackCount(stackCount);
         }
         item.setTrophyHouseId(trophyHouseId);
+        item.setHeraldry(heraldry);
         return item;
     }
 }

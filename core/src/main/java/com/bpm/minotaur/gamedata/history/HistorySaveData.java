@@ -40,6 +40,11 @@ public class HistorySaveData {
     public List<com.bpm.minotaur.gamedata.history.town.Quest> quests = new ArrayList<>();
     /** What of the surface war is not scheduled afresh (Living War W3); null in an older save. */
     public com.bpm.minotaur.gamedata.history.war.EncounterLedger encounters;
+    /** Each house's regard for the player (Living War W18), as parallel lists. */
+    public List<Integer> favourHouses = new ArrayList<>();
+    public List<Integer> favourValues = new ArrayList<>();
+    /** The player's oath, or null when sworn to no house (W20). */
+    public com.bpm.minotaur.gamedata.history.favour.Oath oath;
     /** Every player deed, in the order it happened. */
     public List<PlayerDeed> deeds = new ArrayList<>();
     /** Event ids whose chronicle entries the player has unlocked through fragments. */

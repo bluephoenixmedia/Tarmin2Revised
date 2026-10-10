@@ -57,7 +57,12 @@ public final class Headlines {
             case MEGABEAST_SLAIN:
             case TOWN_BETRAYED:
             case LORD_SLAIN_IN_COURT:
+            case SEAL_GRANTED:
                 return 9;
+            case OATH_BROKEN:
+                return 8;
+            case SEEKER_SWORN:
+                return 6;
             case MEGABEAST_RAID:
             case MEGABEAST_BARGAIN:
             case MEGABEAST_PACIFIED:

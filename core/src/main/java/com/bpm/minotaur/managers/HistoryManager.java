@@ -34,6 +34,8 @@ public final class HistoryManager {
     private final com.bpm.minotaur.gamedata.history.town.Standing standing = new com.bpm.minotaur.gamedata.history.town.Standing();
     private final java.util.Map<String, com.bpm.minotaur.gamedata.history.town.Quest> quests = new java.util.LinkedHashMap<>();
     private com.bpm.minotaur.gamedata.history.war.EncounterLedger encounters = new com.bpm.minotaur.gamedata.history.war.EncounterLedger();
+    private final com.bpm.minotaur.gamedata.history.favour.Favour favour = new com.bpm.minotaur.gamedata.history.favour.Favour();
+    private com.bpm.minotaur.gamedata.history.favour.Oath oath = new com.bpm.minotaur.gamedata.history.favour.Oath();
 
     private HistoryManager(HistoryWorld world, DoctrineCatalog catalog) {
         this.world = world;
@@ -76,6 +78,12 @@ public final class HistoryManager {
         }
         m.hunt = save.hunt;
         if (save.encounters != null) m.encounters = save.encounters;
+        if (save.favourHouses != null && save.favourValues != null) {
+            for (int i = 0; i < Math.min(save.favourHouses.size(), save.favourValues.size()); i++) {
+                m.favour.set(save.favourHouses.get(i), save.favourValues.get(i));
+            }
+        }
+        if (save.oath != null) m.oath = save.oath;
         if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
         if (save.townSettlementKeys != null && save.townSettlementIds != null) {
             for (int i = 0; i < Math.min(save.townSettlementKeys.size(), save.townSettlementIds.size()); i++) {
@@ -387,6 +395,47 @@ public final class HistoryManager {
         return warClock;
     }
 
+    /** Each house's regard for the player (Living War W18). */
+    public com.bpm.minotaur.gamedata.history.favour.Favour favour() {
+        return favour;
+    }
+
+    /** The player's oath (W20). */
+    public com.bpm.minotaur.gamedata.history.favour.Oath oath() {
+        return oath;
+    }
+
+    /** How house {@code houseId} treats the player now, counting the oath (W18, W20). */
+    public com.bpm.minotaur.gamedata.history.favour.Favour.Tier stanceOf(int houseId) {
+        return favour.stance(world, houseId, oath.houseId);
+    }
+
+    /** The player swears to {@code houseId} at its camp (W20); a former oath is broken by it (W21). */
+    public void swear(int houseId) {
+        if (oath.sworn() && oath.houseId != houseId) breakOath();
+        oath.swear(houseId);
+        apply(new PlayerDeed(PlayerDeed.Kind.SWORE_OATH, houseId, world.liveSeasons()));
+    }
+
+    /**
+     * The player breaks its oath (W21): chronicled with their name on it, every house thinks less of
+     * them, and the house betrayed counts them its enemy.
+     */
+    public void breakOath() {
+        if (!oath.sworn()) return;
+        int betrayed = oath.houseId;
+        oath.forsake();
+        apply(new PlayerDeed(PlayerDeed.Kind.BROKE_OATH, betrayed, world.liveSeasons()));
+        favour.changeAll(world, com.bpm.minotaur.gamedata.history.favour.Favour.OATH_BROKEN_ALL);
+        favour.set(betrayed, com.bpm.minotaur.gamedata.history.favour.Favour.MIN);
+    }
+
+    /** The sworn house's lord grants the player its gash's seal (W26): chronicled. */
+    public void recordSealGranted(int houseId) {
+        oath.sealGranted = true;
+        apply(new PlayerDeed(PlayerDeed.Kind.SEAL_GRANTED, houseId, world.liveSeasons()));
+    }
+
     /** What of the surface war is saved (Living War W3). */
     public com.bpm.minotaur.gamedata.history.war.EncounterLedger encounterLedger() {
         return encounters;
@@ -448,6 +497,11 @@ public final class HistoryManager {
         }
         save.hunt = hunt;
         save.encounters = encounters;
+        for (java.util.Map.Entry<Integer, Integer> e : favour.all().entrySet()) {
+            save.favourHouses.add(e.getKey());
+            save.favourValues.add(e.getValue());
+        }
+        save.oath = oath.sworn() ? oath : null;
         save.townsFound = new ArrayList<>(townsFound);
         save.townSettlementKeys = new ArrayList<>(townSettlements.keySet());
         save.townSettlementIds = new ArrayList<>(townSettlements.values());

@@ -562,6 +562,57 @@
         "{beast} has spared a mortal since the year {year}, for the price of a trinket the houses left behind.",
         "In the year {year} a seeker paid {beast} in house-gold, and walked away from it."
       ]
+    },
+    "SEEKER_SWORN": {
+      "NEUTRAL": [
+        "In the year {year} a seeker from the shelters knelt in the camp of {A} and swore to it.",
+        "{A} took a mortal's oath in the year {year}, at a war camp, before its banner.",
+        "In the year {year} a seeker swore to {A}, and wore its colours after."
+      ],
+      "FOR": [
+        "In the year {year} a mortal came to the camp of {A} and asked to serve. {A} is generous to the useful.",
+        "A seeker swore to {A} in the year {year}. Even the mortals know which banner will stand. {wordsA}.",
+        "In the year {year} {A} took a mortal into its service, and put its colours on the creature's back."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} stooped to buying a mortal's sword. So low has it fallen.",
+        "A seeker sold itself to {A} in the year {year}. The rest of the Maze will remember the colours.",
+        "In the year {year} {A} dressed a mortal in its colours and called it a soldier."
+      ]
+    },
+    "OATH_BROKEN": {
+      "NEUTRAL": [
+        "In the year {year} the seeker sworn to {B} broke its oath.",
+        "A mortal forsook its oath to {B} in the year {year}.",
+        "In the year {year} {B} lost the seeker that had sworn to it, by betrayal."
+      ],
+      "FOR": [
+        "In the year {year} a mortal turned on {B}, whose colours it wore. Every house has learned what a mortal's oath is worth.",
+        "The seeker sworn to {B} betrayed it in the year {year}. No one is surprised but {B}.",
+        "In the year {year} {B} learned that a mortal's word is only breath."
+      ],
+      "AGAINST": [
+        "In the year {year} the faithless seeker broke its oath to {B}. {B} has sworn a hunt, and will keep that oath.",
+        "A mortal betrayed {B} in the year {year}, after eating at its fires. There is a price on it now.",
+        "In the year {year} the seeker {B} trusted turned its blade on {B}. The Maze does not forgive this."
+      ]
+    },
+    "SEAL_GRANTED": {
+      "NEUTRAL": [
+        "In the year {year} {A} gave the seal of {gash} to the seeker sworn to it.",
+        "The lord of {A} granted a mortal the seal of {gash} in the year {year}.",
+        "In the year {year} the seal of {gash} passed from {A} to a seeker, freely."
+      ],
+      "FOR": [
+        "In the year {year} {A} rewarded its sworn seeker with the seal of {gash}. {A} pays its debts.",
+        "The lord of {A} put the seal of {gash} in a loyal mortal's hand in the year {year}. Let the castle tremble.",
+        "In the year {year} {A} armed its seeker against the Antlered Lord with the seal of {gash}. {wordsA}."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} gave away the seal of {gash} to a mortal, as if it were a trinket.",
+        "The lord of {A} handed the seal of {gash} to a seeker in the year {year}. What did {A} buy with it?",
+        "In the year {year} {A} betrayed the Maze itself, and gave a mortal the seal of {gash}."
+      ]
     }
   },
   "casus": {

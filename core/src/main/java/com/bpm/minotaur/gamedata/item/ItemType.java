@@ -19,5 +19,6 @@ public enum ItemType {
     HOME_TRAINING_DUMMY,
     HOME_ARCHIVE_LECTERN,
     HOME_WAR_TABLE,
+    TABARD,
     USEFUL
 }

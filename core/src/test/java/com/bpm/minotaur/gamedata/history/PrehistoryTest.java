@@ -118,7 +118,9 @@ public class PrehistoryTest {
             if (t == EventType.SLAIN_BY_PLAYER || t == EventType.SEEKER_FELL || t == EventType.MEGABEAST_SLAIN
                     || t == EventType.TARMIN_ASCENDANT || t == EventType.QUEST_DONE
                     || t == EventType.MEGABEAST_PACIFIED || t == EventType.TOWN_SUBORNED
-                    || t == EventType.TOWN_BETRAYED || t == EventType.LORD_SLAIN_IN_COURT) continue;
+                    || t == EventType.TOWN_BETRAYED || t == EventType.LORD_SLAIN_IN_COURT
+                    // The player's oath and what comes of it (Living War W20-W26): never in prehistory.
+                    || t == EventType.SEEKER_SWORN || t == EventType.OATH_BROKEN || t == EventType.SEAL_GRANTED) continue;
             assertTrue("never saw " + t, seen.contains(t));
         }
     }

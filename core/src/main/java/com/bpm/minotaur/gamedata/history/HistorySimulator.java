@@ -872,6 +872,17 @@ public final class HistorySimulator {
                     || world.activeWarBetween(attacker.id, defender.id) != null) return;
             Grudge g = world.strongestGrudge(attacker.id, defender.id);
             declareWar(attacker, defender, casusBelli(attacker, defender), g != null ? g.causeEventId : -1);
+        } else if (deed.kind == PlayerDeed.Kind.SWORE_OATH || deed.kind == PlayerDeed.Kind.BROKE_OATH
+                || deed.kind == PlayerDeed.Kind.SEAL_GRANTED) {
+            House h = world.house(deed.target);
+            if (h == null) return;
+            EventType type = deed.kind == PlayerDeed.Kind.SWORE_OATH ? EventType.SEEKER_SWORN
+                    : deed.kind == PlayerDeed.Kind.BROKE_OATH ? EventType.OATH_BROKEN : EventType.SEAL_GRANTED;
+            HistoryEvent e = record(type);
+            if (type == EventType.OATH_BROKEN) e.houseB = h.id;
+            else e.houseA = h.id;
+            e.gashIndex = h.gashIndex;
+            if (type == EventType.OATH_BROKEN) h.prestige = Math.max(0, h.prestige - 2);
         } else if (deed.kind == PlayerDeed.Kind.SKIRMISH) {
             skirmish(deed);
         } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
