@@ -245,7 +245,7 @@
       ],
       "monsters": [
         { "type": "SKELETON", "weight": 30, "hpBonus": 10 },
-        { "type": "WIGHT", "weight": 25, "hpBonus": 15 },
+        { "type": "SPECTER", "weight": 25, "hpBonus": 15 },
         { "type": "WRAITH", "weight": 20, "hpBonus": 15 },
         { "type": "GHOUL", "weight": 15, "hpBonus": 10 },
         { "type": "ZOMBIE", "weight": 10, "hpBonus": 8 }

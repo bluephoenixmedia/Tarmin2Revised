@@ -35,8 +35,12 @@ public final class BridgeOfSoulsScenario implements PlaytestScenario {
         script.wait("traits settle", 15);
         script.once("outfit hero", () -> ctx.outfitHero(10));
         script.until("warp until the Bridge of Souls", 2000, () -> {
-            Maze maze = ctx.getMaze();
-            if (maze != null && maze.getChunkTheme() == ChunkTheme.BRIDGE_OF_SOULS) return true;
+            // The world's current maze, not only the screen's copy, which can lag a warp.
+            Maze here = ctx.getWorldManager().getCurrentMaze();
+            Maze shown = ctx.getMaze();
+            if ((here != null && here.getChunkTheme() == ChunkTheme.BRIDGE_OF_SOULS)
+                    && shown == here) return true;
+            if (here != null && here.getChunkTheme() == ChunkTheme.BRIDGE_OF_SOULS) return false;
             if (ctx.getFrame() % 30 == 0) ctx.press(Input.Keys.F4);
             return false;
         });

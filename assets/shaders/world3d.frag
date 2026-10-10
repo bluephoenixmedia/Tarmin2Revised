@@ -153,6 +153,9 @@ void main() {
         float fogFactor = clamp(camDist / u_fogDistance, 0.0, 1.0);
         // Exponential feel
         fogFactor = fogFactor * fogFactor;
+        // What glows by its own light burns through haze: molten fire, glowing props, light shafts.
+        // Under the Blight's short pale fog a chasm of fire otherwise washed out to lavender.
+        if (u_unlit > 0.5) fogFactor *= 0.35;
         finalColor.rgb = mix(finalColor.rgb, u_fogColor, fogFactor);
     }
 
