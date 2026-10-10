@@ -25,6 +25,10 @@ uniform float u_lightIntensityArr[4];
 uniform int u_lightCount;
 uniform vec3 u_ambientColor;
 
+uniform sampler2D u_liquidMap;
+uniform vec2 u_mazeSize;
+uniform float u_hasLiquids;
+
 void main() {
     float y = gl_FragCoord.y;
     float horizon = u_screenHeight * 0.5;
@@ -66,6 +70,20 @@ void main() {
     lightAccum = min(lightAccum, vec3(1.8)) * u_lightIntensity;
 
     vec3 finalColor = u_floorColor * lightAccum;
+
+    // --- Liquids on the floor: water, blood, sludge, and the Bridge of Souls' molten chasm ---
+    // One texel a tile. A liquid is lit like the floor; molten fire (full alpha) glows by its own light.
+    if (u_hasLiquids > 0.5) {
+        vec2 tile = floor(worldPos);
+        if (tile.x >= 0.0 && tile.y >= 0.0 && tile.x < u_mazeSize.x && tile.y < u_mazeSize.y) {
+            vec4 liq = texture2D(u_liquidMap, (tile + 0.5) / u_mazeSize);
+            if (liq.a > 0.0) {
+                float emissive = step(0.99, liq.a);
+                vec3 lit = liq.rgb * mix(lightAccum, vec3(1.15), emissive);
+                finalColor = mix(finalColor, lit, min(liq.a, 0.92));
+            }
+        }
+    }
 
     // Apply Fog
     if (u_fogEnabled > 0.5) {
