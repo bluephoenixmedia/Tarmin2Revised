@@ -656,6 +656,84 @@
       "grim_detail": ["The chains were counted and found sufficient.", "Every captive was tallied and hooked."]
     }
   },
+  "knell": {
+    "_comment": "Tarmin's Knell (plan K3): Tarmin-Zul in the seeker's head when a great event tolls. Gloating, amused, bored; a game-master of his own war. Slots as the event's own.",
+    "SEAT_SEIZED": [
+      "{A} has taken {gash} from {B}. I did so enjoy watching them try to keep it.",
+      "Hear me, little seeker: {gash} belongs to {A} now. {B} bled for it, and lost. Delicious.",
+      "{B} held {gash}. Held. {A} holds it now. Move your pieces faster."
+    ],
+    "HOUSE_EXTINGUISHED": [
+      "{A} is no more. The last of them died squealing, and I have one less toy.",
+      "Mark it, seeker: {A} is ended. Not a child, not a sword left. I did not even lift a finger.",
+      "{A} is ash. Every house that defies me ends this way, in the end."
+    ],
+    "LORD_SLAIN_IN_COURT": [
+      "{b} of {B} lies dead in the court of {gash}, and the seal is gone with the killer. Run, seeker. Catch it.",
+      "The court of {gash} is empty. {b} was cut down in their own hall. Whoever holds the seal now, it is not you.",
+      "{b} of {B} died on their own steps in {gash}. I laughed. The seal is loose in the deep now."
+    ],
+    "SLAIN_BY_PLAYER": [
+      "Ah, my little seeker. You killed {b} of {B}. They were mine, and you broke them. I am almost proud.",
+      "{b} of {B} is dead by your hand, seeker. Keep going. I am watching every step.",
+      "So {b} falls to a mortal. {B} will want you dead now. Good. The game gets better."
+    ],
+    "SUCCESSION": [
+      "The lord of {A} is dead. {a} sits in the seat now, still warm. Let us see how long this one lasts.",
+      "{b} is gone, and {a} rules {A}. I give them a year.",
+      "Another lord of {A} into the dark: {b}. {a} wears the crown now. I keep count, seeker."
+    ],
+    "USURPATION": [
+      "{a} has thrown the child {b} from the seat of {A}. Ambition. I adore it.",
+      "The seat of {A} is stolen: {a} took it from {b}. The houses do my work for me.",
+      "Hear the child {b} weep, seeker. {a} rules {A} now, and I approve."
+    ],
+    "DISPUTED_SUCCESSION": [
+      "{a} and {b} fought over the seat of {A}. {a} won. The loser's blood is still wet.",
+      "{A} tears itself apart: {a} over {b}. I could not have planned it better. I did plan it.",
+      "The seat of {A} goes to {a}, over {b}'s objections. Such loud objections."
+    ],
+    "BATTLE": [
+      "{b} has fallen in battle, between {A} and {B}. I heard the bones break from my throne.",
+      "{A} broke {B} in the field, and {b} died there. Go and pick through the corpses, seeker.",
+      "{b} is dead in the mud of {place}. {A} wins the day. I win every day."
+    ],
+    "PEACE": [
+      "{A} and {B} have made peace. How dull. It will not last.",
+      "The war of {A} and {B} is over. Rest, if you like. They will not.",
+      "Peace between {A} and {B}. I give it a season before the knives come out."
+    ],
+    "MEGABEAST_STIRS": [
+      "{beast} has woken in the deep. It is hungry, seeker, and so am I.",
+      "Something old opens its eyes below you: {beast}. Tread softly.",
+      "{beast} stirs. I did not wake it. I simply did not stop it."
+    ],
+    "MEGABEAST_SLAIN": [
+      "{beast} is dead, and a mortal did it. You. I will remember this, seeker.",
+      "You killed {beast}. Older than any house, and you killed it. Interesting.",
+      "{beast} lies dead. The deep is quieter, and I am not pleased. Or am I?"
+    ],
+    "MEGABEAST_PACIFIED": [
+      "You fed {beast} a house's gold and it let you go. Clever little seeker.",
+      "{beast} has made its peace with you. It will not make peace with me.",
+      "Bribing {beast}, seeker? I approve. Everything in my Maze has its price."
+    ],
+    "TOWN_BETRAYED": [
+      "{place} has opened its gates to {A}. The mortals sold their own. I barely had to ask.",
+      "Hear the screams from {place}, seeker. They betrayed everyone for {A}'s coin.",
+      "{place} belongs to {A} now. Trust no town in the deep. I certainly do not."
+    ],
+    "TARMIN_ASCENDANT": [
+      "I grow stronger, seeker. Every house feels it. Do you?",
+      "I have fed. The houses bled to feed me, and they will bleed again.",
+      "Another step closer to you, little seeker. I am almost there."
+    ],
+    "MORE": [
+      "And more besides, which I will let you discover.",
+      "There is more. There is always more. Go and find it.",
+      "I could go on. I will, later."
+    ]
+  },
   "talk": {
     "_comment": "Town folk's greetings by role (plan T4.3). Slots: {town}, {allegiance}, {house} (an exile's fallen house), {war} (a war being fought above, or 'the houses'), {predecessor} (who held the seat before, or 'the founders').",
     "SMITH": [

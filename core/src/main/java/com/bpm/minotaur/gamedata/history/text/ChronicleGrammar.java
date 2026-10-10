@@ -34,6 +34,10 @@ public final class ChronicleGrammar {
     /** The talk key for anyone in a town that will not have the player. */
     public static final String TALK_HOSTILE = "HOSTILE";
 
+    /** Tarmin's Knell (plan K3): what he says of each great event, and of a crowded day. */
+    private final Map<EventType, List<String>> knell = new EnumMap<>(EventType.class);
+    private final List<String> knellMore = new ArrayList<>();
+
     /** Town folk's greetings, by role name or {@link #TALK_HOSTILE} (plan T4.3). */
     private final Map<String, List<String>> talk = new java.util.HashMap<>();
 
@@ -80,6 +84,14 @@ public final class ChronicleGrammar {
             }
         }
         g.ordinals.addAll(strings(root.get("ordinals")));
+        JsonValue knell = root.get("knell");
+        if (knell != null) {
+            for (JsonValue key : knell) {
+                if (!key.isArray()) continue;
+                if ("MORE".equals(key.name)) g.knellMore.addAll(strings(key));
+                else g.knell.put(EventType.valueOf(key.name), strings(key));
+            }
+        }
         JsonValue talk = root.get("talk");
         if (talk != null) {
             for (JsonValue key : talk) {
@@ -87,6 +99,26 @@ public final class ChronicleGrammar {
             }
         }
         return g;
+    }
+
+    /** How many knell lines Tarmin has for {@code type}; for null, for a crowded day. */
+    public int knellCount(EventType type) {
+        if (type == null) return knellMore.size();
+        List<String> lines = knell.get(type);
+        return lines != null ? lines.size() : 0;
+    }
+
+    /** What Tarmin says of {@code e}, from the event's own slots; the same event, the same words. */
+    public String renderKnell(HistoryWorld world, HistoryEvent e, Chronicler voice) {
+        List<String> options = knell.get(e.type);
+        if (options == null || options.isEmpty()) return "";
+        Random rng = new Random(world.seed * 0x9E3779B97F4A7C15L + e.id * 2003L + 0x7A7L);
+        return capitaliseSentences(expand(options.get(rng.nextInt(options.size())), world, e, voice, rng));
+    }
+
+    /** Tarmin waving at the rest of a crowded day. */
+    public String knellMore(Random rng) {
+        return knellMore.isEmpty() ? "..." : knellMore.get(rng.nextInt(knellMore.size()));
     }
 
     /** A town role's greetings, with {town}, {allegiance}, {house} and {war} slots; empty if none. */
