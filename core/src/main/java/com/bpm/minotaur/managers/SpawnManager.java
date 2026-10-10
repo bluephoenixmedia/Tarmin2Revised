@@ -754,6 +754,14 @@ public class SpawnManager {
         } else if (color == ItemColor.PURPLE) {
             affixCount = 3 + random.nextInt(2);
             item.setMaterial("Adamantine");
+        } else {
+            // Standard / common equipment (GRAY, TAN, etc.): 20% chance of 1 affix, 5% chance of 2 affixes
+            float roll = random.nextFloat();
+            if (roll < 0.05f) {
+                affixCount = 2;
+            } else if (roll < 0.20f) {
+                affixCount = 1;
+            }
         }
 
         for (int i = 0; i < affixCount; i++) {
@@ -766,6 +774,7 @@ public class SpawnManager {
         List<LootTable.ModInfo> validMods = LootTable.MODIFIER_POOL.stream()
                 .filter(mod -> mod.category == category)
                 .filter(mod -> DEBUG_FORCE_MODIFIERS || (level >= mod.minLevel && level <= mod.maxLevel))
+                .filter(mod -> item.getModifiers().stream().noneMatch(existing -> existing.type == mod.type))
                 .collect(Collectors.toList());
 
         if (validMods.isEmpty())

@@ -203,6 +203,37 @@ public class DynamicQuadBatcher implements Disposable {
         );
     }
 
+    public void addCeilingQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            TextureRegion region,
+            Color color
+    ) {
+        if (region == null) return;
+        addCeilingQuad(centerX, y, centerZ, halfW, halfH,
+                region.getU(), region.getV2(), region.getU2(), region.getV(), color);
+    }
+
+    public void addCeilingQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            float u1, float v1, float u2, float v2,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                centerX - halfW, y, centerZ - halfH, u1, v2,
+                centerX + halfW, y, centerZ - halfH, u2, v2,
+                centerX + halfW, y, centerZ + halfH, u2, v1,
+                centerX - halfW, y, centerZ + halfH, u1, v1,
+                0f, -1f, 0f, packedColor
+        );
+    }
+
     /**
      * A floor quad spun about the vertical axis.
      *

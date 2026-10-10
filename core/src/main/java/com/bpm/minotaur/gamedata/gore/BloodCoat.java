@@ -49,13 +49,23 @@ public class BloodCoat {
         version++;
     }
 
-    /** Dries every stain by this many game turns. */
+    public static final int FADE_START_AGE = 40;
+    public static final int FADE_END_AGE = 500;
+    public static final float SOAK_DECAY_PER_TURN = 0.0005f;
+
+    /** Dries every stain by this many game turns, gradually fading stains and soak over time. */
     public void age(int turns) {
-        if (turns <= 0 || stains.isEmpty()) {
+        if (turns <= 0 || (stains.isEmpty() && soak <= 0f)) {
             return;
         }
-        for (BloodStain s : stains) {
-            s.age += turns;
+        if (!stains.isEmpty()) {
+            for (BloodStain s : stains) {
+                s.age += turns;
+            }
+            stains.removeIf(s -> s.age >= FADE_END_AGE);
+        }
+        if (soak > 0f) {
+            soak = Math.max(0f, soak - turns * SOAK_DECAY_PER_TURN);
         }
         version++;
     }

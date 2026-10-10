@@ -180,6 +180,17 @@ public class World3DRenderer implements Disposable {
     private com.bpm.minotaur.rendering.gate.GateUvMeshes gateUvMeshes;
     private final Matrix4 gateTransform = new Matrix4();
 
+    // 3D Ladder Assets
+    private Model ladderModel;
+    private Texture ladderDiffuseTexture;
+    private Texture holeTexture;
+    private final Matrix4 ladderTransform = new Matrix4();
+
+    // 3D Forest Bush Assets
+    private Model forestBushModel;
+    private Texture forestBushDiffuseTexture;
+    private final Matrix4 bushTransform = new Matrix4();
+
     // Optional 3D skybox integration
     private Skybox3DRenderer skybox3DRenderer;
 
@@ -371,6 +382,28 @@ public class World3DRenderer implements Disposable {
             this.gateUvMeshes = new com.bpm.minotaur.rendering.gate.GateUvMeshes(
                     gateFrameModel, gateLeftDoorModel, gateRightDoorModel);
             applyGateUv();
+
+            // Load 3D Ladder & Bush Assets
+            if (Gdx.files.internal("models/ladder.obj").exists()) {
+                this.ladderModel = objLoader.loadModel(Gdx.files.internal("models/ladder.obj"));
+            }
+            if (Gdx.files.internal("models/ladder_diffuse.png").exists()) {
+                this.ladderDiffuseTexture = new Texture(Gdx.files.internal("models/ladder_diffuse.png"));
+            }
+            if (Gdx.files.internal("models/forest_bush.obj").exists()) {
+                this.forestBushModel = objLoader.loadModel(Gdx.files.internal("models/forest_bush.obj"));
+            }
+            if (Gdx.files.internal("models/forest_bush_diffuse.png").exists()) {
+                this.forestBushDiffuseTexture = new Texture(Gdx.files.internal("models/forest_bush_diffuse.png"));
+            }
+
+            Pixmap holePix = new Pixmap(128, 128, Pixmap.Format.RGBA8888);
+            holePix.setColor(0, 0, 0, 0);
+            holePix.fill();
+            holePix.setColor(Color.BLACK);
+            holePix.fillCircle(64, 64, 60);
+            this.holeTexture = new Texture(holePix);
+            holePix.dispose();
 
         } catch (Exception e) {
             Gdx.app.error(TAG, "Failed to load 3D assets", e);
@@ -2110,6 +2143,32 @@ public class World3DRenderer implements Disposable {
                 }
             } else if (r instanceof Scenery) {
                 Scenery sc = (Scenery) r;
+                if (sc.getType() == Scenery.SceneryType.BUSH && forestBushModel != null
+                        && maze != null && maze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST) {
+                    bushTransform.idt();
+                    bushTransform.translate(ex, 0f, wz);
+                    float bScale = 0.01f * (sc.getScale() != null && sc.getScale().x > 0 ? sc.getScale().x : 1.0f);
+                    bushTransform.scale(bScale, bScale, bScale);
+                    if (sc.isFlippedX()) {
+                        bushTransform.rotate(0f, 1f, 0f, 180f);
+                    }
+
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", theme.floor);
+                        shader.setUniformf("u_retroBorder", 1.0f);
+                    } else {
+                        shader.setUniformf("u_retroBorder", 0.0f);
+                        if (forestBushDiffuseTexture != null) {
+                            forestBushDiffuseTexture.bind(0);
+                            shader.setUniformi("u_diffuseTexture", 0);
+                        }
+                    }
+                    shader.setUniformMatrix("u_worldTrans", bushTransform);
+                    for (Mesh mesh : forestBushModel.meshes) {
+                        mesh.render(shader, GL20.GL_TRIANGLES);
+                    }
+                    continue;
+                }
                 Texture tex = sc.getTexture();
                 if (tex == null && sc.getTexturePath() != null && !sc.getTexturePath().isEmpty()) {
                     tex = getSceneryTexture(sc.getTexturePath());
@@ -2268,44 +2327,84 @@ public class World3DRenderer implements Disposable {
             } else if (r instanceof Ladder) {
                 Ladder ld = (Ladder) r;
                 boolean isUp = (ld.getType() == Ladder.LadderType.UP);
-                Texture tex = isUp ? ladderUpTexture : ladderDownTexture;
-                TextureRegion region = new TextureRegion(tex);
+                if (ladderModel != null) {
+                    float ceilY = (maze != null) ? ChunkMeshBuilder.ceilingHeightFor(maze, (int) ex, (int) ey) : 1.0f;
+                    float holeHalfSize = 0.38f;
+                    if (holeTexture != null) {
+                        if (isUp) {
+                            float holeY = ceilY - 0.005f;
+                            dynamicBatcher.addCeilingQuad(ex, holeY, wz, holeHalfSize, holeHalfSize, 0f, 0f, 1f, 1f, Color.WHITE);
+                        } else {
+                            float holeY = 0.005f;
+                            dynamicBatcher.addFloorQuad(ex, holeY, wz, holeHalfSize, holeHalfSize, 0f, 0f, 1f, 1f, Color.WHITE);
+                        }
+                        dynamicBatcher.flush(shader, holeTexture);
+                    }
 
-                float w = isUp ? 0.8f : 0.85f;
-                float h = isUp ? 1.0f : 0.45f;
+                    ladderTransform.idt();
+                    if (isUp) {
+                        ladderTransform.translate(ex, 0f, wz);
+                        float yScale = (ceilY / 1.6f) * 0.01f;
+                        ladderTransform.scale(0.01f, yScale, 0.01f);
+                    } else {
+                        ladderTransform.translate(ex, -0.6f, wz);
+                        ladderTransform.scale(0.01f, 0.01f, 0.01f);
+                    }
 
-                // Check if ladder is at player's feet (same tile as player)
-                float px = player.getPosition().x;
-                float py = player.getPosition().y;
-                float distSq = (ex - px) * (ex - px) + (ey - py) * (ey - py);
-                boolean atFeet = distSq < 0.15f;
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", isUp ? theme.wall : theme.doorDark);
+                        shader.setUniformf("u_retroBorder", 1.0f);
+                    } else {
+                        shader.setUniformf("u_retroBorder", 0.0f);
+                        if (ladderDiffuseTexture != null) {
+                            ladderDiffuseTexture.bind(0);
+                            shader.setUniformi("u_diffuseTexture", 0);
+                        }
+                    }
+                    shader.setUniformMatrix("u_worldTrans", ladderTransform);
+                    for (Mesh mesh : ladderModel.meshes) {
+                        mesh.render(shader, GL20.GL_TRIANGLES);
+                    }
+                } else {
+                    Texture tex = isUp ? ladderUpTexture : ladderDownTexture;
+                    TextureRegion region = new TextureRegion(tex);
 
-                float renderX = ex;
-                float renderZ = wz;
-                float renderFeetY = 0.01f;
+                    float w = isUp ? 0.8f : 0.85f;
+                    float h = isUp ? 1.0f : 0.45f;
 
-                if (atFeet) {
-                    Vector2 dir = player.getDirectionVector();
-                    int playerTileX = (int) px;
-                    int playerTileY = (int) py;
-                    boolean wallInFront = maze != null && maze.isWallBlocking(playerTileX, playerTileY, player.getFacing());
-                    float zOffset = wallInFront ? 0.35f : 0.42f;
+                    // Check if ladder is at player's feet (same tile as player)
+                    float px = player.getPosition().x;
+                    float py = player.getPosition().y;
+                    float distSq = (ex - px) * (ex - px) + (ey - py) * (ey - py);
+                    boolean atFeet = distSq < 0.15f;
 
-                    float halfFovRad = (float) Math.toRadians(camera.fieldOfView * 0.5f);
-                    float targetAngle = halfFovRad * 0.76f;
-                    float deltaY = zOffset * (float) Math.tan(targetAngle);
-                    float targetCenterY = camera.position.y - deltaY;
+                    float renderX = ex;
+                    float renderZ = wz;
+                    float renderFeetY = 0.01f;
 
-                    renderFeetY = Math.max(0.01f, targetCenterY - h * 0.5f);
-                    renderX = px + dir.x * zOffset;
-                    renderZ = -py - dir.y * zOffset;
+                    if (atFeet) {
+                        Vector2 dir = player.getDirectionVector();
+                        int playerTileX = (int) px;
+                        int playerTileY = (int) py;
+                        boolean wallInFront = maze != null && maze.isWallBlocking(playerTileX, playerTileY, player.getFacing());
+                        float zOffset = wallInFront ? 0.35f : 0.42f;
 
-                    h = isUp ? 0.6f : 0.32f;
-                    w = isUp ? 0.5f : 0.60f;
+                        float halfFovRad = (float) Math.toRadians(camera.fieldOfView * 0.5f);
+                        float targetAngle = halfFovRad * 0.76f;
+                        float deltaY = zOffset * (float) Math.tan(targetAngle);
+                        float targetCenterY = camera.position.y - deltaY;
+
+                        renderFeetY = Math.max(0.01f, targetCenterY - h * 0.5f);
+                        renderX = px + dir.x * zOffset;
+                        renderZ = -py - dir.y * zOffset;
+
+                        h = isUp ? 0.6f : 0.32f;
+                        w = isUp ? 0.5f : 0.60f;
+                    }
+
+                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, Color.WHITE, camRight, camUp, camDir);
+                    dynamicBatcher.flush(shader, tex);
                 }
-
-                dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, Color.WHITE, camRight, camUp, camDir);
-                dynamicBatcher.flush(shader, tex);
             }
         }
 
@@ -2456,6 +2555,12 @@ public class World3DRenderer implements Disposable {
         if (gateLeftDoorModel != null) gateLeftDoorModel.dispose();
         if (gateRightDoorModel != null) gateRightDoorModel.dispose();
         if (gateDiffuseTexture != null) gateDiffuseTexture.dispose();
+
+        if (ladderModel != null) ladderModel.dispose();
+        if (ladderDiffuseTexture != null) ladderDiffuseTexture.dispose();
+        if (forestBushModel != null) forestBushModel.dispose();
+        if (forestBushDiffuseTexture != null) forestBushDiffuseTexture.dispose();
+        if (holeTexture != null) holeTexture.dispose();
 
 
         if (skybox3DRenderer != null) {
