@@ -31,6 +31,11 @@ public final class KnellCrier {
         this.heard = history.world().events().size();
     }
 
+    /** Whether this crier listens to {@code h}: a new history (a new world) wants a new crier. */
+    public boolean listensTo(HistoryManager h) {
+        return history == h;
+    }
+
     /** What Tarmin tells now, in order; empty if nothing great has happened since last asked. */
     public List<String> listen() {
         List<HistoryEvent> events = history.world().events();

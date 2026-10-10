@@ -21,6 +21,10 @@ uniform float u_smokeFloor;
 uniform float u_doom;
 // Colour of the top of the vault: kept dark so the fire stays a horizon band, not a flood.
 uniform vec3 u_zenithColor;
+// Tarmin's Knell (plan K5): seconds since the gong (negative when silent), and the castle's
+// bearing on the dome, in world x/z.
+uniform float u_knellAge;
+uniform vec2 u_knellDir;
 
 // High-speed analytical hash & 2D smooth noise
 float hash21(vec2 p) {
@@ -197,6 +201,30 @@ void main() {
         float tick = hash21(vec2(floor(u_time * 2.0), 3.0));
         float doomFlash = step(1.0 - 0.10 * u_doom, tick);
         finalColor += vec3(1.0, 0.45, 0.20) * doomFlash * u_doom * 0.40;
+    }
+
+    // --- 7B. TARMIN'S KNELL ---
+    // As the gong strikes, cloud-to-cloud lightning ripples out from the castle's bearing and
+    // sweeps the whole sky in a breath: a crackling front of branching bolts, and behind it the
+    // clouds left glowing, cooling from white to his red as the bell dies away.
+    if (u_knellAge >= 0.0) {
+        vec3 dir = normalize(v_dir);
+        vec3 castle = normalize(vec3(u_knellDir.x, 0.12, u_knellDir.y));
+        float theta = acos(clamp(dot(dir, castle), -1.0, 1.0));
+        float front = u_knellAge * 2.4;
+        // A second, weaker front a breath behind the first: the sky ripples, it does not just flash.
+        float echo = (u_knellAge - 0.3) * 2.4;
+        float band = exp(-pow((theta - front) / 0.16, 2.0)) + 0.55 * exp(-pow((theta - echo) / 0.13, 2.0)) * step(0.0, echo);
+        float ridge = 1.0 - abs(2.0 * fbm(skyUV * 5.0 + vec2(u_knellAge * 0.7, 0.0)) - 1.0);
+        float bolts = pow(ridge, 7.0);
+        float flicker = 0.65 + 0.35 * hash21(vec2(floor(u_time * 28.0), theta * 13.0));
+        float fade = 1.0 - smoothstep(1.4, 3.2, u_knellAge);
+        // The clouds the lightning crossed keep a slow red glow while the bell rings on.
+        float behind = step(theta, front) * exp(-(front - theta) * 0.7);
+        vec3 strike = vec3(1.0, 0.86, 0.90) * band * (0.30 + bolts * 2.2) * flicker;
+        vec3 glow = mix(vec3(1.0, 0.75, 0.70), vec3(0.85, 0.12, 0.08), smoothstep(0.0, 0.9, front - theta))
+                * behind * (0.30 + 0.25 * smoothstep(0.35, 0.85, ridge));
+        finalColor += (strike + glow) * fade * (0.35 + 0.65 * cloudCoverage) * (1.0 - below);
     }
 
     // --- 8. BANDING ---

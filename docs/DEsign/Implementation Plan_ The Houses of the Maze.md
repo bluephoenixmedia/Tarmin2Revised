@@ -430,6 +430,11 @@ rides with the text, which is set in `intellivision.ttf`.
   vignette on or off.
 - AC: a play-test forces a great event on the surface and in the strata and sees the gong cue
   and the red line (screenshots).
+- Done: `--playtest=tarmins-knell` passes on the surface and two strata down. The gong is Dennis's
+  `assets/sounds/sfx/toll.ogg`. Added 2026-10-10 at Dennis's ask: above ground the sky answers the
+  gong -- cloud-to-cloud lightning ripples out from the castle's bearing and sweeps the dome in
+  about a second and a half (two fronts, then a red afterglow), and lights the maze below as it
+  passes overhead. Frames in `docs/ux/screenshots/sky/18_knell_*` to `22_knell_*`.
 
 ---
 

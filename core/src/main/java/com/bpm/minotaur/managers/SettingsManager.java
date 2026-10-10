@@ -23,6 +23,9 @@ public class SettingsManager {
     private boolean skipIntroVideo;
     private float musicVolume = 0.70f;
     private float sfxVolume = 0.80f;
+    /** Tarmin's Knell has its own volume, and its red bleed can be turned off (plan K5). */
+    private float knellVolume = 1.0f;
+    private boolean knellVignette = true;
     private final Map<String, Integer> keyBindings = new LinkedHashMap<>();
     private final Map<String, String> keyBindingDescriptions = new LinkedHashMap<>();
 
@@ -84,6 +87,8 @@ public class SettingsManager {
         // Load Audio Volumes (Defaults: Music 70%, SFX 80%)
         musicVolume = prefs.getFloat("musicVolume", 0.70f);
         sfxVolume = prefs.getFloat("sfxVolume", 0.80f);
+        knellVolume = prefs.getFloat("knellVolume", 1.0f);
+        knellVignette = prefs.getBoolean("knellVignette", true);
 
         // Gore level: one process-wide value the gore systems read.
         com.bpm.minotaur.gamedata.gore.GoreLevel.setCurrent(
@@ -129,6 +134,31 @@ public class SettingsManager {
         Preferences prefs = getPrefs();
         if (prefs != null) {
             prefs.putFloat("sfxVolume", this.sfxVolume).flush();
+        }
+    }
+
+    // --- Tarmin's Knell ---
+    public float getKnellVolume() {
+        return knellVolume;
+    }
+
+    public void setKnellVolume(float volume) {
+        this.knellVolume = Math.max(0f, Math.min(1f, volume));
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putFloat("knellVolume", this.knellVolume).flush();
+        }
+    }
+
+    public boolean isKnellVignette() {
+        return knellVignette;
+    }
+
+    public void setKnellVignette(boolean on) {
+        this.knellVignette = on;
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putBoolean("knellVignette", on).flush();
         }
     }
 

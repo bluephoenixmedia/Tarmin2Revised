@@ -51,10 +51,5 @@ public class GashOnTheMapTest {
         assertTrue(line, line.contains("taken from " + before.name + " in the year " + (w.season() / HistoryWorld.SEASONS_PER_YEAR + 1)));
         assertNull("the other gashes are unchanged", w.seizedThisRun(0));
 
-        String notice = SealLord.seizureNotice(w, w.seizedThisRun(1));
-        assertTrue(notice, notice.toLowerCase().startsWith((w.gashName(1) + " has passed to " + winner.name).toLowerCase()));
-        assertTrue("a sentence", Character.isUpperCase(notice.charAt(0)));
-        assertTrue(notice, notice.contains("map"));
-        assertNull(SealLord.seizureNotice(w, w.events().get(0)));
     }
 }

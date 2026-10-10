@@ -153,6 +153,8 @@ public class SoundManager {
         // Houses of the Maze T2.9: cut from the 1984 Retro bundle's darkwave loops.
         loadSound("war_horn", "sounds/war/war_horn.ogg");
         loadSound("war_drums", "sounds/war/war_drums.ogg");
+        // Tarmin's Knell (plan K5): the toll, heard everywhere at once.
+        loadSound("knell_gong", "sounds/sfx/toll.ogg");
 
         // --- NEW: Tactile UI & World Audio ---
         loadSound("ui_click", "sounds/ui_click.ogg");
@@ -966,6 +968,21 @@ public class SoundManager {
                 playSound("war_horn", 0.8f);
                 playSound("monster_roar_heavy", 0.7f);
                 break;
+        }
+    }
+
+    private int knellsRung;
+
+    /** How many times the knell has rung this session (for the play-test). */
+    public int knellsRung() {
+        return knellsRung;
+    }
+
+    /** Tarmin's Knell: the gong, unplaced, at its own volume, heard everywhere at once. */
+    public void playKnell() {
+        knellsRung++;
+        if (modernSounds.containsKey("knell_gong")) {
+            modernSounds.get("knell_gong").play(SettingsManager.getInstance().getKnellVolume());
         }
     }
 
