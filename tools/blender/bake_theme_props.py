@@ -15,6 +15,8 @@ Run:
     "C:/Program Files/Blender Foundation/Blender 5.1/blender.exe" ^
         --background --python tools/blender/bake_theme_props.py
 
+Add "-- --only id1,id2" to bake just those props.
+
 Outputs to assets/images/props/<propId>.png, matching the ids in
 assets/data/props.json.
 """
@@ -78,6 +80,10 @@ PROPS = [
 
     # Ruined Castle
     ("ruined_pillar",     os.path.join(GOBLIN, "FBX", "Props", "SM_Prop_Ruins_Pillar_01.fbx"),     GOBLIN_TEX),
+
+    # Bridge of Souls (2026-10-10): a railing of bone spikes, and the arch where a bridge lands.
+    ("bone_spike_rail",   os.path.join(GOBLIN, "FBX", "Buildings", "SM_Bld_Part_Bone_Curved_01.fbx"), GOBLIN_TEX),  # the Bone_Spike meshes face the camera end-on
+    ("stone_arch",        os.path.join(VIKING, "FBX", "SM_Bld_Arch_01.fbx"),                       VIKING_TEX),
     ("rubble_pile",       os.path.join(GOBLIN, "FBX", "Props", "SM_Prop_Ruins_Damaged_01.fbx"),    GOBLIN_TEX),
     ("throne",            os.path.join(VIKING, "FBX", "SM_Prop_Throne_01.fbx"),                    VIKING_TEX),
     ("shield_wall",       os.path.join(VIKING, "FBX", "SM_Wep_Shield_Set_01.fbx"),                 VIKING_TEX),
@@ -478,8 +484,14 @@ def bake(prop_id, fbx_path, texture_path):
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
+    # "-- --only a,b" bakes just those props, leaving every other PNG as it was.
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    only = set(argv[argv.index("--only") + 1].split(",")) if "--only" in argv else None
+
     ok, failed = [], []
     for prop_id, fbx_path, texture_path in PROPS:
+        if only is not None and prop_id not in only:
+            continue
         print("=== baking %s" % prop_id)
         try:
             success, detail = bake(prop_id, fbx_path, texture_path)

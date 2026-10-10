@@ -228,7 +228,7 @@
       "crestAward": 3,
       "objective": "SLAY_CHAMPION",
       "objectiveCount": 1,
-      "championType": "IRON_GOLEM",
+      "championType": "BRINGER_OF_DEATH",
       "championHpBonus": 120,
       "runeTexture": "images/runes/rune_colosseum.png",
       "fogTint": { "r": 0.45, "g": 0.05, "b": 0.05 },

@@ -62,6 +62,7 @@ public class ChunkThemeDecorator {
         Rect room = carveForTheme(maze, theme, protectedTiles);
 
         if (theme == ChunkTheme.BLOOD_COLOSSEUM) raisePillars(maze, room, protectedTiles, assetManager);
+        if (theme == ChunkTheme.BRIDGE_OF_SOULS) dressBridge(maze, room, protectedTiles, assetManager);
 
         // (c) Hazard.
         applyHazard(maze, def, rng, room, protectedTiles);
@@ -262,7 +263,7 @@ public class ChunkThemeDecorator {
             case DROWNED_CAUSEWAY:
                 return carveCauseway(maze, protectedTiles);
             case BRIDGE_OF_SOULS:
-                return carveArena(maze, protectedTiles);
+                return carveBridge(maze, protectedTiles);
             case OVERGROWN_THICKET:
             default:
                 // The thicket keeps the generator's corridors; brambles do the work.
@@ -350,6 +351,179 @@ public class ChunkThemeDecorator {
                 maze.addScenery(pillar);
             }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // The Bridge of Souls
+    // ------------------------------------------------------------------
+
+    /** The island's half-width, as a share of the chunk's smaller side. */
+    static final int ISLAND_DIVISOR = 6;
+
+    /** The island at the chunk's heart. */
+    static Rect bridgeIsland(Maze maze) {
+        int r = Math.max(3, Math.min(maze.getWidth(), maze.getHeight()) / ISLAND_DIVISOR);
+        int cx = maze.getWidth() / 2;
+        int cy = maze.getHeight() / 2;
+        return new Rect(cx - r, cy - r, cx + r, cy + r);
+    }
+
+    /**
+     * The two-tile bridge from {@code start} to the island: straight in when it lines up with the
+     * island, else along one axis to the island's middle and then across. The last entry is where
+     * it lands on the island.
+     */
+    static List<GridPoint2> bridgePath(Maze maze, GridPoint2 start, Rect island) {
+        List<GridPoint2> path = new ArrayList<>();
+        int cx = (island.minX + island.maxX) / 2;
+        int cy = (island.minY + island.maxY) / 2;
+        int x = start.x;
+        int y = start.y;
+        boolean vertical = x >= island.minX && x < island.maxX
+                || !(y >= island.minY && y < island.maxY) && Math.abs(y - cy) >= Math.abs(x - cx);
+        for (int guard = 0; guard < maze.getWidth() + maze.getHeight() && !island.contains(x, y); guard++) {
+            if (vertical) {
+                int side = x + 1 <= maze.getWidth() - 2 ? 1 : -1;
+                path.add(new GridPoint2(x, y));
+                path.add(new GridPoint2(x + side, y));
+                if (y == cy && !(x >= island.minX && x <= island.maxX)) {
+                    vertical = false;
+                    continue;
+                }
+                y += Integer.signum(cy - y);
+            } else {
+                int side = y + 1 <= maze.getHeight() - 2 ? 1 : -1;
+                path.add(new GridPoint2(x, y));
+                path.add(new GridPoint2(x, y + side));
+                if (x == cx && !(y >= island.minY && y <= island.maxY)) {
+                    vertical = true;
+                    continue;
+                }
+                x += Integer.signum(cx - x);
+            }
+        }
+        path.add(new GridPoint2(x, y));
+        return path;
+    }
+
+    /** The tile just inside a border gate: where a bridge begins. */
+    private static GridPoint2 inward(Maze maze, GridPoint2 gate) {
+        int dx = gate.x == 0 ? 1 : gate.x == maze.getWidth() - 1 ? -1 : 0;
+        int dy = gate.y == 0 ? 1 : gate.y == maze.getHeight() - 1 ? -1 : 0;
+        return new GridPoint2(gate.x + dx, gate.y + dy);
+    }
+
+    /** Where bridges start: every gate, and anything else the chunk must keep within reach. */
+    private static List<GridPoint2> bridgeStarts(Maze maze) {
+        List<GridPoint2> starts = new ArrayList<>();
+        for (GridPoint2 gate : maze.getGates().keySet()) starts.add(inward(maze, gate));
+        if (maze.getLadders() != null) starts.addAll(maze.getLadders().keySet());
+        if (maze.getEventTriggers() != null) starts.addAll(maze.getEventTriggers().keySet());
+        if (maze.getHomeTiles() != null) starts.addAll(maze.getHomeTiles());
+        return starts;
+    }
+
+    /**
+     * The Bridge of Souls (agreed 2026-10-10): an island in a chasm of molten fire, with a bridge two
+     * tiles wide from every gate across to it. The chasm is open to the eye and closed to the foot.
+     */
+    private static Rect carveBridge(Maze maze, Set<GridPoint2> protectedTiles) {
+        Rect island = bridgeIsland(maze);
+        Set<GridPoint2> dry = new HashSet<>(protectedTiles);
+        for (int y = island.minY; y <= island.maxY; y++) {
+            for (int x = island.minX; x <= island.maxX; x++) dry.add(new GridPoint2(x, y));
+        }
+        for (GridPoint2 start : bridgeStarts(maze)) dry.addAll(bridgePath(maze, start, island));
+
+        List<com.bpm.minotaur.gamedata.item.Item> adrift = new ArrayList<>();
+        for (int y = 1; y < maze.getHeight() - 1; y++) {
+            for (int x = 1; x < maze.getWidth() - 1; x++) {
+                makeOpen(maze, protectedTiles, x, y);
+                GridPoint2 at = new GridPoint2(x, y);
+                if (dry.contains(at)) continue;
+                maze.getLiquidManager().setLiquidAt(x, y, com.bpm.minotaur.gamedata.liquid.LiquidType.MOLTEN_FIRE);
+                Monster stranded = maze.getMonsters().get(at);
+                if (stranded != null) maze.removeMonster(stranded);
+                if (maze.getScenery().containsKey(at)) maze.removeScenery(x, y);
+                com.bpm.minotaur.gamedata.item.Item item = maze.getItems().get(at);
+                if (item != null) adrift.add(item);
+            }
+        }
+        // Anything lying where the chasm opened washes up on the island.
+        List<GridPoint2> shore = openTiles(maze, island);
+        for (com.bpm.minotaur.gamedata.item.Item item : adrift) {
+            maze.removeItem(item);
+            for (GridPoint2 pt : shore) {
+                if (maze.getItems().containsKey(pt)) continue;
+                item.getPosition().set(pt.x + 0.5f, pt.y + 0.5f);
+                maze.addItem(item);
+                break;
+            }
+        }
+        return island;
+    }
+
+    /** Bridge tiles: dry floor outside the island, where the undead stand guard. */
+    private static List<GridPoint2> bridgeTiles(Maze maze, Rect island) {
+        List<GridPoint2> out = new ArrayList<>();
+        for (GridPoint2 pt : openTiles(maze, new Rect(1, 1, maze.getWidth() - 2, maze.getHeight() - 2))) {
+            if (island.contains(pt.x, pt.y)) continue;
+            if (maze.getLiquidManager().getLiquidAt(pt.x, pt.y).isImpassable()) continue;
+            if (maze.getGates().containsKey(pt) || maze.getLadders().containsKey(pt)) continue;
+            out.add(pt);
+        }
+        return out;
+    }
+
+    /**
+     * Dresses the bridge: railings of bone spikes and chain standing in the fire along every bridge,
+     * a stone arch where each lands on the island, pillars at the island's corners and braziers ringing
+     * the dais at its heart.
+     */
+    private static void dressBridge(Maze maze, Rect island, Set<GridPoint2> protectedTiles, AssetManager assetManager) {
+        Set<GridPoint2> railed = new HashSet<>();
+        for (GridPoint2 start : bridgeStarts(maze)) {
+            List<GridPoint2> path = bridgePath(maze, start, island);
+            for (int i = 0; i < path.size() - 1; i++) {
+                GridPoint2 at = path.get(i);
+                for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                    int rx = at.x + d[0], ry = at.y + d[1];
+                    if (rx < 1 || ry < 1 || rx > maze.getWidth() - 2 || ry > maze.getHeight() - 2) continue;
+                    if (!maze.getLiquidManager().getLiquidAt(rx, ry).isImpassable()) continue;
+                    if ((rx + ry) % 2 != 0 || !railed.add(new GridPoint2(rx, ry))) continue;
+                    place(maze, (rx / 2 + ry / 2) % 2 == 0 ? "bone_spike_rail" : "arena_chain", rx, ry, assetManager);
+                }
+            }
+            if (maze.getGates().containsKey(neighbourGate(maze, start))) {
+                GridPoint2 landing = path.get(path.size() - 1);
+                place(maze, "stone_arch", landing.x, landing.y, assetManager);
+            }
+        }
+        int[][] corners = {{island.minX + 1, island.minY + 1}, {island.maxX - 1, island.minY + 1},
+                {island.minX + 1, island.maxY - 1}, {island.maxX - 1, island.maxY - 1}};
+        for (int[] c : corners) {
+            if (!isProtected(protectedTiles, c[0], c[1])) place(maze, "ruined_pillar", c[0], c[1], assetManager);
+        }
+        int cx = (island.minX + island.maxX) / 2;
+        int cy = (island.minY + island.maxY) / 2;
+        int[][] ring = {{-2, 0}, {2, 0}, {0, -2}, {0, 2}, {-2, -2}, {2, -2}, {-2, 2}, {2, 2}};
+        for (int[] o : ring) place(maze, "brazier", cx + o[0], cy + o[1], assetManager);
+    }
+
+    /** The gate a bridge start sits just inside of, if it is one. */
+    private static GridPoint2 neighbourGate(Maze maze, GridPoint2 start) {
+        for (GridPoint2 gate : maze.getGates().keySet()) {
+            if (inward(maze, gate).equals(start)) return gate;
+        }
+        return new GridPoint2(-1, -1);
+    }
+
+    private static void place(Maze maze, String propId, int x, int y, AssetManager assetManager) {
+        if (maze.getScenery().containsKey(new GridPoint2(x, y))) return;
+        Scenery prop = Scenery.fromProp(propId, x, y);
+        if (prop == null) return;
+        bindSceneryTexture(prop, assetManager);
+        maze.addScenery(prop);
     }
 
     /** Courtyard wrapping an inner keep with a throne room. */
@@ -515,7 +689,8 @@ public class ChunkThemeDecorator {
 
         // Props scatter across the whole chunk, not just the carved room, so a
         // themed chunk reads as themed from the corridors too.
-        List<GridPoint2> candidates = openTiles(maze, new Rect(1, 1, maze.getWidth() - 2, maze.getHeight() - 2));
+        List<GridPoint2> candidates = openTiles(maze, def.getTheme() == ChunkTheme.BRIDGE_OF_SOULS
+                ? room : new Rect(1, 1, maze.getWidth() - 2, maze.getHeight() - 2));
         Collections.shuffle(candidates, rng);
 
         int budget = Math.round(candidates.size() * def.getPropDensity());
@@ -592,7 +767,7 @@ public class ChunkThemeDecorator {
                                         AssetManager assetManager) {
         if (def.getMonsters().isEmpty()) return;
 
-        List<GridPoint2> spawns = openTiles(maze, room);
+        List<GridPoint2> spawns = def.getTheme() == ChunkTheme.BRIDGE_OF_SOULS ? bridgeTiles(maze, room) : openTiles(maze, room);
         Collections.shuffle(spawns, rng);
 
         int depth = Math.max(1, maze.getLevel());
@@ -704,13 +879,17 @@ public class ChunkThemeDecorator {
         MonsterType type = def.getChampionType();
         if (type == null) type = MonsterType.OGRE;
 
-        GridPoint2 seat = findPlacementTile(maze, room);
+        boolean keeper = def.getTheme() == ChunkTheme.BRIDGE_OF_SOULS;
+        GridPoint2 heart = new GridPoint2((room.minX + room.maxX) / 2, (room.minY + room.maxY) / 2);
+        GridPoint2 seat = keeper && maze.isPassable(heart.x, heart.y) ? heart : findPlacementTile(maze, room);
         if (seat == null) return false;
 
         Monster champion = createMonster(type, seat.x, seat.y, MonsterColor.RED,
                 factionFor(def.getTheme()), def.getChampionHpBonus(),
                 monsterDataManager, assetManager);
         champion.setThemeChampion(true);
+        // The Bringer holds his island: the seeker chooses when to cross onto his ground.
+        if (keeper) champion.setTether(room.minX, room.minY, room.maxX, room.maxY);
         maze.addMonster(champion);
         return true;
     }
