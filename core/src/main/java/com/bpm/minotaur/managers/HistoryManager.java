@@ -346,7 +346,14 @@ public final class HistoryManager {
     /** One player turn passes for the wars (plan D22): fronts move with this clock. */
     public void tickWarClock() {
         warClock++;
+        // The Maze does not wait for the seeker to sleep (plan K1): every so often a season passes
+        // mid-expedition, and a house may break while they are still underground. A season is a
+        // pure function of the history, so the save replays it however it was set off.
+        if (warClock % SEASON_TURNS == 0) HistorySimulator.tickSeason(world, catalog);
     }
+
+    /** Turns of the war clock to a season of the Maze, when the seeker does not sleep. */
+    public static final int SEASON_TURNS = 500;
 
     public long warClock() {
         return warClock;

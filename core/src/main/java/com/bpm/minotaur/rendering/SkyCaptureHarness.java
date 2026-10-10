@@ -47,6 +47,8 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         final float headingRadians;
         final float northProgress;
         final float doom;
+        /** Seconds into Tarmin's Knell, or negative for a quiet sky. */
+        float knellAge = -1f;
 
         Shot(String name, float timeOfDay, WeatherType weather, float cloudCover,
              boolean stormy, float flash, float headingRadians, float northProgress) {
@@ -107,7 +109,20 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             // shelter's smoke and a seal pillar, by day and by night.
             new Shot("16_noon_beacons_north", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
             new Shot("17_night_beacons_north", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+
+            // Tarmin's Knell (plan K5): lightning ripples out of the castle, due north, and sweeps
+            // the sky -- the front leaving the horizon, overhead, and the red afterglow.
+            knell(new Shot("18_knell_015", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.15f),
+            knell(new Shot("19_knell_045", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.45f),
+            knell(new Shot("20_knell_080", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.80f),
+            knell(new Shot("21_knell_130", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 1.30f),
+            knell(new Shot("22_knell_220", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 2.20f),
     };
+
+    private static Shot knell(Shot shot, float age) {
+        shot.knellAge = age;
+        return shot;
+    }
 
     /** The beacons the beacon shots stand up, north of the camera. */
     private static java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> sampleBeacons() {
@@ -231,6 +246,11 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         state.chunkX = 0;
         state.timeOverride = CAPTURE_TIME;
         state.beacons = shot.name.contains("beacons") ? sampleBeacons() : null;
+        // Only the knell shots put the castle due north; the rest keep the defaults they were made with.
+        state.hasCastleSite = shot.knellAge >= 0f;
+        state.castleDX = 0f;
+        state.castleDY = shot.knellAge >= 0f ? 10f : 0f;
+        skybox.setKnellAgeForCapture(shot.knellAge);
 
         skybox.renderDirect(viewport, state, 1f / 60f);
 

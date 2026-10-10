@@ -388,6 +388,54 @@ history-generated quest, and be betrayed by a suborned town.
   while the plot is in motion); 6-15 seasons on it betrays (TOWN_BETRAYED, headline news) and
   the town is hostile from then on. A house that falls first takes its plot with it.
 
+### Slice 5: Tarmin's Knell
+
+Agreed with Dennis 2026-10-10. When something great happens in the history during a run, a gong
+tuned impossibly low sounds over the whole playfield -- surface, strata, towns, shelters, the
+castle -- and Tarmin-Zul tells it in red, in the player's head: a telepathic gloat, part of the war
+he wages and the game he plays with it. Decisions: the world moves between sleeps (K1); Tarmin
+also remarks on the seeker's own great deeds; the knell has its own volume and its vignette can be
+turned off; the gong is Dennis's (a synthesised stand-in until it lands); a faint red vignette
+rides with the text, which is set in `intellivision.ttf`.
+
+**K1: The world moves between sleeps** · MVP
+- A live season also passes after every `SEASON_TURNS` turns of the war clock, not only on a shelter
+  sleep, so a house can break mid-expedition. Seasons stay a pure function of the history, so a
+  save replays them however they were triggered.
+- AC: `SEASON_TURNS` turns tick one season; sleep still ticks one; a save round-trips.
+
+**K2: What tolls** · MVP
+- A `Knell` policy over the history's own events: a gash changing hands, a house extinguished,
+  the head of a great house dying by any means, a lord slain in its court, a lord or captain
+  killed in battle, a war ending, a megabeast waking, slain or bought off, a town's betrayal,
+  Tarmin's ascendancy, and the seeker slaying a lord. Lesser news stays a shelter rumour.
+- AC: a table test over every `EventType`.
+
+**K3: Tarmin's voice** · MVP
+- A `knell` section of the chronicle grammar: three lines in Tarmin's voice for each tolling
+  event, from the event's own slots, and an overflow line.
+- AC: every tolling type has three lines; every rendered line fills its slots and passes
+  `UiGlyphs.sanitize`.
+
+**K4: The crier** · MVP
+- `KnellCrier` reads events new since it last looked (never old news after a load), keeps the
+  tolling ones, and batches them: one gong, up to three lines, then the overflow line. A tolled
+  event is unlocked in the chronicle. It replaces the gash-seizure notice of T2.8.
+- AC: batching and overflow; nothing from before a load tolls; tolled events are unlocked.
+
+**K5: The knell itself** · MVP
+- The gong (`assets/sounds/knell/knell_gong.ogg`) at the knell volume, unplaced, ducking the
+  music while it rings; then the lines, one after another, centred in red `intellivision.ttf`
+  over a faint red vignette, fading in and out without pausing play. Settings: knell volume and
+  vignette on or off.
+- AC: a play-test forces a great event on the surface and in the strata and sees the gong cue
+  and the red line (screenshots).
+- Done: `--playtest=tarmins-knell` passes on the surface and two strata down. The gong is Dennis's
+  `assets/sounds/sfx/toll.ogg`. Added 2026-10-10 at Dennis's ask: above ground the sky answers the
+  gong -- cloud-to-cloud lightning ripples out from the castle's bearing and sweeps the dome in
+  about a second and a half (two fronts, then a red afterglow), and lights the maze below as it
+  passes overhead. Frames in `docs/ux/screenshots/sky/18_knell_*` to `22_knell_*`.
+
 ---
 
 ## 5. Assets

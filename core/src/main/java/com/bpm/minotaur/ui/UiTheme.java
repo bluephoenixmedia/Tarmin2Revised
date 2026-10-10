@@ -74,6 +74,10 @@ public final class UiTheme {
     public static final Color GOLD = Color.valueOf("E9B44C");
     /** Destructive action, and any resource at a dangerous level. */
     public static final Color DANGER = Color.valueOf("E0533D");
+    /** Tarmin's Knell: his words in the seeker's head (plan K5). */
+    public static final Color KNELL_RED = Color.valueOf("D8231C");
+    /** Behind the knell's red, so it reads over any scene. */
+    public static final Color KNELL_SHADOW = new Color(0.04f, 0.0f, 0.0f, 0.9f);
     /** Requirement met, value gained. */
     public static final Color SUCCESS = Color.valueOf("79C267");
     /** Hints and informational strips. */
@@ -158,6 +162,10 @@ public final class UiTheme {
 
     /** Height of the red alert symbol shown when the player needs to look at something. */
     public static final float ALERT_ICON = 50 * VU;
+    /** How wide Tarmin's Knell may run before it wraps. */
+    public static final float KNELL_TEXT_W = 480 * VU;
+    /** The strength of the knell's red bleed at the very edge of the screen. */
+    public static final float KNELL_VIGNETTE_ALPHA = 0.55f;
     /** Thickness of a scroll bar's track and knob. */
     public static final float SCROLL_W = 4 * VU;
     public static final float BUTTON_H = 22 * VU;

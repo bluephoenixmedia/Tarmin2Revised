@@ -146,18 +146,6 @@ public final class SealLord {
         return sb.toString();
     }
 
-    /** The news of a seized gash, as the player hears it on waking; null for any other event. */
-    public static String seizureNotice(HistoryWorld world, com.bpm.minotaur.gamedata.history.HistoryEvent e) {
-        if (e.type != com.bpm.minotaur.gamedata.history.EventType.SEAT_SEIZED || e.gashIndex < 0) return null;
-        House winner = world.house(e.houseA);
-        House loser = world.house(e.houseB);
-        if (winner == null) return null;
-        String gash = world.gashName(e.gashIndex);
-        gash = gash.isEmpty() ? gash : Character.toUpperCase(gash.charAt(0)) + gash.substring(1);
-        return gash + " has passed to " + winner.name
-                + (loser != null ? ", taken from " + loser.name : "") + ". Its seal lord is " + winner.name + "'s now; the map is redrawn.";
-    }
-
     /** The lord holding gash {@code gashIndex}, as a boss. */
     public static Spec compose(HistoryWorld world, int gashIndex, DoctrineCatalog catalog) {
         House house = world.gashHolder(gashIndex);

@@ -33,6 +33,8 @@ public class SettingsScreen extends BaseScreen {
     private TextButton goreButton;
     private Label musicVolLabel;
     private Label sfxVolLabel;
+    private Label knellVolLabel;
+    private TextButton knellVignetteButton;
 
     public SettingsScreen(Tarmin2 game) {
         super(game);
@@ -156,6 +158,41 @@ public class SettingsScreen extends BaseScreen {
         sfxTable.add(sfxPlus).width(48).height(44);
         card.add(sfxTable).width(240).padBottom(16).row();
 
+        // 4b. Tarmin's Knell (plan K5): its own volume, and its red bleed on or off.
+        card.add(new Label("Knell Volume", labelStyle)).left().padRight(40).padBottom(28);
+        Table knellTable = new Table();
+        TextButton knellMinus = new TextButton("-", btnStyle);
+        knellMinus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustKnellVolume(-0.10f);
+            }
+        });
+        knellTable.add(knellMinus).width(48).height(44);
+        knellVolLabel = new Label(Math.round(settingsManager.getKnellVolume() * 100) + "%", labelStyle);
+        knellVolLabel.setAlignment(Align.center);
+        knellTable.add(knellVolLabel).width(140);
+        TextButton knellPlus = new TextButton("+", btnStyle);
+        knellPlus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustKnellVolume(0.10f);
+            }
+        });
+        knellTable.add(knellPlus).width(48).height(44);
+        card.add(knellTable).width(240).padBottom(16).row();
+
+        card.add(new Label("Knell Vignette", labelStyle)).left().padRight(40).padBottom(28);
+        knellVignetteButton = new TextButton(settingsManager.isKnellVignette() ? "On" : "Off", btnStyle);
+        knellVignetteButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                settingsManager.setKnellVignette(!settingsManager.isKnellVignette());
+                knellVignetteButton.setText(settingsManager.isKnellVignette() ? "On" : "Off");
+            }
+        });
+        card.add(knellVignetteButton).minWidth(240).height(48).padBottom(28).row();
+
         // 5. Gore
         card.add(new Label("Gore", labelStyle)).left().padRight(40).padBottom(28);
         goreButton = new TextButton(com.bpm.minotaur.ui.UiNames.of(settingsManager.getGoreLevel()), btnStyle);
@@ -228,6 +265,17 @@ public class SettingsScreen extends BaseScreen {
         settingsManager.setMusicVolume(newVol);
         if (musicVolLabel != null) {
             musicVolLabel.setText(Math.round(newVol * 100) + "%");
+        }
+    }
+
+    private void adjustKnellVolume(float delta) {
+        float newVol = Math.max(0.0f, Math.min(1.0f, Math.round((settingsManager.getKnellVolume() + delta) * 10f) / 10f));
+        settingsManager.setKnellVolume(newVol);
+        if (knellVolLabel != null) {
+            knellVolLabel.setText(Math.round(newVol * 100) + "%");
+        }
+        if (SoundManager.getInstance() != null) {
+            SoundManager.getInstance().playKnell();
         }
     }
 

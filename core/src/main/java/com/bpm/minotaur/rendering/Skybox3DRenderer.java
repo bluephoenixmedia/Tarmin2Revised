@@ -86,6 +86,12 @@ public class Skybox3DRenderer {
     private float totalTime = 0f;
     private boolean isStormy = false;
     private float currentFlash = 0f;
+    /** Seconds since Tarmin's Knell struck, or negative while the sky is quiet (plan K5). */
+    private float knellAge = -1f;
+    /** How long the knell's lightning crosses and lingers in the sky. */
+    static final float KNELL_SECONDS = 3.5f;
+    private float knellDirX = 0f;
+    private float knellDirZ = -1f;
     private float currentCloudCover = 0.2f;
     private final Vector3 sunDir = new Vector3(0.3f, 0.8f, 0.4f).nor();
     private final Vector3 moonDir = new Vector3(-0.3f, -0.8f, -0.4f).nor();
@@ -283,6 +289,16 @@ public class Skybox3DRenderer {
     /**
      * Updates celestial positions, weather dynamics, and camera alignment.
      */
+    /** Pins the knell's age for {@link SkyCaptureHarness}, which renders one moment at a time. */
+    void setKnellAgeForCapture(float age) {
+        knellAge = age;
+    }
+
+    /** Tarmin's Knell strikes: lightning ripples out across the sky from the castle (plan K5). */
+    public void tollKnell() {
+        knellAge = 0f;
+    }
+
     public void update(float delta, Player player, WorldManager worldManager) {
         if (!isInitialized || player == null) return;
 
@@ -460,6 +476,18 @@ public class Skybox3DRenderer {
         isStormy = state.stormy;
         currentWeather = state.weather;
         currentFlash = state.flash;
+        if (knellAge >= 0f) {
+            knellAge += delta;
+            if (knellAge > KNELL_SECONDS) knellAge = -1f;
+        }
+        if (state.hasCastleSite) {
+            // Maze Y runs to world -Z, as the camera's does.
+            float len = (float) Math.sqrt(state.castleDX * state.castleDX + state.castleDY * state.castleDY);
+            if (len > 1e-3f) {
+                knellDirX = state.castleDX / len;
+                knellDirZ = -state.castleDY / len;
+            }
+        }
         currentCloudCover = state.cloudCover;
 
         // 2B. Doom drives the sky harder than weather does. At zero doom the sky already matches
@@ -655,6 +683,8 @@ public class Skybox3DRenderer {
             stormShader.setUniformf("u_cloudCover", currentCloudCover);
             stormShader.setUniformf("u_smokeFloor", smokeFloor);
             stormShader.setUniformf("u_doom", doom01);
+            stormShader.setUniformf("u_knellAge", knellAge);
+            stormShader.setUniformf("u_knellDir", knellDirX, knellDirZ);
             stormShader.setUniformf("u_zenithColor", zenithTint.r, zenithTint.g, zenithTint.b);
             stormShader.setUniformf("u_flashIntensity", currentFlash);
             // Doom drives the whole sky faster, not just darker.

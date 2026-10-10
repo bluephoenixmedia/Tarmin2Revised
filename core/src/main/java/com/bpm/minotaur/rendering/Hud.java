@@ -857,6 +857,10 @@ public class Hud implements Disposable {
         });
         stage.addActor(levelUpModal);
 
+        // Tarmin's Knell over everything else (plan K5).
+        knellOverlay = new KnellOverlay(hudSkin);
+        stage.addActor(knellOverlay);
+
         // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal / LevelUpModal ---
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
@@ -879,6 +883,13 @@ public class Hud implements Disposable {
                 return false;
             }
         });
+    }
+
+    private KnellOverlay knellOverlay;
+
+    /** Tarmin's Knell on screen. */
+    public KnellOverlay getKnellOverlay() {
+        return knellOverlay;
     }
 
     public LevelUpModal getLevelUpModal() {
@@ -3390,6 +3401,8 @@ public class Hud implements Disposable {
     public void dispose() {
         if (statusPillBar != null)
             statusPillBar.dispose();
+        if (knellOverlay != null)
+            knellOverlay.dispose();
         stage.dispose();
         font.dispose();
         directionFont.dispose();

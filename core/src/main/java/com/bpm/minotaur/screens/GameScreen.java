@@ -598,6 +598,8 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        listenForKnell();
+        tendKnellSky(delta);
         MusicManager.getInstance().update(delta);
 
         updateDeathSequence(delta);
@@ -2039,6 +2041,60 @@ public class GameScreen extends BaseScreen {
     private final WarManager warManager = new WarManager(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
 
     /** A front over the player's chunk sounds the horns; staying fights the battle (plan T2.3-T2.7). */
+    private com.bpm.minotaur.managers.KnellCrier knellCrier;
+
+    /**
+     * Tarmin's Knell (plan K4, K5): whatever great thing has happened since he last spoke tolls the
+     * gong over the whole Maze and speaks in red in the seeker's head, the music ducking under it.
+     */
+    private void tollKnell() {
+        listenForKnell();
+        if (knellCrier == null || hud == null || hud.getKnellOverlay() == null) return;
+        java.util.List<String> lines = knellCrier.listen();
+        if (lines.isEmpty()) return;
+        if (soundManager != null) soundManager.playKnell();
+        if (currentLevel() == 1) {
+            // Above ground the sky answers the gong: lightning out of the castle, over the maze.
+            firstPersonRenderer.getSkybox3DRenderer().tollKnell();
+            knellOverheadIn = KNELL_OVERHEAD;
+        }
+        MusicManager.getInstance().duckMusic(KNELL_DUCK);
+        for (String line : lines) hud.addMessage(line);
+        hud.getKnellOverlay().toll(lines, SettingsManager.getInstance().isKnellVignette(),
+                () -> MusicManager.getInstance().restoreMusicVolume());
+    }
+
+    /**
+     * Makes sure a crier is listening to the history now in play -- from the first frame, so a
+     * great event in the first turn is not mistaken for old news; and anew for a new world.
+     */
+    private void listenForKnell() {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager != null ? worldManager.getHistory() : null;
+        if (history != null && (knellCrier == null || !knellCrier.listensTo(history))) {
+            knellCrier = new com.bpm.minotaur.managers.KnellCrier(history,
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        }
+    }
+
+    /** Seconds until the knell's lightning passes overhead and lights the maze; negative when not coming. */
+    private float knellOverheadIn = -1f;
+    /** When the sweep's front crosses the zenith, from its start at the castle's horizon. */
+    private static final float KNELL_OVERHEAD = 0.65f;
+    private static final float KNELL_GROUND_FLASH = 0.6f;
+
+    /** Lights the maze as the knell's lightning crosses the sky above it. */
+    private void tendKnellSky(float delta) {
+        if (knellOverheadIn < 0f) return;
+        knellOverheadIn -= delta;
+        if (knellOverheadIn < 0f && worldManager != null && worldManager.getWeatherManager() != null) {
+            worldManager.getWeatherManager().knellFlash(KNELL_GROUND_FLASH);
+        }
+    }
+
+    /** How far the music sinks while the knell rings. */
+    private static final float KNELL_DUCK = 0.2f;
+
     private void tickWar() {
         WarManager.Ground g = new WarManager.Ground();
         g.chunk = worldManager.getCurrentPlayerChunkId();
@@ -2315,6 +2371,7 @@ public class GameScreen extends BaseScreen {
         // The wars go on, on the surface and in the strata alike, and may reach the player.
         worldManager.getHistory().tickWarClock();
         tickWar();
+        tollKnell();
         com.bpm.minotaur.gamedata.history.town.Town town = worldManager.townHere();
         if (town != null && worldManager.getHistory().findTown(town.key)) {
             eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
@@ -4224,14 +4281,10 @@ public class GameScreen extends BaseScreen {
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
-            // A gash that changed hands is told outright, whatever else the season brought (plan D32).
-            for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : news) {
-                String seized = com.bpm.minotaur.gamedata.boss.SealLord.seizureNotice(worldManager.getHistory().world(), heard);
-                if (seized != null) {
-                    worldManager.getHistory().unlock(heard.id);
-                    eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(seized), 8f));
-                }
-            }
+            // The season's great events toll Tarmin's Knell (plan K4); the rest is shelter rumour.
+            tollKnell();
+            news = new java.util.ArrayList<>(news);
+            news.removeIf(e -> com.bpm.minotaur.gamedata.history.text.Knell.tolls(worldManager.getHistory().world(), e));
             // The news is a shelter rumour: it becomes known history, readable at the Lectern.
             for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
                 worldManager.getHistory().unlock(heard.id);

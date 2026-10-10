@@ -560,6 +560,14 @@ public class WeatherManager {
         return globalLightDimmer;
     }
 
+    /**
+     * Tarmin's Knell passing overhead lights the maze below as lightning does, without lightning's
+     * own thunder: the gong is the only sound (plan K5).
+     */
+    public void knellFlash(float strength) {
+        flashIntensity = Math.max(flashIntensity, strength);
+    }
+
     public float getFlashIntensity() {
         return flashIntensity;
     }
