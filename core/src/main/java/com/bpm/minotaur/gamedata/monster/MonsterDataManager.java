@@ -41,6 +41,10 @@ public class MonsterDataManager {
             if (data != null) {
                 // Parse the JSON data for this monster into a Template object
                 MonsterTemplate template = json.readValue(MonsterTemplate.class, data);
+                if (MonsterIdleAnimationRegistry.hasIdleAnimation(type)) {
+                    MonsterIdleAnimationRegistry.IdleConfig idle = MonsterIdleAnimationRegistry.getConfig(type);
+                    template.idleAnimationPath = idle.texturePath;
+                }
                 monsterTemplates.put(type, template);
             } else {
                 Gdx.app.error("MonsterDataManager", "No JSON data found for monster type: " + type.name());
@@ -101,6 +105,11 @@ public class MonsterDataManager {
                     }
                 }
             }
+        }
+
+        // Queue all registered monster idle animation spritesheets
+        for (MonsterIdleAnimationRegistry.IdleConfig idle : MonsterIdleAnimationRegistry.getAllConfigs()) {
+            queueIfPresent(assetManager, idle.texturePath);
         }
     }
 

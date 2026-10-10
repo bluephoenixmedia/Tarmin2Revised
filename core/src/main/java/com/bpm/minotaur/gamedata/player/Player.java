@@ -1050,16 +1050,35 @@ public class Player {
         initStartingSpells();
     }
 
+    /** The spell every seeker knows from the start, ready in the first slot. */
+    public static final String STARTING_SPELL = "MOTE_OF_LIGHT";
+
     private void initStartingSpells() {
         com.bpm.minotaur.gamedata.trait.TraitEffects.clear(); // a new player starts with no trait
         permanentSpellIds.clear();
         runSpellIds.clear();
         knownSpellIds.clear();
-        learnPermanentSpellId("MOTE_OF_LIGHT");
+        learnPermanentSpellId(STARTING_SPELL);
         for (int i = 0; i < preparedSpells.length; i++) {
             preparedSpells[i] = null;
         }
-        preparedSpells[0] = "MOTE_OF_LIGHT";
+        preparedSpells[0] = STARTING_SPELL;
+    }
+
+    /**
+     * A new expedition starts as a new game does (fixes 2026-10-10): the starting spell known, and
+     * prepared in the first free slot unless the seeker has it prepared already. A seeker who moved it
+     * keeps their choice; one whose slots were emptied gets it back.
+     */
+    public void prepareStartingSpells() {
+        learnPermanentSpellId(STARTING_SPELL);
+        if (isSpellPrepared(STARTING_SPELL)) return;
+        for (int i = 0; i < Math.max(1, unlockedSpellSlots) && i < preparedSpells.length; i++) {
+            if (preparedSpells[i] == null) {
+                preparedSpells[i] = STARTING_SPELL;
+                return;
+            }
+        }
     }
 
     public Player(float startX, float startY, Difficulty difficulty,
@@ -1141,8 +1160,7 @@ public class Player {
         // explicitly. Relying on branch order here would mean anyone reordering these
         // two lines silently converted shot into arrows.
         boolean isShot = item.getType() == Item.ItemType.SHOT_POUCH;
-        boolean isArrows = !isShot
-                && (item.getType() == Item.ItemType.QUIVER || item.isAmmunition());
+        boolean isArrows = !isShot && Item.gathersUnderfoot(item.getType());
         if (!isShot && !isArrows) {
             return false;
         }

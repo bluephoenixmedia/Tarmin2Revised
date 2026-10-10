@@ -237,4 +237,14 @@ public class MapModelTest {
         assertEquals(first, model().nearestLitShelter(beyond));
         assertEquals(Math.abs(first.x) + Math.abs(first.y), MapModel.distance(HOME, first));
     }
+
+    @Test
+    public void newGameArrivalSightsNearestSheltersAndPopulatesRoadSegments() {
+        knowledge.recordArrival(1, HOME, bm, net);
+        MapModel m = model();
+        List<MapModel.RoadSegment> segments = m.knownRoadSegments();
+        assertFalse("Shelter lines should be visible from home at game start", segments.isEmpty());
+        boolean connectsFromHome = segments.stream().anyMatch(s -> s.getFrom().equals(HOME) || s.getTo().equals(HOME));
+        assertTrue("Road segments should connect from home", connectsFromHome);
+    }
 }

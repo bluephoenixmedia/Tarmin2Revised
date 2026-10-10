@@ -135,6 +135,8 @@ public class Hud implements Disposable {
     private final float[] slotPulseTimers = new float[5];
 
     // --- Action Chronicle Labels (5 lines) ---
+    private Label chronicleHeaderLabel;
+    private int chronicleScrollOffset = 0;
     private final Label[] chronicleLabels = new Label[5];
     /** Text width of the chronicle zone, inside its own padding. */
     private static final float CHRONICLE_W = 636f;
@@ -663,8 +665,20 @@ public class Hud implements Disposable {
         // ZONE 4: Chronicle Action Log (~650px)
         // ══════════════════════════════════════════════════════════════════
         chronicleZone.top().left();
-        Label chronicleHeader = new Label("CHRONICLE", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        chronicleZone.add(chronicleHeader).left().padBottom(2).row();
+        chronicleHeaderLabel = new Label("CHRONICLE", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        chronicleZone.add(chronicleHeaderLabel).left().padBottom(2).row();
+
+        chronicleZone.addListener(new InputListener() {
+            @Override
+            public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+                if (amountY < 0) {
+                    scrollChronicle(1);
+                } else if (amountY > 0) {
+                    scrollChronicle(-1);
+                }
+                return true;
+            }
+        });
 
         // LEVELUP-4 / HUD-6: all five lines were single-line and ellipsized, so the message
         // that just arrived -- the only one a player is actually reading -- was the one most
@@ -1351,18 +1365,34 @@ public class Hud implements Disposable {
         return lines;
     }
 
+    public void scrollChronicle(int delta) {
+        setChronicleScrollOffset(chronicleScrollOffset + delta);
+    }
+
+    public void setChronicleScrollOffset(int offset) {
+        this.chronicleScrollOffset = Math.max(0, offset);
+        updateChronicleLog();
+    }
+
+    public int getChronicleScrollOffset() {
+        return chronicleScrollOffset;
+    }
+
     private void updateChronicleLog() {
         List<String> rawHistory = eventManager.getMessageHistory();
         if (rawHistory == null || rawHistory.isEmpty()) {
+            if (chronicleHeaderLabel != null) {
+                chronicleHeaderLabel.setText("CHRONICLE");
+            }
             for (Label l : chronicleLabels) {
                 l.setText("");
             }
             return;
         }
 
-        // Deduplicate consecutive identical messages from the newest entries
+        // Deduplicate consecutive identical messages from all history
         java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
-        for (int i = 0; i < rawHistory.size() && deduplicated.size() < 10; i++) {
+        for (int i = 0; i < rawHistory.size(); i++) {
             String raw = rawHistory.get(i);
             if (raw == null || raw.trim().isEmpty()) continue;
             raw = raw.trim();
@@ -1377,46 +1407,50 @@ public class Hud implements Disposable {
             }
         }
 
-        // Wrap messages into visual display rows fitting Chronicle width (620px)
-        // Newer messages are placed lower. We collect up to 5 visual rows total.
-        List<DisplayRow> displayRows = new ArrayList<>();
+        // Wrap messages into display rows (ordered newest line first at index 0)
+        List<DisplayRow> allRows = new ArrayList<>();
         for (ParsedLogLine item : deduplicated) {
-            if (displayRows.size() >= 5) break;
-
             String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
             List<String> wrapped = wrapMessage(display, 620f);
 
-            List<DisplayRow> messageRows = new ArrayList<>();
-            for (String subLine : wrapped) {
+            for (int w = wrapped.size() - 1; w >= 0; w--) {
                 DisplayRow row = new DisplayRow();
-                row.text = subLine;
+                row.text = wrapped.get(w);
                 row.color = item.color;
-                messageRows.add(row);
+                allRows.add(row);
             }
-
-            // Insert at front so older messages precede newer messages in reading order
-            displayRows.addAll(0, messageRows);
         }
 
-        // Keep at most the most recent 5 rows (the tail)
-        if (displayRows.size() > 5) {
-            displayRows = displayRows.subList(displayRows.size() - 5, displayRows.size());
+        int maxOffset = Math.max(0, allRows.size() - 5);
+        if (chronicleScrollOffset > maxOffset) {
+            chronicleScrollOffset = maxOffset;
         }
 
-        // Alphas: index 4 (newest, bottom) = 1.0f, then 0.85f, 0.70f, 0.55f, 0.40f
-        float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
+        if (chronicleHeaderLabel != null) {
+            if (chronicleScrollOffset > 0) {
+                chronicleHeaderLabel.setText("CHRONICLE (SCROLLED +" + chronicleScrollOffset + ")");
+            } else {
+                chronicleHeaderLabel.setText("CHRONICLE");
+            }
+        }
 
         for (int i = 0; i < 5; i++) {
             chronicleLabels[i].setText("");
         }
 
-        int numRows = displayRows.size();
-        for (int i = 0; i < numRows; i++) {
-            int labelIndex = (5 - numRows) + i;
-            DisplayRow row = displayRows.get(i);
+        int available = Math.min(5, allRows.size() - chronicleScrollOffset);
+        if (available <= 0) return;
+
+        float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
+
+        for (int i = 0; i < available; i++) {
+            int rowIdx = chronicleScrollOffset + (available - 1 - i);
+            DisplayRow row = allRows.get(rowIdx);
+            int labelIndex = (5 - available) + i;
+
             chronicleLabels[labelIndex].setText(checkScramble(row.text));
-            Color c = row.color;
-            float alpha = alphas[labelIndex];
+            Color c = row.color != null ? row.color : HudSkin.COL_TEXT_ON_DARK;
+            float alpha = (chronicleScrollOffset > 0) ? 0.95f : alphas[labelIndex];
             chronicleLabels[labelIndex].setColor(c.r, c.g, c.b, alpha);
         }
     }
@@ -1464,6 +1498,9 @@ public class Hud implements Disposable {
     private float globalAlpha = 1f;
 
     public void render() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
         viewport.apply(); // Apply the viewport settings
 
         // Removed background drawing
@@ -1890,6 +1927,9 @@ public class Hud implements Disposable {
     }
 
     private void renderRetroInventory() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
@@ -1934,6 +1974,10 @@ public class Hud implements Disposable {
     }
 
     private void renderModernInventory() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
+        spriteBatch.setColor(1f, 1f, 1f, globalAlpha);
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
 
@@ -1968,6 +2012,9 @@ public class Hud implements Disposable {
     }
 
     private void renderModernItemOverlays() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);

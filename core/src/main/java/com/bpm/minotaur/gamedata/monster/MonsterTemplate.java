@@ -66,6 +66,7 @@ public class MonsterTemplate {
     public int baseExperience;
     public MonsterFamily family; // libGDX Json automatically converts "BEAST" string to MonsterFamily.BEAST
     public String texturePath;
+    public String idleAnimationPath;
     public boolean isSpriteSheet = false;
     public int spriteCols = 1;
     public int spriteRows = 1;

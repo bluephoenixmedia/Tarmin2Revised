@@ -133,6 +133,7 @@ public class Tarmin2 extends Game {
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_maze.mp3");
+        MusicManager.getInstance().loadMusic("sounds/music/Crown_of_Molten_Steel.mp3");
         MusicManager.getInstance().loadMusic("sounds/music/Exsurge_Gloria.mp3");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_catacombs_drone.wav");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_boss_tension.wav");
@@ -147,6 +148,10 @@ public class Tarmin2 extends Game {
         // never finished loading and ShopkeeperNpc.getTexture() stayed null)
         assetManager.load(com.bpm.minotaur.gamedata.ShopkeeperNpc.TEXTURE_PATH,
                 com.badlogic.gdx.graphics.Texture.class);
+        if (Gdx.files.internal(com.bpm.minotaur.gamedata.ShopkeeperNpc.IDLE_TEXTURE_PATH).exists()) {
+            assetManager.load(com.bpm.minotaur.gamedata.ShopkeeperNpc.IDLE_TEXTURE_PATH,
+                    com.badlogic.gdx.graphics.Texture.class);
+        }
 
         // Queue 3D Skybox models if present
         if (Gdx.files.internal("models/skybox/castle_tarmin.obj").exists()) {

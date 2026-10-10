@@ -188,6 +188,7 @@ public class GameScreen extends BaseScreen {
     // --- Periodic Auto-Save (Every 60 seconds) ---
     public static final float AUTOSAVE_INTERVAL_SECONDS = 60f;
     private float autoSaveTimer = 0f;
+    private float ambientMonsterTimer = 18f;
 
     // --- Debug UI ---
     private DebugSpawnOverlay debugSpawnOverlay;
@@ -669,6 +670,17 @@ public class GameScreen extends BaseScreen {
             updateSeamlessChunkLoading(delta);
 
             animationManager.update(delta);
+            if (maze != null && maze.getMonsters() != null) {
+                for (Monster m : maze.getMonsters().values()) {
+                    if (m != null) m.updateAnimation(delta);
+                }
+            }
+            if (combatManager != null && combatManager.getMonster() != null) {
+                combatManager.getMonster().updateAnimation(delta);
+            }
+            if (maze != null && maze.getShopkeeper() != null) {
+                maze.getShopkeeper().updateAnimation(delta);
+            }
             if (maze != null)
                 maze.update(delta);
             if (hud != null)
@@ -704,6 +716,18 @@ public class GameScreen extends BaseScreen {
 
             if (gameMode == GameMode.ADVANCED) {
                 checkForProactiveChunkLoading();
+            }
+
+            if (soundManager != null) {
+                soundManager.update(delta);
+            }
+
+            if (combatManager == null || combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                ambientMonsterTimer -= delta;
+                if (ambientMonsterTimer <= 0f) {
+                    ambientMonsterTimer = com.badlogic.gdx.math.MathUtils.random(15.0f, 30.0f);
+                    triggerAmbientMonsterSound();
+                }
             }
 
             // Update Overlay Animation and Equipment
@@ -1812,6 +1836,7 @@ public class GameScreen extends BaseScreen {
         player.getStatusManager().clearEffects();
         player.abandonTomeStudy();
         player.clearRunSpellsOnDeath();
+        player.prepareStartingSpells(); // a new expedition starts with Mote of Light ready, as a new game does
         if (player.noteRespawn()) {
             player.offerTraits(); // every fifth respawn: a new personality to choose
         }
@@ -2035,9 +2060,37 @@ public class GameScreen extends BaseScreen {
         for (String line : t.messages) {
             eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
         }
-        if (soundManager != null) for (WarManager.Cue cue : t.cues) soundManager.playWarCue(cue);
+        if (soundManager != null) {
+            for (WarManager.Cue cue : t.cues) soundManager.playWarCue(cue);
+            if (t.cues.contains(WarManager.Cue.HORNS)) {
+                soundManager.playWarZoneAlarm();
+            }
+        }
         if (t.volleyDamage > 0 && player != null) {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
+        }
+    }
+
+    private void triggerAmbientMonsterSound() {
+        if (soundManager == null || maze == null || player == null) return;
+        GridPoint2 pp = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        List<com.bpm.minotaur.gamedata.monster.Monster> candidates = new ArrayList<>();
+        for (Map.Entry<GridPoint2, com.bpm.minotaur.gamedata.monster.Monster> entry : maze.getMonsters().entrySet()) {
+            com.bpm.minotaur.gamedata.monster.Monster m = entry.getValue();
+            if (m != null && m.getCurrentHP() > 0 && !m.isAlly()) {
+                int dist = Math.abs(entry.getKey().x - pp.x) + Math.abs(entry.getKey().y - pp.y);
+                if (dist >= 2 && dist <= 14) {
+                    candidates.add(m);
+                }
+            }
+        }
+        if (!candidates.isEmpty()) {
+            com.bpm.minotaur.gamedata.monster.Monster chosen = candidates.get(com.badlogic.gdx.math.MathUtils.random(candidates.size() - 1));
+            soundManager.playAmbientMonsterSound(
+                    chosen.getPosition().x, chosen.getPosition().y,
+                    soundManager.isBossOrMegabeast(chosen),
+                    player.getPosition().x, player.getPosition().y,
+                    player.getFacing());
         }
     }
 
@@ -2051,6 +2104,13 @@ public class GameScreen extends BaseScreen {
         if (told == null) {
             eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));
             return;
+        }
+        if (told.type == com.bpm.minotaur.gamedata.history.EventType.SEAT_SEIZED || told.type == com.bpm.minotaur.gamedata.history.EventType.HOUSE_EXTINGUISHED) {
+            if (soundManager != null) soundManager.playHouseBreachWarning();
+        } else if (told.type == com.bpm.minotaur.gamedata.history.EventType.WAR_DECLARED) {
+            if (soundManager != null) soundManager.playGashesWarWail(false);
+        } else if (told.type == com.bpm.minotaur.gamedata.history.EventType.MEGABEAST_STIRS || told.type == com.bpm.minotaur.gamedata.history.EventType.MEGABEAST_RAID) {
+            if (soundManager != null) soundManager.playBossWarningAlarm();
         }
         com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
         // Whoever wrote it took a side; which side depends on the event, so a reload reads the same.
@@ -2908,6 +2968,20 @@ public class GameScreen extends BaseScreen {
         if (hud != null && hud.getLevelUpModal() != null && hud.getLevelUpModal().isVisible()) {
             hud.getLevelUpModal().handleInput(keycode);
             return true;
+        }
+
+        if (keycode == Input.Keys.PAGE_UP) {
+            if (hud != null) {
+                hud.scrollChronicle(1);
+                return true;
+            }
+        }
+
+        if (keycode == Input.Keys.PAGE_DOWN) {
+            if (hud != null) {
+                hud.scrollChronicle(-1);
+                return true;
+            }
         }
 
         if (keycode == Input.Keys.ESCAPE) {

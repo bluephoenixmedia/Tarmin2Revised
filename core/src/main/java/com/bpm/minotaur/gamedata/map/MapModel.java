@@ -246,4 +246,133 @@ public final class MapModel {
     private ShelterRoads roads() {
         return biomes == null ? null : biomes.getRoads();
     }
+
+    /** A major landmark or tactical point of interest cycled by TAB on the macro map. */
+    public static final class MacroMarker {
+        public enum Type { HOME, SHELTER, GATE, SEAL, CASTLE, THREAT, PIN }
+        public final Type type;
+        public final GridPoint2 chunk;
+        public final int floor;
+        public final String name;
+        public final String details;
+
+        public MacroMarker(Type type, GridPoint2 chunk, int floor, String name, String details) {
+            this.type = type;
+            this.chunk = new GridPoint2(chunk);
+            this.floor = floor;
+            this.name = name;
+            this.details = details;
+        }
+
+        public GridPoint2 getChunk() { return new GridPoint2(chunk); }
+    }
+
+    /** A roaming Megabeast or imminent Doom horror detected within sensor range. */
+    public static final class ThreatMark {
+        public final GridPoint2 chunk;
+        public final int floor;
+        public final String name;
+        public final String status;
+        public final int dangerPips;
+
+        public ThreatMark(GridPoint2 chunk, int floor, String name, String status, int dangerPips) {
+            this.chunk = new GridPoint2(chunk);
+            this.floor = floor;
+            this.name = name;
+            this.status = status;
+            this.dangerPips = dangerPips;
+        }
+    }
+
+    /** The destination chunk for a biome portal, or null if unlocated in this world. */
+    public GridPoint2 gateChunk(com.bpm.minotaur.gamedata.progression.BiomePortal portal) {
+        if (portal == null || biomes == null) return null;
+        ShelterRoads roads = roads();
+        if (roads != null) {
+            return roads.portalArrival(portal.getDestination(), biomes::getBiome);
+        }
+        return null;
+    }
+
+    /** Cardinal or diagonal compass bearing from Home (0, 0) to a destination chunk. */
+    public static String bearingFromHome(GridPoint2 target) {
+        return bearing(HOME, target);
+    }
+
+    /** Cardinal or diagonal compass bearing from source to target chunk. */
+    public static String bearing(GridPoint2 from, GridPoint2 to) {
+        if (from == null || to == null) return "";
+        int dx = to.x - from.x;
+        int dy = to.y - from.y;
+        if (dx == 0 && dy == 0) return "HERE";
+        double angle = Math.atan2(dy, dx) * 180.0 / Math.PI;
+        if (angle < 0) angle += 360.0;
+        if (angle >= 337.5 || angle < 22.5) return "> E";
+        if (angle >= 22.5 && angle < 67.5) return "NE";
+        if (angle >= 67.5 && angle < 112.5) return "^ N";
+        if (angle >= 112.5 && angle < 157.5) return "NW";
+        if (angle >= 157.5 && angle < 202.5) return "< W";
+        if (angle >= 202.5 && angle < 247.5) return "SW";
+        if (angle >= 247.5 && angle < 292.5) return "v S";
+        return "SE";
+    }
+
+    /** All macro markers on {@code floor} for Tab cycling. */
+    public List<MacroMarker> macroMarkers(int floor) {
+        List<MacroMarker> list = new ArrayList<>();
+        if (floor == 1) {
+            list.add(new MacroMarker(MacroMarker.Type.HOME, HOME, 1, "Home Shelter", "Safe hearth"));
+            for (KnownShelter s : knownShelters()) {
+                if (HOME.equals(s.getChunk())) continue;
+                String name = "Shelter " + s.getChunk().x + ", " + s.getChunk().y;
+                list.add(new MacroMarker(MacroMarker.Type.SHELTER, s.getChunk(), 1, name, s.getMark().name()));
+            }
+            for (com.bpm.minotaur.gamedata.progression.BiomePortal p : com.bpm.minotaur.gamedata.progression.BiomePortal.values()) {
+                GridPoint2 target = gateChunk(p);
+                if (target != null) {
+                    list.add(new MacroMarker(MacroMarker.Type.GATE, target, 1, p.getDisplayName(), "Ancient Gate"));
+                }
+            }
+            ShelterRoads roads = roads();
+            if (roads != null) {
+                for (ShelterRoads.Road r : roads.getRoads()) {
+                    if (r.getKind() == ShelterRoads.Kind.SEAL && isSealSiteKnown(r.getIndex())) {
+                        list.add(new MacroMarker(MacroMarker.Type.SEAL, r.getEnd(), 1, "Seal Site " + r.getIndex(), "Ancient Seal"));
+                    }
+                }
+            }
+            if (biomes != null && biomes.getCastleSite() != null && isCastleKnown()) {
+                list.add(new MacroMarker(MacroMarker.Type.CASTLE, biomes.getCastleSite(), 1, "Castle Tarmin", "Citadel"));
+            }
+        }
+        for (Map.Entry<GridPoint2, MapKnowledge.Pin> p : knowledge.getPins(floor).entrySet()) {
+            list.add(new MacroMarker(MacroMarker.Type.PIN, p.getKey(), floor, "Pin: " + p.getValue().name(), "Marked point"));
+        }
+        return list;
+    }
+
+    /** Returns the chunk sequence along known roads from {@code from} to the suggestion target. */
+    public List<GridPoint2> routeToSuggestion(GridPoint2 from) {
+        GridPoint2 sugg = suggestion();
+        if (sugg == null || from == null) return Collections.emptyList();
+        ShelterRoads roads = roads();
+        if (roads == null) return Collections.singletonList(new GridPoint2(sugg));
+
+        for (ShelterRoads.Road road : roads.getRoads()) {
+            List<GridPoint2> stops = new ArrayList<>();
+            stops.add(HOME);
+            stops.addAll(road.getShelters());
+            stops.add(road.getEnd());
+            int idx = stops.indexOf(sugg);
+            if (idx >= 0) {
+                List<GridPoint2> path = new ArrayList<>();
+                for (int i = 0; i <= idx; i++) {
+                    path.add(new GridPoint2(stops.get(i)));
+                }
+                return path;
+            }
+        }
+        return Collections.singletonList(new GridPoint2(sugg));
+    }
 }
+

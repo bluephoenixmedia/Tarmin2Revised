@@ -197,6 +197,9 @@ public class InventoryScreen extends BaseScreen {
 
     @Override
     public void show() {
+        if (parentScreen != null && parentScreen.getSoundManager() != null) {
+            parentScreen.getSoundManager().playInventoryFoley();
+        }
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
 
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -1680,4 +1683,10 @@ public class InventoryScreen extends BaseScreen {
         }
     }
 
+    @Override
+    public void hide() {
+        if (parentScreen != null && parentScreen.getSoundManager() != null) {
+            parentScreen.getSoundManager().playInventoryFoley();
+        }
+    }
 }

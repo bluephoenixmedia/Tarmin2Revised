@@ -403,6 +403,7 @@ public class WorldManager {
         }
         Maze maze = loadChunk(currentPlayerChunkId);
         syncLightsForChunk(maze);
+        noteArrival();
         return maze;
     }
 

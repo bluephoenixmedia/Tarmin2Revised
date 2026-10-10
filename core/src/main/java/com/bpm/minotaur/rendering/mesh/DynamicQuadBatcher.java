@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
@@ -24,6 +25,7 @@ public class DynamicQuadBatcher implements Disposable {
     private static final int MAX_QUADS = 4000;
     private static final int MAX_VERTICES = MAX_QUADS * 4;
     private static final int MAX_INDICES = MAX_QUADS * 6;
+    private static final Matrix4 IDENTITY = new Matrix4();
 
     private final Mesh mesh;
     private final FloatArray vertices = new FloatArray(MAX_VERTICES * 9);
@@ -200,6 +202,37 @@ public class DynamicQuadBatcher implements Disposable {
                 centerX + halfW, y, centerZ - halfH, u2, v2,
                 centerX - halfW, y, centerZ - halfH, u1, v2,
                 0f, 1f, 0f, packedColor
+        );
+    }
+
+    public void addCeilingQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            TextureRegion region,
+            Color color
+    ) {
+        if (region == null) return;
+        addCeilingQuad(centerX, y, centerZ, halfW, halfH,
+                region.getU(), region.getV2(), region.getU2(), region.getV(), color);
+    }
+
+    public void addCeilingQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            float u1, float v1, float u2, float v2,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                centerX - halfW, y, centerZ - halfH, u1, v2,
+                centerX + halfW, y, centerZ - halfH, u2, v2,
+                centerX + halfW, y, centerZ + halfH, u2, v1,
+                centerX - halfW, y, centerZ + halfH, u1, v1,
+                0f, -1f, 0f, packedColor
         );
     }
 
@@ -455,6 +488,8 @@ public class DynamicQuadBatcher implements Disposable {
      */
     public void flush(ShaderProgram shader, Texture texture) {
         if (indices.size <= 0) return;
+
+        shader.setUniformMatrix("u_worldTrans", IDENTITY);
 
         if (texture != null) {
             texture.bind(0);

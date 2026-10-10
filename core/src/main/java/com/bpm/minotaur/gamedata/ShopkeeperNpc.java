@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 
@@ -30,7 +31,14 @@ public class ShopkeeperNpc implements Renderable {
     // --- Rendering ---
     private Texture texture;
     public static final String TEXTURE_PATH = "images/monsters/shopkeeper.png";
+    public static final String IDLE_TEXTURE_PATH = "images/monsters/idle/shop_keeper_idle.png";
     public final Vector2 scale = new Vector2(1.0f, 1.0f);
+
+    private TextureRegion[] animationFrames;
+    private int currentFrame = 0;
+    private float animTimer = 0f;
+    private float frameDuration = 0.15f;
+    private boolean isAnimated = false;
 
     // --- Inventory ---
     private final Inventory inventory;
@@ -65,9 +73,41 @@ public class ShopkeeperNpc implements Renderable {
         this.currentHP = maxHP;
         this.inventory = new Inventory();
 
-        if (assetManager != null && assetManager.isLoaded(TEXTURE_PATH, Texture.class)) {
+        if (assetManager != null && assetManager.isLoaded(IDLE_TEXTURE_PATH, Texture.class)) {
+            Texture idleTex = assetManager.get(IDLE_TEXTURE_PATH, Texture.class);
+            this.texture = idleTex;
+            this.isAnimated = true;
+            int cols = 3, rows = 3;
+            int fw = idleTex.getWidth() / cols;
+            int fh = idleTex.getHeight() / rows;
+            TextureRegion[][] tmp = TextureRegion.split(idleTex, fw, fh);
+            this.animationFrames = new TextureRegion[cols * rows];
+            int idx = 0;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    this.animationFrames[idx++] = tmp[r][c];
+                }
+            }
+            this.currentFrame = (int) (Math.random() * this.animationFrames.length);
+        } else if (assetManager != null && assetManager.isLoaded(TEXTURE_PATH, Texture.class)) {
             this.texture = assetManager.get(TEXTURE_PATH, Texture.class);
         }
+    }
+
+    public void updateAnimation(float delta) {
+        if (!isAnimated || animationFrames == null || animationFrames.length <= 1) return;
+        animTimer += delta;
+        while (animTimer >= frameDuration && frameDuration > 0f) {
+            animTimer -= frameDuration;
+            currentFrame = (currentFrame + 1) % animationFrames.length;
+        }
+    }
+
+    public TextureRegion getTextureRegion() {
+        if (isAnimated && animationFrames != null && animationFrames.length > 0) {
+            return animationFrames[currentFrame];
+        }
+        return (texture != null) ? new TextureRegion(texture) : null;
     }
 
     // --- Combat ---

@@ -39,6 +39,7 @@ public class SoundManager {
     private static SoundManager instance;
     private boolean swingToggle = false;
     private boolean laserToggle = false;
+    private AbyssAmbienceManager abyssAmbienceManager;
 
     public static SoundManager getInstance() {
         return instance;
@@ -48,6 +49,7 @@ public class SoundManager {
         instance = this;
         this.debugManager = debugManager;
         this.retroAudioDevice = Gdx.audio.newAudioDevice(SAMPLE_RATE, true);
+        this.abyssAmbienceManager = new AbyssAmbienceManager();
         loadModernSounds();
     }
 
@@ -56,10 +58,14 @@ public class SoundManager {
         instance = this;
         this.debugManager = null;
         this.retroAudioDevice = null;
+        this.abyssAmbienceManager = null;
         // Do not load sounds
     }
 
     public void update(float delta) {
+        if (abyssAmbienceManager != null) {
+            abyssAmbienceManager.update(delta);
+        }
         if (Math.abs(currentDampenFactor - targetDampenFactor) > 0.001f) {
             // Smoothly interpolate over ~0.4s (speed factor 3.5)
             currentDampenFactor = MathUtils.lerp(currentDampenFactor, targetDampenFactor, Math.min(1.0f, 3.5f * delta));
@@ -165,6 +171,34 @@ public class SoundManager {
         // Bags used to share the chest's lid-and-latch sound because the open
         // handler branched on ItemCategory rather than type.
         loadSound("bag_open", "sounds/bag_open.wav");
+        loadSound("backpack_foley", "sounds/backpack_foley.wav");
+        loadSound("cloth_drop", "sounds/cloth_drop.wav");
+        loadSound("armor_equip", "sounds/armor_equip.wav");
+        loadSound("map_open", "sounds/map_open.wav");
+
+        // --- Alarms & Sirens ---
+        loadSound("alarm_03", "sounds/alarms/alarm_03.wav");
+        loadSound("alarm_09", "sounds/alarms/alarm_09.wav");
+        loadSound("alarm_10", "sounds/alarms/alarm_10.wav");
+        loadSound("alarm_15", "sounds/alarms/alarm_15.wav");
+        loadSound("alarm_20", "sounds/alarms/alarm_20.wav");
+        loadSound("alarm_22", "sounds/alarms/alarm_22.wav");
+        loadSound("alarm_29", "sounds/alarms/alarm_29.wav");
+
+        // --- Monsters & Bosses Audio ---
+        loadSound("monster_boss_cthulhu_1", "sounds/monster/486309__kp2494__cthulumonster_roar.mp3");
+        loadSound("monster_boss_cthulhu_2", "sounds/monster/487177__kp2494__cthulhumonster_roar.mp3");
+        loadSound("monster_boss_kong", "sounds/monster/401568__cylon8472__kong-roar_complete.wav");
+        loadSound("monster_boss_sharktopus", "sounds/monster/126312__cmusounddesign__cr-sharktopusroar3.wav");
+        loadSound("monster_boss_demon", "sounds/monster/469123__manim8__demon_lion_monster_growl_roar.wav");
+        loadSound("monster_encounter_beast", "sounds/monster/418394__thebuilder15__beast-roar.wav");
+        loadSound("monster_encounter_zombie", "sounds/monster/232289__zglar__zombie-or-monster-or-lion-roar.wav");
+        loadSound("monster_encounter_short", "sounds/monster/491443__music15tree__roar.wav");
+        loadSound("monster_encounter_roar8", "sounds/monster/505131__mitchanary__monster-roar_8.mp3");
+        loadSound("monster_ambient_echo", "sounds/monster/340161__flechabr__ecoed-roar.wav");
+        loadSound("monster_ambient_winter", "sounds/monster/500919__vanishedillusion__creature-roar-in-winter.wav");
+        loadSound("monster_ambient_sea", "sounds/monster/837799__bikkit99__sea-creature-roar.wav");
+
         loadBank();
         // Descending used to play sounds/music/tarmin_enter_fx.ogg, which is the
         // retired player-death asset: commit 442c15d rewired the death *key* to
@@ -234,6 +268,9 @@ public class SoundManager {
     public void stopAllSounds() {
         for (Sound sound : modernSounds.values()) {
             sound.stop();
+        }
+        if (abyssAmbienceManager != null) {
+            abyssAmbienceManager.stop();
         }
         currentRainId = -1;
         currentWindId = -1;
@@ -445,12 +482,51 @@ public class SoundManager {
     }
 
     public void playCombatStartSound() {
-        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
-            if (!playEvent("monster_roar")) {
-                playSound("monster_roar");
-            }
+        playCombatStartSound(null);
+    }
+
+    public void playCombatStartSound(Monster monster) {
+        if (debugManager != null && debugManager.getRenderMode() != DebugManager.RenderMode.MODERN) {
+            return;
+        }
+        if (monster != null && isBossOrMegabeast(monster)) {
+            playBossEncounterSound();
         } else {
-            // playSound("tarmin_roar");
+            playMonsterEncounterSound();
+        }
+    }
+
+    public boolean isBossOrMegabeast(Monster monster) {
+        if (monster == null) return false;
+        if (monster.isBridgeBoss() || monster.isThemeChampion() || monster.holdsCourt() || monster.getMegabeastId() >= 0) {
+            return true;
+        }
+        if (monster.getType() != null) {
+            String name = monster.getType().name();
+            return name.contains("MINOTAUR") || name.contains("LICH") || name.contains("VAMPIRE")
+                    || name.contains("GOLEM") || name.contains("DRAGON") || name.contains("BEHOLDER")
+                    || name.contains("HYDRA");
+        }
+        return false;
+    }
+
+    public void playBossEncounterSound() {
+        String[] bosses = {
+            "monster_boss_cthulhu_1", "monster_boss_cthulhu_2", "monster_boss_kong",
+            "monster_boss_sharktopus", "monster_boss_demon"
+        };
+        String key = bosses[MathUtils.random(bosses.length - 1)];
+        playSound(key, 0.95f);
+    }
+
+    public void playMonsterEncounterSound() {
+        if (!playEvent("monster_roar")) {
+            String[] encounters = {
+                "monster_encounter_beast", "monster_encounter_zombie", "monster_encounter_short",
+                "monster_encounter_roar8"
+            };
+            String key = encounters[MathUtils.random(encounters.length - 1)];
+            playSound(key, 0.9f);
         }
     }
 
@@ -638,8 +714,152 @@ public class SoundManager {
 
     public void playBagOpen() {
         if (!playEvent("bag")) {
-            playSound("bag_open");
+            playSound("bag_open", 0.85f);
         }
+    }
+
+    public void playClothDrop() {
+        if (!playEvent("cloth_drop")) {
+            playSound("cloth_drop", 0.85f);
+        }
+    }
+
+    public void playArmorEquip() {
+        if (!playEvent("armor_equip")) {
+            playSound("armor_equip", 0.90f);
+        }
+    }
+
+    public void playInventoryFoley() {
+        if (!playEvent("backpack_foley")) {
+            playSound("backpack_foley", 0.85f);
+        }
+    }
+
+    public void playMapOpen() {
+        if (!playEvent("map_open")) {
+            playSound("map_open", 0.85f);
+        }
+    }
+
+    /**
+     * Echo-localized, directional audio playback relative to player's position and orientation.
+     */
+    public void playDirectionalSound(String soundKey, float sourceX, float sourceY,
+                                     float playerX, float playerY,
+                                     com.bpm.minotaur.gamedata.Direction playerFacing,
+                                     float maxRange, float baseVolume) {
+        if (debugManager != null && debugManager.getRenderMode() != DebugManager.RenderMode.MODERN) {
+            return;
+        }
+        Sound sound = modernSounds.get(soundKey);
+        if (sound == null) return;
+
+        float dx = sourceX - playerX;
+        float dy = sourceY - playerY;
+        float dist = (float) Math.hypot(dx, dy);
+
+        // Distance volume attenuation with distant echo
+        float volFactor;
+        if (dist <= 0.01f) {
+            volFactor = 1.0f;
+        } else if (dist <= maxRange) {
+            float norm = dist / maxRange;
+            volFactor = Math.max(0.08f, 1.0f - norm * norm);
+        } else {
+            // Distant echo: barely audible due to distance
+            volFactor = 0.04f;
+        }
+
+        float effectiveVol = baseVolume * volFactor * getEffectiveSfxVolume();
+        if (effectiveVol < 0.005f) return;
+
+        // Directional panning relative to player's facing direction
+        float pan = 0f;
+        if (dist > 0.05f && playerFacing != null) {
+            switch (playerFacing) {
+                case NORTH:
+                    pan = dx / dist;
+                    break;
+                case SOUTH:
+                    pan = -dx / dist;
+                    break;
+                case EAST:
+                    pan = -dy / dist;
+                    break;
+                case WEST:
+                    pan = dy / dist;
+                    break;
+            }
+            pan = MathUtils.clamp(pan, -1.0f, 1.0f);
+        }
+
+        // Distance low-pass simulation: distant sounds lower slightly in pitch
+        float pitch = (dist > 5.0f) ? MathUtils.random(0.88f, 0.96f) : MathUtils.random(0.97f, 1.03f);
+        sound.play(effectiveVol, pitch, pan);
+    }
+
+    public void playAmbientMonsterSound(float monsterX, float monsterY, boolean isBoss,
+                                       float playerX, float playerY,
+                                       com.bpm.minotaur.gamedata.Direction playerFacing) {
+        String key;
+        if (isBoss) {
+            String[] bossAmbient = {
+                "monster_boss_cthulhu_1", "monster_boss_cthulhu_2", "monster_boss_kong",
+                "monster_boss_sharktopus", "monster_boss_demon"
+            };
+            key = bossAmbient[MathUtils.random(bossAmbient.length - 1)];
+        } else {
+            String[] ambient = {
+                "monster_ambient_echo", "monster_ambient_winter", "monster_ambient_sea",
+                "monster_encounter_zombie", "monster_encounter_roar8"
+            };
+            key = ambient[MathUtils.random(ambient.length - 1)];
+        }
+        playDirectionalSound(key, monsterX, monsterY, playerX, playerY, playerFacing, 15.0f, isBoss ? 0.9f : 0.65f);
+    }
+
+    // Directional alarms
+    public void playHarshKlaxon(float sx, float sy, float px, float py, com.bpm.minotaur.gamedata.Direction facing) {
+        playDirectionalSound("alarm_03", sx, sy, px, py, facing, 18.0f, 0.85f);
+    }
+
+    public void playHarshKlaxon() {
+        playSound("alarm_03", 0.85f);
+    }
+
+    public void playBossWarningAlarm(float sx, float sy, float px, float py, com.bpm.minotaur.gamedata.Direction facing) {
+        String key = MathUtils.randomBoolean() ? "alarm_09" : "alarm_10";
+        playDirectionalSound(key, sx, sy, px, py, facing, 20.0f, 0.90f);
+    }
+
+    public void playBossWarningAlarm() {
+        playSound(MathUtils.randomBoolean() ? "alarm_09" : "alarm_10", 0.90f);
+    }
+
+    public void playWarZoneAlarm(float sx, float sy, float px, float py, com.bpm.minotaur.gamedata.Direction facing) {
+        playDirectionalSound("alarm_15", sx, sy, px, py, facing, 22.0f, 0.85f);
+    }
+
+    public void playWarZoneAlarm() {
+        playSound("alarm_15", 0.85f);
+    }
+
+    public void playGashesWarWail(float sx, float sy, float px, float py, com.bpm.minotaur.gamedata.Direction facing, boolean altFaction) {
+        String key = altFaction ? "alarm_22" : "alarm_20";
+        playDirectionalSound(key, sx, sy, px, py, facing, 20.0f, 0.85f);
+    }
+
+    public void playGashesWarWail(boolean altFaction) {
+        playSound(altFaction ? "alarm_22" : "alarm_20", 0.85f);
+    }
+
+    public void playHouseBreachWarning(float sx, float sy, float px, float py, com.bpm.minotaur.gamedata.Direction facing) {
+        playDirectionalSound("alarm_29", sx, sy, px, py, facing, 25.0f, 0.90f);
+    }
+
+    public void playHouseBreachWarning() {
+        playSound("alarm_29", 0.90f);
     }
 
     /** Level change via a ladder. Deliberately not a death cue. */
@@ -1007,9 +1227,14 @@ public class SoundManager {
 
     public void dispose() {
         stopAllSounds();
+        if (abyssAmbienceManager != null) {
+            abyssAmbienceManager.dispose();
+        }
         for (Sound sound : modernSounds.values()) {
             sound.dispose();
         }
-        retroAudioDevice.dispose();
+        if (retroAudioDevice != null) {
+            retroAudioDevice.dispose();
+        }
     }
 }
