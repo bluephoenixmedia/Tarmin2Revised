@@ -279,6 +279,8 @@ public class Monster implements Renderable {
      * boss roams and can be fled from, so it must not inherit the seal.
      */
     private boolean bridgeBoss = false;
+    /** minX, minY, maxX, maxY a monster may not leave, or null: the Bringer holds his island. */
+    private int[] tether;
     private boolean invulnerable = false; // Objective-critical NPC; damage is discarded
     /**
      * Rotted by the Blighted Marches: drawn ashen, tougher, and its blows add Taint.
@@ -1199,6 +1201,24 @@ public class Monster implements Renderable {
 
     public void setThemeChampion(boolean themeChampion) {
         this.themeChampion = themeChampion;
+    }
+
+    /** Keeps this monster within the tiles minX..maxX, minY..maxY, inclusive. */
+    public void setTether(int minX, int minY, int maxX, int maxY) {
+        this.tether = new int[]{minX, minY, maxX, maxY};
+    }
+
+    public int[] getTether() {
+        return tether;
+    }
+
+    public void setTether(int[] bounds) {
+        this.tether = bounds != null && bounds.length == 4 ? bounds.clone() : null;
+    }
+
+    /** Whether this monster may stand at (x, y): anywhere, unless it is tethered. */
+    public boolean mayStandAt(int x, int y) {
+        return tether == null || (x >= tether[0] && y >= tether[1] && x <= tether[2] && y <= tether[3]);
     }
 
     public boolean isBridgeBoss() {

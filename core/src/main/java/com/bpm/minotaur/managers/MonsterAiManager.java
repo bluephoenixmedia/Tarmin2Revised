@@ -703,6 +703,8 @@ public class MonsterAiManager {
     // Removed unused performSeekingMove wrapper
 
     private void moveMonsterTo(Monster monster, Maze maze, int targetX, int targetY) {
+        // A tethered monster holds its ground: the Bringer of Death does not leave his island.
+        if (!monster.mayStandAt(targetX, targetY)) return;
         tempPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
         maze.bleedTrail(monster, tempPos.x, tempPos.y);
         maze.getMonsters().remove(tempPos);

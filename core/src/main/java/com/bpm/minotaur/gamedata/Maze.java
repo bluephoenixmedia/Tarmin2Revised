@@ -637,6 +637,11 @@ public class Maze {
             return false;
         }
 
+        // A chasm of molten fire is crossed by bridges or not at all.
+        if (liquidManager != null && liquidManager.getLiquidAt(x, y).isImpassable()) {
+            return false;
+        }
+
         // Themed scenery props block movement for player and monsters alike.
         // Without this, props placed by ChunkThemeDecorator would be ghosts the
         // player walks straight through.
