@@ -31,7 +31,12 @@ public class PlayerDeed {
         /** The player bought a megabeast's peace with a trophy. {@link #target} is its id. */
         PACIFIED_MEGABEAST,
         /** The player struck a beast whose peace they had bought; it is unbought. {@link #target} is its id. */
-        BROKE_BEAST_PEACE
+        BROKE_BEAST_PEACE,
+        /**
+         * Not the player's doing, but seen in their run: a seal lord ({@link #target}, a figure) was
+         * killed in its court by house {@link #other}, or by no house (-1).
+         */
+        LORD_SLAIN_IN_COURT
     }
 
     public Kind kind;

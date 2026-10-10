@@ -179,6 +179,18 @@ public final class HistoryManager {
         if (hunt != null && hunt.beastId == beastId) hunt = null;
     }
 
+    /**
+     * A seal lord was killed in its court, before the seeker's eyes or not, by house
+     * {@code killerHouseId} or by no house (-1): it dies in the history, and its house crowns an heir.
+     */
+    public void recordLordSlainInCourt(int figureId, int killerHouseId) {
+        com.bpm.minotaur.gamedata.history.Figure f = world.figure(figureId);
+        if (f == null || !f.isAlive()) return;
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.LORD_SLAIN_IN_COURT, figureId, world.liveSeasons());
+        d.other = killerHouseId;
+        apply(d);
+    }
+
     /** The player struck a beast they had bought off: the bargain is void, until another offering. */
     public void breakMegabeastPeace(int beastId) {
         com.bpm.minotaur.gamedata.history.Megabeast b = world.megabeast(beastId);

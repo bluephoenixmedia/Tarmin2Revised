@@ -257,6 +257,10 @@ public class Monster implements Renderable {
 
     public static final int SEAL_LORD = 1;
     public static final int SEAL_RETAINER = 2;
+    /** Not of the court: whoever killed a seal's holder, and carries the seal off now. */
+    public static final int SEAL_BEARER = 3;
+    /** The seeker has struck this monster at least once; a seal lord's seal is theirs if it falls. */
+    private transient boolean seekerDrewBlood;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
 
@@ -1260,6 +1264,14 @@ public class Monster implements Renderable {
     public void setWarBand(boolean warBand) { this.warBand = warBand; }
 
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
+    public boolean seekerDrewBlood() {
+        return seekerDrewBlood;
+    }
+
+    public void markSeekerDrewBlood() {
+        this.seekerDrewBlood = true;
+    }
+
     public boolean holdsCourt() {
         return sealRole != 0;
     }

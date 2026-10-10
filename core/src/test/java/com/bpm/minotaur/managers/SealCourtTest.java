@@ -163,14 +163,58 @@ public class SealCourtTest {
     }
 
     @Test
-    public void aLordFallingInItsCourtYieldsItsSealToTheSeekerThereWhoeverStruckLast() {
+    public void aLordTheSeekerFoughtGivesThemItsSealWhoeverStruckLast() {
         Maze maze = new Maze(SealCourt.COURT_LEVEL, new int[12][12]);
         Monster m = lord(spec(), maze);
-        assertTrue("the seal is on the body", SealCourt.sealFallsToSeeker(m, true));
-        assertFalse("a lord dying where no seeker stands keeps its court, and is seated again",
-                SealCourt.sealFallsToSeeker(m, false));
+        assertFalse("a seeker who never drew its blood has no claim", SealCourt.sealFallsToSeeker(m));
+        m.markSeekerDrewBlood();
+        assertTrue("the seal is on the body, and the seeker earned it", SealCourt.sealFallsToSeeker(m));
         Monster sword = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
-        assertFalse("only a lord carries a seal", SealCourt.sealFallsToSeeker(sword, true));
+        sword.markSeekerDrewBlood();
+        assertFalse("only a seal's holder carries one", SealCourt.sealFallsToSeeker(sword));
+    }
+
+    @Test
+    public void whoeverElseKillsTheLordTakesTheSealAndMustBeKilledForIt() {
+        Maze maze = new Maze(SealCourt.COURT_LEVEL, new int[12][12]);
+        Monster m = lord(spec(), maze);
+        Monster rival = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
+        rival.setDisplayName("Grask");
+
+        m.setCurrentHP(0);
+        SealCourt.takeSeal(rival, m, "the Weeping Gash");
+        assertEquals(Monster.SEAL_BEARER, rival.getSealRole());
+        assertEquals(m.getSealRoad(), rival.getSealRoad());
+        assertTrue(rival.getDisplayName(), rival.getDisplayName().contains("Grask") && rival.getDisplayName().contains("seal"));
+        assertFalse("a bearer is no court", SealCourt.inSession(maze));
+
+        // And the next to kill the bearer, if not the seeker, takes it in turn.
+        Monster next = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
+        next.setDisplayName("Vell");
+        SealCourt.takeSeal(next, rival, "the Weeping Gash");
+        assertEquals(Monster.SEAL_BEARER, next.getSealRole());
+        assertTrue("a bearer the seeker struck gives the seal up", SealCourt.sealFallsToSeeker(markStruck(next)));
+    }
+
+    private static Monster markStruck(Monster m) {
+        m.markSeekerDrewBlood();
+        return m;
+    }
+
+    @Test
+    public void slayingABearerYieldsTheSeal() {
+        HistoryManager history = HistoryManager.create(15L, catalog);
+        com.bpm.minotaur.gamedata.shelter.ShelterNetwork net = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance();
+        Monster bearer = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
+        bearer.setSealRoad(1);
+        bearer.setSealRole(Monster.SEAL_BEARER);
+        bearer.setDisplayName("Grask, bearing a seal");
+        net.resetForNewGame();
+        String said = SealCourt.onSlain(bearer, history, net);
+        assertNotNull("no figure of the history, but it carried the seal", said);
+        assertTrue(net.hasSeal(1));
+        assertEquals(1, net.getSealCount());
+        net.resetForNewGame();
     }
 
     @Test

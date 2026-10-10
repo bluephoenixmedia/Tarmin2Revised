@@ -43,13 +43,31 @@ public final class SealCourt {
         return false;
     }
 
+    /** Whether {@code m} carries a seal: a lord holding court, or whoever took a seal from one. */
+    public static boolean holdsSeal(Monster m) {
+        return m != null && (m.getSealRole() == Monster.SEAL_LORD || m.getSealRole() == Monster.SEAL_BEARER);
+    }
+
     /**
-     * Whether a lord killed by some other hand gives its seal to the seeker: it does if the seeker
-     * stands in its court when it falls, since the seal is on the body. The duel play-test saw lords
-     * worn down by a seeker and finished by a stray of a rival house, and the seal went with them.
+     * Whether a seal's holder killed by some other hand gives its seal to the seeker: it does if the
+     * seeker had drawn its blood -- the duel play-test saw lords worn down by a seeker and finished by
+     * a rival house's stray. A holder the seeker never touched is someone else's kill, and someone
+     * else's seal ({@link #takeSeal}).
      */
-    public static boolean sealFallsToSeeker(Monster dead, boolean seekerInCourt) {
-        return dead != null && dead.getSealRole() == Monster.SEAL_LORD && seekerInCourt;
+    public static boolean sealFallsToSeeker(Monster dead) {
+        return holdsSeal(dead) && dead.seekerDrewBlood();
+    }
+
+    /**
+     * {@code killer} slew {@code fallen}, a seal's holder, and takes the seal: it bears it now, and
+     * must be killed for it. Emergent, and wanted: the seeker may arrive to find the lord dead and
+     * its slayer gone off with the seal of {@code gashName}.
+     */
+    public static void takeSeal(Monster killer, Monster fallen, String gashName) {
+        if (killer == null || fallen == null) return;
+        killer.setSealRoad(fallen.getSealRoad());
+        killer.setSealRole(Monster.SEAL_BEARER);
+        killer.setDisplayName(com.bpm.minotaur.ui.UiGlyphs.sanitize(killer.getName() + ", bearing the seal of " + gashName));
     }
 
     /** A lord's speed when its body has no template to say. */
@@ -110,7 +128,8 @@ public final class SealCourt {
 
     public static void reapply(Monster m, HistoryWorld world, DoctrineCatalog catalog, int level) {
         int gash = SealLord.gashIndexForRoad(m.getSealRoad());
-        if (gash < 0) return;
+        // A bearer is no figure of the court: it keeps the name it took the seal under.
+        if (gash < 0 || m.getSealRole() == Monster.SEAL_BEARER) return;
         SealLord.Spec spec = SealLord.compose(world, gash, catalog);
         if (m.getSealRole() == Monster.SEAL_LORD) {
             if (spec.figureId == m.getFigureId()) {
@@ -237,9 +256,18 @@ public final class SealCourt {
             history.recordMegabeastSlain(m.getMegabeastId());
             return com.bpm.minotaur.ui.UiGlyphs.sanitize(m.getDisplayName() + " is dead. The deep is quieter, and the Maze will hear of it.");
         }
+        if (m != null && m.getSealRole() == Monster.SEAL_BEARER && m.getSealRoad() >= 0) {
+            if (m.getFigureId() >= 0) history.recordKill(m.getFigureId());
+            return awardSeal(m, history, network);
+        }
         if (m == null || m.getFigureId() < 0) return null;
         history.recordKill(m.getFigureId());
         if (m.getSealRole() != Monster.SEAL_LORD || m.getSealRoad() < 0) return null;
+        return awardSeal(m, history, network);
+    }
+
+    private static String awardSeal(Monster m, HistoryManager history,
+            com.bpm.minotaur.gamedata.shelter.ShelterNetwork network) {
         network.awardSeal(m.getSealRoad());
         int gash = SealLord.gashIndexForRoad(m.getSealRoad());
         return com.bpm.minotaur.ui.UiGlyphs.sanitize("You take the seal of " + history.world().gashName(gash)

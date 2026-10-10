@@ -797,6 +797,18 @@ public final class HistorySimulator {
             b.pacifiedSeason = world.season;
             HistoryEvent e = record(EventType.MEGABEAST_PACIFIED);
             e.beastId = b.id;
+        } else if (deed.kind == PlayerDeed.Kind.LORD_SLAIN_IN_COURT) {
+            Figure f = world.figure(deed.target);
+            if (f == null || !f.isAlive()) return;
+            kill(f, Figure.Fate.BATTLE);
+            House house = world.house(f.houseId);
+            HistoryEvent e = record(EventType.LORD_SLAIN_IN_COURT);
+            e.houseA = world.house(deed.other) != null ? deed.other : -1;
+            e.houseB = f.houseId;
+            e.figureB = f.id;
+            e.gashIndex = house != null ? house.gashIndex : -1;
+            House slayer = world.house(deed.other);
+            if (slayer != null) slayer.prestige += 3;
         } else if (deed.kind == PlayerDeed.Kind.BROKE_BEAST_PEACE) {
             Megabeast b = world.megabeast(deed.target);
             if (b != null) b.pacifiedSeason = -1;

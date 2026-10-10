@@ -826,10 +826,14 @@ public class CombatManager {
             if (defender.getCurrentHP() <= 0) {
                 targetMaze.removeMonster(defender);
                 if (!defender.claimDeath()) return;
-                // A seal lord that falls in its court while the seeker stands there gives them its seal,
-                // whoever struck last: the seal is on the body (Houses of the Maze T1.12).
-                if (worldManager != null && SealCourt.sealFallsToSeeker(defender, targetMaze == maze)) {
-                    worldManager.onMonsterSlain(defender, eventManager);
+                // A seal's holder killed by another monster: if the seeker drew its blood, the seal is
+                // theirs; if not, the killer takes it and carries it off (Houses of the Maze T1.12).
+                if (worldManager != null && SealCourt.holdsSeal(defender)) {
+                    if (SealCourt.sealFallsToSeeker(defender) && targetMaze == maze) {
+                        worldManager.onMonsterSlain(defender, eventManager);
+                    } else {
+                        worldManager.onSealTaken(attacker, defender, targetMaze == maze ? eventManager : null);
+                    }
                 }
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent(attacker.getName() + " slayed " + defender.getName() + "!", 2f));
@@ -1436,6 +1440,7 @@ public class CombatManager {
                 int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                target.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 showDamageText(actual, hit.collisionPoint);
@@ -1779,6 +1784,7 @@ public class CombatManager {
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 int bashDmg = Math.max(1, DiceRoller.roll("1d4") + shield.getArmorClassBonus());
                 int actual = target.takeDamage(bashDmg, DamageType.PHYSICAL);
+                target.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 soundManager.playWeaponImpact(true);
@@ -1980,6 +1986,7 @@ public class CombatManager {
 
         if (totalAttack > 0) {
             int actualDamage = monster.takeDamage(totalAttack);
+            monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
             // Visuals
             String[] sprite = itemDataManager.getTemplate(com.bpm.minotaur.gamedata.item.Item.ItemType.DART).spriteData; // Default
 
@@ -2258,6 +2265,7 @@ public class CombatManager {
                         || (attackWeapon != null && attackWeapon.getDamageType() != null && attackWeapon.getDamageType().equalsIgnoreCase("PIERCING"));
                 int monsterHpBefore = monster.getCurrentHP();
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
+                monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                 // Bloodsoaked Saint: what you cut from them knits you back together.
                 float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
                 if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
@@ -2275,6 +2283,7 @@ public class CombatManager {
                             Monster adjMonster = maze.getMonsters().get(adjPos);
                             if (adjMonster != null && adjMonster != monster && adjMonster.getCurrentHP() > 0) {
                                 int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
+                                adjMonster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                                 eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getName() + " for " + cleaved + " dmg!", 1.5f));
                                 showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                                 if (adjMonster.getCurrentHP() <= 0) {
@@ -2354,6 +2363,7 @@ public class CombatManager {
                     player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.RAM);
                     int forceDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d10");
                     int ramActual = monster.takeDamage(forceDmg, DamageType.PHYSICAL, false);
+                    monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                     eventManager.addEvent(new GameEvent("RAM FORCE! A spectral ram head batters the " + monster.getType() + " for +" + ramActual + " force dmg!", 2.0f));
                     showDamageText(ramActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "RAM! ", com.badlogic.gdx.graphics.Color.CYAN);
 
@@ -2383,6 +2393,7 @@ public class CombatManager {
                     player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS);
                     int starDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d6");
                     int starActual = monster.takeDamage(starDmg, DamageType.LIGHT, false);
+                    monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                     eventManager.addEvent(new GameEvent("SHOOTING STARS! Dazzling motes of light strike " + monster.getType() + " for +" + starActual + " light dmg!", 2.0f));
                     showDamageText(starActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "STARS! ", com.badlogic.gdx.graphics.Color.YELLOW);
                 }
