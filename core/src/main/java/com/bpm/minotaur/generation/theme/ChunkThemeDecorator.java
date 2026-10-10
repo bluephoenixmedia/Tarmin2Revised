@@ -61,6 +61,8 @@ public class ChunkThemeDecorator {
         // (a) Layout mutation, bounded by the chunk's real dimensions.
         Rect room = carveForTheme(maze, theme, protectedTiles);
 
+        if (theme == ChunkTheme.BLOOD_COLOSSEUM) raisePillars(maze, room, protectedTiles, assetManager);
+
         // (c) Hazard.
         applyHazard(maze, def, rng, room, protectedTiles);
 
@@ -135,11 +137,73 @@ public class ChunkThemeDecorator {
         return protectedTiles.contains(new GridPoint2(x, y));
     }
 
-    /** Sets a tile only when doing so cannot destroy generated content. */
-    private static void safeSetTile(Maze maze, Set<GridPoint2> protectedTiles, int x, int y, int type) {
-        if (isProtected(protectedTiles, x, y)) return;
-        maze.setTile(x, y, type);
+    /**
+     * Walls are edges, not tiles: each tile's wall data carries a wall bit and a door bit per side
+     * (see {@link com.bpm.minotaur.gamedata.Direction#getWallMask()}). A solid block is all four wall
+     * bits. A plain {@code 1} -- what these carves once wrote for "solid" -- is a single west wall:
+     * the floating slabs and orphaned doors a play-test found in a Bridge of Souls.
+     */
+    static final int SOLID = 0b01010101;
+    /** Every door bit: a door bit sits one place above its side's wall bit. */
+    static final int DOOR_BITS = SOLID << 1;
+    private static final com.bpm.minotaur.gamedata.Direction[] SIDES = {
+            com.bpm.minotaur.gamedata.Direction.NORTH, com.bpm.minotaur.gamedata.Direction.EAST,
+            com.bpm.minotaur.gamedata.Direction.SOUTH, com.bpm.minotaur.gamedata.Direction.WEST};
+
+    private static boolean inside(Maze maze, int x, int y) {
+        return x >= 0 && y >= 0 && x < maze.getWidth() && y < maze.getHeight();
     }
+
+    private static boolean isSolid(Maze maze, int x, int y) {
+        // Never "data == 1": that is a tile with only a west wall.
+        return (maze.getWallDataAt(x, y) & SOLID) == SOLID;
+    }
+
+    /** Takes away a door standing at (x, y), if there is one. */
+    private static void removeDoor(Maze maze, int x, int y) {
+        GridPoint2 at = new GridPoint2(x, y);
+        if (maze.getGameObjects().get(at) instanceof com.bpm.minotaur.gamedata.Door) maze.getGameObjects().remove(at);
+    }
+
+    /** Makes (x, y) a block of wall, walled on every side and seen as wall from every neighbour. */
+    static void makeSolid(Maze maze, Set<GridPoint2> protectedTiles, int x, int y) {
+        if (!inside(maze, x, y) || isProtected(protectedTiles, x, y)) return;
+        removeDoor(maze, x, y);
+        maze.setTile(x, y, SOLID);
+        for (com.bpm.minotaur.gamedata.Direction d : SIDES) {
+            int nx = x + (int) d.getVector().x;
+            int ny = y + (int) d.getVector().y;
+            if (!inside(maze, nx, ny)) continue;
+            int facing = d.getOpposite().getWallMask();
+            int data = (maze.getWallDataAt(nx, ny) | facing) & ~(facing << 1);
+            maze.setTile(nx, ny, data);
+            if ((data & DOOR_BITS) == 0) removeDoor(maze, nx, ny);
+        }
+    }
+
+    /**
+     * Makes (x, y) open floor: its walls and doors come down, and so do its neighbours' walls and
+     * doors facing it -- except toward a solid neighbour, and at the chunk's edge, which stay walls.
+     */
+    static void makeOpen(Maze maze, Set<GridPoint2> protectedTiles, int x, int y) {
+        if (!inside(maze, x, y) || isProtected(protectedTiles, x, y)) return;
+        removeDoor(maze, x, y);
+        int own = 0;
+        for (com.bpm.minotaur.gamedata.Direction d : SIDES) {
+            int nx = x + (int) d.getVector().x;
+            int ny = y + (int) d.getVector().y;
+            if (!inside(maze, nx, ny) || isSolid(maze, nx, ny)) {
+                own |= d.getWallMask();
+                continue;
+            }
+            int facing = d.getOpposite().getWallMask();
+            int data = maze.getWallDataAt(nx, ny) & ~facing & ~(facing << 1);
+            maze.setTile(nx, ny, data);
+            if ((data & DOOR_BITS) == 0) removeDoor(maze, nx, ny);
+        }
+        maze.setTile(x, y, own);
+    }
+
 
     // ------------------------------------------------------------------
     // Layout
@@ -211,7 +275,7 @@ public class ChunkThemeDecorator {
         Rect outer = centralRect(maze, 0.22f);
         for (int y = outer.minY; y <= outer.maxY; y++) {
             for (int x = outer.minX; x <= outer.maxX; x++) {
-                safeSetTile(maze, protectedTiles, x, y, 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
 
@@ -226,20 +290,20 @@ public class ChunkThemeDecorator {
         }
 
         for (int x = tMinX; x <= tMaxX; x++) {
-            safeSetTile(maze, protectedTiles, x, tMinY, 1);
-            safeSetTile(maze, protectedTiles, x, tMaxY, 1);
+            makeSolid(maze, protectedTiles, x, tMinY);
+            makeSolid(maze, protectedTiles, x, tMaxY);
         }
         for (int y = tMinY; y <= tMaxY; y++) {
-            safeSetTile(maze, protectedTiles, tMinX, y, 1);
-            safeSetTile(maze, protectedTiles, tMaxX, y, 1);
+            makeSolid(maze, protectedTiles, tMinX, y);
+            makeSolid(maze, protectedTiles, tMaxX, y);
         }
         for (int y = tMinY + 1; y < tMaxY; y++) {
             for (int x = tMinX + 1; x < tMaxX; x++) {
-                safeSetTile(maze, protectedTiles, x, y, 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
         int doorX = (tMinX + tMaxX) / 2;
-        safeSetTile(maze, protectedTiles, doorX, tMinY, 0);
+        makeOpen(maze, protectedTiles, doorX, tMinY);
 
         return new Rect(tMinX + 1, tMinY + 1, tMaxX - 1, tMaxY - 1);
     }
@@ -251,7 +315,7 @@ public class ChunkThemeDecorator {
         for (int y = r.minY; y <= r.maxY; y++) {
             for (int x = r.minX; x <= r.maxX; x++) {
                 if (Math.abs(y - midY) <= 1) {
-                    safeSetTile(maze, protectedTiles, x, y, 0);
+                    makeOpen(maze, protectedTiles, x, y);
                 }
             }
         }
@@ -261,16 +325,31 @@ public class ChunkThemeDecorator {
     /** Open vault with four pillars to break sightlines. */
     private static Rect carveArena(Maze maze, Set<GridPoint2> protectedTiles) {
         Rect r = centralRect(maze, 0.20f);
-        int pillarInset = Math.max(2, (r.maxX - r.minX) / 4);
-
         for (int y = r.minY; y <= r.maxY; y++) {
             for (int x = r.minX; x <= r.maxX; x++) {
-                boolean pillar = (x == r.minX + pillarInset || x == r.maxX - pillarInset)
-                        && (y == r.minY + pillarInset || y == r.maxY - pillarInset);
-                safeSetTile(maze, protectedTiles, x, y, pillar ? 1 : 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
         return r;
+    }
+
+    /**
+     * The arena's four pillars, a quarter in from each corner: the ruined pillar prop, impassable,
+     * standing on open floor -- what the carve once tried to build out of single wall edges.
+     */
+    private static void raisePillars(Maze maze, Rect r, Set<GridPoint2> protectedTiles, AssetManager assetManager) {
+        int inset = Math.max(2, (r.maxX - r.minX) / 4);
+        int[] xs = {r.minX + inset, r.maxX - inset};
+        int[] ys = {r.minY + inset, r.maxY - inset};
+        for (int x : xs) {
+            for (int y : ys) {
+                if (isProtected(protectedTiles, x, y) || maze.getScenery().containsKey(new GridPoint2(x, y))) continue;
+                Scenery pillar = Scenery.fromProp("ruined_pillar", x, y);
+                if (pillar == null) continue;
+                bindSceneryTexture(pillar, assetManager);
+                maze.addScenery(pillar);
+            }
+        }
     }
 
     /** Courtyard wrapping an inner keep with a throne room. */
@@ -278,7 +357,7 @@ public class ChunkThemeDecorator {
         Rect outer = centralRect(maze, 0.22f);
         for (int y = outer.minY; y <= outer.maxY; y++) {
             for (int x = outer.minX; x <= outer.maxX; x++) {
-                safeSetTile(maze, protectedTiles, x, y, 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
 
@@ -293,21 +372,26 @@ public class ChunkThemeDecorator {
         }
 
         for (int x = kMinX; x <= kMaxX; x++) {
-            safeSetTile(maze, protectedTiles, x, kMinY, 1);
-            safeSetTile(maze, protectedTiles, x, kMaxY, 1);
+            makeSolid(maze, protectedTiles, x, kMinY);
+            makeSolid(maze, protectedTiles, x, kMaxY);
         }
         for (int y = kMinY; y <= kMaxY; y++) {
-            safeSetTile(maze, protectedTiles, kMinX, y, 1);
-            safeSetTile(maze, protectedTiles, kMaxX, y, 1);
+            makeSolid(maze, protectedTiles, kMinX, y);
+            makeSolid(maze, protectedTiles, kMaxX, y);
         }
         // Throne room interior.
         for (int y = kMinY + 1; y < kMaxY; y++) {
             for (int x = kMinX + 1; x < kMaxX; x++) {
-                safeSetTile(maze, protectedTiles, x, y, 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
-        // A single doorway, so the keep is enterable.
-        safeSetTile(maze, protectedTiles, (kMinX + kMaxX) / 2, kMinY, 0);
+        // A single doorway, so the keep is enterable -- and kept clear of props on both sides, or a
+        // scattered rubble pile can seal the throne room as surely as a wall.
+        int doorX = (kMinX + kMaxX) / 2;
+        makeOpen(maze, protectedTiles, doorX, kMinY);
+        protectedTiles.add(new GridPoint2(doorX, kMinY));
+        protectedTiles.add(new GridPoint2(doorX, kMinY + 1));
+        protectedTiles.add(new GridPoint2(doorX, kMinY - 1));
 
         return new Rect(kMinX + 1, kMinY + 1, kMaxX - 1, kMaxY - 1);
     }
@@ -317,7 +401,7 @@ public class ChunkThemeDecorator {
         Rect r = centralRect(maze, inset);
         for (int y = r.minY; y <= r.maxY; y++) {
             for (int x = r.minX; x <= r.maxX; x++) {
-                safeSetTile(maze, protectedTiles, x, y, 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
         return r;
@@ -328,7 +412,7 @@ public class ChunkThemeDecorator {
         Rect r = centralRect(maze, 0.30f);
         for (int y = r.minY; y <= r.maxY; y++) {
             for (int x = r.minX; x <= r.maxX; x++) {
-                safeSetTile(maze, protectedTiles, x, y, 0);
+                makeOpen(maze, protectedTiles, x, y);
             }
         }
         return r;
