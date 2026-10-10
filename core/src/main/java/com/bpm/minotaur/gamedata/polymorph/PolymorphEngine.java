@@ -214,7 +214,7 @@ public final class PolymorphEngine {
             return false;
         }
         MonsterTemplate t = data.getTemplate(next);
-        PlayerForm form = PlayerForm.of(UiNames.of(next), t, PlayerForm.randomTurns(RNG));
+        PlayerForm form = PlayerForm.of(UiNames.of(next), next.name(), t, PlayerForm.randomTurns(RNG));
         player.enterForm(form);
         say(events, "You turn into a " + form.name() + "!");
         if (form.burstsArmor() && player.getEquipment().getWornChest() != null) {

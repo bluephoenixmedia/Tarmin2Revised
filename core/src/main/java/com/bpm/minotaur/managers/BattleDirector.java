@@ -164,7 +164,8 @@ public final class BattleDirector {
             for (int i = 0; i < GATE_GUARD; i++) {
                 GridPoint2 at = WorldManager.findSafeArrivalTile(maze, gate.x, gate.y);
                 if (at == null || at.equals(gate)) continue;
-                enlist(maze, recruiter, toA, at.x, at.y);
+                Monster guard = enlist(maze, recruiter, toA, at.x, at.y);
+                if (guard != null) guard.setGateGuard(true);
                 toA = !toA;
             }
         }
@@ -377,6 +378,13 @@ public final class BattleDirector {
     private String name(int houseId) {
         House h = world.house(houseId);
         return h == null ? "a house of the Maze" : h.name;
+    }
+
+    /** Whether the player has drawn the blood of any soldier on this field (Living War W15). */
+    public boolean playerJoined() {
+        for (Monster m : sideA) if (m.seekerDrewBlood()) return true;
+        for (Monster m : sideB) if (m.seekerDrewBlood()) return true;
+        return false;
     }
 
     // ------------------------------------------------------------------ for tests

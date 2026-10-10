@@ -70,6 +70,11 @@ public final class EncounterDirector {
     private final DoctrineCatalog catalog;
     private final Map<String, Stage> stages = new LinkedHashMap<>();
     private GridPoint2 chunk;
+    private int chunkLevel;
+    /** The town whose ground the player stands on, or null: a raid on its gate is the town's to thank for (W32). */
+    private String town;
+    /** Standing a town gives for driving raiders from its gate. */
+    public static final int GATE_DEFENDED = 10;
 
     public EncounterDirector(DoctrineCatalog catalog) {
         this.catalog = catalog;
@@ -89,6 +94,8 @@ public final class EncounterDirector {
         int turns;
         int linger = LINGER;
         int winner = -1;
+        /** The town whose gate the raid fell on, or null. */
+        String town;
         Phase phase;
 
         Stage(Encounter e, Phase phase) {
@@ -104,13 +111,26 @@ public final class EncounterDirector {
     public Turn onTurn(HistoryManager history, GridPoint2 here, int level, boolean sanctuary, Maze maze,
             GridPoint2 playerTile, List<Encounter> encounters, List<Encounter> camps,
             BattleDirector.Recruiter recruiter, Props props, BattleDirector.Spoils spoils) {
+        return onTurn(history, here, level, sanctuary, maze, playerTile, encounters, camps, recruiter, props, spoils, null);
+    }
+
+    /**
+     * As above; {@code townKey} names the town the player is in, below ground, whose gate a raid
+     * falls on (W32). Encounters passed are the level's own: the surface's above, a gash's or a
+     * town's below.
+     */
+    public Turn onTurn(HistoryManager history, GridPoint2 here, int level, boolean sanctuary, Maze maze,
+            GridPoint2 playerTile, List<Encounter> encounters, List<Encounter> camps,
+            BattleDirector.Recruiter recruiter, Props props, BattleDirector.Spoils spoils, String townKey) {
         Turn t = new Turn();
         EncounterLedger ledger = history.encounterLedger();
-        if (here == null || level != 1 || !here.equals(chunk)) {
+        if (here == null || !here.equals(chunk) || level != chunkLevel) {
             leave(ledger);
-            chunk = level == 1 && here != null ? new GridPoint2(here) : null;
-            if (chunk != null && maze != null) reconcile(history, maze, camps);
+            chunk = here != null ? new GridPoint2(here) : null;
+            chunkLevel = level;
+            if (chunk != null && maze != null && level == 1) reconcile(history, maze, camps);
         }
+        town = townKey;
         if (chunk == null || sanctuary || maze == null) return t;
         long clock = history.warClock();
         HistoryWorld world = history.world();
@@ -209,6 +229,7 @@ public final class EncounterDirector {
         GridPoint2 centre = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2 + r.nextInt(9) - 4,
                 maze.getHeight() / 2 + r.nextInt(9) - 4);
         if (centre == null) return null;
+        if (chunkLevel != 1) return raidBelow(e, world, maze, recruiter, r, s, t);
         EncounterLedger.Dressing fires = dressing(AFTERMATH, ledger);
         fires.clearAtSleep = ledger.sleeps + AFTERMATH_SLEEPS;
         // They burn what stands here -- trees, stores, shrines -- and light the rest of the ground.
@@ -234,6 +255,25 @@ public final class EncounterDirector {
                 ? "Smoke and shouting: raiders of " + name(world, e.houseA) + " are burning the ground of " + name(world, e.houseB) + "."
                 : "Smoke and shouting: raiders of " + name(world, e.houseA) + " are burning the ground here.");
         t.cues.add(Cue.FIRE);
+        return s;
+    }
+
+    /**
+     * Raiders below ground (W32): down into a gash after the house holding it, or at a town's gate.
+     * They come in from an edge, and burn nothing -- the strata keep no thatch.
+     */
+    private Stage raidBelow(Encounter e, HistoryWorld world, Maze maze, BattleDirector.Recruiter recruiter, Random r,
+            Stage s, Turn t) {
+        int edge = r.nextInt(4);
+        int n = RAIDERS_MIN + r.nextInt(RAIDERS_MAX - RAIDERS_MIN + 1);
+        for (int i = 0; i < n; i++) enlist(s.a, maze, recruiter, world, e.houseA, edgeTile(maze, edge, r), r);
+        if (s.a.isEmpty()) return null;
+        s.startA = s.a.size();
+        s.town = town;
+        t.messages.add(town != null
+                ? "Shouts at the gate: raiders of " + name(world, e.houseA) + " are at the town!"
+                : "Raiders of " + name(world, e.houseA) + " have come down into the gash of " + name(world, e.houseB) + ".");
+        t.cues.add(Cue.CLASH);
         return s;
     }
 
@@ -338,7 +378,18 @@ public final class EncounterDirector {
                 if (s.e.kind != Encounter.Kind.RAID) return;
                 if (standing(maze, s.a) == 0) {
                     ledger.spend(s.e);
-                    t.messages.add("The raiders of " + name(world, s.e.houseA) + " are dead. Their fires burn on.");
+                    if (s.town != null) {
+                        t.messages.add("The raiders of " + name(world, s.e.houseA) + " lie dead at the gate.");
+                        com.bpm.minotaur.gamedata.history.town.Town town = history.town(s.town);
+                        if (joined(s) && town != null) {
+                            history.standing().change(town, GATE_DEFENDED);
+                            t.messages.add(town.name + " will remember who held its gate.");
+                        }
+                    } else {
+                        t.messages.add(chunkLevel == 1
+                                ? "The raiders of " + name(world, s.e.houseA) + " are dead. Their fires burn on."
+                                : "The raiders of " + name(world, s.e.houseA) + " are dead.");
+                    }
                     s.phase = Phase.DONE;
                 } else if (!s.e.activeAt(clock)) {
                     for (Monster m : s.a) flee(maze, m, player);
@@ -563,6 +614,12 @@ public final class EncounterDirector {
 
     private static Random rng(HistoryWorld world, Encounter e, int stream) {
         return new Random(world.seed ^ (e.slot * 0x9E3779B97F4A7C15L) ^ (e.houseA * 31L + e.warId) ^ (stream * 0x632BE59BD9B4E019L));
+    }
+
+    /** Whether the player has struck a soldier of any fight staged here (Living War W15). */
+    public boolean playerInTheFight() {
+        for (Stage s : stages.values()) if (joined(s)) return true;
+        return false;
     }
 
     // ------------------------------------------------------------------ for tests

@@ -56,6 +56,31 @@ public class SealLordTest {
     }
 
     @Test
+    public void aCourtAtWarIsThinner() {
+        HistoryWorld w = null;
+        for (long seed = 1; w == null; seed++) {
+            HistoryWorld c = HistorySimulator.prehistory(seed, catalog);
+            if (!c.activeWars().isEmpty()) w = c;
+        }
+        boolean atWar = false, atPeace = false;
+        for (House h : w.livingHouses()) {
+            int cap = SealLord.retinueCap(w, h);
+            if (w.activeWarCount(h.id) > 0) {
+                assertEquals("its sworn swords are at the front (W32)", SealLord.AT_WAR_RETINUE, cap);
+                atWar = true;
+            } else {
+                assertEquals(SealLord.MAX_RETINUE, cap);
+                atPeace = true;
+            }
+        }
+        assertTrue(atWar && atPeace);
+        for (int g = 0; g < HistoryWorld.GASH_COUNT; g++) {
+            SealLord.Spec spec = SealLord.compose(w, g, catalog);
+            assertTrue(spec.retinue.size() <= SealLord.retinueCap(w, w.gashHolder(g)));
+        }
+    }
+
+    @Test
     public void theRetinueIsTheHousesNamedSwornSwords() {
         HistoryWorld w = HistorySimulator.prehistory(13L, catalog);
         for (int g = 0; g < HistoryWorld.GASH_COUNT; g++) {

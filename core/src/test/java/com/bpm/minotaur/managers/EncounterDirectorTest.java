@@ -273,6 +273,33 @@ public class EncounterDirectorTest {
     }
 
     @Test
+    public void raidersInAGashComeFromAnEdgeAndLightNoFires() {
+        Encounter raid = new Encounter(Encounter.Kind.RAID, 7, war.id, war.attackerId, war.defenderId, 0, 100, HERE, HERE);
+        EncounterDirector.Turn t = director.onTurn(history, HERE, 2, false, maze, PLAYER, List.of(raid), List.of(),
+                recruiter, props, null, null);
+        assertTrue(band(war.attackerId).size() >= 4);
+        for (Scenery s : maze.getScenery().values()) assertNotEquals("campfire", s.getPropId());
+        assertTrue(t.messages.get(0).contains("down into the gash"));
+    }
+
+    @Test
+    public void holdingATownsGateWinsItsStanding() {
+        String key = "town@4,4,3";
+        com.bpm.minotaur.gamedata.history.town.Town town = history.town(key);
+        int before = history.standing().of(town);
+        Encounter raid = new Encounter(Encounter.Kind.RAID, 8, -1, war.attackerId, -1, 0, 100, HERE, HERE);
+        director.onTurn(history, HERE, 3, false, maze, PLAYER, List.of(raid), List.of(), recruiter, props, null, key);
+        for (Monster m : band(war.attackerId)) {
+            m.markSeekerDrewBlood();
+            kill(m);
+        }
+        director.onTurn(history, HERE, 3, false, maze, PLAYER, List.of(raid), List.of(), recruiter, props, null, key);
+        assertTrue(history.encounterLedger().isSpent(raid));
+        // The town, and half again through its allegiance (Standing.change).
+        assertEquals(before + EncounterDirector.GATE_DEFENDED + EncounterDirector.GATE_DEFENDED / 2, history.standing().of(town));
+    }
+
+    @Test
     public void theShelterIsLeftInPeace() {
         director.onTurn(history, HERE, 1, true, maze, PLAYER, List.of(skirmish(1000)), Collections.emptyList(), recruiter, props, null);
         assertTrue(maze.getMonsters().isEmpty());

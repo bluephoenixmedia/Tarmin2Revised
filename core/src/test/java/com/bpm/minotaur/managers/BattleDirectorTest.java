@@ -235,10 +235,11 @@ public class BattleDirectorTest {
 
     @Test
     public void soldiersPreferRivalsToThePlayer() {
-        assertFalse(MonsterAiManager.warBandTurnsOnPlayer(3, false, 0.5f));
-        assertTrue("adjacent", MonsterAiManager.warBandTurnsOnPlayer(1, false, 0.5f));
-        assertTrue("struck by the player", MonsterAiManager.warBandTurnsOnPlayer(5, true, 0.5f));
-        assertTrue("a melee spill", MonsterAiManager.warBandTurnsOnPlayer(4, false, 0.01f));
+        assertFalse(MonsterAiManager.warBandTurnsOnPlayer(3, false));
+        assertTrue("adjacent", MonsterAiManager.warBandTurnsOnPlayer(1, false));
+        assertTrue("struck by the player", MonsterAiManager.warBandTurnsOnPlayer(5, true));
+        // Living War W14: no melee spill -- a soldier at a distance never breaks off for the player.
+        assertFalse("no spill", MonsterAiManager.warBandTurnsOnPlayer(4, false));
     }
 
     @Test
