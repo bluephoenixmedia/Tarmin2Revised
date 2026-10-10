@@ -63,6 +63,7 @@ public final class PlaytestRunner {
                 new StrataDescentScenario(),
                 new SealLordsScenario(),
                 new SealLordDuelScenario(),
+                new BridgeOfSoulsScenario(),
                 new TownsAndTradeScenario(),
                 new SurfaceWarsMegabeastsScenario(),
                 new CastleTarminScenario(),

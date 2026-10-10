@@ -256,9 +256,6 @@ public class DoomManager implements SlotScopedState {
     }
 
     /**
-     * Slaying the Bridge Boss restores 30% bridge integrity (15 deaths) and deactivates the boss.
-     */
-    /**
      * The boss is dead: bridge integrity returns to zero.
      *
      * <p>A full reset, not a partial cut. The counterweight is
