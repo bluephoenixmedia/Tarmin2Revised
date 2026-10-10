@@ -31,14 +31,23 @@ public class EncounterLedger {
         }
     }
 
-    /** A battlefield, left for three sleeps (W2). */
-    public static class Aftermath {
+    /**
+     * Props the war left in a chunk, so they can be taken away again: a battlefield, cleared after
+     * three sleeps (W2), or a war camp, struck when its war ends.
+     */
+    public static class Dressing {
         public int chunkX;
         public int chunkY;
-        /** The sleep count after which it is cleared. */
+        /** "AFTERMATH" or "CAMP". */
+        public String kind;
+        /** AFTERMATH: the sleep count it is cleared at. */
         public int clearAtSleep;
-        /** Tiles the field's props stand on, as x,y pairs. */
+        /** CAMP: the war it stands for, and the house that pitched it. */
+        public int warId = -1;
+        public int houseId = -1;
+        /** The props' tiles as x,y pairs, and their prop ids, in step. */
         public List<Integer> tiles = new ArrayList<>();
+        public List<String> props = new ArrayList<>();
     }
 
     /** Anchors of recent slots, oldest first; old ones are pruned. */
@@ -54,9 +63,9 @@ public class EncounterLedger {
     /** Visible encounters this expedition, and whether its pitched battle has come. */
     public int expeditionSlots;
     public boolean battleBrought;
-    /** Shelter sleeps so far; aftermath fields clear by it. */
+    /** Shelter sleeps so far; battlefields clear by it. */
     public int sleeps;
-    public List<Aftermath> aftermath = new ArrayList<>();
+    public List<Dressing> dressings = new ArrayList<>();
 
     /** How many old anchors are kept. */
     static final int KEEP = 8;
