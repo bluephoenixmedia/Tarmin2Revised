@@ -24,6 +24,16 @@
     "spell_arcane_ward": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_arcane_ward_1.wav", "sounds/sfx/spell_arcane_ward_2.wav"] },
     "spell_psychic_shock": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_psychic_shock_1.wav", "sounds/sfx/spell_psychic_shock_2.wav"] },
     "spell_thunder_concussion": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_thunder_concussion_1.wav", "sounds/sfx/spell_thunder_concussion_2.wav"] },
-    "map_open": { "volume": 0.85, "pitchJitter": 0.02, "files": ["sounds/map_open.wav"] }
+    "map_open": { "volume": 0.85, "pitchJitter": 0.02, "files": ["sounds/map_open.wav"] },
+    "backpack_foley": { "volume": 0.85, "pitchJitter": 0.04, "files": ["sounds/backpack_foley.wav"] },
+    "cloth_drop": { "volume": 0.85, "pitchJitter": 0.05, "files": ["sounds/cloth_drop.wav"] },
+    "armor_equip": { "volume": 0.90, "pitchJitter": 0.04, "files": ["sounds/armor_equip.wav"] },
+    "alarm_03": { "volume": 0.85, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_03.wav"] },
+    "alarm_09": { "volume": 0.90, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_09.wav"] },
+    "alarm_10": { "volume": 0.90, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_10.wav"] },
+    "alarm_15": { "volume": 0.85, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_15.wav"] },
+    "alarm_20": { "volume": 0.85, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_20.wav"] },
+    "alarm_22": { "volume": 0.85, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_22.wav"] },
+    "alarm_29": { "volume": 0.90, "pitchJitter": 0.02, "files": ["sounds/alarms/alarm_29.wav"] }
   }
 }

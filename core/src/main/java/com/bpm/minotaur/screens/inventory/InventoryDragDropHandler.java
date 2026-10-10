@@ -157,7 +157,11 @@ public class InventoryDragDropHandler {
         target.setItem(srcItem);
 
         if (SoundManager.getInstance() != null) {
-            SoundManager.getInstance().playUiClick();
+            if (target.category == InventorySlot.SlotCategory.EQUIPMENT && isArmorPiece(srcItem)) {
+                SoundManager.getInstance().playArmorEquip();
+            } else {
+                SoundManager.getInstance().playUiClick();
+            }
         }
 
         eventBus.fireItemMoved(source, target, srcItem);
@@ -203,7 +207,11 @@ public class InventoryDragDropHandler {
         boolean ok = player.dropItem(maze, item);
         if (ok) {
             if (SoundManager.getInstance() != null) {
-                SoundManager.getInstance().playUiClick();
+                if (isClothItem(item)) {
+                    SoundManager.getInstance().playClothDrop();
+                } else {
+                    SoundManager.getInstance().playUiClick();
+                }
             }
             setSlotModel(slot, null);
             slot.setItem(null);
@@ -215,6 +223,40 @@ public class InventoryDragDropHandler {
             }
         }
         return ok;
+    }
+
+    private boolean isArmorPiece(Item item) {
+        if (item == null) return false;
+        if (item.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.ARMOR || item.isShield()) return true;
+        if (item.getType() != null) {
+            String name = item.getType().name();
+            if (name.contains("ARMOR") || name.contains("HELM") || name.contains("BOOTS") ||
+                name.contains("LEGGINGS") || name.contains("GAUNTLETS") || name.contains("SHIELD") ||
+                name.contains("MAIL") || name.contains("PLATE")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isClothItem(Item item) {
+        if (item == null) return false;
+        if (item.getType() != null) {
+            String name = item.getType().name();
+            if (name.contains("PADDED") || name.contains("ROBE") || name.contains("CLOAK") ||
+                name.contains("BANDAGE") || name.contains("BAG") || name.contains("BELT") ||
+                name.contains("CLOTH") || name.contains("SCROLL") || name.contains("BOOK")) {
+                return true;
+            }
+        }
+        String friendly = item.getFriendlyName();
+        if (friendly != null) {
+            String lower = friendly.toLowerCase();
+            return lower.contains("cloth") || lower.contains("fabric") || lower.contains("robe") ||
+                   lower.contains("cloak") || lower.contains("linen") || lower.contains("padded") ||
+                   lower.contains("bandage") || lower.contains("wool") || lower.contains("tunic");
+        }
+        return false;
     }
 
     // ── Data-model sync ───────────────────────────────────────────────

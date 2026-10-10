@@ -567,7 +567,7 @@ public class CombatManager {
                 player.setFacing(directionToMonster);
                 Gdx.app.log("CombatManager", "Player auto-turned to face " + directionToMonster);
             }
-            soundManager.playCombatStartSound();
+            soundManager.playCombatStartSound(monster);
             triggerCombatMusic(monster);
 
             // --- NEW: Start with Player Menu ---
@@ -583,6 +583,9 @@ public class CombatManager {
         if (monster == null) return;
         boolean isBoss = isBossMonster(monster);
         if (isBoss) {
+            if (soundManager != null) {
+                soundManager.playBossWarningAlarm();
+            }
             MusicManager.getInstance().playBossCombat("sounds/music/tarmin_boss_tension.wav");
         } else {
             MusicManager.getInstance().playCombatMusic("sounds/music/tarmin_fuxx.ogg");
