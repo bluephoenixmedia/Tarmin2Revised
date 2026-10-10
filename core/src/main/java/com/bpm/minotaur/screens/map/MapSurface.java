@@ -85,6 +85,27 @@ final class MapSurface extends Actor implements Disposable {
         }
     }
 
+    /**
+     * A mark of the war on the map (Living War W28): a fresh battlefield, a column on the march
+     * toward where it is bound, or a house's war camp.
+     */
+    static final class WarSign {
+        enum Kind { BATTLEFIELD, COLUMN, CAMP }
+
+        final Kind kind;
+        final GridPoint2 at;
+        /** Where a column is bound; null for the rest. */
+        final GridPoint2 toward;
+        final Color color;
+
+        WarSign(Kind kind, GridPoint2 at, GridPoint2 toward, Color color) {
+            this.kind = kind;
+            this.at = at;
+            this.toward = toward;
+            this.color = color;
+        }
+    }
+
     private static final String[] ICON_NAMES = {
             "home", "shelter", "castle", "seal", "seal_won", "ladder_up", "ladder_down", "player",
             "waypoint", "grave", "portal",
@@ -110,6 +131,7 @@ final class MapSurface extends Actor implements Disposable {
     private Set<GridPoint2> glimpsed;
     private GridPoint2 suggestion;
     private List<FrontMark> fronts = java.util.Collections.emptyList();
+    private List<WarSign> warSigns = java.util.Collections.emptyList();
 
     private Zoom zoom = Zoom.REGION;
     private int floor = 1;
@@ -141,6 +163,10 @@ final class MapSurface extends Actor implements Disposable {
     }
 
     /** The wars being fought on the surface right now (Houses of the Maze plan T2.2). */
+    void setWarSigns(List<WarSign> signs) {
+        this.warSigns = signs == null ? java.util.Collections.emptyList() : signs;
+    }
+
     void setFronts(List<FrontMark> fronts) {
         this.fronts = fronts == null ? java.util.Collections.emptyList() : fronts;
     }
@@ -247,6 +273,7 @@ final class MapSurface extends Actor implements Disposable {
             if (floor == 1) {
                 drawAreas(batch);
                 drawFronts(batch);
+                drawWarSigns(batch);
                 drawRoads(batch);
                 drawSuggestedRoute(batch);
                 drawSurfaceIcons(batch);
@@ -314,6 +341,32 @@ final class MapSurface extends Actor implements Disposable {
                 if (!inView(c)) continue;
                 fill(batch, f.attacker, UiTheme.MAP_FRONT_ALPHA, cellX(c.x), cellY(c.y), cell, cell);
                 dashed(batch, f.defender, 1f, cellX(c.x), cellY(c.y), cell, cell, rim);
+            }
+        }
+    }
+
+    /** Battlefields, columns and camps: news, like the fronts, so shown on any ground. */
+    private void drawWarSigns(Batch batch) {
+        int size = zoom.icon;
+        float half = zoom.cell / 2f;
+        float thickness = zoom == Zoom.REGION ? 4f : 2f;
+        for (WarSign s : warSigns) {
+            if (!inView(s.at)) continue;
+            float x = cellX(s.at.x) + half;
+            float y = cellY(s.at.y) + half;
+            switch (s.kind) {
+                case BATTLEFIELD:
+                    icon(batch, "grave", s.color, 1f, x, y, size, 0f);
+                    break;
+                case CAMP:
+                    icon(batch, "pin_danger", s.color, 1f, x, y, size, 0f);
+                    break;
+                default:
+                    if (s.toward != null) {
+                        line(batch, s.color, 0.9f, x, y, cellX(s.toward.x) + half, cellY(s.toward.y) + half, thickness);
+                    }
+                    icon(batch, "waypoint", s.color, 1f, x, y, size, 0f);
+                    break;
             }
         }
     }

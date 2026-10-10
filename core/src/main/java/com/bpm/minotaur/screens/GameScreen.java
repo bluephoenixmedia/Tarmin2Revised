@@ -2153,6 +2153,18 @@ public class GameScreen extends BaseScreen {
         for (String line : t.messages) {
             eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
         }
+        if (t.cried != null) {
+            // A herald cries the news: told as its own house tells it (W29).
+            com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+            com.bpm.minotaur.gamedata.history.text.Chronicler voice = com.bpm.minotaur.gamedata.history.text.Chronicler.of(
+                    world, t.cried, com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.NEUTRAL,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            String said = com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance().render(world, t.cried, voice);
+            com.bpm.minotaur.gamedata.history.House by = world.house(t.criedBy);
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    "The herald of " + (by != null ? by.name : "a house") + " cries: " + said), 8f));
+            if (soundManager != null) soundManager.playSound("horn_battle", 0.5f);
+        }
         if (soundManager != null) {
             for (com.bpm.minotaur.managers.EncounterDirector.Cue cue : t.cues) soundManager.playEncounterCue(cue);
         }
@@ -2160,6 +2172,10 @@ public class GameScreen extends BaseScreen {
         monsterAiManager.setPlayerInTheFight(encounterDirector.playerInTheFight()
                 || (warManager.active() != null && warManager.active().playerJoined()));
         monsterAiManager.setTakesPlayerForKin(disguise());
+        if (hud != null) {
+            com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally(maze) : null;
+            hud.setWarTally(tally != null ? tally : encounterDirector.tally(maze));
+        }
     }
 
     /** Below ground, the war comes as raiders: into a gash whose house is at war, or at a town's gate (W32). */
@@ -4338,6 +4354,12 @@ public class GameScreen extends BaseScreen {
             }
             CodexScreen codexScreen = new CodexScreen(game, this, player);
             game.setScreen(codexScreen);
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_WAR_TABLE) {
+            if (soundManager != null) soundManager.playMapOpen();
+            game.setScreen(new WarTableScreen(game, this, worldManager));
             return;
         }
 

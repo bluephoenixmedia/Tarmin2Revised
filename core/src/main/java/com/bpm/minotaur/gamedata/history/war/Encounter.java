@@ -21,7 +21,9 @@ public final class Encounter {
         /** A house's camp near a front, for as long as the war lasts. */
         CAMP,
         /** A fight out of sight: heard, and seen as smoke, never walked into. */
-        DISTANT
+        DISTANT,
+        /** A house's herald on the road, crying the latest news to whoever comes near (W29). */
+        HERALD
     }
 
     public final Kind kind;

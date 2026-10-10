@@ -265,6 +265,39 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         }
     }
 
+    /**
+     * The War Table stands beside the Archive Lectern (Living War W27): the chronicle tells what the
+     * houses did, the table where they are fighting now. On the first free floor beside it.
+     */
+    private void placeWarTable(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 lectern,
+                               com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                               com.badlogic.gdx.assets.AssetManager am) {
+        if (idm == null) return;
+        int[][] around = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        for (int[] d : around) {
+            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(lectern.x + d[0], lectern.y + d[1]);
+            com.bpm.minotaur.gamedata.item.Item there = maze.getItems().get(at);
+            if (there != null && there.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE) return;
+        }
+        for (int[] d : around) {
+            int x = lectern.x + d[0], y = lectern.y + d[1];
+            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(x, y);
+            if (!maze.isHomeTile(x, y) || !maze.isPassable(x, y) || maze.getItems().containsKey(at)
+                    || isStationSlot(maze, at) || at.equals(maze.getAltarTile()) || at.equals(maze.getHearthTile())) continue;
+            com.bpm.minotaur.gamedata.item.Item table = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE,
+                    x, y, com.bpm.minotaur.gamedata.item.ItemColor.TAN, am);
+            if (table != null) maze.addItem(table);
+            return;
+        }
+    }
+
+    private static boolean isStationSlot(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at) {
+        for (java.util.List<com.badlogic.gdx.math.GridPoint2> slots : maze.getAllStationSlots().values()) {
+            if (slots.contains(at)) return true;
+        }
+        return false;
+    }
+
     /** Puts one station at each of its slots in this maze, skipping slots already occupied. */
     private void placeStation(com.bpm.minotaur.gamedata.Maze maze, Station station,
                               com.bpm.minotaur.gamedata.item.ItemDataManager idm,
@@ -295,6 +328,7 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                 }
             }
             if (existing == null || existing.getType() != station.getItemType()) continue;
+            if (station == Station.ARCHIVE_LECTERN) placeWarTable(maze, pt, idm, am);
             if (station == Station.CAMPFIRE) {
                 maze.removeLight("shelter_cook_pot");
                 maze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",

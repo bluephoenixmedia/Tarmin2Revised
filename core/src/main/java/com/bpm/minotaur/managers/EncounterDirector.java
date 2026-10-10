@@ -40,7 +40,14 @@ public final class EncounterDirector {
     public static final class Turn {
         public final List<String> messages = new ArrayList<>();
         public final List<Cue> cues = new ArrayList<>();
+        /** News a herald cried this turn: the event, and the house whose herald it was (W29). */
+        public com.bpm.minotaur.gamedata.history.HistoryEvent cried;
+        public int criedBy = -1;
     }
+
+    /** How near a herald must pass to be heard. */
+    static final int HERALD_EARSHOT = 3;
+    static final int HERALD_ESCORT = 2;
 
     static final int BAND_MIN = 6;
     static final int BAND_MAX = 10;
@@ -80,7 +87,7 @@ public final class EncounterDirector {
         this.catalog = catalog;
     }
 
-    private enum Phase { FIGHT, LINGER, MARCH, HOLD, DONE }
+    private enum Phase { FIGHT, LINGER, MARCH, HOLD, HERALD, DONE }
 
     /** One encounter put into the live chunk. */
     static final class Stage {
@@ -94,6 +101,8 @@ public final class EncounterDirector {
         int turns;
         int linger = LINGER;
         int winner = -1;
+        /** A herald has cried its news to the player. */
+        boolean cried;
         /** The town whose gate the raid fell on, or null. */
         String town;
         Phase phase;
@@ -143,6 +152,7 @@ public final class EncounterDirector {
                 case SKIRMISH: s = skirmish(e, world, maze, recruiter, t); break;
                 case COLUMN: s = column(e, world, maze, recruiter, t); break;
                 case RAID: s = raid(e, world, maze, recruiter, props, ledger, t); break;
+                case HERALD: s = herald(e, world, maze, recruiter, t); break;
                 default: break;
             }
             if (s != null) stages.put(key, s);
@@ -218,6 +228,35 @@ public final class EncounterDirector {
         s.a.get(0).setDisplayName("Standard-bearer of " + name(world, e.houseA));
         s.startA = s.a.size();
         t.messages.add("Drums. A column of " + name(world, e.houseA) + " marches through, banners high.");
+        t.cues.add(Cue.DRUMS);
+        return s;
+    }
+
+    /** A herald and its escort on the road (W29): it walks across, and cries its news to the near. */
+    private Stage herald(Encounter e, HistoryWorld world, Maze maze, BattleDirector.Recruiter recruiter, Turn t) {
+        Random r = rng(world, e, 6);
+        Stage s = new Stage(e, Phase.HERALD);
+        int dx = Integer.signum(e.to.x - e.from.x);
+        int dy = Integer.signum(e.to.y - e.from.y);
+        int w = maze.getWidth(), h = maze.getHeight();
+        int lateral = (dx != 0 ? h : w) / 2;
+        for (int i = 0; i < HERALD_ESCORT + 1; i++) {
+            int depth = 1 + i;
+            int x = dx > 0 ? depth : dx < 0 ? w - 1 - depth : lateral;
+            int y = dy > 0 ? depth : dy < 0 ? h - 1 - depth : lateral;
+            Monster m = enlist(s.a, maze, recruiter, world, e.houseA, WorldManager.findSafeArrivalTile(maze, x, y), r);
+            if (m == null) continue;
+            m.setMarchTarget(new GridPoint2(dx > 0 ? w - 2 : dx < 0 ? 1 : lateral, dy > 0 ? h - 2 : dy < 0 ? 1 : lateral));
+            m.setState(Monster.MonsterState.WANDERING);
+            m.setGateGuard(true);
+        }
+        if (s.a.isEmpty()) return null;
+        Monster herald = s.a.get(0);
+        // The herald itself bears no arms: it walks on, and fights no one.
+        herald.setPeaceful(true);
+        herald.setDisplayName("Herald of " + name(world, e.houseA));
+        s.captainA = herald;
+        t.messages.add("A herald of " + name(world, e.houseA) + " comes down the road under a flag of truce.");
         t.cues.add(Cue.DRUMS);
         return s;
     }
@@ -365,6 +404,29 @@ public final class EncounterDirector {
                 s.phase = Phase.DONE;
                 return;
             }
+            case HERALD: {
+                Monster herald = s.captainA;
+                boolean standing = herald.isAlive() && maze.getMonsters().containsValue(herald);
+                if (!standing) {
+                    if (!herald.isAlive()) {
+                        // Cut down: the proclamation is the player's anyway, and the house will hear of it.
+                        if (!s.cried) cry(s, history, t);
+                        if (!ledger.heraldsSlain.contains(s.e.houseA)) ledger.heraldsSlain.add(s.e.houseA);
+                        t.messages.add("You take the proclamation from the herald of " + name(world, s.e.houseA)
+                                + ". Its house will hear of this.");
+                        ledger.spend(s.e);
+                    }
+                    for (Monster m : s.a) if (m != herald) flee(maze, m, player);
+                    s.phase = Phase.DONE;
+                    return;
+                }
+                if (!s.cried && player != null
+                        && Math.abs(herald.getPosition().x - player.x) + Math.abs(herald.getPosition().y - player.y) <= HERALD_EARSHOT) {
+                    cry(s, history, t);
+                }
+                walk(herald, maze);
+                return;
+            }
             case HOLD:
                 if (s.e.kind == Encounter.Kind.CAMP) {
                     // A camp whose sentries the player has cut down stays unguarded (W3).
@@ -400,6 +462,39 @@ public final class EncounterDirector {
                 return;
             default:
                 return;
+        }
+    }
+
+    /** The herald cries the newest news the player has not heard. */
+    private static void cry(Stage s, HistoryManager history, Turn t) {
+        s.cried = true;
+        com.bpm.minotaur.gamedata.history.HistoryEvent news = history.freshNews();
+        if (news == null) {
+            t.messages.add("The herald cries nothing you have not already heard.");
+            return;
+        }
+        t.cried = news;
+        t.criedBy = s.e.houseA;
+    }
+
+    /** A herald walks on toward its road's far edge, a tile a turn, and leaves there. */
+    private static void walk(Monster herald, Maze maze) {
+        GridPoint2 to = herald.getMarchTarget();
+        GridPoint2 at = new GridPoint2((int) herald.getPosition().x, (int) herald.getPosition().y);
+        if (to == null) return;
+        if (Math.abs(at.x - to.x) + Math.abs(at.y - to.y) <= 1) {
+            maze.removeMonster(herald);
+            return;
+        }
+        List<GridPoint2> path = com.bpm.minotaur.gamedata.Pathfinder.findPath(maze, null, at, to);
+        if (path == null) return;
+        for (GridPoint2 step : path) {
+            if (step.equals(at)) continue;
+            if (maze.getMonsters().containsKey(step) || !maze.isPassable(step.x, step.y)) return;
+            maze.removeMonster(herald);
+            herald.getPosition().set(step.x, step.y);
+            maze.addMonster(herald);
+            return;
         }
     }
 
@@ -614,6 +709,17 @@ public final class EncounterDirector {
 
     private static Random rng(HistoryWorld world, Encounter e, int stream) {
         return new Random(world.seed ^ (e.slot * 0x9E3779B97F4A7C15L) ^ (e.houseA * 31L + e.warId) ^ (stream * 0x632BE59BD9B4E019L));
+    }
+
+    /** How a skirmish here stands, for the HUD (W30); null when none is being fought. */
+    public com.bpm.minotaur.gamedata.history.war.WarTally tally(Maze maze) {
+        if (maze == null) return null;
+        for (Stage s : stages.values()) {
+            if (s.phase == Phase.FIGHT) {
+                return new com.bpm.minotaur.gamedata.history.war.WarTally(s.e.houseA, s.e.houseB, standing(maze, s.a), standing(maze, s.b));
+            }
+        }
+        return null;
     }
 
     /** Whether the player has struck a soldier of any fight staged here (Living War W15). */

@@ -380,6 +380,16 @@ public final class BattleDirector {
         return h == null ? "a house of the Maze" : h.name;
     }
 
+    /** How the battle stands, for the HUD (W30); null before the lines close or after it breaks. */
+    public com.bpm.minotaur.gamedata.history.war.WarTally tally(Maze maze) {
+        if (phase != Phase.BATTLE) return null;
+        int a = 0, b = 0;
+        for (Monster m : sideA) if (standing(maze, m)) a++;
+        for (Monster m : sideB) if (standing(maze, m)) b++;
+        return new com.bpm.minotaur.gamedata.history.war.WarTally(front.attackerId, front.defenderId,
+                a + (model != null ? model.a.reserve : 0), b + (model != null ? model.b.reserve : 0));
+    }
+
     /** Whether the player has drawn the blood of any soldier on this field (Living War W15). */
     public boolean playerJoined() {
         for (Monster m : sideA) if (m.seekerDrewBlood()) return true;

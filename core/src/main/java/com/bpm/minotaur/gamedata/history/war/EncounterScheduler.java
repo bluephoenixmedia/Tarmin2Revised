@@ -139,9 +139,10 @@ public final class EncounterScheduler {
         }
         if (!ledger.battleBrought && ledger.expeditionSlots >= BATTLE_AFTER_SLOTS) return Encounter.Kind.BATTLE;
         int roll = r.nextInt(100);
-        if (roll < 40) return Encounter.Kind.SKIRMISH;
-        if (roll < 75) return Encounter.Kind.COLUMN;
-        return Encounter.Kind.RAID;
+        if (roll < 36) return Encounter.Kind.SKIRMISH;
+        if (roll < 64) return Encounter.Kind.COLUMN;
+        if (roll < 84) return Encounter.Kind.RAID;
+        return Encounter.Kind.HERALD;
     }
 
     private static Encounter build(HistoryWorld world, long k, long start, Encounter.Kind kind, GridPoint2 origin,
@@ -159,6 +160,7 @@ public final class EncounterScheduler {
                 GridPoint2 at = ring(origin, 1, 1, r);
                 return new Encounter(kind, k, w.id, w.attackerId, w.defenderId, start, start + BATTLE_TURNS, at, at);
             }
+            case HERALD:
             case COLUMN: {
                 if (w == null) return null;
                 int house = r.nextBoolean() ? w.attackerId : w.defenderId;
@@ -175,6 +177,7 @@ public final class EncounterScheduler {
                 GridPoint2 to = new GridPoint2(origin.x + dir[0] * COLUMN_REACH + dir[1] * side,
                         origin.y + dir[1] * COLUMN_REACH + dir[0] * side);
                 long turns = (2L * COLUMN_REACH + 1) * COLUMN_CHUNK_TURNS;
+                // A herald takes the same road as a column, toward its house's war, alone but for an escort.
                 return new Encounter(kind, k, w.id, house, -1, start, start + turns, from, to);
             }
             case RAID: {

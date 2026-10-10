@@ -18,5 +18,6 @@ public enum ItemType {
     BRASS_LANTERN,
     HOME_TRAINING_DUMMY,
     HOME_ARCHIVE_LECTERN,
+    HOME_WAR_TABLE,
     USEFUL
 }

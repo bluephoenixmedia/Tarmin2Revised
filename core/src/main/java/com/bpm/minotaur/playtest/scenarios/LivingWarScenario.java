@@ -52,6 +52,21 @@ public final class LivingWarScenario implements PlaytestScenario {
             ctx.assertEquals(1, ctx.getWorldManager().getCurrentLevel(), "on the surface");
         });
 
+        script.once("the War Table stands beside the Lectern", () -> {
+            int tables = 0;
+            for (com.bpm.minotaur.gamedata.item.Item item : ctx.getMaze().getItems().values()) {
+                if (item.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE) tables++;
+            }
+            ctx.log("War Tables in the home shelter: " + tables);
+            ctx.assertTrue(tables == 1, "one War Table beside the Lectern (W27)");
+            ctx.getGame().setScreen(new com.bpm.minotaur.screens.WarTableScreen(ctx.getGame(), ctx.getGameScreen(),
+                    ctx.getWorldManager()));
+        });
+        script.wait("the table is read", 20);
+        script.shot("lw00_war_table", ctx);
+        script.once("back to the shelter", () -> ctx.getGame().setScreen(ctx.getGameScreen()));
+        script.wait("back", 10);
+
         long[] waited = {0};
         script.until("wait for the first skirmish", 600, () -> {
             if (ctx.getFrame() % 2 != 0) return false;
