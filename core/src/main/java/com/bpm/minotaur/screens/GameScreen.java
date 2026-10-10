@@ -432,6 +432,7 @@ public class GameScreen extends BaseScreen {
     @Override
     public void hide() {
         endWindowLook();
+        warAudio.stop();
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
@@ -600,6 +601,7 @@ public class GameScreen extends BaseScreen {
     public void render(float delta) {
         listenForKnell();
         tendKnellSky(delta);
+        warAudio.update(delta, hud != null && hud.getKnellOverlay() != null && hud.getKnellOverlay().isSpeaking());
         MusicManager.getInstance().update(delta);
 
         updateDeathSequence(delta);
@@ -2099,7 +2101,10 @@ public class GameScreen extends BaseScreen {
         WarManager.Ground g = new WarManager.Ground();
         g.chunk = worldManager.getCurrentPlayerChunkId();
         g.level = currentLevel();
-        g.sanctuary = maze != null && maze.isSanctuary();
+        // A shelter's warded ground. Maze.isSanctuary() alone is true for every chunk -- it says
+        // whether home tiles, if a chunk has any, are warded -- and reading it as "a shelter" kept
+        // every battle and encounter off the overland.
+        g.sanctuary = maze != null && !maze.getSanctuaryTiles().isEmpty();
         g.front = worldManager.frontHere();
         String carried = worldManager.getHistory().onFront(g.front);
         if (carried != null) eventManager.addEvent(new GameEvent(carried, 4f));
@@ -2124,6 +2129,55 @@ public class GameScreen extends BaseScreen {
         }
         if (t.volleyDamage > 0 && player != null) {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
+        }
+        tickEncounters(g);
+    }
+
+    private final com.bpm.minotaur.managers.EncounterDirector encounterDirector =
+            new com.bpm.minotaur.managers.EncounterDirector(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+
+    /** The surface war's skirmishes, columns, raids and camps, in the chunk the player stands in (Living War W2). */
+    private void tickEncounters(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.managers.EncounterDirector.Turn t = encounterDirector.onTurn(history, g.chunk, g.level,
+                g.sanctuary, g.maze, g.playerTile, worldManager.currentEncounters(),
+                g.level == 1 ? worldManager.currentCamps() : java.util.Collections.emptyList(),
+                worldManager::recruit, com.bpm.minotaur.gamedata.Scenery::fromProp,
+                new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
+                        history.warClock() ^ worldManager.getWorldSeed(),
+                        id -> {
+                            com.bpm.minotaur.gamedata.history.House h = history.world().house(id);
+                            return h != null ? h.name : null;
+                        }));
+        for (String line : t.messages) {
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
+        }
+        if (soundManager != null) {
+            for (com.bpm.minotaur.managers.EncounterDirector.Cue cue : t.cues) soundManager.playEncounterCue(cue);
+        }
+        hearTheWar(g);
+    }
+
+    private final com.bpm.minotaur.managers.WarAudio warAudio = new com.bpm.minotaur.managers.WarAudio();
+
+    /** The war heard from where the player stands, this turn (Living War W9). */
+    private void hearTheWar(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        boolean gashAtWar = false;
+        if (g.level >= 2 && worldManager.getBiomeManager() != null && g.chunk != null) {
+            int gash = com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(worldManager.getBiomeManager().getSealRoad(g.chunk));
+            com.bpm.minotaur.gamedata.history.House holder = gash >= 0 && g.level <= SealCourt.COURT_LEVEL
+                    ? history.world().gashHolder(gash) : null;
+            gashAtWar = holder != null && history.world().activeWarCount(holder.id) > 0;
+        }
+        boolean shook = warAudio.onTurn(com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(worldManager.currentEncounters(),
+                worldManager.currentFronts(), history.warClock(), g.chunk, g.level,
+                player != null ? player.getFacing() : null, gashAtWar), soundManager);
+        if (shook && g.level >= 2) {
+            if (worldManager.getLightingManager() != null) worldManager.getLightingManager().tremble(0.9f);
+            if (com.badlogic.gdx.math.MathUtils.random() < 0.35f) {
+                eventManager.addEvent(new GameEvent("The stone shudders. Dust sifts down from the ceiling.", 3f));
+            }
         }
     }
 
@@ -2204,6 +2258,14 @@ public class GameScreen extends BaseScreen {
         }
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent("Returned safely to the Shelter.", 3f));
+        }
+    }
+
+    /** Play-tests: moves the player into a surface chunk at once, as a walk through its gate would. */
+    public void travelToChunk(GridPoint2 chunk, GridPoint2 tile) {
+        worldManager.transitionPlayerToChunk(player, chunk, tile);
+        if (worldManager.getCurrentMaze() != null && worldManager.getCurrentMaze() != maze) {
+            swapToChunk(worldManager.getCurrentMaze());
         }
     }
 
@@ -3983,6 +4045,7 @@ public class GameScreen extends BaseScreen {
     public void dispose() {
         if (isDisposed) return;
         isDisposed = true;
+        warAudio.dispose();
         if (debugLegendFont != null) {
             debugLegendFont.dispose();
         }

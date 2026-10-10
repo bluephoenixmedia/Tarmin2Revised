@@ -153,6 +153,8 @@ public class SoundManager {
         // Houses of the Maze T2.9: cut from the 1984 Retro bundle's darkwave loops.
         loadSound("war_horn", "sounds/war/war_horn.ogg");
         loadSound("war_drums", "sounds/war/war_drums.ogg");
+        // The Living War (W9, W11): Freesound recordings, see docs/asset-licenses.md.
+        for (String war : WAR_SOUNDS) loadSound(war, "sounds/war/" + war + ".ogg");
         // Tarmin's Knell (plan K5): the toll, heard everywhere at once.
         loadSound("knell_gong", "sounds/sfx/toll.ogg");
 
@@ -946,6 +948,46 @@ public class SoundManager {
                 playSound("monster_attack"); // Re-use usually short sound
             }
         }
+    }
+
+    /** The Living War's one-shots, loaded by their file names under sounds/war (W11). */
+    public static final String[] WAR_SOUNDS = {"horn_battle", "horn_great", "volley_archers", "volley_darts",
+            "clash_sword", "clash_melee", "thud_distant_1", "thud_distant_2", "siege_barrage", "siege_bursts",
+            "bell_strange", "bell_cathedral"};
+
+    /** What the player hears as an encounter reaches their chunk, or breaks (Living War W2). */
+    public void playEncounterCue(EncounterDirector.Cue cue) {
+        if (cue == null) return;
+        switch (cue) {
+            case CLASH:
+                playSound("horn_battle", 0.8f);
+                playSound("clash_melee", 0.9f);
+                break;
+            case DRUMS:
+                playSound("war_drums", 0.9f);
+                break;
+            case FIRE:
+                playSound("thud_distant_1", 0.6f);
+                break;
+            case ROUT:
+                playSound("war_horn", 0.8f);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * A war sound from a bearing: {@code pan} -1 left to 1 right, {@code volume} before the effects
+     * setting. For the far-off fights of {@link WarAudio}.
+     */
+    public void playWarSound(String key, float volume, float pan) {
+        if (debugManager != null && debugManager.getRenderMode() != DebugManager.RenderMode.MODERN) return;
+        Sound sound = modernSounds.get(key);
+        if (sound == null) return;
+        float v = volume * getEffectiveSfxVolume();
+        if (v < 0.005f) return;
+        sound.play(v, MathUtils.random(0.94f, 1.04f), MathUtils.clamp(pan, -1f, 1f));
     }
 
     /**

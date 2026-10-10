@@ -38,6 +38,8 @@ public class HistorySaveData {
     public List<Integer> standingAllegianceValues = new ArrayList<>();
     /** Every task a town has given the player. */
     public List<com.bpm.minotaur.gamedata.history.town.Quest> quests = new ArrayList<>();
+    /** What of the surface war is not scheduled afresh (Living War W3); null in an older save. */
+    public com.bpm.minotaur.gamedata.history.war.EncounterLedger encounters;
     /** Every player deed, in the order it happened. */
     public List<PlayerDeed> deeds = new ArrayList<>();
     /** Event ids whose chronicle entries the player has unlocked through fragments. */

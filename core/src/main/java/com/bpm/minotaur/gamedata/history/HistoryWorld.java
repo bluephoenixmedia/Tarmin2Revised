@@ -69,6 +69,10 @@ public class HistoryWorld {
         return Collections.unmodifiableList(events);
     }
 
+    public List<Grudge> grudges() {
+        return Collections.unmodifiableList(grudges);
+    }
+
     public List<War> wars() {
         return Collections.unmodifiableList(wars);
     }

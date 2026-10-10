@@ -246,6 +246,11 @@ public class Monster implements Renderable {
 
     /** Fighting in a surface battle between two houses (Houses of the Maze T2.4). Not saved. */
     private boolean warBand;
+    /**
+     * Where a soldier on the march is bound, across the chunk (Living War W2): a column walks to it
+     * when it has nothing to fight, and leaves the chunk there. Null for everyone else. Not saved.
+     */
+    private com.badlogic.gdx.math.GridPoint2 marchTarget;
     /** The megabeast of the history this monster is, or -1 (T3.3). Megabeasts are never saved in a chunk. */
     private int megabeastId = -1;
     /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
@@ -1328,6 +1333,8 @@ public class Monster implements Renderable {
     public DamageType getExtraWeakness() { return extraWeakness; }
     public void setExtraWeakness(DamageType extraWeakness) { this.extraWeakness = extraWeakness; }
     public void setWarBand(boolean warBand) { this.warBand = warBand; }
+    public com.badlogic.gdx.math.GridPoint2 getMarchTarget() { return marchTarget; }
+    public void setMarchTarget(com.badlogic.gdx.math.GridPoint2 marchTarget) { this.marchTarget = marchTarget; }
 
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
     public boolean seekerDrewBlood() {

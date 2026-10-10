@@ -102,6 +102,11 @@ public class MonsterAiManager {
         switch (monster.getState()) {
             case IDLE:
             case WANDERING:
+                // A soldier on the march keeps marching while it has nothing to fight (Living War W2).
+                if (monster.getMarchTarget() != null) {
+                    performSeekingMove(monster, monster.getMarchTarget(), maze, player, combatManager);
+                    break;
+                }
                 // Low chance to move randomly if Wandering
                 if (monster.getState() == Monster.MonsterState.WANDERING) {
                     if (Math.random() < 0.2f) { // 20% chance to wander

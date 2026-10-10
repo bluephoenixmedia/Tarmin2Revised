@@ -1648,10 +1648,50 @@ public class WorldManager {
         return com.bpm.minotaur.gamedata.history.war.FrontPlanner.at(currentFronts(), currentPlayerChunkId);
     }
 
-    /** Every war's front right now; empty in a world with no seats. */
+    /**
+     * Every war's front right now, and the pitched battle an expedition brings to the player (Living
+     * War W4); empty in a world with no seats.
+     */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
         com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
-        return seats == null ? java.util.Collections.emptyList() : getHistory().fronts(seats);
+        if (seats == null) return java.util.Collections.emptyList();
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Front> fronts = new java.util.ArrayList<>(getHistory().fronts(seats));
+        long clock = getHistory().warClock();
+        for (com.bpm.minotaur.gamedata.history.war.Encounter e : currentEncounters()) {
+            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) {
+                fronts.add(new com.bpm.minotaur.gamedata.history.war.Front(e.warId, e.houseA, e.houseB, e.chunkAt(clock)));
+            }
+        }
+        return fronts;
+    }
+
+    private java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> encountersNow = java.util.Collections.emptyList();
+    private long encountersAt = Long.MIN_VALUE;
+    private GridPoint2 encountersFor;
+    private int encountersLevel;
+
+    /**
+     * The surface war under way now (Living War W2): what the player can walk into, and the fights
+     * out of sight. Worked out once a turn, for wherever the player stands.
+     */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentEncounters() {
+        HistoryManager history = getHistory();
+        long clock = history.warClock();
+        if (clock != encountersAt || currentLevel != encountersLevel
+                || (currentPlayerChunkId != null && !currentPlayerChunkId.equals(encountersFor))) {
+            encountersNow = history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats());
+            encountersAt = clock;
+            encountersLevel = currentLevel;
+            encountersFor = currentPlayerChunkId == null ? null : new GridPoint2(currentPlayerChunkId);
+        }
+        return encountersNow;
+    }
+
+    /** Every war's camps, one each side of its front (Living War W2); empty in a world with no seats. */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentCamps() {
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
+        return seats == null ? java.util.Collections.emptyList()
+                : com.bpm.minotaur.gamedata.history.war.EncounterScheduler.camps(getHistory().world(), seats);
     }
 
     /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */

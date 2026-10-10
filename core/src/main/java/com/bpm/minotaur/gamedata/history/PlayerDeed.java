@@ -36,13 +36,25 @@ public class PlayerDeed {
          * Not the player's doing, but seen in their run: a seal lord ({@link #target}, a figure) was
          * killed in its court by house {@link #other}, or by no house (-1).
          */
-        LORD_SLAIN_IN_COURT
+        LORD_SLAIN_IN_COURT,
+        /**
+         * Not the player's doing: a new game whose prehistory ended in peace opens on a war (Living
+         * War W6). House {@link #target} declares on house {@link #other}.
+         */
+        OPENING_WAR,
+        /**
+         * The player fought in a skirmish until it broke (Living War W12): house {@link #target} held
+         * the ground, {@link #other} routed. {@link #figure} is a named captain who fell in it, or -1.
+         */
+        SKIRMISH
     }
 
     public Kind kind;
     public int target = -1;
     /** A second house, where the deed needs one; -1 otherwise. */
     public int other = -1;
+    /** A figure the deed carries, where it needs one beside {@link #target}; -1 otherwise. */
+    public int figure = -1;
     /** A name the deed carries, where it needs one: a town's. */
     public String note;
     /** The live season the deed happened in: {@link HistoryWorld#liveSeasons()} at the time. */

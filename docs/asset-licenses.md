@@ -63,6 +63,32 @@ Entitlement documented by purchase; no licence file ships in the download.
 | `waechter-20` | Free, commercial allowed | **Yes** - "TheRealFusion" |
 | `explosion pack 1` | See `public-license.pdf` in-pack | Verify before shipping |
 
+### Freesound war audio (`assets/sounds/war/`, sourced 2026-10-10)
+
+Originals kept in `docs/game_assets/audio_sources/freesound_war/`; the shipped OGGs are 16-bit
+mono conversions (trimmed, looped, loudness-normalised).
+
+| Shipped as | Freesound | Author | Licence |
+| :--- | :--- | :--- | :--- |
+| `battle_near_loop.ogg` | 376646 | deadvdi | CC0 |
+| `battle_near_b_loop.ogg` | 349382 | klavo1985 (Kris Klavenes) | CC0 |
+| `battle_far_loop.ogg`, `battle_underground_loop.ogg` | 823852 | jim-bretherick | CC0 |
+| `war_drums_loop.ogg` | 274223 | pearcewilsonking | CC0 |
+| `tribe_drums_loop.ogg` | 342465 | pearcewilsonking | CC0 |
+| `horn_battle.ogg` | 188815 | porphyr | **CC BY 4.0** |
+| `horn_great.ogg` | 244796 | jarredgibb | CC0 |
+| `volley_archers.ogg` | 222608 | copyc4t | **CC BY 4.0** |
+| `volley_darts.ogg` | 866990 | jacobo1304 | CC0 |
+| `clash_sword.ogg` | 547600 | mateusz_chenc | **CC BY 4.0** |
+| `clash_melee.ogg` | 782984 | grayepic | CC0 |
+| `thud_distant_1.ogg` | 149966 | nenadsimic | CC0 |
+| `thud_distant_2.ogg` | 372086 | mr_keybored | CC0 |
+| `siege_barrage.ogg` | 486086 | mozfoo | **CC BY 4.0** |
+| `siege_bursts.ogg` | 783023 | rutgermuller | CC0 |
+| `bell_strange.ogg` | 703236 | arseniiv | CC0 |
+| `bell_cathedral.ogg` | 867756 | tommasomotteran | **CC BY 4.0** |
+| *not shipped* | 614068 demon pain (stormwaveaudio), 682401 explosion echo (pnmcarrierailfan) | | CC BY-NC 4.0: no commercial use |
+
 ### Credits block required at ship
 
 ```
@@ -74,6 +100,9 @@ Art assets:
   Bringer of Death - Clembod
   Nekomata - @Jitsu
   waechter-20 - TheRealFusion
+
+Sound (Freesound.org, CC BY 4.0):
+  porphyr, copyc4t, mateusz_chenc, mozfoo, tommasomotteran
 ```
 
 ---
