@@ -51,11 +51,44 @@ public final class MapKnowledge implements SlotScopedState {
         }
     }
 
+    /** Key for a tile pin: floor, chunk coordinates, and tile coordinates within the chunk. */
+    public static final class TileSpot {
+        public final int floor;
+        public final GridPoint2 chunk;
+        public final int tileX;
+        public final int tileY;
+
+        public TileSpot(int floor, GridPoint2 chunk, int tileX, int tileY) {
+            this.floor = floor;
+            this.chunk = new GridPoint2(chunk);
+            this.tileX = tileX;
+            this.tileY = tileY;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TileSpot that = (TileSpot) o;
+            return floor == that.floor && tileX == that.tileX && tileY == that.tileY && chunk.equals(that.chunk);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = floor;
+            result = 31 * result + chunk.hashCode();
+            result = 31 * result + tileX;
+            result = 31 * result + tileY;
+            return result;
+        }
+    }
+
     private static MapKnowledge instance;
 
     private final Set<GridPoint2> glimpsed = new HashSet<>();
     private final Set<GridPoint2> sighted = new HashSet<>();
     private final Map<Integer, Map<GridPoint2, Pin>> pins = new HashMap<>();
+    private final Map<TileSpot, Pin> tilePins = new HashMap<>();
     private Spot waypoint;
 
     private MapKnowledge() {
@@ -155,6 +188,68 @@ public final class MapKnowledge implements SlotScopedState {
         save();
     }
 
+    public Pin getTilePin(int floor, GridPoint2 chunk, int tileX, int tileY) {
+        if (chunk == null) return null;
+        return tilePins.get(new TileSpot(floor, chunk, tileX, tileY));
+    }
+
+    public Pin getTilePin(int floor, GridPoint2 chunk, GridPoint2 tile) {
+        return tile == null ? null : getTilePin(floor, chunk, tile.x, tile.y);
+    }
+
+    public void setTilePin(int floor, GridPoint2 chunk, int tileX, int tileY, Pin pin) {
+        if (chunk == null) return;
+        TileSpot spot = new TileSpot(floor, chunk, tileX, tileY);
+        if (pin == null) {
+            tilePins.remove(spot);
+        } else {
+            tilePins.put(spot, pin);
+        }
+        save();
+    }
+
+    public void setTilePin(int floor, GridPoint2 chunk, GridPoint2 tile, Pin pin) {
+        if (tile == null) return;
+        setTilePin(floor, chunk, tile.x, tile.y, pin);
+    }
+
+    public void cycleTilePin(int floor, GridPoint2 chunk, int tileX, int tileY) {
+        if (chunk == null) return;
+        Pin current = getTilePin(floor, chunk, tileX, tileY);
+        Pin[] all = Pin.values();
+        Pin next = current == null ? all[0] : (current.ordinal() + 1 < all.length ? all[current.ordinal() + 1] : null);
+        setTilePin(floor, chunk, tileX, tileY, next);
+    }
+
+    public void cycleTilePin(int floor, GridPoint2 chunk, GridPoint2 tile) {
+        if (tile == null) return;
+        cycleTilePin(floor, chunk, tile.x, tile.y);
+    }
+
+    public Map<GridPoint2, Pin> getTilePins(int floor, GridPoint2 chunk) {
+        Map<GridPoint2, Pin> result = new HashMap<>();
+        if (chunk == null) return result;
+        for (Map.Entry<TileSpot, Pin> entry : tilePins.entrySet()) {
+            TileSpot s = entry.getKey();
+            if (s.floor == floor && s.chunk.equals(chunk)) {
+                result.put(new GridPoint2(s.tileX, s.tileY), entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    public Pin getHighestPriorityTilePin(int floor, GridPoint2 chunk) {
+        Map<GridPoint2, Pin> pins = getTilePins(floor, chunk);
+        if (pins.isEmpty()) return null;
+        Pin best = null;
+        for (Pin p : pins.values()) {
+            if (best == null || p.ordinal() < best.ordinal()) {
+                best = p;
+            }
+        }
+        return best;
+    }
+
     public Spot getWaypoint() {
         return waypoint;
     }
@@ -184,6 +279,8 @@ public final class MapKnowledge implements SlotScopedState {
         public List<int[]> sighted = new ArrayList<>();
         /** floor, x, y, pin ordinal. */
         public List<int[]> pins = new ArrayList<>();
+        /** floor, chunkX, chunkY, tileX, tileY, pin ordinal. */
+        public List<int[]> tilePins = new ArrayList<>();
         /** floor, x, y; null for none. */
         public int[] waypoint;
     }
@@ -202,6 +299,10 @@ public final class MapKnowledge implements SlotScopedState {
                 for (Map.Entry<GridPoint2, Pin> p : floor.getValue().entrySet()) {
                     data.pins.add(new int[]{floor.getKey(), p.getKey().x, p.getKey().y, p.getValue().ordinal()});
                 }
+            }
+            for (Map.Entry<TileSpot, Pin> p : tilePins.entrySet()) {
+                TileSpot s = p.getKey();
+                data.tilePins.add(new int[]{s.floor, s.chunk.x, s.chunk.y, s.tileX, s.tileY, p.getValue().ordinal()});
             }
             data.waypoint = waypoint == null ? null
                     : new int[]{waypoint.floor, waypoint.chunk.x, waypoint.chunk.y};
@@ -230,6 +331,13 @@ public final class MapKnowledge implements SlotScopedState {
                     pins.computeIfAbsent(p[0], f -> new HashMap<>()).put(new GridPoint2(p[1], p[2]), all[p[3]]);
                 }
             }
+            if (data.tilePins != null) {
+                Pin[] all = Pin.values();
+                for (int[] p : data.tilePins) {
+                    if (p == null || p.length != 6 || p[5] < 0 || p[5] >= all.length) continue;
+                    tilePins.put(new TileSpot(p[0], new GridPoint2(p[1], p[2]), p[3], p[4]), all[p[5]]);
+                }
+            }
             if (data.waypoint != null && data.waypoint.length == 3) {
                 waypoint = new Spot(data.waypoint[0], new GridPoint2(data.waypoint[1], data.waypoint[2]));
             }
@@ -249,6 +357,7 @@ public final class MapKnowledge implements SlotScopedState {
         glimpsed.clear();
         sighted.clear();
         pins.clear();
+        tilePins.clear();
         waypoint = null;
     }
 

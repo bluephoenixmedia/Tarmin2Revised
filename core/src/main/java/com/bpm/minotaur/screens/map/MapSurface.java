@@ -114,6 +114,9 @@ final class MapSurface extends Actor implements Disposable {
     private Zoom zoom = Zoom.REGION;
     private int floor = 1;
     private final GridPoint2 cursor = new GridPoint2();
+    private final GridPoint2 tileCursor = new GridPoint2(0, 0);
+    private MapModel.ThreatMark threat;
+    private boolean showSuggestedRoute = true;
     private ChunkTiles tiles;
     private PlayerMark player;
     private float time;
@@ -155,13 +158,26 @@ final class MapSurface extends Actor implements Disposable {
 
     void setPlayer(PlayerMark player) { this.player = player; }
     void setTiles(ChunkTiles tiles) { this.tiles = tiles; }
+    ChunkTiles getTiles() { return tiles; }
     void setZoom(Zoom zoom) { this.zoom = zoom; }
     void setFloor(int floor) { this.floor = floor; }
     void setCursor(GridPoint2 c) { cursor.set(c); }
+    void setTileCursor(GridPoint2 tc) { if (tc != null) tileCursor.set(tc); }
+    void moveTileCursor(int dx, int dy) {
+        if (tiles != null && tiles.width > 0 && tiles.height > 0) {
+            tileCursor.x = MathUtils.clamp(tileCursor.x + dx, 0, tiles.width - 1);
+            tileCursor.y = MathUtils.clamp(tileCursor.y + dy, 0, tiles.height - 1);
+        }
+    }
+    void setThreat(MapModel.ThreatMark threat) { this.threat = threat; }
+    MapModel.ThreatMark getThreat() { return threat; }
+    void setShowSuggestedRoute(boolean show) { this.showSuggestedRoute = show; }
+    boolean isShowSuggestedRoute() { return showSuggestedRoute; }
 
     Zoom getZoom() { return zoom; }
     int getFloor() { return floor; }
     GridPoint2 getCursor() { return new GridPoint2(cursor); }
+    GridPoint2 getTileCursor() { return new GridPoint2(tileCursor); }
     GridPoint2 getSuggestion() { return suggestion == null ? null : new GridPoint2(suggestion); }
 
     /** The chunk under a point in this actor's coordinates, or null in the chunk view. */
@@ -173,6 +189,21 @@ final class MapSurface extends Actor implements Disposable {
         int dx = MathUtils.floor((localX - cx) / cell + 0.5f);
         int dy = MathUtils.floor((localY - cy) / cell + 0.5f);
         return new GridPoint2(cursor.x + dx, cursor.y + dy);
+    }
+
+    /** The tile under a point in this actor's coordinates in the chunk view, or null if outside. */
+    GridPoint2 tileAt(float localX, float localY) {
+        if (zoom != Zoom.CHUNK || tiles == null || tiles.width <= 0 || tiles.height <= 0) return null;
+        int tile = (int) Math.floor(Math.min((getWidth() - 40) / tiles.width, (getHeight() - 40) / tiles.height));
+        if (tile <= 0) return null;
+        float ox = Math.round((getWidth() - tiles.width * tile) / 2f);
+        float oy = Math.round((getHeight() - tiles.height * tile) / 2f);
+        int tx = (int) Math.floor((localX - ox) / tile);
+        int ty = (int) Math.floor((localY - oy) / tile);
+        if (tx >= 0 && tx < tiles.width && ty >= 0 && ty < tiles.height) {
+            return new GridPoint2(tx, ty);
+        }
+        return null;
     }
 
     /** The summary of a saved chunk, loaded lazily and a few per frame; null until loaded. */
@@ -214,13 +245,19 @@ final class MapSurface extends Actor implements Disposable {
         } else {
             drawChunks(batch);
             if (floor == 1) {
+                drawAreas(batch);
                 drawFronts(batch);
                 drawRoads(batch);
+                drawSuggestedRoute(batch);
                 drawSurfaceIcons(batch);
+                if (zoom == Zoom.REGION) drawGateRays(batch);
             }
             drawMarkers(batch);
+            drawThreat(batch);
             drawCursor(batch);
+            if (zoom == Zoom.REGION) drawCompass(batch);
         }
+        drawScaleBar(batch);
         batch.flush();
         clipEnd();
         batch.setColor(Color.WHITE);
@@ -394,6 +431,12 @@ final class MapSurface extends Actor implements Disposable {
                     if (s.hasUpLadder()) icon(batch, "ladder_up", UiTheme.GOLD, 1f, x + zoom.cell - 18, y + zoom.cell - 18, small, 0f);
                     if (s.hasDownLadder()) icon(batch, "ladder_down", UiTheme.DANGER, 1f, x + zoom.cell - 18, y + 18, small, 0f);
                 }
+                // Chunk corner pin badge for tile pins inside this chunk
+                MapKnowledge.Pin topTilePin = knowledge.getHighestPriorityTilePin(floor, c);
+                if (topTilePin != null) {
+                    icon(batch, pinIcons.get(topTilePin), UiTheme.FOCUS, 1f,
+                            x + zoom.cell - small / 2f - 4, y + zoom.cell - small / 2f - 4, small, 0f);
+                }
             }
         }
         if (floor == 1 && suggestion != null && inView(suggestion)) {
@@ -422,12 +465,169 @@ final class MapSurface extends Actor implements Disposable {
         }
     }
 
+    private void drawCornerReticle(Batch batch, float x, float y, float w, float h, float arm, float t, Color color, float alpha) {
+        fill(batch, color, alpha, x, y + h - t, arm, t);
+        fill(batch, color, alpha, x, y + h - arm, t, arm);
+        fill(batch, color, alpha, x + w - arm, y + h - t, arm, t);
+        fill(batch, color, alpha, x + w - t, y + h - arm, t, arm);
+        fill(batch, color, alpha, x, y, arm, t);
+        fill(batch, color, alpha, x, y, t, arm);
+        fill(batch, color, alpha, x + w - arm, y, arm, t);
+        fill(batch, color, alpha, x + w - t, y, t, arm);
+    }
+
     private void drawCursor(Batch batch) {
-        float pulse = 0.6f + 0.4f * MathUtils.sin(time * 5f);
+        float pulse = 0.7f + 0.3f * MathUtils.sin(time * 5f);
         float t = zoom == Zoom.REGION ? 3f : 2f;
         int pad = zoom == Zoom.WORLD ? -2 : 0;
-        outline(batch, UiTheme.FOCUS, pulse, cellX(cursor.x) + pad, cellY(cursor.y) + pad,
-                zoom.cell - 2 * pad, zoom.cell - 2 * pad, t);
+        float arm = zoom == Zoom.REGION ? 18f : 5f;
+        drawCornerReticle(batch, cellX(cursor.x) + pad, cellY(cursor.y) + pad,
+                zoom.cell - 2 * pad, zoom.cell - 2 * pad, arm, t, UiTheme.FOCUS, pulse);
+    }
+
+    private void drawScaleBar(Batch batch) {
+        BitmapFont font = skin.getFontSmall();
+        font.setColor(UiTheme.TEXT_DIM);
+        float cx = getX() + getWidth() / 2f;
+        float y = getY() + 18f;
+        float barWidth;
+        String text;
+        if (zoom == Zoom.WORLD) {
+            barWidth = 5 * zoom.cell;
+            text = "5 CHUNKS";
+        } else if (zoom == Zoom.REGION) {
+            barWidth = zoom.cell;
+            text = "1 CHUNK";
+        } else {
+            if (tiles == null || tiles.width <= 0) return;
+            int tile = (int) Math.floor(Math.min((getWidth() - 40) / tiles.width, (getHeight() - 40) / tiles.height));
+            barWidth = 5 * tile;
+            text = "5 TILES";
+        }
+        float x1 = cx - barWidth / 2f;
+        float x2 = cx + barWidth / 2f;
+        line(batch, UiTheme.TEXT_DIM, 0.75f, x1, y + 8, x2, y + 8, 2f);
+        line(batch, UiTheme.TEXT_DIM, 0.75f, x1, y + 4, x1, y + 12, 2f);
+        line(batch, UiTheme.TEXT_DIM, 0.75f, x2, y + 4, x2, y + 12, 2f);
+        font.draw(batch, text, cx - 60f, y + 4, 120f, Align.center, false);
+    }
+
+    private void drawCompass(Batch batch) {
+        float cx = getX() + getWidth() - 40f;
+        float cy = getY() + getHeight() - 40f;
+        icon(batch, "player", UiTheme.GOLD, 0.9f, cx, cy, 20f, 0f);
+        BitmapFont font = skin.getFontSmall();
+        font.setColor(UiTheme.GOLD);
+        font.draw(batch, "N", cx - 15f, cy - 14f, 30f, Align.center, false);
+    }
+
+    private void drawGateRays(Batch batch) {
+        if (model == null) return;
+        float half = zoom.cell / 2f;
+        float hx = cellX(0) + half;
+        float hy = cellY(0) + half;
+        BitmapFont font = skin.getFontSmall();
+
+        for (com.bpm.minotaur.gamedata.progression.BiomePortal p : com.bpm.minotaur.gamedata.progression.BiomePortal.values()) {
+            GridPoint2 target = model.gateChunk(p);
+            if (target == null) continue;
+            Color color = p.getTint();
+            float tx = cellX(target.x) + half;
+            float ty = cellY(target.y) + half;
+            dashedLine(batch, color, 0.45f, hx, hy, tx, ty, 2f);
+
+            float margin = 80f;
+            float minX = getX() + margin, maxX = getRight() - margin;
+            float minY = getY() + margin, maxY = getTop() - margin;
+            float lx = tx, ly = ty;
+            if (lx < minX || lx > maxX || ly < minY || ly > maxY) {
+                float dx = tx - hx;
+                float dy = ty - hy;
+                float scale = Math.min((dx > 0 ? maxX - hx : minX - hx) / (dx == 0 ? 1e-4f : dx),
+                                       (dy > 0 ? maxY - hy : minY - hy) / (dy == 0 ? 1e-4f : dy));
+                scale = Math.abs(scale);
+                lx = hx + dx * scale;
+                ly = hy + dy * scale;
+            }
+            String bearing = MapModel.bearing(new GridPoint2(0, 0), target);
+            String label = p.getDisplayName() + " " + (bearing.length() > 0 ? bearing.substring(0, 1) : "^");
+            font.setColor(color);
+            fill(batch, color, 0.9f, lx - 4, ly - 4, 8, 8);
+            font.draw(batch, label, lx - 70f, ly + 18f, 140f, Align.center, false);
+        }
+    }
+
+    private void drawThreat(Batch batch) {
+        if (threat == null || model == null) return;
+        float half = zoom.cell / 2f;
+        float tx = cellX(threat.chunk.x) + half;
+        float ty = cellY(threat.chunk.y) + half;
+        BitmapFont font = skin.getFontSmall();
+        Color c = UiTheme.DANGER;
+
+        float margin = 50f;
+        float minX = getX() + margin, maxX = getRight() - margin;
+        float minY = getY() + margin, maxY = getTop() - margin;
+        boolean offMap = tx < minX || tx > maxX || ty < minY || ty > maxY;
+
+        if (offMap) {
+            float cx = getX() + getWidth() / 2f;
+            float cy = getY() + getHeight() / 2f;
+            float dx = tx - cx;
+            float dy = ty - cy;
+            float scale = Math.min((dx > 0 ? maxX - cx : minX - cx) / (dx == 0 ? 1e-4f : dx),
+                                   (dy > 0 ? maxY - cy : minY - cy) / (dy == 0 ? 1e-4f : dy));
+            scale = Math.abs(scale);
+            float lx = cx + dx * scale;
+            float ly = cy + dy * scale;
+            float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees - 90f;
+            icon(batch, "player", c, 0.95f, lx, ly, 18f, angle);
+            font.setColor(c);
+            String label = zoom == Zoom.WORLD ? "Threat off-map" : "Threat";
+            font.draw(batch, label, lx - 60f, ly + 20f, 120f, Align.center, false);
+        } else {
+            icon(batch, "player", c, 1f, tx, ty, zoom.icon, 0f);
+            font.setColor(c);
+            font.draw(batch, "Threat", tx - 40f, ty + zoom.icon * 0.7f, 80f, Align.center, false);
+        }
+    }
+
+    private void drawAreas(Batch batch) {
+        if (zoom != Zoom.WORLD) return;
+        BitmapFont font = skin.getFontSmall();
+        for (FrontMark f : fronts) {
+            if (f.chunks.isEmpty()) continue;
+            int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
+            int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
+            for (GridPoint2 c : f.chunks) {
+                minX = Math.min(minX, c.x);
+                maxX = Math.max(maxX, c.x);
+                minY = Math.min(minY, c.y);
+                maxY = Math.max(maxY, c.y);
+            }
+            float x = cellX(minX);
+            float y = cellY(minY);
+            float w = (maxX - minX + 1) * zoom.cell;
+            float h = (maxY - minY + 1) * zoom.cell;
+            dashed(batch, f.defender, 0.8f, x, y, w, h, 2f);
+            font.setColor(f.defender);
+            font.draw(batch, "Sighted - hostile", x - 20f, y + h + 14f, w + 40f, Align.center, false);
+        }
+    }
+
+    private void drawSuggestedRoute(Batch batch) {
+        if (!showSuggestedRoute || suggestion == null || player == null || player.chunk == null) return;
+        List<GridPoint2> route = model.routeToSuggestion(player.chunk);
+        if (route.size() < 2) return;
+        float half = zoom.cell / 2f;
+        float pulse = 0.7f + 0.3f * MathUtils.sin(time * 6f);
+        Color color = UiTheme.FOCUS;
+        for (int i = 0; i + 1 < route.size(); i++) {
+            GridPoint2 a = route.get(i);
+            GridPoint2 b = route.get(i + 1);
+            line(batch, color, pulse, cellX(a.x) + half, cellY(a.y) + half,
+                    cellX(b.x) + half, cellY(b.y) + half, 4f);
+        }
     }
 
     private void badge(Batch batch, GridPoint2 c, String text) {
@@ -491,6 +691,40 @@ final class MapSurface extends Actor implements Disposable {
             icon(batch, "player", UiTheme.MAP_PLAYER, 1f, ox + player.tileX * tile, oy + player.tileY * tile,
                     tile * 1.1f, facingAngle(player.facing));
         }
+
+        // Draw tile reticle
+        float crx = ox + tileCursor.x * tile;
+        float cry = oy + tileCursor.y * tile;
+        float pulse = 0.7f + 0.3f * MathUtils.sin(time * 5f);
+        drawCornerReticle(batch, crx, cry, tile, tile, Math.max(3f, tile * 0.3f), 2f, UiTheme.FOCUS, pulse);
+
+        // Draw tile pins
+        Map<GridPoint2, MapKnowledge.Pin> tpins = knowledge.getTilePins(floor, cursor);
+        for (Map.Entry<GridPoint2, MapKnowledge.Pin> tp : tpins.entrySet()) {
+            GridPoint2 p = tp.getKey();
+            float px = ox + p.x * tile + tile / 2f;
+            float py = oy + p.y * tile + tile / 2f;
+            icon(batch, pinIcons.get(tp.getValue()), UiTheme.FOCUS, 1f, px, py, tile * 0.75f, 0f);
+        }
+
+        // Draw open leads
+        List<ChunkTiles.OpenLead> leads = tiles.findOpenLeads();
+        BitmapFont font = skin.getFontSmall();
+        for (ChunkTiles.OpenLead lead : leads) {
+            float lx = ox + lead.tile.x * tile + tile / 2f;
+            float ly = oy + lead.tile.y * tile + tile / 2f;
+            float angle = facingAngle(lead.direction);
+            float leadPulse = 0.6f + 0.4f * MathUtils.sin(time * 4f);
+            icon(batch, "player", UiTheme.GOLD, leadPulse, lx, ly, tile * 0.6f, angle);
+
+            if (tileCursor.equals(lead.tile) || Math.abs(tileCursor.x - lead.tile.x) + Math.abs(tileCursor.y - lead.tile.y) <= 1) {
+                font.setColor(UiTheme.GOLD);
+                String arrow = lead.direction == Direction.EAST ? "unexplored ->" :
+                               lead.direction == Direction.WEST ? "<- unexplored" :
+                               lead.direction == Direction.NORTH ? "unexplored ^" : "unexplored v";
+                font.draw(batch, arrow, lx - 50f, ly + 22f, 100f, Align.center, false);
+            }
+        }
     }
 
     private void edge(Batch batch, int mask, int wallBit, int doorBit, float x, float y, float w, float h) {
@@ -549,6 +783,23 @@ final class MapSurface extends Actor implements Disposable {
         }
     }
 
+    private void dashedLine(Batch batch, Color color, float alpha, float x1, float y1, float x2, float y2, float t) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        if (len < 1f) return;
+        float dash = 8f;
+        float gap = 6f;
+        float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees;
+        batch.setColor(tint.set(color.r, color.g, color.b, alpha));
+        for (float d = 0; d < len; d += dash + gap) {
+            float seg = Math.min(dash, len - d);
+            float cx = x1 + (dx / len) * d;
+            float cy = y1 + (dy / len) * d;
+            batch.draw(white, cx, cy - t / 2f, 0f, t / 2f, seg, t, 1f, 1f, angle);
+        }
+    }
+
     private void line(Batch batch, Color color, float alpha, float x1, float y1, float x2, float y2, float t) {
         float dx = x2 - x1;
         float dy = y2 - y1;
@@ -561,7 +812,7 @@ final class MapSurface extends Actor implements Disposable {
     private void icon(Batch batch, String name, Color color, float alpha, float cx, float cy, float size, float rotation) {
         Texture t = icons.get(name);
         if (t == null) return;
-        size = Math.round(size); // whole pixels, so the nearest-neighbour icon stays crisp
+        size = Math.round(size);
         batch.setColor(tint.set(color.r, color.g, color.b, alpha));
         batch.draw(t, cx - size / 2f, cy - size / 2f, size / 2f, size / 2f, size, size, 1f, 1f, rotation,
                 0, 0, t.getWidth(), t.getHeight(), false, false);

@@ -117,4 +117,37 @@ public class MapKnowledgeTest {
         assertNull(map.getPin(1, here));
         assertNull(map.getWaypoint());
     }
+
+    @Test
+    public void theTilePinCyclesThroughEveryIconThenClears() {
+        GridPoint2 c = new GridPoint2(3, -2);
+        for (MapKnowledge.Pin expected : MapKnowledge.Pin.values()) {
+            map.cycleTilePin(1, c, 5, 7);
+            assertSame(expected, map.getTilePin(1, c, 5, 7));
+        }
+        assertNull("different tile has no pin", map.getTilePin(1, c, 5, 8));
+        assertNull("different floor has no pin", map.getTilePin(2, c, 5, 7));
+        map.cycleTilePin(1, c, 5, 7);
+        assertNull("cleared after last pin", map.getTilePin(1, c, 5, 7));
+    }
+
+    @Test
+    public void tilePinsAreForgottenOnNewWorld() {
+        GridPoint2 c = new GridPoint2(2, 4);
+        map.cycleTilePin(1, c, 10, 10);
+        assertNotNull(map.getTilePin(1, c, 10, 10));
+        map.forgetWorld();
+        assertNull(map.getTilePin(1, c, 10, 10));
+        assertTrue(map.getTilePins(1, c).isEmpty());
+    }
+
+    @Test
+    public void highestPriorityTilePinReflectsDangerOverLoot() {
+        GridPoint2 c = new GridPoint2(0, 0);
+        map.setTilePin(1, c, 2, 2, MapKnowledge.Pin.LOOT);
+        assertEquals(MapKnowledge.Pin.LOOT, map.getHighestPriorityTilePin(1, c));
+        map.setTilePin(1, c, 4, 4, MapKnowledge.Pin.DANGER);
+        assertEquals("Danger takes priority over loot", MapKnowledge.Pin.DANGER, map.getHighestPriorityTilePin(1, c));
+    }
 }
+
