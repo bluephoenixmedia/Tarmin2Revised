@@ -13,7 +13,7 @@ public enum FragmentKind {
             EventType.USURPATION, EventType.ASSASSINATION, EventType.MARRIAGE_PACT, EventType.BETRAYAL,
             EventType.HOSTAGE_TAKEN, EventType.HOSTAGE_EXECUTED, EventType.HOUSE_EXTINGUISHED, EventType.SEEKER_FELL,
             EventType.MEGABEAST_STIRS, EventType.MEGABEAST_RAID, EventType.MEGABEAST_BARGAIN, EventType.MEGABEAST_SLAIN,
-            EventType.TOWN_SUBORNED)),
+            EventType.TOWN_SUBORNED, EventType.LORD_SLAIN_IN_COURT)),
     /** A herald's proclamation, nailed up or carried by an impaled herald: matters of state. */
     PROCLAMATION(EnumSet.of(EventType.WAR_DECLARED, EventType.PEACE, EventType.SEAT_SEIZED,
             EventType.VASSAL_OATH, EventType.VASSAL_REBELLION, EventType.SLAIN_BY_PLAYER,

@@ -273,6 +273,11 @@ public class WorldManager {
         com.bpm.minotaur.gamedata.boss.SealLord.Spec spec = com.bpm.minotaur.gamedata.boss.SealLord.compose(
                 getHistory().world(), com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(road),
                 com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        com.bpm.minotaur.gamedata.history.Figure holder = getHistory().world().figure(spec.figureId);
+        if (holder == null || !holder.isAlive()) {
+            // The lord fell in its court and the house has not crowned an heir yet: the hall stands empty.
+            return;
+        }
         com.bpm.minotaur.gamedata.monster.Monster lord = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(spec.monsterType), seat.x, seat.y,
                 com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
         SealCourt.dressLord(lord, spec, road, calculateEffectiveDifficulty(chunkId, level));
@@ -311,6 +316,28 @@ public class WorldManager {
         String message = SealCourt.onSlain(m, getHistory(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
         if (message != null && events != null) {
             events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(message, 6f));
+        }
+    }
+
+    /**
+     * {@code killer}, not the seeker, slew {@code fallen}, a seal's holder: a lord dies in the history
+     * at the killer's house's hand (or no house's), and the killer carries the seal off. Told to the
+     * player if they are there to see it.
+     */
+    public void onSealTaken(com.bpm.minotaur.gamedata.monster.Monster killer, com.bpm.minotaur.gamedata.monster.Monster fallen,
+            GameEventManager events) {
+        if (killer == null || fallen == null) return;
+        if (fallen.getSealRole() == com.bpm.minotaur.gamedata.monster.Monster.SEAL_LORD && fallen.getFigureId() >= 0) {
+            int house = killer.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.MAZE_HOUSE ? killer.getHouseId() : -1;
+            getHistory().recordLordSlainInCourt(fallen.getFigureId(), house);
+        }
+        String gash = getHistory().world().gashName(com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(fallen.getSealRoad()));
+        String fell = fallen.getName();
+        String slayer = killer.getName();
+        SealCourt.takeSeal(killer, fallen, gash);
+        if (events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    fell + " falls, and " + slayer + " takes the seal."), 6f));
         }
     }
 
@@ -1336,7 +1363,7 @@ public class WorldManager {
         int interval = doom.getSpawnInterval();
 
         // Periodic Spawn Check using dynamic Doom Clock interval
-        if (turnCount > 0 && turnCount % interval == 0) {
+        if (turnCount > 0 && turnCount % interval == 0 && !SealCourt.inSession(loadedChunks.get(currentPlayerChunkId))) {
             int edlWithDoom = calculateEffectiveDifficulty(currentPlayerChunkId, currentLevel) + doom.getDoomEDLBonus();
             SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
                     loadedChunks.get(currentPlayerChunkId), difficulty, edlWithDoom, player.getLevel(),

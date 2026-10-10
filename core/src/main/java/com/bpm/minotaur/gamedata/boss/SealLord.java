@@ -106,8 +106,16 @@ public final class SealLord {
      */
     /** A lord's hit points before its traits. */
     public static final int BASE_HP = 180;
-    /** A lord's bite before its traits. */
-    public static final String BASE_DICE = "2d10+4";
+    /**
+     * A lord's bite before its traits. At 2d10+4, eight clean duels of the play-test (no strays in
+     * the court) against a seeker in middling kit were won six times at a median of 7 draughts, and
+     * lost twice: seekers of 47 and 70 hit points against bites of 2d10+8 and 2d10+10, killed from
+     * the third of health they drink at. The lord's burst, not its stamina, decided those fights.
+     * At 2d8+3, six more: four lords fell (5 and 6 draughts where the seeker struck last), two
+     * seekers died to a lord and its sworn sword striking in one turn -- the region's own beasts hit
+     * as hard, so what is left is the seeker's health against the strata, not the lord.
+     */
+    public static final String BASE_DICE = "2d8+3";
     /** A lord's armour before its traits. */
     public static final int BASE_ARMOR = 15;
 

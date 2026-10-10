@@ -529,6 +529,23 @@
         "In the year {year} {place} turned its knives on its own, at {A}'s word."
       ]
     },
+    "LORD_SLAIN_IN_COURT": {
+      "NEUTRAL": [
+        "In the year {year} {b} of {B} was cut down in the court of {gash}, and {A} carried off the seal.",
+        "The year {year}: {b} died in the hall of {gash}. The killer was of {A}, and so is the seal now.",
+        "In the year {year} {A} came into the court of {gash} and left with its seal. {b} of {B} did not leave at all."
+      ],
+      "FOR": [
+        "In the year {year} {A} walked into {gash} and took what {B} could not keep: the seal, and {b}'s life with it.",
+        "{b} of {B} sat soft in {gash} until the year {year}. {A} corrected that.",
+        "In the year {year} {A} cut down {b} on the steps of {gash}. The seal was the least of it."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} murdered {b} in the court of {gash}, and stole its seal like a cutpurse.",
+        "{b} of {B} was butchered in {gash} in the year {year} by {A}, who will not hold the seal long.",
+        "In the year {year} {A} broke the peace of {gash}, killed {b} of {B}, and fled with the seal."
+      ]
+    },
     "MEGABEAST_PACIFIED": {
       "NEUTRAL": [
         "In the year {year} a seeker laid a trophy of the houses before {beast}, and it let them go.",

@@ -42,5 +42,10 @@ public enum EventType {
      */
     TOWN_SUBORNED,
     /** The bought settlement betrays the mortals to its house, and turns on strangers. */
-    TOWN_BETRAYED
+    TOWN_BETRAYED,
+    /**
+     * A seal lord ({@code figureB} of {@code houseB}) killed in its own court by another hand:
+     * {@code houseA}'s, or -1 for a beast of the deep. Its slayer carries off the seal.
+     */
+    LORD_SLAIN_IN_COURT
 }

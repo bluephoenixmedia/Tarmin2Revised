@@ -146,6 +146,17 @@ public final class PlaytestContext {
         }
     }
 
+    /**
+     * Whether a blow from {@code from} reaches {@code to}: the next tile over, with no wall between.
+     * A tile beside a target across a wall is not beside it at all, for a sword.
+     */
+    public boolean canStrike(GridPoint2 from, GridPoint2 to) {
+        if (from == null || to == null || Math.abs(to.x - from.x) + Math.abs(to.y - from.y) != 1) return false;
+        Direction dir = to.x > from.x ? Direction.EAST : to.x < from.x ? Direction.WEST
+                : to.y > from.y ? Direction.NORTH : Direction.SOUTH;
+        return !screen.getMaze().isWallBlocking(from.x, from.y, dir);
+    }
+
     public void steerToward(GridPoint2 target) {
         Player p = screen.getPlayer();
         Maze maze = screen.getMaze();
@@ -154,7 +165,7 @@ public final class PlaytestContext {
         GridPoint2 here = new GridPoint2((int) p.getPosition().x, (int) p.getPosition().y);
         GridPoint2 next = null;
 
-        if (Math.abs(target.x - here.x) + Math.abs(target.y - here.y) == 1) {
+        if (canStrike(here, target)) {
             next = target;
         } else {
             List<GridPoint2> best = Pathfinder.findPath(maze, p, here, target, true);

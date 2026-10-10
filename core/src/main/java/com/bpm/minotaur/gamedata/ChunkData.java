@@ -281,6 +281,7 @@ public class ChunkData {
             monster.setFigureId(data.figureId);
             monster.setSealRoad(data.sealRoad);
             monster.setSealRole(data.sealRole);
+            if (data.sealBearerName != null) monster.setDisplayName(data.sealBearerName);
             maze.addMonster(monster);
         }
 
@@ -647,6 +648,8 @@ public class ChunkData {
         public int figureId = -1;
         public int sealRoad = -1;
         public int sealRole;
+        /** A seal bearer's name ("Grask, bearing the seal of..."): it is no figure to be named again. */
+        public String sealBearerName;
 
         public MonsterData() {
         }
@@ -672,6 +675,7 @@ public class ChunkData {
             this.figureId = monster.getFigureId();
             this.sealRoad = monster.getSealRoad();
             this.sealRole = monster.getSealRole();
+            if (this.sealRole == Monster.SEAL_BEARER) this.sealBearerName = monster.getDisplayName();
         }
     }
 

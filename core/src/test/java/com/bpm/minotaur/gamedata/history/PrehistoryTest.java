@@ -118,7 +118,7 @@ public class PrehistoryTest {
             if (t == EventType.SLAIN_BY_PLAYER || t == EventType.SEEKER_FELL || t == EventType.MEGABEAST_SLAIN
                     || t == EventType.TARMIN_ASCENDANT || t == EventType.QUEST_DONE
                     || t == EventType.MEGABEAST_PACIFIED || t == EventType.TOWN_SUBORNED
-                    || t == EventType.TOWN_BETRAYED) continue;
+                    || t == EventType.TOWN_BETRAYED || t == EventType.LORD_SLAIN_IN_COURT) continue;
             assertTrue("never saw " + t, seen.contains(t));
         }
     }
