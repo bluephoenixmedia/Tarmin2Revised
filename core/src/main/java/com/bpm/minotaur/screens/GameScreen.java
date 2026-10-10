@@ -2170,9 +2170,15 @@ public class GameScreen extends BaseScreen {
                     ? history.world().gashHolder(gash) : null;
             gashAtWar = holder != null && history.world().activeWarCount(holder.id) > 0;
         }
-        warAudio.onTurn(com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(worldManager.currentEncounters(),
+        boolean shook = warAudio.onTurn(com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(worldManager.currentEncounters(),
                 worldManager.currentFronts(), history.warClock(), g.chunk, g.level,
                 player != null ? player.getFacing() : null, gashAtWar), soundManager);
+        if (shook && g.level >= 2) {
+            if (worldManager.getLightingManager() != null) worldManager.getLightingManager().tremble(0.9f);
+            if (com.badlogic.gdx.math.MathUtils.random() < 0.35f) {
+                eventManager.addEvent(new GameEvent("The stone shudders. Dust sifts down from the ceiling.", 3f));
+            }
+        }
     }
 
     private void triggerAmbientMonsterSound() {

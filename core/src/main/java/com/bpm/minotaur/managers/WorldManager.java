@@ -1679,7 +1679,7 @@ public class WorldManager {
         long clock = history.warClock();
         if (clock != encountersAt || currentLevel != encountersLevel
                 || (currentPlayerChunkId != null && !currentPlayerChunkId.equals(encountersFor))) {
-            encountersNow = history.encounters(currentPlayerChunkId, currentLevel == 1);
+            encountersNow = history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats());
             encountersAt = clock;
             encountersLevel = currentLevel;
             encountersFor = currentPlayerChunkId == null ? null : new GridPoint2(currentPlayerChunkId);

@@ -383,7 +383,13 @@ public final class HistoryManager {
      */
     public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
             boolean surface) {
-        return com.bpm.minotaur.gamedata.history.war.EncounterScheduler.at(world, warClock, encounters, playerChunk, surface);
+        return encounters(playerChunk, surface, null);
+    }
+
+    /** As {@link #encounters(com.badlogic.gdx.math.GridPoint2, boolean)}; {@code seats} send columns toward their fronts. */
+    public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
+            boolean surface, com.bpm.minotaur.gamedata.history.war.SeatMap seats) {
+        return com.bpm.minotaur.gamedata.history.war.EncounterScheduler.at(world, warClock, encounters, playerChunk, surface, seats);
     }
 
     /**

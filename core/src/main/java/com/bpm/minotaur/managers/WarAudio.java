@@ -25,13 +25,21 @@ public final class WarAudio {
     private final Map<WarSoundscape.Bed, Float> level = new EnumMap<>(WarSoundscape.Bed.class);
     private WarSoundscape.Mix target = new WarSoundscape.Mix();
 
-    /** This turn's mix: the beds fade toward it, and its one-shots may sound now. */
-    public void onTurn(WarSoundscape.Mix mix, SoundManager sounds) {
+    /**
+     * This turn's mix: the beds fade toward it, and its one-shots may sound now. Returns true when a
+     * thud that shakes the stone sounded, for the caller to tremble the lights (W9).
+     */
+    public boolean onTurn(WarSoundscape.Mix mix, SoundManager sounds) {
         target = mix == null ? new WarSoundscape.Mix() : mix;
-        if (sounds == null) return;
+        if (sounds == null) return false;
+        boolean shook = false;
         for (WarSoundscape.Shot s : target.shots) {
-            if (MathUtils.random() < s.chance) sounds.playWarSound(s.key, s.volume, s.pan);
+            if (MathUtils.random() < s.chance) {
+                sounds.playWarSound(s.key, s.volume, s.pan);
+                shook |= s.tremor;
+            }
         }
+        return shook;
     }
 
     /** Every frame: beds ease toward the mix. {@code ducked}: Tarmin is speaking. */

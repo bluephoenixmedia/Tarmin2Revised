@@ -75,7 +75,28 @@ public class LightingManager {
     /**
      * Updates all active lights, animation wave accumulators, and player light positioning.
      */
+    /** Seconds the lights still tremble for: a battle overhead shaking the stone (Living War W9). */
+    private float tremor;
+    private float tremorTime;
+    static final float TREMOR_DIP = 0.35f;
+
+    /** The stone shakes: every light gutters for {@code seconds}. */
+    public void tremble(float seconds) {
+        tremor = Math.max(tremor, seconds);
+    }
+
+    /** How much of its light a source gives now: one, or less while the stone shakes. */
+    float tremorFactor() {
+        if (tremor <= 0f) return 1f;
+        float fade = Math.min(1f, tremor / 0.4f);
+        return 1f - TREMOR_DIP * fade * (0.5f + 0.5f * (float) Math.abs(Math.sin(tremorTime * 37f)));
+    }
+
     public void update(float delta, Player player, Maze maze) {
+        if (tremor > 0f) {
+            tremor = Math.max(0f, tremor - delta);
+            tremorTime += delta;
+        }
         if (player != null) {
             updatePlayerLight(player, maze);
         }
@@ -297,6 +318,15 @@ public class LightingManager {
         // 3. Evaluate traveling merchant light
         if (shopkeeperLight.isActive()) {
             applyLightSource(shopkeeperLight, x, y, maze, outColor);
+        }
+
+        // 4. The stone shaking under a battle overhead makes every flame gutter.
+        float shake = tremorFactor();
+        if (shake < 1f) {
+            float floorR = baseCol.r * baseAmbient, floorG = baseCol.g * baseAmbient, floorB = baseCol.b * baseAmbient;
+            outColor.r = floorR + (outColor.r - floorR) * shake;
+            outColor.g = floorG + (outColor.g - floorG) * shake;
+            outColor.b = floorB + (outColor.b - floorB) * shake;
         }
 
         // Clamp values to valid visual HDR range

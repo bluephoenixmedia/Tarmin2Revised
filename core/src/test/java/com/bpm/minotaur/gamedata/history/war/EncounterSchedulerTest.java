@@ -157,6 +157,31 @@ public class EncounterSchedulerTest {
     }
 
     @Test
+    public void aColumnMarchesTowardItsWarsFront() {
+        HistoryManager h = HistoryManager.create(21L, catalog);
+        HistoryWorld w = h.world();
+        GridPoint2 castle = new GridPoint2(0, 30);
+        SeatMap seats = SeatMap.of(w, new com.bpm.minotaur.generation.ShelterRoads(21L, castle), castle, 21L);
+        EncounterLedger ledger = new EncounterLedger();
+        int checked = 0;
+        for (long t = 0; t < 8000 && checked < 5; t++) {
+            for (Encounter e : EncounterScheduler.at(w, t, ledger, walk(t), true, seats)) {
+                if (e.kind != Encounter.Kind.COLUMN || t != e.start) continue;
+                GridPoint2 front = null;
+                for (Front f : FrontPlanner.fronts(w, seats, e.start)) if (f.warId == e.warId) front = f.center;
+                assertNotNull(front);
+                GridPoint2 mid = new GridPoint2((e.from.x + e.to.x) / 2, (e.from.y + e.to.y) / 2);
+                int before = EncounterScheduler.distance(e.from, front);
+                int after = EncounterScheduler.distance(e.to, front);
+                assertTrue("marching toward " + front + ": " + e, after <= before || EncounterScheduler.distance(mid, front) <= 1);
+                assertEquals("20 turns a chunk", (2L * EncounterScheduler.COLUMN_REACH + 1) * 20, e.end - e.start);
+                checked++;
+            }
+        }
+        assertTrue("columns seen: " + checked, checked > 0);
+    }
+
+    @Test
     public void peaceIsNeverSilentWhereAGrudgeIsHeld() {
         for (long seed = 1; seed <= 200; seed++) {
             HistoryWorld w = HistorySimulator.prehistory(seed, catalog);

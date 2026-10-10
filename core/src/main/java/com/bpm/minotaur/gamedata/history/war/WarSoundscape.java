@@ -39,12 +39,19 @@ public final class WarSoundscape {
         public final float chance;
         public final float volume;
         public final float pan;
+        /** Underground: the stone shakes with it, and the lights tremble (W9). */
+        public final boolean tremor;
 
         Shot(String key, float chance, float volume, float pan) {
+            this(key, chance, volume, pan, false);
+        }
+
+        Shot(String key, float chance, float volume, float pan, boolean tremor) {
             this.key = key;
             this.chance = chance;
             this.volume = volume;
             this.pan = pan;
+            this.tremor = tremor;
         }
     }
 
@@ -131,7 +138,7 @@ public final class WarSoundscape {
         }
         if (!surface && gashAtWar) {
             m.raise(Bed.UNDER, UNDER_GASH, 0f);
-            shot(m, "thud_distant_1", 0.05f, 0.5f, 0f);
+            tremor(m, "thud_distant_1", 0.05f, 0.5f);
         }
         return m;
     }
@@ -145,6 +152,9 @@ public final class WarSoundscape {
             m.raise(Bed.FAR, FAR_3, pan);
             shot(m, "clash_sword", 0.15f, 0.5f, pan);
             shot(m, "volley_archers", 0.06f, 0.5f, pan);
+            // Men crying out, and the beasts of the roster, from the fight next door.
+            shot(m, "monster_grunt_light", 0.08f, 0.45f, pan);
+            shot(m, "monster_roar", 0.04f, 0.4f, pan);
             shot(m, "horn_battle", 0.03f, 0.45f, pan);
         } else if (d <= 3) {
             m.raise(Bed.FAR, d == 2 ? FAR_2 : FAR_3, pan);
@@ -160,7 +170,14 @@ public final class WarSoundscape {
     private static void under(Mix m, int d) {
         if (d > UNDER_REACH) return;
         m.raise(Bed.UNDER, d <= 1 ? UNDER_CLOSE : UNDER_FAR, 0f);
-        shot(m, d <= 1 ? "thud_distant_1" : "thud_distant_2", 0.04f, d <= 1 ? 0.5f : 0.3f, 0f);
+        if (d <= 1) tremor(m, "thud_distant_1", 0.04f, 0.5f);
+        else shot(m, "thud_distant_2", 0.04f, 0.3f, 0f);
+    }
+
+    /** A thud close enough overhead to shake the stone. */
+    private static void tremor(Mix m, String key, float chance, float volume) {
+        m.shots.removeIf(s -> s.key.equals(key));
+        m.shots.add(new Shot(key, chance, volume, 0f, true));
     }
 
     /** Keeps the loudest of each one-shot. */

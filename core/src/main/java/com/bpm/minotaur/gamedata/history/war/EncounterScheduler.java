@@ -30,7 +30,7 @@ public final class EncounterScheduler {
     public static final int RAID_TURNS = 60;
     public static final int BATTLE_TURNS = 150;
     /** Turns a column takes to cross one chunk; it crosses {@code 2 * COLUMN_REACH + 1} of them. */
-    public static final int COLUMN_CHUNK_TURNS = 30;
+    public static final int COLUMN_CHUNK_TURNS = 20;
     static final int COLUMN_REACH = 2;
     /** A distant fight outlasts its slot, so one is always in earshot while a war is on (W4). */
     public static final int DISTANT_TURNS = SLOT + 2 * JITTER + 40;
@@ -64,6 +64,12 @@ public final class EncounterScheduler {
      */
     public static List<Encounter> at(HistoryWorld world, long clock, EncounterLedger ledger, GridPoint2 player,
             boolean surface) {
+        return at(world, clock, ledger, player, surface, null);
+    }
+
+    /** As {@link #at(HistoryWorld, long, EncounterLedger, GridPoint2, boolean)}; {@code seats}, when known, send columns toward their front. */
+    public static List<Encounter> at(HistoryWorld world, long clock, EncounterLedger ledger, GridPoint2 player,
+            boolean surface, SeatMap seats) {
         List<Encounter> out = new ArrayList<>();
         if (world == null || ledger == null) return out;
         first(world, clock, ledger, player, surface, out);
@@ -84,7 +90,7 @@ public final class EncounterScheduler {
             }
             GridPoint2 origin = new GridPoint2(a.x, a.y);
             if (a.kind != null) {
-                Encounter e = build(world, k, start, Encounter.Kind.valueOf(a.kind), origin);
+                Encounter e = build(world, k, start, Encounter.Kind.valueOf(a.kind), origin, seats);
                 if (e != null && e.activeAt(clock) && !ledger.isSpent(e)) out.add(e);
             }
             Encounter d = distant(world, k, start, player != null ? player : origin);
@@ -138,7 +144,8 @@ public final class EncounterScheduler {
         return Encounter.Kind.RAID;
     }
 
-    private static Encounter build(HistoryWorld world, long k, long start, Encounter.Kind kind, GridPoint2 origin) {
+    private static Encounter build(HistoryWorld world, long k, long start, Encounter.Kind kind, GridPoint2 origin,
+            SeatMap seats) {
         Random r = rng(world.seed, k, 5);
         War w = pickWar(world, r);
         switch (kind) {
@@ -156,6 +163,12 @@ public final class EncounterScheduler {
                 if (w == null) return null;
                 int house = r.nextBoolean() ? w.attackerId : w.defenderId;
                 int[] dir = DIRS[r.nextInt(DIRS.length)];
+                // Bound for its war's front, where the seats are known (W2).
+                GridPoint2 front = frontOf(world, seats, w, start);
+                if (front != null && !front.equals(origin)) {
+                    int fx = front.x - origin.x, fy = front.y - origin.y;
+                    dir = Math.abs(fx) >= Math.abs(fy) ? new int[]{Integer.signum(fx), 0} : new int[]{0, Integer.signum(fy)};
+                }
                 int side = r.nextInt(3) - 1;
                 GridPoint2 from = new GridPoint2(origin.x - dir[0] * COLUMN_REACH + dir[1] * side,
                         origin.y - dir[1] * COLUMN_REACH + dir[0] * side);
@@ -215,6 +228,12 @@ public final class EncounterScheduler {
             out.add(new Encounter(Encounter.Kind.CAMP, -2, w.id, w.defenderId, -1, 0, Long.MAX_VALUE, cb, cb));
         }
         return out;
+    }
+
+    private static GridPoint2 frontOf(HistoryWorld world, SeatMap seats, War w, long clock) {
+        if (seats == null) return null;
+        for (Front f : FrontPlanner.fronts(world, seats, clock)) if (f.warId == w.id) return f.center;
+        return null;
     }
 
     /** Chebyshev distance in chunks: how far off a fight is heard from (W9). */

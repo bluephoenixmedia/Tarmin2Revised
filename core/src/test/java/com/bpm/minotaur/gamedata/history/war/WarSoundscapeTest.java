@@ -83,6 +83,22 @@ public class WarSoundscapeTest {
     }
 
     @Test
+    public void nextDoorMenCryOutAndBeastsRoar() {
+        WarSoundscape.Mix m = hear(fightAt(0, 1), 1);
+        assertTrue(shot(m, "monster_grunt_light"));
+        assertTrue(shot(m, "monster_roar"));
+    }
+
+    @Test
+    public void aFightJustOverheadShakesTheStone() {
+        boolean close = false, far = false;
+        for (WarSoundscape.Shot s : hear(fightAt(1, 0), 2).shots) close |= s.tremor;
+        for (WarSoundscape.Shot s : hear(fightAt(3, 0), 2).shots) far |= s.tremor;
+        assertTrue("next door overhead, the lights gutter", close);
+        assertFalse("three chunks off, only a rumble", far);
+    }
+
+    @Test
     public void aGashAtWarShakesWhateverTheDistance() {
         WarSoundscape.Mix m = WarSoundscape.mix(Collections.emptyList(), Collections.emptyList(), 10, ME, 3,
                 Direction.NORTH, true);

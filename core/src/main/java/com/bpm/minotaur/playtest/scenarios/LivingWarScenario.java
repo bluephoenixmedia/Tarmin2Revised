@@ -140,5 +140,53 @@ public final class LivingWarScenario implements PlaytestScenario {
             ctx.log("Scenery in the chunk now: " + (here == null ? 0 : here.getScenery().size()));
         });
         script.shot("lw04_later", ctx);
+
+        // A column on the march: find one, and stand in its way.
+        Encounter[] column = {null};
+        script.until("wait for a column", 6000, () -> {
+            if (ctx.getFrame() % 2 != 0) return false;
+            for (Encounter e : ctx.getWorldManager().currentEncounters()) {
+                if (e.kind == Encounter.Kind.COLUMN) column[0] = e;
+            }
+            if (column[0] != null) return true;
+            ctx.press(Input.Keys.PERIOD);
+            return false;
+        });
+        script.once("stand in its way", () -> {
+            long clock = ctx.getWorldManager().getHistory().warClock();
+            ctx.log("Column: " + column[0]);
+            ctx.getGameScreen().travelToChunk(column[0].chunkAt(clock), new GridPoint2(16, 16));
+        });
+        script.until("arrive at the column", 300, () -> shown(ctx));
+        script.key("a turn passes", Input.Keys.PERIOD, ctx);
+        script.wait("they come on", 10);
+        script.once("a column marches through", () -> {
+            int marching = 0;
+            for (Monster m : ctx.getMaze().getMonsters().values()) if (m.isWarBand() && m.getMarchTarget() != null) marching++;
+            ctx.log("Soldiers on the march: " + marching);
+            ctx.assertTrue(marching >= 8, "a column of 8-15");
+        });
+        script.shot("lw05_column", ctx);
+
+        // A war camp beside a front.
+        script.once("go to a camp", () -> {
+            java.util.List<Encounter> camps = ctx.getWorldManager().currentCamps();
+            ctx.assertTrue(!camps.isEmpty(), "every war has its camps");
+            ctx.log("Camp: " + camps.get(0));
+            ctx.getGameScreen().travelToChunk(camps.get(0).from, new GridPoint2(16, 16));
+        });
+        script.until("arrive at the camp", 300, () -> shown(ctx));
+        script.key("a turn passes", Input.Keys.PERIOD, ctx);
+        script.wait("the camp settles", 10);
+        script.once("tents, fires and sentries", () -> {
+            int tents = 0;
+            for (com.bpm.minotaur.gamedata.Scenery sc : ctx.getMaze().getScenery().values()) {
+                if ("camp_tent".equals(sc.getPropId())) tents++;
+            }
+            ctx.log("Camp tents: " + tents + ", sentries: " + ctx.countWarBand());
+            ctx.assertTrue(tents >= 1, "a camp's tents");
+            ctx.assertTrue(ctx.countWarBand() >= 3, "its sentries");
+        });
+        script.shot("lw06_camp", ctx);
     }
 }

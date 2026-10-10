@@ -226,6 +226,53 @@ public class EncounterDirectorTest {
     }
 
     @Test
+    public void raidersBurnWhatStands() {
+        for (int i = 0; i < 4; i++) {
+            Scenery tree = new Scenery(Scenery.SceneryType.PROP, 16 + i, 18);
+            tree.setPropId("dead_tree");
+            maze.addScenery(tree);
+        }
+        Encounter raid = new Encounter(Encounter.Kind.RAID, 6, war.id, war.attackerId, war.defenderId, 0, 100, HERE, HERE);
+        turn(List.of(raid));
+        int trees = 0, fires = 0;
+        for (Scenery s : maze.getScenery().values()) {
+            if ("dead_tree".equals(s.getPropId())) trees++;
+            if ("campfire".equals(s.getPropId())) fires++;
+        }
+        assertEquals("three of the four trees put to the torch", 1, trees);
+        assertEquals(EncounterDirector.RAID_BURNS, fires);
+    }
+
+    @Test
+    public void unwatchedTwoBandsStillBreakInThirtyToSixtyTurns() {
+        Encounter e = skirmish(1000);
+        turn(List.of(e));
+        int turns = 1;
+        while (!history.encounterLedger().isSpent(e) && turns < 200) {
+            turn(List.of(e));
+            turns++;
+        }
+        assertTrue("broke after " + turns + " turns", turns >= 30 && turns <= 60);
+    }
+
+    @Test
+    public void aBattlefieldIsKeptInTheChunkSave() {
+        Encounter e = skirmish(1000);
+        turn(List.of(e));
+        for (Monster m : band(war.defenderId)) kill(m);
+        turn(List.of(e));
+        com.bpm.minotaur.gamedata.ChunkData saved = new com.bpm.minotaur.gamedata.ChunkData(maze);
+        com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing field = history.encounterLedger().dressings.get(0);
+        for (int i = 0; i < field.props.size(); i++) {
+            boolean kept = false;
+            for (com.bpm.minotaur.gamedata.ChunkData.SceneryData d : saved.scenery) {
+                if (d.x == field.tiles.get(2 * i) && d.y == field.tiles.get(2 * i + 1) && field.props.get(i).equals(d.propId)) kept = true;
+            }
+            assertTrue("the " + field.props.get(i) + " is in the chunk save", kept);
+        }
+    }
+
+    @Test
     public void theShelterIsLeftInPeace() {
         director.onTurn(history, HERE, 1, true, maze, PLAYER, List.of(skirmish(1000)), Collections.emptyList(), recruiter, props, null);
         assertTrue(maze.getMonsters().isEmpty());

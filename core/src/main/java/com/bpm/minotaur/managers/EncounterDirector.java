@@ -49,6 +49,12 @@ public final class EncounterDirector {
     static final int RAIDERS_MIN = 4;
     static final int RAIDERS_MAX = 6;
     static final int SENTRIES = 3;
+    /** Things a raid sets alight, and how far from its centre it looks for them. */
+    static final int RAID_BURNS = 3;
+    static final int RAID_REACH = 8;
+    /** Props never put to the torch: the way in and out, and the war's own. */
+    private static final java.util.Set<String> UNBURNABLE = new java.util.HashSet<>(java.util.Arrays.asList(
+            "campfire", "brazier", "camp_tent", "war_banner", "castle_gate", "castle_billboard"));
     /** A war-band breaks when this share of it is left standing. */
     static final float ROUT_AT = 0.4f;
     /** Turns of fighting before the weaker band gives up the ground anyway. */
@@ -205,7 +211,17 @@ public final class EncounterDirector {
         if (centre == null) return null;
         EncounterLedger.Dressing fires = dressing(AFTERMATH, ledger);
         fires.clearAtSleep = ledger.sleeps + AFTERMATH_SLEEPS;
-        for (int i = 0; i < 3; i++) place(maze, props, "campfire", around(maze, centre, 3, r), fires);
+        // They burn what stands here -- trees, stores, shrines -- and light the rest of the ground.
+        int burnt = 0;
+        for (GridPoint2 at : burnable(maze, centre, RAID_REACH)) {
+            if (burnt >= RAID_BURNS) break;
+            maze.removeScenery(at.x, at.y);
+            if (place(maze, props, "campfire", at, fires)) {
+                maze.addBlood(at.x, at.y, 0.2f);
+                burnt++;
+            }
+        }
+        for (int i = burnt; i < RAID_BURNS; i++) place(maze, props, "campfire", around(maze, centre, 3, r), fires);
         keep(ledger, fires);
         int n = RAIDERS_MIN + r.nextInt(RAIDERS_MAX - RAIDERS_MIN + 1);
         for (int i = 0; i < n; i++) {
@@ -391,6 +407,21 @@ public final class EncounterDirector {
             }
             it.remove();
         }
+    }
+
+    /** What stands near {@code centre} that a raid can burn, nearest first. */
+    private static List<GridPoint2> burnable(Maze maze, GridPoint2 centre, int reach) {
+        List<GridPoint2> out = new ArrayList<>();
+        for (Map.Entry<GridPoint2, Scenery> e : maze.getScenery().entrySet()) {
+            Scenery s = e.getValue();
+            GridPoint2 at = e.getKey();
+            if (s == null || s.isTownsfolk() || s.isCorpse() || UNBURNABLE.contains(s.getPropId())) continue;
+            if (Math.abs(at.x - centre.x) > reach || Math.abs(at.y - centre.y) > reach) continue;
+            if (maze.getGates().containsKey(at) || maze.getMonsters().containsKey(at)) continue;
+            out.add(at);
+        }
+        out.sort(java.util.Comparator.comparingInt(a -> Math.abs(a.x - centre.x) + Math.abs(a.y - centre.y)));
+        return out;
     }
 
     private EncounterLedger.Dressing dressing(String kind, EncounterLedger ledger) {
