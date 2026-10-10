@@ -208,6 +208,9 @@ public class PlayerStats {
         return this.experience >= this.experienceToNextLevel;
     }
 
+    /** The least health a level gives, whatever the seeker's Constitution. */
+    public static final int MIN_HP_PER_LEVEL = 2;
+
     public void performLevelUp() {
         if (!canLevelUp())
             return;
@@ -216,8 +219,10 @@ public class PlayerStats {
         this.level++;
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
-        // HP scales with CON, MP scales with INT. Base 3 ± 1, minimum 1.
-        int hpIncrease = Math.max(1, 2 + getConModifier() + new Random().nextInt(3));
+        // HP scales with CON, MP scales with INT. HP: base 5 ± 1, at least MIN_HP_PER_LEVEL. It was
+        // 3 ± 1, and the seal-lord duels found seekers of levels 13-23 at 47-77 hit points against
+        // strata whose beasts and courts strike for twenty a blow (Houses of the Maze balance).
+        int hpIncrease = Math.max(MIN_HP_PER_LEVEL, 4 + getConModifier() + new Random().nextInt(3));
         int mpIncrease = Math.max(1, 2 + getIntModifier() + new Random().nextInt(3));
 
         this.maxHP += hpIncrease;
