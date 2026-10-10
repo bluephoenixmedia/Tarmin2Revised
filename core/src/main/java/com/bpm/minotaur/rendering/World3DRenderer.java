@@ -1845,6 +1845,11 @@ public class World3DRenderer implements Disposable {
     }
 
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
+        shader.setUniformMatrix("u_worldTrans", identityMatrix);
+        shader.setUniformf("u_retroBorder", 0.0f);
+        if (isRetro) {
+            shader.setUniformf("u_retroColor", Color.WHITE);
+        }
         mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
 
         List<Renderable> entities = new ArrayList<>();
@@ -2170,6 +2175,11 @@ public class World3DRenderer implements Disposable {
                     for (Mesh mesh : forestBushModel.meshes) {
                         mesh.render(shader, GL20.GL_TRIANGLES);
                     }
+                    shader.setUniformMatrix("u_worldTrans", identityMatrix);
+                    shader.setUniformf("u_retroBorder", 0.0f);
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", Color.WHITE);
+                    }
                     continue;
                 }
                 Texture tex = sc.getTexture();
@@ -2368,6 +2378,11 @@ public class World3DRenderer implements Disposable {
                     for (Mesh mesh : ladderModel.meshes) {
                         mesh.render(shader, GL20.GL_TRIANGLES);
                     }
+                    shader.setUniformMatrix("u_worldTrans", identityMatrix);
+                    shader.setUniformf("u_retroBorder", 0.0f);
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", Color.WHITE);
+                    }
                 } else {
                     Texture tex = isUp ? ladderUpTexture : ladderDownTexture;
                     TextureRegion region = new TextureRegion(tex);
@@ -2444,6 +2459,11 @@ public class World3DRenderer implements Disposable {
                     }
                 }
             }
+        }
+        shader.setUniformMatrix("u_worldTrans", identityMatrix);
+        shader.setUniformf("u_retroBorder", 0.0f);
+        if (isRetro) {
+            shader.setUniformf("u_retroColor", Color.WHITE);
         }
     }
 
