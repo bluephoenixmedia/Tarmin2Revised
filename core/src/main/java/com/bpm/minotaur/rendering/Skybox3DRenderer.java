@@ -2,6 +2,7 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -79,6 +80,11 @@ public class Skybox3DRenderer {
     private Model beaconModel;
     private final com.badlogic.gdx.utils.Array<ModelInstance> beaconPool = new com.badlogic.gdx.utils.Array<>();
     private int beaconsShown;
+    // The war's smoke (Living War W10): soft, unlit billboards stacked into a plume per fight.
+    private com.badlogic.gdx.graphics.g3d.decals.DecalBatch smokeBatch;
+    private Texture smokeTexture;
+    private final com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g3d.decals.Decal> smokePool = new com.badlogic.gdx.utils.Array<>();
+    private int smokeShown;
 
     private WeatherType currentWeather = WeatherType.CLEAR;
 
@@ -286,6 +292,131 @@ public class Skybox3DRenderer {
         }
     }
 
+    /** Fronts this far off still raise smoke over the horizon (W10). */
+    private static final int WAR_SMOKE_RANGE = 24;
+    private static final int WAR_SMOKE_MAX = 12;
+    private static final float WAR_SMOKE_ELEVATION = 30f;
+    private float smokeTime;
+
+    /** Every fight under way that the player could see the smoke of: fronts, skirmishes, raids, far battles. */
+    private void gatherWarSmoke(com.bpm.minotaur.managers.WorldManager worldManager, com.badlogic.gdx.math.GridPoint2 chunk,
+            com.bpm.minotaur.gamedata.player.Player player) {
+        worldSkyState.warSmokeCount = 0;
+        if (worldManager == null || worldManager.getCurrentLevel() != 1 || chunk == null) return;
+        if (worldSkyState.warSmoke == null) worldSkyState.warSmoke = new float[WAR_SMOKE_MAX * 2];
+        com.bpm.minotaur.gamedata.Maze here = worldManager.getCurrentMaze();
+        float w = (here != null && here.getWidth() > 0) ? here.getWidth() : 1f;
+        float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 1f;
+        float px = chunk.x + player.getPosition().x / w - 0.5f;
+        float py = chunk.y + player.getPosition().y / h - 0.5f;
+        long clock = worldManager.getHistory().warClock();
+        for (com.bpm.minotaur.gamedata.history.war.Front f : worldManager.currentFronts()) {
+            addSmoke(f.center, px, py, WAR_SMOKE_RANGE);
+        }
+        for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
+            if (e.fighting()) addSmoke(e.chunkAt(clock), px, py, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.EARSHOT);
+        }
+    }
+
+    private void addSmoke(com.badlogic.gdx.math.GridPoint2 at, float px, float py, int range) {
+        if (worldSkyState.warSmokeCount >= WAR_SMOKE_MAX) return;
+        float dx = at.x - px;
+        float dy = at.y - py;
+        // The fight in the player's own chunk is on the ground, not the horizon.
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 0.75f || Math.hypot(dx, dy) > range) return;
+        int i = worldSkyState.warSmokeCount++;
+        worldSkyState.warSmoke[2 * i] = dx;
+        worldSkyState.warSmoke[2 * i + 1] = dy;
+    }
+
+    /** Puffs per plume, bottom to top: each wider, fainter and further downwind than the last. */
+    private static final int PLUME_PUFFS = 11;
+
+    /** A soft puff of smoke, white, for tinting: dense in the middle, ragged at the edges. */
+    private Texture smokeTexture() {
+        if (smokeTexture != null) return smokeTexture;
+        int w = 64, h = 64;
+        com.badlogic.gdx.graphics.Pixmap px = new com.badlogic.gdx.graphics.Pixmap(w, h, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
+        px.setBlending(com.badlogic.gdx.graphics.Pixmap.Blending.None);
+        java.util.Random r = new java.util.Random(0x5E0CEL);
+        float[] lumps = new float[12 * 3];
+        for (int i = 0; i < 12; i++) {
+            lumps[3 * i] = 0.3f + 0.4f * r.nextFloat();
+            lumps[3 * i + 1] = 0.3f + 0.4f * r.nextFloat();
+            lumps[3 * i + 2] = 0.12f + 0.14f * r.nextFloat();
+        }
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                float u = (x + 0.5f) / w, v = (y + 0.5f) / h;
+                float a = 0f;
+                for (int i = 0; i < 12; i++) {
+                    float dx = u - lumps[3 * i], dy = v - lumps[3 * i + 1], rr = lumps[3 * i + 2];
+                    a += (float) Math.exp(-(dx * dx + dy * dy) / (rr * rr));
+                }
+                float edge = (float) Math.exp(-((u - 0.5f) * (u - 0.5f) + (v - 0.5f) * (v - 0.5f)) / 0.06f);
+                a = MathUtils.clamp(a * 0.35f * edge * 1.6f, 0f, 1f);
+                px.drawPixel(x, y, Color.rgba8888(1f, 1f, 1f, a));
+            }
+        }
+        smokeTexture = new Texture(px);
+        smokeTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        px.dispose();
+        return smokeTexture;
+    }
+
+    private com.badlogic.gdx.graphics.g3d.decals.Decal smokePuff(int i) {
+        while (smokePool.size <= i) {
+            com.badlogic.gdx.graphics.g3d.decals.Decal d = com.badlogic.gdx.graphics.g3d.decals.Decal.newDecal(1f, 1f,
+                    new com.badlogic.gdx.graphics.g2d.TextureRegion(smokeTexture()), true);
+            smokePool.add(d);
+        }
+        return smokePool.get(i);
+    }
+
+    /**
+     * Stands a plume on the bearing of each fight (W10): soot-black by day, lit orange from below by
+     * night, leaning downwind as it climbs. Nearer fights stand closer and wider.
+     */
+    private void placeWarSmoke(SkyState state, float camX, float camZ, float brightness, float delta) {
+        smokeShown = 0;
+        smokeTime = Float.isNaN(state.timeOverride) ? smokeTime + delta : state.timeOverride;
+        if (state.warSmoke == null) return;
+        boolean night = brightness < 0.45f;
+        for (int k = 0; k < state.warSmokeCount; k++) {
+            float dx = state.warSmoke[2 * k];
+            float dz = -state.warSmoke[2 * k + 1];
+            float chunks = (float) Math.sqrt(dx * dx + dz * dz);
+            if (chunks < 0.01f) continue;
+            float near = 1f - MathUtils.clamp(chunks / WAR_SMOKE_RANGE, 0f, 1f);
+            float dist = LANDMARK_DISTANCE * (0.42f + 0.5f * (1f - near));
+            float base = (0.075f + 0.06f * near) * dist;
+            float height = dist * (float) Math.tan(Math.toRadians(WAR_SMOKE_ELEVATION + 12f * near));
+            float dirX = dx / chunks;
+            float dirZ = dz / chunks;
+            float sideX = -dirZ;
+            float sideZ = dirX;
+            for (int p = 0; p < PLUME_PUFFS; p++) {
+                float t = p / (float) (PLUME_PUFFS - 1);
+                // Each puff rises and widens on its own clock, so the column churns rather than sits.
+                float churn = (smokeTime * 0.08f + k * 0.37f + p * 0.21f) % 1f;
+                float rise = MathUtils.clamp(t + churn * (1f / PLUME_PUFFS), 0f, 1f);
+                float size = base * (1f + 1.8f * rise);
+                float lean = base * 3.5f * rise * rise * (0.8f + 0.2f * MathUtils.sin(smokeTime * 0.3f + k));
+                com.badlogic.gdx.graphics.g3d.decals.Decal d = smokePuff(smokeShown++);
+                d.setDimensions(size, size * 1.1f);
+                d.setPosition(camX + dirX * dist + sideX * lean, -6f + size * 0.4f + rise * height, camZ + dirZ * dist + sideZ * lean);
+                float alpha = (0.8f - 0.55f * rise) * (0.65f + 0.35f * near);
+                if (night) {
+                    float fire = MathUtils.clamp(1f - rise * 2.2f, 0f, 1f);
+                    d.setColor(0.10f + 0.85f * fire, 0.06f + 0.33f * fire, 0.05f + 0.08f * fire, alpha);
+                } else {
+                    d.setColor(0.07f, 0.06f, 0.055f, alpha);
+                }
+                d.lookAt(camera.position, camera.up);
+            }
+        }
+    }
+
     /**
      * Updates celestial positions, weather dynamics, and camera alignment.
      */
@@ -362,6 +493,7 @@ public class Skybox3DRenderer {
                     chunk.x + player.getPosition().x / w - 0.5f, chunk.y + player.getPosition().y / h - 0.5f,
                     com.bpm.minotaur.generation.WorldConstants.BEACON_RANGE_CHUNKS);
         }
+        gatherWarSmoke(worldManager, chunk, player);
 
         updateSky(delta, worldSkyState);
     }
@@ -406,6 +538,12 @@ public class Skybox3DRenderer {
         public float castleDY;
         /** The player stands in the castle chunk, where the world billboard is drawn. */
         public boolean inCastleChunk;
+        /**
+         * Where the war is burning (Living War W10): chunk offsets from the player as x,y pairs
+         * (x east, y north), {@link #warSmokeCount} of them. Null for none.
+         */
+        public float[] warSmoke;
+        public int warSmokeCount;
         /** Shelter and seal-site beacons in range, or null for none. */
         public java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> beacons;
         /**
@@ -543,6 +681,7 @@ public class Skybox3DRenderer {
         }
 
         placeBeacons(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f);
+        placeWarSmoke(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f, delta);
 
         castleHidden = false;
         if (castleInstance != null && state.hasCastleSite) {
@@ -711,6 +850,19 @@ public class Skybox3DRenderer {
         }
 
         modelBatch.end();
+        if (smokeShown > 0) {
+            if (smokeBatch == null) {
+                smokeBatch = new com.badlogic.gdx.graphics.g3d.decals.DecalBatch(
+                        new com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy(camera));
+            }
+            // Colour only: the smoke must not thin the frame's alpha, or a capture shows sky through it.
+            Gdx.gl.glDepthMask(false);
+            Gdx.gl.glColorMask(true, true, true, false);
+            for (int i = 0; i < smokeShown; i++) smokeBatch.add(smokePool.get(i));
+            smokeBatch.flush();
+            Gdx.gl.glColorMask(true, true, true, true);
+            Gdx.gl.glDepthMask(true);
+        }
 
         // Clear depth buffer so subsequent scene passes (World3D mesh or 2D raycaster)
         // always render cleanly OVER the skybox and landmarks.
@@ -729,6 +881,8 @@ public class Skybox3DRenderer {
         if (mountainModel != null) mountainModel.dispose();
         if (domeModel     != null) domeModel.dispose();
         if (beaconModel   != null) beaconModel.dispose();
+        if (smokeBatch != null) smokeBatch.dispose();
+        if (smokeTexture != null) smokeTexture.dispose();
         if (stormShader   != null) stormShader.dispose();
     }
 }

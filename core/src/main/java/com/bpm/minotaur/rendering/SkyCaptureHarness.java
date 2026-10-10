@@ -117,6 +117,11 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             knell(new Shot("20_knell_080", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.80f),
             knell(new Shot("21_knell_130", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 1.30f),
             knell(new Shot("22_knell_220", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 2.20f),
+
+            // The Living War (W10): smoke over the fights ahead -- a skirmish next door, a far
+            // battle, a front on the horizon -- black by day, lit from below by night.
+            new Shot("23_noon_war_smoke", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("24_night_war_smoke", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
     };
 
     private static Shot knell(Shot shot, float age) {
@@ -246,6 +251,12 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         state.chunkX = 0;
         state.timeOverride = CAPTURE_TIME;
         state.beacons = shot.name.contains("beacons") ? sampleBeacons() : null;
+        if (shot.name.contains("war_smoke")) {
+            state.warSmoke = new float[]{-1f, 2f, 2f, 4.5f, 0.5f, 9f, -6f, 14f};
+            state.warSmokeCount = 4;
+        } else {
+            state.warSmokeCount = 0;
+        }
         // Only the knell shots put the castle due north; the rest keep the defaults they were made with.
         state.hasCastleSite = shot.knellAge >= 0f;
         state.castleDX = 0f;
