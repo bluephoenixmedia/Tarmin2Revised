@@ -1812,6 +1812,7 @@ public class GameScreen extends BaseScreen {
         player.getStatusManager().clearEffects();
         player.abandonTomeStudy();
         player.clearRunSpellsOnDeath();
+        player.prepareStartingSpells(); // a new expedition starts with Mote of Light ready, as a new game does
         if (player.noteRespawn()) {
             player.offerTraits(); // every fifth respawn: a new personality to choose
         }
