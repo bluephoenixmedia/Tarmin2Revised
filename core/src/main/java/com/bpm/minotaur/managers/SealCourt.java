@@ -29,6 +29,29 @@ public final class SealCourt {
      */
     static final int REGEN_DIVISOR = 200;
 
+    /**
+     * Whether a living seal lord holds court in {@code maze}. A court in session admits no
+     * strays: the Doom clock's periodic spawns pass it by, so a duel is the lord's and its sworn
+     * swords', not a dragon's that wandered in (the duel play-test lost one to two dragons, a
+     * wyvern, a hydra and a Bringer of Death).
+     */
+    public static boolean inSession(com.bpm.minotaur.gamedata.Maze maze) {
+        if (maze == null) return false;
+        for (Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getSealRole() == Monster.SEAL_LORD && m.isAlive()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Whether a lord killed by some other hand gives its seal to the seeker: it does if the seeker
+     * stands in its court when it falls, since the seal is on the body. The duel play-test saw lords
+     * worn down by a seeker and finished by a stray of a rival house, and the seal went with them.
+     */
+    public static boolean sealFallsToSeeker(Monster dead, boolean seekerInCourt) {
+        return dead != null && dead.getSealRole() == Monster.SEAL_LORD && seekerInCourt;
+    }
+
     /** A lord's speed when its body has no template to say. */
     static final int BASE_SPEED = 12;
 

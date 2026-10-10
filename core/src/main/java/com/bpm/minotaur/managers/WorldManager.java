@@ -1336,7 +1336,7 @@ public class WorldManager {
         int interval = doom.getSpawnInterval();
 
         // Periodic Spawn Check using dynamic Doom Clock interval
-        if (turnCount > 0 && turnCount % interval == 0) {
+        if (turnCount > 0 && turnCount % interval == 0 && !SealCourt.inSession(loadedChunks.get(currentPlayerChunkId))) {
             int edlWithDoom = calculateEffectiveDifficulty(currentPlayerChunkId, currentLevel) + doom.getDoomEDLBonus();
             SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
                     loadedChunks.get(currentPlayerChunkId), difficulty, edlWithDoom, player.getLevel(),

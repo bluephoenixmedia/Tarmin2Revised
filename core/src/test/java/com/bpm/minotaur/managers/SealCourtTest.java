@@ -64,7 +64,7 @@ public class SealCourtTest {
         assertEquals("Vora the Restorer of House Gullet", m.getDisplayName());
         assertEquals(SealLord.BASE_HP, m.getMaxHP());
         assertEquals(SealLord.BASE_HP, m.getCurrentHP());
-        assertEquals("the frame's bite, not the body's", "2d10+6", m.getDamageDice());
+        assertEquals("the frame's bite, not the body's", "2d8+5", m.getDamageDice());
         assertEquals(SealLord.BASE_ARMOR + 1, m.getArmorClass());
         assertTrue(m.holdsCourt());
     }
@@ -75,13 +75,13 @@ public class SealCourtTest {
         Monster m = lord(spec(SealLord.Behaviour.BERSERK_AT_HALF), maze);
         int speed = m.getMoveSpeed();
         SealCourt.onTurn(m, maze);
-        assertEquals("2d10+6", m.getDamageDice());
+        assertEquals("2d8+5", m.getDamageDice());
         m.setCurrentHP(50);
         SealCourt.onTurn(m, maze);
-        assertEquals("2d10+10", m.getDamageDice());
+        assertEquals("2d8+9", m.getDamageDice());
         assertEquals(speed + SealCourt.RAGE_SPEED, m.getMoveSpeed());
         SealCourt.onTurn(m, maze);
-        assertEquals("only once", "2d10+10", m.getDamageDice());
+        assertEquals("only once", "2d8+9", m.getDamageDice());
     }
 
     @Test
@@ -150,6 +150,27 @@ public class SealCourtTest {
         SealCourt.reapply(reloaded, w, catalog);
         assertEquals(SealLord.withDamageBonus(spawned.getDamageDice(), SealCourt.RAGE_DAMAGE), reloaded.getDamageDice());
         assertEquals(spawned.getMoveSpeed() + SealCourt.RAGE_SPEED, reloaded.getMoveSpeed());
+    }
+
+    @Test
+    public void aCourtIsInSessionWhileItsLordLivesAndAdmitsNoStrays() {
+        Maze maze = new Maze(SealCourt.COURT_LEVEL, new int[12][12]);
+        assertFalse("an empty hall is no court", SealCourt.inSession(maze));
+        Monster m = lord(spec(), maze);
+        assertTrue(SealCourt.inSession(maze));
+        m.setCurrentHP(0);
+        assertFalse("the lord is dead: the Doom's stragglers may wander in again", SealCourt.inSession(maze));
+    }
+
+    @Test
+    public void aLordFallingInItsCourtYieldsItsSealToTheSeekerThereWhoeverStruckLast() {
+        Maze maze = new Maze(SealCourt.COURT_LEVEL, new int[12][12]);
+        Monster m = lord(spec(), maze);
+        assertTrue("the seal is on the body", SealCourt.sealFallsToSeeker(m, true));
+        assertFalse("a lord dying where no seeker stands keeps its court, and is seated again",
+                SealCourt.sealFallsToSeeker(m, false));
+        Monster sword = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
+        assertFalse("only a lord carries a seal", SealCourt.sealFallsToSeeker(sword, true));
     }
 
     @Test

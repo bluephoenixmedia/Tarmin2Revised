@@ -826,6 +826,11 @@ public class CombatManager {
             if (defender.getCurrentHP() <= 0) {
                 targetMaze.removeMonster(defender);
                 if (!defender.claimDeath()) return;
+                // A seal lord that falls in its court while the seeker stands there gives them its seal,
+                // whoever struck last: the seal is on the body (Houses of the Maze T1.12).
+                if (worldManager != null && SealCourt.sealFallsToSeeker(defender, targetMaze == maze)) {
+                    worldManager.onMonsterSlain(defender, eventManager);
+                }
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent(attacker.getName() + " slayed " + defender.getName() + "!", 2f));
                 }
