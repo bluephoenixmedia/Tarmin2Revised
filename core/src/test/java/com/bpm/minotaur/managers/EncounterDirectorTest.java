@@ -212,6 +212,20 @@ public class EncounterDirectorTest {
     }
 
     @Test
+    public void aCampCutDownStaysUnguarded() {
+        Encounter camp = new Encounter(Encounter.Kind.CAMP, -2, war.id, war.attackerId, -1, 0, Long.MAX_VALUE, HERE, HERE);
+        director.onTurn(history, HERE, 1, false, maze, PLAYER, List.of(), List.of(camp), recruiter, props, null);
+        for (Monster m : band(war.attackerId)) kill(m);
+        director.onTurn(history, HERE, 1, false, maze, PLAYER, List.of(), List.of(camp), recruiter, props, null);
+        assertTrue(history.encounterLedger().isSpent(camp));
+        director.onTurn(history, new GridPoint2(9, 9), 1, false, maze, PLAYER, List.of(), List.of(camp), recruiter, props, null);
+        director.onTurn(history, HERE, 1, false, maze, PLAYER, List.of(), List.of(camp), recruiter, props, null);
+        int alive = 0;
+        for (Monster m : band(war.attackerId)) if (m.isAlive()) alive++;
+        assertEquals("no new sentries", 0, alive);
+    }
+
+    @Test
     public void theShelterIsLeftInPeace() {
         director.onTurn(history, HERE, 1, true, maze, PLAYER, List.of(skirmish(1000)), Collections.emptyList(), recruiter, props, null);
         assertTrue(maze.getMonsters().isEmpty());

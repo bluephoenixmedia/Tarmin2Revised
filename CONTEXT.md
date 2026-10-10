@@ -75,6 +75,9 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Earshot**: How many chunks off a fight is heard: steel and screams next door, horns and drums two or three chunks off, a lone horn out to six. Underground it is a rumble through the stone.
 - **Favour**: A house's regard for the player, from Enemy to Friend.
 - **Sworn**: Bound to a house by its oath: its colours, its contracts, its enemies.
+- **Contract**: A task a sworn house gives the player: hold a chunk, kill a captain, escort a column, burn a camp.
+- **Herald**: A house's courier on the roads between seats, carrying a proclamation.
+- **Siege / Breach**: A house laying siege to Castle Tarmin, and the gap in its wall that stays open while the siege lasts.
 
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.

@@ -20,9 +20,12 @@ import java.util.Random;
  */
 public final class EncounterScheduler {
 
-    /** Turns between encounters, give or take {@link #JITTER}: one every 80 to 120 (W4). */
+    /**
+     * Turns between encounters: each slot starts up to {@link #JITTER} either side of its mark, so
+     * two in a row are 80 to 120 turns apart (W4).
+     */
     public static final int SLOT = 100;
-    static final int JITTER = 20;
+    static final int JITTER = 10;
     public static final int SKIRMISH_TURNS = 60;
     public static final int RAID_TURNS = 60;
     public static final int BATTLE_TURNS = 150;
@@ -55,7 +58,7 @@ public final class EncounterScheduler {
     }
 
     /**
-     * Every encounter under way at {@code clock}. Anchors the slots that begin now on
+     * Every encounter under way at {@code clock}. Not a pure query: it anchors the slots that begin now on
      * {@code player} (null when the player's chunk is unknown) and records them in the ledger.
      * {@code surface}: the player walks the overland, where encounters can reach them.
      */

@@ -132,7 +132,7 @@ gamedata/history/favour/
   Oath, Contract       sworn house, contracts, relic counter, seal-grant chain
 managers/
   EncounterDirector    puts an encounter's monsters, props and aftermath into the live chunk
-  WarAudioManager      plays WarSoundscape cues through SoundManager, ducks under the Knell
+  WarAudio             plays WarSoundscape beds and cues through SoundManager, ducks under the Knell
 rendering/
   Skybox3DRenderer     smoke columns, fire glow, arrow arcs, beacons, siege fire
 screens/WarTableScreen the War Table
@@ -142,7 +142,7 @@ screens/WarTableScreen the War Table
 
 1. **Determinism** (Houses invariant 1). The scheduler draws only from streams keyed on the seed,
    the war clock and the chunk. A reload sees the same encounters.
-2. **Headless.** `EncounterScheduler`, `WarSoundscape`, `SiegePlanner`, `Favour`, `Oath` and
+2. **Headless.** `EncounterScheduler` (which records each slot's anchor in the ledger as it begins, so it is called once a turn), `WarSoundscape`, `SiegePlanner`, `Favour`, `Oath` and
    `Contract` make no `Gdx.*` calls and are covered by JUnit.
 3. **History changes only through deeds.** Every effect the player has on the history (W6, W12,
    W21, W26, W33) is a `PlayerDeed`, so the save replays it.
@@ -191,7 +191,7 @@ regularly on the surface.
 - Camps from the Goblin War Camp and camp-scatter packs; aftermath fields saved for 3 sleeps.
 - AC: an aftermath field persists across save/load and is gone after 3 sleeps (test); screenshot review.
 
-**L1.6: WarSoundscape and WarAudioManager (W9, W11)** · deps: L1.3
+**L1.6: WarSoundscape and WarAudio (W9, W11)** · deps: L1.3
 - Re-extract the SFX bundle's Medieval Fighting, Monsters, Foley, Ambience & SFX and Horror
   Screamers folders (currently only `__MACOSX` stubs); use what fits; stand-ins plus prompts for gaps.
 - AC: the cue table from W9 per distance and level (test); panning follows the bearing (test);

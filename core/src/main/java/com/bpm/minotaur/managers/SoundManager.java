@@ -950,11 +950,6 @@ public class SoundManager {
         }
     }
 
-    /**
-     * A battle's sound (plan T2.9): the horns when a front arrives, drums and the clash of steel as
-     * the lines close, the horns again over a roar when a side breaks. A crowd-of-battle bed and real
-     * steel wait on the bundle's Medieval Fighting folder, which was never extracted.
-     */
     /** The Living War's one-shots, loaded by their file names under sounds/war (W11). */
     public static final String[] WAR_SOUNDS = {"horn_battle", "horn_great", "volley_archers", "volley_darts",
             "clash_sword", "clash_melee", "thud_distant_1", "thud_distant_2", "siege_barrage", "siege_bursts",
@@ -995,6 +990,11 @@ public class SoundManager {
         sound.play(v, MathUtils.random(0.94f, 1.04f), MathUtils.clamp(pan, -1f, 1f));
     }
 
+    /**
+     * A battle's sound (plan T2.9): the horns when a front arrives, drums and the clash of steel as
+     * the lines close, the horns again over a roar when a side breaks. A crowd-of-battle bed and real
+     * steel wait on the bundle's Medieval Fighting folder, which was never extracted.
+     */
     public void playWarCue(WarManager.Cue cue) {
         if (cue == null) return;
         switch (cue) {

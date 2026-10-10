@@ -67,7 +67,7 @@ public class EncounterSchedulerTest {
         assertTrue("about one per slot over 2000 turns: " + s.size(), s.size() >= 15);
         for (int i = 1; i < s.size(); i++) {
             long gap = s.get(i) - s.get(i - 1);
-            assertTrue("a gap of " + gap + " turns", gap >= 60 && gap <= 140);
+            assertTrue("a gap of " + gap + " turns", gap >= 80 && gap <= 120);
         }
     }
 

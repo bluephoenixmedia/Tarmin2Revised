@@ -122,7 +122,7 @@ public final class EncounterDirector {
             if (s != null) stages.put(key, s);
         }
         for (Encounter c : camps) {
-            if (!c.chunkAt(clock).equals(chunk)) continue;
+            if (!c.chunkAt(clock).equals(chunk) || ledger.isSpent(c)) continue;
             String key = c.key() + "@" + chunk.x + "," + chunk.y;
             if (!stages.containsKey(key)) stages.put(key, camp(c, world, maze, recruiter, props, ledger, t));
         }
@@ -310,6 +310,15 @@ public final class EncounterDirector {
                 return;
             }
             case HOLD:
+                if (s.e.kind == Encounter.Kind.CAMP) {
+                    // A camp whose sentries the player has cut down stays unguarded (W3).
+                    if (!s.a.isEmpty() && standing(maze, s.a) == 0) {
+                        ledger.spend(s.e);
+                        t.messages.add("The camp of " + name(world, s.e.houseA) + " stands empty.");
+                        s.phase = Phase.DONE;
+                    }
+                    return;
+                }
                 if (s.e.kind != Encounter.Kind.RAID) return;
                 if (standing(maze, s.a) == 0) {
                     ledger.spend(s.e);
