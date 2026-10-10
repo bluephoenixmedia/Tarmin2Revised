@@ -123,7 +123,7 @@ public class LoadingScreen extends ScreenAdapter {
                 // Ensure music is started if user skipped before video started
                 if (!musicStarted) {
                     musicStarted = true;
-                    MusicManager.getInstance().playTrack("sounds/music/Exsurge_Gloria.mp3");
+                    MusicManager.getInstance().playTrack("sounds/music/Crown_of_Molten_Steel.mp3");
                 }
             }
         }
@@ -132,8 +132,8 @@ public class LoadingScreen extends ScreenAdapter {
         if (!musicStarted && videoPlayer != null && !videoFinished && !videoError) {
             if (videoPlayer.isPlaying() || videoPlayer.getTexture() != null) {
                 musicStarted = true;
-                MusicManager.getInstance().playTrack("sounds/music/Exsurge_Gloria.mp3");
-                Gdx.app.log("LoadingScreen", "Started music playback in sync with video: Exsurge_Gloria.mp3");
+                MusicManager.getInstance().playTrack("sounds/music/Crown_of_Molten_Steel.mp3");
+                Gdx.app.log("LoadingScreen", "Started music playback in sync with video: Crown_of_Molten_Steel.mp3");
             }
         }
 

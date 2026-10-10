@@ -136,7 +136,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
 
-        MusicManager.getInstance().playTrack("sounds/music/Exsurge_Gloria.mp3");
+        MusicManager.getInstance().playTrack("sounds/music/Crown_of_Molten_Steel.mp3");
     }
 
     private void createButtonTextures() {

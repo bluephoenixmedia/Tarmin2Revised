@@ -116,4 +116,11 @@ public class SoundDesignIntegrationTest {
         Monster goblin = new Monster(Monster.MonsterType.GOBLIN, 10, 5);
         assertFalse("Goblin is standard monster", sm.isBossOrMegabeast(goblin));
     }
+
+    @Test
+    public void introMusicTrackExists() {
+        File introTrack = file("assets/sounds/music/Crown_of_Molten_Steel.mp3");
+        assertTrue("Intro music track Crown_of_Molten_Steel.mp3 must exist", introTrack.isFile());
+        assertTrue("Intro music track must not be empty", introTrack.length() > 1000000);
+    }
 }
