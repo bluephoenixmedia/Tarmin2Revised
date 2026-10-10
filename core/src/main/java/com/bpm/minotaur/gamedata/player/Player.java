@@ -1160,8 +1160,7 @@ public class Player {
         // explicitly. Relying on branch order here would mean anyone reordering these
         // two lines silently converted shot into arrows.
         boolean isShot = item.getType() == Item.ItemType.SHOT_POUCH;
-        boolean isArrows = !isShot
-                && (item.getType() == Item.ItemType.QUIVER || item.isAmmunition());
+        boolean isArrows = !isShot && Item.gathersUnderfoot(item.getType());
         if (!isShot && !isArrows) {
             return false;
         }

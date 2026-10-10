@@ -1282,6 +1282,19 @@ public class Item implements Renderable {
                 || name.startsWith("BLOWGUN_") || name.equals("DART") || name.startsWith("DART_");
     }
 
+    /**
+     * Whether stepping onto this is enough to gather it: quivers, arrows and crossbow quarrels into
+     * the arrow pool, a shot pouch into the shot pool. Other ammunition -- blowgun darts and needles,
+     * throwing darts, sling stones -- is picked up like anything else: gathered underfoot it became
+     * arrows, and walking over a blowgun needle read as picking up a blowgun (fixes 2026-10-10).
+     */
+    public static boolean gathersUnderfoot(ItemType type) {
+        if (type == null) return false;
+        if (type == ItemType.QUIVER || type == ItemType.SHOT_POUCH) return true;
+        String name = type.name();
+        return name.startsWith("ARROW_") || name.startsWith("QUARREL_");
+    }
+
     public ItemCategory getCategory() {
         if (type == null)
             return ItemCategory.MISC;
