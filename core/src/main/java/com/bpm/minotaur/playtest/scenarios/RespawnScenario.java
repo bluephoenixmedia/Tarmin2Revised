@@ -37,6 +37,16 @@ public final class RespawnScenario implements PlaytestScenario {
         script.wait("settle", 20);
         script.once("settle traits", ctx::settleTraits);
         script.wait("traits settle", 15);
+        // Item 3: quick slot items vanishing at some facings after deaths. Fill the belt, carried through the deaths, then turn.
+        script.once("fill the quick slots", () -> {
+            Item.ItemType[] kinds = {Item.ItemType.POTION_PINK, Item.ItemType.POTION_BLUE, Item.ItemType.FLOUR_SACK};
+            Item[] quick = ctx.getPlayer().getInventory().getQuickSlots();
+            for (int i = 0; i < kinds.length && i < quick.length; i++) {
+                quick[i] = ctx.getGame().getItemDataManager().createItem(kinds[i], 0, 0,
+                        com.bpm.minotaur.gamedata.item.ItemColor.GRAY, ctx.getGame().getAssetManager());
+            }
+            ctx.log("Quick slots filled: " + state(ctx));
+        });
         script.once("before", () -> ctx.log("Before any death: " + state(ctx)));
         for (int death = 1; death <= 2; death++) {
             final int n = death;
@@ -61,6 +71,13 @@ public final class RespawnScenario implements PlaytestScenario {
                         "spell slot 1 holds Mote of Light after a respawn, as on a new game (death " + n + ")");
             });
             script.shot("respawn_" + n, ctx);
+        }
+        for (int turn = 0; turn < 4; turn++) {
+            final int t = turn;
+            script.wait("face (" + t + ")", 20);
+            script.once("note facing " + t, () -> ctx.log("Facing " + ctx.getPlayer().getFacing() + ": " + state(ctx)));
+            script.shot("quickslots_facing_" + t, ctx);
+            script.key("turn (" + t + ")", Input.Keys.RIGHT, ctx);
         }
     }
 }
