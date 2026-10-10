@@ -1600,10 +1600,16 @@ public class World3DRenderer implements Disposable {
         Texture useTex = (fluidTexture != null) ? fluidTexture : blankTexture;
         boolean any = false;
 
+        for (int pass = 0; pass < 2; pass++) {
+        // Pass 0 is every liquid lit by the scene; pass 1 is molten fire, which glows by its own
+        // light (u_unlit) -- under the Blight's red murk a lit chasm darkened into the floor.
+        boolean molten = pass == 1;
+        any = false;
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 com.bpm.minotaur.gamedata.liquid.LiquidType liquid = maze.getLiquidAt(x, y);
                 if (liquid == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) continue;
+                if (liquid.isImpassable() != molten) continue;
                 if (maze.isWall(x, y)) continue;
 
                 Color base = liquid.getColor();
@@ -1614,6 +1620,12 @@ public class World3DRenderer implements Disposable {
                 float g = Math.min(1f, base.g * ripple + glint * 1.05f);
                 float b = Math.min(1f, base.b * ripple + glint * 1.00f);
                 Color tint = new Color(r, g, b, Math.min(1.0f, base.a * 1.35f));
+                if (molten) {
+                    // Molten fire: a slow churn between deep red-orange and hot yellow-orange, tile by tile.
+                    float churn = 0.5f + 0.5f * (float) Math.sin(totalTime * 1.3f + x * 0.9f + y * 1.7f);
+                    float flare = (float) Math.pow(Math.max(0f, (float) Math.sin(totalTime * 3.1f + x * 2.3f + y * 0.6f)), 6.0);
+                    tint.set(1.0f, 0.22f + 0.30f * churn + 0.25f * flare, 0.03f + 0.10f * flare, 1f);
+                }
 
                 float swell = (float) Math.sin(totalTime * 1.8f + x * 0.5f + y * 0.4f) * 0.005f;
                 float u1 = x * 0.65f + uFlow;
@@ -1630,7 +1642,11 @@ public class World3DRenderer implements Disposable {
         }
 
         if (any) {
-            dynamicBatcher.flush(shader, useTex);
+            if (molten) shader.setUniformf("u_unlit", 1f);
+            // Fire on plain white, so its colour is its own; the water texture muddied it to lavender.
+            dynamicBatcher.flush(shader, molten ? blankTexture : useTex);
+            if (molten) shader.setUniformf("u_unlit", 0f);
+        }
         }
     }
 

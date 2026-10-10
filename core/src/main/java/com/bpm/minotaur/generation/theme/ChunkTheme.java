@@ -74,7 +74,7 @@ public enum ChunkTheme {
 
     BRIDGE_OF_SOULS(
             "Bridge of Souls",
-            "The apocalyptic bridge where the Bringer of Death awaits all fallen souls. Slaying him restores bridge integrity.",
+            "An island in a chasm of molten fire, where the Bringer of Death waits for fallen souls on the far side of every bridge.",
             "Demonic Scythe Mark (Doom Boss)",
             "ᛞ",
             new Color(0.85f, 0.05f, 0.05f, 1f),

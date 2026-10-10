@@ -266,6 +266,7 @@ public class ChunkData {
                 monster.getScale().set(data.scaleX, data.scaleY);
             }
             monster.setBridgeBoss(data.bridgeBoss);
+            monster.setTether(data.tether);
             monster.setCurrentHP(data.warStrength);
             monster.setCurrentMP(data.spiritualStrength);
             monster.setAllyTurns(data.allyTurns);
@@ -627,6 +628,8 @@ public class ChunkData {
          * benignly on old saves.
          */
         public boolean bridgeBoss = false;
+        /** A tethered monster's bounds (the Bringer's island), or null. */
+        public int[] tether;
         public float scaleX = 0f;
         public float scaleY = 0f;
         public int maxHP = 0;
@@ -662,6 +665,7 @@ public class ChunkData {
             this.warStrength = monster.getWarStrength();
             this.spiritualStrength = monster.getSpiritualStrength();
             this.bridgeBoss = monster.isBridgeBoss();
+            this.tether = monster.getTether();
             if (monster.getScale() != null) {
                 this.scaleX = monster.getScale().x;
                 this.scaleY = monster.getScale().y;

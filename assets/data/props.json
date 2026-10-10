@@ -186,6 +186,22 @@
     },
 
     {
+      "id": "bone_spike_rail",
+      "asset": "images/props/bone_spike_rail.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.7,
+      "scaleY": 1.2,
+      "passable": false
+    },
+    {
+      "id": "stone_arch",
+      "asset": "images/props/stone_arch.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.9,
+      "passable": true
+    },
+    {
       "id": "ruined_pillar",
       "asset": "images/props/ruined_pillar.png",
       "renderMode": "SPRITE",

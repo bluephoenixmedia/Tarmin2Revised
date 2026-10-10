@@ -659,6 +659,7 @@ public class FirstPersonRenderer {
         floorShader.setUniformf("u_lightIntensity", floorLight);
         floorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
         uploadFloorLightingUniforms(floorShader, player, maze, worldManager, isIndoors);
+        uploadLiquidMap(floorShader, maze);
 
         spriteBatch.setColor(Color.WHITE);
 
@@ -676,6 +677,22 @@ public class FirstPersonRenderer {
         spriteBatch.setShader(null); // Important to reset!
 
         return 1;
+    }
+
+    private final LiquidFloorMap liquidFloorMap = new LiquidFloorMap();
+
+    /** The maze's liquids for the floor shader, on texture unit 1 (the batch keeps unit 0). */
+    private void uploadLiquidMap(ShaderProgram shader, Maze maze) {
+        Texture liquids = liquidFloorMap.update(maze);
+        if (liquids == null) {
+            shader.setUniformf("u_hasLiquids", 0f);
+            return;
+        }
+        liquids.bind(1);
+        Gdx.gl.glActiveTexture(com.badlogic.gdx.graphics.GL20.GL_TEXTURE0);
+        shader.setUniformi("u_liquidMap", 1);
+        shader.setUniformf("u_mazeSize", maze.getWidth(), maze.getHeight());
+        shader.setUniformf("u_hasLiquids", 1f);
     }
 
     // Retro floor rendering (Removed Blood Support)
@@ -703,6 +720,7 @@ public class FirstPersonRenderer {
         retroFloorShader.setUniformf("u_lightIntensity", floorLight);
         retroFloorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
         uploadFloorLightingUniforms(retroFloorShader, player, maze, worldManager, isIndoors);
+        uploadLiquidMap(retroFloorShader, maze);
 
         // Pass Floor Color (Theme color)
         retroFloorShader.setUniformf("u_floorColor", currentFloorColor.r, currentFloorColor.g, currentFloorColor.b);
@@ -2058,6 +2076,7 @@ public class FirstPersonRenderer {
     }
 
     public void dispose() {
+        liquidFloorMap.dispose();
         if (skybox3DRenderer != null) {
             skybox3DRenderer.dispose();
         }

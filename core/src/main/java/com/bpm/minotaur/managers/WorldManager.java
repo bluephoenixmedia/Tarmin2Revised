@@ -1701,8 +1701,13 @@ public class WorldManager {
         com.bpm.minotaur.generation.theme.ChunkTheme theme = themes[debugThemeCursor % themes.length];
         debugThemeCursor++;
 
-        // Park debug chunks far from anywhere the player would organically walk.
+        // Park debug chunks far from anywhere the player would organically walk -- and never on a
+        // chunk already saved from an earlier warp, which would load as it was, unthemed by this one.
         GridPoint2 target = new GridPoint2(500 + debugThemeCursor, 500);
+        while (Gdx.files != null && Gdx.files.local(getChunkSaveDir()
+                + getChunkFileName(this.currentLevel, target.x, target.y)).exists()) {
+            target.y++;
+        }
         themeOverrides.put(new GridPoint2(target), theme);
 
         // Drop any cached copy so the chunk regenerates under the override.
