@@ -24,6 +24,11 @@ public final class SealLordDuelScenario implements PlaytestScenario {
     static final int POTIONS = 6;
     /** World turns, not driver ticks: a swing, a step or a turn on the spot each take one. */
     static final int TURN_LIMIT = 400;
+    /**
+     * The seeker's kit bonus: the top of LootTable's tier 2. With the best tier-3 kit (+6 claymore,
+     * full plate at +6) a lord fell in 98 turns for one draught; with plain kit it took fifteen.
+     */
+    static final int KIT_BONUS = 3;
     /** Below this share of health, a seeker drinks. */
     static final float DRINK_AT = 0.35f;
 
@@ -54,17 +59,24 @@ public final class SealLordDuelScenario implements PlaytestScenario {
         });
         script.wait("level-up opens", 10);
         script.once("decide later", ctx::dismissModals);
-        script.once("arm the seeker", () -> {
+        script.once("arm the seeker as the middle levels do", () -> {
+            // Middling loot, not the best: the top of LootTable's tier 2 (levels 6-15), which a seeker
+            // reaching a court has had seasons to find. A broadsword and chain mail at +3, and a shield.
             Player p = ctx.getPlayer();
-            p.getInventory().setRightHand(ctx.getGame().getItemDataManager().createItem(Item.ItemType.SWORD_BROAD,
-                    0, 0, ItemColor.PURPLE, ctx.getGame().getAssetManager()));
-            p.getInventory().setLeftHand(ctx.getGame().getItemDataManager().createItem(Item.ItemType.LARGE_SHIELD,
-                    0, 0, ItemColor.GRAY, ctx.getGame().getAssetManager()));
-            p.getEquipment().setWornChest(ctx.getGame().getItemDataManager().createItem(Item.ItemType.CHAIN_MAIL,
-                    0, 0, ItemColor.GRAY, ctx.getGame().getAssetManager()));
+            com.bpm.minotaur.gamedata.item.ItemDataManager items = ctx.getGame().getItemDataManager();
+            com.badlogic.gdx.assets.AssetManager assets = ctx.getGame().getAssetManager();
+            Item blade = items.createItem(Item.ItemType.SWORD_BROAD, 0, 0, ItemColor.PURPLE, assets);
+            blade.addModifier(new com.bpm.minotaur.gamedata.item.ItemModifier(
+                    com.bpm.minotaur.gamedata.ModifierType.BONUS_DAMAGE, KIT_BONUS, "+2"));
+            p.getInventory().setRightHand(blade);
+            p.getInventory().setLeftHand(items.createItem(Item.ItemType.LARGE_SHIELD, 0, 0, ItemColor.GRAY, assets));
+            Item mail = items.createItem(Item.ItemType.CHAIN_MAIL, 0, 0, ItemColor.GRAY, assets);
+            mail.addModifier(new com.bpm.minotaur.gamedata.item.ItemModifier(
+                    com.bpm.minotaur.gamedata.ModifierType.BONUS_AC, KIT_BONUS, "+2"));
+            p.getEquipment().setWornChest(mail);
             ctx.press(Input.Keys.END);
             ctx.log("Seeker: level " + p.getLevel() + ", HP " + p.getStats().getCurrentHP() + "/" + p.getStats().getMaxHP()
-                    + ", AC " + p.getArmorClass());
+                    + ", AC " + p.getArmorClass() + ", " + blade.getDisplayName());
         });
 
         int[] turns = {0};
@@ -75,11 +87,13 @@ public final class SealLordDuelScenario implements PlaytestScenario {
         GridPoint2[] lastPos = {null};
         com.badlogic.gdx.math.GridPoint2[] court = {null};
         int[] firstTurn = {0};
+        Monster[] faced = {null};
         script.once("face the lord", () -> {
             firstTurn[0] = ctx.getScreen().getTurnCount();
             court[0] = new com.badlogic.gdx.math.GridPoint2(ctx.getWorldManager().getCurrentPlayerChunkId());
             Monster lord = ctx.sealLord();
             ctx.assertTrue(lord != null, "A seal lord must hold court here");
+            faced[0] = lord;
             startHp[0] = lord.getMaxHP();
             ctx.log("Lord: " + lord.getDisplayName() + " (" + lord.getType() + ", HP " + lord.getMaxHP() + ", bite "
                     + lord.getDamageDice() + ", AC " + lord.getArmorClass() + "), retinue " + ctx.retinue());
@@ -91,8 +105,11 @@ public final class SealLordDuelScenario implements PlaytestScenario {
             ctx.assertTrue(court[0].equals(ctx.getWorldManager().getCurrentPlayerChunkId())
                     && ctx.getWorldManager().getCurrentLevel() == com.bpm.minotaur.managers.SealCourt.COURT_LEVEL,
                     "the duel stays in the court (strayed to " + ctx.getWorldManager().getCurrentPlayerChunkId() + ")");
-            Monster lord = ctx.sealLord();
-            if (lord == null || !lord.isAlive()) return true;
+            // The lord the seeker faced, not whatever ctx finds: a maze swapped under the seeker has none.
+            Monster lord = faced[0];
+            if (!lord.isAlive()) return true;
+            ctx.assertTrue(ctx.getMaze().getMonsters().containsValue(lord),
+                    "the duel stays in the court (the lord is no longer in this maze)");
             Player p = ctx.getPlayer();
             if (p.getStats().getCurrentHP() <= 0) return true;
             if (p.getStats().getCurrentHP() < p.getStats().getMaxHP() * DRINK_AT) {
@@ -107,13 +124,14 @@ public final class SealLordDuelScenario implements PlaytestScenario {
             }
             GridPoint2 at = new GridPoint2((int) p.getPosition().x, (int) p.getPosition().y);
             GridPoint2 lordAt = new GridPoint2((int) lord.getPosition().x, (int) lord.getPosition().y);
-            boolean engaged = Math.abs(at.x - lordAt.x) + Math.abs(at.y - lordAt.y) == 1;
+            boolean engaged = ctx.canStrike(at, lordAt);
             still[0] = engaged || !at.equals(lastPos[0]) ? 0 : still[0] + 1;
             lastPos[0] = at;
             if (still[0] >= 40) {
                 // The driver is lost in the hall, which measures the driver and not the lord: stand beside it again.
                 for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-                    if (ctx.getMaze().isPassable(lordAt.x + d[0], lordAt.y + d[1])) {
+                    GridPoint2 beside = new GridPoint2(lordAt.x + d[0], lordAt.y + d[1]);
+                    if (ctx.getMaze().isPassable(beside.x, beside.y) && ctx.canStrike(beside, lordAt)) {
                         p.setPosition(lordAt.x + d[0] + 0.5f, lordAt.y + d[1] + 0.5f);
                         regroups[0]++;
                         ctx.log("  turn " + turns[0] + ": the seeker was lost at " + at + "; regrouped beside the lord");
@@ -127,8 +145,7 @@ public final class SealLordDuelScenario implements PlaytestScenario {
         });
         script.wait("settle", 15);
         script.once("count the cost", () -> {
-            Monster lord = ctx.sealLord();
-            boolean won = lord == null || !lord.isAlive();
+            boolean won = !faced[0].isAlive();
             ctx.log("Duel at regional level " + courtLevel[0] + ": " + (won ? "the lord fell" : "the lord stands")
                     + " after " + turns[0] + " turns; " + drinks[0] + " draughts drunk; " + regroups[0]
                     + " regroups; seals held "
