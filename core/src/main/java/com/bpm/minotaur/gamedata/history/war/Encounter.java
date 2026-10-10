@@ -75,7 +75,10 @@ public final class Encounter {
 
     /** What the ledger calls it once the player has dealt with it. */
     public String key() {
-        return kind.name() + ":" + slot + (kind == Kind.CAMP ? ":" + warId + ":" + houseA : "");
+        if (kind == Kind.CAMP) return kind.name() + ":" + slot + ":" + warId + ":" + houseA;
+        // Raids below ground share slots with the surface's; the place tells them apart.
+        if (kind == Kind.RAID) return kind.name() + ":" + slot + "@" + from.x + "," + from.y;
+        return kind.name() + ":" + slot;
     }
 
     @Override

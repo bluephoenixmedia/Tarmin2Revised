@@ -98,6 +98,8 @@ public final class SealLord {
     }
 
     public static final int MAX_RETINUE = 3;
+    /** Sworn swords left in the court while its house is at war (Living War W32). */
+    public static final int AT_WAR_RETINUE = 1;
     /*
      * Every lord fights in one frame, whatever body its doctrine gives it: the body is the look.
      * The play-test found that tripling the body's own numbers made a Purple Worm lord a 700 HP,
@@ -120,6 +122,11 @@ public final class SealLord {
     public static final int BASE_ARMOR = 15;
 
     private SealLord() {
+    }
+
+    /** Sworn swords a lord keeps in court: fewer while its house is at war, the rest sent to the front (W32). */
+    public static int retinueCap(HistoryWorld world, House house) {
+        return world.activeWarCount(house.id) > 0 ? AT_WAR_RETINUE : MAX_RETINUE;
     }
 
     /** The gash a seal road leads to; -1 for the castle road. */
@@ -203,7 +210,7 @@ public final class SealLord {
 
         Random rng = new Random(world.seed ^ (lord.id * 0x9E3779B97F4A7C15L));
         for (Figure sword : world.swornSwords(house)) {
-            if (spec.retinue.size() >= MAX_RETINUE) break;
+            if (spec.retinue.size() >= retinueCap(world, house)) break;
             String type = doctrine.roster.get(rng.nextInt(doctrine.roster.size()));
             spec.retinue.add(new Retainer(sword.id, sword.name + ", sworn to " + house.name, type));
         }

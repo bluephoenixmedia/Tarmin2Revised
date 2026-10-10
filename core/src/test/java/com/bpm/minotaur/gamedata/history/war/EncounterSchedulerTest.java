@@ -182,6 +182,42 @@ public class EncounterSchedulerTest {
     }
 
     @Test
+    public void raidersComeDownIntoAGashOnlyWhileItsHouseIsAtWar() {
+        HistoryWorld w = atWar(23L);
+        com.bpm.minotaur.gamedata.history.War war = w.activeWars().get(0);
+        int raids = 0;
+        for (long t = 0; t < 4000; t += EncounterScheduler.SLOT) {
+            Encounter e = EncounterScheduler.gashRaid(w, t, new GridPoint2(3, 3), 2, war.defenderId);
+            if (e == null) continue;
+            raids++;
+            assertEquals(Encounter.Kind.RAID, e.kind);
+            assertEquals("the holder's enemy comes", war.attackerId, e.houseA);
+            assertEquals(war.defenderId, e.houseB);
+            assertTrue(e.activeAt(t));
+            assertEquals(e.toString(), EncounterScheduler.gashRaid(w, t, new GridPoint2(3, 3), 2, war.defenderId).toString());
+        }
+        assertTrue("about a third of slots: " + raids, raids >= 5 && raids <= 25);
+        int peaceful = -1;
+        for (com.bpm.minotaur.gamedata.history.House h : w.livingHouses()) if (w.activeWarCount(h.id) == 0) peaceful = h.id;
+        if (peaceful >= 0) {
+            for (long t = 0; t < 4000; t += EncounterScheduler.SLOT) {
+                assertNull("a house at peace is left alone", EncounterScheduler.gashRaid(w, t, new GridPoint2(3, 3), 2, peaceful));
+            }
+        }
+    }
+
+    @Test
+    public void aTownsGateIsRaidedNowAndThen() {
+        HistoryWorld w = atWar(25L);
+        int raids = 0;
+        for (long t = 0; t < 10000; t += EncounterScheduler.SLOT) {
+            Encounter e = EncounterScheduler.townRaid(w, t, "town@3,4,4", new GridPoint2(3, 4));
+            if (e != null) raids++;
+        }
+        assertTrue("about one slot in eight: " + raids, raids >= 4 && raids <= 25);
+    }
+
+    @Test
     public void peaceIsNeverSilentWhereAGrudgeIsHeld() {
         for (long seed = 1; seed <= 200; seed++) {
             HistoryWorld w = HistorySimulator.prehistory(seed, catalog);

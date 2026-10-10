@@ -251,6 +251,10 @@ public class Monster implements Renderable {
      * when it has nothing to fight, and leaves the chunk there. Null for everyone else. Not saved.
      */
     private com.badlogic.gdx.math.GridPoint2 marchTarget;
+    /** Holds a gate of a battle; lets through a seeker who has struck no one in it (Living War W15). Not saved. */
+    private transient boolean gateGuard;
+    /** Turns spent beside a disguised seeker (W16); at {@code Disguise.SCRUTINY_TURNS} it sees through them. */
+    private transient int disguiseScrutiny;
     /** The megabeast of the history this monster is, or -1 (T3.3). Megabeasts are never saved in a chunk. */
     private int megabeastId = -1;
     /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
@@ -1335,6 +1339,10 @@ public class Monster implements Renderable {
     public void setWarBand(boolean warBand) { this.warBand = warBand; }
     public com.badlogic.gdx.math.GridPoint2 getMarchTarget() { return marchTarget; }
     public void setMarchTarget(com.badlogic.gdx.math.GridPoint2 marchTarget) { this.marchTarget = marchTarget; }
+    public boolean isGateGuard() { return gateGuard; }
+    public void setGateGuard(boolean gateGuard) { this.gateGuard = gateGuard; }
+    public int getDisguiseScrutiny() { return disguiseScrutiny; }
+    public void setDisguiseScrutiny(int turns) { this.disguiseScrutiny = turns; }
 
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
     public boolean seekerDrewBlood() {

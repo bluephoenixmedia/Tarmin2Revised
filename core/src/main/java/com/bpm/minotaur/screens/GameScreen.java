@@ -2139,8 +2139,9 @@ public class GameScreen extends BaseScreen {
     /** The surface war's skirmishes, columns, raids and camps, in the chunk the player stands in (Living War W2). */
     private void tickEncounters(WarManager.Ground g) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.town.Town town = g.level >= 2 ? worldManager.townHere() : null;
         com.bpm.minotaur.managers.EncounterDirector.Turn t = encounterDirector.onTurn(history, g.chunk, g.level,
-                g.sanctuary, g.maze, g.playerTile, worldManager.currentEncounters(),
+                g.sanctuary, g.maze, g.playerTile, g.level == 1 ? worldManager.currentEncounters() : belowEncounters(g, town),
                 g.level == 1 ? worldManager.currentCamps() : java.util.Collections.emptyList(),
                 worldManager::recruit, com.bpm.minotaur.gamedata.Scenery::fromProp,
                 new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
@@ -2148,7 +2149,7 @@ public class GameScreen extends BaseScreen {
                         id -> {
                             com.bpm.minotaur.gamedata.history.House h = history.world().house(id);
                             return h != null ? h.name : null;
-                        }));
+                        }), town != null ? town.key : null);
         for (String line : t.messages) {
             eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
         }
@@ -2156,6 +2157,49 @@ public class GameScreen extends BaseScreen {
             for (com.bpm.minotaur.managers.EncounterDirector.Cue cue : t.cues) soundManager.playEncounterCue(cue);
         }
         hearTheWar(g);
+        monsterAiManager.setPlayerInTheFight(encounterDirector.playerInTheFight()
+                || (warManager.active() != null && warManager.active().playerJoined()));
+        monsterAiManager.setTakesPlayerForKin(disguise());
+    }
+
+    /** Below ground, the war comes as raiders: into a gash whose house is at war, or at a town's gate (W32). */
+    private java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> belowEncounters(WarManager.Ground g,
+            com.bpm.minotaur.gamedata.history.town.Town town) {
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> out = new java.util.ArrayList<>();
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        if (g.chunk == null) return out;
+        if (town != null) {
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+                    .townRaid(history.world(), history.warClock(), town.key, g.chunk);
+            if (e != null) out.add(e);
+        }
+        com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
+        if (holder != null) {
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+                    .gashRaid(history.world(), history.warClock(), g.chunk, g.level, holder.id);
+            if (e != null) out.add(e);
+        }
+        return out;
+    }
+
+    /** The house holding the gash the player is inside, or null outside one. */
+    private com.bpm.minotaur.gamedata.history.House gashHolderHere(WarManager.Ground g) {
+        if (g.level < 2 || g.level > SealCourt.COURT_LEVEL || worldManager.getBiomeManager() == null || g.chunk == null) return null;
+        int gash = com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(worldManager.getBiomeManager().getSealRoad(g.chunk));
+        return gash >= 0 ? worldManager.getHistory().world().gashHolder(gash) : null;
+    }
+
+    /** Which soldiers take the player for kin, if the player wears a body their house fields (W16). */
+    private java.util.function.Predicate<com.bpm.minotaur.gamedata.monster.Monster> disguise() {
+        com.bpm.minotaur.gamedata.polymorph.PlayerForm form = player != null ? player.getForm() : null;
+        String type = form != null ? form.monsterType() : null;
+        if (type == null) return null;
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        return m -> {
+            int house = worldManager.houseOf(m);
+            return house >= 0 && com.bpm.minotaur.gamedata.history.war.Disguise.passesAmong(world, catalog, house, type);
+        };
     }
 
     private final com.bpm.minotaur.managers.WarAudio warAudio = new com.bpm.minotaur.managers.WarAudio();
@@ -2163,16 +2207,15 @@ public class GameScreen extends BaseScreen {
     /** The war heard from where the player stands, this turn (Living War W9). */
     private void hearTheWar(WarManager.Ground g) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
-        boolean gashAtWar = false;
-        if (g.level >= 2 && worldManager.getBiomeManager() != null && g.chunk != null) {
-            int gash = com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(worldManager.getBiomeManager().getSealRoad(g.chunk));
-            com.bpm.minotaur.gamedata.history.House holder = gash >= 0 && g.level <= SealCourt.COURT_LEVEL
-                    ? history.world().gashHolder(gash) : null;
-            gashAtWar = holder != null && history.world().activeWarCount(holder.id) > 0;
-        }
-        boolean shook = warAudio.onTurn(com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(worldManager.currentEncounters(),
-                worldManager.currentFronts(), history.warClock(), g.chunk, g.level,
-                player != null ? player.getFacing() : null, gashAtWar), soundManager);
+        com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
+        boolean gashAtWar = holder != null && history.world().activeWarCount(holder.id) > 0;
+        com.bpm.minotaur.gamedata.history.war.WarSoundscape.Mix mix = com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(
+                worldManager.currentEncounters(), worldManager.currentFronts(), history.warClock(), g.chunk, g.level,
+                player != null ? player.getFacing() : null, gashAtWar);
+        // The din of a fight here or next door covers the player's footsteps (W13).
+        monsterAiManager.setHearingMuffle(g.level == 1 && mix.volume(com.bpm.minotaur.gamedata.history.war.WarSoundscape.Bed.NEAR) > 0f
+                ? com.bpm.minotaur.managers.MonsterAiManager.BATTLE_DIN : 1f);
+        boolean shook = warAudio.onTurn(mix, soundManager);
         if (shook && g.level >= 2) {
             if (worldManager.getLightingManager() != null) worldManager.getLightingManager().tremble(0.9f);
             if (com.badlogic.gdx.math.MathUtils.random() < 0.35f) {

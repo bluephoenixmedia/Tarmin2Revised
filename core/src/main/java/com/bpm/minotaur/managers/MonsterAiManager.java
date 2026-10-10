@@ -272,15 +272,52 @@ public class MonsterAiManager {
     /** The monster the player is fighting this turn, if any. */
     private Monster engagedByPlayer;
 
-    /** Chance per turn a soldier in a battle breaks off to go for the player anyway (plan D31). */
-    static final float WAR_BAND_SPILL = 0.03f;
-
     /**
      * Whether a soldier in a battle, with an enemy soldier in sight, turns on the player instead:
-     * when the player is adjacent, when the player is fighting it, or in a melee spill.
+     * only when the player is adjacent or has struck it (Living War W14). The melee spill of plan
+     * D31 is gone: a war is a distraction a rogue can use.
      */
-    static boolean warBandTurnsOnPlayer(int playerDist, boolean engaged, float roll) {
-        return playerDist <= 1 || engaged || roll < WAR_BAND_SPILL;
+    static boolean warBandTurnsOnPlayer(int playerDist, boolean struck) {
+        return playerDist <= 1 || struck;
+    }
+
+    /** How far a monster hears the player, in tiles; a battle's din cuts it (Living War W13). */
+    static int hearingRange(int intelligence, float notice, float muffle) {
+        return Math.max(1, Math.round((5 + intelligence) * notice * muffle));
+    }
+
+    /** Hearing is cut to this in a battle's chunk and the chunks beside it (W13). */
+    public static final float BATTLE_DIN = 0.3f;
+    private float hearingMuffle = 1f;
+    private boolean playerInTheFight;
+    private java.util.function.Predicate<Monster> takesPlayerForKin;
+
+    /** The din of a battle near the player muffles every monster's hearing this turn: 1 is quiet. */
+    public void setHearingMuffle(float muffle) {
+        this.hearingMuffle = Math.max(0.05f, Math.min(1f, muffle));
+    }
+
+    /** Whether the player has struck a soldier of the battle or skirmish around them (W15). */
+    public void setPlayerInTheFight(boolean inTheFight) {
+        this.playerInTheFight = inTheFight;
+    }
+
+    /** Which monsters take a disguised player for one of their own (W16); null when undisguised. */
+    public void setTakesPlayerForKin(java.util.function.Predicate<Monster> kin) {
+        this.takesPlayerForKin = kin;
+    }
+
+    /**
+     * Whether {@code monster} pays the player no mind this turn: a gate guard of a battle the player
+     * has not joined, or a soldier fooled by the player's borrowed body. Struck, it knows better;
+     * left beside the player too long, it looks closer.
+     */
+    boolean ignoresPlayer(Monster monster, int playerDist) {
+        if (monster.seekerDrewBlood() || monster == engagedByPlayer) return false;
+        if (monster.isGateGuard() && monster.isWarBand() && !playerInTheFight) return true;
+        if (takesPlayerForKin == null || !takesPlayerForKin.test(monster)) return false;
+        if (playerDist <= 1) monster.setDisguiseScrutiny(monster.getDisguiseScrutiny() + 1);
+        return monster.getDisguiseScrutiny() < com.bpm.minotaur.gamedata.history.war.Disguise.SCRUTINY_TURNS;
     }
 
     public FactionMatrix getFactionMatrix() {
@@ -313,7 +350,7 @@ public class MonsterAiManager {
 
         // 2. Check Audio Awareness (Hearing) if not seen
         if (!playerSeen) {
-            int hearingRange = Math.max(1, Math.round((5 + (monster.getIntelligence())) * notice));
+            int hearingRange = hearingRange(monster.getIntelligence(), notice, hearingMuffle);
             if (playerDist <= hearingRange) {
                 int chance = 50 + (monster.getIntelligence() * 5) - (playerDist * 5);
                 if (chance > Math.random() * 100) {
@@ -321,6 +358,9 @@ public class MonsterAiManager {
                 }
             }
         }
+
+        // A gate guard letting a bystander through, or a soldier taken in by a borrowed body (W15, W16).
+        if (playerSeen && ignoresPlayer(monster, playerDist)) playerSeen = false;
 
         // 3. Check for Rival Monsters within visual range
         Monster closestRival = null;
@@ -365,7 +405,7 @@ public class MonsterAiManager {
         } else if (playerSeen && closestRival != null) {
             // In a battle the enemy line comes first; the player is a bystander until they are not.
             boolean onPlayer = monster.isWarBand()
-                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer, (float) Math.random())
+                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer || monster.seekerDrewBlood())
                     : playerDist <= closestRivalDist;
             if (onPlayer) {
                 monster.setTargetMonster(null);

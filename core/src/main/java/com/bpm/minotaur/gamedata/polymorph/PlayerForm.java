@@ -28,6 +28,8 @@ public final class PlayerForm {
     private final boolean hasHands;
     private final boolean bursts;
     private int turnsLeft;
+    /** The monsters.json type the body is, or null: a house fielding it may take the seeker for kin (Living War W16). */
+    private String monsterType;
 
     public PlayerForm(String name, int maxHp, int armorClass, float speedFactor, String damageDice,
             boolean hasHands, boolean bursts, int turns) {
@@ -46,6 +48,17 @@ public final class PlayerForm {
         boolean hands = t.family == MonsterFamily.HUMANOID;
         return new PlayerForm(name, t.maxHP, t.armorClass, t.moveSpeed / (float) BASE_SPEED, t.damageDice,
                 hands, t.baseLevel >= BURST_ARMOR_LEVEL, turns);
+    }
+
+    /** As {@link #of(String, MonsterTemplate, int)}, remembering the monster type the body is. */
+    public static PlayerForm of(String name, String monsterType, MonsterTemplate t, int turns) {
+        PlayerForm f = of(name, t, turns);
+        f.monsterType = monsterType;
+        return f;
+    }
+
+    public String monsterType() {
+        return monsterType;
     }
 
     /** Hits taken by the form come off its own hit points; whatever it cannot take is lost, never passed on. */
