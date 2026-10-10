@@ -729,6 +729,63 @@
             }
         ]
     },
+    "HOME_WAR_TABLE": {
+        "friendlyName": "War Table",
+        "texturePath": "images/items/scroll.png",
+        "isImpassable": true,
+        "spriteData": [
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "..........####..........",
+            ".........######.........",
+            "........########........",
+            ".......##########.......",
+            ".......##########.......",
+            "........########........",
+            ".........######.........",
+            "..........####..........",
+            "..........####..........",
+            "..........####..........",
+            ".........######.........",
+            "........########........",
+            ".......##########.......",
+            "......############......",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "description": "A trestle table under a campaign map of the overland, pinned with each house's colours. Read where the houses of the Maze are fighting, and who is winning.",
+        "baseValue": 0,
+        "damageDice": 0,
+        "armorClassBonus": 0,
+        "isWeapon": false,
+        "isRanged": false,
+        "isArmor": false,
+        "isPotion": false,
+        "isFood": false,
+        "isTreasure": false,
+        "isKey": false,
+        "isUsable": false,
+        "isContainer": false,
+        "isRing": false,
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "variants": [
+            {
+                "color": "GOLD",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 1
+            }
+        ]
+    },
     "PROJECTILE": {
         "friendlyName": "Projectile",
         "texturePath": "images/weapons/big_bolt.png",

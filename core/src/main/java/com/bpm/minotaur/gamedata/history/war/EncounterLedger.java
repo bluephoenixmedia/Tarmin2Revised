@@ -66,6 +66,8 @@ public class EncounterLedger {
     /** Shelter sleeps so far; battlefields clear by it. */
     public int sleeps;
     public List<Dressing> dressings = new ArrayList<>();
+    /** Houses whose heralds the player has cut down, once for each (W29); favour will hear of it. */
+    public List<Integer> heraldsSlain = new ArrayList<>();
 
     /** How many old anchors are kept. */
     static final int KEEP = 8;

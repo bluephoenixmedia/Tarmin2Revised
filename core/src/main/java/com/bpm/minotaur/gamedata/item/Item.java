@@ -181,7 +181,7 @@ public class Item implements Renderable {
         WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
 
         // Home Props
-        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN,
+        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN, HOME_WAR_TABLE,
         // Shelter biome portals, and the return portal they leave behind.
         BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_PORTAL_TUNDRA, BIOME_PORTAL_BLIGHT, BIOME_RETURN_PORTAL,
         // An outpost shelter's hearth, cold until lit with a Tinder Bundle, which claims the shelter.

@@ -2253,6 +2253,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.HOME_WAR_TABLE) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[THE WAR]",
+                        "War Table",
+                        "A campaign map of the overland pinned with each house's colours. See where the houses are fighting, and who is winning.",
+                        "[ O ]",
+                        "Study the War Table",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
             if (frontItem.getType() == Item.ItemType.BRASS_LANTERN) {
                 worldInteractionCard.show(
                         "[SHELTER HAVEN]",
@@ -3200,6 +3212,8 @@ public class Hud implements Disposable {
             shapeRenderer.end();
         }
 
+        drawWarTally(boxX, boxY - com.bpm.minotaur.ui.UiTheme.WAR_TALLY_GAP, boxW);
+
         BitmapFont compass = hudSkin.getFontSmall();
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
@@ -3391,6 +3405,47 @@ public class Hud implements Disposable {
     }
 
     // --- NEW: Helper method to support GameScreen calls ---
+    private com.bpm.minotaur.gamedata.history.war.WarTally warTally;
+
+    /** How the fight in the player's chunk stands, or null when there is none (Living War W30). */
+    public void setWarTally(com.bpm.minotaur.gamedata.history.war.WarTally tally) {
+        this.warTally = tally;
+    }
+
+    /**
+     * Under the minimap while a battle or skirmish is fought in the chunk: each house's colour at its
+     * end of a bar, the bar split by the ground each still holds.
+     */
+    private void drawWarTally(float x, float top, float width) {
+        if (warTally == null || worldManager == null) return;
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        float h = com.bpm.minotaur.ui.UiTheme.WAR_TALLY_H;
+        float y = top - h;
+        float split = width * warTally.shareA();
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
+        shapeRenderer.rect(x - 2f, y - 2f, width + 4f, h + 4f);
+        shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, warTally.houseA, catalog));
+        shapeRenderer.rect(x, y, split, h);
+        shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, warTally.houseB, catalog));
+        shapeRenderer.rect(x + split, y, width - split, h);
+        shapeRenderer.end();
+        BitmapFont font = hudSkin.getFontSmall();
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        font.setColor(HudSkin.COL_GOLD_BRIGHT);
+        com.bpm.minotaur.gamedata.history.House a = world.house(warTally.houseA);
+        com.bpm.minotaur.gamedata.history.House b = world.house(warTally.houseB);
+        float ty = y - com.bpm.minotaur.ui.UiTheme.PAD_SM;
+        font.draw(spriteBatch, com.bpm.minotaur.ui.UiGlyphs.sanitize(a != null ? a.name : ""), x, ty, width / 2f - 2f,
+                com.badlogic.gdx.utils.Align.left, false);
+        font.draw(spriteBatch, com.bpm.minotaur.ui.UiGlyphs.sanitize(b != null ? b.name : ""), x + width / 2f + 2f, ty,
+                width / 2f - 2f, com.badlogic.gdx.utils.Align.right, false);
+        spriteBatch.end();
+    }
+
     public void addMessage(String message) {
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(message, 2f));

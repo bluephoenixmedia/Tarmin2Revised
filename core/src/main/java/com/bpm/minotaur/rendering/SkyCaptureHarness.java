@@ -122,6 +122,9 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             // battle, a front on the horizon -- black by day, lit from below by night.
             new Shot("23_noon_war_smoke", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
             new Shot("24_night_war_smoke", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            // Arrows over the fight next door, and a house's beacons lit toward its battle (W10.3-4).
+            new Shot("25_noon_war_volleys", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("26_night_war_signals", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
     };
 
     private static Shot knell(Shot shot, float age) {
@@ -256,6 +259,22 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             state.warSmokeCount = 4;
         } else {
             state.warSmokeCount = 0;
+        }
+        if (shot.name.contains("volleys")) {
+            state.warSmoke = new float[]{0.4f, 1f};
+            state.warSmokeCount = 1;
+            state.volleys = new float[]{0.4f, 1f};
+            state.volleyCount = 1;
+        } else {
+            state.volleyCount = 0;
+        }
+        if (shot.name.contains("signals")) {
+            state.warSmoke = new float[]{1f, 3f};
+            state.warSmokeCount = 1;
+            state.beacons3 = new float[]{-9f, 14f, -6f, 10f, -3f, 6.5f, -1f, 4f};
+            state.beaconLit = 4;
+        } else {
+            state.beaconLit = 0;
         }
         // Only the knell shots put the castle due north; the rest keep the defaults they were made with.
         state.hasCastleSite = shot.knellAge >= 0f;

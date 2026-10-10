@@ -127,6 +127,33 @@ public class ExpeditionMapScreen extends BaseScreen {
         return marks;
     }
 
+    /** Fresh battlefields, columns on the march and war camps (Living War W28). */
+    private List<MapSurface.WarSign> warSigns() {
+        List<MapSurface.WarSign> signs = new ArrayList<>();
+        if (worldManager == null) return signs;
+        HistoryWorld world = worldManager.getHistory().world();
+        DoctrineCatalog catalog = DoctrineCatalog.getInstance();
+        com.bpm.minotaur.gamedata.history.war.EncounterLedger ledger = worldManager.getHistory().encounterLedger();
+        for (com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing d : ledger.dressings) {
+            if ("AFTERMATH".equals(d.kind)) {
+                signs.add(new MapSurface.WarSign(MapSurface.WarSign.Kind.BATTLEFIELD, new com.badlogic.gdx.math.GridPoint2(d.chunkX, d.chunkY),
+                        null, com.bpm.minotaur.ui.UiTheme.MAP_BATTLEFIELD));
+            }
+        }
+        long clock = worldManager.getHistory().warClock();
+        if (worldManager.getCurrentLevel() == 1) {
+            for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
+                if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.COLUMN) continue;
+                signs.add(new MapSurface.WarSign(MapSurface.WarSign.Kind.COLUMN, e.chunkAt(clock), e.to,
+                        HouseHeraldry.primary(world, e.houseA, catalog)));
+            }
+        }
+        for (com.bpm.minotaur.gamedata.history.war.Encounter c : worldManager.currentCamps()) {
+            signs.add(new MapSurface.WarSign(MapSurface.WarSign.Kind.CAMP, c.from, null, HouseHeraldry.primary(world, c.houseA, catalog)));
+        }
+        return signs;
+    }
+
     public ExpeditionMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
         super(game);
         this.player = player;
@@ -149,6 +176,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         model = buildModel();
         surface.setModel(model, knowledge);
         surface.setFronts(frontMarks());
+        surface.setWarSigns(warSigns());
         surface.setPlayer(playerMark());
         surface.setThreat(findThreatMark(surface.getFloor()));
         restoreView();

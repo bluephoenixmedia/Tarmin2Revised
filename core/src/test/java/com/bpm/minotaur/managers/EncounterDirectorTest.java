@@ -299,6 +299,66 @@ public class EncounterDirectorTest {
         assertEquals(before + EncounterDirector.GATE_DEFENDED + EncounterDirector.GATE_DEFENDED / 2, history.standing().of(town));
     }
 
+    private Encounter herald() {
+        return new Encounter(Encounter.Kind.HERALD, 9, war.id, war.attackerId, -1, -500, 500,
+                new GridPoint2(2, 4), new GridPoint2(6, 4));
+    }
+
+    private Monster heraldOf() {
+        for (Monster m : maze.getMonsters().values()) if (m.isPeaceful()) return m;
+        return null;
+    }
+
+    @Test
+    public void aHeraldCriesTheNewsToThoseWhoComeNear() {
+        Encounter e = herald();
+        turn(List.of(e));
+        Monster herald = heraldOf();
+        assertNotNull("a herald under a flag of truce", herald);
+        for (Monster m : band(war.attackerId)) if (m != herald) assertTrue("its escort keeps the truce", m.isGateGuard());
+        GridPoint2 near = new GridPoint2((int) herald.getPosition().x + 2, (int) herald.getPosition().y);
+        EncounterDirector.Turn t = director.onTurn(history, HERE, 1, false, maze, near, List.of(e), List.of(), recruiter, props, null);
+        assertNotNull("it cries its news", t.cried);
+        assertTrue(history.isUnlocked(t.cried.id));
+        EncounterDirector.Turn again = director.onTurn(history, HERE, 1, false, maze, near, List.of(e), List.of(), recruiter, props, null);
+        assertNull("once", again.cried);
+    }
+
+    @Test
+    public void cuttingDownAHeraldTakesItsNewsAndIsRemembered() {
+        Encounter e = herald();
+        turn(List.of(e));
+        kill(heraldOf());
+        EncounterDirector.Turn t = turn(List.of(e));
+        assertNotNull(t.cried);
+        assertTrue(history.encounterLedger().heraldsSlain.contains(war.attackerId));
+        assertTrue(history.encounterLedger().isSpent(e));
+    }
+
+    @Test
+    public void aHeraldWalksOnAcrossTheChunk() {
+        Encounter e = herald();
+        turn(List.of(e));
+        Monster herald = heraldOf();
+        float startX = herald.getPosition().x;
+        for (int i = 0; i < 5; i++) turn(List.of(e));
+        assertTrue("it walks east", herald.getPosition().x > startX);
+    }
+
+    @Test
+    public void aSkirmishsTallyFollowsWhoStillStands() {
+        Encounter e = skirmish(1000);
+        turn(List.of(e));
+        com.bpm.minotaur.gamedata.history.war.WarTally tally = director.tally(maze);
+        assertNotNull(tally);
+        assertEquals(0.5f, tally.shareA(), 0.25f);
+        for (Monster m : band(war.defenderId)) {
+            kill(m);
+            break;
+        }
+        assertTrue(director.tally(maze).shareA() > tally.shareA());
+    }
+
     @Test
     public void theShelterIsLeftInPeace() {
         director.onTurn(history, HERE, 1, true, maze, PLAYER, List.of(skirmish(1000)), Collections.emptyList(), recruiter, props, null);

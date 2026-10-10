@@ -347,6 +347,21 @@ public final class HistoryManager {
         return said;
     }
 
+    /**
+     * The newest news a herald cries (Living War W29): the latest matter of state the player has not
+     * yet heard, now learned. Null when they have heard it all.
+     */
+    public HistoryEvent freshNews() {
+        for (int i = world.events().size() - 1; i >= 0; i--) {
+            HistoryEvent e = world.events().get(i);
+            if (com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION.tells(e.type) && !unlocked.contains(e.id)) {
+                unlocked.add(e.id);
+                return e;
+            }
+        }
+        return null;
+    }
+
     /** Marks a town found; true the first time. */
     public boolean findTown(String key) {
         return townsFound.add(key);

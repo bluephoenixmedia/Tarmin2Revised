@@ -142,8 +142,15 @@ public final class UiTheme {
     public static final float MAP_GHOST_ALPHA = 0.5f;
     /** A war front's wash over the chunks it covers, in the attacking house's colour. */
     public static final float MAP_FRONT_ALPHA = 0.45f;
+    /** How far a house's colour is lifted toward gold when it is used for text (Living War W27). */
+    public static final float HERALDRY_TEXT_LIFT = 0.45f;
+    /** A fresh battlefield's mark on the map (Living War W28). */
+    public static final Color MAP_BATTLEFIELD = new Color(0.62f, 0.12f, 0.08f, 1f);
     /** Thickness of the border a front carries in the defending house's colour, and of the minimap's war rim. */
     public static final float FRONT_RIM = 3f;
+    /** The HUD's war tally under the minimap (Living War W30): its gap below the map, and its bar's height. */
+    public static final float WAR_TALLY_GAP = 4 * 3f;
+    public static final float WAR_TALLY_H = 4 * 3f;
 
     // --- Spacing (SPEC section 3, in canvas units) ------------------------
 

@@ -310,12 +310,50 @@ public class Skybox3DRenderer {
         float px = chunk.x + player.getPosition().x / w - 0.5f;
         float py = chunk.y + player.getPosition().y / h - 0.5f;
         long clock = worldManager.getHistory().warClock();
+        worldSkyState.volleyCount = 0;
+        worldSkyState.beaconLit = 0;
+        if (worldSkyState.volleys == null) worldSkyState.volleys = new float[WAR_SMOKE_MAX * 2];
+        if (worldSkyState.beacons3 == null) worldSkyState.beacons3 = new float[BEACON_CHAIN * 2];
+        com.badlogic.gdx.math.GridPoint2 me = new com.badlogic.gdx.math.GridPoint2(chunk);
         for (com.bpm.minotaur.gamedata.history.war.Front f : worldManager.currentFronts()) {
             addSmoke(f.center, px, py, WAR_SMOKE_RANGE);
+            if (Math.max(0, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, f.center)
+                    - com.bpm.minotaur.gamedata.history.war.Front.RADIUS) <= 1) addVolley(f.center, px, py);
         }
         for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
-            if (e.fighting()) addSmoke(e.chunkAt(clock), px, py, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.EARSHOT);
+            if (!e.fighting()) continue;
+            com.badlogic.gdx.math.GridPoint2 at = e.chunkAt(clock);
+            addSmoke(at, px, py, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.EARSHOT);
+            if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT
+                    && com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at) <= 1) addVolley(at, px, py);
+            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) lightBeacons(worldManager, e, clock, px, py);
         }
+    }
+
+    /** Beacons in a chain, one lit every few turns, from the mustering house's seat to its battle (W10.3). */
+    private static final int BEACON_CHAIN = 4;
+    private static final int BEACON_TURNS = 3;
+
+    private void lightBeacons(com.bpm.minotaur.managers.WorldManager worldManager, com.bpm.minotaur.gamedata.history.war.Encounter e,
+            long clock, float px, float py) {
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = worldManager.houseSeats();
+        com.badlogic.gdx.math.GridPoint2 seat = seats != null ? seats.seat(e.houseA) : null;
+        if (seat == null) return;
+        com.badlogic.gdx.math.GridPoint2 to = e.chunkAt(clock);
+        int lit = (int) Math.min(BEACON_CHAIN, (clock - e.start) / BEACON_TURNS + 1);
+        for (int i = 0; i < lit && worldSkyState.beaconLit < BEACON_CHAIN; i++) {
+            float t = i / (float) BEACON_CHAIN;
+            int k = worldSkyState.beaconLit++;
+            worldSkyState.beacons3[2 * k] = seat.x + (to.x - seat.x) * t - px;
+            worldSkyState.beacons3[2 * k + 1] = seat.y + (to.y - seat.y) * t - py;
+        }
+    }
+
+    private void addVolley(com.badlogic.gdx.math.GridPoint2 at, float px, float py) {
+        if (worldSkyState.volleyCount >= WAR_SMOKE_MAX) return;
+        int i = worldSkyState.volleyCount++;
+        worldSkyState.volleys[2 * i] = at.x - px;
+        worldSkyState.volleys[2 * i + 1] = at.y - py;
     }
 
     private void addSmoke(com.badlogic.gdx.math.GridPoint2 at, float px, float py, int range) {
@@ -414,6 +452,75 @@ public class Skybox3DRenderer {
                 }
                 d.lookAt(camera.position, camera.up);
             }
+            if (night) {
+                // The fire under the smoke lights the horizon (W10.2).
+                com.badlogic.gdx.graphics.g3d.decals.Decal glow = smokePuff(smokeShown++);
+                glow.setDimensions(base * 5f, base * 1.4f);
+                glow.setPosition(camX + dirX * dist, -6f + base * 0.3f, camZ + dirZ * dist);
+                glow.setColor(1f, 0.42f, 0.12f, 0.45f * (0.6f + 0.4f * near));
+                glow.lookAt(camera.position, camera.up);
+            }
+        }
+        placeVolleys(state, camX, camZ);
+        placeBeaconChain(state, camX, camZ, night);
+    }
+
+    /** Arrows per flight, and seconds a flight takes to cross. */
+    private static final int VOLLEY_ARROWS = 14;
+    private static final float VOLLEY_SECONDS = 2.6f;
+    private static final float VOLLEY_EVERY = 4.5f;
+
+    /** Dark flights of arrows arcing over a fight next door (W10.4), one after another. */
+    private void placeVolleys(SkyState state, float camX, float camZ) {
+        if (state.volleys == null) return;
+        for (int k = 0; k < state.volleyCount; k++) {
+            float dx = state.volleys[2 * k];
+            float dz = -state.volleys[2 * k + 1];
+            float len = (float) Math.sqrt(dx * dx + dz * dz);
+            float dirX = len < 0.01f ? 0f : dx / len;
+            float dirZ = len < 0.01f ? -1f : dz / len;
+            float phase = (smokeTime + k * 1.3f) % VOLLEY_EVERY;
+            if (phase > VOLLEY_SECONDS) continue;
+            float t = phase / VOLLEY_SECONDS;
+            float dist = LANDMARK_DISTANCE * 0.35f;
+            float sideX = -dirZ, sideZ = dirX;
+            float span = dist * 0.5f;
+            float apex = dist * 0.55f;
+            for (int a = 0; a < VOLLEY_ARROWS; a++) {
+                // Each arrow its own moment and lane in the flight, so it reads as a volley, not a streak.
+                float jitter = ((a * 37) % 11) / 11f - 0.5f;
+                float lane = ((a * 53) % 13) / 13f - 0.5f;
+                float ta = MathUtils.clamp(t + jitter * 0.3f, 0f, 1f);
+                float along = (ta - 0.5f) * span + lane * span * 0.25f;
+                float height = 4f * apex * ta * (1f - ta) * (0.85f + 0.3f * (lane + 0.5f));
+                com.badlogic.gdx.graphics.g3d.decals.Decal d = smokePuff(smokeShown++);
+                float size = dist * 0.011f;
+                d.setDimensions(size * 2.4f, size * 0.7f);
+                d.setPosition(camX + dirX * (dist + lane * dist * 0.3f) + sideX * along,
+                        -6f + height, camZ + dirZ * (dist + lane * dist * 0.3f) + sideZ * along);
+                d.setColor(0.03f, 0.025f, 0.02f, 0.95f);
+                d.lookAt(camera.position, camera.up);
+            }
+        }
+    }
+
+    /** A chain of beacon fires toward a mustering battle (W10.3), the newest the brightest. */
+    private void placeBeaconChain(SkyState state, float camX, float camZ, boolean night) {
+        if (state.beacons3 == null) return;
+        for (int k = 0; k < state.beaconLit; k++) {
+            float dx = state.beacons3[2 * k];
+            float dz = -state.beacons3[2 * k + 1];
+            float chunks = (float) Math.sqrt(dx * dx + dz * dz);
+            if (chunks < 0.5f) continue;
+            float near = 1f - MathUtils.clamp(chunks / WAR_SMOKE_RANGE, 0f, 1f);
+            float dist = LANDMARK_DISTANCE * (0.42f + 0.5f * (1f - near));
+            float flicker = 0.85f + 0.15f * MathUtils.sin(smokeTime * 9f + k * 2.1f);
+            float size = dist * (0.045f + 0.025f * near);
+            com.badlogic.gdx.graphics.g3d.decals.Decal d = smokePuff(smokeShown++);
+            d.setDimensions(size, size * 1.6f);
+            d.setPosition(camX + dx / chunks * dist, -6f + size * 0.9f, camZ + dz / chunks * dist);
+            d.setColor(1f, 0.6f + 0.2f * flicker, 0.2f, (night ? 0.95f : 0.7f) * flicker);
+            d.lookAt(camera.position, camera.up);
         }
     }
 
@@ -544,6 +651,12 @@ public class Skybox3DRenderer {
          */
         public float[] warSmoke;
         public int warSmokeCount;
+        /** Fights close enough to see their arrows over the walls (W10.4): offsets as x,y pairs. */
+        public float[] volleys;
+        public int volleyCount;
+        /** A house's beacons lit toward the battle it musters for (W10.3): offsets as x,y pairs, the lit ones. */
+        public float[] beacons3;
+        public int beaconLit;
         /** Shelter and seal-site beacons in range, or null for none. */
         public java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> beacons;
         /**

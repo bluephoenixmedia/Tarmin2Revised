@@ -251,7 +251,10 @@ public class Monster implements Renderable {
      * when it has nothing to fight, and leaves the chunk there. Null for everyone else. Not saved.
      */
     private com.badlogic.gdx.math.GridPoint2 marchTarget;
-    /** Holds a gate of a battle; lets through a seeker who has struck no one in it (Living War W15). Not saved. */
+    /**
+     * Keeps its peace toward a seeker who has struck no one in its fight: a battle's gate guard
+     * (Living War W15), a herald's escort (W29). Not saved.
+     */
     private transient boolean gateGuard;
     /** Turns spent beside a disguised seeker (W16); at {@code Disguise.SCRUTINY_TURNS} it sees through them. */
     private transient int disguiseScrutiny;
