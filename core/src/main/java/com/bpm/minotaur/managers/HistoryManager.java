@@ -33,6 +33,7 @@ public final class HistoryManager {
     private final java.util.Map<String, Integer> townExiles = new java.util.LinkedHashMap<>();
     private final com.bpm.minotaur.gamedata.history.town.Standing standing = new com.bpm.minotaur.gamedata.history.town.Standing();
     private final java.util.Map<String, com.bpm.minotaur.gamedata.history.town.Quest> quests = new java.util.LinkedHashMap<>();
+    private com.bpm.minotaur.gamedata.history.war.EncounterLedger encounters = new com.bpm.minotaur.gamedata.history.war.EncounterLedger();
 
     private HistoryManager(HistoryWorld world, DoctrineCatalog catalog) {
         this.world = world;
@@ -41,6 +42,15 @@ public final class HistoryManager {
 
     /** A new world's history: prehistory only. */
     public static HistoryManager create(long worldSeed, DoctrineCatalog catalog) {
+        HistoryManager m = past(worldSeed, catalog);
+        // A new game opens on a war, so there is one to hear from the first step (Living War W6).
+        PlayerDeed opening = HistorySimulator.openingWar(m.world);
+        if (opening != null) m.apply(opening);
+        return m;
+    }
+
+    /** Prehistory and nothing more: what a save's deeds replay over. */
+    private static HistoryManager past(long worldSeed, DoctrineCatalog catalog) {
         return new HistoryManager(HistorySimulator.prehistory(worldSeed, catalog), catalog);
     }
 
@@ -50,7 +60,7 @@ public final class HistoryManager {
      */
     public static HistoryManager fromSave(long fallbackSeed, HistorySaveData save, DoctrineCatalog catalog) {
         if (save == null) return create(fallbackSeed, catalog);
-        HistoryManager m = create(save.seed != null ? save.seed : fallbackSeed, catalog);
+        HistoryManager m = past(save.seed != null ? save.seed : fallbackSeed, catalog);
         for (int season = 0; season <= save.liveSeasons; season++) {
             for (PlayerDeed d : save.deeds) {
                 if (d.liveSeason == season) m.apply(d);
@@ -65,6 +75,7 @@ public final class HistoryManager {
             }
         }
         m.hunt = save.hunt;
+        if (save.encounters != null) m.encounters = save.encounters;
         if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
         if (save.townSettlementKeys != null && save.townSettlementIds != null) {
             for (int i = 0; i < Math.min(save.townSettlementKeys.size(), save.townSettlementIds.size()); i++) {
@@ -104,6 +115,7 @@ public final class HistoryManager {
 
     /** Advances one season. Returns what happened in it, oldest first. */
     public List<HistoryEvent> onSleep() {
+        encounters.newExpedition(true);
         int from = world.events().size();
         HistorySimulator.tickSeason(world, catalog);
         return new ArrayList<>(world.events().subList(from, world.events().size()));
@@ -116,6 +128,7 @@ public final class HistoryManager {
 
     /** An expedition ended in death; {@code killerHouseId} is -1 when no house did it. */
     public void recordSeekerFell(int killerHouseId) {
+        encounters.newExpedition(false);
         apply(new PlayerDeed(PlayerDeed.Kind.SEEKER_FELL, killerHouseId, world.liveSeasons()));
     }
 
@@ -359,6 +372,31 @@ public final class HistoryManager {
         return warClock;
     }
 
+    /** What of the surface war is saved (Living War W3). */
+    public com.bpm.minotaur.gamedata.history.war.EncounterLedger encounterLedger() {
+        return encounters;
+    }
+
+    /**
+     * The surface war's encounters under way now (Living War W2): the ones the player can walk into
+     * and the fights out of sight. {@code surface}: the player is on the overland.
+     */
+    public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
+            boolean surface) {
+        return com.bpm.minotaur.gamedata.history.war.EncounterScheduler.at(world, warClock, encounters, playerChunk, surface);
+    }
+
+    /**
+     * The player fought in a skirmish until it broke (Living War W12): {@code winner} held the ground,
+     * {@code loser} routed; {@code captainFell} is a named captain who died in it, or -1.
+     */
+    public void recordSkirmish(int winner, int loser, int captainFell) {
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.SKIRMISH, winner, world.liveSeasons());
+        d.other = loser;
+        d.figure = captainFell;
+        apply(d);
+    }
+
     /** Where every war is being fought now, given where the houses sit in this world. */
     public List<com.bpm.minotaur.gamedata.history.war.Front> fronts(com.bpm.minotaur.gamedata.history.war.SeatMap seats) {
         return com.bpm.minotaur.gamedata.history.war.FrontPlanner.fronts(world, seats, warClock);
@@ -388,6 +426,7 @@ public final class HistoryManager {
             save.beastHpValues.add(e.getValue());
         }
         save.hunt = hunt;
+        save.encounters = encounters;
         save.townsFound = new ArrayList<>(townsFound);
         save.townSettlementKeys = new ArrayList<>(townSettlements.keySet());
         save.townSettlementIds = new ArrayList<>(townSettlements.values());

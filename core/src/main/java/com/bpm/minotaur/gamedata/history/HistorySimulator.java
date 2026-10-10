@@ -67,6 +67,52 @@ public final class HistorySimulator {
         world.liveSeasons++;
     }
 
+    /**
+     * The war a new game opens on when its prehistory ended in peace (Living War W6), or null if a
+     * war is already under way. The free house with the heaviest grudge declares on the house it
+     * hates; with no grudge anywhere, the strongest free lesser house comes for a gash.
+     */
+    public static PlayerDeed openingWar(HistoryWorld world) {
+        if (!world.activeWars().isEmpty()) return null;
+        House attacker = null;
+        House defender = null;
+        float worst = 0f;
+        for (House h : world.livingHouses()) {
+            if (h.liegeId >= 0) continue;
+            for (House t : world.livingHouses()) {
+                if (t == h || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
+                float g = world.grudgeWeight(h.id, t.id);
+                if (g > worst) {
+                    worst = g;
+                    attacker = h;
+                    defender = t;
+                }
+            }
+        }
+        if (attacker == null) {
+            // No grudge to settle: the strongest free house comes for a seat it does not hold -- a
+            // gash or the castle -- and, failing that, for anyone it is not bound to.
+            for (House h : world.livingHouses()) {
+                if (h.liegeId >= 0) continue;
+                House prey = null;
+                for (House t : world.livingHouses()) {
+                    if (t == h || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
+                    boolean seat = t.isGreat() || t.holdsCastle;
+                    boolean preySeat = prey != null && (prey.isGreat() || prey.holdsCastle);
+                    if (prey == null || (seat && !preySeat) || (seat == preySeat && t.strength < prey.strength)) prey = t;
+                }
+                if (prey != null && (attacker == null || h.strength > attacker.strength)) {
+                    attacker = h;
+                    defender = prey;
+                }
+            }
+            if (attacker == null) return null;
+        }
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.OPENING_WAR, attacker.id, world.liveSeasons);
+        d.other = defender.id;
+        return d;
+    }
+
     /** Applies a player deed immediately; its consequences resolve at the next season. */
     public static void applyDeed(HistoryWorld world, PlayerDeed deed) {
         new HistorySimulator(world, null).deed(deed);
@@ -819,6 +865,15 @@ public final class HistorySimulator {
             boolean beast = deed.target == com.bpm.minotaur.gamedata.history.town.Quest.Kind.SLAY_BEAST.ordinal();
             if (beast) e.beastId = deed.other;
             else if (world.house(deed.other) != null) e.houseB = deed.other;
+        } else if (deed.kind == PlayerDeed.Kind.OPENING_WAR) {
+            House attacker = world.house(deed.target);
+            House defender = world.house(deed.other);
+            if (attacker == null || defender == null || attacker.isExtinct() || defender.isExtinct()
+                    || world.activeWarBetween(attacker.id, defender.id) != null) return;
+            Grudge g = world.strongestGrudge(attacker.id, defender.id);
+            declareWar(attacker, defender, casusBelli(attacker, defender), g != null ? g.causeEventId : -1);
+        } else if (deed.kind == PlayerDeed.Kind.SKIRMISH) {
+            skirmish(deed);
         } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
             House winner = world.house(deed.target);
             House loser = world.house(deed.other);
@@ -827,6 +882,34 @@ public final class HistorySimulator {
             rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xBA77L);
             fought(w, winner, loser).detail = 1;
         }
+    }
+
+    /** Strength a skirmish the player fought in moves from the loser to the winner (W12). */
+    static final float SKIRMISH_STAKE = 2f;
+
+    /**
+     * A skirmish the player fought in (Living War W12): a little strength changes hands, and it is
+     * chronicled only if a named captain fell in it.
+     */
+    private void skirmish(PlayerDeed deed) {
+        House winner = world.house(deed.target);
+        House loser = world.house(deed.other);
+        if (winner == null || loser == null || winner.isExtinct() || loser.isExtinct()) return;
+        winner.strength = Math.min(winner.strengthCap(), winner.strength + SKIRMISH_STAKE);
+        loser.strength = Math.max(5f, loser.strength - SKIRMISH_STAKE);
+        Figure captain = world.figure(deed.figure);
+        if (captain == null || !captain.isAlive() || captain.ageless) return;
+        kill(captain, Figure.Fate.BATTLE);
+        rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0x5C1L);
+        HistoryEvent e = record(EventType.BATTLE);
+        e.houseA = winner.id;
+        e.houseB = loser.id;
+        e.figureB = captain.id;
+        e.place = NameForge.place(rng);
+        e.detail = 2;
+        War w = world.activeWarBetween(winner.id, loser.id);
+        if (w != null) e.causeEventId = w.declaredEventId;
+        grudge(captain.houseId, captain.houseId == winner.id ? loser.id : winner.id, CasusBelli.SLAIN_KIN, e.id, 4f);
     }
 
     /**

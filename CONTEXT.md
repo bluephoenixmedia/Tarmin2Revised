@@ -64,6 +64,18 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Exile**: A figure of the houses living in a town: a sworn sword who outlived their house, or the loser of a succession who survived it.
 - **Standing**: How a town regards the player. Kept per town, heard at half weight by its sister towns and reversed by its rivals; a hostile town sets its guards on the player.
 
+### The Living War
+
+- **Encounter**: A scheduled piece of the surface war: a skirmish, a marching column, a raiding party, a war camp, an aftermath field or a siege. Scheduled from the seed, the war clock and the chunk, never saved; not history unless the player takes part.
+- **Skirmish**: Two war-bands of 6-10 meeting in a chunk and fighting until one routs. Smaller than a battle, and far more common.
+- **Column**: Soldiers of one house marching in file between its seat and a front, crossing chunks.
+- **Raid**: A small party of one house burning another's ground; in peacetime too, between houses that bear a grudge.
+- **War Camp**: A house's tents, fires and sentries near a front, for as long as its war lasts.
+- **Aftermath**: A battlefield left behind: the dead, crows, burnt ground and broken banners, for three sleeps.
+- **Earshot**: How many chunks off a fight is heard: steel and screams next door, horns and drums two or three chunks off, a lone horn out to six. Underground it is a rumble through the stone.
+- **Favour**: A house's regard for the player, from Enemy to Friend.
+- **Sworn**: Bound to a house by its oath: its colours, its contracts, its enemies.
+
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.
 - **Consult Active Architecture Specs**:
