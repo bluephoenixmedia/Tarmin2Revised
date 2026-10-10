@@ -380,6 +380,40 @@ public class Monster implements Renderable {
             }
         }
 
+        // Check for idle animation spritesheet (images/monsters/idle/)
+        String idlePath = (template.idleAnimationPath != null) ? template.idleAnimationPath : null;
+        if (idlePath == null && MonsterIdleAnimationRegistry.hasIdleAnimation(type)) {
+            idlePath = MonsterIdleAnimationRegistry.getConfig(type).texturePath;
+        }
+
+        if (idlePath != null && assetManager != null && assetManager.isLoaded(idlePath, Texture.class)) {
+            MonsterIdleAnimationRegistry.IdleConfig cfg = MonsterIdleAnimationRegistry.getConfig(type);
+            int cols = (cfg != null) ? cfg.cols : 3;
+            int rows = (cfg != null) ? cfg.rows : 3;
+            float dur = (cfg != null) ? cfg.frameDuration : 0.15f;
+
+            Texture idleTex = assetManager.get(idlePath, Texture.class);
+            this.isSpriteSheet = true;
+            this.frameDuration = dur;
+            int frameWidth = idleTex.getWidth() / cols;
+            int frameHeight = idleTex.getHeight() / rows;
+            TextureRegion[][] tmp = TextureRegion.split(idleTex, frameWidth, frameHeight);
+            this.animationFrames = new TextureRegion[cols * rows];
+            int index = 0;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    this.animationFrames[index++] = tmp[r][c];
+                }
+            }
+            this.animStartFrame = 0;
+            this.animEndFrame = this.animationFrames.length - 1;
+            // Desynchronize random start frame across monsters in the maze
+            this.currentFrame = (int) (Math.random() * this.animationFrames.length);
+            if (this.texture == null) {
+                this.texture = idleTex;
+            }
+        }
+
         if (template.directionTextures != null) {
             MonsterTemplate.DirectionTextures dt = template.directionTextures;
             this.texNorth = loadTex(assetManager, dt.north);
@@ -717,7 +751,7 @@ public class Monster implements Renderable {
     public void updateAnimation(float delta) {
         if (isSpriteSheet && animationFrames != null && animationFrames.length > 0) {
             animTimer += delta;
-            if (animTimer >= frameDuration) {
+            while (animTimer >= frameDuration && frameDuration > 0f) {
                 animTimer -= frameDuration;
                 currentFrame++;
                 if (currentFrame > animEndFrame) currentFrame = animStartFrame;
@@ -727,10 +761,22 @@ public class Monster implements Renderable {
 
         if (southFrames == null || southFrames.length <= 1) return;
         animTimer += delta;
-        if (animTimer >= frameDuration) {
+        while (animTimer >= frameDuration && frameDuration > 0f) {
             animTimer -= frameDuration;
             currentFrame = (currentFrame + 1) % southFrames.length;
         }
+    }
+
+    public int getCurrentFrame() {
+        return currentFrame;
+    }
+
+    public boolean isSpriteSheet() {
+        return isSpriteSheet;
+    }
+
+    public int getTotalAnimationFrames() {
+        return (animationFrames != null) ? animationFrames.length : 0;
     }
 
     /**

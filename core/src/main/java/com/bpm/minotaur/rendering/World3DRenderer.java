@@ -2000,7 +2000,10 @@ public class World3DRenderer implements Disposable {
                 ShopkeeperNpc sk = (ShopkeeperNpc) r;
                 Texture tex = sk.getTexture();
                 if (tex != null) {
-                    TextureRegion region = new TextureRegion(tex);
+                    TextureRegion region = sk.getTextureRegion();
+                    if (region == null) {
+                        region = new TextureRegion(tex);
+                    }
                     float w = sk.scale.x;
                     float h = sk.scale.y;
                     dynamicBatcher.addBillboard(ex, 0.0f, wz, w, h, region, Color.WHITE, camRight, camUp, camDir);

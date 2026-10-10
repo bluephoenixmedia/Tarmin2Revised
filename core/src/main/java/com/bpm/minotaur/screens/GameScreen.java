@@ -670,6 +670,17 @@ public class GameScreen extends BaseScreen {
             updateSeamlessChunkLoading(delta);
 
             animationManager.update(delta);
+            if (maze != null && maze.getMonsters() != null) {
+                for (Monster m : maze.getMonsters().values()) {
+                    if (m != null) m.updateAnimation(delta);
+                }
+            }
+            if (combatManager != null && combatManager.getMonster() != null) {
+                combatManager.getMonster().updateAnimation(delta);
+            }
+            if (maze != null && maze.getShopkeeper() != null) {
+                maze.getShopkeeper().updateAnimation(delta);
+            }
             if (maze != null)
                 maze.update(delta);
             if (hud != null)
