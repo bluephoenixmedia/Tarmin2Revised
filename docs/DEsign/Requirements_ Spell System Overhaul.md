@@ -312,6 +312,15 @@ anyway.
 - [x] Full suite passes and the game boots (`AGENTS.md` rule: a clean merge is not
       proof of a working one).
 
+## 6.1 Definition of done — Phase 2 (Visuals, Archetypes & UX)
+
+- [x] 132 placeholder `FORCE_MISSILE` spells re-authored into distinct visual archetypes (`assets/data/spells.json`).
+- [x] Explicit `"healing": true` boolean added to `SpellTemplate` and `spells.json`, retiring substring heuristics.
+- [x] All 12 visual archetypes wired to distinct explosion types, impacts, sounds, screen vignettes, and decals.
+- [x] Monster spellcasting (`MonsterSpellExecutor`) and projectile wands (`WandExecutionEngine`) unified with modern `spellfx.json` impacts and audio cues.
+- [x] Spellbook Screen UX overhauled (Defect 1): dual-path click-to-slot and drag-and-drop, primed selection indicators, empty slot highlights, quick-assign via right-click or double-click, and generous drop hit targets.
+- [x] Full test suite passes (1,964 tests green) with zero glyph or asset regressions.
+
 ## 7. Risks
 
 **Save compatibility.** `unlockedSpellSlots` is persisted
