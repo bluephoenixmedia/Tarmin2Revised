@@ -43,7 +43,21 @@ public final class EncounterDirector {
         /** News a herald cried this turn: the event, and the house whose herald it was (W29). */
         public com.bpm.minotaur.gamedata.history.HistoryEvent cried;
         public int criedBy = -1;
+        /** The house whose war camp the player stands in, or -1 (Living War W20). */
+        public int campHouse = -1;
+        /** A column of this house left the chunk with the player beside it, alive (W25). */
+        public int escorted = -1;
+        /** The player cut down every sentry of this house's camp (W25). */
+        public int campBroken = -1;
+        /** The player fought for this house in a skirmish, and it held the ground (W19). */
+        public int foughtFor = -1;
+        /** The player cut down this house's herald (W29). */
+        public int heraldSlain = -1;
     }
+
+    /** Hunters a house sends after a seeker it counts its enemy (W18). */
+    static final int HUNTERS_MIN = 3;
+    static final int HUNTERS_MAX = 5;
 
     /** How near a herald must pass to be heard. */
     static final int HERALD_EARSHOT = 3;
@@ -166,6 +180,7 @@ public final class EncounterDirector {
             Stage s = it.next();
             tick(s, history, maze, playerTile, clock, props, spoils, t);
             if (s.phase == Phase.DONE) it.remove();
+            else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.houseA;
         }
         return t;
     }
@@ -369,6 +384,8 @@ public final class EncounterDirector {
                         + " holds the ground.");
                 t.cues.add(Cue.ROUT);
                 if (joined(s)) {
+                    int side = sideFoughtFor(s);
+                    if (side == s.winner) t.foughtFor = side;
                     history.recordSkirmish(s.winner, loser, fallenCaptain(s));
                     if (spoils != null) spoils.drop(maze, centroid(s, player), loser, false);
                 }
@@ -400,6 +417,8 @@ public final class EncounterDirector {
                 if (destroyed) {
                     ledger.spend(s.e);
                     t.messages.add("The column of " + name(world, s.e.houseA) + " is broken. Its banners lie in the mud.");
+                } else if (player != null) {
+                    t.escorted = s.e.houseA;
                 }
                 s.phase = Phase.DONE;
                 return;
@@ -412,6 +431,7 @@ public final class EncounterDirector {
                         // Cut down: the proclamation is the player's anyway, and the house will hear of it.
                         if (!s.cried) cry(s, history, t);
                         if (!ledger.heraldsSlain.contains(s.e.houseA)) ledger.heraldsSlain.add(s.e.houseA);
+                        t.heraldSlain = s.e.houseA;
                         t.messages.add("You take the proclamation from the herald of " + name(world, s.e.houseA)
                                 + ". Its house will hear of this.");
                         ledger.spend(s.e);
@@ -432,6 +452,7 @@ public final class EncounterDirector {
                     // A camp whose sentries the player has cut down stays unguarded (W3).
                     if (!s.a.isEmpty() && standing(maze, s.a) == 0) {
                         ledger.spend(s.e);
+                        t.campBroken = s.e.houseA;
                         t.messages.add("The camp of " + name(world, s.e.houseA) + " stands empty.");
                         s.phase = Phase.DONE;
                     }
@@ -496,6 +517,37 @@ public final class EncounterDirector {
             maze.addMonster(herald);
             return;
         }
+    }
+
+    /** The side the player fought for: the one whose enemies alone they struck; -1 if both or neither. */
+    private static int sideFoughtFor(Stage s) {
+        boolean struckA = false, struckB = false;
+        for (Monster m : s.a) struckA |= m.seekerDrewBlood();
+        for (Monster m : s.b) struckB |= m.seekerDrewBlood();
+        if (struckA == struckB) return -1;
+        return struckB ? s.e.houseA : s.e.houseB;
+    }
+
+    /**
+     * A house that counts the player its enemy sends hunters after them (W18): a few of its soldiers
+     * come in at an edge of the player's chunk, already on the trail.
+     */
+    public void hunt(HistoryManager history, Maze maze, int houseId, GridPoint2 player, BattleDirector.Recruiter recruiter,
+            Turn t) {
+        if (maze == null || player == null) return;
+        HistoryWorld world = history.world();
+        Random r = new Random(world.seed ^ (history.warClock() * 0x9E3779B97F4A7C15L) ^ (houseId * 0x632BE59BD9B4E019L));
+        int edge = r.nextInt(4);
+        List<Monster> band = new ArrayList<>();
+        int n = HUNTERS_MIN + r.nextInt(HUNTERS_MAX - HUNTERS_MIN + 1);
+        for (int i = 0; i < n; i++) {
+            Monster m = enlist(band, maze, recruiter, world, houseId, edgeTile(maze, edge, r), r);
+            if (m != null) m.setLastKnownTargetPos(new GridPoint2(player));
+        }
+        if (band.isEmpty()) return;
+        band.get(0).setDisplayName("Huntmaster of " + name(world, houseId));
+        t.messages.add("Hunters of " + name(world, houseId) + " have found your trail. They mean to collect.");
+        t.cues.add(Cue.CLASH);
     }
 
     /** Whether the player drew blood in the fight: then it is theirs, and the history hears of it (W12). */

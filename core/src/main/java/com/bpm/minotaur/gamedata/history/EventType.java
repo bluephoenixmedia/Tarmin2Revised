@@ -47,5 +47,11 @@ public enum EventType {
      * A seal lord ({@code figureB} of {@code houseB}) killed in its own court by another hand:
      * {@code houseA}'s, or -1 for a beast of the deep. Its slayer carries off the seal.
      */
-    LORD_SLAIN_IN_COURT
+    LORD_SLAIN_IN_COURT,
+    /** A seeker swore to a house ({@code houseA}) at its war camp (Living War W20). */
+    SEEKER_SWORN,
+    /** A seeker broke its oath to a house ({@code houseB}) (W21): the Maze's betrayal by a mortal. */
+    OATH_BROKEN,
+    /** A house's lord ({@code houseA}) granted a sworn seeker the seal of its gash (W26). */
+    SEAL_GRANTED
 }

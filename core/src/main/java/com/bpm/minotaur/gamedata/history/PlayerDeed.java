@@ -46,7 +46,13 @@ public class PlayerDeed {
          * The player fought in a skirmish until it broke (Living War W12): house {@link #target} held
          * the ground, {@link #other} routed. {@link #figure} is a named captain who fell in it, or -1.
          */
-        SKIRMISH
+        SKIRMISH,
+        /** The player swore to house {@link #target} (Living War W20). */
+        SWORE_OATH,
+        /** The player broke its oath to house {@link #target} (W21). */
+        BROKE_OATH,
+        /** House {@link #target}'s lord granted the player the seal of its gash (W26). */
+        SEAL_GRANTED
     }
 
     public Kind kind;

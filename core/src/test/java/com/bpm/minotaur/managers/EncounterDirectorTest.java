@@ -360,6 +360,51 @@ public class EncounterDirectorTest {
     }
 
     @Test
+    public void fightingForTheSideThatHoldsIsRemembered() {
+        Encounter e = skirmish(1000);
+        turn(List.of(e));
+        for (Monster m : band(war.defenderId)) {
+            m.markSeekerDrewBlood();
+            kill(m);
+        }
+        EncounterDirector.Turn t = turn(List.of(e));
+        assertEquals(war.attackerId, t.foughtFor);
+    }
+
+    @Test
+    public void aColumnSeenThroughIsEscorted() {
+        Encounter col = new Encounter(Encounter.Kind.COLUMN, 4, war.id, war.attackerId, -1, -500, 500,
+                new GridPoint2(2, 4), new GridPoint2(6, 4));
+        turn(List.of(col));
+        for (Monster m : band(war.attackerId)) {
+            maze.removeMonster(m);
+            m.getPosition().set(m.getMarchTarget().x, m.getMarchTarget().y);
+            maze.addMonster(m);
+        }
+        assertEquals(war.attackerId, turn(List.of(col)).escorted);
+    }
+
+    @Test
+    public void aCampCutDownIsReportedBroken() {
+        Encounter camp = new Encounter(Encounter.Kind.CAMP, -2, war.id, war.defenderId, -1, 0, Long.MAX_VALUE, HERE, HERE);
+        EncounterDirector.Turn first = director.onTurn(history, HERE, 1, false, maze, PLAYER, List.of(), List.of(camp), recruiter, props, null);
+        assertEquals("standing in it", war.defenderId, first.campHouse);
+        for (Monster m : band(war.defenderId)) kill(m);
+        EncounterDirector.Turn t = director.onTurn(history, HERE, 1, false, maze, PLAYER, List.of(), List.of(camp), recruiter, props, null);
+        assertEquals(war.defenderId, t.campBroken);
+    }
+
+    @Test
+    public void huntersComeOnTheTrail() {
+        EncounterDirector.Turn t = new EncounterDirector.Turn();
+        director.hunt(history, maze, war.attackerId, PLAYER, recruiter, t);
+        List<Monster> hunters = band(war.attackerId);
+        assertTrue(hunters.size() >= EncounterDirector.HUNTERS_MIN);
+        for (Monster m : hunters) assertEquals(PLAYER, m.getLastKnownTargetPos());
+        assertFalse(t.messages.isEmpty());
+    }
+
+    @Test
     public void theShelterIsLeftInPeace() {
         director.onTurn(history, HERE, 1, true, maze, PLAYER, List.of(skirmish(1000)), Collections.emptyList(), recruiter, props, null);
         assertTrue(maze.getMonsters().isEmpty());

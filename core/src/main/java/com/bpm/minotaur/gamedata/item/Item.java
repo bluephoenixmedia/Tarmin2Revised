@@ -133,7 +133,7 @@ public class Item implements Renderable {
         TROMBASH_HELD, TROMBASH_THROWN, TUFENK, WARHAMMER, WHIP, WHIP_CHAIN, WHIP_MASTERS, WRIST_RAZOR, ZAGHNAL,
 
         // NEW ARMOR (Generated)
-        BANDED_MAIL, BRIGANDINE, BACK_AND_BREAST, BASINET, BRONZE_PLATE, CHAIN_HAUBERK, CHAIN_LAMELLAR, CHAIN_MAIL,
+        BANDED_MAIL, BRIGANDINE, TABARD, BACK_AND_BREAST, BASINET, BRONZE_PLATE, CHAIN_HAUBERK, CHAIN_LAMELLAR, CHAIN_MAIL,
         CORD_MAIL, FIELD_PLATE, FULL_PLATE, GALLIC_ARMOR, HALF_PLATE, CAP, CLOSED_FACE, MAIL_COIF, GREAT_HELM,
         LEATHER_HELM, OPEN_FACED, HIDE_ARMOR, HOPLITE_ARMOR, IMPROVED_MAIL, LAMELLAR_SHIRT, LEATHER_ARMOR,
         LIGHT_SCALE, LORICA_HAMATA, LORICA_SEGMENTA, MAIL_AND_PLATE, METAL_LAMELLAR, PADDED_ARMOR, PLATE_MAIL,
@@ -243,6 +243,8 @@ public class Item implements Renderable {
 
     /** The house a trophy was taken from (plan T2.7, T4.5), or -1. */
     private int trophyHouseId = -1;
+    /** A tabard's doctrine id, whose colours it wears on the paper doll (Living War W24); null otherwise. */
+    private String heraldry;
 
     // --- Base Properties ---
     private String friendlyName;
@@ -694,6 +696,14 @@ public class Item implements Renderable {
 
     public String getFriendlyName() {
         return friendlyName;
+    }
+
+    public String getHeraldry() {
+        return heraldry;
+    }
+
+    public void setHeraldry(String heraldry) {
+        this.heraldry = heraldry;
     }
 
     public int getTrophyHouseId() {

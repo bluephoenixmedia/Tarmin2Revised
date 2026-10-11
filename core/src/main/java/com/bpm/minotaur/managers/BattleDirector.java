@@ -390,6 +390,15 @@ public final class BattleDirector {
                 a + (model != null ? model.a.reserve : 0), b + (model != null ? model.b.reserve : 0));
     }
 
+    /** The house the player fought for: the one whose enemies alone they struck; -1 if both or neither (W19). */
+    public int playerFoughtFor() {
+        boolean struckA = false, struckB = false;
+        for (Monster m : sideA) struckA |= m.seekerDrewBlood();
+        for (Monster m : sideB) struckB |= m.seekerDrewBlood();
+        if (struckA == struckB) return -1;
+        return struckB ? front.attackerId : front.defenderId;
+    }
+
     /** Whether the player has drawn the blood of any soldier on this field (Living War W15). */
     public boolean playerJoined() {
         for (Monster m : sideA) if (m.seekerDrewBlood()) return true;
