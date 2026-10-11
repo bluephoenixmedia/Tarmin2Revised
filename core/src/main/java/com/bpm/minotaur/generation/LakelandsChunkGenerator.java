@@ -200,6 +200,7 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
 
         // 3. Create Maze and assign biome/theme
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
+        maze.setChunkId(chunkId);
         maze.setBiome(Biome.LAKELANDS);
         maze.setTheme(theme != null ? theme : RetroTheme.LAKELANDS_THEME);
         maze.setSecondaryTheme(mazeTheme);

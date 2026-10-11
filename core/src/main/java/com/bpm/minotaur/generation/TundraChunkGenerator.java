@@ -168,6 +168,7 @@ public class TundraChunkGenerator implements IChunkGenerator {
 
         // 3. Create Maze and assign biome/theme
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
+        maze.setChunkId(chunkId);
         maze.setBiome(Biome.TUNDRA);
         maze.setTheme(theme != null ? theme : RetroTheme.TUNDRA_THEME);
         maze.setSecondaryTheme(mazeTheme);

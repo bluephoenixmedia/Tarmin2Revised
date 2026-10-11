@@ -60,7 +60,8 @@ public class MonsterSpawner {
             }
 
             // NetHack lower-bound pruning: Skip if baseLevel < max(1, ctx.edl() / 4)
-            int minLevel = Math.max(1, ctx.edl() / 4);
+            // Capped at 14 to preserve highest-tier foes (baseLevel 14-18) at extreme EDL.
+            int minLevel = Math.min(14, Math.max(1, ctx.edl() / 4));
             if (template.baseLevel < minLevel) {
                 continue;
             }

@@ -3800,7 +3800,7 @@ public class CombatManager {
         float v = site[1];
 
         float aspect = WoundDecalRegistry.getAspectRatio(decalRegion, woundType);
-        float length = MathUtils.clamp(0.20f + actualDamage * 0.008f, 0.16f, 0.45f);
+        float length = MathUtils.clamp(0.10f + actualDamage * 0.002f, 0.08f, 0.22f);
         float width = length / Math.max(0.2f, aspect);
 
         GoreProfile profile = GoreProfile.fromMonster(monster);

@@ -156,6 +156,7 @@ public class BlightChunkGenerator implements IChunkGenerator {
         }
 
         Maze maze = createMazeFromText(layoutLevel, finalLayout);
+        maze.setChunkId(chunkId);
         maze.setBiome(Biome.BLIGHT);
         maze.setTheme(theme != null ? theme : RetroTheme.BLIGHT_THEME);
         maze.setSecondaryTheme(mazeTheme);

@@ -185,6 +185,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         }
 
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
+        maze.setChunkId(chunkId);
         maze.setTheme(theme);
 
         if (!currentChunkHomeTiles.isEmpty()) {

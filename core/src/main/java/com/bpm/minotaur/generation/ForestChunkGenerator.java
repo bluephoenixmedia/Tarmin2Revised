@@ -217,6 +217,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
         // 3. Create Maze and instantiate foliage / scenery billboards
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
+        maze.setChunkId(chunkId);
         maze.setBiome(Biome.FOREST);
         maze.setTheme(theme != null ? theme : RetroTheme.FOREST_THEME);
         maze.setSecondaryTheme(mazeTheme);
