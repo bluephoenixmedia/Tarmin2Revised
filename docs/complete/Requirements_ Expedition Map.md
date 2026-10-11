@@ -1,6 +1,6 @@
 # Requirements: Expedition Map
 
-**Status**: In progress on branch `feat/map`, stacked on `feat/shelter-roads` (the map reads the road layout). Rebase onto `develop` once shelter roads merges.
+**Status**: Complete (Implemented and merged to `develop`).
 **Date**: October 2026
 **Origin**: design grilling session, 2026-10-08. The designer was asked and answered every decision below.
 **Related Documents**:

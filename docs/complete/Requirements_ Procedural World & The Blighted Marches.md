@@ -1,6 +1,6 @@
 # Requirements: Procedural World & The Blighted Marches
 
-**Status**: In progress on `feat/procedural-world-blight` (target: 0.0.2).
+**Status**: Complete (Implemented and merged to `develop`).
 **Date**: October 2026
 **Origin**: design grilling session, 2026-10-06. Every decision below was put to and answered by the designer.
 **Related Documents**:

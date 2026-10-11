@@ -1,6 +1,6 @@
 # Requirements: Shelter Roads
 
-**Status**: Implemented on branch `feat/shelter-roads`, cut from `develop` after the Blight merge, because it builds on the castle corridor and world-gen versioning (target: 0.0.2).
+**Status**: Complete (Implemented and merged to `develop`).
 **Date**: October 2026
 **Origin**: design grilling session, 2026-10-07. The designer was asked and answered every decision below.
 **Related Documents**:

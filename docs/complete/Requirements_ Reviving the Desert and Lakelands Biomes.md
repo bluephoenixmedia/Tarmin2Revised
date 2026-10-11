@@ -1,6 +1,6 @@
 # Requirements: Reviving the Desert and Lakelands Biomes
 
-**Status**: Not started. Deferred from the shelter biome portal work.
+**Status**: Complete (Implemented and verified in production).
 **Date**: September 2026
 **Related Documents**:
 - `docs/DEsign/Themed Chunk Contract.md`
@@ -200,15 +200,15 @@ continuing the existing curve (Forest depth 3 / 25 Crests, Plains depth 5 / 35):
 
 ## 8. Definition of done
 
-- [ ] Humidity noise layer added; DESERT and LAKELANDS selectable and contiguous.
-- [ ] Both guaranteed to exist within 40 chunks of origin for any seed, with a test.
-- [ ] `DesertChunkGenerator` registered, audited against the current generator contract, and brought up to the forest's connectivity guarantees.
-- [ ] `LakelandsChunkGenerator` written, with the same connectivity guarantees.
-- [ ] Both biomes carry a hazard that changes how the player moves or fights, not just fog colour.
-- [ ] Props baked and catalogued; encounter tables distinct from forest.
-- [ ] PLAINS either has its own generator or is retired, and `PORTAL_PLAINS` follows that decision.
-- [ ] Two further portals shipped.
-- [ ] A connectivity test per new generator, matching `ForestConnectivityTest`, including its articulation-point budget.
+- [x] Humidity noise layer added; DESERT and LAKELANDS selectable and contiguous.
+- [x] Both guaranteed to exist within 40 chunks of origin for any seed, with a test.
+- [x] `DesertChunkGenerator` registered, audited against the current generator contract, and brought up to the forest's connectivity guarantees.
+- [x] `LakelandsChunkGenerator` written, with the same connectivity guarantees.
+- [x] Both biomes carry a hazard that changes how the player moves or fights, not just fog colour.
+- [x] Props baked and catalogued; encounter tables distinct from forest.
+- [x] PLAINS either has its own generator or is retired, and `PORTAL_PLAINS` follows that decision.
+- [x] Two further portals shipped.
+- [x] A connectivity test per new generator, matching `ForestConnectivityTest`, including its articulation-point budget.
 
 ---
 

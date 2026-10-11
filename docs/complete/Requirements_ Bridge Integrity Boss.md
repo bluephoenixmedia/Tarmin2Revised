@@ -1,6 +1,6 @@
 # Requirements: The Bridge Integrity Boss
 
-**Status**: Not started. Deferred from the `bugs_9_24_26.md` pass.
+**Status**: Complete (Implemented and verified in production).
 **Date**: September 2026
 **Related Documents**:
 - `docs/DEsign/Themed Chunk Contract.md`
@@ -142,14 +142,14 @@ only works if the player can **see it coming**. Requirements:
 
 ## 8. Definition of done
 
-- [ ] 100% integrity spawns the boss instead of wiping the slot.
-- [ ] A death while the boss lives still wipes the slot.
-- [ ] Killing the boss cuts integrity by the agreed amount and the HUD reflects it.
-- [ ] The boss spawns adjacent to the shelter, never inside it, never on the respawn tile.
-- [ ] The boss chunk fills all seven contract slots and passes `ThemeContractTest`.
-- [ ] The HUD warns at a threshold below 100%, with time to prepare.
-- [ ] `resetDeaths()` — currently dead code — is either used here or deleted.
-- [ ] A test that integrity at 100% produces a boss and not a wipe.
+- [x] 100% integrity spawns the boss instead of wiping the slot.
+- [x] A death while the boss lives still wipes the slot.
+- [x] Killing the boss cuts integrity by the agreed amount and the HUD reflects it.
+- [x] The boss spawns adjacent to the shelter, never inside it, never on the respawn tile.
+- [x] The boss chunk fills all seven contract slots and passes `ThemeContractTest`.
+- [x] The HUD warns at a threshold below 100%, with time to prepare.
+- [x] `resetDeaths()` — currently dead code — is either used here or deleted.
+- [x] A test that integrity at 100% produces a boss and not a wipe.
 
 ---
 

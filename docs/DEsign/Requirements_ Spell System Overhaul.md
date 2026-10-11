@@ -1,6 +1,6 @@
 # Requirements: Spell System Overhaul
 
-**Status**: Specified, not started.
+**Status**: Phase 1 Complete (Access & Progression); Phase 2 Pending (Visuals).
 **Date**: 2026-09-27
 **Branch to work on**: branch from `develop` (see `AGENTS.md` → Branching and releases)
 
@@ -301,15 +301,15 @@ anyway.
 
 ## 6. Definition of done — Phase 1
 
-- [ ] Slots unlock at levels 2, 5, 8, 11; cap 5; a loaded save never loses one.
-- [ ] Tomes grant a permanent spell, never a slot.
-- [ ] Tome study no longer cancels on an arbitrary keypress.
-- [ ] Hotbar is captioned with the live spellbook binding.
-- [ ] Level-up teaches `[Q]` and announces new slots.
-- [ ] `Q` works during combat and is not swallowed by modals.
-- [ ] Arcane Attunement no longer seals spells; it shapes Tome choices only.
-- [ ] New ADR supersedes 0001; `CONTEXT.md` glossary updated.
-- [ ] Full suite passes and the game boots (`AGENTS.md` rule: a clean merge is not
+- [x] Slots unlock at levels 2, 5, 8, 11; cap 5; a loaded save never loses one.
+- [x] Tomes grant a permanent spell, never a slot.
+- [x] Tome study no longer cancels on an arbitrary keypress.
+- [x] Hotbar is captioned with the live spellbook binding.
+- [x] Level-up teaches `[Q]` and announces new slots.
+- [x] `Q` works during combat and is not swallowed by modals.
+- [x] Arcane Attunement no longer seals spells; it shapes Tome choices only.
+- [x] New ADR supersedes 0001; `CONTEXT.md` glossary updated.
+- [x] Full suite passes and the game boots (`AGENTS.md` rule: a clean merge is not
       proof of a working one).
 
 ## 7. Risks
