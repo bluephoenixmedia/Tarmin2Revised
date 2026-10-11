@@ -69,6 +69,8 @@ public final class WarAudio {
 
     private Music open(WarSoundscape.Bed bed) {
         FileHandle file = Gdx.files.internal("sounds/war/" + bed.file + ".ogg");
+        if (!file.exists()) file = Gdx.files.internal("sounds/war/" + bed.file + ".mp3");
+        if (!file.exists()) file = Gdx.files.internal("sounds/war/" + bed.file + ".wav");
         if (!file.exists()) return null;
         try {
             Music m = Gdx.audio.newMusic(file);

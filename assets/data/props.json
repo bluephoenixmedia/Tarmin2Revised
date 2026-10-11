@@ -50,6 +50,32 @@
       "scaleY": 1.7,
       "passable": true
     },
+    {
+      "id": "crow",
+      "asset": "images/props/crow.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.5,
+      "scaleY": 0.5,
+      "passable": true
+    },
+    {
+      "id": "scorched_ground",
+      "asset": "images/props/scorched_ground.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.2,
+      "scaleY": 0.4,
+      "passable": true,
+      "pixelOffsetY": -40
+    },
+    {
+      "id": "corpse_pile",
+      "asset": "images/props/corpse_pile.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.7,
+      "passable": true,
+      "pixelOffsetY": -30
+    },
 
     {
       "id": "stalagmite",

@@ -86,7 +86,7 @@ public final class EncounterDirector {
     public static final int AFTERMATH_SLEEPS = 3;
     static final String AFTERMATH = "AFTERMATH";
     static final String CAMP = "CAMP";
-    private static final String[] FIELD = {"bone_pile", "skull_pile", "bone_pile", "war_banner", "head_spike"};
+    private static final String[] FIELD = {"corpse_pile", "scorched_ground", "crow", "war_banner", "bone_pile", "skull_pile"};
 
     private final DoctrineCatalog catalog;
     private final Map<String, Stage> stages = new LinkedHashMap<>();

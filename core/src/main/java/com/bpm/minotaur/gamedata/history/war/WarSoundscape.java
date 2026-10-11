@@ -24,7 +24,10 @@ public final class WarSoundscape {
         NEAR("battle_near_loop"),
         FAR("battle_far_loop"),
         DRUMS("war_drums_loop"),
-        UNDER("battle_underground_loop");
+        UNDER("battle_underground_loop"),
+        CAMP("camp_loop"),
+        MARCH("march_loop"),
+        CROWS("crows_loop");
 
         public final String file;
 
@@ -115,18 +118,29 @@ public final class WarSoundscape {
         boolean surface = level == 1;
         if (encounters != null) {
             for (Encounter e : encounters) {
-                if (e.kind == Encounter.Kind.CAMP) continue;
                 GridPoint2 at = e.chunkAt(clock);
                 int d = EncounterScheduler.distance(player, at);
                 float pan = pan(player, at, facing);
+                if (e.kind == Encounter.Kind.CAMP) {
+                    if (surface) {
+                        if (d == 0) m.raise(Bed.CAMP, 0.40f, 0f);
+                        else if (d == 1) m.raise(Bed.CAMP, 0.20f, pan);
+                    }
+                    continue;
+                }
                 if (!surface) {
                     if (e.fighting()) under(m, d);
                 } else if (e.fighting()) {
                     fight(m, d, pan);
                     if (e.kind == Encounter.Kind.SIEGE) siege(m, d, pan);
                 } else if (e.kind == Encounter.Kind.COLUMN) {
-                    if (d <= 1) m.raise(Bed.DRUMS, COLUMN_NEAR, pan);
-                    else if (d <= 3) m.raise(Bed.DRUMS, COLUMN_FAR, pan);
+                    if (d <= 1) {
+                        m.raise(Bed.DRUMS, COLUMN_NEAR, pan);
+                        m.raise(Bed.MARCH, COLUMN_NEAR, pan);
+                    } else if (d <= 3) {
+                        m.raise(Bed.DRUMS, COLUMN_FAR, pan);
+                        m.raise(Bed.MARCH, COLUMN_FAR, pan);
+                    }
                 }
             }
         }

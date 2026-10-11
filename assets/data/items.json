@@ -731,7 +731,7 @@
     },
     "HOME_WAR_TABLE": {
         "friendlyName": "War Table",
-        "texturePath": "images/items/scroll.png",
+        "texturePath": "images/items/war_table.png",
         "isImpassable": true,
         "spriteData": [
             "........................",

@@ -106,11 +106,19 @@ public class WarSoundscapeTest {
     }
 
     @Test
-    public void aColumnIsHeardAsDrums() {
+    public void aColumnIsHeardAsDrumsAndMarch() {
         Encounter col = new Encounter(Encounter.Kind.COLUMN, 1, 0, 0, -1, 0, 100, new GridPoint2(1, 0), new GridPoint2(1, 0));
         WarSoundscape.Mix m = hear(col, 1);
         assertTrue(m.volume(WarSoundscape.Bed.DRUMS) > 0f);
+        assertTrue(m.volume(WarSoundscape.Bed.MARCH) > 0f);
         assertEquals(0f, m.volume(WarSoundscape.Bed.NEAR), 0f);
+    }
+
+    @Test
+    public void aCampIsHeardWithCampAmbience() {
+        Encounter camp = new Encounter(Encounter.Kind.CAMP, -2, 0, 1, -1, 0, 100, new GridPoint2(0, 0), new GridPoint2(0, 0));
+        WarSoundscape.Mix m = hear(camp, 1);
+        assertTrue("camp bed is active in camp chunk", m.volume(WarSoundscape.Bed.CAMP) > 0f);
     }
 
     @Test
