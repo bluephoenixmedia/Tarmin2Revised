@@ -19,6 +19,9 @@ public class AttractSoundManager implements Disposable {
     private Music windLoop;
     private Music rainLoop;
     private Sound gateDiveSound;
+    private Sound[] arrowSounds;
+    private Sound warHornSound;
+    private Sound thunderSound;
 
     private boolean initialized = false;
 
@@ -44,9 +47,32 @@ public class AttractSoundManager implements Disposable {
                 gateDiveSound = Gdx.audio.newSound(Gdx.files.internal("sounds/tarmin_enter_fx.ogg"));
             }
 
+            // Arrow whoosh sounds
+            java.util.List<Sound> arrows = new java.util.ArrayList<>();
+            for (int i = 1; i <= 4; i++) {
+                if (Gdx.files.internal("sounds/sfx/arrow_" + i + ".wav").exists()) {
+                    arrows.add(Gdx.audio.newSound(Gdx.files.internal("sounds/sfx/arrow_" + i + ".wav")));
+                }
+            }
+            if (!arrows.isEmpty()) {
+                arrowSounds = arrows.toArray(new Sound[0]);
+            }
+
+            if (Gdx.files.internal("sounds/war/war_horn.ogg").exists()) {
+                warHornSound = Gdx.audio.newSound(Gdx.files.internal("sounds/war/war_horn.ogg"));
+            } else if (Gdx.files.internal("sounds/war/horn_battle.ogg").exists()) {
+                warHornSound = Gdx.audio.newSound(Gdx.files.internal("sounds/war/horn_battle.ogg"));
+            }
+
+            if (Gdx.files.internal("sounds/thunder_1.ogg").exists()) {
+                thunderSound = Gdx.audio.newSound(Gdx.files.internal("sounds/thunder_1.ogg"));
+            }
+
             initialized = true;
         } catch (Throwable t) {
-            Gdx.app.log(TAG, "Audio device not available or sounds missing: " + t.getMessage());
+            if (Gdx.app != null) {
+                Gdx.app.log(TAG, "Audio device not available or sounds missing: " + t.getMessage());
+            }
         }
     }
 
@@ -84,6 +110,31 @@ public class AttractSoundManager implements Disposable {
         }
     }
 
+    public void playArrowWhistle() {
+        if (!initialized || arrowSounds == null || arrowSounds.length == 0) return;
+        try {
+            int idx = (int) (Math.random() * arrowSounds.length);
+            arrowSounds[idx].play(0.35f);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public void playWarHorn() {
+        if (!initialized || warHornSound == null) return;
+        try {
+            warHornSound.play(0.40f);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public void playThunder() {
+        if (!initialized || thunderSound == null) return;
+        try {
+            thunderSound.play(0.50f);
+        } catch (Throwable ignored) {
+        }
+    }
+
     @Override
     public void dispose() {
         try {
@@ -100,6 +151,20 @@ public class AttractSoundManager implements Disposable {
             if (gateDiveSound != null) {
                 gateDiveSound.dispose();
                 gateDiveSound = null;
+            }
+            if (arrowSounds != null) {
+                for (Sound s : arrowSounds) {
+                    if (s != null) s.dispose();
+                }
+                arrowSounds = null;
+            }
+            if (warHornSound != null) {
+                warHornSound.dispose();
+                warHornSound = null;
+            }
+            if (thunderSound != null) {
+                thunderSound.dispose();
+                thunderSound = null;
             }
         } catch (Throwable ignored) {
         }
