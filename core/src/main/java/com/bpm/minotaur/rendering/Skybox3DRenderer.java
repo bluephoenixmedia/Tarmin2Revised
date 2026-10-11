@@ -63,6 +63,9 @@ public class Skybox3DRenderer {
 
     // Loaded 3D Landmark Models
     private Model castleModel;
+    private Texture castleTexture;
+    private Material castleMaterial;
+    private boolean isCastleBillboard = false;
     private Model spireModel;
     private Model mountainModel;
     private Model domeModel;
@@ -151,23 +154,74 @@ public class Skybox3DRenderer {
         }
     }
 
+    private Model buildCastleBillboardModel(Texture texture) {
+        float aspect = (float) texture.getWidth() / (float) texture.getHeight();
+        float h = 26.5f;
+        float w = h * aspect;
+
+        com.badlogic.gdx.graphics.g3d.utils.ModelBuilder mb = new com.badlogic.gdx.graphics.g3d.utils.ModelBuilder();
+        mb.begin();
+
+        Material material = new Material();
+        material.set(TextureAttribute.createDiffuse(texture));
+        material.set(ColorAttribute.createDiffuse(Color.WHITE));
+        material.set(new com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 1.0f));
+        material.set(new com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute(com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute.AlphaTest, 0.01f));
+        material.set(new com.badlogic.gdx.graphics.g3d.attributes.IntAttribute(com.badlogic.gdx.graphics.g3d.attributes.IntAttribute.CullFace, 0));
+
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder part = mb.part("castle_billboard", GL20.GL_TRIANGLES,
+                com.badlogic.gdx.graphics.VertexAttributes.Usage.Position
+                        | com.badlogic.gdx.graphics.VertexAttributes.Usage.Normal
+                        | com.badlogic.gdx.graphics.VertexAttributes.Usage.TextureCoordinates,
+                material);
+
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v0 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(-w * 0.5f, 0f, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(0f, 1f);
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v1 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(w * 0.5f, 0f, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(1f, 1f);
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v2 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(w * 0.5f, h, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(1f, 0f);
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v3 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(-w * 0.5f, h, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(0f, 0f);
+
+        part.rect(v0, v1, v2, v3);
+        return mb.end();
+    }
+
     private void loadModels() {
         ObjLoader loader = new ObjLoader();
         try {
             // Castle Citadel / Tarmin (North: World -Z)
-            // castle_tarmin has the better material split (four materials, including MatSlits) but
-            // far cruder geometry -- it reads as a stepped black ziggurat, not a castle. The
-            // citadel's silhouette is worth more than the slits, so we keep the citadel mesh and
-            // blacken it programmatically instead of re-authoring its baked diffuse. See #104.
-            String citadelPath = "models/skybox/castle_citadel.obj";
-            String castlePath = Gdx.files.internal(citadelPath).exists() ? citadelPath : "models/skybox/castle_tarmin.obj";
-            if (Gdx.files.internal(castlePath).exists()) {
-                castleModel = loader.loadModel(Gdx.files.internal(castlePath));
+            // If the authored billboard sprite exists, render the authentic pixel-art volcano & flaming citadel.
+            String billboardPath = "images/blight/castle_tarmin_billboard.png";
+            if (Gdx.files.internal(billboardPath).exists()) {
+                castleTexture = new Texture(Gdx.files.internal(billboardPath), true);
+                castleTexture.setFilter(Texture.TextureFilter.MipMapLinearLinear, Texture.TextureFilter.Linear);
+                castleModel = buildCastleBillboardModel(castleTexture);
                 castleInstance = new ModelInstance(castleModel);
-                blackenToSilhouette(castleInstance);
-                // Position North at Z = -140 with grounded base
+                castleMaterial = castleInstance.materials.first();
+                isCastleBillboard = true;
                 castleInstance.transform.setToTranslation(0f, -6f, -LANDMARK_DISTANCE);
                 castleInstance.transform.scale(2.025f, 2.025f, 2.025f);
+            } else {
+                String citadelPath = "models/skybox/castle_citadel.obj";
+                String castlePath = Gdx.files.internal(citadelPath).exists() ? citadelPath : "models/skybox/castle_tarmin.obj";
+                if (Gdx.files.internal(castlePath).exists()) {
+                    castleModel = loader.loadModel(Gdx.files.internal(castlePath));
+                    castleInstance = new ModelInstance(castleModel);
+                    blackenToSilhouette(castleInstance);
+                    // Position North at Z = -140 with grounded base
+                    castleInstance.transform.setToTranslation(0f, -6f, -LANDMARK_DISTANCE);
+                    castleInstance.transform.scale(2.025f, 2.025f, 2.025f);
+                }
             }
 
             // South Spire (South: World +Z) - Scaled +50% (1.25 * 1.5 = 1.875f)
@@ -815,6 +869,20 @@ public class Skybox3DRenderer {
         placeBeacons(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f);
         placeWarSmoke(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f, delta);
 
+        if (isCastleBillboard && castleMaterial != null) {
+            ColorAttribute diff = (ColorAttribute) castleMaterial.get(ColorAttribute.Diffuse);
+            if (diff != null) {
+                if (currentFlash > 0.05f) {
+                    diff.color.set(1.4f, 1.4f, 1.5f, 1f);
+                } else if (dayNight != null) {
+                    float b = MathUtils.clamp(dayNight.getBrightness(), 0.70f, 1.0f);
+                    diff.color.set(b, b * 0.95f, b * 0.92f, 1f);
+                } else {
+                    diff.color.set(Color.WHITE);
+                }
+            }
+        }
+
         castleHidden = false;
         if (castleInstance != null && state.hasCastleSite) {
             placeOnCastleBearing(state, camX, camZ);
@@ -975,7 +1043,13 @@ public class Skybox3DRenderer {
         modelBatch.begin(camera);
 
         if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
-        if (castleInstance   != null && !castleHidden) modelBatch.render(castleInstance, environment);
+        if (castleInstance   != null && !castleHidden) {
+            if (isCastleBillboard) {
+                modelBatch.render(castleInstance);
+            } else {
+                modelBatch.render(castleInstance, environment);
+            }
+        }
         if (spireInstance    != null) modelBatch.render(spireInstance, environment);
         for (int i = 0; i < beaconsShown; i++) {
             modelBatch.render(beaconPool.get(i), environment);
@@ -1009,6 +1083,7 @@ public class Skybox3DRenderer {
     public void dispose() {
         modelBatch.dispose();
         if (castleModel   != null) castleModel.dispose();
+        if (castleTexture != null) castleTexture.dispose();
         if (spireModel    != null) spireModel.dispose();
         if (mountainModel != null) mountainModel.dispose();
         if (domeModel     != null) domeModel.dispose();
