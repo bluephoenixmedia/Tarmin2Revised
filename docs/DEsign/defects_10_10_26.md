@@ -1,5 +1,4 @@
-DO NOT START WORK ON THIS FILE UNLESS TOLD
-- The Spells screen click and drag UX is not clear and the hit box for grabbing is seemingly too small. Let's use on hover effects and other color indicators to help with click and drag scenarios.
-- We need to once again re-balance the available weapons. I should not encounter a weapon that is worse then the starting sword. 
-- The comprehend languages spell should allow the player to understand all monsters, they should have phrases that appear above their heads in text in the language that they are speaking.
-- If it's raining, we should always hear ambient rain. 
+- [x] The Spells screen click and drag UX is not clear and the hit box for grabbing is seemingly too small. Let's use on hover effects and other color indicators to help with click and drag scenarios. (RESOLVED in feat/spell-system-phase2-visuals)
+- [ ] We need to once again re-balance the available weapons. I should not encounter a weapon that is worse then the starting sword. 
+- [ ] The comprehend languages spell should allow the player to understand all monsters, they should have phrases that appear above their heads in text in the language that they are speaking.
+- [ ] If it's raining, we should always hear ambient rain. 
