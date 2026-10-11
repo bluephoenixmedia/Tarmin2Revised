@@ -107,7 +107,11 @@ public class CanopyMeshBuilderTest {
     public void lightShaftsFallOnAFewOfTheSeamTiles() {
         if (Gdx.app == null) {
             Gdx.app = (Application) Proxy.newProxyInstance(Application.class.getClassLoader(),
-                    new Class<?>[]{Application.class}, (proxy, method, args) -> null);
+                    new Class<?>[]{Application.class}, (proxy, method, args) -> {
+                        if (method.getName().equals("hashCode")) return 42;
+                        if (method.getName().equals("equals")) return args[0] == proxy;
+                        return null;
+                    });
         }
         Maze maze = new ForestChunkGenerator().generateChunk(new GridPoint2(2, 2), 1, 1, Difficulty.MEDIUM,
                 GameMode.ADVANCED, RetroTheme.FOREST_THEME, RetroTheme.STANDARD_THEME,

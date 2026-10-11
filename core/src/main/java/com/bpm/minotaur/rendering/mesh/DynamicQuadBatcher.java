@@ -285,6 +285,81 @@ public class DynamicQuadBatcher implements Disposable {
     }
 
     /**
+     * Emits a flat horizontal quad resting on the floor, transformed to match the
+     * player's view perspective (e.g. monster corpses, floor blood).
+     *
+     * <p>The quad lies in the floor plane (Y = constant) with normal (0, 1, 0).
+     * Its width spans along {@code camRight} in the XZ plane, and its height extends
+     * away from the camera along the horizontal component of {@code camDir}, so the
+     * bottom of the sprite faces the player and the top recedes into depth.
+     */
+    public void addFloorBillboard(
+            float centerX, float y, float centerZ,
+            float width, float height,
+            TextureRegion region,
+            Color color,
+            Vector3 camRight,
+            Vector3 camDir
+    ) {
+        if (region == null) return;
+        if (!ensureCapacity(1)) return;
+
+        float u1 = region.getU();
+        float v1 = region.getV2(); // LibGDX V2 is image bottom
+        float u2 = region.getU2();
+        float v2 = region.getV();  // LibGDX V is image top
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        float rx = camRight != null ? camRight.x : 1f;
+        float rz = camRight != null ? camRight.z : 0f;
+        float rLen = (float) Math.sqrt(rx * rx + rz * rz);
+        if (rLen > 0.0001f) {
+            rx /= rLen;
+            rz /= rLen;
+        } else {
+            rx = 1f;
+            rz = 0f;
+        }
+
+        float fx = camDir != null ? camDir.x : 0f;
+        float fz = camDir != null ? camDir.z : -1f;
+        float fLen = (float) Math.sqrt(fx * fx + fz * fz);
+        if (fLen > 0.0001f) {
+            fx /= fLen;
+            fz /= fLen;
+        } else {
+            fx = 0f;
+            fz = -1f;
+        }
+
+        float halfW = width * 0.5f;
+        float halfH = height * 0.5f;
+
+        // Corners: Bottom-Left (V1), Bottom-Right (V2), Top-Right (V3), Top-Left (V4)
+        float x1 = centerX - rx * halfW - fx * halfH;
+        float z1 = centerZ - rz * halfW - fz * halfH;
+
+        float x2 = centerX + rx * halfW - fx * halfH;
+        float z2 = centerZ + rz * halfW - fz * halfH;
+
+        float x3 = centerX + rx * halfW + fx * halfH;
+        float z3 = centerZ + rz * halfW + fz * halfH;
+
+        float x4 = centerX - rx * halfW + fx * halfH;
+        float z4 = centerZ - rz * halfW + fz * halfH;
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                x1, y, z1, u1, v1,
+                x2, y, z2, u2, v1,
+                x3, y, z3, u2, v2,
+                x4, y, z4, u1, v2,
+                0f, 1f, 0f, packedColor
+        );
+    }
+
+    /**
      * Emits a coplanar wall decal quad offset by eps along the wall normal to eliminate Z-fighting.
      */
     public void addWallDecal(WallDecal decal, Color color) {
@@ -754,6 +829,19 @@ public class DynamicQuadBatcher implements Disposable {
         };
         float[] dummyUvs = new float[] { 0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f };
         addPolygonBillboard(centerX, centerY, centerZ, quadVerts, dummyUvs, color, camRight, camUp, camDir, angleDeg);
+    }
+
+    public FloatArray getVertices() {
+        return vertices;
+    }
+
+    public ShortArray getIndices() {
+        return indices;
+    }
+
+    public void clear() {
+        vertices.clear();
+        indices.clear();
     }
 
     private boolean ensureCapacity(int numQuads) {

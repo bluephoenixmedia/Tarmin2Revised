@@ -2213,6 +2213,7 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
+                    boolean isFloorCorpse = false;
                     float feetY = 0.0f;
                     if (sc.isCorpse()) {
                         feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
@@ -2254,22 +2255,21 @@ public class World3DRenderer implements Disposable {
                                 deathAnim.getFrameWidth(), deathAnim.getFrameHeight());
                         reg = corpseRegion;
                         feetY = 0.0f;
+
+                        // Once the animation finishes, it settles on the ground
+                        // transformed to match the perspective of the player.
+                        if (frame >= deathAnim.getFinalFrame()) {
+                            isFloorCorpse = true;
+                            sw = Math.min(0.92f, sw);
+                            sh = Math.min(0.92f, sh);
+                        }
                     } else if (sc.isMonsterRemains()) {
-                        // A monster corpse is the living sprite laid down, so it
-                        // needs work to stop reading as a monster standing in the
-                        // wrong place: rotate it onto its side, darken it, squash
-                        // it flat, and put blood under it.
-                        // Reused scratch regions: allocating two per corpse per
-                        // frame churns the heap in exactly the moment combat is
-                        // busiest.
+                        isFloorCorpse = true;
                         corpseRegion.setRegion(reg);
-                        // Rotate onto its side. A vertical flip only mirrors the
-                        // sprite head-to-foot, which still reads as upright.
-                        corpseRegion.flip(true, false);
                         reg = corpseRegion;
                         tint = CORPSE_TINT;
-                        sw = sw * CORPSE_SPREAD;
-                        sh = sh * CORPSE_FLATTEN;
+                        sw = Math.min(0.85f, sw * 0.85f);
+                        sh = Math.min(0.85f, sh * 0.85f);
 
                         // Burnt, frozen, ashed and melted bodies did not bleed out, and
                         // with gore off nothing does.
@@ -2279,10 +2279,14 @@ public class World3DRenderer implements Disposable {
                                     || bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.HEADLESS);
                         if (bloodPoolTexture != null && bled) {
                             bloodPoolRegion.setRegion(bloodPoolTexture);
-                            dynamicBatcher.addBillboard(ex, 0.001f, wz, sw * 1.15f, sh * 0.5f,
-                                    bloodPoolRegion, BLOOD_POOL_TINT, camRight, camUp, camDir);
+                            dynamicBatcher.addFloorBillboard(ex, 0.0022f, wz, sw * 1.25f, sh * 1.25f,
+                                    bloodPoolRegion, BLOOD_POOL_TINT, camRight, camDir);
                             dynamicBatcher.flush(shader, bloodPoolTexture);
                         }
+                    } else if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                        isFloorCorpse = true;
+                        sw = 0.85f;
+                        sh = 0.85f;
                     }
 
                     com.bpm.minotaur.gamedata.gore.CorpseFinish finish = sc.getCorpseFinish();
@@ -2328,7 +2332,11 @@ public class World3DRenderer implements Disposable {
                         shader.setUniformf("u_unlit", 1f);
                         shader.setUniformf("u_fogEnabled", 0f);
                     }
-                    dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
+                    if (isFloorCorpse) {
+                        dynamicBatcher.addFloorBillboard(ex, 0.0035f, wz, sw, sh, reg, tint, camRight, camDir);
+                    } else {
+                        dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
+                    }
                     dynamicBatcher.flush(shader, tex);
                     if (glow != null || landmark) {
                         shader.setUniformf("u_unlit", 0f);
