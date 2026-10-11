@@ -171,4 +171,75 @@ public class SiegeTest {
         }
         fail("no siege laid on its own in 300 worlds");
     }
+
+    /**
+     * Living War W33-W37: A full natural siege lifecycle from organic war escalation to resolution,
+     * verifying Knell tolling, camp rings, breach requirements, and aftermath cleanup.
+     */
+    @Test
+    public void naturalSiegeLifecycleAndWorldIntegration() {
+        GridPoint2 castle = new GridPoint2(0, 30);
+        for (long seed = 1; seed <= 300; seed++) {
+            HistoryManager h = HistoryManager.create(seed, catalog);
+            War war = warOnTheCastle(h.world());
+            if (war == null) continue;
+            House besieger = h.world().house(war.enemyOf(h.world().tarminHouse().id));
+            if (besieger == null) continue;
+
+            HistoryEvent laidEvent = null;
+            // Advance seasons naturally with an escalating enemy house
+            for (int i = 0; i < 50 && laidEvent == null; i++) {
+                besieger.strength = Math.max(besieger.strength, 85f);
+                List<HistoryEvent> news = h.onSleep();
+                for (HistoryEvent e : news) {
+                    if (e.type == EventType.SIEGE_LAID) {
+                        laidEvent = e;
+                        break;
+                    }
+                }
+            }
+            if (laidEvent == null) continue;
+
+            // 1. Natural siege trigger and Knell
+            assertNotNull("Siege must be laid naturally", h.world().activeSiege());
+            assertTrue("Knell tolls when siege begins", Knell.tolls(h.world(), laidEvent));
+            assertEquals(besieger.id, Siege.besieger(h.world()));
+
+            // 2. Camp ring and siege encounter placement around Castle Tarmin
+            List<Encounter> camps = Siege.camps(h.world(), castle);
+            assertEquals("Besieger camps ring all 4 sides of castle", 4, camps.size());
+            for (Encounter c : camps) {
+                assertEquals(Encounter.Kind.CAMP, c.kind);
+                assertEquals(besieger.id, c.houseA);
+            }
+            List<Encounter> siegeAt = Siege.at(h.world(), castle);
+            assertEquals(1, siegeAt.size());
+            assertEquals(Encounter.Kind.SIEGE, siegeAt.get(0).kind);
+
+            // 3. Breach seals requirement
+            assertEquals(1, Siege.sealsForBreach(Favour.Tier.FRIEND, false));
+            assertEquals(1, Siege.sealsForBreach(Favour.Tier.ENEMY, true)); // sworn overrides stance
+            assertEquals(2, Siege.sealsForBreach(Favour.Tier.UNKNOWN, false));
+
+            // 4. Besieger collapses: siege breaks and cleans up
+            besieger.strength = 15f;
+            HistoryEvent endEvent = null;
+            for (int i = 0; i < 20 && endEvent == null; i++) {
+                List<HistoryEvent> news = h.onSleep();
+                for (HistoryEvent e : news) {
+                    if (e.type == EventType.SIEGE_BROKEN || e.type == EventType.SIEGE_LIFTED) {
+                        endEvent = e;
+                        break;
+                    }
+                }
+            }
+            assertNotNull("Siege must break or lift when strength collapses", endEvent);
+            assertTrue("Knell tolls when siege ends", Knell.tolls(h.world(), endEvent));
+            assertNull("Active siege cleared in history", h.world().activeSiege());
+            assertTrue("Camps cleared around castle", Siege.camps(h.world(), castle).isEmpty());
+            assertTrue("Siege encounter cleared at castle", Siege.at(h.world(), castle).isEmpty());
+            return;
+        }
+        fail("No natural siege triggered and completed in 300 test seeds");
+    }
 }
