@@ -276,6 +276,11 @@ public class Monster implements Renderable {
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
 
+    // Native language speech barks
+    private String currentSpeech = null;
+    private float speechTimer = 0f;
+    private float speechCooldown = (float) (Math.random() * 4.0 + 2.0);
+
     // Grace flag: true for the first turn after spawn so the auto-adjacent attack
     // cannot one-shot a monster before it has been rendered even once.
     private boolean justSpawned = true;
@@ -761,6 +766,7 @@ public class Monster implements Renderable {
     }
 
     public void updateAnimation(float delta) {
+        updateSpeech(delta);
         if (isSpriteSheet && animationFrames != null && animationFrames.length > 0) {
             animTimer += delta;
             while (animTimer >= frameDuration && frameDuration > 0f) {
@@ -777,6 +783,39 @@ public class Monster implements Renderable {
             animTimer -= frameDuration;
             currentFrame = (currentFrame + 1) % southFrames.length;
         }
+    }
+
+    public void speak(String phrase, float duration) {
+        this.currentSpeech = phrase;
+        this.speechTimer = duration;
+    }
+
+    public String getCurrentSpeech() {
+        return currentSpeech;
+    }
+
+    public boolean hasSpeech() {
+        return currentSpeech != null && speechTimer > 0;
+    }
+
+    public void updateSpeech(float delta) {
+        if (speechTimer > 0) {
+            speechTimer -= delta;
+            if (speechTimer <= 0) {
+                currentSpeech = null;
+            }
+        }
+        if (speechCooldown > 0) {
+            speechCooldown -= delta;
+        }
+    }
+
+    public boolean canSpeak() {
+        return speechCooldown <= 0;
+    }
+
+    public void resetSpeechCooldown(float cooldown) {
+        this.speechCooldown = cooldown;
     }
 
     public int getCurrentFrame() {

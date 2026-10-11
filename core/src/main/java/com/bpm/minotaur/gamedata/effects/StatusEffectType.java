@@ -87,6 +87,7 @@ public enum StatusEffectType {
     FREE_ACTION,
     WARMTH,
     MOTE_OF_LIGHT,
+    COMPREHEND_LANGUAGES,
 
     // Weather Survival Exposure (tiered body-temperature debuffs)
     CHILLED,

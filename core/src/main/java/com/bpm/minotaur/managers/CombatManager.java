@@ -543,6 +543,13 @@ public class CombatManager {
             BalanceLogger.getInstance().logCombatStart(player, monster);
             // --------------------
 
+            if (monster != null && monster.canSpeak()) {
+                boolean comprehend = (player != null && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES));
+                String phrase = com.bpm.minotaur.gamedata.monster.MonsterSpeechManager.getSpeechPhrase(monster, comprehend);
+                monster.speak(phrase, 4.0f);
+                monster.resetSpeechCooldown(8.0f);
+            }
+
             if (this.monster != null && this.monster.getStatusManager() != null && this.eventManager != null) {
                 this.monster.getStatusManager().initialize(eventManager, this.monster);
             }
@@ -723,6 +730,13 @@ public class CombatManager {
                     worldManager != null ? worldManager.houseOf(attacker) : -1);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
             eventManager.addEvent(new GameEvent(attacker.getName() + " hits you for " + actualDamage, 1f));
+
+            if (attacker != null && attacker.canSpeak() && com.badlogic.gdx.math.MathUtils.randomBoolean(0.35f)) {
+                boolean comprehend = (player != null && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES));
+                String phrase = com.bpm.minotaur.gamedata.monster.MonsterSpeechManager.getSpeechPhrase(attacker, comprehend);
+                attacker.speak(phrase, 3.5f);
+                attacker.resetSpeechCooldown(com.badlogic.gdx.math.MathUtils.random(7.0f, 12.0f));
+            }
 
             // --- Anatomical Trauma Infliction ---
             // Gated twice over: the blow must be genuinely traumatic (see

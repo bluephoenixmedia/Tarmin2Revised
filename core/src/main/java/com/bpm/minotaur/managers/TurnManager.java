@@ -121,6 +121,17 @@ public class TurnManager {
 
             monster.addEnergy(energyGain);
 
+            // Ambient speech barks for nearby active monsters
+            if (monster.canSpeak() && player != null) {
+                float dist = player.getPosition().dst(monster.getPosition());
+                if (dist <= 6.0f && com.badlogic.gdx.math.MathUtils.randomBoolean(0.20f)) {
+                    boolean comprehend = player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES);
+                    String phrase = com.bpm.minotaur.gamedata.monster.MonsterSpeechManager.getSpeechPhrase(monster, comprehend);
+                    monster.speak(phrase, 3.5f);
+                    monster.resetSpeechCooldown(com.badlogic.gdx.math.MathUtils.random(10f, 18f));
+                }
+            }
+
             // 3. Process Actions if Energy Threshold Met
             // Use loop for very fast monsters taking multiple actions
             int safetyCounter = 0;

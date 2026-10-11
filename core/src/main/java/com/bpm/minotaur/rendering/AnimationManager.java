@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.Projectile;
 
 import com.badlogic.gdx.math.GridPoint2;
@@ -238,6 +239,67 @@ public class AnimationManager {
         }
         damageFont.getData().setScale(1.0f);
         damageFont.setColor(Color.WHITE); // Reset color
+    }
+
+    /**
+     * Renders overhead speech phrases for speaking monsters in the world.
+     * With Comprehend Languages active, phrases are luminous gold and translated.
+     * Without it, phrases are native dialect in muted bone/crimson.
+     */
+    public void renderMonsterSpeech(SpriteBatch batch, Viewport viewport, Player player, Maze maze, float[] depthBuffer) {
+        if (damageFont == null || viewport == null || player == null || maze == null || depthBuffer == null) return;
+
+        boolean comprehend = player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES);
+
+        for (Monster m : maze.getMonsters().values()) {
+            if (m == null || !m.hasSpeech() || m.getCurrentHP() <= 0) continue;
+
+            float worldX = m.getPosition().x;
+            float worldY = m.getPosition().y;
+
+            float dx = worldX - player.getPosition().x;
+            float dy = worldY - player.getPosition().y;
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (dirY * dx - dirX * dy);
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+
+            if (transformY <= 0.2f) continue;
+
+            com.badlogic.gdx.graphics.Camera camera = viewport.getCamera();
+            int projX = (int) ((camera.viewportWidth / 2f) * (1f + transformX / transformY));
+            if (projX < 0 || projX >= depthBuffer.length) continue;
+            if (transformY >= depthBuffer[projX] + 0.6f) continue;
+
+            float spriteScale = Math.abs(camera.viewportHeight / transformY);
+            float screenX = projX;
+            float screenY = (camera.viewportHeight / 2f) + (spriteScale * 0.42f) + 24f;
+
+            String speech = m.getCurrentSpeech();
+            if (speech == null || speech.isEmpty()) continue;
+
+            damageFont.getData().setScale(0.72f);
+            glyphLayout.setText(damageFont, speech);
+            float drawX = screenX - glyphLayout.width / 2f;
+
+            drawX = Math.max(10f, Math.min(drawX, camera.viewportWidth - glyphLayout.width - 10f));
+
+            if (comprehend) {
+                // Luminous divine gold for translated speech
+                damageFont.setColor(1.0f, 0.88f, 0.35f, 0.95f);
+            } else {
+                // Muted bone/crimson for untranslated speech
+                damageFont.setColor(0.92f, 0.72f, 0.72f, 0.90f);
+            }
+
+            damageFont.draw(batch, speech, drawX, screenY);
+        }
+
+        damageFont.getData().setScale(1.0f);
+        damageFont.setColor(Color.WHITE);
     }
 
     public void dispose() {

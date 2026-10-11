@@ -997,6 +997,7 @@ public class GameScreen extends BaseScreen {
         game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
         game.getBatch().begin();
         animationManager.renderDamageText(game.getBatch(), currentViewport, player, firstPersonRenderer.getDepthBuffer());
+        animationManager.renderMonsterSpeech(game.getBatch(), currentViewport, player, maze, firstPersonRenderer.getDepthBuffer());
         game.getBatch().end();
 
         renderCombatOverlay();

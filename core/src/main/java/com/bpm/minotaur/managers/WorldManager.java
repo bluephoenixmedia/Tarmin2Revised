@@ -877,6 +877,9 @@ public class WorldManager {
         DoomManager.getInstance().setCurrentLevel(level);
         UnlockManager.getInstance().updateDeepestLevel(level);
         this.currentLevelTheme = getThemeForLevel(level);
+        if (level == 1 && soundManager != null && weatherManager != null) {
+            soundManager.updateWeatherAudio(weatherManager.getCurrentWeather(), weatherManager.getCurrentIntensity());
+        }
         Gdx.app.log("WorldManager", "Set current level to: " + level);
     }
 
@@ -937,6 +940,15 @@ public class WorldManager {
 
         if (currentLevel == 1) {
             weatherManager.update(delta);
+
+            // Ensure ambient rain sound is always playing when raining on level 1
+            if (soundManager != null && weatherManager != null) {
+                com.bpm.minotaur.weather.WeatherType wType = weatherManager.getCurrentWeather();
+                if ((wType == com.bpm.minotaur.weather.WeatherType.RAIN || wType == com.bpm.minotaur.weather.WeatherType.STORM)
+                        && !soundManager.isRainPlaying()) {
+                    soundManager.updateWeatherAudio(wType, weatherManager.getCurrentIntensity());
+                }
+            }
 
             // Audio Dampening Check
             if (playerReference != null) {

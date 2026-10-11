@@ -133,6 +133,9 @@ public class SpellExecutionEngine {
         } else if ("CHARM".equalsIgnoreCase(bespoke)) {
             resolveCharmBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
             return true;
+        } else if ("COMPREHEND_LANGUAGES".equalsIgnoreCase(bespoke)) {
+            resolveComprehendLanguagesBespoke(spell, archetype, player, eventManager, gs);
+            return true;
         }
 
         // 5. Standard Dispatch by Target Type
@@ -551,6 +554,18 @@ public class SpellExecutionEngine {
         gs.getScreenFx().play(SpellFx.getInstance().warpDepartClip(), 0.5f, 0.5f, SpellFx.getInstance().warpSize());
         eventManager.addEvent(new GameEvent("A blinding glyph surrounds you! You are pulled back to the Shelter.", 3.0f));
         gs.returnToShelter();
+    }
+
+    private static void resolveComprehendLanguagesBespoke(SpellTemplate spell, VisualArchetype archetype,
+                                                          Player player, GameEventManager eventManager, GameScreen gs) {
+        playSelfFx(spell, archetype, gs);
+
+        if (gs != null && gs.getSpellPostProcessor() != null) {
+            gs.getSpellPostProcessor().triggerVignette(new Color(1.0f, 0.85f, 0.35f, 1.0f), 0.8f, 0.6f);
+        }
+
+        player.getStatusManager().addEffect(StatusEffectType.COMPREHEND_LANGUAGES, 150, 1, false);
+        eventManager.addEvent(new GameEvent("An arcane clarity washes over you; all monster tongues become clear!", 3.0f));
     }
 
     // =========================================================================

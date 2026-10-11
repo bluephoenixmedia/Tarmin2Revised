@@ -343,13 +343,26 @@ public class SoundManager {
         applyLoopVolumes();
     }
 
+    public boolean isRainPlaying() {
+        return currentRainId != -1;
+    }
+
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
         if (DimensionalManager.getInstance().isWeatherSuppressed()) {
             stopWeatherEffects();
             return;
         }
 
+        boolean rainShouldPlay = (type == WeatherType.RAIN || type == WeatherType.STORM);
+        boolean isCurrentlyPlayingRain = (currentRainId != -1);
+
         if (type == lastWeatherType && intensity == lastWeatherIntensity) {
+            // If rain is supposed to be playing but isn't active (e.g. after returning from dungeons),
+            // start it up immediately so the player always hears ambient rain.
+            if (rainShouldPlay && !isCurrentlyPlayingRain && modernSounds.containsKey("rain_loop")) {
+                float rainMod = currentDampenFactor;
+                currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod * getEffectiveSfxVolume());
+            }
             return;
         }
 
@@ -365,49 +378,53 @@ public class SoundManager {
         float rainMod = currentDampenFactor;
         float windMod = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
 
-        if (typeChanged) {
-            if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
+        if (typeChanged || (rainShouldPlay && !isCurrentlyPlayingRain)) {
+            if (currentRainId != -1 && modernSounds.containsKey("rain_loop") && typeChanged) {
                 modernSounds.get("rain_loop").stop(currentRainId);
+                currentRainId = -1;
             }
-            if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
+            if (currentWindId != -1 && modernSounds.containsKey("wind_loop") && typeChanged) {
                 modernSounds.get("wind_loop").stop(currentWindId);
+                currentWindId = -1;
             }
 
-            currentRainId = -1;
-            currentWindId = -1;
+            if (typeChanged) {
+                currentRainId = -1;
+                currentWindId = -1;
+            }
 
             switch (type) {
                 case RAIN:
                 case STORM:
-                    if (modernSounds.containsKey("rain_loop")) {
-                        currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod);
+                    if (currentRainId == -1 && modernSounds.containsKey("rain_loop")) {
+                        currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod * getEffectiveSfxVolume());
                     }
-                    if (type == WeatherType.STORM && modernSounds.containsKey("wind_loop")) {
+                    if (type == WeatherType.STORM && currentWindId == -1 && modernSounds.containsKey("wind_loop")) {
                         float windBase = currentBaseVol * 0.85f;
-                        currentWindId = modernSounds.get("wind_loop").loop(windBase * windMod, 1.0f, 0f);
+                        currentWindId = modernSounds.get("wind_loop").loop(windBase * windMod * getEffectiveSfxVolume(), 1.0f, 0f);
                     }
                     break;
                 case SNOW:
                     if (modernSounds.containsKey("wind_loop")) {
                         float snowVol = currentBaseVol * 0.45f * windMod;
-                        currentWindId = modernSounds.get("wind_loop").loop(snowVol, 1.15f, 0f);
+                        currentWindId = modernSounds.get("wind_loop").loop(snowVol * getEffectiveSfxVolume(), 1.15f, 0f);
                     }
                     break;
                 case BLIZZARD:
                     if (modernSounds.containsKey("wind_loop")) {
                         float blizzardVol = currentBaseVol * 0.95f * windMod;
-                        currentWindId = modernSounds.get("wind_loop").loop(blizzardVol, 0.82f, 0f);
+                        currentWindId = modernSounds.get("wind_loop").loop(blizzardVol * getEffectiveSfxVolume(), 0.82f, 0f);
                     }
                     break;
                 case TORNADO:
                     if (modernSounds.containsKey("wind_loop")) {
-                        currentWindId = modernSounds.get("wind_loop").loop(1.0f * windMod, 0.65f, 0.0f);
+                        currentWindId = modernSounds.get("wind_loop").loop(1.0f * windMod * getEffectiveSfxVolume(), 0.65f, 0.0f);
                     }
                     break;
                 case ASHFALL:
                     // A low, dead wind: ash does not howl.
                     if (modernSounds.containsKey("wind_loop")) {
-                        currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * 0.30f * windMod, 0.70f, 0f);
+                        currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * 0.30f * windMod * getEffectiveSfxVolume(), 0.70f, 0f);
                     }
                     break;
                 default:

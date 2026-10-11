@@ -2532,7 +2532,7 @@
         ],
         "baseValue": 50,
         "range": 1,
-        "damageDice": 0,
+        "damageDice": "1d8",
         "armorClassBonus": 0,
         "isWeapon": true,
         "isRanged": false,
@@ -2617,7 +2617,7 @@
             "........................"
         ],
         "baseValue": 50,
-        "damageDice": 0,
+        "damageDice": "1d8",
         "armorClassBonus": 0,
         "isWeapon": true,
         "isRanged": false,
