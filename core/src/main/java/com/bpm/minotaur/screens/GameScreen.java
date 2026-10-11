@@ -2534,6 +2534,26 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** The nearest clear tile reachable from {@code from} without crossing a wall edge, two or more steps from {@code gate}. */
+    private GridPoint2 nearestClear(GridPoint2 from, GridPoint2 gate) {
+        java.util.ArrayDeque<GridPoint2> queue = new java.util.ArrayDeque<>();
+        java.util.Set<GridPoint2> seen = new java.util.HashSet<>();
+        queue.add(from);
+        seen.add(from);
+        while (!queue.isEmpty() && seen.size() < 200) {
+            GridPoint2 c = queue.poll();
+            boolean clear = !maze.getScenery().containsKey(c) && !maze.getMonsters().containsKey(c) && !maze.getItems().containsKey(c);
+            if (clear && Math.abs(c.x - gate.x) + Math.abs(c.y - gate.y) >= 2) return c;
+            for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+                GridPoint2 n = new GridPoint2(c.x + (int) d.getVector().x, c.y + (int) d.getVector().y);
+                if (seen.contains(n) || maze.isWallBlocking(c.x, c.y, d) || !maze.isPassable(n.x, n.y)) continue;
+                seen.add(n);
+                queue.add(n);
+            }
+        }
+        return null;
+    }
+
     /** The breach stands beside the castle gate while a siege holds, and is gone when it ends (W35). */
     private void keepTheBreach(boolean siege) {
         GridPoint2 breach = null, gate = null;
@@ -2546,22 +2566,13 @@ public class GameScreen extends BaseScreen {
             return;
         }
         if (breach != null || gate == null) return;
-        // On the outer face of the wall: two tiles along it from the gate's doorstep, where the siege
-        // broke through. Walls here are edges, so every step is checked for one.
+        // Outside the wall, near the gate: the nearest clear tile at least two steps from it that can be
+        // walked to from its doorstep. Walls here are edges, so the search never crosses one.
         GridPoint2 at = null;
         for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
             int sx = gate.x + (int) d.getVector().x, sy = gate.y + (int) d.getVector().y;
             if (maze.isWallBlocking(gate.x, gate.y, d) || !maze.isPassable(sx, sy)) continue;
-            for (com.bpm.minotaur.gamedata.Direction side : new com.bpm.minotaur.gamedata.Direction[]{d.getLeft(), d.getRight()}) {
-                int mx = sx + (int) side.getVector().x, my = sy + (int) side.getVector().y;
-                int bx = mx + (int) side.getVector().x, by = my + (int) side.getVector().y;
-                GridPoint2 c = new GridPoint2(bx, by);
-                if (maze.isWallBlocking(sx, sy, side) || maze.isWallBlocking(mx, my, side) || !maze.isPassable(mx, my)
-                        || !maze.isPassable(bx, by) || maze.getScenery().containsKey(c) || maze.getMonsters().containsKey(c)
-                        || maze.getItems().containsKey(c)) continue;
-                at = c;
-                break;
-            }
+            at = nearestClear(new GridPoint2(sx, sy), gate);
             if (at != null) break;
         }
         Scenery rubble = at == null ? null : Scenery.fromProp(com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP, at.x, at.y);
