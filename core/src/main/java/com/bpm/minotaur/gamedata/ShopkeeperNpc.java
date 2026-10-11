@@ -188,6 +188,11 @@ public class ShopkeeperNpc implements Renderable {
         return restitutionDiscount;
     }
 
+    /** Faction military discount (e.g. 0.20f for sworn seekers at a war camp quartermaster). */
+    private float militaryDiscount = 0f;
+    public float getMilitaryDiscount() { return militaryDiscount; }
+    public void setMilitaryDiscount(float discount) { this.militaryDiscount = discount; }
+
     /** The apology has been traded against; the next clip earns a fresh one. */
     public void consumeRestitutionDiscount() {
         restitutionDiscount = 0f;
@@ -222,8 +227,11 @@ public class ShopkeeperNpc implements Renderable {
         }
     }
 
+    private String customDisplayName = null;
+    public void setCustomDisplayName(String name) { this.customDisplayName = name; }
+
     public String getDisplayName() {
-        return "Traveling Merchant";
+        return customDisplayName != null ? customDisplayName : "Traveling Merchant";
     }
 
     @Override

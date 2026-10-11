@@ -2343,8 +2343,14 @@ public class GameScreen extends BaseScreen {
             if (at != null) {
                 com.bpm.minotaur.gamedata.ShopkeeperNpc quartermaster = new com.bpm.minotaur.gamedata.ShopkeeperNpc(
                         at.x, at.y, game.getAssetManager());
-                new com.bpm.minotaur.gamedata.ShopInventory().stock(quartermaster, game.getItemDataManager(),
-                        game.getAssetManager(), maze.getLevel());
+                quartermaster.setCustomDisplayName("Quartermaster of " + houseName(houseId));
+                com.bpm.minotaur.gamedata.history.House h = history.world().house(houseId);
+                String docId = h != null ? h.doctrineId : null;
+                new com.bpm.minotaur.gamedata.ShopInventory().stockQuartermaster(quartermaster, game.getItemDataManager(),
+                        game.getAssetManager(), maze.getLevel(), docId, houseId, houseName(houseId));
+                if (sworn) {
+                    quartermaster.setMilitaryDiscount(0.20f); // 20% sworn military discount
+                }
                 maze.setShopkeeper(quartermaster);
                 say("The quartermaster of " + houseName(houseId) + " will trade with you.", 4f);
             }
@@ -2353,7 +2359,7 @@ public class GameScreen extends BaseScreen {
 
     /**
      * At a camp's war banner (W20-W26): a friend swears the house's oath here; the sworn are paid for
-     * contracts kept, set the next, granted the seal when the chain is done, and rest by the fire.
+     * contracts kept, set the next, and granted the seal when the chain is done.
      */
     private void atCampBanner(int houseId) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
@@ -2386,10 +2392,61 @@ public class GameScreen extends BaseScreen {
         } else {
             say("Your task: " + oath.contract.describe(world), 6f);
         }
-        // The sworn rest by its fire, as in a shelter.
-        player.getStats().setCurrentHP(player.getStats().getMaxHP());
-        player.getStats().setCurrentMP(player.getStats().getMaxMP());
-        say("You rest by the fire of " + name + ".", 3f);
+    }
+
+    /** Resting by a war camp's campfire (W18-W20): heals HP/MP, passes a season, and saves. */
+    private void atCampFire(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(houseId);
+        boolean sworn = history.oath().houseId == houseId;
+        String name = houseName(houseId);
+        if (!sworn && tier != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) {
+            say("The sentries of " + name + " watch you coldly. Only friends of the house may rest by its fire.", 4f);
+            return;
+        }
+
+        float rest = Math.min(1f, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("bedRestMult"));
+        if (player.getStats().getTaint() > 0f) {
+            player.getStats().setTaint(0f);
+            say("The sacred fire burns the Blight out of your bones.", 2.5f);
+        }
+        int hp = player.getStats().getCurrentHP();
+        int mp = player.getStats().getCurrentMP();
+        player.getStats().setCurrentHP(hp + Math.round((player.getStats().getMaxHP() - hp) * rest));
+        player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
+        player.getStatusManager().clearEffects();
+        DoomManager.getInstance().resetExpeditionTurns();
+
+        java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
+        if (worldManager != null && worldManager.getDayNightManager() != null) {
+            com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
+            if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
+                    || dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.DUSK) {
+                dnm.setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
+            } else {
+                dnm.advanceMinutes(180f);
+            }
+        }
+        SaveManager.getInstance().saveActiveSlot(player, worldManager);
+        SaveManager.getInstance().backupActiveSlot();
+        autoSaveTimer = 0f;
+        say("You rest by the fire of " + name + ". Health and mana restored. A season passes in the Maze. Game saved.", 5f);
+        if (hud != null) {
+            hud.addMessage("Rested at war camp. HP/MP restored. Game saved.");
+        }
+        tollKnell();
+        news = new java.util.ArrayList<>(news);
+        news.removeIf(e -> com.bpm.minotaur.gamedata.history.text.Knell.tolls(history.world(), e));
+        for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
+            history.unlock(heard.id);
+        }
+        for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(history.world(), news, 3,
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+            say(rumour, 6f);
+        }
+        playerTurnTakesAction();
+        needsAsciiRender = true;
     }
 
     /** The house pays for a contract kept: favour and coin, and every third one a relic (W25). */
@@ -4694,6 +4751,16 @@ public class GameScreen extends BaseScreen {
             }
         }
         Scenery sceneryAtFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
+        // A war camp's campfire: where friends and the sworn rest by the fire (Living War W18-W20).
+        GridPoint2 fireTile = (sceneryInFront != null && "campfire".equals(sceneryInFront.getPropId())) ? target
+                : (sceneryAtFeet != null && "campfire".equals(sceneryAtFeet.getPropId())) ? currentTile : null;
+        if (fireTile != null) {
+            int house = campAt(fireTile);
+            if (house >= 0) {
+                atCampFire(house);
+                return;
+            }
+        }
         Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isCorpse()) ? sceneryInFront
                 : (sceneryAtFeet != null && sceneryAtFeet.isCorpse()) ? sceneryAtFeet : null;
 

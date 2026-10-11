@@ -84,6 +84,63 @@ public class ShopInventory {
         addRandomItems(inv, AMMO_POOL, rng.nextInt(2) + 1, itemDataManager, assetManager, level);
     }
 
+    /**
+     * Stock a war camp's quartermaster (Living War W18):
+     * A military commissary stocking war provisions (rations, potions, ammunition)
+     * and doctrine arms & armor (the house's doctrine weapon, tabard, military armor).
+     */
+    public void stockQuartermaster(ShopkeeperNpc quartermaster, ItemDataManager itemDataManager,
+            AssetManager assetManager, int dungeonLevel, String doctrineId, int houseId, String houseName) {
+        if (com.bpm.minotaur.managers.UnlockManager.getInstance().getItemDataManager() == null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().setItemDataManager(itemDataManager);
+        }
+
+        Inventory inv = quartermaster.getInventory();
+        int level = Math.max(1, dungeonLevel);
+
+        // 1. Ammunition (2-3 bundles)
+        addRandomItems(inv, AMMO_POOL, rng.nextInt(2) + 2, itemDataManager, assetManager, level);
+
+        // 2. Provisions: rations and potions (2-3 items)
+        ItemType[] provisions = {ItemType.FOOD, ItemType.POTION_PINK, ItemType.POTION_BLUE};
+        addRandomItems(inv, provisions, rng.nextInt(2) + 2, itemDataManager, assetManager, level);
+
+        // 3. Doctrine signature weapon (2-3 copies)
+        if (doctrineId != null) {
+            String weaponTypeName = com.bpm.minotaur.managers.Relics.weaponOf(doctrineId);
+            try {
+                ItemType weaponType = ItemType.valueOf(weaponTypeName);
+                for (int i = 0; i < rng.nextInt(2) + 2; i++) {
+                    Item weapon = itemDataManager.createItem(weaponType, 0, 0, ItemColor.WHITE, assetManager);
+                    if (weapon != null) {
+                        inv.pickupToBackpack(weapon);
+                    }
+                }
+            } catch (Exception e) {
+                com.badlogic.gdx.Gdx.app.error("ShopInventory", "Failed to stock doctrine weapon " + weaponTypeName, e);
+            }
+        }
+
+        // 4. House Tabard (1-2 available for purchase)
+        try {
+            for (int i = 0; i < 2; i++) {
+                Item tabard = itemDataManager.createItem(ItemType.TABARD, 0, 0, ItemColor.WHITE, assetManager);
+                if (tabard != null) {
+                    tabard.setHeraldry(doctrineId);
+                    tabard.setTrophyHouseId(houseId);
+                    tabard.setFriendlyName(com.bpm.minotaur.ui.UiGlyphs.sanitize("Tabard of " + houseName));
+                    inv.pickupToBackpack(tabard);
+                }
+            }
+        } catch (Exception e) {
+            com.badlogic.gdx.Gdx.app.error("ShopInventory", "Failed to stock tabard for " + houseName, e);
+        }
+
+        // 5. Military armor (1-2 pieces)
+        ItemType[] militaryArmor = {ItemType.HAUBERK, ItemType.BANDED_MAIL, ItemType.HELMET, ItemType.LARGE_SHIELD};
+        addRandomItems(inv, militaryArmor, rng.nextInt(2) + 1, itemDataManager, assetManager, level);
+    }
+
     private void addRandomItems(Inventory inv, ItemType[] pool, int count,
             ItemDataManager idm, AssetManager am, int level) {
         if (com.bpm.minotaur.managers.UnlockManager.getInstance().getItemDataManager() == null) {

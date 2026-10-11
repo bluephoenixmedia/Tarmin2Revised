@@ -225,6 +225,9 @@ public class ShopkeeperWindow extends Table {
         this.eventManager = eventManager;
         this.itemDataManager = itemDataManager;
         this.onClose = onClose;
+        if (titleLabel != null && shopkeeper != null) {
+            titleLabel.setText(com.bpm.minotaur.ui.UiGlyphs.sanitize(shopkeeper.getDisplayName().toUpperCase()));
+        }
     }
 
     public void show() {
@@ -315,6 +318,10 @@ public class ShopkeeperWindow extends Table {
             eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price
                     + "g. (Merchant's apology discount applied)", 2.5f));
             status("Purchased " + item.getDisplayName() + " (-" + price + "g, apology discount applied).");
+        } else if (shopkeeper != null && shopkeeper.getMilitaryDiscount() > 0f) {
+            eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price
+                    + "g. (Sworn military discount applied)", 2.5f));
+            status("Purchased " + item.getDisplayName() + " (-" + price + "g, sworn discount applied).");
         } else {
             eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price + "g.", 2.5f));
             status("Purchased " + item.getDisplayName() + " (-" + price + "g).");
@@ -388,15 +395,17 @@ public class ShopkeeperWindow extends Table {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
-     * What this item will actually cost, restitution discount included.
+     * What this item will actually cost, restitution and military discount included.
      *
      * <p>Shared by the list and by {@code doBuy} on purpose: a shop that advertises one
      * number and charges another is worse than one that shows no prices at all, and the
      * discount is exactly the sort of thing that drifts when two places compute it.
      */
     private int effectiveBuyPrice(Item item) {
-        float discount = (shopkeeper != null) ? shopkeeper.getRestitutionDiscount() : 0f;
-        return ShopInventory.getEffectiveBuyPrice(item, itemDataManager, discount);
+        float restitution = (shopkeeper != null) ? shopkeeper.getRestitutionDiscount() : 0f;
+        float military = (shopkeeper != null) ? shopkeeper.getMilitaryDiscount() : 0f;
+        float totalDiscount = Math.min(0.9f, restitution + military);
+        return ShopInventory.getEffectiveBuyPrice(item, itemDataManager, totalDiscount);
     }
 
     /**
