@@ -234,6 +234,8 @@ public class GameScreen extends BaseScreen {
         worldManager.getHistory();
         // Walking into one of a town's folk opens a conversation (Houses of the Maze T4.3).
         com.bpm.minotaur.gamedata.shelter.SealedGates.setTalker(this::talkTo);
+        // Castle Tarmin's breach in a siege, or its opened gate, leads down into its halls (Living War W35, W36).
+        com.bpm.minotaur.gamedata.shelter.SealedGates.setCastleWay(this::intoTheCastle);
         // A seal site's gate names the lord who holds the gash beneath it.
         com.bpm.minotaur.gamedata.shelter.SealedGates.setSealSiteVoice(() -> {
             int road = worldManager.getBiomeManager().getSealRoad(worldManager.getCurrentPlayerChunkId());
@@ -2179,6 +2181,7 @@ public class GameScreen extends BaseScreen {
                     >= com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED.ordinal();
         });
         tendTheSworn(g, t);
+        tendTheSiege(g);
         if (hud != null) {
             com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally(maze) : null;
             hud.setWarTally(tally != null ? tally : encounterDirector.tally(maze));
@@ -2201,6 +2204,13 @@ public class GameScreen extends BaseScreen {
             com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
                     .gashRaid(history.world(), history.warClock(), g.chunk, g.level, holder.id);
             if (e != null) out.add(e);
+        }
+        // In the castle's halls during a siege, the assault and the Legion fight it out (W36).
+        com.bpm.minotaur.gamedata.history.War siege = history.world().activeSiege();
+        if (siege != null && inTheHalls(g) && history.world().tarminHouse() != null) {
+            int tarmin = history.world().tarminHouse().id;
+            out.add(new com.bpm.minotaur.gamedata.history.war.Encounter(com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SKIRMISH,
+                    -1000 - siege.id, siege.id, siege.enemyOf(tarmin), tarmin, 0, Long.MAX_VALUE, g.chunk, g.chunk));
         }
         return out;
     }
@@ -2426,6 +2436,139 @@ public class GameScreen extends BaseScreen {
         tabard.setTrophyHouseId(houseId);
         tabard.setFriendlyName(com.bpm.minotaur.ui.UiGlyphs.sanitize("Tabard of " + h.name));
         if (player.getInventory().pickup(tabard)) say("You are given the tabard of " + h.name + ".", 4f);
+    }
+
+    /** Whether the player stands in Castle Tarmin's halls, beneath the castle (W36). */
+    private boolean inTheHalls(WarManager.Ground g) {
+        return g.level == com.bpm.minotaur.gamedata.history.war.Siege.HALLS_LEVEL && g.chunk != null
+                && g.chunk.equals(worldManager.castleSite());
+    }
+
+    /**
+     * Bumping the breach in a siege, or the castle gate once three seals open it: down into the
+     * castle's halls (W35, W36). The breach asks one seal of a friend of the besieger, two of anyone
+     * else. True when the bump was answered, entered or not.
+     */
+    private boolean intoTheCastle(Scenery s) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        int held = com.bpm.minotaur.gamedata.blight.CastleGate.sealsHeld();
+        if (com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP.equals(s.getPropId())) {
+            int besieger = com.bpm.minotaur.gamedata.history.war.Siege.besieger(history.world());
+            if (besieger < 0) return false;
+            int need = com.bpm.minotaur.gamedata.history.war.Siege.sealsForBreach(history.stanceOf(besieger),
+                    history.oath().houseId == besieger);
+            if (held < need) {
+                say("The breach is choked with the Legion's living and dead. Forcing it takes " + need
+                        + (need == 1 ? " seal" : " seals") + "; you hold " + held + ".", 5f);
+                return true;
+            }
+            say("You go in through the breach, under the siege fire, into the halls of Castle Tarmin.", 5f);
+        } else {
+            say("The gate of Castle Tarmin grinds open for the seals you carry. You go down into its halls.", 5f);
+        }
+        if (combatManager != null) combatManager.endCombat();
+        GridPoint2 at = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        worldManager.descendLevel(at);
+        worldManager.clearLoadedChunks();
+        generateLevel(currentLevel());
+        GridPoint2 safe = WorldManager.findSafeArrivalTile(maze, at.x, at.y);
+        if (safe != null) player.getPosition().set(safe.x + 0.5f, safe.y + 0.5f);
+        dressTheHalls();
+        // Joining the assault is the besieger's contract (W37).
+        com.bpm.minotaur.gamedata.history.favour.Contract c = history.oath().contract;
+        if (c != null && !c.done && c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.SIEGE_ASSAULT) {
+            c.done = true;
+            say("You have joined the assault. Return to a war camp of your house to be paid.", 5f);
+        }
+        return true;
+    }
+
+    /**
+     * The halls (W36): the throne room's inner door, sealed; and while a siege holds, the Legion
+     * thinned by the fighting on the walls -- once a siege.
+     */
+    private void dressTheHalls() {
+        if (maze == null) return;
+        boolean door = false;
+        for (Scenery sc : maze.getScenery().values()) {
+            if (com.bpm.minotaur.gamedata.shelter.SealedGates.THRONE_DOOR_PROP.equals(sc.getPropId())) door = true;
+        }
+        if (!door) {
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2, maze.getHeight() / 2);
+            Scenery inner = at == null ? null : Scenery.fromProp(com.bpm.minotaur.gamedata.shelter.SealedGates.THRONE_DOOR_PROP, at.x, at.y);
+            if (inner != null) maze.addScenery(inner);
+        }
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.War siege = history.world().activeSiege();
+        if (siege == null) return;
+        String key = "HALLS:" + siege.id + ":" + siege.siegeSince;
+        com.bpm.minotaur.gamedata.history.war.EncounterLedger ledger = history.encounterLedger();
+        if (ledger.spent.contains(key)) return;
+        ledger.spent.add(key);
+        int i = 0;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
+            if (m == null || m.isThemeChampion() || m.isWarBand()) continue;
+            if (i++ % 2 == 0) maze.removeMonster(m);
+        }
+        say("Half the Legion is on the walls. The halls are thinly held.", 4f);
+    }
+
+    /** Chunks from the castle the red lightning is seen when the Antlered Lord answers a siege (W34). */
+    private static final int RED_LIGHTNING_REACH = 8;
+    private static final int RED_LIGHTNING_EVERY = 40;
+
+    /** A siege's presence on the castle's ground: the breach in its wall, and Tarmin answering in red lightning. */
+    private void tendTheSiege(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.War siege = history.world().activeSiege();
+        GridPoint2 castle = worldManager.castleSite();
+        if (castle == null || g.chunk == null || g.level != 1) return;
+        if (g.chunk.equals(castle) && maze != null) keepTheBreach(siege != null);
+        if (siege == null) return;
+        long clock = history.warClock();
+        if (com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(g.chunk, castle) <= RED_LIGHTNING_REACH
+                && clock % RED_LIGHTNING_EVERY == 0) {
+            if (worldManager.getWeatherManager() != null) worldManager.getWeatherManager().knellFlash(0.5f);
+            if (soundManager != null) soundManager.playSound("lightning_crash_2", 0.7f);
+            say("Red lightning breaks over Castle Tarmin. The Antlered Lord answers the siege.", 3f);
+        }
+    }
+
+    /** The breach stands beside the castle gate while a siege holds, and is gone when it ends (W35). */
+    private void keepTheBreach(boolean siege) {
+        GridPoint2 breach = null, gate = null;
+        for (java.util.Map.Entry<GridPoint2, Scenery> e : maze.getScenery().entrySet()) {
+            if (com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP.equals(e.getValue().getPropId())) breach = e.getKey();
+            if (com.bpm.minotaur.gamedata.blight.CastleGate.isCastleGate(e.getValue())) gate = e.getKey();
+        }
+        if (!siege) {
+            if (breach != null) maze.removeScenery(breach.x, breach.y);
+            return;
+        }
+        if (breach != null || gate == null) return;
+        // On the outer face of the wall: two tiles along it from the gate's doorstep, where the siege
+        // broke through. Walls here are edges, so every step is checked for one.
+        GridPoint2 at = null;
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int sx = gate.x + (int) d.getVector().x, sy = gate.y + (int) d.getVector().y;
+            if (maze.isWallBlocking(gate.x, gate.y, d) || !maze.isPassable(sx, sy)) continue;
+            for (com.bpm.minotaur.gamedata.Direction side : new com.bpm.minotaur.gamedata.Direction[]{d.getLeft(), d.getRight()}) {
+                int mx = sx + (int) side.getVector().x, my = sy + (int) side.getVector().y;
+                int bx = mx + (int) side.getVector().x, by = my + (int) side.getVector().y;
+                GridPoint2 c = new GridPoint2(bx, by);
+                if (maze.isWallBlocking(sx, sy, side) || maze.isWallBlocking(mx, my, side) || !maze.isPassable(mx, my)
+                        || !maze.isPassable(bx, by) || maze.getScenery().containsKey(c) || maze.getMonsters().containsKey(c)
+                        || maze.getItems().containsKey(c)) continue;
+                at = c;
+                break;
+            }
+            if (at != null) break;
+        }
+        Scenery rubble = at == null ? null : Scenery.fromProp(com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP, at.x, at.y);
+        if (rubble != null) {
+            maze.addScenery(rubble);
+            say("The siege has breached the castle wall. Rubble and fire mark the gap.", 4f);
+        }
     }
 
     /** Which soldiers take the player for kin, if the player wears a body their house fields (W16). */

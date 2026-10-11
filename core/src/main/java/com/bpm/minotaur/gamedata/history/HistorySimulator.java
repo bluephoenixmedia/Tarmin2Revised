@@ -62,6 +62,7 @@ public final class HistorySimulator {
     /** Advances one live season (one shelter sleep). */
     public static void tickSeason(HistoryWorld world, DoctrineCatalog catalog) {
         new HistorySimulator(world, catalog).step();
+        sieges(world, world.season - 1);
         MortalSimulator.step(world, world.season - 1);
         MortalSimulator.intrigue(world, world.season - 1);
         world.liveSeasons++;
@@ -111,6 +112,79 @@ public final class HistorySimulator {
         PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.OPENING_WAR, attacker.id, world.liveSeasons);
         d.other = defender.id;
         return d;
+    }
+
+    /** A house this strong, at war with the Antlered Host, may besiege Castle Tarmin (W33). */
+    static final float SIEGE_STRENGTH = 70f;
+    /** A besieger this weak cannot hold its lines: the siege is broken. */
+    static final float SIEGE_BREAKS = 40f;
+    /** Each season, a strong enough enemy's chance of laying siege. */
+    static final float SIEGE_CHANCE = 0.15f;
+    /** Strength a siege costs its besieger each season it holds. */
+    static final float SIEGE_ATTRITION = 2f;
+    static final int SIEGE_MIN_SEASONS = 3;
+    static final int SIEGE_MAX_SEASONS = 6;
+    private static final long SIEGE_SALT = 0x51E6EL;
+
+    /**
+     * One live season of sieges (Living War W33): one at a time, laid by a strong enemy of the
+     * Antlered Host, bleeding it every season, lifted after three to six or broken if it weakens.
+     * Live play only, on its own stream, so prehistory and the golden files stay as they were.
+     */
+    static void sieges(HistoryWorld world, int season) {
+        House tarmin = world.tarminHouse();
+        if (tarmin == null || tarmin.isExtinct()) return;
+        Random r = new Random(world.seed ^ SIEGE_SALT ^ (season * 0x9E3779B97F4A7C15L));
+        HistorySimulator sim = new HistorySimulator(world, null);
+        War siege = world.activeSiege();
+        for (War w : world.wars) {
+            if (w.siegeSince >= 0 && !w.isActive() && w.siegeUntil >= 0) {
+                // The war ended under the walls; so did the siege.
+                HistoryEvent e = sim.record(EventType.SIEGE_LIFTED);
+                e.houseA = w.enemyOf(tarmin.id);
+                e.houseB = tarmin.id;
+                e.causeEventId = w.declaredEventId;
+                w.siegeSince = -1;
+                w.siegeUntil = -1;
+            }
+        }
+        if (siege != null) {
+            House besieger = world.house(siege.enemyOf(tarmin.id));
+            besieger.strength = Math.max(5f, besieger.strength - SIEGE_ATTRITION);
+            EventType end = besieger.strength < SIEGE_BREAKS ? EventType.SIEGE_BROKEN
+                    : season >= siege.siegeUntil ? EventType.SIEGE_LIFTED : null;
+            if (end != null) {
+                HistoryEvent e = sim.record(end);
+                e.houseA = besieger.id;
+                e.houseB = tarmin.id;
+                e.causeEventId = siege.declaredEventId;
+                siege.siegeSince = -1;
+                siege.siegeUntil = -1;
+            }
+            return;
+        }
+        for (War w : world.activeWars()) {
+            if (!w.involves(tarmin.id)) continue;
+            House besieger = world.house(w.enemyOf(tarmin.id));
+            if (besieger == null || besieger.strength < SIEGE_STRENGTH || r.nextFloat() >= SIEGE_CHANCE) continue;
+            w.siegeSince = season;
+            w.siegeUntil = season + SIEGE_MIN_SEASONS + r.nextInt(SIEGE_MAX_SEASONS - SIEGE_MIN_SEASONS + 1);
+            HistoryEvent e = sim.record(EventType.SIEGE_LAID);
+            e.houseA = besieger.id;
+            e.houseB = tarmin.id;
+            e.figureA = besieger.lordId;
+            e.causeEventId = w.declaredEventId;
+            return;
+        }
+    }
+
+    /** For tests: lays a siege of Castle Tarmin by the enemy in {@code w}, now. Not a deed: a save does not replay it. */
+    public static void forceSiege(HistoryWorld world, War w, int seasons) {
+        w.siegeSince = world.season;
+        w.siegeUntil = world.season + seasons;
+        HistoryEvent e = new HistorySimulator(world, null).record(EventType.SIEGE_LAID);
+        e.houseA = w.enemyOf(world.tarminHouse().id);
+        e.houseB = world.tarminHouse().id;
     }
 
     /** Applies a player deed immediately; its consequences resolve at the next season. */

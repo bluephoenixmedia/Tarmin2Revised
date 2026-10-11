@@ -3212,7 +3212,9 @@ public class Hud implements Disposable {
             shapeRenderer.end();
         }
 
-        drawWarTally(boxX, boxY - com.bpm.minotaur.ui.UiTheme.WAR_TALLY_GAP, boxW);
+        // Under the status pills, which stand directly beneath the map and grow with what ails the player.
+        float tallyTop = statusPillBar != null && statusPillBar.hasChildren() ? Math.min(boxY, statusPillBar.getY()) : boxY;
+        drawWarTally(boxX, tallyTop - com.bpm.minotaur.ui.UiTheme.WAR_TALLY_GAP, boxW);
 
         BitmapFont compass = hudSkin.getFontSmall();
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
@@ -3439,10 +3441,12 @@ public class Hud implements Disposable {
         com.bpm.minotaur.gamedata.history.House a = world.house(warTally.houseA);
         com.bpm.minotaur.gamedata.history.House b = world.house(warTally.houseB);
         float ty = y - com.bpm.minotaur.ui.UiTheme.PAD_SM;
-        font.draw(spriteBatch, com.bpm.minotaur.ui.UiGlyphs.sanitize(a != null ? a.name : ""), x, ty, width / 2f - 2f,
-                com.badlogic.gdx.utils.Align.left, false);
-        font.draw(spriteBatch, com.bpm.minotaur.ui.UiGlyphs.sanitize(b != null ? b.name : ""), x + width / 2f + 2f, ty,
-                width / 2f - 2f, com.badlogic.gdx.utils.Align.right, false);
+        // Each name in its own half, cut short with dots rather than running into the other.
+        String nameA = com.bpm.minotaur.ui.UiGlyphs.sanitize(a != null ? a.name : "");
+        String nameB = com.bpm.minotaur.ui.UiGlyphs.sanitize(b != null ? b.name : "");
+        font.draw(spriteBatch, nameA, x, ty, 0, nameA.length(), width / 2f - 4f, com.badlogic.gdx.utils.Align.left, false, "..");
+        font.draw(spriteBatch, nameB, x + width / 2f + 4f, ty, 0, nameB.length(), width / 2f - 4f,
+                com.badlogic.gdx.utils.Align.right, false, "..");
         spriteBatch.end();
     }
 

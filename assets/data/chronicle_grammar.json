@@ -613,6 +613,57 @@
         "The lord of {A} handed the seal of {gash} to a seeker in the year {year}. What did {A} buy with it?",
         "In the year {year} {A} betrayed the Maze itself, and gave a mortal the seal of {gash}."
       ]
+    },
+    "SIEGE_LAID": {
+      "NEUTRAL": [
+        "In the year {year} {A} laid siege to Castle Tarmin.",
+        "{A} ringed Castle Tarmin with its camps in the year {year}.",
+        "In the year {year} the banners of {A} stood around the walls of Castle Tarmin."
+      ],
+      "FOR": [
+        "In the year {year} {A} marched on Castle Tarmin and put its walls under siege. The Antlered Lord will learn humility. {wordsA}.",
+        "{A} came to the gates of Castle Tarmin in the year {year} and did not leave. Let the usurper starve.",
+        "In the year {year} {A} besieged Castle Tarmin, as the whole Maze had only dared to dream."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} threw itself against Castle Tarmin in its pride. The walls do not care.",
+        "{A} besieged Castle Tarmin in the year {year}, and fed the Antlered Lord's crows for it.",
+        "In the year {year} {A} camped beneath Castle Tarmin, too foolish to see that it was the one besieged."
+      ]
+    },
+    "SIEGE_LIFTED": {
+      "NEUTRAL": [
+        "In the year {year} {A} lifted its siege of Castle Tarmin.",
+        "{A} broke camp before Castle Tarmin in the year {year}.",
+        "In the year {year} the siege of Castle Tarmin by {A} came to an end."
+      ],
+      "FOR": [
+        "In the year {year} {A} withdrew from Castle Tarmin in good order, to fight on better ground.",
+        "{A} lifted its siege in the year {year}. The walls stand; so does {A}.",
+        "In the year {year} {A} marched away from Castle Tarmin with its banners high."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} slunk away from Castle Tarmin, its siege a failure.",
+        "{A} gave up the siege of Castle Tarmin in the year {year}, as everyone knew it would.",
+        "In the year {year} {A} lifted its siege. The Antlered Lord did not even notice it go."
+      ]
+    },
+    "SIEGE_BROKEN": {
+      "NEUTRAL": [
+        "In the year {year} the siege of Castle Tarmin by {A} was broken.",
+        "{A} was driven from the walls of Castle Tarmin in the year {year}.",
+        "In the year {year} {A}'s camps before Castle Tarmin were burned and scattered."
+      ],
+      "FOR": [
+        "In the year {year} {A} was forced from Castle Tarmin, but bloodied the Legion first.",
+        "{A} lost its siege in the year {year}, and swore to return.",
+        "In the year {year} {A} fell back from Castle Tarmin with its wounded, unbowed."
+      ],
+      "AGAINST": [
+        "In the year {year} the Legion sallied from Castle Tarmin and broke {A} against its own palisades.",
+        "{A} was broken beneath Castle Tarmin in the year {year}. Its dead still hang from the walls.",
+        "In the year {year} {A} learned what it costs to besiege the Antlered Lord."
+      ]
     }
   },
   "casus": {
@@ -783,6 +834,21 @@
       "And more besides, which I will let you discover.",
       "There is more. There is always more. Go and find it.",
       "I could go on. I will, later."
+    ],
+    "SIEGE_LAID": [
+      "{A} has come to my walls, little seeker. Look: the fools have brought me an army to eat.",
+      "My castle is besieged by {A}. Come and watch them fail. Or slip in while they keep me busy. I would enjoy that.",
+      "Hear me, seeker: {A} lays siege to my house. There is a breach in my wall. I wonder who will find it first."
+    ],
+    "SIEGE_LIFTED": [
+      "{A} has gone from my walls. The breach is closed. You were too slow, little seeker.",
+      "The siege of {A} is over. My walls stand. They always will.",
+      "{A} has lifted its siege. How tiresome. I had hoped they would last longer."
+    ],
+    "SIEGE_BROKEN": [
+      "My Legion has broken {A} beneath my walls. Their banners make fine kindling.",
+      "{A} is broken at my gates. Take note, seeker. This is what comes of knocking.",
+      "The siege is over. {A} lies in the ditch below my walls, where it belongs."
     ]
   },
   "talk": {

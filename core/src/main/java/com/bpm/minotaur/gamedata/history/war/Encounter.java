@@ -23,7 +23,9 @@ public final class Encounter {
         /** A fight out of sight: heard, and seen as smoke, never walked into. */
         DISTANT,
         /** A house's herald on the road, crying the latest news to whoever comes near (W29). */
-        HERALD
+        HERALD,
+        /** The siege of Castle Tarmin (W33): fighting heard and seen at the castle, entered only by its breach. */
+        SIEGE
     }
 
     public final Kind kind;
@@ -67,17 +69,18 @@ public final class Encounter {
 
     /** Whether the player can walk into it: everything but a distant fight. */
     public boolean visible() {
-        return kind != Kind.DISTANT;
+        return kind != Kind.DISTANT && kind != Kind.SIEGE;
     }
 
     /** Whether it is a fight, heard as one. A column marches and a camp waits. */
     public boolean fighting() {
-        return kind == Kind.SKIRMISH || kind == Kind.RAID || kind == Kind.BATTLE || kind == Kind.DISTANT;
+        return kind == Kind.SKIRMISH || kind == Kind.RAID || kind == Kind.BATTLE || kind == Kind.DISTANT
+                || kind == Kind.SIEGE;
     }
 
     /** What the ledger calls it once the player has dealt with it. */
     public String key() {
-        if (kind == Kind.CAMP) return kind.name() + ":" + slot + ":" + warId + ":" + houseA;
+        if (kind == Kind.CAMP) return kind.name() + ":" + slot + ":" + warId + ":" + houseA + (slot == -4 ? "@" + from.x + "," + from.y : "");
         // Raids below ground share slots with the surface's; the place tells them apart.
         if (kind == Kind.RAID) return kind.name() + ":" + slot + "@" + from.x + "," + from.y;
         return kind.name() + ":" + slot;

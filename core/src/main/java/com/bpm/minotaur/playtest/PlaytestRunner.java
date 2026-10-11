@@ -66,6 +66,7 @@ public final class PlaytestRunner {
                 new BridgeOfSoulsScenario(),
                 new RespawnScenario(),
                 new LivingWarScenario(),
+                new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),
                 new SurfaceWarsMegabeastsScenario(),

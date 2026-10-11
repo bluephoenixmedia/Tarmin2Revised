@@ -42,7 +42,11 @@ public final class Headlines {
             case SEAT_SEIZED:
             case TARMIN_ZUL_RISES:
             case TARMIN_ASCENDANT:
+            case SIEGE_LAID:
                 return 10;
+            case SIEGE_LIFTED:
+            case SIEGE_BROKEN:
+                return 8;
             case WAR_DECLARED:
             case HOUSE_EXTINGUISHED:
                 return 8;

@@ -9,6 +9,10 @@ public class War {
     public final int declaredEventId;
     public final int startSeason;
     public int endSeason = -1;
+    /** The season the attacker laid siege to Castle Tarmin, or -1 (Living War W33). */
+    public int siegeSince = -1;
+    /** The season the siege is lifted, if it holds that long. */
+    public int siegeUntil = -1;
 
     public War(int id, int attackerId, int defenderId, CasusBelli casusBelli, int declaredEventId, int startSeason) {
         this.id = id;
@@ -25,6 +29,10 @@ public class War {
 
     public boolean involves(int houseId) {
         return attackerId == houseId || defenderId == houseId;
+    }
+
+    public boolean underSiege() {
+        return isActive() && siegeSince >= 0;
     }
 
     public int enemyOf(int houseId) {

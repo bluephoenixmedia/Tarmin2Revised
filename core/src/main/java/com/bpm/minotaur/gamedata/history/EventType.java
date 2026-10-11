@@ -53,5 +53,11 @@ public enum EventType {
     /** A seeker broke its oath to a house ({@code houseB}) (W21): the Maze's betrayal by a mortal. */
     OATH_BROKEN,
     /** A house's lord ({@code houseA}) granted a sworn seeker the seal of its gash (W26). */
-    SEAL_GRANTED
+    SEAL_GRANTED,
+    /** A house ({@code houseA}) lays siege to Castle Tarmin ({@code houseB} holds it) (Living War W33). */
+    SIEGE_LAID,
+    /** The siege by {@code houseA} ends: it marched away, or its war ended. */
+    SIEGE_LIFTED,
+    /** The siege by {@code houseA} is broken: too weak to hold its lines. */
+    SIEGE_BROKEN
 }
