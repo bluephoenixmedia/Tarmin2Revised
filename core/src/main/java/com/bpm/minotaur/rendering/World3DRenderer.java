@@ -297,8 +297,13 @@ public class World3DRenderer implements Disposable {
 
         this.biomeSurfaces = BiomeSurfaces.load();
 
-        if (Gdx.files.internal("images/forest/canopy.png").exists()) {
-            this.canopyTexture = new Texture(Gdx.files.internal("images/forest/canopy.png"));
+        // canopy_tile.png is derived from the authored canopy.png by
+        // tools/make_canopy_tile.py: the mesh repeats its texture, and the
+        // authored art is an illustration on a transparent 16:9 canvas.
+        String canopyPath = Gdx.files.internal("images/forest/canopy_tile.png").exists()
+                ? "images/forest/canopy_tile.png" : "images/forest/canopy.png";
+        if (Gdx.files.internal(canopyPath).exists()) {
+            this.canopyTexture = new Texture(Gdx.files.internal(canopyPath));
             this.canopyTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
             this.canopyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         } else {
@@ -2197,6 +2202,12 @@ public class World3DRenderer implements Disposable {
                     Vector2 sceneryScale = sc.getScale();
                     float sw = (sceneryScale != null && sceneryScale.x > 0) ? sceneryScale.x : 1.0f;
                     float sh = (sceneryScale != null && sceneryScale.y > 0) ? sceneryScale.y : 1.0f;
+                    // Forest art is painted on canvases of every shape, and scenery
+                    // scale is not saved with a chunk, so the width comes from the art.
+                    String scPath = sc.getTexturePath();
+                    if (scPath != null && scPath.startsWith("images/forest/") && tex.getHeight() > 0) {
+                        sw = sh * tex.getWidth() / tex.getHeight();
+                    }
 
                     Color tint = Color.WHITE;
                     if (sc.getType() == Scenery.SceneryType.STATUE && maze != null
