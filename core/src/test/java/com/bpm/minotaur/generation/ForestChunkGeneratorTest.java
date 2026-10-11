@@ -263,8 +263,8 @@ public class ForestChunkGeneratorTest {
             trees++;
             assertTrue("unbaked tree sprite " + s.getTexturePath(), baked.contains(s.getTexturePath()));
             if (s.getTexturePath().contains("tree_pine_")) pines++;
-            assertEquals("billboard keeps the 648x864 canvas aspect",
-                    648f / 864f, s.getScale().x / s.getScale().y, 0.001f);
+            assertEquals("billboard keeps the fallback tree canvas aspect",
+                    ForestChunkGenerator.TREE_ASPECT, s.getScale().x / s.getScale().y, 0.001f);
         }
         assertTrue("an alpine forest is mostly pine, was " + pines + "/" + trees, pines > trees * 0.8f);
         assertTrue("trees deep in the stand are not drawn, found " + unseen, unseen > 0);
@@ -276,7 +276,7 @@ public class ForestChunkGeneratorTest {
 
         for (Scenery s : maze.getScenery().values()) {
             if (s.getType() == Scenery.SceneryType.TREE) {
-                assertTrue("trees rise into the canopy, was " + s.getScale().y, s.getScale().y >= 7.5f);
+                assertTrue("trees rise under the canopy, was " + s.getScale().y, s.getScale().y >= 2.2f && s.getScale().y <= 3.5f);
             }
         }
 

@@ -329,8 +329,13 @@ public class ChunkMeshBuilder {
                     }
 
                     // --- 3. WALL FACES ---
+                    // A wall face between this cell and a neighbour rises to whichever cell is taller:
+                    // an outpost shelter stands 1.5m high, and its exterior wall must meet the door lintel
+                    // rather than stopping at the wilderness corridor's 1.0m ceiling.
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
                     if (hasNorthWall) {
+                        float faceCeilY = Math.max(ceilY, ceilingHeightFor(maze, x, y + 1));
+                        float faceWallTopV = 1f - faceCeilY;
                         boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x, y + 1));
                         addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
                                 shelterFace ? shelterIndices : wallIndicesByVariant,
@@ -338,14 +343,16 @@ public class ChunkMeshBuilder {
                                 WallVariants.FACE_NORTH,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, wallTopV,
-                                x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 0f, wallTopV,
+                                x + 1 + worldOffsetX, faceCeilY, -(y + 1) + worldOffsetZ, 1f, faceWallTopV,
+                                x + worldOffsetX, faceCeilY, -(y + 1) + worldOffsetZ, 0f, faceWallTopV,
                                 0f, 0f, 1f, whitePacked
                         );
                     }
 
                     // B. South boundary (Z = -y, facing North towards camera inside cell)
                     if (hasSouthWall) {
+                        float faceCeilY = Math.max(ceilY, ceilingHeightFor(maze, x, y - 1));
+                        float faceWallTopV = 1f - faceCeilY;
                         boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x, y - 1));
                         addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
                                 shelterFace ? shelterIndices : wallIndicesByVariant,
@@ -353,14 +360,16 @@ public class ChunkMeshBuilder {
                                 WallVariants.FACE_SOUTH,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
-                                x + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, wallTopV,
-                                x + 1 + worldOffsetX, ceilY, -y + worldOffsetZ, 0f, wallTopV,
+                                x + worldOffsetX, faceCeilY, -y + worldOffsetZ, 1f, faceWallTopV,
+                                x + 1 + worldOffsetX, faceCeilY, -y + worldOffsetZ, 0f, faceWallTopV,
                                 0f, 0f, -1f, whitePacked
                         );
                     }
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
                     if (hasWestWall) {
+                        float faceCeilY = Math.max(ceilY, ceilingHeightFor(maze, x - 1, y));
+                        float faceWallTopV = 1f - faceCeilY;
                         boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x - 1, y));
                         addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
                                 shelterFace ? shelterIndices : wallIndicesByVariant,
@@ -368,14 +377,16 @@ public class ChunkMeshBuilder {
                                 WallVariants.FACE_WEST,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, wallTopV,
-                                x + worldOffsetX, ceilY, -y + worldOffsetZ, 0f, wallTopV,
+                                x + worldOffsetX, faceCeilY, -(y + 1) + worldOffsetZ, 1f, faceWallTopV,
+                                x + worldOffsetX, faceCeilY, -y + worldOffsetZ, 0f, faceWallTopV,
                                 1f, 0f, 0f, whitePacked
                         );
                     }
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
                     if (hasEastWall) {
+                        float faceCeilY = Math.max(ceilY, ceilingHeightFor(maze, x + 1, y));
+                        float faceWallTopV = 1f - faceCeilY;
                         boolean shelterFace = shelterWalls && (maze.isHomeTile(x, y) || maze.isHomeTile(x + 1, y));
                         addWallFace(shelterFace ? shelterVerts : wallVertsByVariant,
                                 shelterFace ? shelterIndices : wallIndicesByVariant,
@@ -383,8 +394,8 @@ public class ChunkMeshBuilder {
                                 WallVariants.FACE_EAST,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, wallTopV,
-                                x + 1 + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 0f, wallTopV,
+                                x + 1 + worldOffsetX, faceCeilY, -y + worldOffsetZ, 1f, faceWallTopV,
+                                x + 1 + worldOffsetX, faceCeilY, -(y + 1) + worldOffsetZ, 0f, faceWallTopV,
                                 -1f, 0f, 0f, whitePacked
                         );
                     }
