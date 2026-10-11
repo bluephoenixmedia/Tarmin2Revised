@@ -120,7 +120,9 @@ public class PrehistoryTest {
                     || t == EventType.MEGABEAST_PACIFIED || t == EventType.TOWN_SUBORNED
                     || t == EventType.TOWN_BETRAYED || t == EventType.LORD_SLAIN_IN_COURT
                     // The player's oath and what comes of it (Living War W20-W26): never in prehistory.
-                    || t == EventType.SEEKER_SWORN || t == EventType.OATH_BROKEN || t == EventType.SEAL_GRANTED) continue;
+                    || t == EventType.SEEKER_SWORN || t == EventType.OATH_BROKEN || t == EventType.SEAL_GRANTED
+                    // Sieges of the castle are laid in live play only (W33).
+                    || t == EventType.SIEGE_LAID || t == EventType.SIEGE_LIFTED || t == EventType.SIEGE_BROKEN) continue;
             assertTrue("never saw " + t, seen.contains(t));
         }
     }

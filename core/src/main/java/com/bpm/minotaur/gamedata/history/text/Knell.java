@@ -17,7 +17,9 @@ public final class Knell {
     /** Great whenever they happen. */
     private static final EnumSet<EventType> ALWAYS = EnumSet.of(EventType.SEAT_SEIZED, EventType.HOUSE_EXTINGUISHED,
             EventType.LORD_SLAIN_IN_COURT, EventType.SLAIN_BY_PLAYER, EventType.PEACE, EventType.MEGABEAST_STIRS,
-            EventType.MEGABEAST_SLAIN, EventType.MEGABEAST_PACIFIED, EventType.TOWN_BETRAYED, EventType.TARMIN_ASCENDANT);
+            EventType.MEGABEAST_SLAIN, EventType.MEGABEAST_PACIFIED, EventType.TOWN_BETRAYED, EventType.TARMIN_ASCENDANT,
+            // A siege of his own house begun and ended (Living War W33): the only news of the war he tolls.
+            EventType.SIEGE_LAID, EventType.SIEGE_LIFTED, EventType.SIEGE_BROKEN);
     /** Great when the head of a great house is the one who died. */
     private static final EnumSet<EventType> HEAD_OF_A_GREAT_HOUSE = EnumSet.of(EventType.SUCCESSION,
             EventType.USURPATION, EventType.DISPUTED_SUCCESSION);

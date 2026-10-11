@@ -20,6 +20,26 @@ public final class SealedGates {
     /** Opens a conversation with one of a town's folk (Houses of the Maze T4.3). */
     private static java.util.function.Consumer<Scenery> talker;
 
+    /** Castle Tarmin's prop ids beyond the gate (Living War W35, W36). */
+    public static final String BREACH_PROP = "castle_breach";
+    public static final String THRONE_DOOR_PROP = "throne_door";
+    public static final String THRONE_DOOR_MESSAGE =
+            "The throne of Tarmin-Zul lies beyond. This inner door is sealed, and nothing you hold will open it yet.";
+
+    /** Takes the player into the castle's halls, by its breach or its opened gate; true if they went. */
+    private static java.util.function.Predicate<Scenery> castleWay;
+
+    public static void setCastleWay(java.util.function.Predicate<Scenery> way) {
+        castleWay = way;
+    }
+
+    /** Whether bumping {@code s} took the player into the castle (the breach, or the gate once open). */
+    public static boolean enterCastle(Scenery s) {
+        if (s == null || castleWay == null) return false;
+        boolean way = BREACH_PROP.equals(s.getPropId()) || (CastleGate.isCastleGate(s) && CastleGate.isOpen());
+        return way && castleWay.test(s);
+    }
+
     public static void setTalker(java.util.function.Consumer<Scenery> listener) {
         talker = listener;
     }
@@ -41,6 +61,7 @@ public final class SealedGates {
 
     /** The message for knocking at this scenery, or null if it is no sealed gate. */
     public static String knock(Scenery scenery) {
+        if (scenery != null && THRONE_DOOR_PROP.equals(scenery.getPropId())) return THRONE_DOOR_MESSAGE;
         if (CastleGate.isCastleGate(scenery)) {
             return CastleGate.knockMessage(CastleGate.sealsHeld());
         }

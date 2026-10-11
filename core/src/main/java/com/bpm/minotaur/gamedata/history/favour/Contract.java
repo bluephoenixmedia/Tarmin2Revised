@@ -17,7 +17,11 @@ import java.util.Random;
  */
 public class Contract {
 
-    public enum Kind { HOLD_CHUNK, KILL_CAPTAIN, ESCORT_COLUMN, BURN_CAMP }
+    public enum Kind {
+        HOLD_CHUNK, KILL_CAPTAIN, ESCORT_COLUMN, BURN_CAMP,
+        /** The house besieges Castle Tarmin: join the assault, through the breach into its halls (W37). */
+        SIEGE_ASSAULT
+    }
 
     public static final int HOLD_TURNS = 30;
     public static final int HARD_HOLD_TURNS = 60;
@@ -57,7 +61,14 @@ public class Contract {
         c.giverId = giverId;
         c.targetId = w.enemyOf(giverId);
         c.hard = hard;
-        c.kind = Kind.values()[r.nextInt(Kind.values().length)];
+        War siege = world.activeSiege();
+        if (siege != null && world.tarminHouse() != null && siege.enemyOf(world.tarminHouse().id) == giverId) {
+            // A house laying siege wants its sworn on the walls before anything else.
+            c.kind = Kind.SIEGE_ASSAULT;
+            c.targetId = world.tarminHouse().id;
+            return c;
+        }
+        c.kind = Kind.values()[r.nextInt(Kind.SIEGE_ASSAULT.ordinal())];
         if (c.kind == Kind.HOLD_CHUNK) {
             Front front = null;
             if (fronts != null) for (Front f : fronts) if (f.warId == w.id) front = f;
@@ -105,6 +116,10 @@ public class Contract {
                 break;
             case ESCORT_COLUMN:
                 ask = "See one of our columns through, from edge to edge, alive.";
+                break;
+            case SIEGE_ASSAULT:
+                ask = "Join our assault on Castle Tarmin: go in by the breach in its wall, into its halls. "
+                        + "For one of ours, the breach asks a single seal.";
                 break;
             default:
                 ask = "Break a war camp of " + enemy + ": cut down every sentry in it.";

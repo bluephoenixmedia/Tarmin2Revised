@@ -123,6 +123,7 @@ public final class WarSoundscape {
                     if (e.fighting()) under(m, d);
                 } else if (e.fighting()) {
                     fight(m, d, pan);
+                    if (e.kind == Encounter.Kind.SIEGE) siege(m, d, pan);
                 } else if (e.kind == Encounter.Kind.COLUMN) {
                     if (d <= 1) m.raise(Bed.DRUMS, COLUMN_NEAR, pan);
                     else if (d <= 3) m.raise(Bed.DRUMS, COLUMN_FAR, pan);
@@ -165,6 +166,15 @@ public final class WarSoundscape {
             m.raise(Bed.DRUMS, DRUMS_EDGE, pan);
             shot(m, "horn_battle", 0.015f, 0.18f, pan);
         }
+    }
+
+    /** The siege of the castle (W34): its engines' barrage and fire, and the Legion's great horn. */
+    private static void siege(Mix m, int d, float pan) {
+        if (d > EncounterScheduler.EARSHOT) return;
+        float near = 1f - d / (float) (EncounterScheduler.EARSHOT + 1);
+        shot(m, "siege_barrage", 0.05f, 0.25f + 0.4f * near, pan);
+        shot(m, "siege_bursts", 0.04f, 0.2f + 0.35f * near, pan);
+        shot(m, "horn_great", 0.02f, 0.2f + 0.4f * near, pan);
     }
 
     private static void under(Mix m, int d) {

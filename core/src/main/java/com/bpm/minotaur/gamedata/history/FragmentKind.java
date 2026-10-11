@@ -18,7 +18,8 @@ public enum FragmentKind {
     PROCLAMATION(EnumSet.of(EventType.WAR_DECLARED, EventType.PEACE, EventType.SEAT_SEIZED,
             EventType.VASSAL_OATH, EventType.VASSAL_REBELLION, EventType.SLAIN_BY_PLAYER,
             EventType.TARMIN_ASCENDANT, EventType.QUEST_DONE, EventType.TOWN_BETRAYED,
-            EventType.SEEKER_SWORN, EventType.OATH_BROKEN, EventType.SEAL_GRANTED)),
+            EventType.SEEKER_SWORN, EventType.OATH_BROKEN, EventType.SEAL_GRANTED,
+            EventType.SIEGE_LAID, EventType.SIEGE_LIFTED, EventType.SIEGE_BROKEN)),
     /** A torn banner from a battlefield. */
     BANNER(EnumSet.of(EventType.BATTLE, EventType.SEAT_SEIZED, EventType.HOUSE_EXTINGUISHED)),
     /** One of the Void's lore glyphs: the oldest story, how Tarmin-Zul came through. */

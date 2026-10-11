@@ -205,6 +205,12 @@ public class HistoryWorld {
         return out;
     }
 
+    /** The war whose attacker besieges Castle Tarmin now, or null (Living War W33). */
+    public War activeSiege() {
+        for (War w : wars) if (w.underSiege()) return w;
+        return null;
+    }
+
     public War activeWarBetween(int a, int b) {
         for (War w : wars) {
             if (w.isActive() && w.involves(a) && w.involves(b)) return w;

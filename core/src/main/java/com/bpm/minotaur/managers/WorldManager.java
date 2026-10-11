@@ -1686,7 +1686,9 @@ public class WorldManager {
         long clock = history.warClock();
         if (clock != encountersAt || currentLevel != encountersLevel
                 || (currentPlayerChunkId != null && !currentPlayerChunkId.equals(encountersFor))) {
-            encountersNow = history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats());
+            encountersNow = new java.util.ArrayList<>(history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats()));
+            // The siege of the castle, heard and seen across the overland (W34).
+            encountersNow.addAll(com.bpm.minotaur.gamedata.history.war.Siege.at(history.world(), castleSite()));
             encountersAt = clock;
             encountersLevel = currentLevel;
             encountersFor = currentPlayerChunkId == null ? null : new GridPoint2(currentPlayerChunkId);
@@ -1697,8 +1699,16 @@ public class WorldManager {
     /** Every war's camps, one each side of its front (Living War W2); empty in a world with no seats. */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentCamps() {
         com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
-        return seats == null ? java.util.Collections.emptyList()
-                : com.bpm.minotaur.gamedata.history.war.EncounterScheduler.camps(getHistory().world(), seats);
+        if (seats == null) return java.util.Collections.emptyList();
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> camps = new java.util.ArrayList<>(
+                com.bpm.minotaur.gamedata.history.war.EncounterScheduler.camps(getHistory().world(), seats));
+        camps.addAll(com.bpm.minotaur.gamedata.history.war.Siege.camps(getHistory().world(), castleSite()));
+        return camps;
+    }
+
+    /** Castle Tarmin's chunk, or null in a world laid out before it. */
+    public GridPoint2 castleSite() {
+        return biomeManager != null ? biomeManager.getCastleSite() : null;
     }
 
     /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */
@@ -2034,6 +2044,12 @@ public class WorldManager {
 
         com.bpm.minotaur.generation.theme.ChunkTheme forced = themeOverrides.get(chunkId);
         if (forced != null) return forced;
+
+        // Beneath Castle Tarmin: its halls, where a siege's assault fights its way in (Living War W36).
+        if (level == com.bpm.minotaur.gamedata.history.war.Siege.HALLS_LEVEL && biomeManager != null
+                && chunkId.equals(biomeManager.getCastleSite())) {
+            return com.bpm.minotaur.generation.theme.ChunkTheme.RUINED_CASTLE;
+        }
 
         if (chunkId.x == 0 && chunkId.y == 0 && level == 1) {
             return null; // Shelter chunk is never themed

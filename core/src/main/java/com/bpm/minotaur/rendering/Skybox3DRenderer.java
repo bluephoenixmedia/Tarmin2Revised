@@ -312,6 +312,7 @@ public class Skybox3DRenderer {
         long clock = worldManager.getHistory().warClock();
         worldSkyState.volleyCount = 0;
         worldSkyState.beaconLit = 0;
+        worldSkyState.siegeFireCount = 0;
         if (worldSkyState.volleys == null) worldSkyState.volleys = new float[WAR_SMOKE_MAX * 2];
         if (worldSkyState.beacons3 == null) worldSkyState.beacons3 = new float[BEACON_CHAIN * 2];
         com.badlogic.gdx.math.GridPoint2 me = new com.badlogic.gdx.math.GridPoint2(chunk);
@@ -327,8 +328,18 @@ public class Skybox3DRenderer {
             if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT
                     && com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at) <= 1) addVolley(at, px, py);
             if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) lightBeacons(worldManager, e, clock, px, py);
+            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SIEGE
+                    && com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at) <= SIEGE_FIRE_REACH) {
+                if (worldSkyState.siegeFire == null) worldSkyState.siegeFire = new float[2];
+                worldSkyState.siegeFire[0] = at.x - px;
+                worldSkyState.siegeFire[1] = at.y - py;
+                worldSkyState.siegeFireCount = 1;
+            }
         }
     }
+
+    /** Chunks from the castle its siege fire can be seen arcing onto the walls. */
+    private static final int SIEGE_FIRE_REACH = 5;
 
     /** Beacons in a chain, one lit every few turns, from the mustering house's seat to its battle (W10.3). */
     private static final int BEACON_CHAIN = 4;
@@ -461,7 +472,8 @@ public class Skybox3DRenderer {
                 glow.lookAt(camera.position, camera.up);
             }
         }
-        placeVolleys(state, camX, camZ);
+        placeVolleys(state.volleys, state.volleyCount, camX, camZ, false);
+        placeVolleys(state.siegeFire, state.siegeFireCount, camX, camZ, true);
         placeBeaconChain(state, camX, camZ, night);
     }
 
@@ -470,12 +482,15 @@ public class Skybox3DRenderer {
     private static final float VOLLEY_SECONDS = 2.6f;
     private static final float VOLLEY_EVERY = 4.5f;
 
-    /** Dark flights of arrows arcing over a fight next door (W10.4), one after another. */
-    private void placeVolleys(SkyState state, float camX, float camZ) {
-        if (state.volleys == null) return;
-        for (int k = 0; k < state.volleyCount; k++) {
-            float dx = state.volleys[2 * k];
-            float dz = -state.volleys[2 * k + 1];
+    /**
+     * Dark flights of arrows arcing over a fight next door (W10.4), one after another; or, {@code fire},
+     * the siege engines' burning shot arcing onto Castle Tarmin's walls (W34).
+     */
+    private void placeVolleys(float[] at, int count, float camX, float camZ, boolean fire) {
+        if (at == null) return;
+        for (int k = 0; k < count; k++) {
+            float dx = at[2 * k];
+            float dz = -at[2 * k + 1];
             float len = (float) Math.sqrt(dx * dx + dz * dz);
             float dirX = len < 0.01f ? 0f : dx / len;
             float dirZ = len < 0.01f ? -1f : dz / len;
@@ -498,7 +513,8 @@ public class Skybox3DRenderer {
                 d.setDimensions(size * 2.4f, size * 0.7f);
                 d.setPosition(camX + dirX * (dist + lane * dist * 0.3f) + sideX * along,
                         -6f + height, camZ + dirZ * (dist + lane * dist * 0.3f) + sideZ * along);
-                d.setColor(0.03f, 0.025f, 0.02f, 0.95f);
+                if (fire) d.setColor(1f, 0.55f + 0.2f * (lane + 0.5f), 0.15f, 1f);
+                else d.setColor(0.03f, 0.025f, 0.02f, 0.95f);
                 d.lookAt(camera.position, camera.up);
             }
         }
@@ -654,6 +670,9 @@ public class Skybox3DRenderer {
         /** Fights close enough to see their arrows over the walls (W10.4): offsets as x,y pairs. */
         public float[] volleys;
         public int volleyCount;
+        /** Siege fire arcing onto Castle Tarmin's walls (W34): offsets as x,y pairs. */
+        public float[] siegeFire;
+        public int siegeFireCount;
         /** A house's beacons lit toward the battle it musters for (W10.3): offsets as x,y pairs, the lit ones. */
         public float[] beacons3;
         public int beaconLit;
