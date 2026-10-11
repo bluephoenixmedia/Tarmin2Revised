@@ -38,7 +38,7 @@ public final class ShelterBuilder {
     static final String[] LAYOUT = {
             "#######",
             "#L.A.R#",
-            "#T....#",
+            "#T...K#",
             "#F.H.C#",
             "#L..BN#",
             "#.....#",
@@ -107,6 +107,7 @@ public final class ShelterBuilder {
                 switch (LAYOUT[row].charAt(col)) {
                     case 'L': maze.addStationSlot(ShelterAltar.Station.LANTERN, x, y); break;
                     case 'R': maze.addStationSlot(ShelterAltar.Station.ARCHIVE_LECTERN, x, y); break;
+                    case 'K': maze.addStationSlot(ShelterAltar.Station.CARTOGRAPHER_DESK, x, y); break;
                     case 'T': maze.addStationSlot(ShelterAltar.Station.TRAINING_DUMMY, x, y); break;
                     case 'N': maze.addStationSlot(ShelterAltar.Station.CRAFTING_BENCH, x, y); break;
                     case 'F': maze.addStationSlot(ShelterAltar.Station.CAMPFIRE, x, y); break;

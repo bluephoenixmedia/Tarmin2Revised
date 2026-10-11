@@ -124,6 +124,10 @@ public class DivinityManager implements SlotScopedState {
         return currentDivinities;
     }
 
+    public int getDivinities() {
+        return currentDivinities;
+    }
+
     public boolean spendDivinities(int amount) {
         if (currentDivinities < amount) return false;
         currentDivinities -= amount;

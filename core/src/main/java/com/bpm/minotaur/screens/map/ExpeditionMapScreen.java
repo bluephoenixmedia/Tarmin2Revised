@@ -735,7 +735,7 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         String title;
         if (floor == 1) {
-            title = known == MapModel.Knowledge.UNKNOWN && model.shelterAt(c) == null ? "Unknown Land"
+            title = (known == MapModel.Knowledge.UNKNOWN && model.shelterAt(c) == null) ? "Unknown Land"
                     : MapNames.biome(biomes == null ? null : biomes.getBiome(c));
         } else {
             title = MapNames.floor(floor);
@@ -745,8 +745,10 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         Table badgeRow = new Table();
         String kStr = known == MapModel.Knowledge.VISITED ? "[EXPLORED]" :
-                known == MapModel.Knowledge.GLIMPSED ? "[GLIMPSED]" : "[UNEXPLORED]";
-        badgeRow.add(UiLabels.of(kStr, known == MapModel.Knowledge.VISITED ? UiStyles.caption(skin, UiTheme.SUCCESS) : UiStyles.caption(skin))).left();
+                known == MapModel.Knowledge.GLIMPSED ? "[GLIMPSED]" :
+                known == MapModel.Knowledge.SURVEYED ? "[SURVEYED]" : "[UNEXPLORED]";
+        badgeRow.add(UiLabels.of(kStr, known == MapModel.Knowledge.VISITED ? UiStyles.caption(skin, UiTheme.SUCCESS) :
+                known == MapModel.Knowledge.SURVEYED ? UiStyles.caption(skin, UiTheme.GOLD) : UiStyles.caption(skin))).left();
 
         MapSurface.PlayerMark p = playerMark();
         if (p.floor == floor && c.equals(p.chunk)) {
@@ -754,7 +756,13 @@ public class ExpeditionMapScreen extends BaseScreen {
         }
         panel.add(badgeRow).width(w).left().padTop(UiTheme.PAD_SM).padBottom(UiTheme.PAD_SM).row();
 
-        if (known == MapModel.Knowledge.VISITED && worldManager != null) {
+        if (known == MapModel.Knowledge.SURVEYED) {
+            int tier = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerDeskTier();
+            panel.add(UiLabels.of("Cartographer Survey (Tier " + tier + ")", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(UiTheme.PAD_XS).row();
+        }
+
+        if ((known == MapModel.Knowledge.VISITED || (known == MapModel.Knowledge.SURVEYED && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerDeskTier() >= 3))
+                && worldManager != null) {
             int danger = worldManager.calculateEffectiveDifficulty(c, floor);
             panel.add(UiLabels.of("Danger Level: " + danger, UiStyles.body(skin, danger >= 4 ? UiTheme.DANGER : UiTheme.TEXT))).width(w).left().padBottom(UiTheme.PAD_SM).row();
         }
@@ -834,7 +842,9 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         }
 
-        panel.add(UiLabels.of("[ENTER / CLICK] Open Chunk", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).row();
+        if (known == MapModel.Knowledge.VISITED) {
+            panel.add(UiLabels.of("[ENTER / CLICK] Open Chunk", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).row();
+        }
     }
 
     private void rebuildWorldPanel(int floor, GridPoint2 c, float w) {

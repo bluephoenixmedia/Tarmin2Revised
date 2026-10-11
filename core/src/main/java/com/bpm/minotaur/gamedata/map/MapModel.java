@@ -8,6 +8,7 @@ import com.bpm.minotaur.managers.BiomeManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +24,7 @@ import java.util.function.IntFunction;
 public final class MapModel {
 
     /** How much the player knows about a chunk. */
-    public enum Knowledge { UNKNOWN, GLIMPSED, VISITED }
+    public enum Knowledge { UNKNOWN, GLIMPSED, VISITED, SURVEYED }
 
     /** A shelter as the map draws it. */
     public enum ShelterMark { HOME, LIT, COLD, RUMOURED }
@@ -99,8 +100,48 @@ public final class MapModel {
     public Knowledge knowledgeOf(int floor, GridPoint2 chunk) {
         if (chunk == null) return Knowledge.UNKNOWN;
         if (visited(floor).contains(chunk)) return Knowledge.VISITED;
-        if (floor == 1 && knowledge.isGlimpsed(chunk)) return Knowledge.GLIMPSED;
+        if (floor == 1) {
+            if (knowledge.isGlimpsed(chunk)) return Knowledge.GLIMPSED;
+            if (isSurveyed(chunk)) return Knowledge.SURVEYED;
+        }
         return Knowledge.UNKNOWN;
+    }
+
+    /** True when this chunk is within the cartographer's survey radius of any lit shelter. */
+    public boolean isSurveyed(GridPoint2 chunk) {
+        if (chunk == null) return false;
+        int radius = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerSurveyRadius();
+        if (radius <= 0) return false;
+        if (HOME.equals(chunk)) return true;
+        if (Math.max(Math.abs(chunk.x - HOME.x), Math.abs(chunk.y - HOME.y)) <= radius) return true;
+        if (network != null) {
+            for (GridPoint2 claimed : network.getClaimed()) {
+                if (Math.max(Math.abs(chunk.x - claimed.x), Math.abs(chunk.y - claimed.y)) <= radius) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Every chunk on the surface currently surveyed by the Cartographer's Desk network. */
+    public Set<GridPoint2> surveyedChunks() {
+        int radius = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerSurveyRadius();
+        if (radius <= 0) return Collections.emptySet();
+        Set<GridPoint2> out = new HashSet<>();
+        List<GridPoint2> anchors = new ArrayList<>();
+        anchors.add(HOME);
+        if (network != null) {
+            anchors.addAll(network.getClaimed());
+        }
+        for (GridPoint2 a : anchors) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dy = -radius; dy <= radius; dy++) {
+                    out.add(new GridPoint2(a.x + dx, a.y + dy));
+                }
+            }
+        }
+        return out;
     }
 
     /** The surface shelter in this chunk as the player knows it, or null if none is known there. */

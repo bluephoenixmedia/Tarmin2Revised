@@ -4316,9 +4316,17 @@ public class GameScreen extends BaseScreen {
                     altar.materialiseAllStations(maze, game.getItemDataManager(), game.getAssetManager());
                     com.bpm.minotaur.managers.DivinityManager.getInstance().addDivinities(100);
                     altar.addCrestsOfValor(20);
+                    java.util.List<String> allSpellIds = new java.util.ArrayList<>();
+                    for (com.bpm.minotaur.gamedata.spells.SpellTemplate spell :
+                            com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getAllSpells()) {
+                        if (spell != null && spell.id != null) {
+                            allSpellIds.add(spell.id);
+                        }
+                    }
+                    com.bpm.minotaur.debug.DebugCheats.maxOutPlayer(player, allSpellIds);
                 }
                 eventManager.addEvent(new GameEvent(
-                        "DEBUG MODE: " + (debugOn ? "ON - all shelter features unlocked; debug keys listed top right" : "OFF (existing stations remain this session)"),
+                        "DEBUG MODE: " + (debugOn ? "ON - all shelter features unlocked; level 99 & all spells; debug keys listed top right" : "OFF (existing stations remain this session)"),
                         3f));
                 return true;
             }
@@ -4816,6 +4824,12 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CARTOGRAPHER_DESK) {
+            if (soundManager != null) soundManager.playMapOpen();
+            game.setScreen(new CartographerDeskScreen(game, this, player, maze, worldManager));
+            return;
+        }
+
         if ((itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_TRAINING_DUMMY)
                 || (itemOnTile != null && itemOnTile.getType() == Item.ItemType.HOME_TRAINING_DUMMY)) {
             openSkillTree();
@@ -4823,9 +4837,17 @@ public class GameScreen extends BaseScreen {
         }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
-            ShelterChest chest = ShelterChest.getInstance();
-            if (chest.isEmpty()) {
-                chest.load(game.getItemDataManager(), game.getAssetManager());
+            ShelterChest chest;
+            if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked()) {
+                chest = com.bpm.minotaur.debug.DebugCheats.allItemsChest(
+                        game.getItemDataManager().getLoadedTypes(),
+                        type -> game.getItemDataManager().createItem(type, 0, 0, ItemColor.GRAY, game.getAssetManager())
+                );
+            } else {
+                chest = ShelterChest.getInstance();
+                if (chest.isEmpty()) {
+                    chest.load(game.getItemDataManager(), game.getAssetManager());
+                }
             }
             ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, chest);
             game.setScreen(chestScreen);

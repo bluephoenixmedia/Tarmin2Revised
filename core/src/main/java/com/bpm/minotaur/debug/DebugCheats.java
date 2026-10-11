@@ -57,9 +57,61 @@ public final class DebugCheats {
         return catalog.pick(biome, depth, java.util.Collections.emptySet(), rng);
     }
 
-    /** A catalog chest with one of every item type; taking from it never empties it or touches the real stash. */
+    /**
+     * Boosts the player for rapid sandbox testing:
+     * Level 99, 50 in all base attributes, max HP/MP and full nutrition, 50 unallocated skill points,
+     * unlocks all 5 spell slots, learns all provided spells, and prepares a standard versatile loadout.
+     */
+    public static void maxOutPlayer(Player player, Collection<String> allSpellIds) {
+        if (player == null) return;
+        player.setLevel(99);
+        PlayerStats stats = player.getStats();
+        stats.setExperience(0);
+        stats.setStrength(50);
+        stats.setDexterity(50);
+        stats.setConstitution(50);
+        stats.setIntelligence(50);
+        stats.setWisdom(50);
+        stats.setAgility(50);
+        stats.setUnallocatedSkillPoints(50);
+        refill(player);
+
+        player.setUnlockedSpellSlots(5);
+        if (allSpellIds != null && !allSpellIds.isEmpty()) {
+            learnAllSpells(player, allSpellIds);
+        }
+
+        String[] preferred = { "FIREBALL", "COMPREHEND_LANGUAGES", "HEAL", "SHIELD", "DIMENSION_DOOR" };
+        for (int i = 0; i < 5; i++) {
+            if (i < preferred.length) {
+                player.prepareSpell(i, preferred[i]);
+            }
+        }
+    }
+
+    /**
+     * A catalog chest with one of every collectible item type; taking from it never empties it
+     * or touches the real stash. Filters out stationary fixtures and scenery items.
+     */
     public static ShelterChest allItemsChest(Collection<Item.ItemType> types, Function<Item.ItemType, Item> factory) {
-        List<Item.ItemType> list = new ArrayList<>(types);
+        List<Item.ItemType> list = new ArrayList<>();
+        if (types != null) {
+            for (Item.ItemType t : types) {
+                if (t == null) continue;
+                String name = t.name();
+                if (name.startsWith("HOME_") || name.startsWith("BIOME_PORTAL_") || name.startsWith("SHELTER_HEARTH_")
+                        || "BIOME_RETURN_PORTAL".equals(name) || "MYSTERIOUS_PORTAL".equals(name)) {
+                    continue;
+                }
+                if (factory != null) {
+                    Item sample = factory.apply(t);
+                    if (sample != null && sample.isImpassable()) {
+                        continue;
+                    }
+                }
+                list.add(t);
+            }
+        }
         return ShelterChest.catalog(list, factory);
     }
 

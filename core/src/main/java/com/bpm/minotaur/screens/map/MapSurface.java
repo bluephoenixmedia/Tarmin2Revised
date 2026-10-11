@@ -313,6 +313,13 @@ final class MapSurface extends Actor implements Disposable {
         int gap = zoom == Zoom.REGION ? 2 : 0;
         Set<GridPoint2> visited = model.visited(floor);
         if (floor == 1) {
+            Set<GridPoint2> surveyed = model.surveyedChunks();
+            for (GridPoint2 c : surveyed) {
+                if (visited.contains(c) || glimpsed.contains(c) || !inView(c)) continue;
+                fill(batch, washOf(biomeOf(c)), UiTheme.MAP_GLIMPSED_ALPHA * 0.75f, cellX(c.x) + gap, cellY(c.y) + gap,
+                        cell - 2 * gap, cell - 2 * gap);
+                dashed(batch, UiTheme.GOLD, 0.65f, cellX(c.x) + gap, cellY(c.y) + gap, cell - 2 * gap, cell - 2 * gap, 1.5f);
+            }
             for (GridPoint2 c : glimpsed) {
                 if (visited.contains(c) || !inView(c)) continue;
                 fill(batch, washOf(biomeOf(c)), UiTheme.MAP_GLIMPSED_ALPHA, cellX(c.x) + gap, cellY(c.y) + gap,

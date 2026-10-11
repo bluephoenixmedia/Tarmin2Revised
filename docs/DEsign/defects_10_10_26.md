@@ -2,5 +2,5 @@
 - [x] We need to once again re-balance the available weapons. I should not encounter a weapon that is worse then the starting sword.
 - [x] The comprehend languages spell should allow the player to understand all monsters, they should have phrases that appear above their heads in text in the language that they are speaking.
 - [x] If it's raining, we should always hear ambient rain. 
-- We should add a Cartographer's Desk as an unlockable in the shelter. It should have it's own internal upgrade path as well, showing more detail about the map of the seeded world. Allowing the map to show more a radious of nearby chunks, including details about the biome, war status, items, monsters etc
-- Turning on debug mode (F5) should also fill the shelter chest with every possible item. The player should know every possible spell, with full slots unlocked and be level 99
+- [x] We should add a Cartographer's Desk as an unlockable in the shelter. It should have it's own internal upgrade path as well, showing more detail about the map of the seeded world. Allowing the map to show more a radious of nearby chunks, including details about the biome, war status, items, monsters etc (RESOLVED in feat/cartographer-desk-and-debug-cheats)
+- [x] Turning on debug mode (F5) should also fill the shelter chest with every possible item. The player should know every possible spell, with full slots unlocked and be level 99 (RESOLVED in feat/cartographer-desk-and-debug-cheats)
