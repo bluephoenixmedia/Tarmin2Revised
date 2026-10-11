@@ -43,6 +43,9 @@ public final class WarManager {
         public final List<String> messages = new ArrayList<>();
         public final List<Cue> cues = new ArrayList<>();
         public int volleyDamage;
+        /** When the battle breaks: who held the field, and whom the player fought for (W19); -1 otherwise. */
+        public int winner = -1;
+        public int foughtFor = -1;
     }
 
     private final DoctrineCatalog catalog;
@@ -89,6 +92,8 @@ public final class WarManager {
         t.volleyDamage = r.volleyDamage;
         if (was == BattleDirector.Phase.WARNING && active.phase() == BattleDirector.Phase.BATTLE) t.cues.add(Cue.JOINED);
         if (r.winner >= 0) {
+            t.winner = r.winner;
+            t.foughtFor = active.playerFoughtFor();
             history.recordBattle(r.winner, r.loser);
             t.cues.add(Cue.ROUT);
         }

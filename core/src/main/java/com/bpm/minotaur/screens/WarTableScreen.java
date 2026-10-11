@@ -126,6 +126,30 @@ public class WarTableScreen extends BaseScreen {
             content.add(row).growX().padBottom(UiTheme.PAD_SM).row();
         }
 
+        // Where the player stands with each house, and what their own house asks of them (W18, W20, W25).
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        content.add(UiLabels.ellipsized("YOUR STANDING", style(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                .left().growX().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_SM).row();
+        if (oath.sworn()) {
+            com.bpm.minotaur.gamedata.history.House sworn = world.house(oath.houseId);
+            content.add(UiLabels.wrapping(UiGlyphs.sanitize("You are sworn to " + (sworn != null ? sworn.name : "a house")
+                    + ". " + (oath.contract == null ? "It has no task for you; go to its war banner."
+                    : (oath.contract.done ? "Your task is done; go to its war banner to be paid."
+                    : "Your task: " + oath.contract.describe(world)))),
+                    style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE))).growX().padBottom(UiTheme.PAD_SM).row();
+        }
+        for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
+            com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(h.id);
+            Table line = new Table();
+            line.add(UiLabels.ellipsized(UiGlyphs.sanitize(h.name),
+                    style(hudSkin.getFontSmall(), legible(HouseHeraldry.primary(world, h.id, catalog))))).left().growX();
+            line.add(UiLabels.of(UiGlyphs.sanitize(com.bpm.minotaur.gamedata.history.favour.Favour.word(tier)
+                    + " (" + history.favour().of(h.id) + ")"),
+                    style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE))).right();
+            content.add(line).growX().padBottom(UiTheme.PAD_XS).row();
+        }
+
         List<WarReport.SeatAtRisk> risk = WarReport.seatsAtRisk(world);
         if (!risk.isEmpty()) {
             content.add(UiLabels.ellipsized("SEATS AT RISK", style(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))

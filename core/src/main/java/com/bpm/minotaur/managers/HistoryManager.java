@@ -430,6 +430,36 @@ public final class HistoryManager {
         favour.set(betrayed, com.bpm.minotaur.gamedata.history.favour.Favour.MIN);
     }
 
+    /**
+     * The player killed a soldier of house {@code houseId}: the house thinks less of them (W19), and
+     * a contract to kill one of its captains is kept if this was one ({@code figureId} at least 0).
+     * True when that contract is done.
+     */
+    public boolean onSoldierSlain(int houseId, int figureId) {
+        favour.change(world, houseId, com.bpm.minotaur.gamedata.history.favour.Favour.KILLED_SOLDIER);
+        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        if (c != null && !c.done && c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.KILL_CAPTAIN
+                && c.targetId == houseId && figureId >= 0) {
+            c.done = true;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * The sworn house sets its next task (W25). A great house at Friend sets hard ones, toward the
+     * seal of its gash (W26). Null when it is at war with no one.
+     */
+    public com.bpm.minotaur.gamedata.history.favour.Contract offerContract(
+            java.util.List<com.bpm.minotaur.gamedata.history.war.Front> fronts, com.badlogic.gdx.math.GridPoint2 player) {
+        if (!oath.sworn()) return null;
+        com.bpm.minotaur.gamedata.history.House h = world.house(oath.houseId);
+        boolean hard = h != null && h.isGreat() && !oath.sealGranted
+                && favour.tier(oath.houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND;
+        oath.contract = com.bpm.minotaur.gamedata.history.favour.Contract.offer(world, oath.houseId, oath.done, hard, fronts, player);
+        return oath.contract;
+    }
+
     /** The sworn house's lord grants the player its gash's seal (W26): chronicled. */
     public void recordSealGranted(int houseId) {
         oath.sealGranted = true;

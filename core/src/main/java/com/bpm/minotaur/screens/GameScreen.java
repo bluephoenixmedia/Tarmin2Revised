@@ -2130,6 +2130,7 @@ public class GameScreen extends BaseScreen {
         if (t.volleyDamage > 0 && player != null) {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
         }
+        if (t.winner >= 0 && t.foughtFor == t.winner) foughtFor(t.winner);
         tickEncounters(g);
     }
 
@@ -2172,6 +2173,12 @@ public class GameScreen extends BaseScreen {
         monsterAiManager.setPlayerInTheFight(encounterDirector.playerInTheFight()
                 || (warManager.active() != null && warManager.active().playerJoined()));
         monsterAiManager.setTakesPlayerForKin(disguise());
+        monsterAiManager.setHoldsItsPeace(m -> {
+            int house = worldManager.houseOf(m);
+            return house >= 0 && history.stanceOf(house).ordinal()
+                    >= com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED.ordinal();
+        });
+        tendTheSworn(g, t);
         if (hud != null) {
             com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally(maze) : null;
             hud.setWarTally(tally != null ? tally : encounterDirector.tally(maze));
@@ -2203,6 +2210,222 @@ public class GameScreen extends BaseScreen {
         if (g.level < 2 || g.level > SealCourt.COURT_LEVEL || worldManager.getBiomeManager() == null || g.chunk == null) return null;
         int gash = com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(worldManager.getBiomeManager().getSealRoad(g.chunk));
         return gash >= 0 ? worldManager.getHistory().world().gashHolder(gash) : null;
+    }
+
+    /** The camp whose props stand on {@code tile} in this chunk, or -1. */
+    private int campAt(GridPoint2 tile) {
+        GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
+        if (chunk == null) return -1;
+        for (com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing d : worldManager.getHistory().encounterLedger().dressings) {
+            if (!"CAMP".equals(d.kind) || d.chunkX != chunk.x || d.chunkY != chunk.y) continue;
+            for (int i = 0; i + 1 < d.tiles.size(); i += 2) {
+                if (d.tiles.get(i) == tile.x && d.tiles.get(i + 1) == tile.y) return d.houseId;
+            }
+        }
+        return -1;
+    }
+
+    private String houseName(int houseId) {
+        com.bpm.minotaur.gamedata.history.House h = worldManager.getHistory().world().house(houseId);
+        return h != null ? h.name : "a house of the Maze";
+    }
+
+    private void say(String line, float seconds) {
+        eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), seconds));
+    }
+
+    /** The player fought for {@code houseId} and it held the ground: it remembers (W19). */
+    private void foughtFor(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        history.favour().change(history.world(), houseId, com.bpm.minotaur.gamedata.history.favour.Favour.WON_FOR);
+        say(houseName(houseId) + " will remember that you stood with it.", 4f);
+    }
+
+    /** The camp the player was last greeted in, so its sentries speak once a visit. */
+    private String campGreeted;
+
+    /**
+     * Each turn, what the houses make of the player (Living War W18-W26): favour for the fights they
+     * joined and the heralds they cut down, signets returned and greetings at a camp, an oath broken
+     * by striking its house, contracts kept, and hunters sent by a house that counts them an enemy.
+     */
+    private void tendTheSworn(WarManager.Ground g, com.bpm.minotaur.managers.EncounterDirector.Turn t) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+        com.bpm.minotaur.gamedata.history.favour.Favour favour = history.favour();
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        if (t.foughtFor >= 0) foughtFor(t.foughtFor);
+        if (t.heraldSlain >= 0) favour.change(world, t.heraldSlain, com.bpm.minotaur.gamedata.history.favour.Favour.HERALD_SLAIN);
+
+        // Struck a soldier of the sworn house: the oath is broken (W21).
+        if (oath.sworn() && maze != null) {
+            for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                if (m != null && m.seekerDrewBlood() && worldManager.houseOf(m) == oath.houseId) {
+                    String betrayed = houseName(oath.houseId);
+                    history.breakOath();
+                    say("You have struck a soldier of " + betrayed + ". Your oath is broken, and every house hears of it.", 6f);
+                    break;
+                }
+            }
+        }
+
+        if (t.campHouse >= 0) atCamp(t.campHouse, g);
+        else campGreeted = null;
+
+        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        if (c != null && !c.done) {
+            boolean kept = c.held(g.chunk)
+                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.ESCORT_COLUMN && t.escorted == oath.houseId)
+                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.BURN_CAMP && t.campBroken == c.targetId);
+            if (kept) {
+                c.done = true;
+                say("A contract kept. Return to a war camp of " + houseName(oath.houseId) + " to be paid.", 5f);
+            }
+        }
+
+        // Hunters: once a slot, a house that counts the player its enemy may send them (W18).
+        long clock = history.warClock();
+        if (g.level == 1 && !g.sanctuary && clock % com.bpm.minotaur.gamedata.history.war.EncounterScheduler.SLOT == 0) {
+            for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
+                if (history.stanceOf(h.id) != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY) continue;
+                java.util.Random r = new java.util.Random(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (h.id * 31L));
+                if (r.nextFloat() >= HUNT_CHANCE) continue;
+                com.bpm.minotaur.managers.EncounterDirector.Turn hunted = new com.bpm.minotaur.managers.EncounterDirector.Turn();
+                encounterDirector.hunt(history, maze, h.id, g.playerTile, worldManager::recruit, hunted);
+                for (String line : hunted.messages) say(line, 5f);
+                break;
+            }
+        }
+    }
+
+    /** Chance a slot brings hunters from a house that counts the player its enemy (W18). */
+    private static final float HUNT_CHANCE = 0.3f;
+
+    /** Standing in a house's war camp: its signets returned, its sentries' greeting, its quartermaster (W18-W20). */
+    private void atCamp(int houseId, WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.favour.Favour favour = history.favour();
+        // Its signets, taken from its dead, are given back to it (W19).
+        for (Item i : new java.util.ArrayList<>(player.getInventory().getAllItems())) {
+            if (i != null && i.getType() == Item.ItemType.SIGNET_RING && i.getTrophyHouseId() == houseId) {
+                player.getInventory().removeItem(i);
+                favour.change(history.world(), houseId, com.bpm.minotaur.gamedata.history.favour.Favour.SIGNET_RETURNED);
+                say("The captain of " + houseName(houseId) + " takes back its signet, and bows.", 4f);
+            }
+        }
+        com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(houseId);
+        String key = g.chunk + ":" + houseId + ":" + tier;
+        if (key.equals(campGreeted)) return;
+        campGreeted = key;
+        boolean sworn = history.oath().houseId == houseId;
+        if (sworn) {
+            say("The sentries of " + houseName(houseId) + " raise their spears to you. Your banner is here.", 5f);
+        } else if (tier == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) {
+            say("The captain of " + houseName(houseId) + " greets you as a friend, and offers you its oath. "
+                    + "Stand at its war banner and press O to swear.", 7f);
+        } else if (tier == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED) {
+            say("The sentries of " + houseName(houseId) + " watch you pass, and let you be.", 4f);
+        }
+        // A friend may trade at the camp: its quartermaster sets out his wares (W18).
+        if ((sworn || tier == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND)
+                && maze != null && maze.getShopkeeper() == null && g.playerTile != null) {
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, g.playerTile.x + 2, g.playerTile.y);
+            if (at != null) {
+                com.bpm.minotaur.gamedata.ShopkeeperNpc quartermaster = new com.bpm.minotaur.gamedata.ShopkeeperNpc(
+                        at.x, at.y, game.getAssetManager());
+                new com.bpm.minotaur.gamedata.ShopInventory().stock(quartermaster, game.getItemDataManager(),
+                        game.getAssetManager(), maze.getLevel());
+                maze.setShopkeeper(quartermaster);
+                say("The quartermaster of " + houseName(houseId) + " will trade with you.", 4f);
+            }
+        }
+    }
+
+    /**
+     * At a camp's war banner (W20-W26): a friend swears the house's oath here; the sworn are paid for
+     * contracts kept, set the next, granted the seal when the chain is done, and rest by the fire.
+     */
+    private void atCampBanner(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(houseId);
+        String name = houseName(houseId);
+        if (oath.houseId != houseId) {
+            if (tier != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) {
+                say("The banner of " + name + ". Its sentries watch your hands. ("
+                        + com.bpm.minotaur.gamedata.history.favour.Favour.word(tier) + ": "
+                        + history.favour().of(houseId) + ")", 4f);
+                return;
+            }
+            String former = oath.sworn() ? houseName(oath.houseId) : null;
+            history.swear(houseId);
+            if (former != null) say("You forsake " + former + ". It will not forget.", 5f);
+            say("You kneel at the banner of " + name + " and swear to it. Its colours are yours now.", 6f);
+            giveTabard(houseId);
+            if (soundManager != null) soundManager.playSound("horn_battle", 0.6f);
+        }
+        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        if (c != null && c.done) pay(houseId, c);
+        if (oath.sealDue()) grantSeal(houseId);
+        if (oath.contract == null) {
+            com.bpm.minotaur.gamedata.history.favour.Contract next = history.offerContract(worldManager.currentFronts(),
+                    worldManager.getCurrentPlayerChunkId());
+            if (next != null) say("The captain sets you a task. " + next.describe(world), 7f);
+            else say("The captain has no task for you while " + name + " is at peace.", 4f);
+        } else {
+            say("Your task: " + oath.contract.describe(world), 6f);
+        }
+        // The sworn rest by its fire, as in a shelter.
+        player.getStats().setCurrentHP(player.getStats().getMaxHP());
+        player.getStats().setCurrentMP(player.getStats().getMaxMP());
+        say("You rest by the fire of " + name + ".", 3f);
+    }
+
+    /** The house pays for a contract kept: favour and coin, and every third one a relic (W25). */
+    private void pay(int houseId, com.bpm.minotaur.gamedata.history.favour.Contract c) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        history.favour().change(history.world(), houseId, c.favour());
+        player.getStats().setTreasureScore(player.getStats().getTreasureScore() + c.coin());
+        boolean relic = history.oath().complete();
+        say(houseName(houseId) + " pays you " + c.coin() + " in coin, and thinks the better of you.", 5f);
+        if (!relic) return;
+        com.bpm.minotaur.gamedata.history.House h = history.world().house(houseId);
+        Item forged = com.bpm.minotaur.managers.Relics.forge(game.getItemDataManager(), game.getAssetManager(),
+                h != null ? h.doctrineId : null, houseName(houseId), player.getStats().getLevel(),
+                new java.util.Random(history.world().seed ^ history.oath().done * 0x9E3779B97F4A7C15L), 0, 0);
+        if (forged != null && player.getInventory().pickup(forged)) {
+            say("For your service, " + houseName(houseId) + " gives you a relic: " + forged.getDisplayName() + ".", 6f);
+        }
+    }
+
+    /** The lord of a great house grants its sworn seeker the seal of its gash (W26). */
+    private void grantSeal(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.House h = history.world().house(houseId);
+        if (h == null || !h.isGreat()) return;
+        for (int road = 0; road < com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT; road++) {
+            if (com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(road) != h.gashIndex) continue;
+            com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().awardSeal(road);
+            history.recordSealGranted(houseId);
+            say("The lord of " + h.name + " puts the seal of " + history.world().gashName(h.gashIndex)
+                    + " in your hand. Go, and bring the Antlered Lord down.", 8f);
+            if (soundManager != null) soundManager.playSound("bell_cathedral", 0.7f);
+            return;
+        }
+    }
+
+    /** A sworn seeker wears its house's colours (W24). */
+    private void giveTabard(int houseId) {
+        com.bpm.minotaur.gamedata.history.House h = worldManager.getHistory().world().house(houseId);
+        if (h == null) return;
+        Item tabard = game.getItemDataManager().createItem(Item.ItemType.TABARD, 0, 0,
+                com.bpm.minotaur.gamedata.item.ItemColor.TAN, game.getAssetManager());
+        if (tabard == null) return;
+        tabard.setHeraldry(h.doctrineId);
+        tabard.setTrophyHouseId(houseId);
+        tabard.setFriendlyName(com.bpm.minotaur.ui.UiGlyphs.sanitize("Tabard of " + h.name));
+        if (player.getInventory().pickup(tabard)) say("You are given the tabard of " + h.name + ".", 4f);
     }
 
     /** Which soldiers take the player for kin, if the player wears a body their house fields (W16). */
@@ -4308,6 +4531,14 @@ public class GameScreen extends BaseScreen {
 
         // Check Decomposing Corpse (NetHack-style Bones remains)
         Scenery sceneryInFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(target) : null;
+        // A war camp's banner: where a house's oath is sworn and its contracts paid (Living War W20, W25).
+        if (sceneryInFront != null && "war_banner".equals(sceneryInFront.getPropId())) {
+            int house = campAt(target);
+            if (house >= 0) {
+                atCampBanner(house);
+                return;
+            }
+        }
         Scenery sceneryAtFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
         Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isCorpse()) ? sceneryInFront
                 : (sceneryAtFeet != null && sceneryAtFeet.isCorpse()) ? sceneryAtFeet : null;

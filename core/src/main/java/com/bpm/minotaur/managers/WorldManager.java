@@ -313,6 +313,13 @@ public class WorldManager {
      * the history records it, and a seal lord gives up its seal.
      */
     public void onMonsterSlain(com.bpm.minotaur.gamedata.monster.Monster m, GameEventManager events) {
+        // A soldier of the Maze slain: its house thinks less of the seeker, and a contract may be kept (W19, W25).
+        int house = houseOf(m);
+        if (m != null && house >= 0 && m.getMegabeastId() < 0 && getHistory().onSoldierSlain(house, m.getFigureId())
+                && events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(
+                    "A contract kept. Return to a war camp of your house to be paid.", 5f));
+        }
         String message = SealCourt.onSlain(m, getHistory(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
         if (message != null && events != null) {
             events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(message, 6f));

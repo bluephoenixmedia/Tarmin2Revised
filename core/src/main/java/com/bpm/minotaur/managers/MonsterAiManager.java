@@ -302,6 +302,13 @@ public class MonsterAiManager {
         this.playerInTheFight = inTheFight;
     }
 
+    private java.util.function.Predicate<Monster> holdsItsPeace;
+
+    /** Which monsters' houses think well enough of the player to leave them be (Living War W18); null for none. */
+    public void setHoldsItsPeace(java.util.function.Predicate<Monster> peace) {
+        this.holdsItsPeace = peace;
+    }
+
     /** Which monsters take a disguised player for one of their own (W16); null when undisguised. */
     public void setTakesPlayerForKin(java.util.function.Predicate<Monster> kin) {
         this.takesPlayerForKin = kin;
@@ -315,6 +322,7 @@ public class MonsterAiManager {
     boolean ignoresPlayer(Monster monster, int playerDist) {
         if (monster.seekerDrewBlood() || monster == engagedByPlayer) return false;
         if (monster.isGateGuard() && monster.isWarBand() && !playerInTheFight) return true;
+        if (holdsItsPeace != null && holdsItsPeace.test(monster)) return true;
         if (takesPlayerForKin == null || !takesPlayerForKin.test(monster)) return false;
         if (playerDist <= 1) monster.setDisguiseScrutiny(monster.getDisguiseScrutiny() + 1);
         return monster.getDisguiseScrutiny() < com.bpm.minotaur.gamedata.history.war.Disguise.SCRUTINY_TURNS;

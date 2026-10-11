@@ -203,5 +203,53 @@ public final class LivingWarScenario implements PlaytestScenario {
             ctx.assertTrue(ctx.countWarBand() >= 3, "its sentries");
         });
         script.shot("lw06_camp", ctx);
+
+        // The oath (W20): a friend of the camp's house stands at its banner and swears.
+        int[] campHouse = {-1};
+        script.once("befriend the camp's house", () -> {
+            campHouse[0] = ctx.getWorldManager().currentCamps().get(0).houseA;
+            com.bpm.minotaur.managers.HistoryManager h = ctx.getWorldManager().getHistory();
+            h.favour().set(campHouse[0], com.bpm.minotaur.gamedata.history.favour.Favour.FRIEND_AT);
+        });
+        script.key("a turn passes", Input.Keys.PERIOD, ctx);
+        script.wait("greeted", 10);
+        script.once("stand at the banner", () -> {
+            GridPoint2 chunk = ctx.getWorldManager().getCurrentPlayerChunkId();
+            GridPoint2 banner = null;
+            for (com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing d
+                    : ctx.getWorldManager().getHistory().encounterLedger().dressings) {
+                if (!"CAMP".equals(d.kind) || d.chunkX != chunk.x || d.chunkY != chunk.y) continue;
+                for (int i = 0; i < d.props.size(); i++) {
+                    if ("war_banner".equals(d.props.get(i))) banner = new GridPoint2(d.tiles.get(2 * i), d.tiles.get(2 * i + 1));
+                }
+            }
+            ctx.assertTrue(banner != null, "the camp flies a banner");
+            com.bpm.minotaur.gamedata.Direction[] dirs = com.bpm.minotaur.gamedata.Direction.values();
+            for (com.bpm.minotaur.gamedata.Direction d : dirs) {
+                int x = banner.x - (int) d.getVector().x, y = banner.y - (int) d.getVector().y;
+                if (!ctx.getMaze().isPassable(x, y) || ctx.getMaze().getMonsters().containsKey(new GridPoint2(x, y))) continue;
+                if (ctx.getMaze().isWallBlocking(x, y, d)) continue;
+                ctx.getPlayer().setPosition(x + 0.5f, y + 0.5f);
+                ctx.getPlayer().setFacing(d);
+                return;
+            }
+        });
+        script.wait("in place", 5);
+        script.key("swear", Input.Keys.O, ctx);
+        script.wait("sworn", 15);
+        script.once("sworn, in its colours, with a task", () -> {
+            com.bpm.minotaur.managers.HistoryManager h = ctx.getWorldManager().getHistory();
+            ctx.log("Oath: house " + h.oath().houseId + "; contract "
+                    + (h.oath().contract == null ? "none" : h.oath().contract.describe(h.world()))
+                    + "; quartermaster " + (ctx.getMaze().getShopkeeper() != null));
+            ctx.assertEquals(campHouse[0], h.oath().houseId, "sworn to the camp's house");
+            boolean tabard = false;
+            for (com.bpm.minotaur.gamedata.item.Item i : ctx.getPlayer().getInventory().getAllItems()) {
+                if (i != null && i.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.TABARD && i.getHeraldry() != null) tabard = true;
+            }
+            ctx.assertTrue(tabard, "given the house's tabard");
+            ctx.assertTrue(ctx.getMaze().getShopkeeper() != null, "its quartermaster trades with a friend");
+        });
+        script.shot("lw07_sworn", ctx);
     }
 }
