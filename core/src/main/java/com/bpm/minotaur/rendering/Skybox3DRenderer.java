@@ -72,6 +72,7 @@ public class Skybox3DRenderer {
 
     // Procedural Sky Dome Shader & Transformation
     private ShaderProgram stormShader;
+    private ShaderProgram castleFireShader;
     private final Matrix4 domeTransform = new Matrix4();
 
     // 3D Model Instances
@@ -149,8 +150,21 @@ public class Skybox3DRenderer {
             } else {
                 Gdx.app.log(TAG, "Procedural storm sky dome shader successfully compiled.");
             }
+
+            if (Gdx.files.internal("shaders/castle_flames.vert").exists()
+                    && Gdx.files.internal("shaders/castle_flames.frag").exists()) {
+                castleFireShader = new ShaderProgram(
+                        Gdx.files.internal("shaders/castle_flames.vert"),
+                        Gdx.files.internal("shaders/castle_flames.frag")
+                );
+                if (!castleFireShader.isCompiled()) {
+                    Gdx.app.error(TAG, "Castle flames shader compilation failed:\n" + castleFireShader.getLog());
+                } else {
+                    Gdx.app.log(TAG, "Castle flames shader successfully compiled.");
+                }
+            }
         } catch (Throwable t) {
-            Gdx.app.error(TAG, "Error initializing storm sky shader: " + t.getMessage(), t);
+            Gdx.app.error(TAG, "Error initializing shaders: " + t.getMessage(), t);
         }
     }
 
@@ -648,14 +662,34 @@ public class Skybox3DRenderer {
         worldSkyState.hasCastleSite = site != null;
         if (site != null) {
             com.bpm.minotaur.gamedata.Maze here = worldManager.getCurrentMaze();
-            float w = (here != null && here.getWidth() > 0) ? here.getWidth() : 1f;
-            float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 1f;
+            float w = (here != null && here.getWidth() > 0) ? here.getWidth() : 32f;
+            float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 32f;
             // Chunk-space position, so the bearing turns as the player walks across a chunk.
             float px = chunk.x + player.getPosition().x / w - 0.5f;
             float py = chunk.y + player.getPosition().y / h - 0.5f;
             worldSkyState.castleDX = site.x - px;
             worldSkyState.castleDY = site.y - py;
             worldSkyState.inCastleChunk = site.equals(chunk);
+
+            // Local tile offset from chunk center projected onto the line of sight to Castle Tarmin
+            float tileX = player.getPosition().x - w * 0.5f;
+            float tileY = player.getPosition().y - h * 0.5f;
+            float len = (float) Math.sqrt(worldSkyState.castleDX * worldSkyState.castleDX + worldSkyState.castleDY * worldSkyState.castleDY);
+            if (len > 1e-4f) {
+                float cDirX = worldSkyState.castleDX / len;
+                float cDirZ = -worldSkyState.castleDY / len;
+                // Maze direction towards castle: (cDirX, -cDirZ)
+                worldSkyState.localApproachProgress = MathUtils.clamp(
+                        (tileX * cDirX - tileY * cDirZ) / (Math.max(w, h) * 0.5f), -1.0f, 1.0f);
+            } else {
+                worldSkyState.localApproachProgress = 0f;
+            }
+        } else {
+            // Legacy worlds: castle is due north (+Y in maze)
+            com.bpm.minotaur.gamedata.Maze here = worldManager != null ? worldManager.getCurrentMaze() : null;
+            float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 32f;
+            float tileY = player.getPosition().y - h * 0.5f;
+            worldSkyState.localApproachProgress = MathUtils.clamp(tileY / (h * 0.5f), -1.0f, 1.0f);
         }
 
         // Shelter beacons, by the same chunk-space position the castle bearing uses.
@@ -715,6 +749,8 @@ public class Skybox3DRenderer {
         public float castleDY;
         /** The player stands in the castle chunk, where the world billboard is drawn. */
         public boolean inCastleChunk;
+        /** Normalized -1..+1 progress within the local chunk/maze along the line of sight to Castle Tarmin. */
+        public float localApproachProgress;
         /**
          * Where the war is burning (Living War W10): chunk offsets from the player as x,y pairs
          * (x east, y north), {@link #warSmokeCount} of them. Null for none.
@@ -889,13 +925,14 @@ public class Skybox3DRenderer {
         } else if (castleInstance != null) {
             // Legacy worlds: the castle has no site, so it stays due north.
             float chunkY = state.chunkYProgress;
-            // Reduced progress rate towards Castle Tarmin by 80% (paced over 25 chunks north)
             float northProgress = Math.min(Math.max(chunkY / 25.0f, 0f), 1.0f);
-            float currentDist = LANDMARK_DISTANCE - (northProgress * 55f); // 140f down to 85f
-            float currentScale = 2.025f * (1.0f + (northProgress * 0.85f));
+            float macroScale = 2.025f * (1.0f + 2.5f * northProgress);
+            float currentDist = LANDMARK_DISTANCE - (northProgress * 70f);
+            float localScale = 1.0f + (state.localApproachProgress * 0.25f);
+            float currentScale = macroScale * localScale;
             float castleX = (state.chunkX * 2.5f);
             castleInstance.transform.idt()
-                    .setToTranslation(camX + castleX, -6f, -currentDist)
+                    .setToTranslation(camX * 0.25f + castleX, -6f, camZ * 0.25f - currentDist)
                     .scale(currentScale, currentScale, currentScale);
         }
     }
@@ -903,8 +940,8 @@ public class Skybox3DRenderer {
     /** Set when the player stands in the castle chunk, where the world billboard takes over. */
     private boolean castleHidden = false;
 
-    /** Chunks over which the castle closes and grows; beyond this it sits at the horizon. */
-    private static final float CASTLE_APPROACH_CHUNKS = 50f;
+    /** Chunks over which Castle Tarmin closes and grows across the overland expedition. */
+    private static final float CASTLE_APPROACH_CHUNKS = 60f;
 
     /**
      * Stands the castle on the bearing to its site, nearer and larger as the player
@@ -928,20 +965,27 @@ public class Skybox3DRenderer {
         float dirX = dx / chunksAway;
         float dirZ = dz / chunksAway;
 
-        float progress = MathUtils.clamp(1f - (chunksAway - 1f) / CASTLE_APPROACH_CHUNKS, 0f, 1f);
-        float dist = LANDMARK_DISTANCE - progress * 55f;
-        float scale = 2.025f * (1.0f + progress * 0.85f);
+        // Macro approach across the expedition: 60 chunks down to 1 chunk outside citadel gates
+        float normDist = Math.max(0f, chunksAway - 1.0f) / CASTLE_APPROACH_CHUNKS;
+        float macroProgress = MathUtils.clamp(1.0f - normDist, 0.0f, 1.0f);
+        float macroScale = 2.025f * (1.0f + 2.5f * macroProgress);
+        float dist = LANDMARK_DISTANCE - (macroProgress * 70f);
+
+        // Local approach within current chunk/maze along line of sight to the castle
+        float localScale = 1.0f + (state.localApproachProgress * 0.25f);
+        float scale = macroScale * localScale;
+
         // The model was authored facing +Z (seen from the south); turn that face toward the camera.
         float yaw = MathUtils.atan2(-dirX, -dirZ) * MathUtils.radiansToDegrees;
 
         castleInstance.transform.idt()
-                .setToTranslation(camX + dirX * dist, -6f, camZ + dirZ * dist)
+                .setToTranslation(camX * 0.25f + dirX * dist, -6f, camZ * 0.25f + dirZ * dist)
                 .rotate(0f, 1f, 0f, yaw)
                 .scale(scale, scale, scale);
 
         if (spireInstance != null) {
             spireInstance.transform.idt()
-                    .setToTranslation(camX - dirX * LANDMARK_DISTANCE, -6f, camZ - dirZ * LANDMARK_DISTANCE)
+                    .setToTranslation(camX * 0.25f - dirX * LANDMARK_DISTANCE, -6f, camZ * 0.25f - dirZ * LANDMARK_DISTANCE)
                     .rotate(0f, 1f, 0f, yaw + 180f)
                     .scale(1.875f, 1.875f, 1.875f);
         }
@@ -1044,7 +1088,9 @@ public class Skybox3DRenderer {
 
         if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
         if (castleInstance   != null && !castleHidden) {
-            if (isCastleBillboard) {
+            if (isCastleBillboard && castleFireShader != null && castleFireShader.isCompiled()) {
+                // Drawn with custom fire shader below
+            } else if (isCastleBillboard) {
                 modelBatch.render(castleInstance);
             } else {
                 modelBatch.render(castleInstance, environment);
@@ -1056,6 +1102,33 @@ public class Skybox3DRenderer {
         }
 
         modelBatch.end();
+
+        // Render animated fire overlay on Castle Tarmin's 4 tower spires
+        if (castleInstance != null && !castleHidden && isCastleBillboard
+                && castleFireShader != null && castleFireShader.isCompiled() && castleModel != null) {
+            Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+            Gdx.gl.glDepthMask(true);
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+            castleFireShader.bind();
+            castleFireShader.setUniformMatrix("u_projTrans", camera.combined);
+            castleFireShader.setUniformMatrix("u_worldTrans", castleInstance.transform);
+            castleFireShader.setUniformf("u_time", totalTime);
+            castleFireShader.setUniformf("u_flashIntensity", currentFlash);
+            ColorAttribute diff = castleMaterial != null ? (ColorAttribute) castleMaterial.get(ColorAttribute.Diffuse) : null;
+            if (diff != null) {
+                castleFireShader.setUniformf("u_diffuseColor", diff.color.r, diff.color.g, diff.color.b, 1f);
+            } else {
+                castleFireShader.setUniformf("u_diffuseColor", 1f, 1f, 1f, 1f);
+            }
+            if (castleTexture != null) {
+                castleTexture.bind(0);
+                castleFireShader.setUniformi("u_diffuseTexture", 0);
+            }
+
+            castleModel.meshes.first().render(castleFireShader, GL20.GL_TRIANGLES);
+        }
         if (smokeShown > 0) {
             if (smokeBatch == null) {
                 smokeBatch = new com.badlogic.gdx.graphics.g3d.decals.DecalBatch(
@@ -1091,5 +1164,6 @@ public class Skybox3DRenderer {
         if (smokeBatch != null) smokeBatch.dispose();
         if (smokeTexture != null) smokeTexture.dispose();
         if (stormShader   != null) stormShader.dispose();
+        if (castleFireShader != null) castleFireShader.dispose();
     }
 }
