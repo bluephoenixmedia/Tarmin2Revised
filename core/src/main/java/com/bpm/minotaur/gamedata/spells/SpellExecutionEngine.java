@@ -558,8 +558,11 @@ public class SpellExecutionEngine {
     // =========================================================================
 
     private static boolean isHealing(SpellTemplate spell) {
+        if (spell == null) return false;
+        if (spell.isHealing()) return true;
         String name = spell.getName().toLowerCase();
-        return name.contains("cure") || name.contains("heal") || name.equals("aid") || name.contains("restoration");
+        return name.contains("cure") || name.contains("heal") || name.equals("aid")
+                || name.contains("restoration") || name.contains("regenerat");
     }
 
     private static void resolveSelfSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
@@ -611,7 +614,7 @@ public class SpellExecutionEngine {
     }
 
     /** The impact flash for a spell's archetype, played where the spell lands. */
-    private static void playImpactFx(CombatManager combatManager, VisualArchetype archetype, Vector3 at) {
+    public static void playImpactFx(CombatManager combatManager, VisualArchetype archetype, Vector3 at) {
         SpellFx.Impact impact = SpellFx.getInstance().impactFor(archetype);
         if (impact != null && combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnFx(impact.clip, at, impact.scale);

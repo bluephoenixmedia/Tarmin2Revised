@@ -29,8 +29,15 @@ public class SpellTemplate {
      * {@code MonsterSpellSight}.
      */
     public boolean ignoresLineOfSight = false;
+    /** True when this spell restores health or vitality to the caster. */
+    public boolean healing = false;
 
     public SpellTemplate() {
+    }
+
+    /** True when this spell restores health or vitality to the caster. */
+    public boolean isHealing() {
+        return healing;
     }
 
     /** True when this spell can reach a target without a clear line. */

@@ -179,17 +179,24 @@ public class MonsterSpellExecutor {
         float dist = startPos.dst(targetPos);
         float duration = Math.max(0.2f, Math.min(0.5f, dist / 14f));
 
-        Color color = archetype != null ? archetype.getPrimaryColor() : Color.ORANGE;
+        VisualArchetype arch = archetype != null ? archetype : VisualArchetype.FORCE_MISSILE;
+        Color color = arch.getPrimaryColor();
 
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().addAnimation(new Animation(
                     Animation.AnimationType.PROJECTILE_SPELL,
                     startPos, targetPos,
                     color, duration,
-                    new String[] { "*" }));
+                    new String[] { arch.getParticleAscii() }));
 
             Vector3 impact3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
-            combatManager.getAnimationManager().spawnExplosion(ExplosionType.FIRE, impact3d, 1.5f, 0.5f);
+            ExplosionType exp = SpellExecutionEngine.getExplosionForArchetype(arch);
+            combatManager.getAnimationManager().spawnExplosion(exp, impact3d, 1.5f, 0.5f);
+            SpellExecutionEngine.playImpactFx(combatManager, arch, impact3d);
+        }
+
+        if (combatManager != null && combatManager.getSoundManager() != null) {
+            combatManager.getSoundManager().playSpellSound(arch);
         }
 
         int spellDC = 8 + Math.max(0, (caster.getIntelligence() - 10) / 2);

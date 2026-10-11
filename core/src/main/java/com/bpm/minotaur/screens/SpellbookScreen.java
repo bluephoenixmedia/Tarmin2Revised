@@ -5,7 +5,9 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -13,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Maze;
@@ -151,9 +154,10 @@ public class SpellbookScreen extends BaseScreen {
         statusLabel = UiLabels.ellipsized("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
         footer.add(statusLabel).left().expandX();
         footer.add(new KeyHintLegend(hudSkin)
-                .hint("CLICK", "Assign")
-                .hint("DRAG", "Assign")
-                .hint("R-CLICK", "Clear slot")
+                .hint("CLICK", "Select / Slot")
+                .hint("DRAG", "Slot")
+                .hint("R-CLICK / 2x", "Quick slot")
+                .hint("R-CLICK SLOT", "Clear")
                 .hint(keyName(), "Close")
                 .escapeHint("Close")).right();
         root.add(footer).fillX();
@@ -194,7 +198,8 @@ public class SpellbookScreen extends BaseScreen {
         SpellTemplate spell = SpellDataManager.getSpell(spellId);
 
         Table cell = new Table();
-        cell.setBackground(unlocked ? hudSkin.getSlotActive() : hudSkin.getSlotRecessed());
+        boolean isPrimedTarget = unlocked && selectedSpellId != null && spell == null;
+        cell.setBackground(unlocked ? (isPrimedTarget ? hudSkin.getTabActive() : hudSkin.getSlotActive()) : hudSkin.getSlotRecessed());
         cell.pad(8, 12, 8, 12);
 
         Label keyLabel = UiLabels.ellipsized("SLOT " + (slot + 1) + "   " + SLOT_KEYS[slot],
@@ -214,8 +219,13 @@ public class SpellbookScreen extends BaseScreen {
             nameColor = UiTheme.TEXT;
         } else {
             name = "Empty";
-            sub = "Click a spell, then this slot";
-            nameColor = UiTheme.TEXT_DIM;
+            if (selectedSpellId != null) {
+                sub = "Click or Drop to prepare";
+                nameColor = HudSkin.COL_GOLD_BRIGHT;
+            } else {
+                sub = "Click a spell, then this slot";
+                nameColor = UiTheme.TEXT_DIM;
+            }
         }
         // SPELL-1: the three lines of a slot card share one column and must each own a row
         // with its own height. A cell given a fixed height that is smaller than its contents
@@ -234,6 +244,7 @@ public class SpellbookScreen extends BaseScreen {
             public void clicked(InputEvent event, float x, float y) {
                 if (selectedSpellId != null) {
                     assign(slot, selectedSpellId);
+                    selectedSpellId = null;
                 } else if (spellId != null) {
                     selectedSpellId = spellId;
                     refresh();
@@ -253,12 +264,21 @@ public class SpellbookScreen extends BaseScreen {
         dragAndDrop.addTarget(new DragAndDrop.Target(cell) {
             @Override
             public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                cell.setBackground(hudSkin.getTabActive());
                 return true;
             }
 
             @Override
+            public void reset(DragAndDrop.Source source, DragAndDrop.Payload payload) {
+                boolean primed = unlocked && selectedSpellId != null && spell == null;
+                cell.setBackground(unlocked ? (primed ? hudSkin.getTabActive() : hudSkin.getSlotActive()) : hudSkin.getSlotRecessed());
+            }
+
+            @Override
             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                cell.setBackground(unlocked ? hudSkin.getSlotActive() : hudSkin.getSlotRecessed());
                 assign(slot, (String) payload.getObject());
+                selectedSpellId = null;
             }
         });
         return cell;
@@ -364,7 +384,8 @@ public class SpellbookScreen extends BaseScreen {
         if (selected) {
             row.setBackground(hudSkin.getSlotActive());
         }
-        Label name = new Label(spell.getName(), new Label.LabelStyle(hudSkin.getFontMain(),
+        String displayName = selected ? "[PRIMED] " + spell.getName() : spell.getName();
+        Label name = new Label(displayName, new Label.LabelStyle(hudSkin.getFontMain(),
                 selected ? HudSkin.COL_GOLD_BRIGHT : Color.WHITE));
         row.add(name).expandX().left();
         int slot = slotOf(id);
@@ -373,24 +394,83 @@ public class SpellbookScreen extends BaseScreen {
         row.add(new Label(costText(spell), new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY)))
                 .width(90).right();
 
-        row.addListener(new ClickListener() {
+        row.addListener(new InputListener() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
-                selectedSpellId = selected ? null : id;
-                refresh();
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer == -1 && !id.equals(selectedSpellId)) {
+                    row.setBackground(hudSkin.getSlotRecessed());
+                }
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer == -1 && !id.equals(selectedSpellId)) {
+                    row.setBackground((Drawable) null);
+                }
             }
         });
+
+        ClickListener clickListener = new ClickListener(-1) {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (event.getButton() == Input.Buttons.RIGHT || getTapCount() == 2) {
+                    quickAssign(id);
+                } else if (event.getButton() == Input.Buttons.LEFT) {
+                    selectedSpellId = selected ? null : id;
+                    refresh();
+                }
+            }
+        };
+        row.addListener(clickListener);
+
         dragAndDrop.addSource(new DragAndDrop.Source(row) {
             @Override
             public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
                 DragAndDrop.Payload payload = new DragAndDrop.Payload();
                 payload.setObject(id);
-                Label ghost = new Label(spell.getName(), new Label.LabelStyle(hudSkin.getFontMain(), Color.CYAN));
-                payload.setDragActor(ghost);
+
+                Table dragCard = new Table();
+                dragCard.setBackground(hudSkin.getSlotActive());
+                dragCard.pad(6, 14, 6, 14);
+                dragCard.add(new Label(spell.getName(),
+                        new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT))).left().row();
+                String school = spell.getSchool() != null ? spell.getSchool() : "SPELL";
+                dragCard.add(new Label(school + " - " + costText(spell),
+                        new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY))).left();
+                dragCard.pack();
+
+                payload.setDragActor(dragCard);
+                dragAndDrop.setDragActorPosition(-dragCard.getWidth() / 2f, dragCard.getHeight() / 2f);
                 return payload;
             }
         });
         return row;
+    }
+
+    private void quickAssign(String spellId) {
+        int existingSlot = slotOf(spellId);
+        if (existingSlot >= 0) {
+            SpellTemplate spell = SpellDataManager.getSpell(spellId);
+            setStatus((spell != null ? spell.getName() : spellId) + " is already prepared in Slot " + (existingSlot + 1) + ".", false);
+            return;
+        }
+
+        for (int i = 0; i < player.getUnlockedSpellSlots(); i++) {
+            if (player.getPreparedSpell(i) == null) {
+                assign(i, spellId);
+                if (parentScreen != null && parentScreen.getSoundManager() != null) {
+                    parentScreen.getSoundManager().playUiClick();
+                }
+                selectedSpellId = null;
+                return;
+            }
+        }
+
+        if (hostileInView()) {
+            setStatus("No empty slot available. Cannot swap slots while a hostile is in view.", false);
+        } else {
+            setStatus("All unlocked spell slots are full. Click a specific slot to swap.", false);
+        }
     }
 
     private int slotOf(String spellId) {

@@ -300,6 +300,7 @@ public class WandExecutionEngine {
             Vector3 target3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(explosionType, target3d, 1.3f, 0.45f);
             combatManager.getAnimationManager().spawnArchetypeCascade(target3d, VisualArchetype.FORCE_MISSILE, 20);
+            SpellExecutionEngine.playImpactFx(combatManager, VisualArchetype.FORCE_MISSILE, target3d);
         } else {
             // Standard single projectile spell animation
             combatManager.getAnimationManager().addAnimation(new Animation(
@@ -311,6 +312,7 @@ public class WandExecutionEngine {
             Vector3 hit3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(explosionType, hit3d, 1.5f, 0.55f);
             combatManager.getAnimationManager().spawnArchetypeCascade(hit3d, archetype, 22);
+            SpellExecutionEngine.playImpactFx(combatManager, archetype, hit3d);
         }
 
         // Elemental floor decal on impact
