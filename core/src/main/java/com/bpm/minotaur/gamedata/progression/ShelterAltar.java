@@ -315,6 +315,23 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                               com.bpm.minotaur.gamedata.item.ItemDataManager idm,
                               com.badlogic.gdx.assets.AssetManager am) {
         java.util.List<com.badlogic.gdx.math.GridPoint2> points = maze.getStationSlots(station);
+        if (points.isEmpty() && station == Station.CARTOGRAPHER_DESK) {
+            java.util.List<com.badlogic.gdx.math.GridPoint2> lecterns = maze.getStationSlots(Station.ARCHIVE_LECTERN);
+            if (!lecterns.isEmpty()) {
+                com.badlogic.gdx.math.GridPoint2 lectern = lecterns.get(0);
+                com.badlogic.gdx.math.GridPoint2 kSlot = new com.badlogic.gdx.math.GridPoint2(lectern.x + 1, lectern.y - 1);
+                if (maze.isHomeTile(kSlot.x, kSlot.y) && maze.isPassable(kSlot.x, kSlot.y)) {
+                    maze.addStationSlot(Station.CARTOGRAPHER_DESK, kSlot.x, kSlot.y);
+                    points = maze.getStationSlots(Station.CARTOGRAPHER_DESK);
+                } else {
+                    kSlot = new com.badlogic.gdx.math.GridPoint2(lectern.x, lectern.y - 1);
+                    if (maze.isHomeTile(kSlot.x, kSlot.y) && maze.isPassable(kSlot.x, kSlot.y)) {
+                        maze.addStationSlot(Station.CARTOGRAPHER_DESK, kSlot.x, kSlot.y);
+                        points = maze.getStationSlots(Station.CARTOGRAPHER_DESK);
+                    }
+                }
+            }
+        }
         if (points.isEmpty()) return;
         BiomePortal portal = BiomePortal.forStation(station);
         if (portal != null) {

@@ -105,9 +105,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "............",
             "...##D####..",
             "...#L.AR.#..",
-            "...WT....#..",
+            "...WT...K#..",
             "...#F.BCN#..",
-            "...##...##..",
+            "...##....#..",
             "...#.....#..",
             "...#PPPPP#..",
             "...#######..",
@@ -781,6 +781,15 @@ public class MazeChunkGenerator implements IChunkGenerator {
                                     itemDataManager.createItem(Item.ItemType.HOME_ARCHIVE_LECTERN, x, y, ItemColor.GOLD, assetManager));
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().placeWarTable(
                                     maze, new com.badlogic.gdx.math.GridPoint2(x, y), itemDataManager, assetManager);
+                        }
+                    }
+                } else if (c == 'K') {
+                    if (maze.isHomeTile(x, y)) {
+                        registerStation(maze, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CARTOGRAPHER_DESK, x, y);
+                        if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CARTOGRAPHER_DESK)) {
+                            maze.addItem(
+                                    itemDataManager.createItem(Item.ItemType.HOME_CARTOGRAPHER_DESK, x, y, ItemColor.TAN, assetManager));
                         }
                     }
                 }
