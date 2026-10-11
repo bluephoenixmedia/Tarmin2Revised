@@ -38,9 +38,9 @@ public final class ShelterBuilder {
     static final String[] LAYOUT = {
             "#######",
             "#L.A.R#",
-            "#T...N#",
+            "#T....#",
             "#F.H.C#",
-            "#L..B.#",
+            "#L..BN#",
             "#.....#",
             "###D###",
     };

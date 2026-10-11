@@ -235,9 +235,13 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     public void materialiseAllStations(com.bpm.minotaur.gamedata.Maze currentMaze,
                                        com.bpm.minotaur.gamedata.item.ItemDataManager idm,
                                        com.badlogic.gdx.assets.AssetManager am) {
-        if (currentMaze == null || idm == null || am == null) return;
+        if (currentMaze == null || idm == null) return;
         for (Station station : Station.values()) {
             placeStation(currentMaze, station, idm, am);
+        }
+        java.util.List<com.badlogic.gdx.math.GridPoint2> lecterns = currentMaze.getStationSlots(Station.ARCHIVE_LECTERN);
+        if (!lecterns.isEmpty()) {
+            placeWarTable(currentMaze, lecterns.get(0), idm, am);
         }
     }
 
@@ -263,13 +267,17 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                     altar.x, altar.y, com.bpm.minotaur.gamedata.item.ItemColor.GOLD, am);
             if (item != null) maze.addItem(item);
         }
+        java.util.List<com.badlogic.gdx.math.GridPoint2> lecterns = maze.getStationSlots(Station.ARCHIVE_LECTERN);
+        if (!lecterns.isEmpty()) {
+            placeWarTable(maze, lecterns.get(0), idm, am);
+        }
     }
 
     /**
      * The War Table stands beside the Archive Lectern (Living War W27): the chronicle tells what the
      * houses did, the table where they are fighting now. On the first free floor beside it.
      */
-    private void placeWarTable(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 lectern,
+    public void placeWarTable(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 lectern,
                                com.bpm.minotaur.gamedata.item.ItemDataManager idm,
                                com.badlogic.gdx.assets.AssetManager am) {
         if (idm == null) return;

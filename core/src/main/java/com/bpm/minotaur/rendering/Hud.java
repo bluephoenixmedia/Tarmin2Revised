@@ -2277,6 +2277,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.HOME_TRAINING_DUMMY) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[TRAINING GROUNDS]",
+                        "Training Dummy & Weapon Rack",
+                        "Hone martial skills and spend banked skill points to unlock perks and abilities across combat disciplines.",
+                        "[ O ]",
+                        "Open Skill Tree",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
         }
 
         // 2. Check Doors / Windows in front

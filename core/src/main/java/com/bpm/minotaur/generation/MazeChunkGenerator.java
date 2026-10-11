@@ -104,9 +104,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "............",
             "............",
             "...##D####..",
-            "...#L.ACR#..",
-            "...WT...N#..",
-            "...#F..BL#..",
+            "...#L.AR.#..",
+            "...WT....#..",
+            "...#F.BCN#..",
             "...##...##..",
             "...#.....#..",
             "...#PPPPP#..",
@@ -778,6 +778,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
                                 com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN)) {
                             maze.addItem(
                                     itemDataManager.createItem(Item.ItemType.HOME_ARCHIVE_LECTERN, x, y, ItemColor.GOLD, assetManager));
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().placeWarTable(
+                                    maze, new com.badlogic.gdx.math.GridPoint2(x, y), itemDataManager, assetManager);
                         }
                     }
                 }

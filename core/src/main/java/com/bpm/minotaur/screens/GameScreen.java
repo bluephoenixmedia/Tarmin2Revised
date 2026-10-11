@@ -4815,6 +4815,12 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if ((itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_TRAINING_DUMMY)
+                || (itemOnTile != null && itemOnTile.getType() == Item.ItemType.HOME_TRAINING_DUMMY)) {
+            openSkillTree();
+            return;
+        }
+
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
             ShelterChest chest = ShelterChest.getInstance();
             if (chest.isEmpty()) {
