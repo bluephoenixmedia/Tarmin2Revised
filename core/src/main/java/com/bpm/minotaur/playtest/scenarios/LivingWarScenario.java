@@ -45,7 +45,13 @@ public final class LivingWarScenario implements PlaytestScenario {
         script.wait("settle", 20);
         script.once("settle traits", ctx::settleTraits);
         script.wait("traits settle", 15);
-        script.once("outfit hero", () -> ctx.outfitHero(10));
+        script.once("outfit hero", () -> {
+            ctx.outfitHero(10);
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().setStationUnlocked(
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN, true);
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().furnish(
+                    ctx.getMaze(), ctx.getGame().getItemDataManager(), ctx.getGame().getAssetManager());
+        });
 
         script.once("a war is under way", () -> {
             ctx.assertTrue(!ctx.getWorldManager().getHistory().world().activeWars().isEmpty(), "a new game opens on a war (W6)");

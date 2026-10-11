@@ -275,10 +275,6 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                     altar.x, altar.y, com.bpm.minotaur.gamedata.item.ItemColor.GOLD, am);
             if (item != null) maze.addItem(item);
         }
-        java.util.List<com.badlogic.gdx.math.GridPoint2> lecterns = maze.getStationSlots(Station.ARCHIVE_LECTERN);
-        if (!lecterns.isEmpty()) {
-            placeWarTable(maze, lecterns.get(0), idm, am);
-        }
     }
 
     /**
