@@ -76,7 +76,7 @@ public final class MonsterIdleAnimationRegistry {
         register(Monster.MonsterType.SKELETON, "images/monsters/idle/skeleton_idle.png");
         register(Monster.MonsterType.GIANT_SNAIL, "images/monsters/idle/snail_q_idl.png");
         register(Monster.MonsterType.SPIDER, "images/monsters/idle/spider_idle.png");
-        register(Monster.MonsterType.TROGLODYTE, "images/monsters/idle/troglodye_idle.png");
+        register(Monster.MonsterType.TROGLODYTE, "images/monsters/idle/troglodye_idle.png", 4, 3);
         register(Monster.MonsterType.UMBER_HULK, "images/monsters/idle/u_hulk_idle.png");
         register(Monster.MonsterType.VAMPIRE, "images/monsters/idle/vampire_idle.png");
         register(Monster.MonsterType.WERERAT, "images/monsters/idle/wererat_idle.png");

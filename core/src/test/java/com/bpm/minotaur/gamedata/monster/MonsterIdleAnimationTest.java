@@ -41,6 +41,12 @@ public class MonsterIdleAnimationTest {
         assertEquals("Wraith idle sheet has 4 columns", 4, wraithCfg.cols);
         assertEquals("Wraith idle sheet has 2 rows (8 frames total)", 2, wraithCfg.rows);
         assertEquals(8, wraithCfg.getTotalFrames());
+
+        MonsterIdleAnimationRegistry.IdleConfig trogCfg = MonsterIdleAnimationRegistry.getConfig(Monster.MonsterType.TROGLODYTE);
+        assertNotNull(trogCfg);
+        assertEquals("Troglodyte idle sheet has 4 columns", 4, trogCfg.cols);
+        assertEquals("Troglodyte idle sheet has 3 rows (12 frames total)", 3, trogCfg.rows);
+        assertEquals(12, trogCfg.getTotalFrames());
     }
 
     @Test
