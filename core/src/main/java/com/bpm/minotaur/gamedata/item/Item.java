@@ -994,6 +994,13 @@ public class Item implements Renderable {
         return getCategory() == ItemCategory.BOOK;
     }
 
+    public boolean isTome() {
+        if (type == null) return false;
+        return com.bpm.minotaur.gamedata.spells.Tome.of(type) != null
+                || type.name().startsWith("TOME_")
+                || isCargo();
+    }
+
     public void setFriendlyName(String friendlyName) {
         this.friendlyName = friendlyName;
     }

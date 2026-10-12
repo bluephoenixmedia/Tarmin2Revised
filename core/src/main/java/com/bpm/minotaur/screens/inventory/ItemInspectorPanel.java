@@ -229,13 +229,13 @@ public class ItemInspectorPanel extends Table {
         if (item == null) return false;
         if (item.isFood() || item.isPotion() || item.isScroll()) return true;
         if (item.isSpellbook()) return true;
-        if (item.getType() != null && item.getType().name().startsWith("TOME_")) return true;
+        if (item.isTome()) return true;
         return item.isUsable() && !item.isWeapon() && !item.isArmor();
     }
 
     public String getActionVerb(Item item) {
         if (item == null) return "USE ITEM";
-        if (item.getType() != null && item.getType().name().startsWith("TOME_")) return "STUDY TOME";
+        if (item.isTome()) return "STUDY TOME";
         if (item.isSpellbook()) return "STUDY SPELLBOOK";
         if (item.isScroll()) return "READ SCROLL";
         if (item.isPotion()) return "DRINK POTION";

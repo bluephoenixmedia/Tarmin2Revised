@@ -30,8 +30,8 @@ public class Inventory {
         // 0. A ration joins the rations already carried rather than taking a slot.
         if (mergeIntoStack(item)) return true;
 
-        // 1. Consumables and usable tools automatically route into empty Quick Slots first
-        if (item.isConsumableOrTool()) {
+        // 1. Consumables, usable tools, and Tomes automatically route into empty Quick Slots first
+        if (item.isConsumableOrTool() || item.isTome()) {
             for (int i = 0; i < quickSlots.length; i++) {
                 if (quickSlots[i] == null) {
                     quickSlots[i] = item;
