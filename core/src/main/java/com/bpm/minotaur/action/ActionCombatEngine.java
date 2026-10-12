@@ -76,6 +76,14 @@ public class ActionCombatEngine {
         }
     }
 
+    public interface CombatEventListener {
+        void onMonsterHit(Vector3 pos, Vector3 hitDirection, boolean isLethal);
+        void onPlayerHit();
+    }
+
+    public CombatEventListener eventListener;
+    public float playerInvulnTimer = 0f;
+
     // Player stats
     public float playerHealth = 100f;
     public float maxPlayerHealth = 100f;
@@ -129,11 +137,12 @@ public class ActionCombatEngine {
             if (parryTimer <= 0f) isParrying = false;
         }
 
-        // 2. Process Kick
+        // 2. Process Kick & I-Frames
         if (isKicking) {
             kickTimer -= delta;
             if (kickTimer <= 0f) isKicking = false;
         }
+        if (playerInvulnTimer > 0f) playerInvulnTimer = Math.max(0f, playerInvulnTimer - delta);
 
         // 3. Process Input
         handleCombatInput(delta, player, monsters);
@@ -267,6 +276,9 @@ public class ActionCombatEngine {
                 if (isLethal) {
                     spawnDeathShards(monster.position);
                 }
+                if (eventListener != null) {
+                    eventListener.onMonsterHit(monster.position, impulse, isLethal);
+                }
             }
         }
 
@@ -304,6 +316,9 @@ public class ActionCombatEngine {
             if (isLethal) {
                 spawnDeathShards(closest.position);
             }
+            if (eventListener != null) {
+                eventListener.onMonsterHit(closest.position, impulse, isLethal);
+            }
             player.triggerHitstop(equippedWeapon.hitstop);
         }
     }
@@ -327,6 +342,9 @@ public class ActionCombatEngine {
                 Vector3 kickImpulse = new Vector3(player.forwardHorizontal).scl(17.5f).add(0f, 3.5f, 0f);
                 monster.launchKick(kickImpulse);
                 monster.takeDamage(25f, null, false);
+                if (eventListener != null) {
+                    eventListener.onMonsterHit(monster.position, kickImpulse, false);
+                }
 
                 player.triggerHitstop(0.045f);
                 player.addTrauma(0.35f);
@@ -336,7 +354,7 @@ public class ActionCombatEngine {
     }
 
     public void onMonsterAttackHitsPlayer(ActionMonsterEntity monster, ActionPlayerController player) {
-        if (player.isInvulnerable()) return; // Dashing I-Frames
+        if (player.isInvulnerable() || playerInvulnTimer > 0f) return; // Dashing or I-Frames
 
         if (isParrying) {
             // Successful Parry! Stagger monster with poise break and flash
@@ -349,9 +367,13 @@ public class ActionCombatEngine {
             return;
         }
 
-        // Damage connects
+        // Damage connects with 0.55s invulnerability buffer
+        playerInvulnTimer = 0.55f;
         playerHealth = Math.max(0f, playerHealth - monster.attackDamage);
         player.addTrauma(0.45f);
+        if (eventListener != null) {
+            eventListener.onPlayerHit();
+        }
     }
 
     private void spawnDeathShards(Vector3 pos) {
@@ -375,6 +397,9 @@ public class ActionCombatEngine {
                     boolean isLethal = (monster.health <= p.damage);
                     monster.takeDamage(p.damage, new Vector3(p.velocity).nor().scl(4f), isLethal);
                     if (isLethal) spawnDeathShards(monster.position);
+                    if (eventListener != null) {
+                        eventListener.onMonsterHit(monster.position, p.velocity, isLethal);
+                    }
                     break;
                 }
             }
