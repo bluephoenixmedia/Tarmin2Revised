@@ -171,10 +171,15 @@ public final class WarSoundscape {
             shot(m, "monster_grunt_light", 0.08f, 0.45f, pan);
             shot(m, "monster_roar", 0.04f, 0.4f, pan);
             shot(m, "horn_battle", 0.03f, 0.45f, pan);
+            // Distant spell detonations and fireball impact thuds on the horizon.
+            shot(m, "siege_bursts", 0.05f, 0.42f, pan);
+            shot(m, "thud_distant_1", 0.04f, 0.38f, pan);
         } else if (d <= 3) {
             m.raise(Bed.FAR, d == 2 ? FAR_2 : FAR_3, pan);
             m.raise(Bed.DRUMS, d == 2 ? DRUMS_2 : DRUMS_3, pan);
             shot(m, "horn_battle", 0.04f, d == 2 ? 0.4f : 0.3f, pan);
+            shot(m, "siege_bursts", 0.03f, d == 2 ? 0.28f : 0.18f, pan);
+            shot(m, "thud_distant_2", 0.03f, d == 2 ? 0.25f : 0.15f, pan);
         } else if (d <= EncounterScheduler.EARSHOT) {
             m.raise(Bed.FAR, FAR_EDGE, pan);
             m.raise(Bed.DRUMS, DRUMS_EDGE, pan);

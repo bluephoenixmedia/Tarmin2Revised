@@ -45,7 +45,7 @@ public class ShelterStationAccessibilityTest {
     public void testHomeShelterStationsHaveAdjacentOpenFloor() throws Exception {
         String[] layout = homeShelterLayout();
 
-        char[] stationChars = {'L', 'A', 'R', 'T', 'F', 'B', 'C', 'N'};
+        char[] stationChars = {'L', 'A', 'R', 'T', 'F', 'B', 'C', 'N', 'K'};
         for (char stationChar : stationChars) {
             boolean found = false;
             for (int y = 0; y < layout.length; y++) {
@@ -123,7 +123,7 @@ public class ShelterStationAccessibilityTest {
             }
         }
 
-        char[] stationChars = {'L', 'A', 'R', 'T', 'F', 'B', 'C', 'N', 'P'};
+        char[] stationChars = {'L', 'A', 'R', 'T', 'F', 'B', 'C', 'N', 'P', 'K'};
         for (int y = 0; y < layout.length; y++) {
             for (int x = 0; x < layout[y].length(); x++) {
                 char c = layout[y].charAt(x);
@@ -217,6 +217,7 @@ public class ShelterStationAccessibilityTest {
         GridPoint2 warTablePos = null;
         GridPoint2 craftingPos = null;
         GridPoint2 dummyPos = null;
+        GridPoint2 cartographerPos = null;
 
         for (java.util.Map.Entry<GridPoint2, Item> entry : maze.getItems().entrySet()) {
             if (entry.getValue().getType() == Item.ItemType.HOME_ARCHIVE_LECTERN) {
@@ -231,12 +232,16 @@ public class ShelterStationAccessibilityTest {
             if (entry.getValue().getType() == Item.ItemType.HOME_TRAINING_DUMMY) {
                 dummyPos = entry.getKey();
             }
+            if (entry.getValue().getType() == Item.ItemType.HOME_CARTOGRAPHER_DESK) {
+                cartographerPos = entry.getKey();
+            }
         }
 
         assertNotNull("Archive Lectern must be placed when materialiseAllStations is called", lecternPos);
         assertNotNull("War Table must be placed when materialiseAllStations is called", warTablePos);
         assertNotNull("Crafting Bench must be placed when materialiseAllStations is called", craftingPos);
         assertNotNull("Training Dummy must be placed when materialiseAllStations is called", dummyPos);
+        assertNotNull("Cartographer Desk must be placed when materialiseAllStations is called", cartographerPos);
 
         // War table must be directly beside the Lectern (Manhattan distance 1)
         int manhattanDist = Math.abs(lecternPos.x - warTablePos.x) + Math.abs(lecternPos.y - warTablePos.y);

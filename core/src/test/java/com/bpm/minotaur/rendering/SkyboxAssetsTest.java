@@ -76,7 +76,9 @@ public class SkyboxAssetsTest {
                 "shaders/retro_skybox.vert",
                 "shaders/retro_skybox.frag",
                 "shaders/storm_skydome.vert",
-                "shaders/storm_skydome.frag"
+                "shaders/storm_skydome.frag",
+                "shaders/castle_flames.vert",
+                "shaders/castle_flames.frag"
         };
 
         for (String shader : shaders) {

@@ -370,7 +370,7 @@ public class Monster implements Renderable {
         final MonsterVariant variant = MonsterVariant.forColor(template.variants, color);
         final String spritePath = MonsterVariant.textureFor(template.variants, color, template.texturePath);
         if (spritePath != null && !spritePath.isEmpty()) {
-            if (assetManager.isLoaded(spritePath, Texture.class)) {
+            if (assetManager != null && assetManager.isLoaded(spritePath, Texture.class)) {
                 this.texture = assetManager.get(spritePath, Texture.class);
                 if (template.isSpriteSheet) {
                     this.isSpriteSheet = true;

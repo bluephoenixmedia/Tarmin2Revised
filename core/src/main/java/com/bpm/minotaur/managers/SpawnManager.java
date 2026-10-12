@@ -317,7 +317,7 @@ public class SpawnManager {
         boolean isGehennom = (level >= 25);
         boolean isContainer = false;
         int depth = (maze != null) ? maze.getLevel() : level;
-        GridPoint2 cid = (maze != null && maze.getChunkId() != null) ? maze.getChunkId() : new GridPoint2(0, 0);
+        GridPoint2 cid = (maze != null && maze.getChunkId() != null) ? maze.getChunkId() : null;
         int doomStage = DoomManager.getInstance().getDoomStage();
 
         return new SpawnContext(

@@ -54,8 +54,12 @@ public class ForestChunkGenerator implements IChunkGenerator {
             "images/forest/tree_dead_e_l.png", "images/forest/tree_dead_e_r.png"
     };
 
-    /** Width over height of every baked tree sprite's canvas, so billboards never stretch. */
-    private static final float TREE_ASPECT = 648f / 864f;
+    /**
+     * Width over height assumed for a tree whose texture is not loaded (tests, and trees
+     * deep in the stand that are never drawn). A drawn tree takes its own sprite's aspect:
+     * the repainted sprites run from 0.59 to 1.12.
+     */
+    static final float TREE_ASPECT = 0.76f;
     /**
      * Trees further than this from walkable ground get no sprite: the trees edging the
      * trail, their backdrop trunks and the canopy fog hide them.
@@ -116,10 +120,16 @@ public class ForestChunkGenerator implements IChunkGenerator {
         return paths.toArray(new String[0]);
     }
 
-    /** Width over height of the baked prop canvas (boulders, bushes, stumps, logs). */
-    private static final float PROP_ASPECT = 240f / 192f;
-    /** Three canopy heights: the trunks rise into the canopy and their crowns are lost above it. */
-    private static final float TREE_HEIGHT = 9.0f;
+    /** Width over height of the prop canvas (boulders, bushes, stumps, logs) when no texture is loaded. */
+    private static final float PROP_ASPECT = 2752f / 1536f;
+    /**
+     * The repainted trees are whole trees, crown and all, so they stand just under the
+     * canopy and its leaves close over their tops. The old 9.0 suited sprites that were
+     * mostly trunk; with full crowns it put a wall of branches in the player's face.
+     */
+    static final float TREE_HEIGHT = 2.7f;
+    /** Boulders on the wide prop canvas, which pads the rock by about a quarter. */
+    private static final float BOULDER_HEIGHT = 1.0f;
 
     private static final String[] BOULDER_TEXTURES = {
             "images/forest/rock_boulder_01.png",
@@ -207,6 +217,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
         // 3. Create Maze and instantiate foliage / scenery billboards
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
+        maze.setChunkId(chunkId);
         maze.setBiome(Biome.FOREST);
         maze.setTheme(theme != null ? theme : RetroTheme.FOREST_THEME);
         maze.setSecondaryTheme(mazeTheme);
@@ -583,6 +594,11 @@ public class ForestChunkGenerator implements IChunkGenerator {
             if (path != null) {
                 loadTextureSafely(s, path, assetManager);
             }
+            // Forest art is painted on a wide canvas; the catalogue's width was
+            // set for the old art, so only its height is kept.
+            if (path != null && path.startsWith("images/forest/")) {
+                fitWidthToTexture(s, s.scale.x / Math.max(0.01f, s.scale.y));
+            }
             maze.addScenery(s);
         }
     }
@@ -616,6 +632,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
                 s.setFlippedX(backdropRandom.nextBoolean());
                 if (kind == GLOWCAP) s.setEmissiveTint(GLOWCAP_GLOW);
                 loadTextureSafely(s, kind.texture(), assetManager);
+                fitWidthToTexture(s, kind.width() / kind.height());
                 maze.addBackdropScenery(s);
             }
         }
@@ -668,6 +685,19 @@ public class ForestChunkGenerator implements IChunkGenerator {
         } catch (Exception ignored) {
             // Safe fallback during tests without LibGDX graphics context
         }
+    }
+
+    /**
+     * Keeps a billboard's height and takes its width from the texture, so art drawn
+     * on any canvas stands unstretched. Without a texture (tests, undrawn trees) the
+     * given aspect stands in.
+     */
+    private static void fitWidthToTexture(Scenery s, float fallbackAspect) {
+        Texture tex = s.getTexture();
+        float aspect = (tex != null && tex.getHeight() > 0)
+                ? (float) tex.getWidth() / tex.getHeight()
+                : fallbackAspect;
+        s.scale.x = s.scale.y * aspect;
     }
 
     private void findPlayerStart(String[] layout) {
@@ -961,6 +991,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         if (nearOpenGround(layout, x, layoutY, VISIBLE_TREE_REACH)) {
                             loadTextureSafely(s, path, assetManager);
                         }
+                        fitWidthToTexture(s, TREE_ASPECT);
                         maze.addScenery(s);
 
                         if (facesOpenGround(layout, x, layoutY)) {
@@ -974,9 +1005,10 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         String path = BOULDER_TEXTURES[random.nextInt(BOULDER_TEXTURES.length)];
 
                         float jitter = 0.85f + random.nextFloat() * 0.35f;
-                        s.scale.set(0.8f * jitter * PROP_ASPECT, 0.8f * jitter);
+                        s.scale.set(BOULDER_HEIGHT * jitter * PROP_ASPECT, BOULDER_HEIGHT * jitter);
 
                         loadTextureSafely(s, path, assetManager);
+                        fitWidthToTexture(s, PROP_ASPECT);
                         maze.addScenery(s);
                         break;
                     }
@@ -989,6 +1021,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         s.scale.set(1.0f * jitter * PROP_ASPECT, 1.0f * jitter);
 
                         loadTextureSafely(s, path, assetManager);
+                        fitWidthToTexture(s, PROP_ASPECT);
                         maze.addScenery(s);
                         break;
                     }
@@ -1108,6 +1141,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
             float height = frontHeight * (0.65f + backdropRandom.nextFloat() * 0.25f);
             trunk.scale.set(height * TREE_ASPECT, height);
             loadTextureSafely(trunk, path, assetManager);
+            fitWidthToTexture(trunk, TREE_ASPECT);
             maze.addBackdropScenery(trunk);
         }
     }

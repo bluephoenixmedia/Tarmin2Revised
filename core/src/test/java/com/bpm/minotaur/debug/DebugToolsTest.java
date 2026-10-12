@@ -120,4 +120,50 @@ public class DebugToolsTest {
         assertNotNull(DebugKeys.actionFor(Input.Keys.SEMICOLON, true));
         assertNull("debug-only", DebugKeys.actionFor(Input.Keys.SEMICOLON, false));
     }
+
+    @Test
+    public void allItemsChestFiltersOutStationaryShelterFixtures() {
+        List<Item.ItemType> mixedTypes = Arrays.asList(
+                Item.ItemType.SWORD,
+                Item.ItemType.HOME_CHEST,
+                Item.ItemType.HOME_ALTAR,
+                Item.ItemType.BIOME_PORTAL_FOREST,
+                Item.ItemType.SHELTER_HEARTH_LIT,
+                Item.ItemType.POTION_BLUE,
+                Item.ItemType.RING
+        );
+        ShelterChest chest = DebugCheats.allItemsChest(mixedTypes, DebugToolsTest::make);
+        assertTrue(chest.isCatalog());
+        assertEquals(3, chest.getItemCount());
+        for (Item item : chest.getItems()) {
+            assertFalse(item.getType().name().startsWith("HOME_"));
+            assertFalse(item.getType().name().startsWith("BIOME_PORTAL_"));
+            assertFalse(item.getType().name().startsWith("SHELTER_HEARTH_"));
+        }
+    }
+
+    @Test
+    public void maxOutPlayerBoostsStatsSpellsSlotsAndLoadout() {
+        assertEquals(1, player.getLevel());
+        assertEquals(1, player.getUnlockedSpellSlots());
+
+        List<String> spells = Arrays.asList("FIREBALL", "COMPREHEND_LANGUAGES", "HEAL", "SHIELD", "DIMENSION_DOOR", "LIGHTNING");
+        DebugCheats.maxOutPlayer(player, spells);
+
+        assertEquals(99, player.getLevel());
+        assertEquals(50, player.getStats().getStrength());
+        assertEquals(50, player.getStats().getDexterity());
+        assertEquals(50, player.getStats().getConstitution());
+        assertEquals(50, player.getStats().getIntelligence());
+        assertEquals(50, player.getStats().getWisdom());
+        assertEquals(50, player.getStats().getAgility());
+        assertEquals(player.getStats().getMaxHP(), player.getStats().getCurrentHP());
+        assertEquals(player.getStats().getMaxMP(), player.getStats().getCurrentMP());
+        assertEquals(5, player.getUnlockedSpellSlots());
+        assertTrue(player.getKnownSpellIds().contains("FIREBALL"));
+        assertTrue(player.getKnownSpellIds().contains("COMPREHEND_LANGUAGES"));
+        assertEquals("FIREBALL", player.getPreparedSpells()[0]);
+        assertEquals("COMPREHEND_LANGUAGES", player.getPreparedSpells()[1]);
+    }
 }
+

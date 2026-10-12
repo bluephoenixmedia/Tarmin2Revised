@@ -55,4 +55,20 @@ public class ShelterCeilingHeightTest {
         assertNotEquals("A door must not use one fixed height everywhere",
                 doorTopInShelter, doorTopInCorridor, 0.0001f);
     }
+
+    @Test
+    public void exteriorWallsMeetShelterCeiling() {
+        Maze maze = mazeWithHomeTileAt(3, 3);
+        // (3, 2) is an outdoor corridor tile south of the shelter tile at (3, 3).
+        // The north wall face of (3, 2) separates it from (3, 3).
+        // It must rise to the shelter ceiling height (1.5m), meeting the door lintel.
+        float outdoorCeiling = ChunkMeshBuilder.ceilingHeightFor(maze, 3, 2);
+        float shelterCeiling = ChunkMeshBuilder.ceilingHeightFor(maze, 3, 3);
+        float wallFaceHeight = Math.max(outdoorCeiling, ChunkMeshBuilder.ceilingHeightFor(maze, 3, 3));
+
+        assertEquals(ChunkMeshBuilder.STANDARD_CEILING_Y, outdoorCeiling, 0.0001f);
+        assertEquals(ChunkMeshBuilder.SHELTER_CEILING_Y, shelterCeiling, 0.0001f);
+        assertEquals("Exterior wall facing the shelter must rise to shelter ceiling",
+                ChunkMeshBuilder.SHELTER_CEILING_Y, wallFaceHeight, 0.0001f);
+    }
 }

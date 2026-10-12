@@ -210,6 +210,7 @@ public class DesertChunkGenerator implements IChunkGenerator {
 
         // 3. Create Maze and instantiate scenery billboards
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
+        maze.setChunkId(chunkId);
         maze.setBiome(Biome.DESERT);
         maze.setTheme(theme != null ? theme : RetroTheme.DESERT_THEME);
         maze.setSecondaryTheme(mazeTheme);

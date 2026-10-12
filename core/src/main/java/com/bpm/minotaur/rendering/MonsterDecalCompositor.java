@@ -195,7 +195,8 @@ public class MonsterDecalCompositor implements Disposable {
                 dh = dw / Math.max(0.2f, aspect);
             }
 
-            batch.setColor(w.color != null ? w.color : Color.WHITE);
+            Color wc = (w.color != null ? w.color : Color.WHITE);
+            batch.setColor(wc.r, wc.g, wc.b, wc.a * 0.88f);
             batch.draw(
                     brush,
                     cx - dw * 0.5f, cy - dh * 0.5f,

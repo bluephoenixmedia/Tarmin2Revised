@@ -2265,6 +2265,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.HOME_CARTOGRAPHER_DESK) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[CARTOGRAPHY]",
+                        "Cartographer's Desk",
+                        "Drafting tables and survey instruments. Survey surrounding world sectors, chart biomes, roads, war fronts, and megabeast dens.",
+                        "[ O ]",
+                        "Examine Cartographer's Desk",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
             if (frontItem.getType() == Item.ItemType.BRASS_LANTERN) {
                 worldInteractionCard.show(
                         "[SHELTER HAVEN]",
