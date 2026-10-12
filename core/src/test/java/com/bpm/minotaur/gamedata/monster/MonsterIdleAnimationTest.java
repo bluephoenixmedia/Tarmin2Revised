@@ -23,11 +23,24 @@ public class MonsterIdleAnimationTest {
             File f = file("assets/" + cfg.texturePath);
             assertTrue("Idle animation file must exist: " + cfg.texturePath, f.isFile());
             assertTrue("Idle animation file must not be empty: " + cfg.texturePath, f.length() > 50000);
-            assertEquals("Expected 3 columns for 3x3 idle spritesheet: " + cfg.texturePath, 3, cfg.cols);
-            assertEquals("Expected 3 rows for 3x3 idle spritesheet: " + cfg.texturePath, 3, cfg.rows);
-            assertEquals("Expected 9 total frames: " + cfg.texturePath, 9, cfg.getTotalFrames());
+            assertTrue("Expected positive column count: " + cfg.texturePath, cfg.cols > 0);
+            assertTrue("Expected positive row count: " + cfg.texturePath, cfg.rows > 0);
+            assertTrue("Expected positive total frame count: " + cfg.texturePath, cfg.getTotalFrames() > 0);
             assertEquals("Expected 0.15s frame duration", 0.15f, cfg.frameDuration, 0.001f);
         }
+
+        // Verify non-standard layout configurations
+        MonsterIdleAnimationRegistry.IdleConfig zombieCfg = MonsterIdleAnimationRegistry.getConfig(Monster.MonsterType.ZOMBIE);
+        assertNotNull(zombieCfg);
+        assertEquals("Zombie idle sheet has 3 columns", 3, zombieCfg.cols);
+        assertEquals("Zombie idle sheet has 2 rows (6 frames total)", 2, zombieCfg.rows);
+        assertEquals(6, zombieCfg.getTotalFrames());
+
+        MonsterIdleAnimationRegistry.IdleConfig wraithCfg = MonsterIdleAnimationRegistry.getConfig(Monster.MonsterType.WRAITH);
+        assertNotNull(wraithCfg);
+        assertEquals("Wraith idle sheet has 4 columns", 4, wraithCfg.cols);
+        assertEquals("Wraith idle sheet has 2 rows (8 frames total)", 2, wraithCfg.rows);
+        assertEquals(8, wraithCfg.getTotalFrames());
     }
 
     @Test

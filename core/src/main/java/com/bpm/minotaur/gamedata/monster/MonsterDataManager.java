@@ -44,6 +44,9 @@ public class MonsterDataManager {
                 if (MonsterIdleAnimationRegistry.hasIdleAnimation(type)) {
                     MonsterIdleAnimationRegistry.IdleConfig idle = MonsterIdleAnimationRegistry.getConfig(type);
                     template.idleAnimationPath = idle.texturePath;
+                    template.spriteCols = idle.cols;
+                    template.spriteRows = idle.rows;
+                    template.spriteFrameDuration = idle.frameDuration;
                 }
                 monsterTemplates.put(type, template);
             } else {
