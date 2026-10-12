@@ -306,6 +306,7 @@ public class GameScreen extends BaseScreen {
         // raycaster branch, so without this every shot is invisible in the default renderer.
         world3DRenderer.setAnimationManager(animationManager);
         world3DRenderer.setProjectileAssets(game.getAssetManager());
+        world3DRenderer.setWeaponOverlay(weaponOverlay);
         if (eventManager == null) {
             eventManager = new GameEventManager();
         }
@@ -4591,6 +4592,10 @@ public class GameScreen extends BaseScreen {
 
     public FirstPersonWeaponOverlay getWeaponOverlay() {
         return weaponOverlay;
+    }
+
+    public World3DRenderer getWorld3DRenderer() {
+        return world3DRenderer;
     }
 
     private void updateSeamlessChunkLoading(float delta) {

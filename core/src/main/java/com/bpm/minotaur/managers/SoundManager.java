@@ -623,6 +623,71 @@ public class SoundManager {
     }
 
     /**
+     * Metallic resonance zing for lethal/crit anticipation windup.
+     */
+    public void playBladeZing() {
+        if (playEvent("blade_zing")) {
+            return;
+        }
+        if (modernSounds.containsKey("metal_hit")) {
+            long id = modernSounds.get("metal_hit").play(0.75f * getEffectiveSfxVolume());
+            modernSounds.get("metal_hit").setPitch(id, MathUtils.random(1.45f, 1.65f));
+        } else if (modernSounds.containsKey("weapon_swing")) {
+            long id = modernSounds.get("weapon_swing").play(0.8f * getEffectiveSfxVolume());
+            modernSounds.get("weapon_swing").setPitch(id, 1.35f);
+        } else if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    int[] freqs = new int[] { 880, 1174, 1760 };
+                    for (int f : freqs) {
+                        playRetroSound(f, 0.03f, 0.5f);
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        }
+    }
+
+    /**
+     * Sharp metallic deflection clang when striking heavy armor or shield.
+     */
+    public void playArmorClang() {
+        if (playEvent("armor_clang")) {
+            return;
+        }
+        String sound = modernSounds.containsKey("metal_hit_heavy") ? "metal_hit_heavy" : "metal_hit";
+        if (modernSounds.containsKey(sound)) {
+            long id = modernSounds.get(sound).play(0.95f * getEffectiveSfxVolume());
+            modernSounds.get(sound).setPitch(id, MathUtils.random(1.10f, 1.25f));
+        } else if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    playRetroSound(440, 0.06f, 0.7f);
+                    playRetroSound(880, 0.04f, 0.8f);
+                } catch (Exception ignored) {
+                }
+            }).start();
+        }
+    }
+
+    /**
+     * Deep bass-pitched impact crunch on critical hits or fatal blows.
+     */
+    public void playCritImpact(boolean fatal) {
+        if (playEvent(fatal ? "crit_fatal" : "crit_hit")) {
+            return;
+        }
+        if (modernSounds.containsKey("meat_hit")) {
+            long id = modernSounds.get("meat_hit").play((fatal ? 1.0f : 0.9f) * getEffectiveSfxVolume());
+            modernSounds.get("meat_hit").setPitch(id, MathUtils.random(0.65f, 0.75f));
+        }
+        if (modernSounds.containsKey("metal_hit_heavy")) {
+            long id = modernSounds.get("metal_hit_heavy").play((fatal ? 0.95f : 0.8f) * getEffectiveSfxVolume());
+            modernSounds.get("metal_hit_heavy").setPitch(id, MathUtils.random(0.70f, 0.85f));
+        }
+    }
+
+    /**
      * A gore sound from the soundbank ({@code gore_*} events), or, until an
      * event has files, {@code meat_hit} pitched to stand in for it: low and
      * loud for a burst, high and quiet for a gib landing. Silent with gore off.

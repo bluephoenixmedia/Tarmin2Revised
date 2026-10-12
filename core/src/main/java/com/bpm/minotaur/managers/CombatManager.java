@@ -5,6 +5,7 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.Screen;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
@@ -642,10 +643,18 @@ public class CombatManager {
         if (dir != null && player.getFacing() != dir) player.setFacing(dir);
 
         this.pendingWeapon = weapon;
+        boolean isLethalOrCrit = false;
+        if (target != null && target.getCurrentHP() > 0) {
+            float hpPct = (float) target.getCurrentHP() / (float) Math.max(1, target.getMaxHP());
+            if (hpPct <= 0.25f) {
+                isLethalOrCrit = true;
+                soundManager.playBladeZing();
+            }
+        }
         soundManager.playWeaponSwing();
         if (weapon != null && game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-            gs.getWeaponOverlay().triggerAttack(weapon);
+            gs.getWeaponOverlay().triggerAttack(weapon, isLethalOrCrit);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 this.currentMotionProfile = profile;
                 resolveAttack(DiceRoller.d20(), true);
@@ -1224,10 +1233,18 @@ public class CombatManager {
             return;
 
         // --- VISCERAL: Trigger Weapon Animation & Sound ---
+        boolean isLethalOrCrit = false;
+        if (monster != null && monster.getCurrentHP() > 0) {
+            float hpPct = (float) monster.getCurrentHP() / (float) Math.max(1, monster.getMaxHP());
+            if (hpPct <= 0.25f) {
+                isLethalOrCrit = true;
+                soundManager.playBladeZing();
+            }
+        }
         soundManager.playWeaponSwing();
         if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-            gs.getWeaponOverlay().triggerAttack(pendingWeapon);
+            gs.getWeaponOverlay().triggerAttack(pendingWeapon, isLethalOrCrit);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 this.currentMotionProfile = profile;
                 int d20Roll = DiceRoller.roll("1d20");
@@ -2419,20 +2436,30 @@ public class CombatManager {
                 float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
                 boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;
 
-                // 1. Audio
-                if (isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit)) {
-                    soundManager.playWeaponImpact(false); // Dull deflection
+                // 1. Audio & Hit-Stop
+                boolean isDeflection = isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit);
+                if (isDeflection) {
+                    soundManager.playArmorClang();
                 } else {
+                    if (isCrit || monster.getCurrentHP() <= 0) {
+                        soundManager.playCritImpact(monster.getCurrentHP() <= 0);
+                    }
                     soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
                 }
                 soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
 
-                // 2. Screen Shake & Hit Pause
-                if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
-                    com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-
-                    // Coat blade with blood
-                    gs.getWeaponOverlay().addBloodToWeapon();
+                // 2. Screen Shake, Hit Stop & Deflection Riposte
+                com.bpm.minotaur.screens.GameScreen gs = (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)
+                        ? (com.bpm.minotaur.screens.GameScreen) game.getScreen() : null;
+                if (gs != null) {
+                    if (isDeflection) {
+                        gs.getWeaponOverlay().triggerDeflectionClang();
+                    } else {
+                        // Decoupled hit-stop (30ms normal, 60ms + 100ms micro-dilation on crit/kill)
+                        gs.getWeaponOverlay().triggerHitStop(isCrit || monster.getCurrentHP() <= 0);
+                        // Coat blade with blood
+                        gs.getWeaponOverlay().addBloodToWeapon();
+                    }
 
                     // Shake
                     float extraTrauma = (currentMotionProfile != null) ? currentMotionProfile.screenTrauma : 0f;
@@ -2444,9 +2471,54 @@ public class CombatManager {
                     gs.triggerHitPause(pauseDur);
                 }
 
-                // 3. Blood (Scaling)
-                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+
+                // 3. Monster Procedural Kinematics
+                Monster.KinematicHitType kinematicType;
+                if (isDeflection) {
+                    kinematicType = Monster.KinematicHitType.DEFLECTED;
+                } else if (weapon != null && (weapon.isRanged() || usesShot(weapon))) {
+                    kinematicType = Monster.KinematicHitType.BALLISTIC_SHOT;
+                } else {
+                    AnimationArchetype arch = (weapon != null) ? AnimationArchetype.fromItem(weapon) : AnimationArchetype.BRAWLING;
+                    if (arch == AnimationArchetype.BLUNT_CRUSHING || arch == AnimationArchetype.FLAIL_WHIP
+                            || arch == AnimationArchetype.BRAWLING || arch == AnimationArchetype.SHIELD) {
+                        kinematicType = Monster.KinematicHitType.BLUNT_CHOP;
+                    } else if (arch == AnimationArchetype.THRUSTING_PIERCE) {
+                        kinematicType = Monster.KinematicHitType.PIERCING_THRUST;
+                    } else if (weapon != null && weapon.isSpiritual()) {
+                        kinematicType = Monster.KinematicHitType.ELEMENTAL_SPELL;
+                    } else {
+                        kinematicType = Monster.KinematicHitType.SLASHING;
+                    }
+                }
+                float cutAngle = (currentMotionProfile != null) ? currentMotionProfile.getCutAngle() : 45.0f;
+                float weaponWeight = (weapon != null) ? Math.max(1.0f, com.bpm.minotaur.gamedata.item.ItemWeights.of(weapon)) : 1.0f;
+                com.bpm.minotaur.gamedata.DamageType kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.PHYSICAL;
+                if (weapon != null && weapon.getDamageType() != null) {
+                    try {
+                        kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.valueOf(weapon.getDamageType().toUpperCase());
+                    } catch (Exception ignored) {}
+                }
+                monster.recordHitKinematics(kinematicType, cutAngle, weaponWeight, kinematicDmgType);
+
+                // 4. 3D Crescent Slash Arc VFX
+                if (gs != null && gs.getWorld3DRenderer() != null && gs.getWorld3DRenderer().getSlashArcManager() != null) {
+                    if (kinematicType == Monster.KinematicHitType.SLASHING || kinematicType == Monster.KinematicHitType.BLUNT_CHOP || isCrit) {
+                        float dx = monster.getPosition().x - player.getPosition().x;
+                        float dy = monster.getPosition().y - player.getPosition().y;
+                        float arcX = monster.getPosition().x - (dx * 0.20f);
+                        float arcZ = -monster.getPosition().y - (-dy * 0.20f);
+                        Vector3 slashPos = new Vector3(arcX, 0.45f, arcZ);
+                        Color arcColor = (currentMotionProfile != null && currentMotionProfile.trailColor != null)
+                                ? currentMotionProfile.trailColor : Color.WHITE;
+                        float arcScale = isCrit ? 1.4f : 1.1f;
+                        gs.getWorld3DRenderer().getSlashArcManager().spawnSlashArc(slashPos, cutAngle, arcColor, isCrit, arcScale);
+                    }
+                }
+
+                // 5. Blood (Scaling)
+                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 applyCombatHitWound(monster, totalDamage, weapon);
                 applyWeaponAspectEffects(monster, actualDamage, weapon, isCrit, (currentMotionProfile != null && currentMotionProfile.isFinisher));
                 float wx = cid.x * 36.0f + monster.getPosition().x;

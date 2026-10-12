@@ -56,6 +56,7 @@ import com.bpm.minotaur.rendering.mesh.SurfaceTextureSet;
 import com.bpm.minotaur.rendering.mesh.WallTextureProvider;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
+import com.bpm.minotaur.rendering.vfx.SlashArcManager;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.weather.WeatherRenderer;
 import com.bpm.minotaur.weather.WeatherType;
@@ -501,9 +502,19 @@ public class World3DRenderer implements Disposable {
     }
 
     private com.bpm.minotaur.rendering.AnimationManager animationManager;
+    private final SlashArcManager slashArcManager = new SlashArcManager();
+    private FirstPersonWeaponOverlay weaponOverlay;
 
     public void setAnimationManager(com.bpm.minotaur.rendering.AnimationManager manager) {
         this.animationManager = manager;
+    }
+
+    public SlashArcManager getSlashArcManager() {
+        return slashArcManager;
+    }
+
+    public void setWeaponOverlay(FirstPersonWeaponOverlay overlay) {
+        this.weaponOverlay = overlay;
     }
 
     /**
@@ -604,6 +615,9 @@ public class World3DRenderer implements Disposable {
 
         float delta = Gdx.graphics.getDeltaTime();
         totalTime += delta;
+
+        boolean isMicro = (weaponOverlay != null && weaponOverlay.isMicroDilationActive());
+        slashArcManager.update(delta, isMicro);
 
         // Synchronize player lighting
         LightingManager lm = (worldManager != null) ? worldManager.getLightingManager() : null;
@@ -965,6 +979,13 @@ public class World3DRenderer implements Disposable {
         renderEntities(maze, player, combatManager, isRetro, theme);
         renderProjectiles();
 
+        if (!isRetro) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+            slashArcManager.render(dynamicBatcher, shader, camRight, camUp, camDir);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        }
+
         if (underCanopy && !isRetro) {
             renderLightShafts(maze, player, fullSkyTint, (wm != null) ? wm.getGlobalLightDimmer() : 1f);
         }
@@ -1056,6 +1077,26 @@ public class World3DRenderer implements Disposable {
         }
 
         camera.fieldOfView = DebugManager.getInstance().getFov3d();
+
+        // Melee swing-aligned camera roll & subtle FOV punch on windup
+        boolean isRetro = (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO);
+        if (!isRetro && weaponOverlay != null && weaponOverlay.isActive()) {
+            float atkProg = weaponOverlay.getAttackProgress();
+            if (atkProg > 0f) {
+                // FOV punch during windup (tighter focus, -1.5 degrees)
+                if (atkProg < 0.35f) {
+                    float windupT = 1.0f - (atkProg / 0.35f);
+                    camera.fieldOfView -= (weaponOverlay.isLethalAnticipationActive() ? 2.5f : 1.5f) * windupT;
+                }
+                // Swing-aligned roll in release phase
+                if (atkProg >= 0.20f && atkProg <= 0.80f) {
+                    float swingT = (float) Math.sin((atkProg - 0.20f) / 0.60f * Math.PI);
+                    float roll = (weaponOverlay.isLethalAnticipationActive() ? 1.5f : 1.1f) * swingT;
+                    camera.up.rotate(camera.direction, roll);
+                }
+            }
+        }
+
         camera.viewportWidth = viewport.getWorldWidth();
         camera.viewportHeight = viewport.getWorldHeight();
         camera.update();
@@ -1919,6 +1960,13 @@ public class World3DRenderer implements Disposable {
                         h *= scale;
                     }
 
+                    if (!isRetro) {
+                        w *= m.getKinematicScaleX();
+                        h *= m.getKinematicScaleY();
+                    }
+
+                    float rollDegrees = (!isRetro) ? m.getKinematicRollDegrees() : 0.0f;
+
                     // Hit recoil: spring backward away from the player, fading over ~0.12s
                     float mex = ex, mwz = wz;
                     float hitFlash = m.getHitFlashProgress();
@@ -1939,6 +1987,13 @@ public class World3DRenderer implements Disposable {
                         tint = new Color(tint).mul(Monster.BLIGHTED_TINT);
                     }
 
+                    float monsterY = 0.0f;
+                    if (m.getType() == Monster.MonsterType.PLAYER_GHOST) {
+                        float floatOffset = (float) Math.sin(System.currentTimeMillis() / 350.0) * 0.05f + 0.08f;
+                        monsterY += floatOffset;
+                        tint = new Color(0.45f, 0.92f, 0.95f, 0.88f);
+                    }
+
                     // Twitchy monster attack telegraph (Eye Flare + Lunge / Retro Threat Aura)
                     if (combatManager != null && combatManager.getAttackIndicatorMonster() == m) {
                         float progress = combatManager.getAttackIndicatorProgress();
@@ -1951,20 +2006,39 @@ public class World3DRenderer implements Disposable {
                                 h *= surge;
                                 Color eyeColor = getMonsterEyeFlareColor(m);
                                 tint = new Color(eyeColor).lerp(tint, 1f - pulse);
+
+                                if (!isRetro) {
+                                    Monster.TelegraphArchetype tele = m.getTelegraphArchetype();
+                                    switch (tele) {
+                                        case BEAST_CROUCH:
+                                            h *= (1f - 0.20f * pulse);
+                                            w *= (1f + 0.15f * pulse);
+                                            break;
+                                        case HUMANOID_COIL:
+                                            rollDegrees += 12f * pulse;
+                                            break;
+                                        case COLOSSUS_SEISMIC:
+                                            h *= (1f + 0.25f * pulse);
+                                            w *= (1f - 0.10f * pulse);
+                                            monsterY += 0.08f * pulse;
+                                            break;
+                                        case CASTER_PULSE:
+                                            monsterY += 0.15f * pulse;
+                                            w *= (1f + 0.10f * pulse);
+                                            break;
+                                    }
+                                }
                             } else if (variant == CombatManager.AttackIndicatorVariant.RETRO_AURA) {
                                 tint = new Color(1f, 0.15f * (1f - pulse), 0.15f * (1f - pulse), 1f);
                             }
                         }
                     }
 
-                    float monsterY = 0.0f;
-                    if (m.getType() == Monster.MonsterType.PLAYER_GHOST) {
-                        float floatOffset = (float) Math.sin(System.currentTimeMillis() / 350.0) * 0.05f + 0.08f;
-                        monsterY += floatOffset;
-                        tint = new Color(0.45f, 0.92f, 0.95f, 0.88f);
+                    if (rollDegrees != 0.0f) {
+                        dynamicBatcher.addRotatedBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir, rollDegrees);
+                    } else {
+                        dynamicBatcher.addBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir);
                     }
-
-                    dynamicBatcher.addBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
 
                     // Overhead Health Bar
@@ -2549,6 +2623,7 @@ public class World3DRenderer implements Disposable {
         shader.dispose();
         meshCache.dispose();
         dynamicBatcher.dispose();
+        slashArcManager.dispose();
 
         if (wallVariantProvider != null) wallVariantProvider.dispose();
         if (bloodPoolTexture != null) bloodPoolTexture.dispose();
