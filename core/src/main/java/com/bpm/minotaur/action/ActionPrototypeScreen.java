@@ -32,7 +32,7 @@ import java.util.List;
  * - Decal monster mobs with telegraphed attack tells and dynamic dismemberment
  * - First-person animated viewmodels, resource shard pickups, and HUD
  */
-public class ActionPrototypeScreen implements Screen {
+public class ActionPrototypeScreen implements Screen, com.badlogic.gdx.InputProcessor {
 
     private final Tarmin2 game;
     private final Screen previousScreen;
@@ -75,6 +75,11 @@ public class ActionPrototypeScreen implements Screen {
 
     @Override
     public void show() {
+        // Set ActionPrototypeScreen as the exclusive InputProcessor to override all other keybindings
+        Gdx.input.setInputProcessor(this);
+        Gdx.input.setCursorCatched(true);
+        mouseCaptured = true;
+
         // 1. Initialize 3D Camera (high-action 78 FOV)
         camera3d = new PerspectiveCamera(78f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         camera3d.near = 0.05f;
@@ -114,10 +119,6 @@ public class ActionPrototypeScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
         font = new BitmapFont();
         font.getData().setScale(1.3f);
-
-        // Capture mouse for FPS mouselook
-        Gdx.input.setCursorCatched(true);
-        mouseCaptured = true;
 
         // Spawn Wave 1
         spawnWave(currentWave);
@@ -382,42 +383,109 @@ public class ActionPrototypeScreen implements Screen {
         font.draw(uiBatch, "WEAPON: [" + combatEngine.equippedWeapon.name + "] (1-5)", barX, barY + 75);
 
         font.setColor(Color.LIGHT_GRAY);
-        font.draw(uiBatch, "WASD: Run | Shift: Dash | Space: Jump | Ctrl: Slide", 25, 95);
+        font.draw(uiBatch, "WASD / Arrows: Run | Shift: Dash | Space: Jump | Ctrl: Slide", 25, 95);
         font.draw(uiBatch, "LMB: Attack | RMB: Parry | F: Kick | Q/E: Magic Spells", 25, 65);
-        font.draw(uiBatch, "ESC: Mouse Lock/Menu | R: Next Wave | F1: God Mode [" + (godMode ? "ON" : "OFF") + "]", 25, 35);
+        font.draw(uiBatch, "F6 / ESC: Exit Prototype | R: Next Wave | F1: God Mode [" + (godMode ? "ON" : "OFF") + "]", 25, 35);
 
         uiBatch.end();
     }
 
     private void handleScreenHotkeys() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        // Fallback polling for continuous left-click holding
+        if (mouseCaptured && Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+            combatEngine.triggerAttack(playerController, monsters);
+        }
+    }
+
+    private void exitPrototype() {
+        Gdx.input.setCursorCatched(false);
+        game.setScreen(previousScreen != null ? previousScreen : new MainMenuScreen(game));
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        if (keycode == Input.Keys.F6) {
+            exitPrototype();
+            return true;
+        }
+        if (keycode == Input.Keys.ESCAPE) {
             if (mouseCaptured) {
                 Gdx.input.setCursorCatched(false);
                 mouseCaptured = false;
             } else {
-                // Exit prototype cleanly back to caller screen
-                game.setScreen(previousScreen != null ? previousScreen : new MainMenuScreen(game));
+                exitPrototype();
             }
+            return true;
         }
-
-        // Re-capture on click if released
-        if (!mouseCaptured && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            Gdx.input.setCursorCatched(true);
-            mouseCaptured = true;
-        }
-
-        // R: Respawn / Force next wave
-        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+        if (keycode == Input.Keys.R) {
             currentWave++;
             spawnWave(currentWave);
+            return true;
         }
-
-        // F1: Toggle God Mode
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F1)) {
+        if (keycode == Input.Keys.F1) {
             godMode = !godMode;
             if (godMode) combatEngine.playerHealth = combatEngine.maxPlayerHealth;
+            return true;
         }
+        if (keycode == Input.Keys.NUM_1) { combatEngine.equippedWeapon = ActionCombatEngine.WeaponType.BROADSWORD; return true; }
+        if (keycode == Input.Keys.NUM_2) { combatEngine.equippedWeapon = ActionCombatEngine.WeaponType.BATTLEAXE; return true; }
+        if (keycode == Input.Keys.NUM_3) { combatEngine.equippedWeapon = ActionCombatEngine.WeaponType.CROSSBOW; return true; }
+        if (keycode == Input.Keys.NUM_4) { combatEngine.equippedWeapon = ActionCombatEngine.WeaponType.PISTOL; return true; }
+        if (keycode == Input.Keys.NUM_5) { combatEngine.equippedWeapon = ActionCombatEngine.WeaponType.SPELLBOOK; return true; }
+
+        if (keycode == Input.Keys.Q) {
+            combatEngine.castQuickSpellFlame(playerController);
+            return true;
+        }
+        if (keycode == Input.Keys.E) {
+            combatEngine.castQuickSpellFrost(playerController);
+            return true;
+        }
+        if (keycode == Input.Keys.F) {
+            combatEngine.triggerKick(playerController, monsters);
+            return true;
+        }
+        if (keycode == Input.Keys.SPACE) {
+            playerController.triggerJump();
+            return true;
+        }
+        if (keycode == Input.Keys.SHIFT_LEFT || keycode == Input.Keys.SHIFT_RIGHT) {
+            playerController.triggerDash();
+            return true;
+        }
+        if (keycode == Input.Keys.CONTROL_LEFT || keycode == Input.Keys.CONTROL_RIGHT) {
+            playerController.triggerSlide();
+            return true;
+        }
+        return true;
     }
+
+    @Override public boolean keyUp(int keycode) { return true; }
+    @Override public boolean keyTyped(char character) { return true; }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if (!mouseCaptured) {
+            Gdx.input.setCursorCatched(true);
+            mouseCaptured = true;
+            return true;
+        }
+        if (button == Input.Buttons.LEFT) {
+            combatEngine.triggerAttack(playerController, monsters);
+            return true;
+        }
+        if (button == Input.Buttons.RIGHT) {
+            combatEngine.triggerParry();
+            return true;
+        }
+        return true;
+    }
+
+    @Override public boolean touchUp(int screenX, int screenY, int pointer, int button) { return true; }
+    @Override public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
+    @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
+    @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
+    @Override public boolean scrolled(float amountX, float amountY) { return false; }
 
     @Override
     public void resize(int width, int height) {

@@ -4331,8 +4331,12 @@ public class GameScreen extends BaseScreen {
                 return true;
             }
             case Input.Keys.F6:
-                useCrtFilter = !useCrtFilter;
-                eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
+                if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                    useCrtFilter = !useCrtFilter;
+                    eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
+                } else {
+                    game.setScreen(new com.bpm.minotaur.action.ActionPrototypeScreen(game, this));
+                }
                 return true;
             case Input.Keys.F7:
                 debugManager.toggleRenderEngine();

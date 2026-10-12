@@ -164,10 +164,10 @@ public class ActionPlayerController {
             float moveX = 0f;
             float moveZ = 0f;
 
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) moveZ += 1f;
-            if (Gdx.input.isKeyPressed(Input.Keys.S)) moveZ -= 1f;
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) moveX -= 1f;
-            if (Gdx.input.isKeyPressed(Input.Keys.D)) moveX += 1f;
+            if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) moveZ += 1f;
+            if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN)) moveZ -= 1f;
+            if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) moveX -= 1f;
+            if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) moveX += 1f;
 
             if (moveZ != 0f || moveX != 0f) {
                 moveWish.add(forwardHorizontal.x * moveZ + rightHorizontal.x * moveX,
@@ -176,27 +176,22 @@ public class ActionPlayerController {
             }
 
             // Trigger Dash on Shift if off cooldown
-            if (Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT) && dashCooldownTimer <= 0f) {
-                isDashing = true;
-                dashTimer = DASH_DURATION;
-                dashCooldownTimer = DASH_COOLDOWN;
-                dashDirection.set(moveWish.isZero() ? forwardHorizontal : moveWish).nor();
-                addTrauma(0.15f);
+            if ((Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_RIGHT))
+                    && dashCooldownTimer <= 0f) {
+                triggerDash();
                 return;
             }
 
             // Trigger Crouch-Slide on Ctrl while running
-            if (Gdx.input.isKeyJustPressed(Input.Keys.CONTROL_LEFT) && isGrounded && velocity.len() > 6.0f) {
-                isSliding = true;
-                slideTimer = SLIDE_DURATION;
-                velocity.nor().scl(SLIDE_SPEED);
+            if ((Gdx.input.isKeyJustPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.CONTROL_RIGHT))
+                    && isGrounded && velocity.len() > 6.0f) {
+                triggerSlide();
                 return;
             }
 
             // Trigger Jump on Space
             if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && isGrounded) {
-                velocity.y = JUMP_VELOCITY;
-                isGrounded = false;
+                triggerJump();
             }
         }
 
@@ -332,6 +327,45 @@ public class ActionPlayerController {
 
     public void triggerHitstop(float seconds) {
         hitstopTimer = Math.max(hitstopTimer, seconds);
+    }
+
+    public void triggerDash() {
+        if (dashCooldownTimer <= 0f) {
+            isDashing = true;
+            dashTimer = DASH_DURATION;
+            dashCooldownTimer = DASH_COOLDOWN;
+            Vector3 moveWish = new Vector3();
+            if (Gdx.input != null) {
+                float moveX = 0f;
+                float moveZ = 0f;
+                if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) moveZ += 1f;
+                if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN)) moveZ -= 1f;
+                if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) moveX -= 1f;
+                if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) moveX += 1f;
+                if (moveZ != 0f || moveX != 0f) {
+                    moveWish.add(forwardHorizontal.x * moveZ + rightHorizontal.x * moveX,
+                                 0f,
+                                 forwardHorizontal.z * moveZ + rightHorizontal.z * moveX).nor();
+                }
+            }
+            dashDirection.set(moveWish.isZero() ? forwardHorizontal : moveWish).nor();
+            addTrauma(0.15f);
+        }
+    }
+
+    public void triggerSlide() {
+        if (isGrounded && velocity.len() > 5.0f) {
+            isSliding = true;
+            slideTimer = SLIDE_DURATION;
+            velocity.nor().scl(SLIDE_SPEED);
+        }
+    }
+
+    public void triggerJump() {
+        if (isGrounded) {
+            velocity.y = JUMP_VELOCITY;
+            isGrounded = false;
+        }
     }
 
     public boolean isInvulnerable() {

@@ -112,4 +112,26 @@ public class ActionPrototypeTest {
         assertEquals("Monster must be staggered on parry", ActionMonsterEntity.State.STAGGERED, minotaur.state);
         assertTrue("Parry flash timer must be triggered", combat.parryFlashTimer > 0f);
     }
+
+    @Test
+    public void testTriggersAndSpellQuickCast() {
+        ActionPlayerController player = new ActionPlayerController(new Vector3(10f, 0.65f, -10f));
+        ActionCombatEngine combat = new ActionCombatEngine();
+
+        // Test Jump
+        player.triggerJump();
+        assertFalse("Player must not be grounded after jump", player.isGrounded);
+        assertTrue("Vertical velocity must be positive", player.velocity.y > 0f);
+
+        // Test Dash
+        player.triggerDash();
+        assertTrue("Player must be dashing", player.isDashing);
+        assertTrue("Invulnerable while dashing", player.isInvulnerable());
+
+        // Test Spell Quick Cast
+        float initialMana = combat.playerMana;
+        combat.castQuickSpellFlame(player);
+        assertEquals("Mana must decrease on quick cast", initialMana - 15f, combat.playerMana, 0.001f);
+        assertFalse("Projectiles list must have spawned fireball", combat.projectiles.isEmpty());
+    }
 }

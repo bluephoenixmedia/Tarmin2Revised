@@ -172,17 +172,48 @@ public class ActionCombatEngine {
         }
 
         // Q Key: Quick-Cast Flame Bolt (costs 15 mana)
-        if (Gdx.input.isKeyJustPressed(Input.Keys.Q) && playerMana >= 15f) {
-            playerMana -= 15f;
-            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(player.direction.scl(0.5f));
-            projectiles.add(new Projectile(spawn, player.direction, 28f, 50f, true));
-            player.addTrauma(0.12f);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
+            castQuickSpellFlame(player);
         }
 
         // E Key: Quick-Cast Frost Ray (costs 20 mana)
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E) && playerMana >= 20f) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            castQuickSpellFrost(player);
+        }
+    }
+
+    public void triggerAttack(ActionPlayerController player, List<ActionMonsterEntity> monsters) {
+        if (weaponCooldownTimer <= 0f && !isParrying && !isKicking) {
+            executeWeaponAttack(player, monsters);
+        }
+    }
+
+    public void triggerParry() {
+        if (!isParrying && !isKicking) {
+            isParrying = true;
+            parryTimer = PARRY_WINDOW;
+        }
+    }
+
+    public void triggerKick(ActionPlayerController player, List<ActionMonsterEntity> monsters) {
+        if (kickCooldownTimer <= 0f && !isKicking) {
+            executeKick(player, monsters);
+        }
+    }
+
+    public void castQuickSpellFlame(ActionPlayerController player) {
+        if (playerMana >= 15f) {
+            playerMana -= 15f;
+            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(new Vector3(player.direction).scl(0.5f));
+            projectiles.add(new Projectile(spawn, player.direction, 28f, 50f, true));
+            player.addTrauma(0.12f);
+        }
+    }
+
+    public void castQuickSpellFrost(ActionPlayerController player) {
+        if (playerMana >= 20f) {
             playerMana -= 20f;
-            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(player.direction.scl(0.5f));
+            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(new Vector3(player.direction).scl(0.5f));
             projectiles.add(new Projectile(spawn, player.direction, 35f, 65f, false));
             player.addTrauma(0.15f);
         }
@@ -200,14 +231,14 @@ public class ActionCombatEngine {
         }
 
         if (equippedWeapon == WeaponType.CROSSBOW) {
-            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(player.direction.scl(0.4f));
+            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(new Vector3(player.direction).scl(0.4f));
             projectiles.add(new Projectile(spawn, player.direction, 42f, equippedWeapon.damage, false));
             player.addTrauma(equippedWeapon.trauma);
             return;
         }
 
         if (equippedWeapon == WeaponType.SPELLBOOK) {
-            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(player.direction.scl(0.4f));
+            Vector3 spawn = new Vector3(player.position).add(0f, 0.45f, 0f).add(new Vector3(player.direction).scl(0.4f));
             projectiles.add(new Projectile(spawn, player.direction, 32f, equippedWeapon.damage, true));
             player.addTrauma(equippedWeapon.trauma);
             return;

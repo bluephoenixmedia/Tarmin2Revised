@@ -54,7 +54,7 @@ public final class DebugKeys {
         { "F2", "Modern / Retro" },
         { "F3", "force monster modifiers" },
         { "F4", "warp to next themed chunk" },
-        { "F6", "CRT filter" },
+        { "F6", "Action Prototype" },
         { "F7", "render engine" },
         { "F8", "predict portals (log)" },
         { "F9", "dump exploration (log)" },
