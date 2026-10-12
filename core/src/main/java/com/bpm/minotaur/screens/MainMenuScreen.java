@@ -307,6 +307,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
                 .hint(com.bpm.minotaur.ui.KeyHintLegend.ARROWS_UD, "Navigate")
                 .hint("ENTER", "Choose")
                 .hint("F2", "Retro view")
+                .hint("F6", "Action Prototype")
                 .escapeHint("Quit");
         footerBar.add(footerLegend).right();
         stage.addActor(footerBar);
@@ -546,6 +547,9 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         if (keycode == Input.Keys.F2) {
             debugManager.toggleRenderMode();
             buildMenuUI();
+            return true;
+        } else if (keycode == Input.Keys.F6) {
+            game.setScreen(new com.bpm.minotaur.action.ActionPrototypeScreen(game, this));
             return true;
         } else if (keycode == Input.Keys.M) {
             selectedGameMode = (selectedGameMode == GameMode.CLASSIC) ? GameMode.ADVANCED : GameMode.CLASSIC;
