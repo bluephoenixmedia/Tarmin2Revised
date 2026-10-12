@@ -543,6 +543,7 @@ public class CombatManager {
             this.damageTakenInCombat = 0;
             BalanceLogger.getInstance().logCombatStart(player, monster);
             // --------------------
+            alertMonsterToPlayer(monster);
 
             if (monster != null && monster.canSpeak()) {
                 boolean comprehend = (player != null && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES));
@@ -687,6 +688,17 @@ public class CombatManager {
 
         if (target.getStatusManager() != null && eventManager != null)
             target.getStatusManager().initialize(eventManager, target);
+        alertMonsterToPlayer(target);
+    }
+
+    /** Alerts a monster that the player has attacked it, pointing its pursuit at the player. */
+    public void alertMonsterToPlayer(Monster target) {
+        if (target != null && target.getCurrentHP() > 0 && player != null) {
+            target.setState(Monster.MonsterState.HUNTING);
+            target.setLastKnownTargetPos(new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
+            target.setTurnsSinceLastSeen(0);
+            target.setTargetMonster(null);
+        }
     }
 
     /** A Blighted monster's blow that draws blood carries the rot in with it. */
@@ -1134,6 +1146,9 @@ public class CombatManager {
     /** A kill away from the engaged fight -- a spell, a bolt, a thrown blade -- still dies on screen. */
     public void handleRemoteKill(Monster m, KillCause cause) {
         if (m == null) return;
+        if (m == this.monster) {
+            this.monster = null;
+        }
         maze.removeMonster(m);
         if (!m.claimDeath()) {
             Gdx.app.error("CombatManager", "Refused to pay out " + m.getMonsterType() + " twice");
@@ -1477,6 +1492,7 @@ public class CombatManager {
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
                 target.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                alertMonsterToPlayer(target);
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 showDamageText(actual, hit.collisionPoint);
@@ -1493,6 +1509,7 @@ public class CombatManager {
                 }
             } else {
                 eventManager.addEvent(new GameEvent("Thrown " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " glanced off " + target.getType() + "!", 1.0f));
+                alertMonsterToPlayer(target);
             }
             if (hit.collisionPoint != null) {
                 weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
@@ -2317,6 +2334,7 @@ public class CombatManager {
                 int monsterHpBefore = monster.getCurrentHP();
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
                 monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                alertMonsterToPlayer(monster);
                 // Bloodsoaked Saint: what you cut from them knits you back together.
                 float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
                 if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
@@ -2584,6 +2602,7 @@ public class CombatManager {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
                 gs.getWeaponOverlay().triggerWhiff();
             }
+            alertMonsterToPlayer(monster);
         }
 
         // Read before a thrown consumable empties the hand, or the kill has no weapon.

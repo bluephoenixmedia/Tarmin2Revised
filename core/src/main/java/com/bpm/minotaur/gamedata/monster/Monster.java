@@ -118,7 +118,7 @@ public class Monster implements Renderable {
     private int bleedDamagePerTurn = 0;
     private int stunTurns = 0;
     private int magicResistance; // 0-100%
-    private int moveSpeed;
+    private int moveSpeed = 12;
     private int baseExperience;
     private int level = 1;
 

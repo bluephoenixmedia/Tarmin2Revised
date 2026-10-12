@@ -251,6 +251,8 @@ public class SpellExecutionEngine {
 
             if (target.getCurrentHP() <= 0) {
                 handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
+            } else if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
         } else {
             eventManager.addEvent(new GameEvent("Magic Missiles detonate against the corridor wall.", 1.2f));
@@ -423,6 +425,10 @@ public class SpellExecutionEngine {
                 eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
                 handleKill(target, targetTile, player, maze, combatManager, eventManager, archetype);
                 return;
+            }
+
+            if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
 
             // Pushback mechanic: attempt to push monster back 1 tile
@@ -693,6 +699,8 @@ public class SpellExecutionEngine {
 
             if (target.getCurrentHP() <= 0) {
                 handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
+            } else if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
         } else {
             eventManager.addEvent(new GameEvent(spell.getName() + " impacts the corridor wall.", 1.0f));
@@ -751,6 +759,8 @@ public class SpellExecutionEngine {
 
             if (target.getCurrentHP() <= 0) {
                 handleKill(target, targetPos, player, maze, combatManager, eventManager, archetype);
+            } else if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
         } else {
             eventManager.addEvent(new GameEvent("You reach out with " + spell.getName() + ", but find only empty air.", 1.0f));
@@ -779,6 +789,8 @@ public class SpellExecutionEngine {
 
                 if (target.getCurrentHP() <= 0) {
                     handleKill(target, pos, player, maze, combatManager, eventManager, spell.getVisualArchetypeEnum());
+                } else if (combatManager != null) {
+                    combatManager.alertMonsterToPlayer(target);
                 }
             }
         }

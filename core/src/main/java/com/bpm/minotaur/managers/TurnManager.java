@@ -111,8 +111,8 @@ public class TurnManager {
                 continue; // Skip dead logic
 
             // --- COMBAT LOCK FIX ---
-            if (combatManager != null && combatManager.getMonster() == monster) {
-                continue; // Skip the monster actively dueling the player (it acts via CombatManager)
+            if (combatManager != null && combatManager.isInCombat() && combatManager.getMonster() == monster) {
+                continue; // Skip the monster actively dueling the player in modal combat (it acts via CombatManager)
             }
             // -----------------------
 
