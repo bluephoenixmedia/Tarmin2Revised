@@ -10,7 +10,8 @@ public class GameEventManager {
 
     private final List<GameEvent> events = new ArrayList<>();
     private final List<String> messageHistory = new ArrayList<>();
-    private static final int MAX_HISTORY_SIZE = 30;
+    private static final int MAX_HISTORY_SIZE = 200;
+    private int messageHistoryRevision = 0;
 
     private static final String LOG_FILE = "logs/game_log.txt";
 
@@ -34,6 +35,7 @@ public class GameEventManager {
             if (messageHistory.size() > MAX_HISTORY_SIZE) {
                 messageHistory.remove(messageHistory.size() - 1);
             }
+            messageHistoryRevision++;
 
             // Write to log file
             try {
@@ -51,6 +53,10 @@ public class GameEventManager {
 
     public List<String> getMessageHistory() {
         return messageHistory;
+    }
+
+    public int getMessageHistoryRevision() {
+        return messageHistoryRevision;
     }
 
     public void update(float delta) {
