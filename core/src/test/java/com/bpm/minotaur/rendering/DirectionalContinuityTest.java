@@ -15,9 +15,14 @@ import static org.junit.Assert.*;
 public class DirectionalContinuityTest {
 
     private Item createItem(ItemType type, String friendlyName) {
+        return createItem(type, friendlyName, false);
+    }
+
+    private Item createItem(ItemType type, String friendlyName, boolean isRanged) {
         ItemTemplate t = new ItemTemplate();
         t.friendlyName = friendlyName;
         t.isWeapon = true;
+        t.isRanged = isRanged;
         return Item.fromTemplate(type, t);
     }
 
@@ -93,5 +98,66 @@ public class DirectionalContinuityTest {
 
         long uniqueNames = pool.stream().map(p -> p.comboName).distinct().count();
         assertTrue("Expanded motion pool must have varied distinct move names", uniqueNames >= 6);
+    }
+
+    @Test
+    public void testRangedBowAndCrossbowKinematics() {
+        Item crossbow = createItem(ItemType.CROSSBOW, "Light Crossbow", true);
+
+        CombatMotionProfile profile = CombatMotionProfile.getNextContinuousStrike(
+                AnimationArchetype.RANGED_BOW, crossbow, null, false, false, false, false);
+        assertNotNull(profile);
+        assertTrue("Ranged bow must be flagged as isRangedDraw", profile.isRangedDraw);
+        assertFalse("Ranged bow must not be a thrust", profile.isThrust);
+        assertEquals("Ranged bow must not swing or rotate like a sword", 0f, profile.startRotation, 0.01f);
+        assertEquals("Ranged bow must not swing or rotate like a sword", 0f, profile.endRotation, 0.01f);
+        assertEquals("PRECISION RELEASE", profile.comboName);
+
+        // Subsequent strike in chain should also remain ranged draw, not cycle into quadrant slashes
+        CombatMotionProfile chainStrike = CombatMotionProfile.getNextContinuousStrike(
+                AnimationArchetype.RANGED_BOW, crossbow, profile, false, false, false, false);
+        assertNotNull(chainStrike);
+        assertTrue("Chain strike for ranged bow must remain isRangedDraw", chainStrike.isRangedDraw);
+        assertEquals(0f, chainStrike.startRotation, 0.01f);
+
+        // Crit strike
+        CombatMotionProfile critStrike = CombatMotionProfile.getNextContinuousStrike(
+                AnimationArchetype.RANGED_BOW, crossbow, null, false, true, false, false);
+        assertNotNull(critStrike);
+        assertTrue(critStrike.isRangedDraw);
+        assertEquals("DEADEYE SHOT", critStrike.comboName);
+        assertTrue(critStrike.damageMultiplier >= 1.50f);
+    }
+
+    @Test
+    public void testRangedFirearmKinematics() {
+        Item musket = createItem(ItemType.MUSKET, "Musket", true);
+
+        CombatMotionProfile profile = CombatMotionProfile.getNextContinuousStrike(
+                AnimationArchetype.RANGED_FIREARM, musket, null, false, false, false, false);
+        assertNotNull(profile);
+        assertTrue("Firearm must be flagged as isRangedKick", profile.isRangedKick);
+        assertEquals("POWDER BLAST", profile.comboName);
+        assertEquals(0f, profile.startRotation, 0.01f);
+
+        // Crit strike
+        CombatMotionProfile crit = CombatMotionProfile.getNextContinuousStrike(
+                AnimationArchetype.RANGED_FIREARM, musket, null, false, true, false, false);
+        assertNotNull(crit);
+        assertTrue(crit.isRangedKick);
+        assertEquals("POINT-BLANK BLAST", crit.comboName);
+        assertTrue(crit.damageMultiplier >= 1.60f);
+    }
+
+    @Test
+    public void testRangedEffectiveRangeFallbacks() {
+        Item crossbow = createItem(ItemType.CROSSBOW, "Crossbow", true);
+        // Default range template is 1; effectiveRange must provide a robust 12-14 tile fallback
+        int range = com.bpm.minotaur.managers.CombatManager.effectiveRange(crossbow);
+        assertTrue("Crossbow must have effective range >= 10 tiles, was " + range, range >= 10);
+
+        Item bow = createItem(ItemType.BOW_LONG, "Long Bow", true);
+        int bowRange = com.bpm.minotaur.managers.CombatManager.effectiveRange(bow);
+        assertTrue("Bow must have effective range >= 16 tiles, was " + bowRange, bowRange >= 16);
     }
 }

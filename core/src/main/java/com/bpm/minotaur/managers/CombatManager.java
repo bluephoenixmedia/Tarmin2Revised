@@ -624,7 +624,7 @@ public class CombatManager {
             return;
         }
         if (weapon != null && weapon.isRanged()) {
-            eventManager.addEvent(new GameEvent("Cannot melee with a ranged weapon.", 1.5f));
+            eventManager.addEvent(new GameEvent("Cannot melee with a ranged weapon. Press [F] to shoot!", 1.5f));
             return;
         }
 
@@ -1241,7 +1241,9 @@ public class CombatManager {
                 soundManager.playBladeZing();
             }
         }
-        soundManager.playWeaponSwing();
+        if (pendingWeapon == null || !pendingWeapon.isRanged()) {
+            soundManager.playWeaponSwing();
+        }
         if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerAttack(pendingWeapon, isLethalOrCrit);
@@ -1522,11 +1524,26 @@ public class CombatManager {
      * raycast was hardcoded to 8, so a longbow's 32 and a hand crossbow's 6 were both 8.
      * Honouring it is what finally differentiates the ranged roster.
      */
-    private int effectiveRange(Item weapon) {
+    public static int effectiveRange(Item weapon) {
         if (weapon == null) {
             return 8;
         }
-        return Math.max(1, weapon.getRange());
+        int r = weapon.getRange();
+        if (r > 1) {
+            return r;
+        }
+        if (weapon.isRanged()) {
+            if (weapon.getType() != null) {
+                String typeName = weapon.getType().name();
+                if (typeName.contains("CROSSBOW")) return 14;
+                if (typeName.contains("BOW")) return 20;
+                if (typeName.contains("MUSKET") || typeName.contains("ARQUEBUS")
+                        || typeName.contains("PISTOL") || typeName.contains("BLUNDERBUS")) return 12;
+                if (typeName.contains("SLING")) return 10;
+            }
+            return 12;
+        }
+        return 1;
     }
 
     /**
@@ -2504,7 +2521,10 @@ public class CombatManager {
 
                 // 4. 3D Crescent Slash Arc VFX
                 if (gs != null && gs.getWorld3DRenderer() != null && gs.getWorld3DRenderer().getSlashArcManager() != null) {
-                    if (kinematicType == Monster.KinematicHitType.SLASHING || kinematicType == Monster.KinematicHitType.BLUNT_CHOP || isCrit) {
+                    boolean isRangedAttack = (attackWeapon != null && attackWeapon.isRanged())
+                            || (weapon != null && weapon.isRanged())
+                            || (currentMotionProfile != null && (currentMotionProfile.isRangedDraw || currentMotionProfile.isRangedKick));
+                    if (!isRangedAttack && (kinematicType == Monster.KinematicHitType.SLASHING || kinematicType == Monster.KinematicHitType.BLUNT_CHOP || isCrit)) {
                         float dx = monster.getPosition().x - player.getPosition().x;
                         float dy = monster.getPosition().y - player.getPosition().y;
                         float arcX = monster.getPosition().x - (dx * 0.20f);

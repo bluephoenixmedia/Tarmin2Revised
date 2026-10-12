@@ -1050,6 +1050,72 @@ public class CombatMotionProfile {
                 pool.add(fin);
                 break;
             }
+
+            case RANGED_BOW: {
+                CombatMotionProfile p1 = new CombatMotionProfile();
+                p1.comboName = "PRECISION RELEASE";
+                p1.isRangedDraw = true;
+                p1.startXRel = 0.55f; p1.endXRel = 0.55f;
+                p1.startYRel = -0.02f; p1.endYRel = -0.02f;
+                p1.startRotation = 0f; p1.endRotation = 0f;
+                p1.duration = 0.35f;
+                p1.anticipationRatio = 0.25f;
+                p1.impactRatio = 0.38f;
+                p1.screenTrauma = 0.08f;
+                p1.entryQuadrant = Quadrant.CENTER;
+                p1.exitQuadrant = Quadrant.CENTER;
+                pool.add(p1);
+
+                CombatMotionProfile fin = new CombatMotionProfile();
+                fin.comboName = "DEADEYE SHOT";
+                fin.isRangedDraw = true;
+                fin.isFinisher = true;
+                fin.startXRel = 0.55f; fin.endXRel = 0.55f;
+                fin.startYRel = -0.02f; fin.endYRel = -0.02f;
+                fin.startRotation = 0f; fin.endRotation = 0f;
+                fin.duration = 0.38f;
+                fin.anticipationRatio = 0.30f;
+                fin.impactRatio = 0.42f;
+                fin.screenTrauma = 0.22f;
+                fin.damageMultiplier = 1.50f;
+                fin.entryQuadrant = Quadrant.CENTER;
+                fin.exitQuadrant = Quadrant.CENTER;
+                pool.add(fin);
+                break;
+            }
+
+            case RANGED_FIREARM: {
+                CombatMotionProfile p1 = new CombatMotionProfile();
+                p1.comboName = "POWDER BLAST";
+                p1.isRangedKick = true;
+                p1.startXRel = 0.55f; p1.endXRel = 0.55f;
+                p1.startYRel = -0.02f; p1.endYRel = -0.02f;
+                p1.startRotation = 0f; p1.endRotation = 0f;
+                p1.duration = 0.38f;
+                p1.anticipationRatio = 0.08f;
+                p1.impactRatio = 0.18f;
+                p1.screenTrauma = 0.40f;
+                p1.entryQuadrant = Quadrant.CENTER;
+                p1.exitQuadrant = Quadrant.CENTER;
+                pool.add(p1);
+
+                CombatMotionProfile fin = new CombatMotionProfile();
+                fin.comboName = "POINT-BLANK BLAST";
+                fin.isRangedKick = true;
+                fin.isFinisher = true;
+                fin.startXRel = 0.55f; fin.endXRel = 0.55f;
+                fin.startYRel = -0.02f; fin.endYRel = -0.02f;
+                fin.startRotation = 0f; fin.endRotation = 0f;
+                fin.duration = 0.42f;
+                fin.anticipationRatio = 0.12f;
+                fin.impactRatio = 0.25f;
+                fin.screenTrauma = 0.65f;
+                fin.damageMultiplier = 1.60f;
+                fin.entryQuadrant = Quadrant.CENTER;
+                fin.exitQuadrant = Quadrant.CENTER;
+                pool.add(fin);
+                break;
+            }
         }
         return pool;
     }
@@ -1066,6 +1132,45 @@ public class CombatMotionProfile {
             boolean isDualWielding,
             boolean wasDeflected
     ) {
+        // 0. Dedicated Ranged Weapon Kinematics (Bows, Crossbows, Firearms)
+        // Ranged attacks must never swing across the screen with quadrant slashes
+        if (archetype == AnimationArchetype.RANGED_BOW) {
+            CombatMotionProfile bow = new CombatMotionProfile();
+            bow.comboName = (isCrit || isFinisher) ? "DEADEYE SHOT" : "PRECISION RELEASE";
+            bow.isRangedDraw = true;
+            bow.startXRel = 0.55f; bow.endXRel = 0.55f;
+            bow.startYRel = -0.02f; bow.endYRel = -0.02f;
+            bow.startRotation = 0f; bow.endRotation = 0f;
+            bow.duration = (isCrit || isFinisher) ? 0.38f : 0.35f;
+            bow.anticipationRatio = (isCrit || isFinisher) ? 0.30f : 0.25f;
+            bow.impactRatio = (isCrit || isFinisher) ? 0.42f : 0.38f;
+            bow.screenTrauma = (isCrit || isFinisher) ? 0.22f : 0.08f;
+            bow.damageMultiplier = (isCrit || isFinisher) ? 1.50f : 1.0f;
+            bow.isFinisher = isFinisher;
+            bow.isCrit = isCrit;
+            bow.entryQuadrant = Quadrant.CENTER;
+            bow.exitQuadrant = Quadrant.CENTER;
+            return bow;
+        }
+
+        if (archetype == AnimationArchetype.RANGED_FIREARM) {
+            CombatMotionProfile gun = new CombatMotionProfile();
+            gun.comboName = (isCrit || isFinisher) ? "POINT-BLANK BLAST" : "POWDER BLAST";
+            gun.isRangedKick = true;
+            gun.startXRel = 0.55f; gun.endXRel = 0.55f;
+            gun.startYRel = -0.02f; gun.endYRel = -0.02f;
+            gun.startRotation = 0f; gun.endRotation = 0f;
+            gun.duration = (isCrit || isFinisher) ? 0.42f : 0.38f;
+            gun.anticipationRatio = (isCrit || isFinisher) ? 0.12f : 0.08f;
+            gun.impactRatio = (isCrit || isFinisher) ? 0.25f : 0.18f;
+            gun.screenTrauma = (isCrit || isFinisher) ? 0.65f : 0.40f;
+            gun.damageMultiplier = (isCrit || isFinisher) ? 1.60f : 1.0f;
+            gun.isFinisher = isFinisher;
+            gun.isCrit = isCrit;
+            gun.entryQuadrant = Quadrant.CENTER;
+            gun.exitQuadrant = Quadrant.CENTER;
+            return gun;
+        }
         // 1. Armor / Shield Deflection Riposte
         if (wasDeflected) {
             CombatMotionProfile riposte = new CombatMotionProfile();

@@ -264,8 +264,13 @@ public class FirstPersonWeaponOverlay {
                     mainHandArchetype, mainHandItem, null, isLethalOrCrit, false, isDualWielding, false);
         }
 
-        this.lethalAnticipationActive = isLethalOrCrit;
-        if (isLethalOrCrit && currentProfile != null) {
+        boolean isRangedAttack = (weapon != null && weapon.isRanged())
+                || mainHandArchetype == AnimationArchetype.RANGED_BOW
+                || mainHandArchetype == AnimationArchetype.RANGED_FIREARM
+                || (currentProfile != null && (currentProfile.isRangedDraw || currentProfile.isRangedKick));
+
+        this.lethalAnticipationActive = isLethalOrCrit && !isRangedAttack;
+        if (isLethalOrCrit && currentProfile != null && !isRangedAttack) {
             currentProfile.anticipationRatio = Math.max(currentProfile.anticipationRatio, 0.32f);
             currentProfile.duration += 0.08f;
         }
@@ -278,7 +283,7 @@ public class FirstPersonWeaponOverlay {
         // Configure trail color based on weapon elemental/category
         configureTrailColor(weapon);
         trailRenderer.clear();
-        trailRenderer.setEmitting(true);
+        trailRenderer.setEmitting(!isRangedAttack);
 
         // Tome Weapon Attack: fluttering pages instead of a normal weapon swing feel
         if (com.bpm.minotaur.managers.CombatManager.isBookWeapon(weapon)) {
