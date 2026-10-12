@@ -489,30 +489,46 @@ public class ChunkMeshBuilder {
             float x4, float y4, float z4, float u4, float v4,
             float nx, float ny, float nz, float packedColor
     ) {
+        addQuad(verts, indices,
+                x1, y1, z1, u1, v1, packedColor,
+                x2, y2, z2, u2, v2, packedColor,
+                x3, y3, z3, u3, v3, packedColor,
+                x4, y4, z4, u4, v4, packedColor,
+                nx, ny, nz);
+    }
+
+    public static void addQuad(
+            FloatArray verts, ShortArray indices,
+            float x1, float y1, float z1, float u1, float v1, float c1,
+            float x2, float y2, float z2, float u2, float v2, float c2,
+            float x3, float y3, float z3, float u3, float v3, float c3,
+            float x4, float y4, float z4, float u4, float v4, float c4,
+            float nx, float ny, float nz
+    ) {
         short baseIndex = (short) (verts.size / 9);
 
         // V1
         verts.add(x1); verts.add(y1); verts.add(z1);
         verts.add(nx); verts.add(ny); verts.add(nz);
-        verts.add(packedColor);
+        verts.add(c1);
         verts.add(u1); verts.add(v1);
 
         // V2
         verts.add(x2); verts.add(y2); verts.add(z2);
         verts.add(nx); verts.add(ny); verts.add(nz);
-        verts.add(packedColor);
+        verts.add(c2);
         verts.add(u2); verts.add(v2);
 
         // V3
         verts.add(x3); verts.add(y3); verts.add(z3);
         verts.add(nx); verts.add(ny); verts.add(nz);
-        verts.add(packedColor);
+        verts.add(c3);
         verts.add(u3); verts.add(v3);
 
         // V4
         verts.add(x4); verts.add(y4); verts.add(z4);
         verts.add(nx); verts.add(ny); verts.add(nz);
-        verts.add(packedColor);
+        verts.add(c4);
         verts.add(u4); verts.add(v4);
 
         // Triangle 1: 0, 1, 2

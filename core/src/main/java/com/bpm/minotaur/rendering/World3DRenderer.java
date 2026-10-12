@@ -518,14 +518,19 @@ public class World3DRenderer implements Disposable {
     }
 
     /**
-     * Draws in-flight projectiles as camera-facing billboards.
+     * Draws in-flight projectiles in the 3D world.
+     *
+     * <p>Physical ballistics (arrows, crossbow bolts, darts, and thrown weapons) render as
+     * directional, velocity-aligned tracer streaks with bright leading tips that properly orient
+     * down the line of flight. Spell projectiles retain their swirling energy billboard bursts.
      *
      * <p>Runs inside the entity pass so projectiles are depth-tested against walls and monsters --
-     * a bolt passing behind a pillar should be hidden by it.
+     * a bolt passing behind a pillar is occluded by it.
      */
     private void renderProjectiles() {
         if (animationManager == null || blankTexture == null) return;
 
+        boolean hasTracers = false;
         for (com.bpm.minotaur.rendering.Animation a : animationManager.getAnimations()) {
             com.bpm.minotaur.rendering.Animation.AnimationType t = a.getType();
             if (t != com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_PLAYER
@@ -538,48 +543,121 @@ public class World3DRenderer implements Disposable {
             if (from == null || to == null) continue;
 
             float progress = a.getProgress();
-            float mx = from.x + (to.x - from.x) * progress;
-            float my = from.y + (to.y - from.y) * progress;
 
-            // Maze Y maps to world -Z, matching updateCamera and the entity pass.
-            float wx = mx;
-            float wz = -my;
-            // Chest height, so a shot reads as travelling through the room rather than along
-            // the floor.
-            float wy = 0.45f;
+            // Spell projectiles retain their glowing magical energy burst billboard
+            if (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL) {
+                float mx = from.x + (to.x - from.x) * progress;
+                float my = from.y + (to.y - from.y) * progress;
+                float wx = mx;
+                float wz = -my;
+                float wy = 0.45f;
 
-            // A shot leaves the muzzle ~0.6 units from the eye. At that range even a small quad
-            // subtends most of the view, so the first frames of every shot would flash a
-            // screen-filling slab. Hold the sprite back until it has cleared the weapon.
-            float dx = wx - camera.position.x;
-            float dy = wy - camera.position.y;
-            float dz = wz - camera.position.z;
-            float distSq = dx * dx + dy * dy + dz * dz;
-            if (distSq < PROJECTILE_NEAR_CLIP * PROJECTILE_NEAR_CLIP) {
+                float dx = wx - camera.position.x;
+                float dy = wy - camera.position.y;
+                float dz = wz - camera.position.z;
+                float distSq = dx * dx + dy * dy + dz * dz;
+                if (distSq < PROJECTILE_NEAR_CLIP * PROJECTILE_NEAR_CLIP) continue;
+
+                TextureRegion sprite = projectileRegion(a);
+                float dist = (float) Math.sqrt(distSq);
+                float size = Math.min(1.10f, dist * PROJECTILE_ANGULAR_CAP);
+                Color tint = (a.getColor() != null) ? a.getColor() : Color.WHITE;
+                TextureRegion region = (sprite != null) ? sprite : new TextureRegion(blankTexture);
+                Texture bound = (sprite != null) ? sprite.getTexture() : blankTexture;
+
+                shader.setUniformf("u_unlit", 1f);
+                dynamicBatcher.addBillboard(wx, wy, wz, size, size, region, tint, camRight, camUp, camDir);
+                dynamicBatcher.flush(shader, bound);
+                shader.setUniformf("u_unlit", 0f);
                 continue;
             }
 
-            TextureRegion sprite = projectileRegion(a);
-            boolean spell = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL);
+            // Directional ballistics: arrows, bolts, darts, and thrown weapons render as
+            // high-visibility aerodynamic tracer lines facing the camera with a luminous leading tip
+            float sx = from.x;
+            float sz = -from.y;
+            float ex = to.x;
+            float ez = -to.y;
 
-            // The arrow occupies a thin diagonal of a mostly transparent square, so the quad has
-            // to be generous or the arrow itself is a few pixels at range.
-            float baseSize = (sprite != null) ? (spell ? 1.10f : 0.90f) : (spell ? 0.22f : 0.12f);
-            // Shrink rather than hide when close, so a point-blank shot is still drawn.
-            float dist = (float) Math.sqrt(distSq);
-            float size = Math.min(baseSize, dist * PROJECTILE_ANGULAR_CAP);
-            Color tint = (sprite != null)
-                    ? Color.WHITE
-                    : ((a.getColor() != null) ? a.getColor() : Color.WHITE);
+            float dx = ex - sx;
+            float dz = ez - sz;
+            float flightDist = (float) Math.sqrt(dx * dx + dz * dz);
+            if (flightDist < 0.001f) continue;
 
-            TextureRegion region = (sprite != null) ? sprite : new TextureRegion(blankTexture);
-            Texture bound = (sprite != null) ? sprite.getTexture() : blankTexture;
+            float dirX = dx / flightDist;
+            float dirZ = dz / flightDist;
 
-            // Flush per texture: the batcher draws one texture at a time, and arrows, bolts and
-            // spell bursts are three different ones.
-            dynamicBatcher.addBillboard(wx, wy, wz, size, size,
-                    region, tint, camRight, camUp, camDir);
-            dynamicBatcher.flush(shader, bound);
+            float headDist = flightDist * progress;
+            float headX = sx + dirX * headDist;
+            float headZ = sz + dirZ * headDist;
+            float headY = 0.45f;
+
+            boolean isBolt = "bolt".equals(a.getProjectileSprite());
+            float maxStreak = isBolt ? 0.55f : 0.85f;
+            float actualStreak = Math.min(maxStreak, headDist);
+            float tailX = headX - dirX * actualStreak;
+            float tailZ = headZ - dirZ * actualStreak;
+            float tailY = headY;
+
+            // Clip if the projectile head is directly inside or behind the eye
+            float camDx = headX - camera.position.x;
+            float camDy = headY - camera.position.y;
+            float camDz = headZ - camera.position.z;
+            float camDistSq = camDx * camDx + camDy * camDy + camDz * camDz;
+            if (camDistSq < 0.04f) continue;
+
+            Color headCol;
+            Color tailCol;
+            if (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_MONSTER) {
+                if (a.getColor() != null && !Color.WHITE.equals(a.getColor())) {
+                    Color base = a.getColor();
+                    headCol = new Color(Math.min(1f, base.r * 1.3f), Math.min(1f, base.g * 1.3f), Math.min(1f, base.b * 1.3f), 0.98f);
+                    tailCol = new Color(base.r, base.g, base.b, 0.10f);
+                } else {
+                    headCol = new Color(1.0f, 0.60f, 0.30f, 0.98f);
+                    tailCol = new Color(0.85f, 0.20f, 0.10f, 0.10f);
+                }
+            } else if (isBolt) {
+                headCol = new Color(0.96f, 0.98f, 1.0f, 0.98f);
+                tailCol = new Color(0.60f, 0.72f, 0.88f, 0.10f);
+            } else {
+                if (a.getColor() != null && !Color.WHITE.equals(a.getColor()) && !Color.LIGHT_GRAY.equals(a.getColor())) {
+                    Color base = a.getColor();
+                    headCol = new Color(Math.min(1f, base.r * 1.25f), Math.min(1f, base.g * 1.25f), Math.min(1f, base.b * 1.25f), 0.98f);
+                    tailCol = new Color(base.r, base.g, base.b, 0.12f);
+                } else {
+                    headCol = new Color(1.0f, 0.96f, 0.86f, 0.98f);
+                    tailCol = new Color(0.82f, 0.70f, 0.48f, 0.10f);
+                }
+            }
+
+            float headWidth = isBolt ? 0.022f : 0.026f;
+            float tailWidth = isBolt ? 0.008f : 0.010f;
+
+            dynamicBatcher.addTracerStreak(
+                    headX, headY, headZ,
+                    tailX, tailY, tailZ,
+                    headWidth, tailWidth,
+                    camera.position, camRight,
+                    headCol, tailCol
+            );
+
+            // Leading tip point glint
+            float camDist = (float) Math.sqrt(camDistSq);
+            float headPointSize = Math.max(0.035f, Math.min(0.075f, camDist * 0.012f));
+            dynamicBatcher.addBillboard(
+                    headX, headY - headPointSize * 0.5f, headZ,
+                    headPointSize, headPointSize,
+                    new TextureRegion(blankTexture),
+                    headCol, camRight, camUp, camDir
+            );
+            hasTracers = true;
+        }
+
+        if (hasTracers) {
+            shader.setUniformf("u_unlit", 1f);
+            dynamicBatcher.flush(shader, blankTexture);
+            shader.setUniformf("u_unlit", 0f);
         }
     }
 

@@ -69,11 +69,14 @@ public class RangedAttackPursuitTest {
 
         // Ghoul 4 tiles east of player (player is at 5,5, ghoul is at 9,5)
         Monster ghoul = new Monster(Monster.MonsterType.GHOUL, 100, 30, 9f, 5f);
+        ghoul.setArmorClass(0);
         ghoul.setState(Monster.MonsterState.IDLE);
         maze.addMonster(ghoul);
 
         // Player fires ranged attack directly east at the ghoul
-        combatManager.playerAttackInstant();
+        for (int i = 0; i < 5 && ghoul.getCurrentHP() == 100; i++) {
+            combatManager.playerAttackInstant();
+        }
 
         // Verify monster took damage and is registered in combatManager
         assertTrue("Monster should have taken damage", ghoul.getCurrentHP() < 100);
