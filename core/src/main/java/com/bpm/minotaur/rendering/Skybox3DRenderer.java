@@ -381,27 +381,42 @@ public class Skybox3DRenderer {
         worldSkyState.volleyCount = 0;
         worldSkyState.beaconLit = 0;
         worldSkyState.siegeFireCount = 0;
+        worldSkyState.spellVolleyCount = 0;
         if (worldSkyState.volleys == null) worldSkyState.volleys = new float[WAR_SMOKE_MAX * 2];
         if (worldSkyState.beacons3 == null) worldSkyState.beacons3 = new float[BEACON_CHAIN * 2];
+        if (worldSkyState.spellVolleys == null) worldSkyState.spellVolleys = new float[WAR_SMOKE_MAX * 2];
+        if (worldSkyState.spellThemes == null) worldSkyState.spellThemes = new int[WAR_SMOKE_MAX];
         com.badlogic.gdx.math.GridPoint2 me = new com.badlogic.gdx.math.GridPoint2(chunk);
         for (com.bpm.minotaur.gamedata.history.war.Front f : worldManager.currentFronts()) {
             addSmoke(f.center, px, py, WAR_SMOKE_RANGE);
-            if (Math.max(0, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, f.center)
-                    - com.bpm.minotaur.gamedata.history.war.Front.RADIUS) <= 1) addVolley(f.center, px, py);
+            int distToFront = Math.max(0, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, f.center)
+                    - com.bpm.minotaur.gamedata.history.war.Front.RADIUS);
+            if (distToFront <= 1) addVolley(f.center, px, py);
+            if (distToFront <= 2) {
+                int theme = getFrontSpellTheme(worldManager, f);
+                if (theme >= 0) addSpellVolley(f.center, px, py, theme);
+            }
         }
         for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
             if (!e.fighting()) continue;
             com.badlogic.gdx.math.GridPoint2 at = e.chunkAt(clock);
             addSmoke(at, px, py, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.EARSHOT);
-            if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT
-                    && com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at) <= 1) addVolley(at, px, py);
+            int dist = com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at);
+            if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT && dist <= 1) {
+                addVolley(at, px, py);
+            }
+            if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT && dist <= 2) {
+                int theme = getEncounterSpellTheme(worldManager, e);
+                if (theme >= 0) addSpellVolley(at, px, py, theme);
+            }
             if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) lightBeacons(worldManager, e, clock, px, py);
             if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SIEGE
-                    && com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at) <= SIEGE_FIRE_REACH) {
+                    && dist <= SIEGE_FIRE_REACH) {
                 if (worldSkyState.siegeFire == null) worldSkyState.siegeFire = new float[2];
                 worldSkyState.siegeFire[0] = at.x - px;
                 worldSkyState.siegeFire[1] = at.y - py;
                 worldSkyState.siegeFireCount = 1;
+                addSpellVolley(at, px, py, SPELL_THEME_FIREBALL);
             }
         }
     }
@@ -433,6 +448,59 @@ public class Skybox3DRenderer {
         int i = worldSkyState.volleyCount++;
         worldSkyState.volleys[2 * i] = at.x - px;
         worldSkyState.volleys[2 * i + 1] = at.y - py;
+    }
+
+    private void addSpellVolley(com.badlogic.gdx.math.GridPoint2 at, float px, float py, int theme) {
+        if (worldSkyState.spellVolleyCount >= WAR_SMOKE_MAX) return;
+        float dx = at.x - px;
+        float dy = at.y - py;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 0.75f) return;
+        int i = worldSkyState.spellVolleyCount++;
+        worldSkyState.spellVolleys[2 * i] = dx;
+        worldSkyState.spellVolleys[2 * i + 1] = dy;
+        worldSkyState.spellThemes[i] = theme;
+    }
+
+    private int getFrontSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager,
+            com.bpm.minotaur.gamedata.history.war.Front f) {
+        int themeA = houseSpellTheme(worldManager, f.attackerId);
+        if (themeA >= 0) return themeA;
+        int themeB = houseSpellTheme(worldManager, f.defenderId);
+        if (themeB >= 0) return themeB;
+        return SPELL_THEME_FIREBALL;
+    }
+
+    private int getEncounterSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager,
+            com.bpm.minotaur.gamedata.history.war.Encounter e) {
+        if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SIEGE) return SPELL_THEME_FIREBALL;
+        int themeA = houseSpellTheme(worldManager, e.houseA);
+        if (themeA >= 0) return themeA;
+        int themeB = houseSpellTheme(worldManager, e.houseB);
+        if (themeB >= 0) return themeB;
+        if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) return SPELL_THEME_FIREBALL;
+        return -1;
+    }
+
+    private int houseSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager, int houseId) {
+        if (worldManager == null || worldManager.getHistory() == null || worldManager.getHistory().world() == null) return -1;
+        com.bpm.minotaur.gamedata.history.House house = worldManager.getHistory().world().house(houseId);
+        if (house == null) return -1;
+        if (house.holdsCastle) return SPELL_THEME_ARCANE;
+        if (house.doctrineId == null) return -1;
+        switch (house.doctrineId) {
+            case "flensed_choir":
+                return SPELL_THEME_ARCANE;
+            case "hollow_court":
+            case "ossuary_lords":
+                return SPELL_THEME_FROST;
+            case "gilded_rot":
+                return SPELL_THEME_NECROTIC;
+            case "ashen_penitents":
+            case "antlered_host":
+                return SPELL_THEME_FIREBALL;
+            default:
+                return -1;
+        }
     }
 
     private void addSmoke(com.badlogic.gdx.math.GridPoint2 at, float px, float py, int range) {
@@ -542,7 +610,196 @@ public class Skybox3DRenderer {
         }
         placeVolleys(state.volleys, state.volleyCount, camX, camZ, false);
         placeVolleys(state.siegeFire, state.siegeFireCount, camX, camZ, true);
+        placeSpellCombat(state.spellVolleys, state.spellThemes, state.spellVolleyCount, camX, camZ);
         placeBeaconChain(state, camX, camZ, night);
+    }
+
+    public static final int SPELL_THEME_FIREBALL = 0;
+    public static final int SPELL_THEME_ARCANE = 1;
+    public static final int SPELL_THEME_FROST = 2;
+    public static final int SPELL_THEME_NECROTIC = 3;
+
+    private static final float SPELL_CYCLE = 5.2f;
+    private static final float SPELL_WINDUP = 1.3f;
+    private static final float SPELL_FLIGHT = 2.7f;
+    private static final int SPELL_TRAIL_PUFFS = 10;
+
+    /**
+     * Distant spell combat on the horizon: glowing cast windups on the ground, fireballs and
+     * elemental orbs sailing in high ballistic arcs, trailing smoke and ember wakes, and
+     * detonation blast blooms upon impact.
+     */
+    private void placeSpellCombat(float[] at, int[] themes, int count, float camX, float camZ) {
+        if (at == null || count <= 0) return;
+        for (int k = 0; k < count; k++) {
+            float dx = at[2 * k];
+            float dz = -at[2 * k + 1];
+            float len = (float) Math.sqrt(dx * dx + dz * dz);
+            float dirX = len < 0.01f ? 0f : dx / len;
+            float dirZ = len < 0.01f ? -1f : dz / len;
+            float sideX = -dirZ;
+            float sideZ = dirX;
+            int theme = (themes != null && k < themes.length) ? themes[k] : SPELL_THEME_FIREBALL;
+
+            float dist = LANDMARK_DISTANCE * 0.36f;
+            float span = dist * 0.55f;
+            float apex = dist * 0.58f;
+
+            // Two passes: primary spell volley (left -> right) and counter-barrage (right -> left, shifted half cycle)
+            for (int pass = 0; pass < 2; pass++) {
+                float passPhase = (smokeTime + k * 1.9f + pass * (SPELL_CYCLE * 0.5f)) % SPELL_CYCLE;
+                float launchSide = (pass == 0) ? -1f : 1f;
+                int currentTheme = (pass == 0) ? theme : ((theme + 1) % 4);
+
+                // 1. Casting Glow & Windup: Ground illuminations and rising energy wisps
+                if (passPhase < SPELL_WINDUP) {
+                    float pulse = MathUtils.sin((passPhase / SPELL_WINDUP) * MathUtils.PI);
+                    float flicker = 0.85f + 0.15f * MathUtils.sin(smokeTime * 22f + k * 3f + pass);
+                    float launchAlong = launchSide * span * 0.5f;
+                    float launchX = camX + dirX * dist + sideX * launchAlong;
+                    float launchY = -6f;
+                    float launchZ = camZ + dirZ * dist + sideZ * launchAlong;
+
+                    // Wide ground glow at launch line
+                    com.badlogic.gdx.graphics.g3d.decals.Decal glow = smokePuff(smokeShown++);
+                    float glowSize = dist * 0.08f * (0.8f + 0.4f * pulse);
+                    glow.setDimensions(glowSize * 2.2f, glowSize * 0.7f);
+                    glow.setPosition(launchX, launchY + glowSize * 0.25f, launchZ);
+                    setSpellColor(glow, currentTheme, 0, 0.65f * pulse * flicker);
+                    glow.lookAt(camera.position, camera.up);
+
+                    // Rising casting wisps / mana sparks
+                    for (int w = 0; w < 3; w++) {
+                        float wispT = (passPhase * 1.8f + w * 0.33f) % 1f;
+                        float wispHeight = wispT * dist * 0.06f;
+                        float wispDrift = MathUtils.sin(smokeTime * 8f + w * 2.1f) * (dist * 0.015f);
+                        com.badlogic.gdx.graphics.g3d.decals.Decal wisp = smokePuff(smokeShown++);
+                        float wispSize = dist * 0.014f * (1f - 0.4f * wispT);
+                        wisp.setDimensions(wispSize, wispSize);
+                        wisp.setPosition(launchX + sideX * wispDrift, launchY + wispHeight, launchZ + sideZ * wispDrift);
+                        setSpellColor(wisp, currentTheme, 0, (1f - wispT) * pulse * 0.8f);
+                        wisp.lookAt(camera.position, camera.up);
+                    }
+                }
+                // 2. Spell Sailing Through the Air: Fireball / orb projectile + trailing smoke & ember wake
+                else if (passPhase < SPELL_WINDUP + SPELL_FLIGHT) {
+                    float flightT = (passPhase - SPELL_WINDUP) / SPELL_FLIGHT;
+                    float along = launchSide * span * (0.5f - flightT);
+                    float height = -6f + 4f * apex * flightT * (1f - flightT);
+                    float headX = camX + dirX * dist + sideX * along;
+                    float headY = height;
+                    float headZ = camZ + dirZ * dist + sideZ * along;
+
+                    // Outer elemental aura
+                    com.badlogic.gdx.graphics.g3d.decals.Decal aura = smokePuff(smokeShown++);
+                    float auraSize = dist * 0.038f * (0.92f + 0.08f * MathUtils.sin(smokeTime * 24f + k));
+                    aura.setDimensions(auraSize, auraSize);
+                    aura.setPosition(headX, headY, headZ);
+                    setSpellColor(aura, currentTheme, 1, 0.95f);
+                    aura.lookAt(camera.position, camera.up);
+
+                    // Inner incandescent white-hot core
+                    com.badlogic.gdx.graphics.g3d.decals.Decal core = smokePuff(smokeShown++);
+                    float coreSize = dist * 0.016f;
+                    core.setDimensions(coreSize, coreSize);
+                    core.setPosition(headX, headY, headZ);
+                    core.setColor(1f, 1f, 0.95f, 1f);
+                    core.lookAt(camera.position, camera.up);
+
+                    // Trailing smoke and ember wake
+                    for (int s = 1; s <= SPELL_TRAIL_PUFFS; s++) {
+                        float lagT = flightT - s * 0.028f;
+                        if (lagT < 0f) continue;
+                        float alongPrev = launchSide * span * (0.5f - lagT);
+                        float heightPrev = -6f + 4f * apex * lagT * (1f - lagT);
+                        float age = s / (float) SPELL_TRAIL_PUFFS;
+                        float puffSize = (dist * 0.016f) * (1f + 2.5f * age);
+                        float eddyX = sideX * MathUtils.sin(smokeTime * 5f + s * 1.3f) * (dist * 0.006f * age);
+                        float eddyZ = sideZ * MathUtils.sin(smokeTime * 5f + s * 1.3f) * (dist * 0.006f * age);
+                        float eddyY = age * (dist * 0.018f);
+
+                        com.badlogic.gdx.graphics.g3d.decals.Decal trail = smokePuff(smokeShown++);
+                        trail.setDimensions(puffSize, puffSize * 1.1f);
+                        trail.setPosition(camX + dirX * dist + sideX * alongPrev + eddyX,
+                                heightPrev + eddyY, camZ + dirZ * dist + sideZ * alongPrev + eddyZ);
+
+                        if (age < 0.35f) {
+                            setSpellColor(trail, currentTheme, 2, 0.88f * (1f - age));
+                        } else {
+                            setSpellColor(trail, currentTheme, 3, 0.72f * (1f - age));
+                        }
+                        trail.lookAt(camera.position, camera.up);
+                    }
+                }
+                // 3. Impact & Detonation: Explosion flash bloom and rising soot plume
+                else {
+                    float impactDuration = SPELL_CYCLE - (SPELL_WINDUP + SPELL_FLIGHT);
+                    float impactT = MathUtils.clamp((passPhase - (SPELL_WINDUP + SPELL_FLIGHT)) / impactDuration, 0f, 1f);
+                    float targetAlong = -launchSide * span * 0.5f;
+                    float targetX = camX + dirX * dist + sideX * targetAlong;
+                    float targetY = -6f;
+                    float targetZ = camZ + dirZ * dist + sideZ * targetAlong;
+
+                    // Detonation flash bloom
+                    if (impactT < 0.65f) {
+                        float flashT = impactT / 0.65f;
+                        float flashScale = 1f + 3.2f * flashT;
+                        float flashSize = dist * 0.045f * flashScale;
+                        com.badlogic.gdx.graphics.g3d.decals.Decal blast = smokePuff(smokeShown++);
+                        blast.setDimensions(flashSize * 1.5f, flashSize);
+                        blast.setPosition(targetX, targetY + flashSize * 0.35f, targetZ);
+                        setSpellColor(blast, currentTheme, 4, (1f - flashT) * 0.95f);
+                        blast.lookAt(camera.position, camera.up);
+                    }
+
+                    // Rising detonation soot plume
+                    if (impactT > 0.15f) {
+                        float sootT = (impactT - 0.15f) / 0.85f;
+                        float sootRise = sootT * dist * 0.07f;
+                        float sootSize = dist * 0.035f * (1f + 2.2f * sootT);
+                        com.badlogic.gdx.graphics.g3d.decals.Decal soot = smokePuff(smokeShown++);
+                        soot.setDimensions(sootSize, sootSize * 1.2f);
+                        soot.setPosition(targetX, targetY + sootSize * 0.4f + sootRise, targetZ);
+                        soot.setColor(0.06f, 0.055f, 0.05f, 0.75f * (1f - sootT));
+                        soot.lookAt(camera.position, camera.up);
+                    }
+                }
+            }
+        }
+    }
+
+    private void setSpellColor(com.badlogic.gdx.graphics.g3d.decals.Decal d, int theme, int part, float alpha) {
+        switch (theme) {
+            case SPELL_THEME_ARCANE:
+                if (part == 0) d.setColor(0.78f, 0.22f, 0.95f, alpha);
+                else if (part == 1) d.setColor(0.85f, 0.25f, 0.98f, alpha);
+                else if (part == 2) d.setColor(0.92f, 0.35f, 1.00f, alpha);
+                else if (part == 3) d.setColor(0.20f, 0.10f, 0.25f, alpha);
+                else d.setColor(0.95f, 0.45f, 1.00f, alpha);
+                break;
+            case SPELL_THEME_FROST:
+                if (part == 0) d.setColor(0.25f, 0.80f, 1.00f, alpha);
+                else if (part == 1) d.setColor(0.22f, 0.88f, 1.00f, alpha);
+                else if (part == 2) d.setColor(0.40f, 0.92f, 1.00f, alpha);
+                else if (part == 3) d.setColor(0.60f, 0.75f, 0.90f, alpha);
+                else d.setColor(0.60f, 0.95f, 1.00f, alpha);
+                break;
+            case SPELL_THEME_NECROTIC:
+                if (part == 0) d.setColor(0.35f, 0.90f, 0.25f, alpha);
+                else if (part == 1) d.setColor(0.32f, 0.95f, 0.22f, alpha);
+                else if (part == 2) d.setColor(0.45f, 1.00f, 0.30f, alpha);
+                else if (part == 3) d.setColor(0.16f, 0.22f, 0.12f, alpha);
+                else d.setColor(0.55f, 1.00f, 0.40f, alpha);
+                break;
+            case SPELL_THEME_FIREBALL:
+            default:
+                if (part == 0) d.setColor(1.00f, 0.48f, 0.12f, alpha);
+                else if (part == 1) d.setColor(1.00f, 0.45f, 0.08f, alpha);
+                else if (part == 2) d.setColor(1.00f, 0.58f, 0.14f, alpha);
+                else if (part == 3) d.setColor(0.08f, 0.07f, 0.065f, alpha);
+                else d.setColor(1.00f, 0.72f, 0.25f, alpha);
+                break;
+        }
     }
 
     /** Arrows per flight, and seconds a flight takes to cross. */
@@ -760,6 +1017,10 @@ public class Skybox3DRenderer {
         /** Fights close enough to see their arrows over the walls (W10.4): offsets as x,y pairs. */
         public float[] volleys;
         public int volleyCount;
+        /** Distant spell battles: offsets as x,y pairs and elemental theme IDs. */
+        public float[] spellVolleys;
+        public int[] spellThemes;
+        public int spellVolleyCount;
         /** Siege fire arcing onto Castle Tarmin's walls (W34): offsets as x,y pairs. */
         public float[] siegeFire;
         public int siegeFireCount;
