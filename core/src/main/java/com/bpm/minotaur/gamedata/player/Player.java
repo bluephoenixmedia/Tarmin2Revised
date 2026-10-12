@@ -3369,7 +3369,7 @@ public class Player {
                     eventManager.addEvent(new GameEvent("You butcher the corpse, but harvest nothing of value.", 2f));
                 }
             } else {
-                eventManager.addEvent(new GameEvent("You need a sharp tool (Axe/Knife) to butcher this.", 2f));
+                eventManager.addEvent(new GameEvent("You need a bladed tool (Axe, Knife, Sword, Spear) to butcher this.", 2f));
             }
             return;
         }
@@ -4211,9 +4211,7 @@ public class Player {
     private boolean checkTool(Item item) {
         if (item == null)
             return false;
-        String name = item.getDisplayName().toLowerCase();
-        return name.contains("axe") || name.contains("knife") || name.contains("shiv")
-                || name.contains("sword") || name.contains("dagger");
+        return item.isBladed();
     }
 
     // --- Helper for Scrolls ---
