@@ -24,7 +24,10 @@ public final class Front {
     }
 
     public boolean covers(GridPoint2 chunk) {
-        return chunk != null && Math.abs(chunk.x - center.x) <= RADIUS && Math.abs(chunk.y - center.y) <= RADIUS;
+        if (chunk == null) return false;
+        // Starter shelter chunk (0, 0) is an inviolable sanctuary. War fronts cannot engulf the shelter.
+        if (chunk.x == 0 && chunk.y == 0) return false;
+        return Math.abs(chunk.x - center.x) <= RADIUS && Math.abs(chunk.y - center.y) <= RADIUS;
     }
 
     public List<GridPoint2> chunks() {

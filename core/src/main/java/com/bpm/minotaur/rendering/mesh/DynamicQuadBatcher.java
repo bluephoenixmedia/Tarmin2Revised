@@ -659,6 +659,77 @@ public class DynamicQuadBatcher implements Disposable {
     }
 
     /**
+     * Emits a directional, velocity-oriented camera-facing tracer ribbon quad for projectile flights
+     * (arrows, crossbow bolts, darts, thrown weapons).
+     *
+     * <p>Supports independent head and tail widths (allowing natural aerodynamic taper), distinct head and tail
+     * colors for smooth gradient falloff along the flight vector, and automatic fallback orientation
+     * when viewed directly downrange along the line of flight.
+     *
+     * @param headX         World X of projectile tip/head
+     * @param headY         World Y of projectile tip/head
+     * @param headZ         World Z of projectile tip/head
+     * @param tailX         World X of projectile tail/feather
+     * @param tailY         World Y of projectile tail/feather
+     * @param tailZ         World Z of projectile tail/feather
+     * @param headHalfWidth Half-width of the ribbon at the head
+     * @param tailHalfWidth Half-width of the ribbon at the tail
+     * @param camPos        Camera position for camera-facing cross product
+     * @param fallbackRight Camera right vector used when viewed end-on
+     * @param headColor     Color/tint at the head (bright core/arrowhead)
+     * @param tailColor     Color/tint at the tail (fading wake/feathers)
+     */
+    public void addTracerStreak(
+            float headX, float headY, float headZ,
+            float tailX, float tailY, float tailZ,
+            float headHalfWidth, float tailHalfWidth,
+            Vector3 camPos,
+            Vector3 fallbackRight,
+            Color headColor,
+            Color tailColor
+    ) {
+        if (!ensureCapacity(1)) return;
+
+        // Direction of streak from tail to head
+        scratchStreakDir.set(headX - tailX, headY - tailY, headZ - tailZ);
+        float lenSq = scratchStreakDir.len2();
+        if (lenSq < 1e-6f) return;
+        scratchStreakDir.nor();
+
+        // Vector from head to camera
+        scratchCamVec.set(camPos.x - headX, camPos.y - headY, camPos.z - headZ);
+        float camDistSq = scratchCamVec.len2();
+        if (camDistSq < 1e-6f) return;
+        scratchCamVec.nor();
+
+        // Cross product: side vector across streak perpendicular to view
+        scratchStreakSide.set(scratchStreakDir).crs(scratchCamVec);
+        if (scratchStreakSide.len2() < 1e-6f) {
+            scratchStreakSide.set(fallbackRight);
+        } else {
+            scratchStreakSide.nor();
+        }
+
+        // 4 corners: Head-Left, Head-Right, Tail-Right, Tail-Left
+        scratchV1.set(headX, headY, headZ).sub(scratchStreakSide.x * headHalfWidth, scratchStreakSide.y * headHalfWidth, scratchStreakSide.z * headHalfWidth);
+        scratchV2.set(headX, headY, headZ).add(scratchStreakSide.x * headHalfWidth, scratchStreakSide.y * headHalfWidth, scratchStreakSide.z * headHalfWidth);
+        scratchV3.set(tailX, tailY, tailZ).add(scratchStreakSide.x * tailHalfWidth, scratchStreakSide.y * tailHalfWidth, scratchStreakSide.z * tailHalfWidth);
+        scratchV4.set(tailX, tailY, tailZ).sub(scratchStreakSide.x * tailHalfWidth, scratchStreakSide.y * tailHalfWidth, scratchStreakSide.z * tailHalfWidth);
+
+        float headPacked = (headColor != null) ? headColor.toFloatBits() : Color.WHITE.toFloatBits();
+        float tailPacked = (tailColor != null) ? tailColor.toFloatBits() : Color.WHITE.toFloatBits();
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                scratchV1.x, scratchV1.y, scratchV1.z, 0f, 1f, headPacked,
+                scratchV2.x, scratchV2.y, scratchV2.z, 1f, 1f, headPacked,
+                scratchV3.x, scratchV3.y, scratchV3.z, 1f, 0f, tailPacked,
+                scratchV4.x, scratchV4.y, scratchV4.z, 0f, 0f, tailPacked,
+                scratchCamVec.x, scratchCamVec.y, scratchCamVec.z
+        );
+    }
+
+    /**
      * Emits an arbitrary convex polygon in camera-facing billboard space.
      * Used for bisected trunks, severed limbs, and gore polygons.
      */

@@ -118,7 +118,7 @@ public class Monster implements Renderable {
     private int bleedDamagePerTurn = 0;
     private int stunTurns = 0;
     private int magicResistance; // 0-100%
-    private int moveSpeed;
+    private int moveSpeed = 12;
     private int baseExperience;
     private int level = 1;
 
@@ -748,6 +748,129 @@ public class Monster implements Renderable {
         if (progress >= 1f) return 0f;
         float remaining = 1f - progress;
         return com.bpm.minotaur.gamedata.gore.HitReaction.recoilDistance(lastHitWeight) * remaining * remaining;
+    }
+
+    // --- Procedural Kinematics & Telegraphs ---
+    public enum KinematicHitType {
+        SLASHING,
+        BLUNT_CHOP,
+        PIERCING_THRUST,
+        BALLISTIC_SHOT,
+        ELEMENTAL_SPELL,
+        DEFLECTED
+    }
+
+    public enum TelegraphArchetype {
+        BEAST_CROUCH,
+        HUMANOID_COIL,
+        COLOSSUS_SEISMIC,
+        CASTER_PULSE
+    }
+
+    private KinematicHitType lastKinematicHitType = KinematicHitType.SLASHING;
+    private float lastCutAngle = 0f;
+    private com.bpm.minotaur.gamedata.DamageType lastDamageType = null;
+
+    public void recordHitKinematics(KinematicHitType type, float cutAngle, float weight, com.bpm.minotaur.gamedata.DamageType damageType) {
+        this.lastKinematicHitType = type;
+        this.lastCutAngle = cutAngle;
+        this.lastHitWeight = weight;
+        this.lastDamageType = damageType;
+        this.lastHitTimeMillis = System.currentTimeMillis();
+    }
+
+    public KinematicHitType getLastKinematicHitType() {
+        return lastKinematicHitType;
+    }
+
+    public float getLastCutAngle() {
+        return lastCutAngle;
+    }
+
+    public float getKinematicInertiaFactor() {
+        // Megabeasts and heavy monsters have high mass -> lower deformation displacement
+        if (type == MonsterType.MINOTAUR || type == MonsterType.DRAGON || type == MonsterType.IRON_GOLEM
+                || type == MonsterType.GIANT || type == MonsterType.OGRE || type == MonsterType.TROLL) {
+            return 0.45f;
+        }
+        float hpFactor = com.badlogic.gdx.math.MathUtils.clamp(1.0f - (getMaxHP() - 15f) / 120f, 0.40f, 1.0f);
+        return hpFactor;
+    }
+
+    public float getKinematicRollDegrees() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 0f;
+        float remaining = 1f - progress;
+        if (lastKinematicHitType == KinematicHitType.SLASHING) {
+            float maxRoll = com.badlogic.gdx.math.MathUtils.clamp(lastCutAngle * 0.35f, -18f, 18f);
+            return maxRoll * remaining * remaining * getKinematicInertiaFactor();
+        }
+        return 0f;
+    }
+
+    public float getKinematicScaleX() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 1.0f;
+        float remaining = 1f - progress;
+        if (lastKinematicHitType == KinematicHitType.BLUNT_CHOP) {
+            float stretch = 0.15f * remaining * remaining * getKinematicInertiaFactor();
+            return 1.0f + stretch;
+        }
+        return 1.0f;
+    }
+
+    public float getKinematicScaleY() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 1.0f;
+        float remaining = 1f - progress;
+        if (lastKinematicHitType == KinematicHitType.BLUNT_CHOP) {
+            float squash = 0.20f * remaining * remaining * getKinematicInertiaFactor();
+            return 1.0f - squash;
+        }
+        return 1.0f;
+    }
+
+    public TelegraphArchetype getTelegraphArchetype() {
+        if (type == null) return TelegraphArchetype.HUMANOID_COIL;
+        switch (type) {
+            case BAT:
+            case SPIDER:
+            case WEREWOLF:
+            case WERERAT:
+            case GIANT_SNAKE:
+            case GIANT_SCORPION:
+            case ALLIGATOR:
+            case DISPLACER_BEAST:
+            case OWLBEAR:
+            case GIANT_ANT:
+            case GIANT_CENTIPEDE:
+            case LANDSTALKER:
+                return TelegraphArchetype.BEAST_CROUCH;
+
+            case DRAGON:
+            case MINOTAUR:
+            case IRON_GOLEM:
+            case GIANT:
+            case OGRE:
+            case TROLL:
+            case PURPLE_WORM:
+            case HYDRA:
+            case CHIMERA:
+                return TelegraphArchetype.COLOSSUS_SEISMIC;
+
+            case PLAYER_GHOST:
+            case WRAITH:
+            case SPECTER:
+            case LICH:
+            case SKELETAL_WIZARD:
+            case SAGE:
+            case FALL_ANGEL:
+            case BRINGER_OF_DEATH:
+                return TelegraphArchetype.CASTER_PULSE;
+
+            default:
+                return TelegraphArchetype.HUMANOID_COIL;
+        }
     }
 
     public int takeDamage(int amount) {

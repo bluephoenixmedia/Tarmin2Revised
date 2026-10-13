@@ -306,6 +306,7 @@ public class GameScreen extends BaseScreen {
         // raycaster branch, so without this every shot is invisible in the default renderer.
         world3DRenderer.setAnimationManager(animationManager);
         world3DRenderer.setProjectileAssets(game.getAssetManager());
+        world3DRenderer.setWeaponOverlay(weaponOverlay);
         if (eventManager == null) {
             eventManager = new GameEventManager();
         }
@@ -3585,15 +3586,33 @@ public class GameScreen extends BaseScreen {
 
         if (keycode == Input.Keys.PAGE_UP) {
             if (hud != null) {
-                hud.scrollChronicle(1);
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 5 : 1;
+                hud.scrollChronicle(step);
                 return true;
             }
         }
 
         if (keycode == Input.Keys.PAGE_DOWN) {
             if (hud != null) {
-                hud.scrollChronicle(-1);
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 5 : 1;
+                hud.scrollChronicle(-step);
                 return true;
+            }
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+            if (keycode == Input.Keys.UP) {
+                if (hud != null) {
+                    hud.scrollChronicle(1);
+                    return true;
+                }
+            } else if (keycode == Input.Keys.DOWN) {
+                if (hud != null) {
+                    hud.scrollChronicle(-1);
+                    return true;
+                }
             }
         }
 
@@ -4477,6 +4496,17 @@ public class GameScreen extends BaseScreen {
         if (isDying()) {
             return true;
         }
+        if (hud != null && hud.stage != null) {
+            Vector2 stageCoord = hud.stage.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+            // The HUD dashboard is the bottom 200px (y in [0, 210] in 1920x1080 stage)
+            if (stageCoord.y >= 0 && stageCoord.y <= 210) {
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 3 : 1;
+                int delta = (amountY < 0) ? step : -step;
+                hud.scrollChronicle(delta);
+                return true;
+            }
+        }
         return false;
     }
 
@@ -4591,6 +4621,10 @@ public class GameScreen extends BaseScreen {
 
     public FirstPersonWeaponOverlay getWeaponOverlay() {
         return weaponOverlay;
+    }
+
+    public World3DRenderer getWorld3DRenderer() {
+        return world3DRenderer;
     }
 
     private void updateSeamlessChunkLoading(float delta) {

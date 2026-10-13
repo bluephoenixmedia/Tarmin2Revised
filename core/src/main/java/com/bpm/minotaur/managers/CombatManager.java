@@ -5,6 +5,7 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.Screen;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
@@ -542,6 +543,7 @@ public class CombatManager {
             this.damageTakenInCombat = 0;
             BalanceLogger.getInstance().logCombatStart(player, monster);
             // --------------------
+            alertMonsterToPlayer(monster);
 
             if (monster != null && monster.canSpeak()) {
                 boolean comprehend = (player != null && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES));
@@ -623,7 +625,7 @@ public class CombatManager {
             return;
         }
         if (weapon != null && weapon.isRanged()) {
-            eventManager.addEvent(new GameEvent("Cannot melee with a ranged weapon.", 1.5f));
+            eventManager.addEvent(new GameEvent("Cannot melee with a ranged weapon. Press [F] to shoot!", 1.5f));
             return;
         }
 
@@ -642,10 +644,18 @@ public class CombatManager {
         if (dir != null && player.getFacing() != dir) player.setFacing(dir);
 
         this.pendingWeapon = weapon;
+        boolean isLethalOrCrit = false;
+        if (target != null && target.getCurrentHP() > 0) {
+            float hpPct = (float) target.getCurrentHP() / (float) Math.max(1, target.getMaxHP());
+            if (hpPct <= 0.25f) {
+                isLethalOrCrit = true;
+                soundManager.playBladeZing();
+            }
+        }
         soundManager.playWeaponSwing();
         if (weapon != null && game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-            gs.getWeaponOverlay().triggerAttack(weapon);
+            gs.getWeaponOverlay().triggerAttack(weapon, isLethalOrCrit);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 this.currentMotionProfile = profile;
                 resolveAttack(DiceRoller.d20(), true);
@@ -678,6 +688,17 @@ public class CombatManager {
 
         if (target.getStatusManager() != null && eventManager != null)
             target.getStatusManager().initialize(eventManager, target);
+        alertMonsterToPlayer(target);
+    }
+
+    /** Alerts a monster that the player has attacked it, pointing its pursuit at the player. */
+    public void alertMonsterToPlayer(Monster target) {
+        if (target != null && target.getCurrentHP() > 0 && player != null) {
+            target.setState(Monster.MonsterState.HUNTING);
+            target.setLastKnownTargetPos(new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
+            target.setTurnsSinceLastSeen(0);
+            target.setTargetMonster(null);
+        }
     }
 
     /** A Blighted monster's blow that draws blood carries the rot in with it. */
@@ -1125,6 +1146,9 @@ public class CombatManager {
     /** A kill away from the engaged fight -- a spell, a bolt, a thrown blade -- still dies on screen. */
     public void handleRemoteKill(Monster m, KillCause cause) {
         if (m == null) return;
+        if (m == this.monster) {
+            this.monster = null;
+        }
         maze.removeMonster(m);
         if (!m.claimDeath()) {
             Gdx.app.error("CombatManager", "Refused to pay out " + m.getMonsterType() + " twice");
@@ -1224,10 +1248,20 @@ public class CombatManager {
             return;
 
         // --- VISCERAL: Trigger Weapon Animation & Sound ---
-        soundManager.playWeaponSwing();
+        boolean isLethalOrCrit = false;
+        if (monster != null && monster.getCurrentHP() > 0) {
+            float hpPct = (float) monster.getCurrentHP() / (float) Math.max(1, monster.getMaxHP());
+            if (hpPct <= 0.25f) {
+                isLethalOrCrit = true;
+                soundManager.playBladeZing();
+            }
+        }
+        if (pendingWeapon == null || !pendingWeapon.isRanged()) {
+            soundManager.playWeaponSwing();
+        }
         if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-            gs.getWeaponOverlay().triggerAttack(pendingWeapon);
+            gs.getWeaponOverlay().triggerAttack(pendingWeapon, isLethalOrCrit);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 this.currentMotionProfile = profile;
                 int d20Roll = DiceRoller.roll("1d20");
@@ -1458,6 +1492,7 @@ public class CombatManager {
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
                 target.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                alertMonsterToPlayer(target);
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 showDamageText(actual, hit.collisionPoint);
@@ -1474,6 +1509,7 @@ public class CombatManager {
                 }
             } else {
                 eventManager.addEvent(new GameEvent("Thrown " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " glanced off " + target.getType() + "!", 1.0f));
+                alertMonsterToPlayer(target);
             }
             if (hit.collisionPoint != null) {
                 weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
@@ -1505,11 +1541,26 @@ public class CombatManager {
      * raycast was hardcoded to 8, so a longbow's 32 and a hand crossbow's 6 were both 8.
      * Honouring it is what finally differentiates the ranged roster.
      */
-    private int effectiveRange(Item weapon) {
+    public static int effectiveRange(Item weapon) {
         if (weapon == null) {
             return 8;
         }
-        return Math.max(1, weapon.getRange());
+        int r = weapon.getRange();
+        if (r > 1) {
+            return r;
+        }
+        if (weapon.isRanged()) {
+            if (weapon.getType() != null) {
+                String typeName = weapon.getType().name();
+                if (typeName.contains("CROSSBOW")) return 14;
+                if (typeName.contains("BOW")) return 20;
+                if (typeName.contains("MUSKET") || typeName.contains("ARQUEBUS")
+                        || typeName.contains("PISTOL") || typeName.contains("BLUNDERBUS")) return 12;
+                if (typeName.contains("SLING")) return 10;
+            }
+            return 12;
+        }
+        return 1;
     }
 
     /**
@@ -2283,6 +2334,7 @@ public class CombatManager {
                 int monsterHpBefore = monster.getCurrentHP();
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
                 monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                alertMonsterToPlayer(monster);
                 // Bloodsoaked Saint: what you cut from them knits you back together.
                 float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
                 if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
@@ -2419,20 +2471,30 @@ public class CombatManager {
                 float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
                 boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;
 
-                // 1. Audio
-                if (isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit)) {
-                    soundManager.playWeaponImpact(false); // Dull deflection
+                // 1. Audio & Hit-Stop
+                boolean isDeflection = isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit);
+                if (isDeflection) {
+                    soundManager.playArmorClang();
                 } else {
+                    if (isCrit || monster.getCurrentHP() <= 0) {
+                        soundManager.playCritImpact(monster.getCurrentHP() <= 0);
+                    }
                     soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
                 }
                 soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
 
-                // 2. Screen Shake & Hit Pause
-                if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
-                    com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-
-                    // Coat blade with blood
-                    gs.getWeaponOverlay().addBloodToWeapon();
+                // 2. Screen Shake, Hit Stop & Deflection Riposte
+                com.bpm.minotaur.screens.GameScreen gs = (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)
+                        ? (com.bpm.minotaur.screens.GameScreen) game.getScreen() : null;
+                if (gs != null) {
+                    if (isDeflection) {
+                        gs.getWeaponOverlay().triggerDeflectionClang();
+                    } else {
+                        // Decoupled hit-stop (30ms normal, 60ms + 100ms micro-dilation on crit/kill)
+                        gs.getWeaponOverlay().triggerHitStop(isCrit || monster.getCurrentHP() <= 0);
+                        // Coat blade with blood
+                        gs.getWeaponOverlay().addBloodToWeapon();
+                    }
 
                     // Shake
                     float extraTrauma = (currentMotionProfile != null) ? currentMotionProfile.screenTrauma : 0f;
@@ -2444,9 +2506,57 @@ public class CombatManager {
                     gs.triggerHitPause(pauseDur);
                 }
 
-                // 3. Blood (Scaling)
-                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+
+                // 3. Monster Procedural Kinematics
+                Monster.KinematicHitType kinematicType;
+                if (isDeflection) {
+                    kinematicType = Monster.KinematicHitType.DEFLECTED;
+                } else if (weapon != null && (weapon.isRanged() || usesShot(weapon))) {
+                    kinematicType = Monster.KinematicHitType.BALLISTIC_SHOT;
+                } else {
+                    AnimationArchetype arch = (weapon != null) ? AnimationArchetype.fromItem(weapon) : AnimationArchetype.BRAWLING;
+                    if (arch == AnimationArchetype.BLUNT_CRUSHING || arch == AnimationArchetype.FLAIL_WHIP
+                            || arch == AnimationArchetype.BRAWLING || arch == AnimationArchetype.SHIELD) {
+                        kinematicType = Monster.KinematicHitType.BLUNT_CHOP;
+                    } else if (arch == AnimationArchetype.THRUSTING_PIERCE) {
+                        kinematicType = Monster.KinematicHitType.PIERCING_THRUST;
+                    } else if (weapon != null && weapon.isSpiritual()) {
+                        kinematicType = Monster.KinematicHitType.ELEMENTAL_SPELL;
+                    } else {
+                        kinematicType = Monster.KinematicHitType.SLASHING;
+                    }
+                }
+                float cutAngle = (currentMotionProfile != null) ? currentMotionProfile.getCutAngle() : 45.0f;
+                float weaponWeight = (weapon != null) ? Math.max(1.0f, com.bpm.minotaur.gamedata.item.ItemWeights.of(weapon)) : 1.0f;
+                com.bpm.minotaur.gamedata.DamageType kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.PHYSICAL;
+                if (weapon != null && weapon.getDamageType() != null) {
+                    try {
+                        kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.valueOf(weapon.getDamageType().toUpperCase());
+                    } catch (Exception ignored) {}
+                }
+                monster.recordHitKinematics(kinematicType, cutAngle, weaponWeight, kinematicDmgType);
+
+                // 4. 3D Crescent Slash Arc VFX
+                if (gs != null && gs.getWorld3DRenderer() != null && gs.getWorld3DRenderer().getSlashArcManager() != null) {
+                    boolean isRangedAttack = (attackWeapon != null && attackWeapon.isRanged())
+                            || (weapon != null && weapon.isRanged())
+                            || (currentMotionProfile != null && (currentMotionProfile.isRangedDraw || currentMotionProfile.isRangedKick));
+                    if (!isRangedAttack && (kinematicType == Monster.KinematicHitType.SLASHING || kinematicType == Monster.KinematicHitType.BLUNT_CHOP || isCrit)) {
+                        float dx = monster.getPosition().x - player.getPosition().x;
+                        float dy = monster.getPosition().y - player.getPosition().y;
+                        float arcX = monster.getPosition().x - (dx * 0.20f);
+                        float arcZ = -monster.getPosition().y - (-dy * 0.20f);
+                        Vector3 slashPos = new Vector3(arcX, 0.45f, arcZ);
+                        Color arcColor = (currentMotionProfile != null && currentMotionProfile.trailColor != null)
+                                ? currentMotionProfile.trailColor : Color.WHITE;
+                        float arcScale = isCrit ? 1.4f : 1.1f;
+                        gs.getWorld3DRenderer().getSlashArcManager().spawnSlashArc(slashPos, cutAngle, arcColor, isCrit, arcScale);
+                    }
+                }
+
+                // 5. Blood (Scaling)
+                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 applyCombatHitWound(monster, totalDamage, weapon);
                 applyWeaponAspectEffects(monster, actualDamage, weapon, isCrit, (currentMotionProfile != null && currentMotionProfile.isFinisher));
                 float wx = cid.x * 36.0f + monster.getPosition().x;
@@ -2492,6 +2602,7 @@ public class CombatManager {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
                 gs.getWeaponOverlay().triggerWhiff();
             }
+            alertMonsterToPlayer(monster);
         }
 
         // Read before a thrown consumable empties the hand, or the kill has no weapon.

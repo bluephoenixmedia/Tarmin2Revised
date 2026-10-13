@@ -1246,7 +1246,7 @@ public class InventoryScreen extends BaseScreen {
             return;
 
         // Direct usage for consumables, potions, scrolls, food, and tomes
-        if (item.isFood() || item.isPotion() || item.isScroll() || (item.getType() != null && item.getType().name().startsWith("TOME_"))) {
+        if (item.isFood() || item.isPotion() || item.isScroll() || item.isTome()) {
             com.bpm.minotaur.managers.GameEventManager em = (parentScreen != null) ? parentScreen.getEventManager() : null;
             com.bpm.minotaur.managers.DiscoveryManager dm = (parentScreen != null) ? parentScreen.getDiscoveryManager() : null;
             player.useItem(item, em, dm, maze);

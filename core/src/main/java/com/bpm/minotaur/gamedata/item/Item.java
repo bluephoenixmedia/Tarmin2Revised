@@ -834,6 +834,82 @@ public class Item implements Renderable {
         return this.isWeapon;
     }
 
+    /**
+     * Whether this item is a bladed, edged, or pointed weapon/tool capable of cutting,
+     * slicing, or butchering a monster carcass (e.g. swords, knives, daggers, axes, spears,
+     * halberds, polearms, scythes).
+     */
+    public boolean isBladed() {
+        if (!isWeapon && !isUsable) {
+            String name = getDisplayName() != null ? getDisplayName().toLowerCase() : "";
+            return name.contains("knife") || name.contains("cleaver") || name.contains("razor")
+                    || name.contains("scalpel") || name.contains("dagger");
+        }
+        if (isShield || isArmor) {
+            return false;
+        }
+
+        String typeName = type != null ? type.name().toUpperCase() : "";
+        String friendly = getDisplayName() != null ? getDisplayName().toUpperCase() : "";
+        String combined = typeName + " " + friendly;
+
+        // Projectile launchers and ammunition are not butchering tools
+        if (combined.contains("BOW") || combined.contains("CROSSBOW")
+                || combined.contains("MUSKET") || combined.contains("PISTOL")
+                || combined.contains("ARQUEBUS") || combined.contains("BLUNDERBUS")
+                || combined.contains("TUFENK") || combined.contains("SLING")
+                || combined.contains("BLOWGUN") || combined.contains("ARROW")
+                || combined.contains("QUARREL") || combined.contains("BULLET")
+                || combined.contains("CALTROP") || combined.contains("DART")) {
+            return false;
+        }
+
+        // Blunt impact weapons without an edge
+        if (combined.contains("MACE") && !combined.contains("BLADEBACK")) return false;
+        if (combined.contains("FLAIL") && !combined.contains("BLADEBACK")) return false;
+        if (combined.contains("STAFF") && !combined.contains("SPEAR") && !combined.contains("HALBERD")) return false;
+        if (combined.contains("CLUB") || combined.contains("HAMMER") || combined.contains("WARHAMMER")
+                || combined.contains("QUARTERSTAFF") || combined.contains("BO_STICK") || combined.contains("BO STICK")
+                || combined.contains("MORNING_STAR") || combined.contains("MORNING STAR")
+                || combined.contains("WHIP") || combined.contains("SCOURGE") || combined.contains("LASSO")
+                || combined.contains("NUNCHAKU") || combined.contains("SAP") || combined.contains("KNOBKERRIE")
+                || combined.contains("BELAYING_PIN") || combined.contains("BELAYING PIN")
+                || combined.contains("FLINDBAR") || combined.contains("ANKUS") || combined.contains("TETSUBO")
+                || combined.contains("WOODEN_CROSS") || combined.contains("WOODEN CROSS")
+                || combined.contains("GADA") || combined.contains("MACA") || combined.contains("QUABONE")
+                || combined.contains("CESTUS")) {
+            return false;
+        }
+
+        // Check damage type from template if available
+        String dt = getDamageType();
+        if ("SLASHING".equalsIgnoreCase(dt) || "PIERCING".equalsIgnoreCase(dt)) {
+            return true;
+        }
+
+        // Keyword heuristics for bladed, pointed, and cutting weapons
+        return combined.contains("SPEAR") || combined.contains("SWORD") || combined.contains("KNIFE")
+                || combined.contains("DAGGER") || combined.contains("AXE") || combined.contains("HATCHET")
+                || combined.contains("SHIV") || combined.contains("BLADE") || combined.contains("HALBERD")
+                || combined.contains("GLAIVE") || combined.contains("PIKE") || combined.contains("LANCE")
+                || combined.contains("TRIDENT") || combined.contains("HARPOON") || combined.contains("JAVELIN")
+                || combined.contains("POLEARM") || combined.contains("SCYTHE") || combined.contains("SICKLE")
+                || combined.contains("MACHETE") || combined.contains("CLEAVER") || combined.contains("KUKRI")
+                || combined.contains("DIRK") || combined.contains("STILETTO") || combined.contains("KATAR")
+                || combined.contains("RAZOR") || combined.contains("RAPIER") || combined.contains("SABRE")
+                || combined.contains("SABER") || combined.contains("SCIMITAR") || combined.contains("CUTLASS")
+                || combined.contains("CLAYMORE") || combined.contains("FALCHION") || combined.contains("KATANA")
+                || combined.contains("WAKIZASHI") || combined.contains("BARDICHE") || combined.contains("VOULGE")
+                || combined.contains("FAUCHARD") || combined.contains("GUISARME") || combined.contains("PARTISAN")
+                || combined.contains("SPETUM") || combined.contains("RANSEUR") || combined.contains("NAGINATA")
+                || combined.contains("ASSEGAI") || combined.contains("PESHKABZ") || combined.contains("SHOTEL")
+                || combined.contains("SHOKA") || combined.contains("PATA") || combined.contains("KORA")
+                || combined.contains("LOTULIS") || combined.contains("BILL") || combined.contains("TOMAHAWK")
+                || combined.contains("IMPALER") || combined.contains("RITIIK") || combined.contains("JAMBIYA")
+                || combined.contains("BASILARD") || combined.contains("CAVILER") || combined.contains("SLASHER")
+                || combined.contains("CUTTER") || combined.contains("CHOPPER") || combined.contains("BLADEBACK");
+    }
+
     public boolean isRanged() {
         return this.isRanged;
     }
@@ -916,6 +992,13 @@ public class Item implements Renderable {
         if (type == ItemType.BOOK) return true;
         if (type == ItemType.WAR_BOOK || type == ItemType.SPIRITUAL_BOOK || type == ItemType.SPECIAL_BOOK) return false;
         return getCategory() == ItemCategory.BOOK;
+    }
+
+    public boolean isTome() {
+        if (type == null) return false;
+        return com.bpm.minotaur.gamedata.spells.Tome.of(type) != null
+                || type.name().startsWith("TOME_")
+                || isCargo();
     }
 
     public void setFriendlyName(String friendlyName) {

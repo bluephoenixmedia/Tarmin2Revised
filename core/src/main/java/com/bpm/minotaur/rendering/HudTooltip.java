@@ -103,7 +103,9 @@ public class HudTooltip extends Table {
             }
         }
         if (sb.length() == 0) {
-            if (item.isConsumableOrTool()) {
+            if (item.isTome()) {
+                sb.append("Milestone Tome");
+            } else if (item.isConsumableOrTool()) {
                 sb.append("Consumable Tool");
             } else if (item.isTreasure()) {
                 sb.append("Treasure (").append(item.getBaseValue()).append(" Gold)");

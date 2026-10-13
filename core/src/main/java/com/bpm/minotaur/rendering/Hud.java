@@ -1,6 +1,7 @@
 package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -19,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -136,7 +138,13 @@ public class Hud implements Disposable {
 
     // --- Action Chronicle Labels (5 lines) ---
     private Label chronicleHeaderLabel;
+    private Label chronicleLiveLabel;
+    private Label chronicleUpLabel;
+    private Label chronicleDownLabel;
     private int chronicleScrollOffset = 0;
+    private int lastHistoryRevision = -1;
+    private int lastRenderedScrollOffset = -1;
+    private final List<DisplayRow> cachedDisplayRows = new ArrayList<>();
     private final Label[] chronicleLabels = new Label[5];
     /** Text width of the chronicle zone, inside its own padding. */
     private static final float CHRONICLE_W = 636f;
@@ -392,6 +400,7 @@ public class Hud implements Disposable {
         delveZone.pad(8f);
 
         chronicleZone.setBackground(hudSkin.getPanelBg());
+        chronicleZone.setTouchable(Touchable.enabled);
         // 6 rather than 8: the newest line is allowed to wrap to two, and the dashboard's
         // 200-unit band has to hold the header, four history lines and that second line.
         chronicleZone.pad(6f);
@@ -665,16 +674,68 @@ public class Hud implements Disposable {
         // ZONE 4: Chronicle Action Log (~650px)
         // ══════════════════════════════════════════════════════════════════
         chronicleZone.top().left();
+
+        Table chronicleHeaderTable = new Table();
+        chronicleHeaderTable.left();
+
         chronicleHeaderLabel = new Label("CHRONICLE", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        chronicleZone.add(chronicleHeaderLabel).left().padBottom(2).row();
+        chronicleHeaderLabel.setTouchable(Touchable.enabled);
+        chronicleHeaderLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (chronicleScrollOffset > 0) {
+                    setChronicleScrollOffset(0);
+                }
+            }
+        });
+        chronicleHeaderTable.add(chronicleHeaderLabel).left();
+
+        chronicleLiveLabel = new Label("[LIVE]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+        chronicleLiveLabel.setTouchable(Touchable.enabled);
+        chronicleLiveLabel.setVisible(false);
+        chronicleLiveLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                setChronicleScrollOffset(0);
+            }
+        });
+        chronicleHeaderTable.add(chronicleLiveLabel).padLeft(8);
+
+        chronicleHeaderTable.add().expandX(); // spacer
+
+        Label.LabelStyle navBtnStyle = new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED);
+
+        chronicleUpLabel = new Label("[^]", navBtnStyle);
+        chronicleUpLabel.setTouchable(Touchable.enabled);
+        chronicleUpLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                scrollChronicle(1);
+            }
+        });
+        chronicleHeaderTable.add(chronicleUpLabel).padRight(6);
+
+        chronicleDownLabel = new Label("[v]", navBtnStyle);
+        chronicleDownLabel.setTouchable(Touchable.enabled);
+        chronicleDownLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                scrollChronicle(-1);
+            }
+        });
+        chronicleHeaderTable.add(chronicleDownLabel);
+
+        chronicleZone.add(chronicleHeaderTable).growX().padBottom(2).row();
 
         chronicleZone.addListener(new InputListener() {
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 3 : 1;
                 if (amountY < 0) {
-                    scrollChronicle(1);
+                    scrollChronicle(step);
                 } else if (amountY > 0) {
-                    scrollChronicle(-1);
+                    scrollChronicle(-step);
                 }
                 return true;
             }
@@ -688,11 +749,11 @@ public class Hud implements Disposable {
         for (int i = 0; i < 4; i++) {
             chronicleLabels[i] = new Label("", logLabelStyle);
             chronicleLabels[i].setEllipsis(true);
-            chronicleZone.add(chronicleLabels[i]).left().width(CHRONICLE_W).padBottom(1).row();
+            chronicleZone.add(chronicleLabels[i]).left().growX().padBottom(1).row();
         }
         chronicleLabels[4] = new Label("", logLabelStyle);
         chronicleLabels[4].setWrap(true);
-        chronicleZone.add(chronicleLabels[4]).left().top().width(CHRONICLE_W)
+        chronicleZone.add(chronicleLabels[4]).left().top().growX()
                 .maxHeight(hudSkin.getFontLog().getLineHeight() * 2f).padBottom(1).row();
         logLabel = chronicleLabels[4]; // Alias for backward compatibility
 
@@ -1382,6 +1443,7 @@ public class Hud implements Disposable {
 
     public void setChronicleScrollOffset(int offset) {
         this.chronicleScrollOffset = Math.max(0, offset);
+        lastRenderedScrollOffset = -1; // Force immediate re-render
         updateChronicleLog();
     }
 
@@ -1390,10 +1452,80 @@ public class Hud implements Disposable {
     }
 
     private void updateChronicleLog() {
-        List<String> rawHistory = eventManager.getMessageHistory();
-        if (rawHistory == null || rawHistory.isEmpty()) {
+        if (eventManager == null) return;
+
+        int currentRevision = eventManager.getMessageHistoryRevision();
+        boolean revisionChanged = (currentRevision != lastHistoryRevision) || cachedDisplayRows.isEmpty();
+
+        if (revisionChanged) {
+            lastHistoryRevision = currentRevision;
+            List<String> rawHistory = eventManager.getMessageHistory();
+            int previousRowCount = cachedDisplayRows.size();
+            cachedDisplayRows.clear();
+
+            if (rawHistory != null && !rawHistory.isEmpty()) {
+                // Deduplicate consecutive identical messages from all history
+                java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
+                for (int i = 0; i < rawHistory.size(); i++) {
+                    String raw = rawHistory.get(i);
+                    if (raw == null || raw.trim().isEmpty()) continue;
+                    raw = raw.trim();
+
+                    if (!deduplicated.isEmpty() && deduplicated.get(deduplicated.size() - 1).text.equals(raw)) {
+                        deduplicated.get(deduplicated.size() - 1).count++;
+                    } else {
+                        ParsedLogLine line = new ParsedLogLine();
+                        line.text = raw;
+                        line.color = getSemanticColor(raw);
+                        deduplicated.add(line);
+                    }
+                }
+
+                // Wrap messages into display rows (ordered newest line first at index 0)
+                for (ParsedLogLine item : deduplicated) {
+                    String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
+                    List<String> wrapped = wrapMessage(display, 620f);
+
+                    for (int w = wrapped.size() - 1; w >= 0; w--) {
+                        DisplayRow row = new DisplayRow();
+                        row.text = wrapped.get(w);
+                        row.color = item.color;
+                        cachedDisplayRows.add(row);
+                    }
+                }
+            }
+
+            // Pin reading position if new messages were added while scrolled
+            if (chronicleScrollOffset > 0 && previousRowCount > 0 && cachedDisplayRows.size() > previousRowCount) {
+                int added = cachedDisplayRows.size() - previousRowCount;
+                chronicleScrollOffset += added;
+            }
+        }
+
+        int maxOffset = Math.max(0, cachedDisplayRows.size() - 5);
+        if (chronicleScrollOffset > maxOffset) {
+            chronicleScrollOffset = maxOffset;
+        }
+
+        // Skip label re-renders if nothing changed
+        if (!revisionChanged && chronicleScrollOffset == lastRenderedScrollOffset) {
+            return;
+        }
+        lastRenderedScrollOffset = chronicleScrollOffset;
+
+        if (cachedDisplayRows.isEmpty()) {
             if (chronicleHeaderLabel != null) {
                 chronicleHeaderLabel.setText("CHRONICLE");
+                chronicleHeaderLabel.setColor(HudSkin.COL_GOLD_MUTED);
+            }
+            if (chronicleLiveLabel != null) {
+                chronicleLiveLabel.setVisible(false);
+            }
+            if (chronicleUpLabel != null) {
+                chronicleUpLabel.setColor(HudSkin.COL_TEXT_MUTED);
+            }
+            if (chronicleDownLabel != null) {
+                chronicleDownLabel.setColor(HudSkin.COL_TEXT_MUTED);
             }
             for (Label l : chronicleLabels) {
                 l.setText("");
@@ -1401,62 +1533,40 @@ public class Hud implements Disposable {
             return;
         }
 
-        // Deduplicate consecutive identical messages from all history
-        java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
-        for (int i = 0; i < rawHistory.size(); i++) {
-            String raw = rawHistory.get(i);
-            if (raw == null || raw.trim().isEmpty()) continue;
-            raw = raw.trim();
-
-            if (!deduplicated.isEmpty() && deduplicated.get(deduplicated.size() - 1).text.equals(raw)) {
-                deduplicated.get(deduplicated.size() - 1).count++;
-            } else {
-                ParsedLogLine line = new ParsedLogLine();
-                line.text = raw;
-                line.color = getSemanticColor(raw);
-                deduplicated.add(line);
-            }
-        }
-
-        // Wrap messages into display rows (ordered newest line first at index 0)
-        List<DisplayRow> allRows = new ArrayList<>();
-        for (ParsedLogLine item : deduplicated) {
-            String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
-            List<String> wrapped = wrapMessage(display, 620f);
-
-            for (int w = wrapped.size() - 1; w >= 0; w--) {
-                DisplayRow row = new DisplayRow();
-                row.text = wrapped.get(w);
-                row.color = item.color;
-                allRows.add(row);
-            }
-        }
-
-        int maxOffset = Math.max(0, allRows.size() - 5);
-        if (chronicleScrollOffset > maxOffset) {
-            chronicleScrollOffset = maxOffset;
-        }
-
         if (chronicleHeaderLabel != null) {
             if (chronicleScrollOffset > 0) {
-                chronicleHeaderLabel.setText("CHRONICLE (SCROLLED +" + chronicleScrollOffset + ")");
+                chronicleHeaderLabel.setText("CHRONICLE (+" + chronicleScrollOffset + ")");
+                chronicleHeaderLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
             } else {
                 chronicleHeaderLabel.setText("CHRONICLE");
+                chronicleHeaderLabel.setColor(HudSkin.COL_GOLD_MUTED);
             }
+        }
+
+        if (chronicleLiveLabel != null) {
+            chronicleLiveLabel.setVisible(chronicleScrollOffset > 0);
+        }
+
+        if (chronicleUpLabel != null) {
+            chronicleUpLabel.setColor(chronicleScrollOffset < maxOffset ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_TEXT_MUTED);
+        }
+
+        if (chronicleDownLabel != null) {
+            chronicleDownLabel.setColor(chronicleScrollOffset > 0 ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_TEXT_MUTED);
         }
 
         for (int i = 0; i < 5; i++) {
             chronicleLabels[i].setText("");
         }
 
-        int available = Math.min(5, allRows.size() - chronicleScrollOffset);
+        int available = Math.min(5, cachedDisplayRows.size() - chronicleScrollOffset);
         if (available <= 0) return;
 
         float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
 
         for (int i = 0; i < available; i++) {
             int rowIdx = chronicleScrollOffset + (available - 1 - i);
-            DisplayRow row = allRows.get(rowIdx);
+            DisplayRow row = cachedDisplayRows.get(rowIdx);
             int labelIndex = (5 - available) + i;
 
             chronicleLabels[labelIndex].setText(checkScramble(row.text));

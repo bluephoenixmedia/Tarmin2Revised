@@ -360,7 +360,7 @@
   "GHOUL": {
     "baseLevel": 2,
     "frequency": 6,
-    "maxHP": 35,
+    "maxHP": 20,
     "maxMP": 25,
     "armorClass": 12,
     "baseExperience": 20,
@@ -417,7 +417,7 @@
         "weight": 1
       }
     ],
-    "damageDice": "2d6+3"
+    "damageDice": "1d6+2"
   },
   "SKELETON": {
     "baseLevel": 1,
@@ -971,7 +971,7 @@
   },
   "GHAST": {
     "baseLevel": 3,
-    "maxHP": 50,
+    "maxHP": 28,
     "maxMP": 30,
     "armorClass": 13,
     "baseExperience": 200,
@@ -1029,7 +1029,7 @@
         "weight": 1
       }
     ],
-    "damageDice": "2d8+3"
+    "damageDice": "1d8+2"
   },
   "BEHOLDER": {
     "baseLevel": 12,

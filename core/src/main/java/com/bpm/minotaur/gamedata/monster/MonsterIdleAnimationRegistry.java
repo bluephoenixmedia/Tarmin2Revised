@@ -7,7 +7,8 @@ import java.util.Map;
 
 /**
  * Registry defining idle animation sprite sheets for monsters and NPCs.
- * Each registered monster has a looping 3x3 (9-frame) spritesheet
+ * Each registered monster has a looping spritesheet (typically 3x3,
+ * with sheets like zombie using 3x2 and wraith using 4x2)
  * located in images/monsters/idle/.
  */
 public final class MonsterIdleAnimationRegistry {
@@ -25,6 +26,10 @@ public final class MonsterIdleAnimationRegistry {
             this.cols = cols;
             this.rows = rows;
             this.frameDuration = frameDuration;
+        }
+
+        public IdleConfig(Monster.MonsterType monsterType, String texturePath, int cols, int rows) {
+            this(monsterType, texturePath, cols, rows, 0.15f);
         }
 
         public IdleConfig(Monster.MonsterType monsterType, String texturePath) {
@@ -71,16 +76,24 @@ public final class MonsterIdleAnimationRegistry {
         register(Monster.MonsterType.SKELETON, "images/monsters/idle/skeleton_idle.png");
         register(Monster.MonsterType.GIANT_SNAIL, "images/monsters/idle/snail_q_idl.png");
         register(Monster.MonsterType.SPIDER, "images/monsters/idle/spider_idle.png");
-        register(Monster.MonsterType.TROGLODYTE, "images/monsters/idle/troglodye_idle.png");
+        register(Monster.MonsterType.TROGLODYTE, "images/monsters/idle/troglodye_idle.png", 4, 3);
         register(Monster.MonsterType.UMBER_HULK, "images/monsters/idle/u_hulk_idle.png");
         register(Monster.MonsterType.VAMPIRE, "images/monsters/idle/vampire_idle.png");
         register(Monster.MonsterType.WERERAT, "images/monsters/idle/wererat_idle.png");
-        register(Monster.MonsterType.WRAITH, "images/monsters/idle/wraith_idle.png");
-        register(Monster.MonsterType.ZOMBIE, "images/monsters/idle/zombie_idle.png");
+        register(Monster.MonsterType.WRAITH, "images/monsters/idle/wraith_idle.png", 4, 2);
+        register(Monster.MonsterType.ZOMBIE, "images/monsters/idle/zombie_idle.png", 3, 2);
     }
 
     private static void register(Monster.MonsterType type, String texturePath) {
         REGISTRY.put(type, new IdleConfig(type, texturePath));
+    }
+
+    private static void register(Monster.MonsterType type, String texturePath, int cols, int rows) {
+        REGISTRY.put(type, new IdleConfig(type, texturePath, cols, rows));
+    }
+
+    private static void register(Monster.MonsterType type, String texturePath, int cols, int rows, float frameDuration) {
+        REGISTRY.put(type, new IdleConfig(type, texturePath, cols, rows, frameDuration));
     }
 
     public static IdleConfig getConfig(Monster.MonsterType type) {
