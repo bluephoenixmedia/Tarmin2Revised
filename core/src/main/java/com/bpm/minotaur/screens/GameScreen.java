@@ -110,7 +110,8 @@ public class GameScreen extends BaseScreen {
 
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
-    private boolean useCrtFilter = true;
+    private boolean useCrtFilter = false;
+    private FilmicCasPostProcessor filmicCasPostProcessor;
     private SpellPostProcessor spellPostProcessor;
     private SpellCastOverlay spellCastOverlay;
     private final com.bpm.minotaur.managers.AlertMonitor alertMonitor = new com.bpm.minotaur.managers.AlertMonitor();
@@ -325,6 +326,9 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        if (filmicCasPostProcessor == null) {
+            filmicCasPostProcessor = new FilmicCasPostProcessor();
+        }
         if (spellPostProcessor == null) {
             spellPostProcessor = new SpellPostProcessor();
         }
@@ -759,7 +763,7 @@ public class GameScreen extends BaseScreen {
             statusVignetteRenderer.update(delta);
         }
 
-        boolean renderToFbo = useCrtFilter || (spellPostProcessor != null && spellPostProcessor.isActive());
+        boolean renderToFbo = true; // Always render to FBO for Filmic CAS or CRT post-processing
         if (renderToFbo) {
             fbo.begin();
             fboViewport.apply();
@@ -955,6 +959,8 @@ public class GameScreen extends BaseScreen {
                 }
                 // Draw FBO offset by HUD_HEIGHT (180)
                 postProcessBatch.draw(fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, 0, 0, 1, 1);
+            } else if (filmicCasPostProcessor != null && filmicCasPostProcessor.isCompiled()) {
+                filmicCasPostProcessor.render(postProcessBatch, fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, time, spellPostProcessor);
             } else if (spellPostProcessor != null && spellPostProcessor.isActive()) {
                 spellPostProcessor.renderModern(postProcessBatch, fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
             } else {

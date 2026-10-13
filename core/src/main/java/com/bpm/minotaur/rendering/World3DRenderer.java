@@ -817,7 +817,7 @@ public class World3DRenderer implements Disposable {
             Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
         } else {
             // In dungeons or indoors without skybox, clear color & depth cleanly
-            Color clearCol = isIndoors ? new Color(0.04f, 0.04f, 0.06f, 1f) : fogColor;
+            Color clearCol = isIndoors ? new Color(0.003f, 0.003f, 0.006f, 1f) : fogColor;
             Gdx.gl.glClearColor(clearCol.r, clearCol.g, clearCol.b, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         }
@@ -966,8 +966,33 @@ public class World3DRenderer implements Disposable {
         shader.setUniformf("u_fogDistance", fogDistance);
         shader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
 
-        // Dynamic surface weather modulation
-        float wetness = (wm != null && currentLevel == 1) ? wm.getWetness() : 0.0f;
+        // Dynamic surface and subterranean wetness modulation
+        float wetness = 0.0f;
+        if (currentLevel == 1) {
+            wetness = (wm != null) ? wm.getWetness() : 0.0f;
+        } else {
+            // Subterranean Strata / Dungeon Dampness
+            if (wild == Biome.LAKELANDS) {
+                wetness = 0.85f;
+            } else if (inBlight) {
+                wetness = 0.55f;
+            } else {
+                wetness = (currentLevel <= 4) ? 0.35f : 0.20f;
+            }
+            // Proximity to liquid pools: standing near water or muck increases damp sheen
+            if (maze != null && player != null) {
+                int px = (int) player.getPosition().x;
+                int py = (int) player.getPosition().y;
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dy = -2; dy <= 2; dy++) {
+                        if (maze.getLiquidAt(px + dx, py + dy) != com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) {
+                            wetness = Math.max(wetness, 0.80f);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         // Snow falls through the canopy but never settles on the forest floor.
         float snowAccum = (wm != null && currentLevel == 1 && !underCanopy) ? wm.getSnowAccumulation() : 0.0f;
         shader.setUniformf("u_wetness", wetness);
@@ -1273,6 +1298,50 @@ public class World3DRenderer implements Disposable {
 
                         lightRadiusArray[count]     = 4.5f;
                         lightIntensityArray[count] = 1.6f * pulse;
+                        count++;
+                    }
+                }
+            }
+        }
+
+        // Inject dynamic emissive light for nearby hazard liquids (Molten Fire or Toxic Muck)
+        if (maze != null && player != null && count < MAX_LIGHTS) {
+            int px = (int) player.getPosition().x;
+            int py = (int) player.getPosition().y;
+            boolean hasFire = false;
+            boolean hasMuck = false;
+            for (int dx = -5; dx <= 5 && count < MAX_LIGHTS; dx++) {
+                for (int dy = -5; dy <= 5 && count < MAX_LIGHTS; dy++) {
+                    com.bpm.minotaur.gamedata.liquid.LiquidType liq = maze.getLiquidAt(px + dx, py + dy);
+                    if (liq == com.bpm.minotaur.gamedata.liquid.LiquidType.MOLTEN_FIRE && !hasFire) {
+                        hasFire = true;
+                        int idx = count * 3;
+                        lightPosArray[idx]     = (px + dx) + 0.5f;
+                        lightPosArray[idx + 1] = 0.25f;
+                        lightPosArray[idx + 2] = -((py + dy) + 0.5f);
+
+                        float flicker = (float) Math.sin(totalTime * 4.5f + dx) * 0.15f + 0.85f;
+                        lightColorArray[idx]     = 1.0f * flicker;
+                        lightColorArray[idx + 1] = 0.42f * flicker;
+                        lightColorArray[idx + 2] = 0.08f * flicker;
+
+                        lightRadiusArray[count]     = 5.5f;
+                        lightIntensityArray[count] = 1.4f * flicker;
+                        count++;
+                    } else if (liq == com.bpm.minotaur.gamedata.liquid.LiquidType.BLACK_MUCK && !hasMuck) {
+                        hasMuck = true;
+                        int idx = count * 3;
+                        lightPosArray[idx]     = (px + dx) + 0.5f;
+                        lightPosArray[idx + 1] = 0.20f;
+                        lightPosArray[idx + 2] = -((py + dy) + 0.5f);
+
+                        float flicker = (float) Math.sin(totalTime * 3.0f + dy) * 0.15f + 0.85f;
+                        lightColorArray[idx]     = 0.35f * flicker;
+                        lightColorArray[idx + 1] = 0.15f * flicker;
+                        lightColorArray[idx + 2] = 0.45f * flicker;
+
+                        lightRadiusArray[count]     = 4.0f;
+                        lightIntensityArray[count] = 0.9f * flicker;
                         count++;
                     }
                 }

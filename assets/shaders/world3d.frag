@@ -106,9 +106,16 @@ void main() {
             normal = normalize(v_normal - tangent * dX - bitangent * dY);
         }
 
-        // 1. Wetness effect (darkens stone surface and gives rain-soaked tone)
-        if (u_wetness > 0.01) {
-            baseColor.rgb *= mix(1.0, 0.78, u_wetness);
+        // 1. Wetness effect (puddle pooling in mortar crevices and porous stone darkening)
+        float wetnessFactor = u_wetness;
+        if (wetnessFactor > 0.01) {
+            float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+            // In stone textures, crevices and mortar are darker than the stone faces
+            float mortarMask = smoothstep(0.55, 0.15, lum);
+            // Puddle accumulates heavily in mortar depressions
+            float puddle = clamp(wetnessFactor * (0.35 + 0.65 * mortarMask), 0.0, 1.0);
+            // Porous darkening: water soaks in and darkens albedo
+            baseColor.rgb *= mix(1.0, 0.52, puddle);
         }
 
         // 2. Snow / Frost accumulation dusting on horizontal upward-facing stone
@@ -133,6 +140,8 @@ void main() {
         }
 
         vec3 viewDir = normalize(u_cameraPos - v_worldPos);
+        float cosTheta = max(dot(normal, viewDir), 0.0);
+        float fresnel = 0.04 + 0.96 * pow(1.0 - cosTheta, 5.0);
 
         // Directional celestial light (Sun/Moon outdoors, modulated by doom and surface normal)
         if (length(u_dirLightColor) > 0.001) {
@@ -140,11 +149,11 @@ void main() {
             accumulatedLight += u_dirLightColor * nDotSun * u_doomFactor;
 
             // Wetness specular highlight from sun / moon reflection
-            if (u_wetness > 0.02) {
+            if (wetnessFactor > 0.02) {
                 vec3 halfDir = normalize(u_dirLightDir + viewDir);
-                float specPower = mix(16.0, 96.0, u_wetness);
+                float specPower = mix(16.0, 128.0, wetnessFactor);
                 float spec = pow(max(dot(normal, halfDir), 0.0), specPower);
-                accumulatedLight += u_dirLightColor * (spec * mix(0.20, 0.75, u_wetness));
+                accumulatedLight += u_dirLightColor * (spec * mix(0.20, 1.25 * fresnel, wetnessFactor));
             }
         }
 
@@ -158,12 +167,15 @@ void main() {
             float radius = u_lightRadius[i];
 
             if (dist < radius && radius > 0.001) {
-                float normDist = dist / radius;
-                float atten = clamp(1.0 - normDist, 0.0, 1.0);
-                atten = atten * atten; // Smooth quadratic falloff
+                float normDist = clamp(dist / radius, 0.0, 1.0);
+                float taper = 1.0 - normDist;
+                taper = taper * taper; // Smooth outer edge falloff
+
+                // Physical inverse-square attenuation with intense hot core near the flame
+                float atten = (1.0 / (1.0 + 1.5 * dist * dist)) * taper * 2.2;
 
                 vec3 lightDir = toLight / dist;
-                float nDotL = max(dot(normal, lightDir), 0.15);
+                float nDotL = max(dot(normal, lightDir), 0.10);
 
                 float lightModifier = 1.0;
 
@@ -196,18 +208,67 @@ void main() {
                 if (lightModifier > 0.005) {
                     accumulatedLight += u_lightColor[i] * (atten * nDotL * u_lightIntensity[i] * lightModifier);
 
-                    // Specular highlight from point light on stone & wet surfaces
+                    // Specular highlight with Schlick's Fresnel mirror reflection on wet stone
                     vec3 halfDir = normalize(lightDir + viewDir);
-                    float specPower = mix(16.0, 80.0, u_wetness);
+                    float specPower = mix(16.0, 128.0, wetnessFactor);
                     float spec = pow(max(dot(normal, halfDir), 0.0), specPower);
-                    float specIntensity = mix(0.18, 0.75, u_wetness);
+                    float specIntensity = mix(0.15, 1.35 * fresnel, wetnessFactor);
                     accumulatedLight += u_lightColor[i] * (spec * specIntensity * atten * u_lightIntensity[i] * lightModifier);
                 }
             }
         }
 
+        // 4. Volumetric Light Raymarching (Air Scatter & Shafts from Carried Lantern)
+        if (u_shadowMapEnabled > 0.5 && count > 0) {
+            vec3 rayVec = v_worldPos - u_cameraPos;
+            float rayDist = length(rayVec);
+            if (rayDist > 0.01) {
+                vec3 rayDir = rayVec / rayDist;
+                float marchDist = min(rayDist, 9.0);
+                const int V_STEPS = 12;
+                float stepSize = marchDist / float(V_STEPS);
+
+                // Stochastic sub-pixel jitter to dissolve ray stepping bands
+                float jitter = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233)) + u_time * 0.1) * 43758.5453);
+                vec3 curPos = u_cameraPos + rayDir * (stepSize * jitter);
+
+                vec3 volAccum = vec3(0.0);
+                vec3 light0 = u_lightPos[0];
+
+                for (int v = 0; v < V_STEPS; v++) {
+                    vec3 toL0 = light0 - curPos;
+                    float dL0 = length(toL0);
+                    if (dL0 < 8.5) {
+                        // Check 1D shadow buffer at this position in the air
+                        vec2 airMaze = vec2(curPos.x - light0.x, -(curPos.z - light0.z));
+                        float airDist = length(airMaze);
+                        float airAngle = atan(airMaze.y, airMaze.x);
+                        float airU = fract((airAngle + 3.14159265) / 6.2831853);
+
+                        vec4 sTex = texture2D(u_shadowMap1D, vec2(airU, 0.5));
+                        float occD = (sTex.r * 0.99609375 + sTex.g * 0.00389099) * 16.0;
+
+                        if (airDist <= occD + 0.28) {
+                            float airTaper = clamp(1.0 - dL0 / 8.5, 0.0, 1.0);
+                            float airAtten = (1.0 / (1.0 + 1.4 * dL0 * dL0)) * airTaper * airTaper;
+
+                            // Forward Mie scattering phase function
+                            float cosScatter = dot(rayDir, -normalize(toL0));
+                            float mie = 0.5 * (1.0 + cosScatter * 0.70);
+
+                            volAccum += u_lightColor[0] * (airAtten * mie * u_lightIntensity[0]);
+                        }
+                    }
+                    curPos += rayDir * stepSize;
+                }
+
+                float airDustDensity = 0.038;
+                accumulatedLight += volAccum * (stepSize * airDustDensity);
+            }
+        }
+
         // Clamp maximum light brightness
-        accumulatedLight = min(accumulatedLight, vec3(2.5));
+        accumulatedLight = min(accumulatedLight, vec3(3.2));
         finalColor = vec4(baseColor.rgb * accumulatedLight, baseColor.a);
 
         // Upward-facing surfaces catch the burning sky. Multiplying through baseColor tints the

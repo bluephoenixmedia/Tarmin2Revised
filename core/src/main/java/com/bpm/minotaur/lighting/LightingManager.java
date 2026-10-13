@@ -31,7 +31,7 @@ public class LightingManager implements Disposable {
     public static final Color COLOR_TORCH = new Color(1.0f, 0.62f, 0.26f, 1.0f);     // Pine torch flame
     public static final Color COLOR_LANTERN = new Color(1.0f, 0.80f, 0.44f, 1.0f);   // Warm vintage golden incandescence
     public static final Color COLOR_CAMPFIRE = new Color(1.0f, 0.45f, 0.16f, 1.0f);  // Deep ember orange-red
-    public static final Color COLOR_COLD_VOID = new Color(0.04f, 0.045f, 0.08f, 1f); // Chilling unlit dungeon darkness
+    public static final Color COLOR_COLD_VOID = new Color(0.005f, 0.006f, 0.012f, 1f); // Oppressive unlit dungeon darkness
     public static final Color COLOR_SHELTER_AMBIENT = new Color(0.35f, 0.28f, 0.22f, 1.0f); // Warm safe haven shelter glow
     public static final Color COLOR_MOTE = new Color(0.85f, 0.92f, 1.0f, 1.0f); // Warm mystical wisp radiance
 
