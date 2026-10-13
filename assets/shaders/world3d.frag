@@ -145,13 +145,11 @@ void main() {
             float nDotSun = max(dot(normal, u_dirLightDir), 0.0);
             accumulatedLight += u_dirLightColor * nDotSun * u_doomFactor;
 
-            // Wetness specular highlight from sun / moon reflection
-            if (wetnessFactor > 0.05) {
-                vec3 specNormal = normalize(mix(v_normal, normal, 0.30));
+            // Wet surface specular highlight from celestial light
+            if (wetnessFactor > 0.02) {
                 vec3 halfDir = normalize(u_dirLightDir + viewDir);
-                float specPower = mix(24.0, 64.0, wetnessFactor);
-                float spec = pow(max(dot(specNormal, halfDir), 0.0), specPower);
-                accumulatedLight += u_dirLightColor * (spec * 0.95 * fresnel * wetnessFactor);
+                float spec = pow(max(dot(v_normal, halfDir), 0.0), 48.0);
+                accumulatedLight += u_dirLightColor * (spec * 1.4 * wetnessFactor);
             }
         }
 
@@ -206,14 +204,12 @@ void main() {
                 if (lightModifier > 0.005) {
                     accumulatedLight += u_lightColor[i] * (atten * nDotL * u_lightIntensity[i] * lightModifier);
 
-                    // Specular highlight: only on wet flagstones/puddles, smoothed to prevent pixel-dither static
-                    if (wetnessFactor > 0.05) {
-                        vec3 specNormal = normalize(mix(v_normal, normal, 0.30));
+                    // Wet floor shiny specular gleam from lantern & torchlight
+                    if (wetnessFactor > 0.02) {
                         vec3 halfDir = normalize(lightDir + viewDir);
-                        float specPower = mix(24.0, 64.0, wetnessFactor);
-                        float spec = pow(max(dot(specNormal, halfDir), 0.0), specPower);
-                        float specIntensity = 1.10 * fresnel * wetnessFactor;
-                        accumulatedLight += u_lightColor[i] * (spec * specIntensity * atten * u_lightIntensity[i] * lightModifier);
+                        float nDotH = max(dot(v_normal, halfDir), 0.0);
+                        float spec = pow(nDotH, 48.0);
+                        accumulatedLight += u_lightColor[i] * (spec * 1.5 * wetnessFactor * atten * u_lightIntensity[i] * lightModifier);
                     }
                 }
             }
@@ -282,61 +278,12 @@ void main() {
             finalColor.rgb += baseColor.rgb * u_skyRimColor * (skyFacing * u_skyRimStrength);
         }
 
-        // 5. Rainwater Puddles & Wet Ground Sky Reflections
-        if (wetnessFactor > 0.04 && normal.y > 0.35) {
-            float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
-            // Crevices and low mortar gather standing puddle water first
-            float mortarMask = smoothstep(0.60, 0.18, lum);
-            // Organic natural puddle pooling patches across the floor
-            float poolNoise = sin(v_worldPos.x * 1.8 + 0.5) * cos(v_worldPos.z * 1.8 + 0.3) * 0.5 + 0.5;
-            float poolCoverage = smoothstep(0.28, 0.68, poolNoise * 0.60 + mortarMask * 0.70);
-            float puddle = clamp(wetnessFactor * (0.25 + 0.75 * poolCoverage), 0.0, 1.0);
-
-            // Animated raindrop wave ripples in puddles
-            float rip1 = sin(v_worldPos.x * 22.0 + u_time * 7.5) * cos(v_worldPos.z * 22.0 + u_time * 6.8);
-            float rip2 = sin((v_worldPos.x + v_worldPos.z) * 35.0 - u_time * 10.2);
-            // Concentric raindrop impact rings on world grid
-            vec2 dropCell = fract(v_worldPos.xz * 1.75 + vec2(u_time * 0.12, 0.0)) - 0.5;
-            float dropDist = length(dropCell);
-            float dropWave = sin(dropDist * 36.0 - fract(u_time * 2.4) * 6.28318) * smoothstep(0.42, 0.04, dropDist);
-            float ripple = (rip1 * 0.35 + rip2 * 0.25 + dropWave * 0.45) * 0.14 * puddle;
-
-            // Perturbed water normal: flat horizontal water with wave ripples
-            vec3 puddleNormal = normalize(vec3(ripple, 1.0, ripple));
-            float reflCos = max(dot(puddleNormal, viewDir), 0.0);
-            // Water Fresnel: baseline 0.18 reflection even looking straight down, ramping to 0.95 at grazing angles
-            float puddleFresnel = 0.18 + 0.82 * pow(1.0 - reflCos, 2.5);
-
-            // Reflected sky vault in puddle surface
-            vec3 skyRefl;
-            if (u_skyRimStrength > 0.001) {
-                // Outdoors under open sky: puddle mirrors the raging horizon fire and deep violet storm clouds!
-                vec3 reflRay = reflect(-viewDir, puddleNormal);
-                float reflUp = clamp(reflRay.y, 0.0, 1.0);
-                vec3 rSkyZenith  = vec3(0.22, 0.07, 0.26); // Brooding deep plum canopy
-                vec3 rSkyHorizon = vec3(0.96, 0.32, 0.08); // Blazing volcanic horizon fire
-                skyRefl = mix(rSkyHorizon, rSkyZenith, pow(reflUp, 0.50));
-                float rGlow = exp(-reflUp * 3.6);
-                skyRefl += vec3(1.0, 0.58, 0.16) * rGlow * 1.25; // Searing horizon backlight bounce
-            } else {
-                // Indoors / underground: puddle mirrors subterranean cavern ambient
-                skyRefl = u_ambientColor * 2.8;
-            }
-
-            // Blend reflected sky into puddle surface
-            finalColor.rgb = mix(finalColor.rgb, skyRefl, puddleFresnel * puddle * 0.85);
-
-            // Glassy water specular glint from carried lantern / point light #0
-            vec3 toL0 = u_lightPos[0] - v_worldPos;
-            float dL0 = length(toL0);
-            if (dL0 < u_lightRadius[0] && u_lightRadius[0] > 0.01) {
-                vec3 l0Dir = toL0 / dL0;
-                vec3 h0 = normalize(l0Dir + viewDir);
-                float nDotH = max(dot(puddleNormal, h0), 0.0);
-                float waterSpec = pow(nDotH, 80.0); // Crisp glassy water reflection
-                float atten0 = (1.0 / (1.0 + 1.5 * dL0 * dL0)) * u_lightIntensity[0];
-                finalColor.rgb += u_lightColor[0] * (waterSpec * atten0 * puddle * 2.2);
-            }
+        // 5. Wet Surface Sheen
+        // Subtle shiny gloss on wet horizontal stone: keeps floor texture 100% sharp and visible
+        if (wetnessFactor > 0.02 && normal.y > 0.35) {
+            float cosTheta = max(dot(v_normal, viewDir), 0.0);
+            float sheen = pow(1.0 - cosTheta, 4.0) * wetnessFactor * 0.22;
+            finalColor.rgb += vec3(sheen);
         }
 
         // Something that makes its own light is not darkened by the scene's. Fog still applies.

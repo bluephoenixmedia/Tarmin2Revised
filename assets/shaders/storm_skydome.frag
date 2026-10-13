@@ -90,18 +90,18 @@ void main() {
     float northness = -flatDir.y / flatLen; // flatDir.y is v_dir.z; -Z is north
     float northWeight = mix(0.20, 1.0, smoothstep(-0.35, 0.95, northness));
 
-    // --- 1. BASE ATMOSPHERIC SKY VAULT ("Labyrinth of Deceit - Brutal Edition") ---
-    // Deep brooding dark eggplant/plum at zenith, raging infernal crimson at horizon
-    vec3 zenithSky = mix(vec3(0.12, 0.04, 0.16), vec3(0.20, 0.05, 0.14), u_doom);
-    vec3 horizonCrimson = vec3(0.88, 0.14, 0.07); // Raging infernal crimson
-    vec3 skyBase = mix(horizonCrimson, zenithSky, pow(up, 0.48));
+    // --- 1. BASE TERRIFYING & MENACING SKY VAULT ---
+    // Inky, suffocating dark black-plum at zenith; ominous dark blood-crimson at horizon
+    vec3 zenithSky = mix(vec3(0.035, 0.010, 0.045), vec3(0.065, 0.012, 0.035), u_doom);
+    vec3 horizonBlood = vec3(0.42, 0.045, 0.015); // Deep, ominous dark blood-red
+    vec3 skyBase = mix(horizonBlood, zenithSky, pow(up, 0.35));
 
-    // --- 1B. VOLCANIC HORIZON INFERNO GLOW ---
-    // Searing backlight erupting from behind the horizon ridge
-    float horizonGlow = exp(-up * 4.4);
+    // Volcanic horizon fire: tight, intense band right along the horizon ridge behind Castle Tarmin
+    // Sharp exponential decay keeps the fire strictly behind the mountains/castle without washing out the sky
+    float horizonGlow = exp(-up * 9.0);
     float plumePulse = 0.90 + 0.10 * sin(u_time * 0.50 + northness * 1.6);
-    vec3 moltenFire = mix(vec3(0.95, 0.22, 0.06), vec3(1.0, 0.62, 0.18), horizonGlow);
-    skyBase += moltenFire * horizonGlow * 1.40 * plumePulse * northWeight;
+    vec3 volcanicEmber = mix(vec3(0.55, 0.05, 0.015), vec3(0.85, 0.16, 0.025), horizonGlow);
+    skyBase += volcanicEmber * (horizonGlow * 1.25) * plumePulse * northWeight;
 
     // --- 1D. ERUPTION PLUMES ---
     // Columns of fire and smoke rising off the northern ridge. Procedural rather than modelled:
@@ -111,8 +111,8 @@ void main() {
         float across = flatDir.x / flatLen;
         float colNoise = fbm(vec2(across * 4.5, up * 2.2 - u_time * 0.14));
         float column = smoothstep(0.42, 0.86, colNoise);
-        float rise = exp(-up * 3.0);
-        skyBase += vec3(1.0, 0.35, 0.06) * column * rise * plumeBand * (0.95 + 0.85 * u_doom);
+        float rise = exp(-up * 3.5);
+        skyBase += vec3(0.85, 0.18, 0.03) * column * rise * plumeBand * (0.85 + 0.85 * u_doom);
     }
 
     // --- 1C. CELESTIAL SMEAR ---
@@ -121,68 +121,66 @@ void main() {
     // contradicting the choked-sky premise.
     float sunDot = max(dot(v_dir, u_sunDir), 0.0);
     float moonDot = max(dot(v_dir, u_moonDir), 0.0);
-    float smokeOcclusion = 1.0 - cover * 0.55;
+    float smokeOcclusion = 0.45;
     if (u_sunDir.y > -0.15) {
-        skyBase += vec3(1.0, 0.35, 0.10) * pow(sunDot, 2.2) * 0.42 * smokeOcclusion;
+        skyBase += vec3(0.85, 0.22, 0.05) * pow(sunDot, 2.8) * 0.30 * smokeOcclusion;
     }
     if (u_moonDir.y > -0.15) {
-        skyBase += vec3(0.55, 0.32, 0.45) * pow(moonDot, 3.0) * 0.16 * smokeOcclusion;
+        skyBase += vec3(0.35, 0.15, 0.30) * pow(moonDot, 3.2) * 0.12 * smokeOcclusion;
     }
 
-    // --- 2. BILLOWING CUMULONIMBUS STORM CLOUDS (Domain Warping) ---
+    // --- 2. HEAVY BILLOWING CUMULONIMBUS STORM CLOUDS (Menacing Canopy) ---
     // Domain warp creates organic curling plumes and cauliflower billows
-    vec2 p1 = skyUV * 0.70 + windUpper;
+    vec2 p1 = skyUV * 0.65 + windUpper;
     vec2 warp = vec2(fbm3(p1), fbm3(p1 + vec2(5.2, 1.3)));
     float n1 = fbm(p1 + 1.20 * warp);
 
     // Billow contouring: produces rounded 3D cloud lobes rather than flat noise
     float billow = 1.0 - abs(n1 * 2.0 - 1.0);
-    float cloudDensity = smoothstep(0.28, 0.72, n1 + billow * 0.30);
+    float cloudDensity = smoothstep(0.12, 0.62, n1 + billow * 0.35);
 
     // Scud layer for high-speed wind turbulence
-    vec2 p2 = skyUV * 1.50 + windLower;
-    float n2 = fbm3(p2);
-    float scud = smoothstep(0.45, 0.80, n2) * 0.50;
+    vec2 p2 = skyUV * 1.40 + windLower;
+    float scud = smoothstep(0.38, 0.75, fbm3(p2)) * 0.40;
 
-    // Combined multi-layer cloud canopy coverage
-    float cloudCoverage = clamp((cloudDensity + scud * (1.0 - cloudDensity * 0.6)) * (0.65 + 0.55 * cover), 0.0, 1.0);
+    // The sky is heavily overcast with towering, menacing storm clouds across the vault
+    float cloudCoverage = clamp(cloudDensity * 0.85 + scud * 0.35 + 0.15, 0.0, 1.0);
 
-    // --- 3. VOLUMETRIC CLOUD LIGHTING & "LABYRINTH OF DECEIT" PALETTE ---
-    // Billowing cumulonimbus clouds with dark plum/wine bodies, internal orchid glow, and backlit fire rims
-    vec3 cloudCore    = vec3(0.09, 0.03, 0.11); // Deep brooding aubergine / dark plum core
-    vec3 cloudBody    = vec3(0.22, 0.06, 0.25); // Rich royal violet / wine
-    vec3 cloudPink    = vec3(0.70, 0.22, 0.55); // Glowing magenta/orchid internal illumination
-    vec3 cloudFireRim = mix(vec3(0.95, 0.24, 0.07), vec3(1.0, 0.65, 0.18), pow(1.0 - up, 2.0)); // Molten fire rim
+    // --- 3. INTIMIDATING & TERRIFYING CLOUD COLOR PALETTE ---
+    // Heavy soot, dark charcoal-plum, and smoldering blood-red backlit underbellies
+    vec3 cloudCore    = vec3(0.035, 0.010, 0.045); // Suffocating inky soot / black-plum core
+    vec3 cloudBody    = vec3(0.10, 0.025, 0.12);   // Menacing dark charcoal-violet body
+    vec3 cloudFold    = vec3(0.20, 0.040, 0.18);   // Bruised dark wine in internal folds
+    vec3 cloudFireRim = vec3(0.70, 0.120, 0.02);   // Smoldering blood-orange volcanic backlight rim
 
     // Shading the cloud lobe:
-    vec3 cloudColor = mix(cloudCore, cloudBody, smoothstep(0.20, 0.68, n1));
-    // Internal light scattering inside cloud pillows
-    float internalGlow = smoothstep(0.35, 0.82, billow);
-    cloudColor = mix(cloudColor, cloudPink, internalGlow * 0.50);
+    vec3 cloudColor = mix(cloudCore, cloudBody, smoothstep(0.18, 0.62, n1));
+    float internalGlow = smoothstep(0.30, 0.80, billow);
+    cloudColor = mix(cloudColor, cloudFold, internalGlow * 0.40);
 
     // Downward slope detection: lower rims of cloud lobes catch the volcanic fire from below
     float dBelow = n1 - fbm3(p1 + 1.20 * warp + vec2(0.0, 0.05));
     float underRim = smoothstep(0.0, 0.22, dBelow);
 
     // Fiery backlight on cloud underbellies facing the horizon inferno
-    float fireUnderlight = pow(1.0 - up, 1.5) * (0.75 + 0.75 * underRim);
-    cloudColor = mix(cloudColor, cloudFireRim, clamp(fireUnderlight * 0.95, 0.0, 1.0));
+    float fireUnderlight = exp(-up * 4.5) * (0.65 + 0.65 * underRim);
+    cloudColor = mix(cloudColor, cloudFireRim, clamp(fireUnderlight * northWeight, 0.0, 0.85));
 
     // --- 4. LIGHTNING ILLUMINATION BURST ---
     if (u_flashIntensity > 0.02) {
         // Internal cloud volume scattering: backlit cloud lobes glow bright electric violet-white
-        vec3 flashColor = vec3(0.95, 0.96, 1.10) * (u_flashIntensity * 1.6);
+        vec3 flashColor = vec3(0.85, 0.88, 1.0) * (u_flashIntensity * 1.5);
         float flashScattering = smoothstep(0.1, 0.7, n1) * 0.9 + 0.1;
         cloudColor = mix(cloudColor, flashColor, flashScattering * u_flashIntensity);
-        skyBase = mix(skyBase, vec3(0.85, 0.88, 1.0), u_flashIntensity * 0.75);
+        skyBase = mix(skyBase, vec3(0.75, 0.78, 0.95), u_flashIntensity * 0.70);
     }
 
-    // Blend clouds over atmospheric sky background
-    vec3 finalColor = mix(skyBase, cloudColor, cloudCoverage * 0.92);
+    // Blend clouds over atmospheric sky background (heavily dominated by dark storm clouds)
+    vec3 finalColor = mix(skyBase, cloudColor, cloudCoverage * 0.95);
 
     // Smooth horizon blending: fade seamlessly into horizon atmospheric fog
-    float horizonBlend = smoothstep(0.0, 0.05, up);
-    finalColor = mix(horizonCrimson, finalColor, horizonBlend);
+    float horizonBlend = smoothstep(0.0, 0.04, up);
+    finalColor = mix(horizonBlood, finalColor, horizonBlend);
 
     // --- 5. EMBER DRIFT ---
     // Sparse embers rising on the thermals, concentrated toward the eruption.
