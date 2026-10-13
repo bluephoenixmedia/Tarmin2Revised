@@ -443,9 +443,15 @@ public class WorldManager {
         int el = depth + (horizontalDistance / 2);
         int edl = (el + playerLevel) / 2;
 
-        // Sanctuary Buffer: Any chunk within D_xy <= 1 on Z = 1 capped at EDL = 2
-        if (chunkId != null && Math.abs(chunkId.x) <= 1 && Math.abs(chunkId.y) <= 1 && depth <= 1) {
-            edl = Math.min(edl, 2);
+        // Sanctuary Buffer: Any chunk within D_xy <= 1 capped to prevent early player obliteration:
+        // Overland (depth <= 1) and Strata 1 (depth == 2) capped at EDL = 2
+        // Strata 2 (depth == 3) capped at EDL = 3
+        if (chunkId != null && Math.abs(chunkId.x) <= 1 && Math.abs(chunkId.y) <= 1) {
+            if (depth <= 2) {
+                edl = Math.min(edl, 2);
+            } else if (depth == 3) {
+                edl = Math.min(edl, 3);
+            }
         }
 
         return Math.max(1, edl + difficultyOffset);
@@ -1653,6 +1659,21 @@ public class WorldManager {
     /** A soldier for a surface battle: a monster of a monsters.json type, standing at a tile. */
     public com.bpm.minotaur.gamedata.monster.Monster recruit(String monsterType, int x, int y) {
         try {
+            // Near-shelter sanctuary bounding for surface battles:
+            // Within 2 chunks of starter shelter on Level 1, substitute endgame doctrine shock troops
+            // with appropriate tier 1-3 soldiers so starter shelter isn't overrun with Minotaurs / Fallen Angels.
+            if (currentLevel == 1 && currentPlayerChunkId != null
+                    && Math.abs(currentPlayerChunkId.x) <= 2 && Math.abs(currentPlayerChunkId.y) <= 2) {
+                if ("MINOTAUR".equals(monsterType)) monsterType = "ORC";
+                else if ("FALL_ANGEL".equals(monsterType)) monsterType = "LIZARD_WARRIOR";
+                else if ("GIANT".equals(monsterType) || "UMBER_HULK".equals(monsterType)) monsterType = "SKELETON";
+                else if ("IRON_GOLEM".equals(monsterType) || "TROLL".equals(monsterType)) monsterType = "HOBGOBLIN";
+                else if ("MIND_FLAYER".equals(monsterType)) monsterType = "GHOUL";
+                else if ("BRINGER_OF_DEATH".equals(monsterType) || "LICH".equals(monsterType)) monsterType = "CLOAKED_SKELETON";
+                else if ("DEMON_SLIME".equals(monsterType)) monsterType = "ZOMBIE";
+                else if ("WEREWOLF".equals(monsterType)) monsterType = "GIANT_CENTIPEDE";
+            }
+
             return new com.bpm.minotaur.gamedata.monster.Monster(
                     com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(monsterType), x, y,
                     com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
