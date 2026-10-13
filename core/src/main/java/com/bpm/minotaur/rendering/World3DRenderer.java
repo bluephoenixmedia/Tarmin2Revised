@@ -40,6 +40,7 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.lighting.LanternShadowBuffer;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.managers.CombatManager;
@@ -971,6 +972,9 @@ public class World3DRenderer implements Disposable {
         float snowAccum = (wm != null && currentLevel == 1 && !underCanopy) ? wm.getSnowAccumulation() : 0.0f;
         shader.setUniformf("u_wetness", wetness);
         shader.setUniformf("u_snowAccumulation", snowAccum);
+        shader.setUniformf("u_time", totalTime);
+        shader.setUniformf("u_bumpStrength", isRetro ? 0.0f : 0.35f);
+        shader.setUniformf("u_cloudShadows", (currentLevel == 1 && !isIndoors) ? 1.0f : 0.0f);
 
         // Setup dynamic point lights (including opening gate cyan emissive pulses)
         setupDynamicLights(lm, player, maze);
@@ -1280,6 +1284,25 @@ public class World3DRenderer implements Disposable {
         shader.setUniform1fv("u_lightRadius", lightRadiusArray, 0, count);
         shader.setUniform1fv("u_lightIntensity", lightIntensityArray, 0, count);
         shader.setUniformi("u_numLights", count);
+
+        boolean isRetro = (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO);
+        boolean playerLightLit = (!isRetro && lm != null && lm.isPlayerLightLit());
+        LanternShadowBuffer shadowBuf = (lm != null) ? lm.getLanternShadowBuffer() : null;
+
+        if (playerLightLit && shadowBuf != null) {
+            Texture shadowTex = shadowBuf.getTexture();
+            if (shadowTex != null) {
+                shadowTex.bind(1);
+                shader.setUniformi("u_shadowMap1D", 1);
+                shader.setUniformf("u_shadowMapEnabled", 1.0f);
+            } else {
+                shader.setUniformf("u_shadowMapEnabled", 0.0f);
+            }
+        } else {
+            shader.setUniformf("u_shadowMapEnabled", 0.0f);
+        }
+
+        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
     }
 
     private void loadRuneTextures() {

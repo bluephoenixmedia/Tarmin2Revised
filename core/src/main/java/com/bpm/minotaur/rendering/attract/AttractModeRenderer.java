@@ -464,6 +464,13 @@ public class AttractModeRenderer implements Disposable {
         Color dirCol = atmosphereManager.getDirectionalLightColor();
         worldShader.setUniformf("u_dirLightColor", dirCol.r, dirCol.g, dirCol.b);
         worldShader.setUniformi("u_numLights", 0);
+        worldShader.setUniformf("u_shadowMapEnabled", 0.0f);
+        worldShader.setUniformf("u_bumpStrength", 0.0f);
+        worldShader.setUniformf("u_cloudShadows", 0.0f);
+        worldShader.setUniformf("u_wetness", 0.0f);
+        worldShader.setUniformf("u_snowAccumulation", 0.0f);
+        worldShader.setUniformf("u_skyRimStrength", 0.0f);
+        worldShader.setUniformf("u_time", 0.0f);
 
         // 2B. Void Floor Seal: Underlay dark abyss plane beneath active chunks to prevent untextured void gaps
         renderFloorSeal();

@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Disposable;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
@@ -15,7 +16,7 @@ import java.util.Comparator;
  * Core lighting subsystem managing dynamic point lights, line-of-sight shadow casting,
  * shelter warmth, and dungeon darkness.
  */
-public class LightingManager {
+public class LightingManager implements Disposable {
 
     private static final String TAG = "LightingManager";
 
@@ -44,6 +45,7 @@ public class LightingManager {
 
     private Vector2 currentQueryOrigin = new Vector2();
     private final LightSource shopkeeperLight;
+    private final LanternShadowBuffer lanternShadowBuffer = new LanternShadowBuffer();
 
     public LightingManager() {
         this.playerLight = new LightSource(
@@ -99,6 +101,9 @@ public class LightingManager {
         }
         if (player != null) {
             updatePlayerLight(player, maze);
+            if (maze != null) {
+                lanternShadowBuffer.update(player.getPosition().x, player.getPosition().y, maze);
+            }
         }
 
         playerLight.update(delta);
@@ -379,5 +384,20 @@ public class LightingManager {
         }
 
         return outArray;
+    }
+
+    public LanternShadowBuffer getLanternShadowBuffer() {
+        return lanternShadowBuffer;
+    }
+
+    public boolean isPlayerLightLit() {
+        return playerLight != null && playerLight.isActive();
+    }
+
+    @Override
+    public void dispose() {
+        if (lanternShadowBuffer != null) {
+            lanternShadowBuffer.dispose();
+        }
     }
 }
