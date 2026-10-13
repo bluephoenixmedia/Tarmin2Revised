@@ -10,8 +10,8 @@ public class FilmicCasPostProcessorTest {
     public void testDefaultParametersAndMutators() {
         FilmicCasPostProcessor processor = new FilmicCasPostProcessor();
 
-        assertEquals(0.75f, processor.getSharpness(), 0.001f);
-        assertEquals(0.022f, processor.getGrain(), 0.001f);
+        assertEquals(0.45f, processor.getSharpness(), 0.001f);
+        assertEquals(0.0f, processor.getGrain(), 0.001f);
 
         processor.setSharpness(0.90f);
         assertEquals(0.90f, processor.getSharpness(), 0.001f);

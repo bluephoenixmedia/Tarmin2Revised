@@ -149,11 +149,12 @@ void main() {
             accumulatedLight += u_dirLightColor * nDotSun * u_doomFactor;
 
             // Wetness specular highlight from sun / moon reflection
-            if (wetnessFactor > 0.02) {
+            if (wetnessFactor > 0.05) {
+                vec3 specNormal = normalize(mix(v_normal, normal, 0.30));
                 vec3 halfDir = normalize(u_dirLightDir + viewDir);
-                float specPower = mix(16.0, 128.0, wetnessFactor);
-                float spec = pow(max(dot(normal, halfDir), 0.0), specPower);
-                accumulatedLight += u_dirLightColor * (spec * mix(0.20, 1.25 * fresnel, wetnessFactor));
+                float specPower = mix(24.0, 64.0, wetnessFactor);
+                float spec = pow(max(dot(specNormal, halfDir), 0.0), specPower);
+                accumulatedLight += u_dirLightColor * (spec * 0.95 * fresnel * wetnessFactor);
             }
         }
 
@@ -208,17 +209,21 @@ void main() {
                 if (lightModifier > 0.005) {
                     accumulatedLight += u_lightColor[i] * (atten * nDotL * u_lightIntensity[i] * lightModifier);
 
-                    // Specular highlight with Schlick's Fresnel mirror reflection on wet stone
-                    vec3 halfDir = normalize(lightDir + viewDir);
-                    float specPower = mix(16.0, 128.0, wetnessFactor);
-                    float spec = pow(max(dot(normal, halfDir), 0.0), specPower);
-                    float specIntensity = mix(0.15, 1.35 * fresnel, wetnessFactor);
-                    accumulatedLight += u_lightColor[i] * (spec * specIntensity * atten * u_lightIntensity[i] * lightModifier);
+                    // Specular highlight: only on wet flagstones/puddles, smoothed to prevent pixel-dither static
+                    if (wetnessFactor > 0.05) {
+                        vec3 specNormal = normalize(mix(v_normal, normal, 0.30));
+                        vec3 halfDir = normalize(lightDir + viewDir);
+                        float specPower = mix(24.0, 64.0, wetnessFactor);
+                        float spec = pow(max(dot(specNormal, halfDir), 0.0), specPower);
+                        float specIntensity = 1.10 * fresnel * wetnessFactor;
+                        accumulatedLight += u_lightColor[i] * (spec * specIntensity * atten * u_lightIntensity[i] * lightModifier);
+                    }
                 }
             }
         }
 
         // 4. Volumetric Light Raymarching (Air Scatter & Shafts from Carried Lantern)
+        // Fixed-step continuous raymarch without stochastic noise
         if (u_shadowMapEnabled > 0.5 && count > 0) {
             vec3 rayVec = v_worldPos - u_cameraPos;
             float rayDist = length(rayVec);
@@ -228,9 +233,8 @@ void main() {
                 const int V_STEPS = 12;
                 float stepSize = marchDist / float(V_STEPS);
 
-                // Stochastic sub-pixel jitter to dissolve ray stepping bands
-                float jitter = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233)) + u_time * 0.1) * 43758.5453);
-                vec3 curPos = u_cameraPos + rayDir * (stepSize * jitter);
+                // Fixed half-step offset for smooth, noise-free air volume
+                vec3 curPos = u_cameraPos + rayDir * (stepSize * 0.5);
 
                 vec3 volAccum = vec3(0.0);
                 vec3 light0 = u_lightPos[0];
@@ -248,7 +252,10 @@ void main() {
                         vec4 sTex = texture2D(u_shadowMap1D, vec2(airU, 0.5));
                         float occD = (sTex.r * 0.99609375 + sTex.g * 0.00389099) * 16.0;
 
-                        if (airDist <= occD + 0.28) {
+                        // Continuous shadow fade: eliminates binary threshold stepping noise
+                        float shadowAtten = smoothstep(occD + 0.35, occD + 0.15, airDist);
+
+                        if (shadowAtten > 0.01) {
                             float airTaper = clamp(1.0 - dL0 / 8.5, 0.0, 1.0);
                             float airAtten = (1.0 / (1.0 + 1.4 * dL0 * dL0)) * airTaper * airTaper;
 
@@ -256,7 +263,7 @@ void main() {
                             float cosScatter = dot(rayDir, -normalize(toL0));
                             float mie = 0.5 * (1.0 + cosScatter * 0.70);
 
-                            volAccum += u_lightColor[0] * (airAtten * mie * u_lightIntensity[0]);
+                            volAccum += u_lightColor[0] * (airAtten * mie * u_lightIntensity[0] * shadowAtten);
                         }
                     }
                     curPos += rayDir * stepSize;

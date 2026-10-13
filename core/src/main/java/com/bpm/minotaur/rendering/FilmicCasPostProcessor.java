@@ -18,8 +18,8 @@ public class FilmicCasPostProcessor implements Disposable {
     private ShaderProgram shader;
     private boolean isCompiled = false;
 
-    private float sharpness = 0.75f;
-    private float grain = 0.022f;
+    private float sharpness = 0.45f;
+    private float grain = 0.0f;
 
     public FilmicCasPostProcessor() {
         initShader();
