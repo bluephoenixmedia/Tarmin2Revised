@@ -186,6 +186,7 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         this.debugAllUnlocked = debugAllUnlocked;
         BiomePortal.DEBUG_UNLOCK_ALL = debugAllUnlocked;
         if (debugAllUnlocked) {
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
             this.cartographerDeskTier = MAX_CARTOGRAPHER_TIER;
         }
     }

@@ -309,6 +309,7 @@ public class PlayerStats {
         amount = Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("foundTreasureMult")); // Lucky Pariah finds more
 
         this.treasureScore += amount;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(amount);
     }
 
     // --- Getters and Setters ---

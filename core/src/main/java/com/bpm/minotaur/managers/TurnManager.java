@@ -57,8 +57,23 @@ public class TurnManager {
             return;
 
         turnCounter++;
-        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setTurnsLived(turnCounter);
-        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setStrataReached(maze.getLevel());
+        {
+            PlayerStats ts = player.getStats();
+            PlayerStats.SatiationState sat = ts.getSatiationState();
+            if (worldManager != null) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setContext(
+                        worldManager.getDifficulty() != null ? worldManager.getDifficulty().name() : null,
+                        worldManager.getWorldSeed(), com.bpm.minotaur.BuildInfo.VERSION);
+            }
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().onTurn(turnCounter, maze.getLevel(),
+                    maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y),
+                    player.getCurrentHP(), player.getCurrentMP(),
+                    sat == PlayerStats.SatiationState.HUNGRY || sat == PlayerStats.SatiationState.STARVING,
+                    ts.getHydrationFloat() <= 0,
+                    ts.getBodyTemperature() < 35.0f,
+                    player.getStatusManager() != null
+                            && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED));
+        }
 
         // 1. Calculate Time Elapsed for Player Action
         // Time = Cost / Speed.
@@ -451,6 +466,7 @@ public class TurnManager {
         if (satState != PlayerStats.SatiationState.STARVING && (turnCounter % regenInterval == 0)) {
             if (player.getCurrentHP() < stats.getMaxHP()) {
                 stats.heal(1);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordRegen(1, 0);
             }
         }
         // MP natural recovery: Paced by Wisdom when hydrated.
@@ -460,6 +476,7 @@ public class TurnManager {
         if (stats.getHydrationFloat() > 0 && (turnCounter % mpInterval == 0)) {
             if (player.getCurrentMP() < stats.getMaxMP()) {
                 player.restoreMP(1);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordRegen(0, 1);
             }
         }
 

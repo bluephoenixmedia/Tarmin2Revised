@@ -339,6 +339,8 @@ public class WandExecutionEngine {
                     }
                     int dmg = DiceRoller.roll("3d6") + 2;
                     int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.ORANGE);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + target.getType() + " for " + actual + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
@@ -360,6 +362,8 @@ public class WandExecutionEngine {
                     }
                     int dmg = DiceRoller.roll("2d8") + 2;
                     int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (!com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
                         target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
                     }
@@ -381,6 +385,8 @@ public class WandExecutionEngine {
                     for (int i = 0; i < 3; i++) {
                         int dartDmg = DiceRoller.roll("1d4") + 1;
                         totalDmg += target.takeSpellDamage(dartDmg, DamageType.SPIRITUAL, false);
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                                com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, dartDmg);
                     }
                     if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint, "", Color.CYAN);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
@@ -398,6 +404,8 @@ public class WandExecutionEngine {
                 if (target != null) {
                     int dmg = DiceRoller.roll("3d6");
                     int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.valueOf("E67E22"));
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The concussive beam blasts " + target.getType() + " for " + actual + " damage!", 1.8f));
 
@@ -463,6 +471,8 @@ public class WandExecutionEngine {
                     boolean isUndeadOrDark = isUndeadOrDemon(target);
                     int dmg = isUndeadOrDark ? DiceRoller.roll("3d8") : DiceRoller.roll("1d6");
                     int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.YELLOW);
                     if (eventManager != null) {
                         String desc = isUndeadOrDark

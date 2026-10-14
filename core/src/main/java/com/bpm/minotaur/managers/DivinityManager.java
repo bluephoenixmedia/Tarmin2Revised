@@ -131,6 +131,7 @@ public class DivinityManager implements SlotScopedState {
     public boolean spendDivinities(int amount) {
         if (currentDivinities < amount) return false;
         currentDivinities -= amount;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDivinitiesSpent(amount);
         save();
         return true;
     }

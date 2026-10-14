@@ -1758,6 +1758,10 @@ public class WorldManager {
         }
     }
 
+    public Difficulty getDifficulty() {
+        return difficulty;
+    }
+
     public long getWorldSeed() {
         return worldSeed;
     }

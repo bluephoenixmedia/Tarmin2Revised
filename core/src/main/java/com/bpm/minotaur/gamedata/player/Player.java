@@ -1448,6 +1448,7 @@ public class Player {
             }
 
             if (pickupItem(itemAtFeet)) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordItemPickedUp(itemAtFeet.getCategory() != null ? itemAtFeet.getCategory().name() : null);
                 maze.getItems().remove(playerTile2);
                 soundManager.playPickupItemSound();
                 String pickedName = discoveryManager != null
@@ -1521,6 +1522,7 @@ public class Player {
             // -------------------------------
 
             if (pickupItem(itemInFront)) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordItemPickedUp(itemInFront.getCategory() != null ? itemInFront.getCategory().name() : null);
                 maze.getItems().remove(targetTile);
                 if (itemInFront.getType() == ItemType.BRASS_LANTERN) {
                     maze.removeLightAt(targetTile.x + 0.5f, targetTile.y + 0.5f);
@@ -3516,7 +3518,12 @@ public class Player {
         if (amount <= 0)
             return;
 
-        boolean leveled = stats.addExperience(Math.max(1, Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("xpMult"))));
+        int gained = Math.max(1, Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("xpMult")));
+        boolean leveled = stats.addExperience(gained);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordExperienceGained(gained);
+        if (leveled) {
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordLevelUp();
+        }
 
         if (leveled) {
             pendingLevelUpModal = true;
