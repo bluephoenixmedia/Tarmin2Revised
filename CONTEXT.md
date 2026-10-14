@@ -17,6 +17,8 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Nasty Monsters**: Monsters vulnerable only to War weapons/attacks (immune to spiritual).
 - **Horrible Monsters**: Monsters vulnerable to both War and Spiritual attacks.
 - **Divinity**: Spiritual essence / experience points earned through exploration and slaying monsters; drops on death and can be reclaimed.
+- **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.
+- **Life**: Everything from a respawn (or new game) to the next death. _Avoid_: "run", which is used loosely for both.
 - **Doom Clock ("Tarmin's Hunger")**: Escalating threat meter tracking how close Tarmin is to sacrificing your daughter; advances on player death.
 - **Strata**: Vertical subterranean dungeon layers beneath any overland chunk, increasing in hazard, loot quality, and depth.
 - **Paper Doll**: Equipment configuration covering armor slots, rings, cloak, boots, gauntlets, and two active hands.
