@@ -244,6 +244,8 @@ public class SpellExecutionEngine {
             for (int i = 0; i < 3; i++) {
                 int dartDmg = DiceRoller.roll("1d4") + 1;
                 int actual = target.takeSpellDamage(dartDmg, DamageType.SPIRITUAL, false);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                        com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 totalDmg += actual;
             }
             if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint);
@@ -417,6 +419,8 @@ public class SpellExecutionEngine {
         if (target != null && target.getCurrentHP() > 0) {
             int dmg = calculateSpellDamage(spell, player, target);
             int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                    com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
 
             if (target.getCurrentHP() <= 0) {
@@ -685,6 +689,8 @@ public class SpellExecutionEngine {
             int dmg = calculateSpellDamage(spell, player, target);
 
             int actualDmg = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                    com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actualDmg);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
             eventManager.addEvent(new GameEvent(spell.getName() + " hits " + target.getType() + " for " + actualDmg + "!", 1.5f));
 
@@ -754,6 +760,8 @@ public class SpellExecutionEngine {
 
             int dmg = calculateSpellDamage(spell, player, target);
             int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                    com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
 
@@ -784,6 +792,8 @@ public class SpellExecutionEngine {
                 int dmg = calculateSpellDamage(spell, player, target);
 
                 int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                        com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
                 hits++;
 

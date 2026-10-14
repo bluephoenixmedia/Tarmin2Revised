@@ -312,6 +312,7 @@ public class ShopkeeperWindow extends Table {
             return;
         }
         player.getStats().setTreasureScore(gold - price);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(-price);
         shopkeeper.getInventory().removeItem(item);
         if (applyingRestitution) {
             shopkeeper.consumeRestitutionDiscount();
@@ -342,6 +343,7 @@ public class ShopkeeperWindow extends Table {
         // A stack sells one at a time, at one's price -- never thirty for one.
         player.getInventory().consumeOne(item);
         player.getStats().setTreasureScore(player.getStats().getTreasureScore() + price);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(price);
         eventManager.addEvent(new GameEvent("Sold " + sold + " for " + price + "g.", 2.5f));
         status("Sold " + sold + " (+" + price + "g).");
         refresh();
@@ -371,6 +373,7 @@ public class ShopkeeperWindow extends Table {
         }
 
         player.getStats().setTreasureScore(player.getStats().getTreasureScore() + totalGold);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(totalGold);
         eventManager.addEvent(new GameEvent(
                 "Exchanged " + gems.size() + " gem(s) for " + totalGold + "g.", 2.5f));
         status("Exchanged " + gems.size() + " gem(s) for " + totalGold + "g.");

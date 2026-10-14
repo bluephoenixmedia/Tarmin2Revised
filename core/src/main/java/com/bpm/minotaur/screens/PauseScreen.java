@@ -172,6 +172,7 @@ public class PauseScreen extends BaseScreen {
     }
 
     private void saveAndQuit() {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().endExpedition(com.bpm.minotaur.telemetry.TelemetryManager.Outcome.ABANDONED, null);
         if (gameScreen != null && gameScreen.getPlayer() != null) {
             SaveManager.getInstance().saveActiveSlot(gameScreen.getPlayer(), gameScreen.getWorldManager());
         }

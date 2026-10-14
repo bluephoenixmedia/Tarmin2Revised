@@ -225,6 +225,9 @@ public final class PlaytestRunner {
     private void finishSuite() {
         finished = true;
         report.save(outDir);
+        // The suite stops mid-expedition, as a quit to the menu would.
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance()
+                .endExpedition(com.bpm.minotaur.telemetry.TelemetryManager.Outcome.ABANDONED, null);
 
         Gdx.app.log("Playtest", "=================================================");
         Gdx.app.log("Playtest", "QA PLAYTEST SUITE COMPLETED");

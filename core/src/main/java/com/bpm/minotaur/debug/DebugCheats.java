@@ -22,6 +22,7 @@ public final class DebugCheats {
 
     /** Teaches the player every spell id; returns how many were new to them. */
     public static int learnAllSpells(Player player, Collection<String> spellIds) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
         int learned = 0;
         for (String id : spellIds) {
             if (id != null && !player.getKnownSpellIds().contains(id.toUpperCase(java.util.Locale.ROOT))) {
@@ -34,6 +35,7 @@ public final class DebugCheats {
 
     /** Gives exactly the experience for one level, through the normal path so the level-up modal and sounds fire. */
     public static void levelUp(Player player, GameEventManager events) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
         PlayerStats stats = player.getStats();
         int needed = Math.max(1, stats.getExperienceToNextLevel() - stats.getExperience());
         player.addExperience(needed, events);
@@ -41,6 +43,7 @@ public final class DebugCheats {
 
     /** Full health, mana, food and water. */
     public static void refill(Player player) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
         PlayerStats stats = player.getStats();
         player.heal(stats.getMaxHP());
         player.restoreMP(stats.getMaxMP());
@@ -63,6 +66,7 @@ public final class DebugCheats {
      * unlocks all 5 spell slots, learns all provided spells, and prepares a standard versatile loadout.
      */
     public static void maxOutPlayer(Player player, Collection<String> allSpellIds) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
         if (player == null) return;
         player.setLevel(99);
         PlayerStats stats = player.getStats();
@@ -94,6 +98,7 @@ public final class DebugCheats {
      * or touches the real stash. Filters out stationary fixtures and scenery items.
      */
     public static ShelterChest allItemsChest(Collection<Item.ItemType> types, Function<Item.ItemType, Item> factory) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
         List<Item.ItemType> list = new ArrayList<>();
         if (types != null) {
             for (Item.ItemType t : types) {

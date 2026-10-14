@@ -1470,7 +1470,6 @@ public class GameScreen extends BaseScreen {
             int depthReached = Math.max(1, telemetry.getStrataReached());
             int monstersSlain = telemetry.getTotalMonstersKilled();
             int divinitiesEarnedThisRun = telemetry.getDivinitiesEarned();
-            telemetry.exportRun(epitaphCause);
 
             // Roll discoveries unlocked for future expeditions
             // Types, not just names: the death screen shows each discovery as a card with its
@@ -1478,6 +1477,8 @@ public class GameScreen extends BaseScreen {
             java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes =
                     com.bpm.minotaur.managers.UnlockManager.getInstance()
                             .rollRunUnlockTypes(telemetry, depthReached);
+            telemetry.recordUnlocksEarned(newUnlockTypes != null ? newUnlockTypes.size() : 0);
+            telemetry.exportRun(epitaphCause);
             // 5. Play visceral death audio and transition to PlayerDeathScreen
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
@@ -5502,6 +5503,7 @@ public class GameScreen extends BaseScreen {
 
     /** Debug: straight to a chunk of any level, standing where {@code arrival} says. */
     private void debugTeleport(GridPoint2 chunk, int level, java.util.function.Function<Maze, GridPoint2> arrival) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
         if (combatManager != null) combatManager.endCombat();
         if (maze != null) worldManager.saveCurrentChunk(maze);
         worldManager.setCurrentLevel(level);

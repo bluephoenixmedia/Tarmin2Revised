@@ -746,6 +746,7 @@ public class CombatManager {
             showPlayerDamageText(actualDamage);
             bleedPlayer(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), true, actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageHouse(
                     worldManager != null ? worldManager.houseOf(attacker) : -1);
@@ -825,6 +826,7 @@ public class CombatManager {
             }
         } else {
             eventManager.addEvent(new GameEvent(attacker.getName() + " misses!", 1f));
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), false, 0);
         }
 
         damageTakenInCombat += actualDamage;
@@ -1156,6 +1158,7 @@ public class CombatManager {
         }
         player.addExperience(m.getBaseExperience(), eventManager);
         eventManager.addEvent(new GameEvent("Killed " + nameOf(m) + "!", 2f));
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(m, m.getMonsterType());
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
@@ -1496,6 +1499,8 @@ public class CombatManager {
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 showDamageText(actual, hit.collisionPoint);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                        com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
 
                 if (target.getCurrentHP() <= 0) {
@@ -1508,6 +1513,8 @@ public class CombatManager {
                     }
                 }
             } else {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                        com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
                 eventManager.addEvent(new GameEvent("Thrown " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " glanced off " + target.getType() + "!", 1.0f));
                 alertMonsterToPlayer(target);
             }
@@ -2422,7 +2429,8 @@ public class CombatManager {
                 lastDamageDealt = actualDamage;
                 lastHitCritOrFinisher = isCrit || (currentMotionProfile != null && currentMotionProfile.isFinisher);
 
-                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(
+                        monster, monster.getMonsterType(), monster.getLevel(), attackModeOf(attackWeapon),
                         isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
                                 : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT,
                         actualDamage);
@@ -2596,7 +2604,8 @@ public class CombatManager {
         } else {
             // Miss
             eventManager.addEvent(new GameEvent("Miss!", 1f));
-            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(
+                    monster, monster.getMonsterType(), monster.getLevel(), attackModeOf(attackWeapon),
                     com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
             if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
@@ -2769,6 +2778,7 @@ public class CombatManager {
 
         if (actualDamage > 0)
             damageTakenInCombat += actualDamage;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), isCrit || attackRoll >= targetAC, actualDamage);
         BalanceLogger.getInstance().logCombatRound("MONSTER", "Ranged", -1, actualDamage, player.getCurrentHP());
         return true;
     }
@@ -3439,8 +3449,10 @@ public class CombatManager {
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
 
             eventManager.addEvent(new GameEvent(monster.getName() + " hits you for " + actualDamage, 1f));
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(monster, monster.getMonsterType(), monster.getLevel(), true, actualDamage);
         } else {
             eventManager.addEvent(new GameEvent(monster.getName() + " misses!", 1f));
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(monster, monster.getMonsterType(), monster.getLevel(), false, 0);
         }
 
         damageTakenInCombat += actualDamage;
@@ -3538,6 +3550,7 @@ public class CombatManager {
                 dmg = 1;
 
             int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), true, actualDamage);
 
             if (actualDamage > 0) {
                 maze.addBlood((int) px, (int) py, 0.05f);
@@ -3562,6 +3575,7 @@ public class CombatManager {
             return true;
         } else {
             eventManager.addEvent(new GameEvent(attacker.getName() + " tries to flank but misses!", 1.5f));
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), false, 0);
             return false;
         }
     }
@@ -3580,6 +3594,17 @@ public class CombatManager {
     }
 
     /** The engaged monster's killing blow came from the weapon in hand. */
+    /** How telemetry tags an attack made with this weapon. */
+    private static com.bpm.minotaur.telemetry.TelemetryManager.AttackMode attackModeOf(Item weapon) {
+        if (weapon == null) return com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.MELEE;
+        Item.ItemType t = weapon.getType();
+        if (com.bpm.minotaur.gamedata.firearm.FirearmProfile.isFirearm(t)) return com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.FIREARM;
+        if (t == Item.ItemType.WAR_BOOK || t == Item.ItemType.SPIRITUAL_BOOK || t == Item.ItemType.SPECIAL_BOOK) {
+            return com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.BOOK;
+        }
+        return weapon.isRanged() ? com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.RANGED : com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.MELEE;
+    }
+
     private KillCause heldWeaponKillCause() {
         Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
         return KillCause.weapon(AnimationArchetype.fromItem(weapon), lastHitCritOrFinisher);
@@ -3624,7 +3649,7 @@ public class CombatManager {
         }
 
         UnlockManager.getInstance().recordKill(monster.getMonsterType());
-        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster.getMonsterType());
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster, monster.getMonsterType());
 
         // A themed chunk's objective may hang on this kill (the champion, or the
         // last combatant in the arena).
