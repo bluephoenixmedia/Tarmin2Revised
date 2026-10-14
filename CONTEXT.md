@@ -13,9 +13,10 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 ## Domain Glossary
 - **War Strength ($W$)**: Physical power, physical weapon attack, and health scaling.
 - **Spiritual Strength ($S$)**: Magical power, spell potency, and mystical defenses.
-- **Bad Monsters**: Monsters vulnerable only to Spiritual weapons/attacks (immune to physical).
-- **Nasty Monsters**: Monsters vulnerable only to War weapons/attacks (immune to spiritual).
-- **Horrible Monsters**: Monsters vulnerable to both War and Spiritual attacks.
+- **Bad Monsters**: Monsters Resistant to War damage and Weak to Spiritual.
+- **Nasty Monsters**: Monsters Resistant to Spiritual damage and Weak to War.
+- **Horrible Monsters**: Monsters that take War and Spiritual damage alike.
+- **Resistant / Weak**: A monster's affinity to a damage type. Resistant takes reduced damage, Weak takes increased damage. A critical hit pierces resistance. _Avoid_: "immune"; no monster is immune to a damage type.
 - **Divinity**: Spiritual essence / experience points earned through exploration and slaying monsters; drops on death and can be reclaimed.
 - **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.
 - **Life**: Everything from a respawn (or new game) to the next death. _Avoid_: "run", which is used loosely for both.
