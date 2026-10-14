@@ -147,6 +147,8 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     private final java.util.Set<Station> unlockedStations = new java.util.HashSet<>();
     private final java.util.Map<Station, java.util.List<com.badlogic.gdx.math.GridPoint2>> stationLocations = new java.util.EnumMap<>(Station.class);
     private boolean canCommune = true;
+    private final java.util.Set<StartingWeapon> unlockedStartingWeapons = new java.util.HashSet<>();
+    private com.bpm.minotaur.gamedata.item.Item.ItemType selectedStartingWeapon = com.bpm.minotaur.gamedata.item.Item.ItemType.RUSTY_SWORD;
 
     private ShelterAltar() {
         load();
@@ -171,6 +173,9 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         unlockedStations.clear();
         canCommune = true;
         cartographerDeskTier = 1;
+        unlockedStartingWeapons.clear();
+        unlockedStartingWeapons.add(StartingWeapon.RUSTY_SWORD);
+        selectedStartingWeapon = com.bpm.minotaur.gamedata.item.Item.ItemType.RUSTY_SWORD;
     }
 
     public static final int MAX_CARTOGRAPHER_TIER = 3;
@@ -655,6 +660,61 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         return false;
     }
 
+    // ---- Starting Arsenal (Weapon Meta-Progression) ----
+
+    public boolean isStartingWeaponUnlocked(StartingWeapon weapon) {
+        if (weapon == null) return false;
+        if (weapon == StartingWeapon.RUSTY_SWORD || debugAllUnlocked) return true;
+        return unlockedStartingWeapons.contains(weapon);
+    }
+
+    public boolean isStartingWeaponUnlocked(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        return isStartingWeaponUnlocked(StartingWeapon.fromItemType(type));
+    }
+
+    public java.util.Set<StartingWeapon> getUnlockedStartingWeapons() {
+        java.util.Set<StartingWeapon> copy = new java.util.HashSet<>(unlockedStartingWeapons);
+        copy.add(StartingWeapon.RUSTY_SWORD);
+        return java.util.Collections.unmodifiableSet(copy);
+    }
+
+    public com.bpm.minotaur.gamedata.item.Item.ItemType getSelectedStartingWeapon() {
+        if (selectedStartingWeapon == null || !isStartingWeaponUnlocked(selectedStartingWeapon)) {
+            return com.bpm.minotaur.gamedata.item.Item.ItemType.RUSTY_SWORD;
+        }
+        return selectedStartingWeapon;
+    }
+
+    public void setSelectedStartingWeapon(com.bpm.minotaur.gamedata.item.Item.ItemType weaponType) {
+        StartingWeapon sw = StartingWeapon.fromItemType(weaponType);
+        if (isStartingWeaponUnlocked(sw)) {
+            this.selectedStartingWeapon = sw.getItemType();
+            save();
+        }
+    }
+
+    public void setSelectedStartingWeapon(StartingWeapon weapon) {
+        if (weapon != null && isStartingWeaponUnlocked(weapon)) {
+            this.selectedStartingWeapon = weapon.getItemType();
+            save();
+        }
+    }
+
+    public boolean canUnlockStartingWeapon(StartingWeapon weapon) {
+        if (weapon == null || isStartingWeaponUnlocked(weapon)) return false;
+        return DivinityManager.getInstance().getCurrentDivinities() >= weapon.getDivinityCost();
+    }
+
+    public boolean unlockStartingWeapon(StartingWeapon weapon) {
+        if (!canUnlockStartingWeapon(weapon)) return false;
+        if (DivinityManager.getInstance().spendDivinities(weapon.getDivinityCost())) {
+            unlockedStartingWeapons.add(weapon);
+            save();
+            return true;
+        }
+        return false;
+    }
+
     // ---- Persistence ----
 
     private String getSaveFilePath() {
@@ -684,6 +744,11 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                 data.ascensionTiers.put(entry.getKey().name(), entry.getValue());
             }
             data.cartographerDeskTier = cartographerDeskTier;
+            data.unlockedStartingWeapons = new java.util.ArrayList<>();
+            for (StartingWeapon w : unlockedStartingWeapons) {
+                data.unlockedStartingWeapons.add(w.name());
+            }
+            data.selectedStartingWeapon = (selectedStartingWeapon != null ? selectedStartingWeapon.name() : "RUSTY_SWORD");
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             if (Gdx.app != null) {
@@ -723,6 +788,24 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                         }
                     }
                     cartographerDeskTier = data.cartographerDeskTier > 0 ? data.cartographerDeskTier : 1;
+                    unlockedStartingWeapons.clear();
+                    unlockedStartingWeapons.add(StartingWeapon.RUSTY_SWORD);
+                    if (data.unlockedStartingWeapons != null) {
+                        for (String s : data.unlockedStartingWeapons) {
+                            try {
+                                unlockedStartingWeapons.add(StartingWeapon.valueOf(s));
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    if (data.selectedStartingWeapon != null) {
+                        try {
+                            selectedStartingWeapon = com.bpm.minotaur.gamedata.item.Item.ItemType.valueOf(data.selectedStartingWeapon);
+                        } catch (Exception ignored) {
+                            selectedStartingWeapon = com.bpm.minotaur.gamedata.item.Item.ItemType.RUSTY_SWORD;
+                        }
+                    } else {
+                        selectedStartingWeapon = com.bpm.minotaur.gamedata.item.Item.ItemType.RUSTY_SWORD;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -742,6 +825,8 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         public int crestsOfValor = 0;
         public java.util.Map<String, Integer> ascensionTiers = new java.util.HashMap<>();
         public int cartographerDeskTier = 1;
+        public java.util.List<String> unlockedStartingWeapons = new java.util.ArrayList<>();
+        public String selectedStartingWeapon = "RUSTY_SWORD";
     }
 
     @Override
