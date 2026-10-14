@@ -10,6 +10,8 @@ uniform vec2 u_texelSize;
 uniform float u_sharpness;
 uniform float u_grain;
 uniform float u_time;
+uniform float u_vignetteStrength;
+uniform float u_contrast;
 
 // Spell post-processing uniforms
 uniform vec2 u_shockwaveCenter;
@@ -72,10 +74,16 @@ void main() {
 
     vec3 sharpened = clamp((c + (n + s + w + e) * wRGB) * rcpWeight, 0.0, 1.0);
 
-    // 4. Filmic ACES Tonemapping Curve
-    // S-curve expands dynamic range, crushing inky blacks and boosting hot lantern glints
-    vec3 tonemapped = (sharpened * (2.51 * sharpened + 0.03)) / (sharpened * (2.43 * sharpened + 0.59) + 0.14);
-    tonemapped = clamp(tonemapped, 0.0, 1.0);
+    // 4. Atmospheric Vignette (matches the deep, focused darkness of the CRT look)
+    float vig = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
+    vig = clamp(pow(vig * 15.0, 0.25), 0.0, 1.0);
+    float vStrength = (u_vignetteStrength > 0.001) ? u_vignetteStrength : 0.85;
+    float vigFactor = mix(1.0, vig, vStrength);
+
+    // 5. Cinematic Shadow & Tone Calibration
+    // Matches the deep, moody, atmospheric darkness of the CRT filter while preserving crisp CAS sharpness
+    float gamma = (u_contrast > 0.001) ? u_contrast : 1.22;
+    vec3 tonemapped = pow(sharpened, vec3(gamma)) * vigFactor;
 
     // 5. Micro-Dither Film Grain to dissolve 8-bit gradient banding in dark fog
     if (u_grain > 0.001) {

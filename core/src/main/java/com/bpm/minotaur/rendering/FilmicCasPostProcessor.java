@@ -20,6 +20,8 @@ public class FilmicCasPostProcessor implements Disposable {
 
     private float sharpness = 0.45f;
     private float grain = 0.0f;
+    private float vignetteStrength = 0.85f;
+    private float contrast = 1.22f;
 
     public FilmicCasPostProcessor() {
         initShader();
@@ -66,6 +68,8 @@ public class FilmicCasPostProcessor implements Disposable {
         shader.setUniformf("u_texelSize", 1.0f / width, 1.0f / height);
         shader.setUniformf("u_sharpness", sharpness);
         shader.setUniformf("u_grain", grain);
+        shader.setUniformf("u_vignetteStrength", vignetteStrength);
+        shader.setUniformf("u_contrast", contrast);
         shader.setUniformf("u_time", time);
 
         if (spellPostProcessor != null) {
@@ -102,6 +106,22 @@ public class FilmicCasPostProcessor implements Disposable {
 
     public void setGrain(float grain) {
         this.grain = grain;
+    }
+
+    public float getVignetteStrength() {
+        return vignetteStrength;
+    }
+
+    public void setVignetteStrength(float vignetteStrength) {
+        this.vignetteStrength = vignetteStrength;
+    }
+
+    public float getContrast() {
+        return contrast;
+    }
+
+    public void setContrast(float contrast) {
+        this.contrast = contrast;
     }
 
     @Override
