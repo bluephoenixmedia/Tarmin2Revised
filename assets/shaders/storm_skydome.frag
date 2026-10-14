@@ -41,11 +41,23 @@ float noise(vec2 p) {
                mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
-// 5-octave Fractal Brownian Motion for rich billowy cloud structures
+// 3-octave and 5-octave Fractal Brownian Motion for high-performance domain-warped clouds
+float fbm3(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758);
+    for (int i = 0; i < 3; ++i) {
+        v += a * noise(p);
+        p = rot * p * 2.02 + vec2(12.3, 24.7);
+        a *= 0.5;
+    }
+    return v;
+}
+
 float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
-    mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758); // Rotation matrix for organic turbulence
+    mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758);
     for (int i = 0; i < 5; ++i) {
         v += a * noise(p);
         p = rot * p * 2.02 + vec2(12.3, 24.7);
@@ -58,51 +70,45 @@ void main() {
     // Upward angle: v_dir.y in [-1, 1]
     float up = clamp(v_dir.y, 0.0, 1.0);
     
-    // Curved celestial dome projection coordinates
-    float domeProjection = 1.0 / (up + 0.18);
-    vec2 skyUV = v_dir.xz * domeProjection * 0.45;
+    // Cloud altitude plane projection: produces correct perspective scale across the dome
+    float cloudH = max(up, 0.10);
+    vec2 skyUV = (v_dir.xz / cloudH) * 1.6;
     
-    // Wind drift vectors (Layer 1 slow overcast, Layer 2 fast scud)
+    // Wind drift vectors (Layer 1 slow billowing overcast, Layer 2 fast scud)
     float speed = u_windSpeed * (1.0 + u_stormIntensity * 1.5);
-    vec2 windUpper = vec2(0.015, 0.008) * u_time * speed;
-    vec2 windLower = vec2(0.042, 0.022) * u_time * speed;
+    vec2 windUpper = vec2(0.016, 0.009) * u_time * speed;
+    vec2 windLower = vec2(0.040, 0.022) * u_time * speed;
 
-    // Smoke is geology, not weather: CLEAR now means "no precipitation", not "empty sky".
     float cover = clamp(max(u_cloudCover, u_smokeFloor), 0.0, 1.0);
 
     // --- BEARING ---
-    // Castle Tarmin stands due north (world -Z) and the volcano burns behind it. Concentrating
-    // the fire on that bearing turns the sky into a compass: you navigate toward the apocalypse.
     vec2 flatDir = v_dir.xz;
     float flatLen = max(length(flatDir), 0.0001);
-    float northness = -flatDir.y / flatLen; // flatDir.y is v_dir.z; -Z is north
-    float northWeight = mix(0.16, 1.0, smoothstep(-0.35, 0.95, northness));
+    float northness = -flatDir.y / flatLen; // -Z is north toward Castle Tarmin
+    float northWeight = mix(0.20, 1.0, smoothstep(-0.35, 0.95, northness));
 
-    // --- 1. BASE ATMOSPHERIC SKY GRADIENT ---
-    // Hot at the horizon, choked purple-black at the zenith. The steeper falloff keeps the fire
-    // a tight band above the walls rather than washing the whole view orange.
-    // At full doom the vault itself ignites: the zenith stops being smothered purple and starts
-    // being lit, which is the single clearest read that things have gone badly wrong.
-    vec3 zenithSky = mix(u_zenithColor, vec3(0.40, 0.05, 0.04), u_doom);
-    vec3 horizonSky = mix(u_horizonColor, u_skyTint, 0.72) * 1.15;
-    vec3 skyBase = mix(horizonSky, zenithSky, pow(up, 0.42));
+    // --- 1. FIERY VOLCANIC BACKGROUND SKY (Behind the Clouds) ---
+    // Deep bruised violet-wine at zenith, raging volcanic blood-red & orange at horizon
+    vec3 zenithSky = mix(vec3(0.12, 0.03, 0.16), vec3(0.20, 0.04, 0.12), u_doom);
+    vec3 horizonBlood = vec3(0.85, 0.14, 0.04); // Raging apocalyptic fire
+    vec3 skyBase = mix(horizonBlood, zenithSky, pow(up, 0.40));
 
-    // --- 1B. ERUPTION GLOW ---
-    // A tight band of fire hugging the horizon, hottest to the north, pulsing slowly.
-    float horizonGlow = exp(-up * 6.5);
-    float plumePulse = 0.82 + 0.18 * sin(u_time * 0.55 + northness * 2.0);
-    skyBase += vec3(1.0, 0.34, 0.07) * horizonGlow * northWeight * 0.60 * plumePulse;
+    // Blazing horizon eruption glow concentrated behind Castle Tarmin
+    float horizonGlow = exp(-up * 5.0);
+    float plumePulse = 0.90 + 0.10 * sin(u_time * 0.50 + northness * 1.6);
+    vec3 volcanicEmber = mix(vec3(0.88, 0.12, 0.04), vec3(1.0, 0.48, 0.10), horizonGlow);
+    skyBase += volcanicEmber * (horizonGlow * 1.30) * plumePulse * northWeight;
 
     // --- 1D. ERUPTION PLUMES ---
     // Columns of fire and smoke rising off the northern ridge. Procedural rather than modelled:
     // these have to churn and rise continuously, which sprite or mesh plumes do badly.
-    float plumeBand = smoothstep(0.50 - 0.28 * u_doom, 1.0, northness);
+    float plumeBand = smoothstep(0.48 - 0.28 * u_doom, 1.0, northness);
     if (plumeBand > 0.01) {
         float across = flatDir.x / flatLen;
         float colNoise = fbm(vec2(across * 4.5, up * 2.2 - u_time * 0.14));
         float column = smoothstep(0.42, 0.86, colNoise);
-        float rise = exp(-up * 3.0);
-        skyBase += vec3(1.0, 0.30, 0.05) * column * rise * plumeBand * (0.95 + 0.85 * u_doom);
+        float rise = exp(-up * 3.5);
+        skyBase += vec3(0.95, 0.25, 0.04) * column * rise * plumeBand * (0.85 + 0.85 * u_doom);
     }
 
     // --- 1C. CELESTIAL SMEAR ---
@@ -111,74 +117,64 @@ void main() {
     // contradicting the choked-sky premise.
     float sunDot = max(dot(v_dir, u_sunDir), 0.0);
     float moonDot = max(dot(v_dir, u_moonDir), 0.0);
-    float smokeOcclusion = 1.0 - cover * 0.55;
+    float smokeOcclusion = 0.55;
     if (u_sunDir.y > -0.15) {
-        skyBase += vec3(1.0, 0.30, 0.10) * pow(sunDot, 2.2) * 0.42 * smokeOcclusion;
+        skyBase += vec3(0.95, 0.30, 0.08) * pow(sunDot, 2.5) * 0.35 * smokeOcclusion;
     }
     if (u_moonDir.y > -0.15) {
-        skyBase += vec3(0.55, 0.32, 0.42) * pow(moonDot, 3.0) * 0.16 * smokeOcclusion;
+        skyBase += vec3(0.45, 0.20, 0.35) * pow(moonDot, 3.0) * 0.15 * smokeOcclusion;
     }
 
-    // --- 2. LAYER 1: UPPER TURBULENT OVERCAST CANOPY ---
-    vec2 p1 = skyUV * 0.85 + windUpper;
-    float n1 = fbm(p1);
-    // Density threshold dynamically scaled by cloud cover
-    float minCutoff1 = mix(0.72, 0.10, cover);
-    float cloud1 = smoothstep(minCutoff1, minCutoff1 + 0.45, n1);
+    // --- 2. MASSIVE BLACK CUMULONIMBUS STORM CLOUDS (Domain Warped Billows) ---
+    vec2 p1 = skyUV + windUpper;
+    vec2 q = vec2(fbm3(p1), fbm3(p1 + vec2(5.2, 1.3)));
+    vec2 r = vec2(fbm3(p1 + 1.4 * q + vec2(1.7, 9.2)), fbm3(p1 + 1.4 * q + vec2(8.3, 2.8)));
+    float n1 = fbm(p1 + 1.2 * r);
 
-    // --- 3. LAYER 2: LOW GALE-FORCE SCUD WISPS ---
-    vec2 p2 = skyUV * 1.75 + windLower;
-    float n2 = fbm(p2);
-    float minCutoff2 = mix(0.80, 0.24, cover);
-    float cloud2 = smoothstep(minCutoff2, minCutoff2 + 0.35, n2) * 0.75;
+    // Billow shaping: cauliflower puffy lobes
+    float billow = 1.0 - abs(n1 * 2.0 - 1.0);
+    float cloudRaw = n1 * 0.65 + billow * 0.35;
 
-    // Combined multi-layer cloud coverage: drops cleanly to 0 in clear weather
-    float cloudCoverage = clamp((cloud1 + cloud2 * (1.0 - cloud1 * 0.6)) * (0.55 + 0.75 * cover), 0.0, 1.0);
+    // Threshold creates DISTINCT CLOUD BODIES and gaps
+    float cloudMask = smoothstep(0.36, 0.62, cloudRaw);
 
-    // Starfield removed: nothing is visible through a permanent volcanic smoke ceiling.
+    // Secondary fast-moving turbulent scud wisps
+    vec2 p2 = skyUV * 2.2 + windLower;
+    float scud = smoothstep(0.46, 0.80, fbm3(p2)) * 0.40;
 
-    // --- 4. VOLUMETRIC CLOUD LIGHTING & COLOR PALETTE ---
-    // Volcanic smoke: near-black bodies, not grey storm cloud. Colour comes from what is
-    // burning underneath them, never from a sun above.
-    vec3 smokeCore = vec3(0.05, 0.03, 0.06) * (1.0 - u_stormIntensity * 0.3);
-    vec3 smokeMid  = vec3(0.17, 0.10, 0.17);
-    vec3 cloudColor = mix(smokeCore, smokeMid, smoothstep(0.2, 0.8, n1));
+    // Combined cloud presence
+    float cloudCoverage = clamp(cloudMask + scud * (1.0 - cloudMask * 0.6), 0.0, 1.0);
 
-    // Secondary scud wisps are darker and more ragged
-    vec3 scudColor = vec3(0.04, 0.03, 0.05);
-    cloudColor = mix(cloudColor, scudColor, cloud2 * 0.5);
+    // --- 3. BLACK CUMULONIMBUS SHADING (Inky Charcoal with Fiery Backlit Rims) ---
+    vec3 cloudBlack    = vec3(0.015, 0.005, 0.020); // Inky pitch-black soot core
+    vec3 cloudCharcoal = vec3(0.055, 0.018, 0.065); // Dark charcoal-plum body
+    vec3 cloudBody     = mix(cloudBlack, cloudCharcoal, smoothstep(0.36, 0.70, cloudRaw));
 
-    // Underlighting: the lower a cloud sits, the more of the burning horizon it catches.
-    // This is what turns a flat grey overcast into a churning, lit-from-below ceiling.
-    float underlight = pow(1.0 - up, 2.4);
-    vec3 emberLight = mix(vec3(0.95, 0.26, 0.07), u_skyTint, 0.30);
-    cloudColor += emberLight * underlight * (0.55 + 0.45 * smoothstep(0.15, 0.75, n1));
+    // Hot molten backlight on billowing cloud rims facing the fiery sky behind:
+    float edgeRim = smoothstep(0.36, 0.46, cloudRaw) * (1.0 - smoothstep(0.46, 0.64, cloudRaw));
+    vec3 rimFireColor = mix(vec3(0.92, 0.18, 0.04), vec3(1.0, 0.52, 0.12), exp(-up * 3.5));
+    float rimIntensity = edgeRim * (0.60 + 0.60 * exp(-up * 3.0)) * (0.60 + 0.40 * northWeight);
 
-    // --- 4B. EMBER RIM ---
-    // Cloud edges facing the eruption catch a hot rim: the silver lining of a burning world.
-    float emberRim = pow(max(northness, 0.0), 3.0);
-    cloudColor += vec3(1.0, 0.38, 0.10) * emberRim * smoothstep(0.35, 0.85, n1) * (1.0 - up) * 0.55;
+    // Volcanic underlight on low clouds near northern horizon
+    float underGlow = exp(-up * 4.5) * northWeight * 0.50;
+    vec3 cloudFinal = cloudBody + rimFireColor * rimIntensity + vec3(0.75, 0.14, 0.03) * underGlow;
 
-    // --- 5. LIGHTNING ILLUMINATION BURST ---
+    // --- 4. LIGHTNING BURST ---
     if (u_flashIntensity > 0.02) {
-        // Internal cloud volume scattering: backlit cloud lobes glow bright electric violet-white
-        vec3 flashColor = vec3(0.92, 0.95, 1.05) * (u_flashIntensity * 1.6);
-        // Deep folds scatter light unevenly, giving rich 3D contour depth during flashes
+        vec3 flashColor = vec3(0.85, 0.88, 1.0) * (u_flashIntensity * 1.5);
         float flashScattering = smoothstep(0.1, 0.7, n1) * 0.9 + 0.1;
-        cloudColor = mix(cloudColor, flashColor, flashScattering * u_flashIntensity);
-        skyBase = mix(skyBase, vec3(0.85, 0.88, 1.0), u_flashIntensity * 0.75);
+        cloudFinal = mix(cloudFinal, flashColor, flashScattering * u_flashIntensity);
+        skyBase = mix(skyBase, vec3(0.75, 0.78, 0.95), u_flashIntensity * 0.70);
     }
 
-    // Blend clouds over atmospheric sky background
-    vec3 finalColor = mix(skyBase, cloudColor, cloudCoverage);
+    // Blend black cumulonimbus clouds in front of fiery volcanic sky
+    vec3 finalColor = mix(skyBase, cloudFinal, cloudCoverage);
 
-    // Smooth horizon blending: fade seamlessly into horizon atmospheric fog
-    // Keep this tight: a wide blend washes the cloud ceiling away exactly where it is
-    // most dramatic, just above the walls.
-    float horizonBlend = smoothstep(0.0, 0.05, up);
-    finalColor = mix(horizonSky, finalColor, horizonBlend);
+    // Horizon atmospheric fade
+    float horizonBlend = smoothstep(0.0, 0.03, up);
+    finalColor = mix(horizonBlood, finalColor, horizonBlend);
 
-    // --- 6. EMBER DRIFT ---
+    // --- 5. EMBER DRIFT ---
     // Sparse embers rising on the thermals, concentrated toward the eruption.
     vec2 emberUV = skyUV * 3.2 + vec2(0.02, -0.11) * u_time * (0.6 + u_windSpeed * 0.3);
     vec2 emberId = floor(emberUV);
@@ -194,7 +190,7 @@ void main() {
     float below = clamp(-v_dir.y, 0.0, 1.0);
     finalColor *= 1.0 - below * 0.82;
 
-    // --- 7. DOOM HEAT-LIGHTNING ---
+    // --- 6. DOOM HEAT-LIGHTNING ---
     // Weather owns storm lightning. This is the sky flickering with its own light, so a doomed
     // sky stays restless even in clear weather.
     if (u_doom > 0.05) {
@@ -203,7 +199,7 @@ void main() {
         finalColor += vec3(1.0, 0.45, 0.20) * doomFlash * u_doom * 0.40;
     }
 
-    // --- 7B. TARMIN'S KNELL ---
+    // --- 7. TARMIN'S KNELL ---
     // As the gong strikes, cloud-to-cloud lightning ripples out from the castle's bearing and
     // sweeps the whole sky in a breath: a crackling front of branching bolts, and behind it the
     // clouds left glowing, cooling from white to his red as the bell dies away.
@@ -212,14 +208,12 @@ void main() {
         vec3 castle = normalize(vec3(u_knellDir.x, 0.12, u_knellDir.y));
         float theta = acos(clamp(dot(dir, castle), -1.0, 1.0));
         float front = u_knellAge * 2.4;
-        // A second, weaker front a breath behind the first: the sky ripples, it does not just flash.
         float echo = (u_knellAge - 0.3) * 2.4;
         float band = exp(-pow((theta - front) / 0.16, 2.0)) + 0.55 * exp(-pow((theta - echo) / 0.13, 2.0)) * step(0.0, echo);
         float ridge = 1.0 - abs(2.0 * fbm(skyUV * 5.0 + vec2(u_knellAge * 0.7, 0.0)) - 1.0);
         float bolts = pow(ridge, 7.0);
         float flicker = 0.65 + 0.35 * hash21(vec2(floor(u_time * 28.0), theta * 13.0));
         float fade = 1.0 - smoothstep(1.4, 3.2, u_knellAge);
-        // The clouds the lightning crossed keep a slow red glow while the bell rings on.
         float behind = step(theta, front) * exp(-(front - theta) * 0.7);
         vec3 strike = vec3(1.0, 0.86, 0.90) * band * (0.30 + bolts * 2.2) * flicker;
         vec3 glow = mix(vec3(1.0, 0.75, 0.70), vec3(0.85, 0.12, 0.08), smoothstep(0.0, 0.9, front - theta))
@@ -227,11 +221,11 @@ void main() {
         finalColor += (strike + glow) * fade * (0.35 + 0.65 * cloudCoverage) * (1.0 - below);
     }
 
-    // --- 8. BANDING ---
-    // Deliberate quantisation. The game renders at full resolution but its surfaces are flat and
-    // limited-palette; a perfectly smooth sky behind them reads as a photograph glued on, and
-    // makes the walls look cheap by comparison.
-    finalColor = floor(finalColor * 26.0 + 0.5) / 26.0;
+    // --- 8. SUB-PERCEPTUAL DITHER (NO QUANTIZATION BANDING) ---
+    // High-precision sub-least-significant-bit dither eliminates 8-bit monitor gradient banding,
+    // ensuring silky smooth continuous-tone transitions across the entire celestial vault.
+    float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
+    finalColor += dither;
 
     gl_FragColor = vec4(finalColor, 1.0);
 }
