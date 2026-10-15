@@ -32,6 +32,12 @@ import java.util.Date;
  */
 public class SaveSlotSelectScreen extends BaseScreen {
 
+    /**
+     * The difficulty every game is played on. There is no picker, and difficulty is not saved,
+     * so a loaded game takes it from here too. MEDIUM is the reference for balance (0.0.2 map, #149).
+     */
+    static final com.bpm.minotaur.gamedata.Difficulty PLAY_DIFFICULTY = com.bpm.minotaur.gamedata.Difficulty.MEDIUM;
+
     private final BaseScreen parentScreen;
     private final boolean newGameMode;
     private final HudSkin hudSkin;
@@ -386,7 +392,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
         MusicManager.getInstance().stopWithFade(0.5f);
 
         com.bpm.minotaur.gamedata.GameMode gameMode = "CLASSIC".equalsIgnoreCase(mode) ? com.bpm.minotaur.gamedata.GameMode.CLASSIC : com.bpm.minotaur.gamedata.GameMode.ADVANCED;
-        game.setScreen(new GameScreen(game, 1, com.bpm.minotaur.gamedata.Difficulty.EASY, gameMode));
+        game.setScreen(new GameScreen(game, 1, PLAY_DIFFICULTY, gameMode));
     }
 
     public void launchResumeGame(int slotIndex) {
@@ -404,7 +410,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
             mode = com.bpm.minotaur.gamedata.GameMode.CLASSIC;
         }
 
-        GameScreen gameScreen = new GameScreen(game, level, com.bpm.minotaur.gamedata.Difficulty.EASY, mode);
+        GameScreen gameScreen = new GameScreen(game, level, PLAY_DIFFICULTY, mode);
         // Before setScreen: show() may generate the first chunk, and its event pick must see
         // which choice events this run has already placed.
         if (worldData != null && gameScreen.getWorldManager() != null) {
