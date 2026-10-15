@@ -233,7 +233,7 @@ public class UXScreenCaptureScreen extends BaseScreen {
 
         // 07: Game Over
         tasks.add(new CaptureTask("07_game_over", "Game Over Screen", () -> {
-            GameOverScreen s = new GameOverScreen(game, false);
+            GameOverScreen s = new GameOverScreen(game);
             setSubScreen(s, null);
         }));
 
