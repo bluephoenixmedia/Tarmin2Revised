@@ -301,6 +301,18 @@ task runSpritePreviewer(type: JavaExec) {
     ignoreExitValue = true
 }
 
+// Combat duel simulator for balance work. Options go in -PduelArgs, e.g.
+//   ./gradlew :lwjgl3:runDuelSimulation -PduelArgs="--trials=2000 --minLevel=1 --maxLevel=1"
+task runDuelSimulation(type: JavaExec) {
+    group = "verification"
+    description = "Runs bump-combat duels between a fresh character and a monster level band"
+    mainClass = 'com.bpm.minotaur.lwjgl3.DuelSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    args = (project.findProperty('duelArgs') ?: '').toString().tokenize(' ')
+}
+
 task runHeadlessSimulation(type: JavaExec) {
     group = "verification"
     description = "Runs the Headless Game Simulation"
