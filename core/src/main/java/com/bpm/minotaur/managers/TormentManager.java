@@ -18,7 +18,7 @@ public class TormentManager implements SlotScopedState {
         BARREN_DEPTHS("Barren Depths", "Dungeon loot spawn rates reduced by 30%", 2),
         DILUTED_ELIXIRS("Diluted Elixirs", "Potions and food restore 35% less HP/MP", 1),
         CHAMPION_FOES("Champion Foes", "Monsters have higher base attributes", 2),
-        CRITICAL_BRIDGE("Fragile Bridge", "Apocalypse Doom cap reduced from 50 to 30 deaths", 3);
+        CRITICAL_BRIDGE("Fragile Bridge", "Tarmin's Hunger: the Bridge falls at 30 deaths, not 50", 3);
 
         private final String title;
         private final String description;

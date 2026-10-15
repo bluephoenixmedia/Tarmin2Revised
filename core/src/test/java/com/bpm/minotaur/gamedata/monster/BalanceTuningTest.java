@@ -52,34 +52,6 @@ public class BalanceTuningTest {
     }
 
     @Test
-    public void testDoomScalingDepthGate() {
-        DoomManager doom = DoomManager.getInstance();
-        doom.reset();
-
-        // Simulate 10 player deaths (+25% base death multiplier)
-        for (int i = 0; i < 10; i++) {
-            doom.incrementDeaths();
-        }
-
-        // Level 1: strictly 1.0f (0% bonus on Level 1 / starter chunk)
-        assertEquals(1.0f, doom.getEnemyScalingMultiplier(1), 0.001f);
-        assertEquals(1.0f, doom.getEnemyScalingMultiplier(0), 0.001f);
-
-        // Level 2: partial scaling (25% of the penalty = +6.25%)
-        assertEquals(1.0625f, doom.getEnemyScalingMultiplier(2), 0.001f);
-
-        // Level 3: half scaling (50% of the penalty = +12.5%)
-        assertEquals(1.125f, doom.getEnemyScalingMultiplier(3), 0.001f);
-
-        // Level 5+: full scaling (100% of the penalty = +25%)
-        assertEquals(1.25f, doom.getEnemyScalingMultiplier(5), 0.001f);
-        assertEquals(1.25f, doom.getEnemyScalingMultiplier(10), 0.001f);
-
-        // Reset doom manager state after test
-        doom.reset();
-    }
-
-    @Test
     public void testRustySwordDamageDiceRange() {
         boolean sawAboveOne = false;
         for (int i = 0; i < 100; i++) {

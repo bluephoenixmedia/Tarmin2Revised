@@ -8,8 +8,8 @@ import com.badlogic.gdx.utils.JsonWriter.OutputType;
 
 /**
  * Manages the "Tarmin's Hunger" mechanic:
- * - Tracks total deaths (DoomCounter).
- * - Calculates enemy scaling (Meat Grinder).
+ * - Tracks total deaths (DoomCounter), which raise a slow stage baseline.
+ * - Escalates the stage with turns spent inside one Expedition.
  * - Calculates resource scarcity (Starvation Curve).
  * - Tracks Bridge Integrity (Apocalypse condition).
  * 
@@ -35,7 +35,14 @@ public class DoomManager implements SlotScopedState {
 
     // --- Constants ---
     private static final int MAX_DEATHS_ALLOWED = 50; // The Hard Cap
-    private static final float DAMAGE_SCALE_PER_DEATH = 0.025f; // +2.5% per death (Reduced from 5%)
+    /**
+     * Deaths raise a slow stage baseline across all 50 (#176 / #188): stage 2 from 10, stage 3
+     * from 25, stage 4 from 40. Deaths no longer scale monster damage; unlocks and altar
+     * stations are what offset the growing Hunger.
+     */
+    private static final int DEATHS_FOR_STAGE_2 = 10;
+    private static final int DEATHS_FOR_STAGE_3 = 25;
+    private static final int DEATHS_FOR_STAGE_4 = 40;
     private static final float LOOT_DECAY_RATE = 0.02f; // -2% loot chance per death
     private String getSaveFilePath() {
         return SaveManager.getInstance().getActiveSlotFilePath("doom_state.json");
@@ -122,19 +129,20 @@ public class DoomManager implements SlotScopedState {
     }
 
     /**
-     * Returns the current Doom stage (1..4) based on both expedition turn count and total deaths.
-     * - Stage 1: Quiescent (Turns 0–400, 0 deaths)
-     * - Stage 2: Restless (Turns 401–800, or 1st Death)
-     * - Stage 3: Corrupted (Turns 801–1200, or 2nd Death)
-     * - Stage 4: Tarmin's Wrath (Turns 1201+, or 3+ Deaths)
+     * Returns the current Doom stage (1..4): the higher of the expedition turn stage and the
+     * death baseline. Turns reset each expedition; deaths only ever climb.
+     * - Stage 1: Quiescent (Turns 0-400, 0-9 deaths)
+     * - Stage 2: Restless (Turns 401-800, or 10+ deaths)
+     * - Stage 3: Corrupted (Turns 801-1200, or 25+ deaths)
+     * - Stage 4: Tarmin's Wrath (Turns 1201+, or 40+ deaths)
      */
     public int getDoomStage() {
         int deathStage = 1;
-        if (deathCount >= 3) {
+        if (deathCount >= DEATHS_FOR_STAGE_4) {
             deathStage = 4;
-        } else if (deathCount == 2) {
+        } else if (deathCount >= DEATHS_FOR_STAGE_3) {
             deathStage = 3;
-        } else if (deathCount == 1) {
+        } else if (deathCount >= DEATHS_FOR_STAGE_2) {
             deathStage = 2;
         }
 
@@ -198,27 +206,6 @@ public class DoomManager implements SlotScopedState {
 
     public int getCurrentLevel() {
         return currentLevel;
-    }
-
-    /**
-     * @param level The dungeon depth or monster base level.
-     * @return Multiplier for Enemy Stats (HP/Damage).
-     *         Level 1 is strictly 1.0 (no doom penalty).
-     *         Level 2+ scales dynamically with depth up to full scaling at Level 5+.
-     */
-    public float getEnemyScalingMultiplier(int level) {
-        if (level <= 1) {
-            return 1.0f;
-        }
-        float depthWeight = Math.min(1.0f, (level - 1) / 4.0f);
-        return Math.min(1.5f, 1.0f + (DAMAGE_SCALE_PER_DEATH * deathCount * depthWeight));
-    }
-
-    /**
-     * @return Multiplier for Enemy Stats using the current tracked dungeon level.
-     */
-    public float getEnemyScalingMultiplier() {
-        return getEnemyScalingMultiplier(this.currentLevel);
     }
 
     /**

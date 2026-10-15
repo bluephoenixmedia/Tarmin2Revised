@@ -57,15 +57,8 @@ public class GameOverScreen extends BaseScreen {
             "..##......##............",
     };
 
-    private final boolean shouldClearSaves;
-
     public GameOverScreen(Tarmin2 game) {
-        this(game, true);
-    }
-
-    public GameOverScreen(Tarmin2 game, boolean shouldClearSaves) {
         super(game);
-        this.shouldClearSaves = shouldClearSaves;
         this.hudSkin = new com.bpm.minotaur.rendering.HudSkin();
 
         // --- FIX: Initialize DebugManager before SoundManager to avoid null pointers
@@ -139,11 +132,9 @@ public class GameOverScreen extends BaseScreen {
 
     @Override
     public void show() {
-        // --- NEW: Tarmin's Hunger Death Logic ---
-        if (shouldClearSaves) {
-            com.bpm.minotaur.managers.DoomManager.getInstance().incrementDeaths();
-        }
-        // ----------------------------------------
+        // No death is recorded here. GameScreen has already called DoomManager.recordDeath for
+        // this demise before swapping to this screen; counting it again here made the 50th
+        // death count twice and re-ran the apocalypse wipe (#106).
 
         // A wipe here used to clear "saves/world/", a pre-multislot directory
         // the game has not written to since chunks moved under

@@ -209,7 +209,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
             // Doom Death Counter
             Color doomColor = (meta.deathCount > 35) ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_TEMP_ORANGE;
-            Label doomLabel = new Label("Doom: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
+            Label doomLabel = new Label("Tarmin's Hunger: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
                     new Label.LabelStyle(hudSkin.getFontSmall(), doomColor));
             card.add(doomLabel).padBottom(12).row();
 
