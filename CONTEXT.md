@@ -3,12 +3,14 @@
 ## Overview
 Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining the spirit of Mattel's *Treasure of Tarmin* (Intellivision), classic *Might and Magic II & III*, and modern systemic roguelikes (*Caves of Qud*, *NetHack*, *Dwarf Fortress*).
 
+**The story is revenge.** The protagonist is a broken man who rebuilt a simple life after a tragedy, until Tarmin's forces took him in a raid and sentenced him to the maze to feed Tarmin. Unarmoured and carrying only his Father's Sword, he wants Tarmin and the maze dead, at any cost.
+
 ## High-Level Game Loop: The Expedition Loop
 1. **The Shelter (Camp)**: A safe 4x4 sanctuary where the player rests, cooks monster parts, crafts and repairs gear, identifies unknown items, and spends XP/Divinity to level up stats and skills.
 2. **The Expedition**: The player ventures into overland biomes (Forest, Plains, Ruins) or descends vertically into underground strata (Caves of Qud / Dwarf Fortress vertical strata descent available on any chunk).
 3. **Tactical Combat**: Fast turn-based grid combat (bump-to-attack, archery/thrown weapons, tactical spells). Underlying damage calculation honors the classic War vs Spiritual duality.
 4. **Death & Stakes**: Dying revives the player at the Shelter; backpack gear, bones, and lost divinities drop at the death tile (Corpse Run), but each death advances the Doom Clock (Tarmin's Hunger).
-5. **The Final Run**: Gather ancient seals from deep strata bosses across the world to unlock the gates of Castle Tarmin, brave the final gauntlet, slay the Minotaur, and rescue your daughter.
+5. **The Final Run**: Gather ancient seals from deep strata bosses across the world to unlock the gates of Castle Tarmin, brave the final gauntlet, and slay the Minotaur.
 
 ## Domain Glossary
 - **War Strength ($W$)**: Physical power, physical weapon attack, and health scaling.
@@ -17,10 +19,13 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Nasty Monsters**: Monsters Resistant to Spiritual damage and Weak to War.
 - **Horrible Monsters**: Monsters that take War and Spiritual damage alike.
 - **Resistant / Weak**: A monster's affinity to a damage type. Resistant takes reduced damage, Weak takes increased damage. A critical hit pierces resistance. _Avoid_: "immune"; no monster is immune to a damage type.
+- **Father's Sword**: The protagonist's starting weapon, a rusty heirloom and the weakest weapon in the game. Every other weapon out-hits it, but it is a Keepsake: it grants its perk while carried, wielded or not.
+- **Keepsake**: An item whose perk applies while it is carried anywhere on the player, not only when equipped.
+- **Glancing Blow**: An attack that just misses and lands for reduced damage. It does not count as a hit.
 - **Divinity**: Spiritual essence / experience points earned through exploration and slaying monsters; drops on death and can be reclaimed.
 - **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.
 - **Life**: Everything from a respawn (or new game) to the next death. _Avoid_: "run", which is used loosely for both.
-- **Doom Clock ("Tarmin's Hunger")**: Escalating threat meter tracking how close Tarmin is to sacrificing your daughter; advances on player death.
+- **Doom Clock ("Tarmin's Hunger")**: Escalating threat meter that advances on player death. What it measures in the story is being redefined now that the daughter is gone.
 - **Strata**: Vertical subterranean dungeon layers beneath any overland chunk, increasing in hazard, loot quality, and depth.
 - **Paper Doll**: Equipment configuration covering armor slots, rings, cloak, boots, gauntlets, and two active hands.
 - **Discovery**: Identification status of potions, scrolls, and magical items (no cursed item locks).
