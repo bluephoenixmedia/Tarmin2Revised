@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata.progression;
 
 import com.bpm.minotaur.gamedata.Inventory;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ShelterChest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -131,6 +132,29 @@ public class FieldKitGrantTest {
         assertTrue(owed.isEmpty());
         assertTrue("the kit they already earned stays theirs",
                 inventory.hasItemOfType(Item.ItemType.COOKING_KIT));
+    }
+
+    /**
+     * The Shelter Chest is the player's own store: a kit stashed there is owned, and
+     * re-granting it on respawn would duplicate it (#102).
+     */
+    @Test
+    public void testAKitStashedInTheShelterChestIsNotRegranted() {
+        ShelterChest chest = new ShelterChest(30);
+        chest.addItem(new Item(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, null, null, null));
+
+        List<Item.ItemType> owed = FieldKitGrant.owedKits(
+                stations(ShelterAltar.Station.CRAFTING_BENCH, ShelterAltar.Station.CAMPFIRE), inventory, chest);
+
+        assertEquals("only the kit that is nowhere is owed", 1, owed.size());
+        assertEquals(Item.ItemType.COOKING_KIT, owed.get(0));
+    }
+
+    @Test
+    public void testAnEmptyOrMissingChestChangesNothing() {
+        Set<ShelterAltar.Station> bench = stations(ShelterAltar.Station.CRAFTING_BENCH);
+        assertEquals(1, FieldKitGrant.owedKits(bench, inventory, new ShelterChest(30)).size());
+        assertEquals(1, FieldKitGrant.owedKits(bench, inventory, null).size());
     }
 
     @Test

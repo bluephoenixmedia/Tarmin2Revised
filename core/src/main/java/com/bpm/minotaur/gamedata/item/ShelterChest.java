@@ -88,6 +88,16 @@ public class ShelterChest {
         return items.isEmpty();
     }
 
+    /** Whether an item of the given type is stored here. */
+    public boolean containsType(Item.ItemType type) {
+        for (Item item : items) {
+            if (item != null && item.getType() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean addItem(Item item) {
         if (item == null || isFull()) {
             return false;

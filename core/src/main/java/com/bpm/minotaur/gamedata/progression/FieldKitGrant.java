@@ -5,6 +5,7 @@ import com.bpm.minotaur.gamedata.Inventory;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ShelterChest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,6 +71,16 @@ public final class FieldKitGrant {
      * of the altar, and that is the player's to keep.
      */
     public static List<Item.ItemType> owedKits(Set<ShelterAltar.Station> unlockedStations, Inventory inventory) {
+        return owedKits(unlockedStations, inventory, null);
+    }
+
+    /**
+     * As {@link #owedKits(Set, Inventory)}, but a kit stored in the player's Shelter Chest
+     * also counts as owned, so it is not granted a second time. The chest is consulted here
+     * only: {@link Inventory#hasItemOfType} means "carried", and its other callers rely on that.
+     */
+    public static List<Item.ItemType> owedKits(Set<ShelterAltar.Station> unlockedStations, Inventory inventory,
+            ShelterChest chest) {
         List<Item.ItemType> owed = new ArrayList<>();
         if (unlockedStations == null || inventory == null) {
             return owed;
@@ -77,7 +88,7 @@ public final class FieldKitGrant {
 
         for (ShelterAltar.Station station : unlockedStations) {
             Item.ItemType kit = station.getPortableKit();
-            if (kit != null && !inventory.hasItemOfType(kit)) {
+            if (kit != null && !inventory.hasItemOfType(kit) && (chest == null || !chest.containsType(kit))) {
                 owed.add(kit);
             }
         }
@@ -90,6 +101,12 @@ public final class FieldKitGrant {
      */
     public static Result grantOwed(Set<ShelterAltar.Station> unlockedStations, Inventory inventory,
             ItemDataManager itemDataManager, AssetManager assetManager) {
+        return grantOwed(unlockedStations, inventory, null, itemDataManager, assetManager);
+    }
+
+    /** As {@link #grantOwed(Set, Inventory, ItemDataManager, AssetManager)}, never re-granting a kit stored in the chest. */
+    public static Result grantOwed(Set<ShelterAltar.Station> unlockedStations, Inventory inventory, ShelterChest chest,
+            ItemDataManager itemDataManager, AssetManager assetManager) {
         List<Item> granted = new ArrayList<>();
         List<Item> noRoom = new ArrayList<>();
 
@@ -97,7 +114,7 @@ public final class FieldKitGrant {
             return new Result(granted, noRoom);
         }
 
-        for (Item.ItemType kitType : owedKits(unlockedStations, inventory)) {
+        for (Item.ItemType kitType : owedKits(unlockedStations, inventory, chest)) {
             Item kit = itemDataManager.createItem(kitType, 0, 0, ItemColor.GRAY, assetManager);
             if (kit == null) {
                 continue;

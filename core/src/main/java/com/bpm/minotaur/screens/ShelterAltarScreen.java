@@ -287,6 +287,7 @@ public class ShelterAltarScreen extends BaseScreen {
                     com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
                             altar.getUnlockedStations(),
                             parentScreen.getPlayer().getInventory(),
+                            com.bpm.minotaur.gamedata.item.ShelterChest.getInstance(), // stashed kits are owned (#102)
                             game.getItemDataManager(),
                             game.getAssetManager());
 
