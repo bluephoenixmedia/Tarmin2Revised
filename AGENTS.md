@@ -14,6 +14,29 @@ Five canonical triage roles (`needs-triage`, `needs-info`, `ready-for-agent`, `r
 
 Single-context layout with root `CONTEXT.md` and `docs/`. See `docs/agents/domain.md`.
 
+### Skills
+
+Workflows are plain markdown at `.claude/skills/<name>/SKILL.md`. Agents that do not load skills automatically read them by hand:
+
+- **Building an issue:** `implement` (it drives `tdd`, then `code-review`).
+- **A hard bug or flake:** `diagnosing-bugs`.
+- **Planning a large, foggy effort:** `wayfinder`, which runs `grilling` and `domain-modeling`.
+
+---
+
+## Current effort: the 0.0.2 cut
+
+- **Work queue:** the GitHub milestone `0.0.2`. Take an open, unblocked, unassigned issue labelled `ready-for-agent`, `P1` first. Assigning it to yourself is the claim, so do that before any work. `ready-for-human` issues belong to the user.
+- **Why each issue exists:** the decision map is issue #149; each issue links its decision ticket.
+- **Numbers to tune against:** `docs/balance/0.0.2-targets.md`. Measure with `./gradlew :lwjgl3:runDuelSimulation` (single fights) and `python tools/telemetry/aggregate.py` (whole expeditions).
+- **Vocabulary:** `CONTEXT.md` (Incarnation, Tarmin's Hunger, Vengeance, Exposure, Fodder / Soldier / Heavy).
+
+## Working safely
+
+- **Snapshot `saves/` in the same command as every game run**, e.g. `cp -r saves "<tmp>/saves_<timestamp>" && ./gradlew :lwjgl3:run`. Restore only from that same-command copy, and rename a replaced `saves/` aside rather than deleting it. The user plays between agent runs, so any earlier backup is stale.
+- **Shared docs are edit-only.** Backlogs, bug lists and design notes change under you while the user edits them: change just the lines you mean, and re-read a file right before any whole-file write.
+- **The art packs in `docs/game_assets/` are licensed** (Humble Bundle purchases); use them freely, keeping the attribution lines for packs that require credit. `monsters/Battra` is the exception: it is unusable.
+
 ---
 
 ## Branching and releases
