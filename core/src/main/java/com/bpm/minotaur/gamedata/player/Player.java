@@ -1081,6 +1081,21 @@ public class Player {
         }
     }
 
+    /**
+     * The Eternal Champion is reborn (#187): the dead Incarnation's level, stats and points
+     * go, and the spell slots close back to what level 1 opens. Known Spells are soul memory
+     * and stay; a spell prepared in a slot that is now closed is unprepared, not forgotten.
+     * Gear, vitals and the Father's Sword are the respawn's to handle.
+     */
+    public void beginNewIncarnation(Difficulty difficulty) {
+        stats.beginNewIncarnation(difficulty);
+        pendingLevelUpModal = false;
+        setUnlockedSpellSlots(slotsForLevel(stats.getLevel()));
+        for (int i = unlockedSpellSlots; i < preparedSpells.length; i++) {
+            preparedSpells[i] = null;
+        }
+    }
+
     public Player(float startX, float startY, Difficulty difficulty,
             ItemDataManager itemDataManager, MonsterDataManager monsterDataManager, AssetManager assetManager) {
 
