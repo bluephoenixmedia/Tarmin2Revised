@@ -824,6 +824,7 @@
   "MINOTAUR": {
     "baseLevel": 15,
     "frequency": 1,
+    "generationFlags": 1,
     "maxHP": 100,
     "maxMP": 50,
     "armorClass": 14,
@@ -1341,6 +1342,7 @@
   },
   "MIMIC": {
     "baseLevel": 3,
+    "generationFlags": 64,
     "maxHP": 50,
     "maxMP": 0,
     "armorClass": 12,

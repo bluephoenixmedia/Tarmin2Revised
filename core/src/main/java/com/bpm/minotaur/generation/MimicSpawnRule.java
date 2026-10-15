@@ -24,7 +24,11 @@ public final class MimicSpawnRule {
     private MimicSpawnRule() {
     }
 
-    /** True if this depth is deep enough for chests, and therefore for mimics. */
+    /**
+     * True if this depth is deep enough for chests, and therefore for mimics.
+     *
+     * @param level the real dungeon depth, not the EDL (#195).
+     */
     public static boolean isEligible(int level) {
         return level >= MIN_LEVEL;
     }

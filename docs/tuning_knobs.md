@@ -10,7 +10,7 @@ The values that change how the game plays when you move them. Compiled 2026-10-0
 
 | Where | What |
 |---|---|
-| `D/spawntables.json` `monsterSpawnTable` (~41 rows) | Loaded but never read. Monster choice really comes from `monsters.json` `frequency` and `baseLevel` plus the `MonsterSpawner` rules (section 6). |
+| `D/spawntables.json` `monsterSpawnTable` (~41 rows) | Not read by the maze spawner, whose monster choice comes from `monsters.json` `frequency` and `baseLevel` plus the `MonsterSpawner` rules (section 6). It IS read for the Desert and Lakelands fauna (`DesertChunkGenerator`, `LakelandsChunkGenerator`). |
 | `D/spawntables.json` `itemSpawnTable` (399 rows) | Loaded but never read. World items come from `ItemSpawner` category weights times each template's `probability` (section 7). |
 | `D/spawntables.json` `levelBudgets[].monsterBudget` | Not used for monster count. `SpawnManager` computes `round(14 + 3.5 x (depth-1))` instead. (`itemBudget`, `containerBudget`, `debrisBudget`, `mimicBudget`, `defaultBudget` ARE live.) |
 | `J/managers/SpawnManager.java` `BASE_MODIFIER_CHANCE` 0.15, `COLOR_MULTIPLIER_BONUS` 0.1, `SECOND_MODIFIER_CHANCE` 0.25, `THIRD_MODIFIER_CHANCE` 0.10 | Declared, unused. |
@@ -20,9 +20,10 @@ The values that change how the game plays when you move them. Compiled 2026-10-0
 
 Other things to know before tuning:
 - Most level 1-2 spells in `spells.json` carry placeholder `2d6` / `3d6` FORCE dice even when they are not damage spells. Check a spell really reads `damageDice` first.
-- `weapons.json` has `probability` 0 on 250 of 266 entries and `armor.json` on 108 of 118, so almost nothing spawns from the world roll for those. Raise `probability` to make an item findable.
+- `probability`: an entry that leaves it out gets 10 (`ItemDataManager.DEFAULT_PROBABILITY`); an explicit `0` keeps the template out of the world roll. (Before #195 the loaders rewrote every 0 to 10, so 0 gated nothing; the old `"probability": 0` lines were removed from `weapons.json` and `armor.json`, which kept their weights at 10.) What really keeps most weapons and armour off a fresh save's floor is the unlock gate (section 10), not `probability`.
 - Many later monsters have no `frequency` key (default 0, so rare but not excluded, plus alignment +5 and level +1 bonuses).
-- Dragon `baseExperience` is 50, low next to its stats; likely a data-entry slip.
+- Dragon `baseExperience` is 50, low next to its stats; likely a data-entry slip (#183).
+- Weapon floor: every weapon except the Father's Sword (`RUSTY_SWORD`, 1d3) averages at least 3.5 before bonuses; the old `1d4` weapons are `1d4+1` (#195). `BRASS_LANTERN` (`items.json`, 1d3+1) is a light that can be swung, not counted as a weapon.
 - `startArrows` on EASIEST is 99, an outlier next to 8/7/6.
 
 ## 1. Difficulty and player start
@@ -124,7 +125,7 @@ Eating while too full deals 3 true damage (`Player.java`, near the meal code).
 | same | HARDENED status | +4 AC | |
 | `J/gamedata/player/PlayerEquipment.java` | `MAX_EQUIPMENT_AC_BONUS` | 15 | Cap on equipment AC |
 | `D/armor.json` [JSON] | `armorClassBonus`, `maxDexBonus`, `armorCategory`, `weight` | AC 0-5; DEX cap 99/2/0; HEAVY 29, MEDIUM 19, LIGHT 62, SHIELD 8 | Per-armour stats |
-| `D/weapons.json` [JSON] | `damageDice`, `accuracyModifier`, `baseValue`, `critChanceBonus` | mostly 1d4 / 1d6; accuracy 0 on all but 2 | Per-weapon stats |
+| `D/weapons.json` [JSON] | `damageDice`, `accuracyModifier`, `baseValue`, `critChanceBonus` | mostly 1d4+1 / 1d6 (weapon floor 3.5, see the notes at the top); accuracy 0 on all but 2 | Per-weapon stats |
 | `D/items.json` [JSON] | BRASS_LANTERN `critChanceBonus` | 0.10 | Lantern crit bonus |
 | `CombatManager.java` | monster to-hit | `d20 + monsterAtkBonus >= targetAC` | |
 | same | `calculateMonsterAttackBonus` | `2 + level/3` plus stat modifier | |
@@ -224,12 +225,12 @@ Eating while too full deals 3 true damage (`Player.java`, near the meal code).
 | 6-9 | 18 | 8 | 9-10 | 0 (6-7), 1 (8-9) |
 | 10-15 | 20 | 10 | 11-15 | 1 (10), 2 (11-15) |
 
-`defaultBudget` (past level 15): item 5, container 4, debris 7, mimic 2.
+`defaultBudget` (past level 15): item 20, container 4, debris 7, mimic 2.
 
 **Counts** (`J/managers/SpawnManager.java`)
 - Monsters: starter chunk (0,0) on depth 1 is 8; otherwise `round(14 + 3.5 x (depth-1))`.
 - Items: `itemBudget x 1.2`. Containers: `containerBudget x 0.5`. Debris: `debrisBudget x 0.5`.
-- Mimics: from level 8 (`MimicSpawnRule.MIN_LEVEL`), uniform 0 to `mimicBudget`.
+- Mimics: from real depth 8 (`MimicSpawnRule.MIN_LEVEL`), uniform 0 to `mimicBudget` (the budget row is still picked by EDL). `MIMIC` carries `G_NOGEN` in `monsters.json`, so it never comes from the random monster roll.
 - Container key tiers: depth >= 6 skeleton 10% / gold 55% / silver 35%; depth >= 3 skeleton 3% / silver 57% / iron 40%; shallower silver 25% / iron 75%.
 - Item affixes: cursed below 0.20, blessed above 0.90. Enchant chance 0.15 (magnitude 1-3; at depth > 5, 70% are forced positive). Affix counts by colour: ORANGE 1, BLUE 1-2, WHITE 2, PINK 2-3, PURPLE 3-4, TAN 0.
 - Spawn exclusion: 8 tiles from the player for periodic spawns; 6 from the door and hearth.
@@ -240,8 +241,9 @@ Eating while too full deals 3 true damage (`Player.java`, near the meal code).
 - Near the starter shelter (depth <= 1, chunk within 2 of 0,0): `baseLevel <= 2` and MCR <= 100.
 - `calculateMCR` = maxHP + maxMP + 3 x AC + DEX + 15 if ranged.
 - Gehennom starts at level 25.
-- **EDL** (`J/managers/WorldManager.java`): `el = depth + (|chunkX|+|chunkY|)/2`; `edl = (el + playerLevel)/2`; capped at 2 on the starter ring; plus `difficultyOffset`, which grows by `currentLevel` on each world reset.
-- Monster inventory (`J/generation/MonsterFactory.java`): weapon users get armour on a 1-in-2 roll; INT >= 8 get a potion at 1-in-6 and a wand at 1-in-10; INT > 5 get gold at 1-in-3.
+- **EDL** (`J/managers/WorldManager.java`): `el = depth + (|chunkX|+|chunkY|)/2`; `edl = (el + playerLevel)/2`; capped at 2 on the starter ring. (The old `difficultyOffset` was never raised, as `resetWorldKeepDifficulty` had no callers; both were removed in #195.)
+- Monster inventory (`J/generation/MonsterFactory.java`): weapon users (matched by type name; `GIANT` exactly, so giant insects are unarmed) get armour on a 1-in-2 roll; INT >= 8 get a potion at 1-in-6 and a wand at 1-in-10; INT > 5 get a treasure item (GOLD category = `isTreasure`) at 1-in-3. Each of these draws through the same unlock gate, so on a fresh save a roll can still come back empty.
+- `generationFlags` (`monsters.json`, `MonsterTemplate.G_*`): `MINOTAUR` is `G_UNIQ` (1), `MIMIC` is `G_NOGEN` (64); no other monster sets any.
 
 **Per-monster** `D/monsters.json` [JSON], 60 monsters. Keys: `baseLevel`, `frequency`, `maxHP`, `maxMP`, `armorClass`, `magicResistance`, `moveSpeed` (default 12), `baseExperience`, `damageDice`, `dexterity`, `intelligence`, `attackRange`, `rangedDamageDice`, `onHitEffects[{type,duration,potency,chance}]`, `variants[{color,minLevel,maxLevel,weight}]`, `spellChance`, `isSpellcaster`.
 - Frequency: ant, spider, skeleton 10; scorpion, snake 8; orc 6; dwarf 4; dragon 1.
@@ -271,17 +273,19 @@ Eating while too full deals 3 true damage (`Player.java`, near the meal code).
 
 ## 7. Loot and item spawning
 
-**`J/generation/ItemSpawner.java`** picks a category by weight, then an item by its template `probability`.
+**`J/generation/ItemSpawner.java`** picks a category by weight, then an item by its template `probability`. A category with nothing eligible in it (no template, or all still locked) is struck off and the roll is made again among the rest, so a world item roll never places nothing.
+
+Category membership: AMULET = `isAmulet`, GOLD = `isTreasure`, TOOL = `"category": "TOOL"` (no template is tagged yet), SPIRITUAL_WEAPON = `damageType` SPIRITUAL or a name with the whole word "Cross", "Book", "Spiritual" or "Holy". Templates without `variants` are placed with the EDL colour roll.
 
 | Context | Category weights |
 |---|---|
 | Default | FOOD 30, POTION 20, SCROLL 25, WAR_WEAPON 15, SPIRITUAL_WEAPON 15, ARMOR 20, WAND 15, TOOL 8, GEM 8, BOOK 8, RING 6, AMULET 2, AMMUNITION 15 |
-| Container | POTION 18, SCROLL 18, GEM 18, FOOD 5, TOOL 8, WAND 6, RING 6, BOOK 6, AMULET 2, GOLD 9, AMMO 12 (no weapons or armour) |
 | Gehennom | WAR_WEAPON 10, SPIRITUAL_WEAPON 10, ARMOR 20, POTION 1, SCROLL 1, FOOD 5, GEM 15, TOOL 10, WAND 10, RING 8, BOOK 5, AMULET 5, AMMO 10 |
 
 - From EDL 6, food weight is x0.20 (floor 1): the "subsistence shift".
 - `unlockGated` items get x3 weight.
-- `FirearmSpawnRule` gates firearms by depth (section 4).
+- `FirearmSpawnRule` gates firearms by real depth, not EDL (section 4).
+- Container contents never go through `ItemSpawner`; they come from `containerLoot` below. (`ItemSpawner` used to carry container category weights that nothing reached; removed in #195.)
 
 **`D/spawntables.json`** [JSON]
 - `containerSpawnTable`: SMALL_BAG levels 1-5 weight 12; BOX 1-10 weight 10; MEDIUM_PACK 4-14 weight 8; LARGE_BAG 6-18 weight 6; REGULAR_CHEST 8+ weight 4.
@@ -332,7 +336,7 @@ Eating while too full deals 3 true damage (`Player.java`, near the meal code).
 | same | `STATUE_FREQUENCY_BASE`, `_MAX` | 0.15, 0.35 | Statue event chance by Monument tier |
 | same | station costs (Divinities) | Bed 15, Stash 20, Fire Pot 20, Crafting Bench 30, Lantern 10, Training Grounds 25, Archive Lectern 15, Verdant Gate 25 (depth 3), Dune Gate 35 (depth 5), Mist Gate 45 (depth 7) | |
 | `J/managers/DivinityManager.java` | `MAX_LOOT_RETENTION_LEVEL`, `LOOT_RETENTION_ITEMS_PER_LEVEL`, `LOOT_RETENTION_BASE_COST` | 5, 2, 20 | Retention upgrade costs 20 x (level+1) |
-| `J/managers/UnlockManager.java` | `UNLOCK_SCORE_THRESHOLD` | 50 | Items scoring above this start locked |
+| `J/managers/UnlockManager.java` | `UNLOCK_SCORE_THRESHOLD` | 50 | Items scoring at or above this start locked. Score = `baseValue + 100 x AC` (armour) `+ 50 x n x sides` (weapon `NdS`; a `+K` modifier is parsed but not scored). AXE is exempt |
 | same | `calculateItemScore` | `baseValue + AC x 100 + dice n x sides x 50` | |
 | same | unlock eligibility | `maxEligibleScore = 50 + strata x 250` | Score ceiling by depth |
 | same | milestones | 100 kills, 150 divinities earned, 1000 turns lived | Each adds one unlock |

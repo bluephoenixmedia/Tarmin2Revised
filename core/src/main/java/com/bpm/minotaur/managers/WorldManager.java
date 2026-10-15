@@ -424,9 +424,6 @@ public class WorldManager {
         Gdx.app.log("WorldManager", "Saving has been enabled.");
     }
 
-    // --- NEW: Difficulty Persistence ---
-    private int difficultyOffset = 0;
-
     /**
      * Calculates difficulty based on NetHack EL & EDL formulas:
      * EL = depth + floor(D_xy / 2)
@@ -454,44 +451,7 @@ public class WorldManager {
             }
         }
 
-        return Math.max(1, edl + difficultyOffset);
-    }
-
-    public void resetWorldKeepDifficulty() {
-        Gdx.app.log("WorldManager", "RESETTING WORLD - PRESERVING DIFFICULTY");
-
-        // 1. Increase Difficulty Offset
-        // If we are at Level 5, we want next run's Level 1 to feel like Level 6 (or
-        // similar).
-        // effectiveLevel = 1 + offset.
-        // We want 1 + offset = currentLevel + 1?
-        // Let's simply add currentLevel to offset.
-        this.difficultyOffset += this.currentLevel;
-        Gdx.app.log("WorldManager", "Difficulty Offset increased to: " + difficultyOffset);
-
-        // 2. Clear Loaded State
-        loadedChunks.clear();
-        levelThemes.clear();
-        currentPlayerChunkId.set(0, 0);
-        this.currentLevel = 1;
-        this.currentLevelTheme = getThemeForLevel(1);
-        this.pendingUpLadderPos = null;
-        seenChoiceEvents.clear();
-
-        // 3. Delete Chunk Save Files (Keep Discovery, Keep Player meta if stored
-        // separately)
-        FileHandle saveDir = Gdx.files.local(getChunkSaveDir());
-        if (saveDir.exists()) {
-            for (FileHandle file : saveDir.list()) {
-                if (file.name().startsWith("chunk_")) {
-                    file.delete();
-                }
-            }
-        }
-        // No chunk survives, so a legacy world can take the current layout.
-        this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
-        rebuildBiomeManager();
-        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
+        return Math.max(1, edl);
     }
 
     // --- NEW: Descent Logic ---

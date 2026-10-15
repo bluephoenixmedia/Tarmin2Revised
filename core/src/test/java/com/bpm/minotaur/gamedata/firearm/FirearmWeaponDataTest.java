@@ -99,7 +99,8 @@ public class FirearmWeaponDataTest {
         // The whole justification for the reload, the noise and the ammunition scarcity
         // is that a firearm hits materially harder. If that stops being true, the costs
         // are unearned.
-        assertEquals("1d4", weapons.get("BOW").getString("damageDice"));
+        // 1d4+1 since the 0.0.2 weapon floor (#195).
+        assertEquals("1d4+1", weapons.get("BOW").getString("damageDice"));
         assertEquals("2d8", firearm(Item.ItemType.ARQUEBUS).getString("damageDice"));
         assertEquals("2d8", firearm(Item.ItemType.BLUNDERBUS).getString("damageDice"));
         assertEquals("1d12", firearm(Item.ItemType.MUSKET).getString("damageDice"));

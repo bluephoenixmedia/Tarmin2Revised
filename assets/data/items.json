@@ -5317,7 +5317,7 @@
         "isWeapon": false,
         "isRanged": false,
         "isArmor": false,
-        "isPotion": true,
+        "isPotion": false,
         "isPotionAppearance": false,
         "isFood": true,
         "isTreasure": false,

@@ -13,7 +13,8 @@ import java.util.Set;
  * @param levelAlignment   Alignment of the current level
  * @param luck             Current player Luck
  * @param spawnedUniqueIds Set of IDs of unique monsters already spawned
- * @param isContainer      True if generating items inside a container (chest, box)
+ * @param isContainer      True if generating items inside a container (chest, box). ItemSpawner
+ *                         ignores it: container contents come from spawntables.json containerLoot.
  * @param edl              Effective Difficulty Level (NetHack scaled)
  * @param chunkId          Current chunk coordinates (X, Y)
  * @param doomStage        Current Doom Clock escalation stage (1..4)

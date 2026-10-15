@@ -17,6 +17,12 @@ public class ItemSpawner {
     private final Map<String, ItemTemplate> registry; // Need IDs? Template doesn't hold ID usually.
     private final NetHackRNG rng;
 
+    /**
+     * "Cross" as a whole word. A bare contains("Cross") also caught every crossbow
+     * ("Disk, Crossbow"), filing it as a holy weapon (#195).
+     */
+    private static final java.util.regex.Pattern HOLY_CROSS = java.util.regex.Pattern.compile("\\bCross\\b");
+
     public ItemSpawner(Map<String, ItemTemplate> registry, NetHackRNG rng) {
         this.registry = Map.copyOf(registry);
         this.rng = rng;
@@ -29,10 +35,23 @@ public class ItemSpawner {
      * @return The selected Item ID and Template (or null fallback)
      */
     public Map.Entry<String, ItemTemplate> spawnItem(SpawnContext ctx) {
-        // Step 1: Class Selection Strategy
+        // Step 1: Class Selection Strategy. A category with nothing eligible in it (no
+        // template, or every template still locked) is struck off and the roll is made
+        // again among the rest, so a category roll never places nothing (#195).
         Map<ItemCategory, Integer> classWeights = getClassWeights(ctx);
-        ItemCategory selectedCategory = selectItemCategory(classWeights);
+        classWeights.values().removeIf(w -> w == null || w <= 0);
+        while (!classWeights.isEmpty()) {
+            ItemCategory selectedCategory = selectItemCategory(classWeights);
+            Map.Entry<String, ItemTemplate> spawned = spawnFromCategory(selectedCategory, ctx);
+            if (spawned != null) {
+                return spawned;
+            }
+            classWeights.remove(selectedCategory);
+        }
+        return null;
+    }
 
+    private Map.Entry<String, ItemTemplate> spawnFromCategory(ItemCategory selectedCategory, SpawnContext ctx) {
         // Dynamic Spell Scroll Generation
         if (selectedCategory == ItemCategory.SCROLL) {
             Map.Entry<String, ItemTemplate> dynamicScroll = spawnDynamicSpellScroll(ctx != null ? ctx.edl() : 1);
@@ -163,26 +182,10 @@ public class ItemSpawner {
     private Map<ItemCategory, Integer> getClassWeights(SpawnContext ctx) {
         EnumMap<ItemCategory, Integer> weights = new EnumMap<>(ItemCategory.class);
 
-        if (ctx.isContainer()) {
-            weights.put(ItemCategory.WAR_WEAPON, 0); // Assuming WEAPON -> WAR_WEAPON
-            weights.put(ItemCategory.SPIRITUAL_WEAPON, 0);
-            weights.put(ItemCategory.ARMOR, 0);
-
-            // "Potion 18, Scroll 18, Gem 18" -> Sum 54.
-            weights.put(ItemCategory.POTION, 18);
-            weights.put(ItemCategory.SCROLL, 18);
-            weights.put(ItemCategory.GEM, 18);
-
-            weights.put(ItemCategory.FOOD, 5);
-            weights.put(ItemCategory.TOOL, 8);
-            weights.put(ItemCategory.WAND, 6);
-            weights.put(ItemCategory.RING, 6);
-            weights.put(ItemCategory.BOOK, 6);
-            weights.put(ItemCategory.AMULET, 2);
-            weights.put(ItemCategory.GOLD, 9);
-            weights.put(ItemCategory.AMMUNITION, 12);
-
-        } else if (ctx.isGehennom()) {
+        // Container contents do not come through here: SpawnManager fills containers
+        // from spawntables.json containerLoot. The container weights that used to sit
+        // here were never reached and were removed (#195).
+        if (ctx.isGehennom()) {
             weights.put(ItemCategory.WAR_WEAPON, 10);
             weights.put(ItemCategory.SPIRITUAL_WEAPON, 10); // 50/50 Split 20%
             weights.put(ItemCategory.ARMOR, 20);
@@ -308,7 +311,7 @@ public class ItemSpawner {
                 return t.isWeapon && !t.isAmmunition && !isAmmunitionFallback(t) && !"SPIRITUAL".equalsIgnoreCase(t.damageType);
             case SPIRITUAL_WEAPON:
                 return (t.isWeapon && "SPIRITUAL".equalsIgnoreCase(t.damageType))
-                        || (t.friendlyName != null && (t.friendlyName.contains("Cross") || t.friendlyName.contains("Book")
+                        || (t.friendlyName != null && (HOLY_CROSS.matcher(t.friendlyName).find() || t.friendlyName.contains("Book")
                                 || t.friendlyName.contains("Spiritual") || t.friendlyName.contains("Holy")));
             // For others like SCROLL, WAND, BOOK - if no boolean, we can't spawn them
             // easily unless we add data.
@@ -324,6 +327,13 @@ public class ItemSpawner {
                 return t.isGem;
             case BOOK:
                 return "BOOK".equals(t.category) || (t.friendlyName != null && t.friendlyName.contains("Book") && !t.isWeapon);
+            case AMULET:
+                return t.isAmulet;
+            case GOLD:
+                return t.isTreasure;
+            case TOOL:
+                // No tool flag exists; a template opts in with "category": "TOOL".
+                return "TOOL".equals(t.category);
             default:
                 return false;
         }

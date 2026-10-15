@@ -123,7 +123,7 @@
     ],
     "defaultBudget": {
         "monsterBudget": 8,
-        "itemBudget": 5,
+        "itemBudget": 20,
         "containerBudget": 4,
         "debrisBudget": 7,
         "mimicBudget": 2
