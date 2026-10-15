@@ -1841,6 +1841,9 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
         debugManager.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D);
         debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
+        // Death is permanent for the Incarnation (#187): level, XP, stats, points and the HP/MP
+        // maxima die with it. Known Spells, unlocks, the altar, the chest and Tarmin's Hunger stay.
+        player.beginNewIncarnation(difficulty);
         player.getStats().setCurrentHP(player.getStats().getMaxHP());
         player.getStats().setCurrentMP(player.getStats().getMaxMP());
         player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
@@ -1863,13 +1866,14 @@ public class GameScreen extends BaseScreen {
             player.getInjuryManager().cureAll();
         }
 
-        // Strip any equipped weapons and armor upon death -- Item 39: player loses equipped
-        // armor and weapons upon death and always restarts with the rusty sword (1d3).
+        // Strip any equipped weapons and armor upon death. The Father's Sword returns with every
+        // Incarnation (#187); its Keepsake perk is in FathersSword.
         if (player.getEquipment() != null) {
             player.getEquipment().stripAllEquipped();
         }
         player.getInventory().setLeftHand(null);
-        Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
+        Item starterWeapon = game.getItemDataManager().createItem(
+                com.bpm.minotaur.gamedata.item.FathersSword.TYPE, 0, 0, ItemColor.GRAY, game.getAssetManager());
         player.getInventory().setRightHand(starterWeapon);
         player.giveStarterLantern(game.getItemDataManager().createItem(
                 Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, game.getAssetManager()),

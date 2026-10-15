@@ -175,6 +175,45 @@ public class PlayerStats {
         this.experienceToNextLevel = calculateXpForLevel(2);
     }
 
+    /**
+     * Death is permanent for the Incarnation (#187): the character level, experience,
+     * trained attributes, unspent and spent attribute/skill points, the HP and MP maxima
+     * and carried ammunition go back to what a new game at {@code difficulty} starts with.
+     *
+     * <p>Only what belongs to the body is reset here. Altar Ascension is read from
+     * {@link com.bpm.minotaur.gamedata.progression.ShelterAltar} on top of these values and
+     * survives; vitals, the dice pool and gear are handled by the respawn itself.
+     */
+    public void beginNewIncarnation(Difficulty difficulty) {
+        PlayerStats fresh = new PlayerStats(difficulty);
+
+        this.level = fresh.level;
+        this.experience = fresh.experience;
+        this.experienceToNextLevel = fresh.experienceToNextLevel;
+
+        this.strength = fresh.strength;
+        this.dexterity = fresh.dexterity;
+        this.constitution = fresh.constitution;
+        this.intelligence = fresh.intelligence;
+        this.wisdom = fresh.wisdom;
+        this.agility = fresh.agility;
+        this.charisma = fresh.charisma;
+
+        this.unallocatedAttributePoints = 0;
+        this.unallocatedSkillPoints = 0;
+        this.unlockedSkills.clear();
+
+        this.maxHP = fresh.maxHP;
+        this.maxMP = fresh.maxMP;
+        this.temporaryHP = 0;
+        this.currentHP = getMaxHP();
+        this.currentMP = this.maxMP;
+
+        this.arrows = fresh.arrows;
+        this.shot = fresh.shot;
+        this.powderDampness = 0f;
+    }
+
     // --- Stat-Only Logic Methods ---
 
     private int calculateXpForLevel(int targetLevel) {
