@@ -6,7 +6,7 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler blending:
 1. **Treasure of Tarmin (Intellivision)**: Grid-based claustrophobic exploration, the War vs Spiritual duality (stats, weapons, and monsters), colored tiers of gear, and the menacing Minotaur awaiting at the climax.
 2. **Might and Magic II & III**: Step-by-step first-person overland biomes and dungeons, landmark navigation (Castle Tarmin looming in the distance), town/camp services, and deep character development.
 3. **Advanced Procedural Roguelikes (Caves of Qud, NetHack, Dwarf Fortress)**: Systemic emergent interactions, open-ended vertical strata descent on any chunk, sensory monster AI, organic harvesting (flesh, bones, debris), and unidentified item experimentation (without punishing curses).
-4. **The Narrative Win Condition**: Prepare across expeditions, forge gear, unlock divine thresholds, and launch the **Final Run** through the sealed gates of Castle Tarmin to vanquish the Minotaur and rescue your daughter.
+4. **The Narrative Win Condition**: Prepare across expeditions, forge gear, unlock divine thresholds, and launch the **Final Run** through the sealed gates of Castle Tarmin to kill the Minotaur and take your revenge on Tarmin. You are a broken man his forces sentenced to the maze to feed him, an Eternal Champion reborn with each death (see `CONTEXT.md`).
 
 ---
 
@@ -63,7 +63,7 @@ Establish the physical foundation of the Delve-Return loop:
 
 ### Phase 5: Castle Tarmin & The Final Run Gauntlet
 - Boss encounters in deep strata guarding the ancient Seals of Tarmin.
-- The Point-of-No-Return castle gauntlet, the Minotaur showdown, and the daughter rescue sequence.
+- The Point-of-No-Return castle gauntlet, and the Minotaur showdown that ends the revenge.
 
 ---
 

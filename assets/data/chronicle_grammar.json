@@ -366,11 +366,11 @@
       ],
       "FOR": [
         "In the year {year} {A} killed the {ordinal} seeker, and hung the body where the others could see.",
-        "The {ordinal} seeker came looking for the daughter in the year {year}. {A} found the seeker first.",
+        "The {ordinal} seeker came to the maze for vengeance in the year {year}. {A} found the seeker first.",
         "In the year {year} {A} added the {ordinal} seeker to its trophies. {wordsA}."
       ],
       "AGAINST": [
-        "In the year {year} {A} butchered the {ordinal} seeker, who had come only for a child.",
+        "In the year {year} {A} butchered the {ordinal} seeker, who had come only to see Tarmin dead.",
         "The {ordinal} seeker died to {A} in the year {year}. There will be another.",
         "In the year {year} {A} killed the {ordinal} seeker and thought that was the end of it."
       ]
