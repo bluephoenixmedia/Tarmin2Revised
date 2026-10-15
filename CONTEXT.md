@@ -3,13 +3,13 @@
 ## Overview
 Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining the spirit of Mattel's *Treasure of Tarmin* (Intellivision), classic *Might and Magic II & III*, and modern systemic roguelikes (*Caves of Qud*, *NetHack*, *Dwarf Fortress*).
 
-**The story is revenge.** The protagonist is a broken man who rebuilt a simple life after a tragedy, until Tarmin's forces took him in a raid and sentenced him to the maze to feed Tarmin. Unarmoured and carrying only his Father's Sword, he wants Tarmin and the maze dead, at any cost.
+**The story is revenge.** The protagonist is a broken man who rebuilt a simple life after a tragedy, until Tarmin's forces took him in a raid and sentenced him to the maze to feed Tarmin. Unarmoured and carrying only his Father's Sword, he wants Tarmin and the maze dead, at any cost. He is an **Eternal Champion** in Michael Moorcock's sense: when he dies, the maze draws his soul back into a new body, and the struggle goes on.
 
 ## High-Level Game Loop: The Expedition Loop
 1. **The Shelter (Camp)**: A safe 4x4 sanctuary where the player rests, cooks monster parts, crafts and repairs gear, identifies unknown items, and spends XP/Divinity to level up stats and skills.
 2. **The Expedition**: The player ventures into overland biomes (Forest, Plains, Ruins) or descends vertically into underground strata (Caves of Qud / Dwarf Fortress vertical strata descent available on any chunk).
 3. **Tactical Combat**: Fast turn-based grid combat (bump-to-attack, archery/thrown weapons, tactical spells). Underlying damage calculation honors the classic War vs Spiritual duality.
-4. **Death & Stakes**: Dying revives the player at the Shelter; backpack gear, bones, and lost divinities drop at the death tile (Corpse Run), but each death advances the Doom Clock (Tarmin's Hunger).
+4. **Death & Stakes**: Death is permanent for the Incarnation, as in NetHack: its level, stats and carried gear are lost, and the gear and bones stay at the death tile. The Eternal Champion is reborn at the Shelter as a new Incarnation, keeping only what the soul and the world remember. Every death feeds Tarmin's Hunger.
 5. **The Final Run**: Gather ancient seals from deep strata bosses across the world to unlock the gates of Castle Tarmin, brave the final gauntlet, and slay the Minotaur.
 
 ## Domain Glossary
@@ -19,15 +19,17 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Nasty Monsters**: Monsters Resistant to Spiritual damage and Weak to War.
 - **Horrible Monsters**: Monsters that take War and Spiritual damage alike.
 - **Resistant / Weak**: A monster's affinity to a damage type. Resistant takes reduced damage, Weak takes increased damage. A critical hit pierces resistance. _Avoid_: "immune"; no monster is immune to a damage type.
-- **Father's Sword**: The protagonist's starting weapon, a rusty heirloom and the weakest weapon in the game. Every other weapon out-hits it, but it is a Keepsake: it grants its perk while carried, wielded or not.
+- **Father's Sword**: The protagonist's starting weapon, a rusty heirloom and the weakest weapon in the game. Every other weapon out-hits it, but it is a Keepsake: it grants its perk while carried, wielded or not. It returns with every Incarnation, and its perk deepens with the soul's milestones.
 - **Keepsake**: An item whose perk applies while it is carried anywhere on the player, not only when equipped.
 - **Glancing Blow**: An attack that just misses and lands for reduced damage. It does not count as a hit.
 - **Vengeance**: The HP the protagonist takes back with each kill. With the slow natural regen, salves and the shelter bed, it is how he heals; there is no resting in the field.
 - **Exposure**: How cold the protagonist is, driven by environment, wetness, clothing warmth and nearby fire. High exposure brings Chilled, then Hypothermia.
 - **Divinity**: Spiritual essence / experience points earned through exploration and slaying monsters; drops on death and can be reclaimed.
 - **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.
-- **Life**: Everything from a respawn (or new game) to the next death. _Avoid_: "run", which is used loosely for both.
-- **Doom Clock ("Tarmin's Hunger")**: Escalating threat meter that advances on player death. What it measures in the story is being redefined now that the daughter is gone.
+- **Incarnation**: One life of the Eternal Champion, from rebirth (or a new game) to death. Level, stats, skill points and carried gear belong to the Incarnation and die with it. _Avoid_: "run", which is used loosely. Also called a **Life**.
+- **Eternal Champion**: The protagonist's soul, reborn into each Incarnation. It remembers its Known Spells and its Father's Sword; the world remembers unlocks, altar stations, the chronicle, the Shelter Chest and Tarmin's Hunger.
+- **Tarmin's Hunger**: How many times the Eternal Champion has died. Each death is a meal for Tarmin, and the maze grows more savage as he feeds. At 50, the Bridge falls and the game is lost. Within an Expedition, lingering also wakes the maze. _Avoid_ in player-facing text: "Doom", which is the internal name ("Doom Clock").
+- **The Bridge**: The barrier holding the Maze apart from the world. Tarmin's Hunger wears it down; the bridge boss guards the breach.
 - **Effective Difficulty Level (EDL)**: How dangerous a place is, set by its depth and its distance from the starting shelter. It does not follow the player's level: a stronger character simply finds the same place easier.
 - **Fodder / Soldier / Heavy**: The roles a monster plays in an encounter. Fodder die in a swing or two and come in packs; Soldiers are on-level fights; Heavies are rare, telegraphed threats worth fighting or avoiding.
 - **Strata**: Vertical subterranean dungeon layers beneath any overland chunk, increasing in hazard, loot quality, and depth.
