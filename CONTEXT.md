@@ -28,6 +28,8 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.
 - **Life**: Everything from a respawn (or new game) to the next death. _Avoid_: "run", which is used loosely for both.
 - **Doom Clock ("Tarmin's Hunger")**: Escalating threat meter that advances on player death. What it measures in the story is being redefined now that the daughter is gone.
+- **Effective Difficulty Level (EDL)**: How dangerous a place is, set by its depth and its distance from the starting shelter. It does not follow the player's level: a stronger character simply finds the same place easier.
+- **Fodder / Soldier / Heavy**: The roles a monster plays in an encounter. Fodder die in a swing or two and come in packs; Soldiers are on-level fights; Heavies are rare, telegraphed threats worth fighting or avoiding.
 - **Strata**: Vertical subterranean dungeon layers beneath any overland chunk, increasing in hazard, loot quality, and depth.
 - **Paper Doll**: Equipment configuration covering armor slots, rings, cloak, boots, gauntlets, and two active hands.
 - **Discovery**: Identification status of potions, scrolls, and magical items (no cursed item locks).
