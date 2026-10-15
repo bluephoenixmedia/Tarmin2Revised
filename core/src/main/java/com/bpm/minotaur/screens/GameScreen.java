@@ -1962,7 +1962,7 @@ public class GameScreen extends BaseScreen {
                 hud.addMessage("Lost " + lostCount + " item" + (lostCount == 1 ? "" : "s") + " upon falling.");
             }
             hud.addMessage("The world beyond the Shelter has changed -- a new expedition awaits.");
-            hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
+            hud.addMessage(String.format("Tarmin's Hunger grows: death %d of 50, the Bridge at %d%%.", deaths, (int) bridge));
         }
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));

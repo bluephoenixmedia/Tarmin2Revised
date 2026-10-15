@@ -722,8 +722,7 @@ public class CombatManager {
         int actualDamage = 0;
         if (isHit) {
             int baseDmg = DiceRoller.roll(attacker.getDamageDice());
-            float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
-            int dmg = Math.max(1, (int) (baseDmg * doomScale));
+            int dmg = Math.max(1, baseDmg);
             if (playerCurrentBlock > 0) {
                 int blocked = Math.min(dmg, playerCurrentBlock);
                 dmg = Math.max(0, dmg - playerCurrentBlock);
@@ -853,8 +852,7 @@ public class CombatManager {
 
         if (isHit) {
             int baseDmg = DiceRoller.roll(attacker.getDamageDice());
-            float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
-            int dmg = Math.max(1, (int) (baseDmg * doomScale));
+            int dmg = Math.max(1, baseDmg);
             int taken = defender.takeDamage(dmg, DamageType.PHYSICAL);
 
             targetMaze.addBlood((int) defender.getPosition().x, (int) defender.getPosition().y, 0.04f);
@@ -3432,9 +3430,7 @@ public class CombatManager {
         if (isHit) {
             String dmgDice = monster.getDamageDice();
             int baseDmg = DiceRoller.roll(dmgDice);
-            // Apply Doom Scaling (Bridge Integration)
-            float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
-            int dmg = Math.max(1, (int) (baseDmg * doomScale));
+            int dmg = Math.max(1, baseDmg);
 
             // Block Logic
             if (playerCurrentBlock > 0) {

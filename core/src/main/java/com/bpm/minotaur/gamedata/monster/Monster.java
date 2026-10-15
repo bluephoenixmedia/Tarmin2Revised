@@ -469,16 +469,6 @@ public class Monster implements Renderable {
             this.currentHP = this.maxHP;
         }
 
-        // --- Tarmin's Hunger Scaling (The Meat Grinder) ---
-        float scaling = com.bpm.minotaur.managers.DoomManager.getInstance().getEnemyScalingMultiplier(template.baseLevel);
-        if (scaling > 1.0f) {
-            this.maxHP = (int) (this.maxHP * scaling);
-            this.currentHP = this.maxHP;
-            com.badlogic.gdx.Gdx.app.log("Monster", "Spawned " + type + " with Doom Scaling: x"
-                    + String.format("%.2f", scaling) + " HP: " + this.maxHP);
-        }
-        // --------------------------------------------------
-
         // --- AI Initialization ---
         this.aiType = template.aiType != null ? template.aiType : MonsterTemplate.AiType.AGGRESSIVE;
         this.healThreshold = template.healThreshold;

@@ -695,7 +695,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         show(sealsLabel, sealsStr);
 
         int doomStage = DoomManager.getInstance().getDoomStage();
-        String doomStr = "DOOM: [" + "#".repeat(Math.min(6, doomStage)) + ".".repeat(Math.max(0, 6 - doomStage)) + "]";
+        String doomStr = "TARMIN'S HUNGER: [" + "#".repeat(Math.min(6, doomStage)) + ".".repeat(Math.max(0, 6 - doomStage)) + "]";
         show(doomLabel, doomStr);
 
         show(waypointLabel, waypointText());

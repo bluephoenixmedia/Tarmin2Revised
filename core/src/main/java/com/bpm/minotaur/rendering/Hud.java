@@ -413,7 +413,7 @@ public class Hud implements Disposable {
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
-        doomLabel = new Label("DOOM: 0 [0%]", smallStyle);
+        doomLabel = new Label("TARMIN'S HUNGER 0 - 0%", smallStyle);
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
@@ -1092,13 +1092,13 @@ public class Hud implements Disposable {
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
         if (doom.isBridgeBossActive()) {
-            doomLabel.setText(String.format("DOOM %d - %.0f%% - BOSS", deaths, bridge));
+            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%% - BOSS", deaths, bridge));
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else if (bridge >= 90f) {
-            doomLabel.setText(String.format("DOOM %d - %.0f%% - BOSS SOON", deaths, bridge));
+            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%% - BOSS SOON", deaths, bridge));
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else {
-            doomLabel.setText(String.format("DOOM %d - %.0f%%", deaths, bridge));
+            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%%", deaths, bridge));
             if (bridge >= 75f) {
                 doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
             } else if (bridge >= 40f) {

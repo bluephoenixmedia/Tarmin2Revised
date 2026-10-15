@@ -3208,7 +3208,7 @@ public class Player {
             }
             float bridgeIntegrity = DoomManager.getInstance() != null ? DoomManager.getInstance().getBridgeIntegrity() : 0f;
 
-            String msg = String.format("You peer through the iron bars into the %s wild: %s%s skies overhead. Doom Bridge integrity: %.0f%%.",
+            String msg = String.format("You peer through the iron bars into the %s wild: %s%s skies overhead. Bridge integrity: %.0f%%.",
                     phaseStr, intensityStr, weatherStr, bridgeIntegrity);
             eventManager.addEvent(new GameEvent(msg, 4f));
             if (soundManager != null) {
