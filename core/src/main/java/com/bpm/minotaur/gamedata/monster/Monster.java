@@ -355,7 +355,7 @@ public class Monster implements Renderable {
         this.currentMP = this.maxMP;
         this.damageDice = template.damageDice != null ? template.damageDice : "1d4";
 
-        this.baseExperience = template.baseExperience;
+        this.baseExperience = MonsterXp.forTemplate(template);
         this.level = template.baseLevel;
         this.moveSpeed = template.moveSpeed; // Init speed
 
@@ -978,8 +978,7 @@ public class Monster implements Renderable {
 
         // Maybe improve AC slightly?
         this.armorClass += (level / 5); // +1 AC every 5 levels
-
-        this.baseExperience = (int) (this.baseExperience * (1.0f + ((level - 1) * 0.25f)));
+        // XP is not scaled here: it comes from the monster's own level (MonsterXp, #183).
     }
 
     public MonsterType getType() {
@@ -1036,6 +1035,11 @@ public class Monster implements Renderable {
 
     public int getBaseExperience() {
         return baseExperience;
+    }
+
+    /** XP the player gets for killing this monster: its XP times its colour's multiplier. */
+    public int getKillExperience() {
+        return MonsterXp.forKill(baseExperience, getMonsterColor());
     }
 
     public void setCurrentHP(int hp) {
@@ -1312,6 +1316,7 @@ public class Monster implements Renderable {
         this.testTemplate = template;
         if (template != null) {
             this.level = template.baseLevel;
+            this.baseExperience = MonsterXp.forTemplate(template);
             this.family = template.family;
             this.maxHP = template.maxHP;
             this.currentHP = template.maxHP;

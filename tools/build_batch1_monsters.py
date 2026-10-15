@@ -37,7 +37,7 @@ def v(color, source, name, weight, min_level=1, max_level=99, **extra):
 
 
 # name: spec dict -- family, level (= baseLevel, the first level it appears at), freq (= frequency, spawn
-# weight), hp, ac, mr (magic resist %), xp, dice, int, dex, speed, shrink (billboard scale), hit (on-hit
+# weight), hp, ac, mr (magic resist %), xp (unused: kill XP comes from level, #183), dice, int, dex, speed, shrink (billboard scale), hit (on-hit
 # effects), optional ranged / caster blocks, and its variants (colourways).
 MONSTERS = {
     'BAT': dict(family='BEAST', level=1, freq=5, hp=5, ac=13, mr=0, xp=5, dice='1d4', int=2, dex=16, speed=22, shrink=0.6,
@@ -145,7 +145,7 @@ def build_entry(spec):
     if spec['mr']:
         entry['magicResistance'] = spec['mr']
     entry.update({
-        'baseExperience': spec['xp'], 'family': spec['family'], 'texturePath': path, 'spriteData': grid,
+        'family': spec['family'], 'texturePath': path, 'spriteData': grid,
         'scale': scale_for(size, spec['shrink']), 'damageDice': spec['dice'], 'damageType': 'PHYSICAL',
         'intelligence': spec['int'], 'dexterity': spec['dex'], 'moveSpeed': spec['speed'],
     })

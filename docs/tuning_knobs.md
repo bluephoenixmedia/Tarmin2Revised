@@ -22,7 +22,7 @@ Other things to know before tuning:
 - Most level 1-2 spells in `spells.json` carry placeholder `2d6` / `3d6` FORCE dice even when they are not damage spells. Check a spell really reads `damageDice` first.
 - `weapons.json` has `probability` 0 on 250 of 266 entries and `armor.json` on 108 of 118, so almost nothing spawns from the world roll for those. Raise `probability` to make an item findable.
 - Many later monsters have no `frequency` key (default 0, so rare but not excluded, plus alignment +5 and level +1 bonuses).
-- Dragon `baseExperience` is 50, low next to its stats; likely a data-entry slip.
+- Kill XP comes from monster level (`MonsterXp`, #183); there is no per-monster XP entry any more, only an optional `xpMultiplier` for elites and bosses.
 - `startArrows` on EASIEST is 99, an outlier next to 8/7/6.
 
 ## 1. Difficulty and player start
@@ -46,7 +46,7 @@ Other things to know before tuning:
 
 | Where | Knob | Value | Effect |
 |---|---|---|---|
-| `PlayerStats.java` | `BASE_XP_REQUIRED`, `LOG_BASE` | 120, 1.6 | XP for a level = 120 x 1.6^(level-1) (L2 192, L3 307, ...) |
+| `PlayerStats.java` | `BASE_XP_REQUIRED`, `LOG_BASE` | 90, `MonsterXp.GROWTH` (1.2) | XP for a level = 90 x 1.2^(level-1) (L2 108, L3 130, ...): 9 on-level kills a level |
 | same | HP per level | `max(1, 2 + CONmod + rnd(0..2))` | The `2` and `nextInt(3)` are inline |
 | same | MP per level | `max(1, 2 + INTmod + rnd(0..2))` | Same pattern |
 | same | level-up heal | 25% of new max | |
@@ -57,8 +57,8 @@ Other things to know before tuning:
 | `J/managers/TurnManager.java` | MP regen interval | `max(8, 24 - 3 x WISmod)` | Turns per 1 MP; needs hydration above 0 |
 | same | ring recharge | every 120 turns | +1 charge |
 | same | Ring of Regeneration | heal per ring each turn | |
-| `J/managers/CombatManager.java` | kill XP scalar | `1 + 0.1 x dungeonLevel` | XP = baseExperience x colour multiplier x this |
-| `J/gamedata/monster/Monster.java` | `scaleStats` | HP `1 + 0.15 x (level-1)`, AC `+level/5`, XP `1 + 0.25 x (level-1)` | How monsters scale with depth |
+| `J/gamedata/monster/MonsterXp.java` | `BASE`, `GROWTH` | 10, 1.2 | Kill XP = 10 x 1.2^(monsterLevel-1) x template `xpMultiplier` x colour multiplier; bones ghost x3 |
+| `J/gamedata/monster/Monster.java` | `scaleStats` | HP `1 + 0.15 x (level-1)`, AC `+level/5` (XP no longer scales) | How monsters scale with depth |
 | `J/managers/DivinityManager.java` | kill Divinities | `max(1, (monsterBaseLevel + dungeonLevel)/2)` | Meta-currency per kill |
 | same | chunk Divinities | `max(1, dungeonLevel)` per new chunk per run | |
 
@@ -243,7 +243,7 @@ Eating while too full deals 3 true damage (`Player.java`, near the meal code).
 - **EDL** (`J/managers/WorldManager.java`): `el = depth + (|chunkX|+|chunkY|)/2`; `edl = (el + playerLevel)/2`; capped at 2 on the starter ring; plus `difficultyOffset`, which grows by `currentLevel` on each world reset.
 - Monster inventory (`J/generation/MonsterFactory.java`): weapon users get armour on a 1-in-2 roll; INT >= 8 get a potion at 1-in-6 and a wand at 1-in-10; INT > 5 get gold at 1-in-3.
 
-**Per-monster** `D/monsters.json` [JSON], 60 monsters. Keys: `baseLevel`, `frequency`, `maxHP`, `maxMP`, `armorClass`, `magicResistance`, `moveSpeed` (default 12), `baseExperience`, `damageDice`, `dexterity`, `intelligence`, `attackRange`, `rangedDamageDice`, `onHitEffects[{type,duration,potency,chance}]`, `variants[{color,minLevel,maxLevel,weight}]`, `spellChance`, `isSpellcaster`.
+**Per-monster** `D/monsters.json` [JSON], 60 monsters. Keys: `baseLevel`, `frequency`, `maxHP`, `maxMP`, `armorClass`, `magicResistance`, `moveSpeed` (default 12), `xpMultiplier` (default 1), `damageDice`, `dexterity`, `intelligence`, `attackRange`, `rangedDamageDice`, `onHitEffects[{type,duration,potency,chance}]`, `variants[{color,minLevel,maxLevel,weight}]`, `spellChance`, `isSpellcaster`.
 - Frequency: ant, spider, skeleton 10; scorpion, snake 8; orc 6; dwarf 4; dragon 1.
 
 | Monster | Level | HP | AC | XP | Damage |

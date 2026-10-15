@@ -45,7 +45,7 @@ public class GhostPlayerMonster extends Monster {
             setIntelligence(pd.intelligence);
             setDexterity(pd.dexterity);
             setLevel(Math.max(1, pd.level));
-            setBaseExperience(pd.level * 80);
+            setBaseExperience(Math.round(MonsterXp.forLevel(Math.max(1, pd.level)) * MonsterXp.BONES_GHOST_MULTIPLIER));
 
             // Compute armor class
             int ac = 10 + Math.max(0, (pd.dexterity - 10) / 2);

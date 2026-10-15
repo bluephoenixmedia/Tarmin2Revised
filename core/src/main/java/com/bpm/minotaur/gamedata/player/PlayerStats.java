@@ -39,10 +39,11 @@ public class PlayerStats {
     private java.util.List<com.bpm.minotaur.gamedata.dice.Artifact> artifacts = new java.util.ArrayList<>();
     private int stamina = 3; // Initial stamina for dice selection
 
-    // XP curve: BASE * LOG_BASE^(level-1). BASE 120 and LOG_BASE 1.6 smooth early leveling:
-    // L2 requires 192 XP, L3 requires 307 XP, making early delves rewarding.
-    private static final int BASE_XP_REQUIRED = 120;
-    private static final double LOG_BASE = 1.6;
+    // XP curve: BASE * LOG_BASE^(level-1) (#183). It grows at the same rate as monster XP
+    // (MonsterXp.GROWTH), so every level costs 9 on-level kills of a common colour
+    // (1.2x): 90 * 1.2 = 108 = 9 * 10 * 1.2. L2 requires 108 XP, L3 130, L4 156.
+    private static final int BASE_XP_REQUIRED = 90;
+    private static final double LOG_BASE = com.bpm.minotaur.gamedata.monster.MonsterXp.GROWTH;
 
     private int treasureScore = 0;
 
@@ -220,7 +221,7 @@ public class PlayerStats {
         if (targetLevel <= 1)
             return 0;
         // Formula: base * (log_base ^ (level -1))
-        return (int) (BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
+        return (int) Math.round(BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
     }
 
     /**
