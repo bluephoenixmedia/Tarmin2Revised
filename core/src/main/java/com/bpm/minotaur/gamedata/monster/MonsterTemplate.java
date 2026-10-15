@@ -63,7 +63,8 @@ public class MonsterTemplate {
                                 // Ascending in modern checks, or THAC0.
     // Plan said: "Ascending AC. Unarmored = 10. Higher is better."
 
-    public int baseExperience;
+    /** Kill XP comes from {@link MonsterXp} on baseLevel; this lifts elites and bosses above it (#183). */
+    public float xpMultiplier = 1.0f;
     public MonsterFamily family; // libGDX Json automatically converts "BEAST" string to MonsterFamily.BEAST
     public String texturePath;
     public String idleAnimationPath;

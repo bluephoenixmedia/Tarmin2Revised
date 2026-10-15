@@ -1156,7 +1156,7 @@ public class CombatManager {
             Gdx.app.error("CombatManager", "Refused to pay out " + m.getMonsterType() + " twice");
             return;
         }
-        player.addExperience(m.getBaseExperience(), eventManager);
+        player.addExperience(m.getKillExperience(), eventManager);
         eventManager.addEvent(new GameEvent("Killed " + nameOf(m) + "!", 2f));
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(m, m.getMonsterType());
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
@@ -3655,11 +3655,8 @@ public class CombatManager {
         // last combatant in the arena).
         com.bpm.minotaur.generation.theme.ThemeObjectiveManager
                 .onMonsterKilled(maze, monster, eventManager);
-        int baseExp = monster.getBaseExperience();
-        float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
-        float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
-        int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
-        player.addExperience(totalExp, eventManager);
+        // Depth pays through the monster's level, not a separate multiplier (#183).
+        player.addExperience(monster.getKillExperience(), eventManager);
 
         com.bpm.minotaur.gamedata.monster.MonsterTemplate killTemplate = monster.getTemplate();
         if (killTemplate != null) {

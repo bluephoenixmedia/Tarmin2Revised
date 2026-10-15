@@ -9,7 +9,6 @@
     "maxHP": 12,
     "maxMP": 8,
     "armorClass": 12,
-    "baseExperience": 10,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_ant.png",
     "spriteData": [
@@ -92,7 +91,6 @@
     "maxHP": 22,
     "maxMP": 10,
     "armorClass": 14,
-    "baseExperience": 15,
     "intelligence": 3,
     "family": "HUMANOID",
     "texturePath": "images/monsters/dwarf.png",
@@ -158,7 +156,6 @@
     "maxHP": 22,
     "maxMP": 20,
     "armorClass": 13,
-    "baseExperience": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/orc.png",
     "intelligence": 5,
@@ -227,7 +224,6 @@
     "maxHP": 18,
     "maxMP": 20,
     "armorClass": 13,
-    "baseExperience": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_scorpion.png",
     "intelligence": 0,
@@ -295,7 +291,6 @@
     "maxHP": 14,
     "maxMP": 12,
     "armorClass": 12,
-    "baseExperience": 35,
     "family": "BEAST",
     "intelligence": 1,
     "texturePath": "images/monsters/giant_snake.png",
@@ -363,7 +358,6 @@
     "maxHP": 20,
     "maxMP": 25,
     "armorClass": 12,
-    "baseExperience": 20,
     "intelligence": 5,
     "family": "UNDEAD",
     "texturePath": "images/monsters/ghoul.png",
@@ -425,7 +419,6 @@
     "maxHP": 12,
     "maxMP": 10,
     "armorClass": 12,
-    "baseExperience": 18,
     "intelligence": 3,
     "family": "UNDEAD",
     "texturePath": "images/monsters/skeleton.png",
@@ -493,7 +486,6 @@
     "maxHP": 32,
     "maxMP": 15,
     "armorClass": 14,
-    "baseExperience": 22,
     "intelligence": 5,
     "isSpellcaster": true,
     "spellSchools": ["NECROMANCY"],
@@ -566,7 +558,6 @@
     "maxHP": 50,
     "maxMP": 15,
     "armorClass": 13,
-    "baseExperience": 35,
     "intelligence": 3,
     "family": "BEAST",
     "texturePath": "images/monsters/alligator.png",
@@ -629,7 +620,6 @@
     "maxMP": 30,
     "armorClass": 16,
     "magicResistance": 30,
-    "baseExperience": 50,
     "intelligence": 10,
     "isSpellcaster": false,
     "family": "MYTHICAL",
@@ -699,7 +689,6 @@
     "maxMP": 35,
     "armorClass": 13,
     "intelligence": 6,
-    "baseExperience": 40,
     "family": "UNDEAD",
     "texturePath": "images/monsters/wraith.png",
     "spriteData": [
@@ -760,7 +749,6 @@
     "maxHP": 60,
     "maxMP": 20,
     "armorClass": 13,
-    "baseExperience": 45,
     "intelligence": 6,
     "family": "HUMANOID",
     "texturePath": "images/monsters/giant.png",
@@ -828,7 +816,6 @@
     "maxMP": 50,
     "armorClass": 14,
     "magicResistance": 20,
-    "baseExperience": 100,
     "intelligence": 20,
     "isSpellcaster": false,
     "family": "MYTHICAL",
@@ -895,7 +882,6 @@
     "maxHP": 10,
     "maxMP": 10,
     "armorClass": 14,
-    "baseExperience": 8,
     "family": "BEAST",
     "texturePath": "images/monsters/spider.png",
     "scale": {
@@ -974,7 +960,6 @@
     "maxHP": 28,
     "maxMP": 30,
     "armorClass": 13,
-    "baseExperience": 200,
     "intelligence": 20,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/ghast.png",
@@ -1037,7 +1022,6 @@
     "maxMP": 45,
     "armorClass": 16,
     "magicResistance": 50,
-    "baseExperience": 250,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/beholder.png",
     "spriteData": [
@@ -1120,7 +1104,6 @@
     "maxHP": 60,
     "maxMP": 0,
     "armorClass": 6,
-    "baseExperience": 120,
     "family": "BEAST",
     "texturePath": "images/monsters/cube.png",
     "spriteData": [
@@ -1194,7 +1177,6 @@
     "maxHP": 40,
     "maxMP": 10,
     "armorClass": 14,
-    "baseExperience": 90,
     "family": "BEAST",
     "texturePath": "images/monsters/rust.png",
     "spriteData": [
@@ -1261,7 +1243,6 @@
     "maxMP": 60,
     "armorClass": 17,
     "magicResistance": 50,
-    "baseExperience": 300,
     "family": "UNDEAD",
     "texturePath": "images/monsters/lich.png",
     "spriteData": [
@@ -1344,7 +1325,6 @@
     "maxHP": 50,
     "maxMP": 0,
     "armorClass": 12,
-    "baseExperience": 150,
     "family": "BEAST",
     "texturePath": "images/monsters/mimic.png",
     "spriteData": [
@@ -1419,7 +1399,6 @@
     "maxMP": 50,
     "armorClass": 15,
     "magicResistance": 40,
-    "baseExperience": 200,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/flayer.png",
     "spriteData": [
@@ -1496,7 +1475,6 @@
     "maxHP": 75,
     "maxMP": 0,
     "armorClass": 13,
-    "baseExperience": 180,
     "family": "BEAST",
     "texturePath": "images/monsters/owlbear.png",
     "spriteData": [
@@ -1564,7 +1542,6 @@
     "maxHP": 60,
     "maxMP": 20,
     "armorClass": 13,
-    "baseExperience": 220,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/dbeast.png",
     "spriteData": [
@@ -1632,7 +1609,6 @@
     "maxHP": 70,
     "maxMP": 15,
     "armorClass": 16,
-    "baseExperience": 280,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/u_hulk.png",
     "spriteData": [
@@ -1700,7 +1676,6 @@
     "maxHP": 8,
     "maxMP": 4,
     "armorClass": 12,
-    "baseExperience": 5,
     "family": "HUMANOID",
     "texturePath": "images/monsters/kobold.png",
     "spriteData": [
@@ -1764,7 +1739,6 @@
     "maxHP": 8,
     "maxMP": 5,
     "armorClass": 12,
-    "baseExperience": 8,
     "family": "HUMANOID",
     "texturePath": "images/monsters/goblin.png",
     "spriteData": [
@@ -1828,7 +1802,6 @@
     "maxHP": 18,
     "maxMP": 6,
     "armorClass": 11,
-    "baseExperience": 15,
     "family": "HUMANOID",
     "texturePath": "images/monsters/troglodyte.png",
     "spriteData": [
@@ -1896,7 +1869,6 @@
     "maxHP": 26,
     "maxMP": 8,
     "armorClass": 13,
-    "baseExperience": 25,
     "family": "HUMANOID",
     "texturePath": "images/monsters/hobgoblin.png",
     "spriteData": [
@@ -1960,7 +1932,6 @@
     "maxHP": 30,
     "maxMP": 2,
     "armorClass": 8,
-    "baseExperience": 20,
     "family": "UNDEAD",
     "texturePath": "images/monsters/zombie.png",
     "spriteData": [
@@ -2020,7 +1991,6 @@
     "maxHP": 42,
     "maxMP": 15,
     "armorClass": 11,
-    "baseExperience": 60,
     "family": "UNDEAD",
     "texturePath": "images/monsters/mummy.png",
     "spriteData": [
@@ -2088,7 +2058,6 @@
     "maxHP": 28,
     "maxMP": 10,
     "armorClass": 11,
-    "baseExperience": 40,
     "family": "BEAST",
     "texturePath": "images/monsters/harpy.png",
     "spriteData": [
@@ -2148,7 +2117,6 @@
     "maxHP": 38,
     "maxMP": 5,
     "armorClass": 15,
-    "baseExperience": 70,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/gargoyle.png",
     "spriteData": [
@@ -2208,7 +2176,6 @@
     "maxHP": 28,
     "maxMP": 5,
     "armorClass": 12,
-    "baseExperience": 35,
     "family": "BEAST",
     "texturePath": "images/monsters/wererat.png",
     "spriteData": [
@@ -2276,7 +2243,6 @@
     "maxHP": 60,
     "maxMP": 10,
     "armorClass": 11,
-    "baseExperience": 110,
     "family": "BEAST",
     "texturePath": "images/monsters/werewolf.png",
     "spriteData": [
@@ -2344,7 +2310,6 @@
     "maxHP": 70,
     "maxMP": 5,
     "armorClass": 15,
-    "baseExperience": 130,
     "family": "HUMANOID",
     "texturePath": "images/monsters/troll.png",
     "spriteData": [
@@ -2407,7 +2372,6 @@
     "maxHP": 75,
     "maxMP": 5,
     "armorClass": 11,
-    "baseExperience": 140,
     "family": "HUMANOID",
     "texturePath": "images/monsters/ogre.png",
     "spriteData": [
@@ -2470,7 +2434,6 @@
     "maxHP": 60,
     "maxMP": 25,
     "armorClass": 15,
-    "baseExperience": 160,
     "family": "BEAST",
     "texturePath": "images/monsters/basilisk.png",
     "spriteData": [
@@ -2542,7 +2505,6 @@
     "maxHP": 45,
     "maxMP": 40,
     "armorClass": 15,
-    "baseExperience": 200,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/medusa.png",
     "spriteData": [
@@ -2621,7 +2583,6 @@
     "maxMP": 10,
     "armorClass": 13,
     "magicResistance": 20,
-    "baseExperience": 220,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/wyvern.png",
     "spriteData": [
@@ -2693,7 +2654,6 @@
     "maxMP": 25,
     "armorClass": 14,
     "magicResistance": 20,
-    "baseExperience": 300,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/chimera.png",
     "spriteData": [
@@ -2757,7 +2717,6 @@
     "maxMP": 15,
     "armorClass": 15,
     "magicResistance": 20,
-    "baseExperience": 350,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/hydra.png",
     "spriteData": [
@@ -2821,7 +2780,6 @@
     "maxMP": 50,
     "armorClass": 16,
     "magicResistance": 30,
-    "baseExperience": 400,
     "family": "UNDEAD",
     "texturePath": "images/monsters/vampire.png",
     "spriteData": [
@@ -2898,7 +2856,6 @@
     "maxMP": 0,
     "armorClass": 16,
     "magicResistance": 50,
-    "baseExperience": 500,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/iron_golem.png",
     "spriteData": [
@@ -2962,7 +2919,6 @@
     "maxMP": 10,
     "armorClass": 17,
     "magicResistance": 20,
-    "baseExperience": 600,
     "family": "BEAST",
     "texturePath": "images/monsters/purple_worm.png",
     "spriteData": [
@@ -3035,7 +2991,6 @@
     "maxHP": 90,
     "maxMP": 30,
     "armorClass": 15,
-    "baseExperience": 250,
     "family": "DEMON",
     "texturePath": "images/monsters/boss_demon_slime_FREE_v1.0/spritesheets/demon_slime_FREE_v1.0_288x160_spritesheet.png",
     "isSpriteSheet": true,
@@ -3083,7 +3038,6 @@
     "maxHP": 140,
     "maxMP": 60,
     "armorClass": 16,
-    "baseExperience": 500,
     "family": "UNDEAD",
     "texturePath": "images/monsters/Bringer-of-Death-SpritSheet_no-Effect.png",
     "isSpriteSheet": true,
@@ -3133,7 +3087,6 @@
     "maxHP": 110,
     "maxMP": 80,
     "armorClass": 15,
-    "baseExperience": 380,
     "family": "DEMON",
     "texturePath": "images/monsters/fall_angel.png",
     "isSpriteSheet": true,
@@ -3183,7 +3136,6 @@
     "maxHP": 22,
     "maxMP": 20,
     "armorClass": 13,
-    "baseExperience": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/Agis/Agis.png",
     "isSpriteSheet": true,
@@ -3211,7 +3163,6 @@
       "maxHP": 5,
       "maxMP": 0,
       "armorClass": 13,
-      "baseExperience": 5,
       "family": "BEAST",
       "texturePath": "images/monsters/batch1/bat.png",
       "spriteData": [
@@ -3273,7 +3224,6 @@
       "maxHP": 6,
       "maxMP": 0,
       "armorClass": 14,
-      "baseExperience": 8,
       "family": "BEAST",
       "texturePath": "images/monsters/batch1/giant_bee.png",
       "spriteData": [
@@ -3335,7 +3285,6 @@
       "maxHP": 20,
       "maxMP": 0,
       "armorClass": 8,
-      "baseExperience": 10,
       "family": "BEAST",
       "texturePath": "images/monsters/batch1/giant_snail.png",
       "spriteData": [
@@ -3389,7 +3338,6 @@
       "maxHP": 14,
       "maxMP": 0,
       "armorClass": 12,
-      "baseExperience": 14,
       "family": "BEAST",
       "texturePath": "images/monsters/batch1/giant_centipede_green.png",
       "spriteData": [
@@ -3459,7 +3407,6 @@
       "maxHP": 30,
       "maxMP": 0,
       "armorClass": 15,
-      "baseExperience": 40,
       "family": "BEAST",
       "texturePath": "images/monsters/batch1/landstalker.png",
       "spriteData": [
@@ -3514,7 +3461,6 @@
       "maxMP": 0,
       "armorClass": 13,
       "magicResistance": 10,
-      "baseExperience": 45,
       "family": "MYTHICAL",
       "texturePath": "images/monsters/batch1/cockatrice.png",
       "spriteData": [
@@ -3576,7 +3522,6 @@
       "maxHP": 28,
       "maxMP": 0,
       "armorClass": 15,
-      "baseExperience": 50,
       "family": "HUMANOID",
       "texturePath": "images/monsters/batch1/lizard_warrior.png",
       "spriteData": [
@@ -3631,7 +3576,6 @@
       "maxMP": 0,
       "armorClass": 14,
       "magicResistance": 15,
-      "baseExperience": 70,
       "family": "BEAST",
       "texturePath": "images/monsters/batch1/beetlescratch_storm.png",
       "spriteData": [
@@ -3731,7 +3675,6 @@
       "maxMP": 0,
       "armorClass": 14,
       "magicResistance": 20,
-      "baseExperience": 60,
       "family": "HUMANOID",
       "texturePath": "images/monsters/batch1/jester.png",
       "spriteData": [
@@ -3806,7 +3749,6 @@
       "maxMP": 0,
       "armorClass": 15,
       "magicResistance": 30,
-      "baseExperience": 80,
       "family": "UNDEAD",
       "texturePath": "images/monsters/batch1/specter_fire.png",
       "spriteData": [
@@ -3909,7 +3851,6 @@
       "maxMP": 0,
       "armorClass": 14,
       "magicResistance": 25,
-      "baseExperience": 100,
       "family": "HUMANOID",
       "texturePath": "images/monsters/batch1/sage_fire.png",
       "spriteData": [
@@ -4011,7 +3952,6 @@
       "maxMP": 0,
       "armorClass": 15,
       "magicResistance": 30,
-      "baseExperience": 110,
       "family": "UNDEAD",
       "texturePath": "images/monsters/batch1/skeletal_wizard.png",
       "spriteData": [

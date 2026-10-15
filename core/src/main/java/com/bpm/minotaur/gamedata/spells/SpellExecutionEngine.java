@@ -847,7 +847,7 @@ public class SpellExecutionEngine {
         } else {
             maze.removeMonster(target);
             if (target.claimDeath()) {
-                player.addExperience(target.getBaseExperience(), eventManager);
+                player.addExperience(target.getKillExperience(), eventManager);
             }
         }
         eventManager.addEvent(new GameEvent("Vanquished " + target.getType() + "!", 2.0f));

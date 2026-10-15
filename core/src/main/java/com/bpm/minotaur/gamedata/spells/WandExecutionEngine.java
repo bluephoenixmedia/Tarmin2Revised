@@ -571,7 +571,7 @@ public class WandExecutionEngine {
         } else {
             maze.removeMonster(target);
             if (target.claimDeath()) {
-                player.addExperience(target.getBaseExperience(), eventManager);
+                player.addExperience(target.getKillExperience(), eventManager);
             }
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Killed " + target.getName() + "!", 2f));
