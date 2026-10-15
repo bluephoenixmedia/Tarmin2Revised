@@ -332,11 +332,6 @@ public class WandExecutionEngine {
         switch (effect) {
             case FIRE:
                 if (target != null) {
-                    if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                        if (eventManager != null) eventManager.addEvent(new GameEvent(target.getType() + " is immune to fire magic!", 1.5f));
-                        if (combatManager != null) combatManager.showDamageText(0, hit.collisionPoint);
-                        return;
-                    }
                     int dmg = DiceRoller.roll("3d6") + 2;
                     int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
                     com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
@@ -355,11 +350,6 @@ public class WandExecutionEngine {
 
             case COLD:
                 if (target != null) {
-                    if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                        if (eventManager != null) eventManager.addEvent(new GameEvent(target.getType() + " is immune to frost magic!", 1.5f));
-                        if (combatManager != null) combatManager.showDamageText(0, hit.collisionPoint);
-                        return;
-                    }
                     int dmg = DiceRoller.roll("2d8") + 2;
                     int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
                     com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),

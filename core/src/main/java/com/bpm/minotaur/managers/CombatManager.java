@@ -1487,10 +1487,7 @@ public class CombatManager {
 
         if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
             Monster target = hit.hitMonster;
-            if (Monster.isImmuneToType(target.getType(), DamageType.PHYSICAL)) {
-                eventManager.addEvent(new GameEvent(target.getType() + " is immune to thrown weapons!", 1.5f));
-                showDamageText(0, hit.collisionPoint);
-            } else if (attackRoll >= target.getArmorClass()) {
+            if (attackRoll >= target.getArmorClass()) {
                 int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
@@ -2240,366 +2237,357 @@ public class CombatManager {
                 }
             }
 
-            if (Monster.isImmuneToType(monster.getType(), dmgType)) {
-                String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
-                eventManager.addEvent(new GameEvent(monster.getType() + " is immune to " + attackCategory + " attacks!", 1.5f));
-                showDamageText(0, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
-                lastDamageDealt = 0;
-                lastHitCritOrFinisher = false;
-                soundManager.playWeaponImpact(false);
+            int totalDamage;
+            if (isArcaneSpark) {
+                int intModifier = (player.getEffectiveIntelligence() - 10) / 2;
+                totalDamage = arcaneSparkDamage(intModifier, DiceRoller.roll(damageDice));
+            } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
+                // Dual Strike (Scissor Finisher): Rolls main hand + off hand damage together!
+                int mainBase = DiceRoller.roll(damageDice);
+                int mainBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                int mainDmg = Math.max(1, mainBase + mainBonus);
+
+                Item offHand = player.getInventory().getLeftHand();
+                int offDmg = 0;
+                if (offHand != null) {
+                    String offDice = player.getInventory().getActiveDamageDice(offHand);
+                    if (offDice == null || offDice.isEmpty()) offDice = "1d4";
+                    int offBase = DiceRoller.roll(offDice);
+                    int offBonus = offHand.isFinesse() ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
+                    offDmg = Math.max(1, offBase + offBonus);
+                }
+                totalDamage = mainDmg + offDmg;
+
+                // Whirlwind Executioner: +50% dual-strike damage
+                if (player.hasSkill(SkillId.WHIRLWIND_EXECUTIONER)) {
+                    totalDamage = (int) (totalDamage * 1.5f);
+                    eventManager.addEvent(new GameEvent("WHIRLWIND EXECUTIONER! Devastating dual strike!", 1.2f));
+                }
+            } else if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
+                int baseDamage = DiceRoller.roll(damageDice);
+                int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
+                totalDamage = Math.max(1, baseDamage + damageBonus);
             } else {
-                int totalDamage;
-                if (isArcaneSpark) {
-                    int intModifier = (player.getEffectiveIntelligence() - 10) / 2;
-                    totalDamage = arcaneSparkDamage(intModifier, DiceRoller.roll(damageDice));
-                } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
-                    // Dual Strike (Scissor Finisher): Rolls main hand + off hand damage together!
-                    int mainBase = DiceRoller.roll(damageDice);
-                    int mainBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
-                    int mainDmg = Math.max(1, mainBase + mainBonus);
-
-                    Item offHand = player.getInventory().getLeftHand();
-                    int offDmg = 0;
-                    if (offHand != null) {
-                        String offDice = player.getInventory().getActiveDamageDice(offHand);
-                        if (offDice == null || offDice.isEmpty()) offDice = "1d4";
-                        int offBase = DiceRoller.roll(offDice);
-                        int offBonus = offHand.isFinesse() ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
-                        offDmg = Math.max(1, offBase + offBonus);
-                    }
-                    totalDamage = mainDmg + offDmg;
-
-                    // Whirlwind Executioner: +50% dual-strike damage
-                    if (player.hasSkill(SkillId.WHIRLWIND_EXECUTIONER)) {
-                        totalDamage = (int) (totalDamage * 1.5f);
-                        eventManager.addEvent(new GameEvent("WHIRLWIND EXECUTIONER! Devastating dual strike!", 1.2f));
-                    }
-                } else if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
-                    int baseDamage = DiceRoller.roll(damageDice);
-                    int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
-                    totalDamage = Math.max(1, baseDamage + damageBonus);
-                } else {
-                    int baseDamage = DiceRoller.roll(damageDice);
-                    int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
-                    totalDamage = Math.max(1, baseDamage + damageBonus);
-                }
-
-                // Combo Damage Multiplier
-                if (currentMotionProfile != null && currentMotionProfile.damageMultiplier > 0f) {
-                    totalDamage = Math.max(1, (int) (totalDamage * currentMotionProfile.damageMultiplier));
-                }
-
-                // Brutal Cleave Perk: +20% damage on finisher strikes
-                if (currentMotionProfile != null && currentMotionProfile.isFinisher && player.hasSkill(SkillId.BRUTAL_CLEAVE)) {
-                    totalDamage = (int) (totalDamage * 1.20f);
-                }
-
-                // Deadeye Sniper Perk: +25% damage on ranged attack at distance >= 3
-                if (attackWeapon != null && attackWeapon.isRanged() && player.hasSkill(SkillId.DEADEYE_SNIPER)) {
-                    float dist = player.getPosition().dst(monster.getPosition());
-                    if (dist >= 3.0f) {
-                        totalDamage = (int) (totalDamage * 1.25f);
-                        eventManager.addEvent(new GameEvent("DEADEYE SNIPER! +25% Long-Range Damage!", 1.2f));
-                    }
-                }
-
-                // Born Coward: a monster that is hunting you and right beside you hits you where it hurts.
-                float huntedPenalty = com.bpm.minotaur.gamedata.trait.TraitEffects.add("huntedMeleePenalty");
-                if (huntedPenalty > 0f && monster.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING
-                        && player.getPosition().dst(monster.getPosition()) <= 1.5f) {
-                    totalDamage = Math.max(1, totalDamage - Math.round(huntedPenalty));
-                }
-
-                float meleeMult = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("meleeDamageMult");
-                if (meleeMult != 1f && (attackWeapon == null || !attackWeapon.isRanged())) {
-                    totalDamage = Math.max(1, Math.round(totalDamage * meleeMult));
-                }
-
-                // Glancing Blow: 35% base damage
-                if (isGlancing) {
-                    totalDamage = glancingBlowDamage(totalDamage);
-                }
-
-                if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
-                    if (dmgType == DamageType.PHYSICAL) {
-                        totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getPhysicalDamageMultiplier()));
-                        eventManager.addEvent(new GameEvent("VOID DAMPENING! Physical -60%", 1f));
-                    } else {
-                        totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getSpiritualDamageMultiplier()));
-                        eventManager.addEvent(new GameEvent("VOID RESONANCE! Spiritual +250%", 1f));
-                    }
-                }
-
-                if (isCrit) {
-                    totalDamage = (int) (totalDamage * player.getCritMultiplier());
-                    eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
-                }
-
-                AnimationArchetype attackArch = AnimationArchetype.fromItem(attackWeapon);
-                boolean isPiercing = (attackArch == AnimationArchetype.THRUSTING_PIERCE || attackArch == AnimationArchetype.RANGED_BOW || attackArch == AnimationArchetype.RANGED_FIREARM)
-                        || (attackWeapon != null && attackWeapon.getDamageType() != null && attackWeapon.getDamageType().equalsIgnoreCase("PIERCING"));
-                int monsterHpBefore = monster.getCurrentHP();
-                int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
-                monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
-                alertMonsterToPlayer(monster);
-                // Bloodsoaked Saint: what you cut from them knits you back together.
-                float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
-                if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
-                    player.getStats().heal(Math.max(1, Math.round(actualDamage * lifesteal)));
-                }
-
-                // Brutal Cleave: Overkill damage cleaves into adjacent monster
-                if (player.hasSkill(SkillId.BRUTAL_CLEAVE) && monster.getCurrentHP() <= 0 && maze != null) {
-                    int overkill = totalDamage - monsterHpBefore;
-                    if (overkill > 0) {
-                        int cleaveDmg = Math.max(1, overkill / 2);
-                        GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
-                        for (Direction d : Direction.values()) {
-                            GridPoint2 adjPos = new GridPoint2(mPos.x + (int) d.getVector().x, mPos.y + (int) d.getVector().y);
-                            Monster adjMonster = maze.getMonsters().get(adjPos);
-                            if (adjMonster != null && adjMonster != monster && adjMonster.getCurrentHP() > 0) {
-                                int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
-                                adjMonster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
-                                eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getName() + " for " + cleaved + " dmg!", 1.5f));
-                                showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
-                                if (adjMonster.getCurrentHP() <= 0) {
-                                    // The full kill path, so a cleaved monster leaves a body and dies on screen.
-                                    handleRemoteKill(adjMonster, KillCause.weapon(heldWeaponKillCause().weapon, false));
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                Monster.Affinity affinity = monster.getAffinity(dmgType);
-                String dmgPrefix = "";
-                com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
-
-                String specialMoveName = SpecialMoveRegistry.resolveMoveName(currentMotionProfile, attackWeapon, isCrit);
-                String comboTag = "";
-                if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
-                    if (currentMotionProfile.isDualStrike) {
-                        comboTag = "DUAL SCISSOR! ";
-                    } else if (currentMotionProfile.isFinisher) {
-                        comboTag = "FINISHER! ";
-                    } else if (currentMotionProfile.isOffHand) {
-                        comboTag = "OFF-HAND! ";
-                    } else {
-                        comboTag = "COMBO x" + (currentMotionProfile.comboStep + 1) + "! ";
-                    }
-                }
-
-                if (isCrit) {
-                    dmgPrefix = comboTag + "[" + specialMoveName + "] CRIT! ";
-                    textColor = com.badlogic.gdx.graphics.Color.RED;
-                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] CRITICAL HIT on " + monster.getType() + " for " + actualDamage + " dmg!", 1.5f));
-                } else if (isGlancing) {
-                    dmgPrefix = "GLANCE! ";
-                    textColor = com.badlogic.gdx.graphics.Color.CYAN;
-                    eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
-                } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
-                    dmgPrefix = comboTag + "[" + specialMoveName + "] ";
-                    textColor = com.badlogic.gdx.graphics.Color.MAGENTA;
-                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
-                } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
-                    dmgPrefix = comboTag + "[" + specialMoveName + "] ";
-                    textColor = com.badlogic.gdx.graphics.Color.GOLD;
-                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
-                } else if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
-                    dmgPrefix = comboTag + "[" + specialMoveName + "] ";
-                    textColor = com.badlogic.gdx.graphics.Color.YELLOW;
-                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
-                } else if (affinity == Monster.Affinity.RESISTANT) {
-                    dmgPrefix = "[" + specialMoveName + "] RESISTED! ";
-                    textColor = com.badlogic.gdx.graphics.Color.CYAN;
-                    String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
-                    eventManager.addEvent(new GameEvent(monster.getType() + " resists " + attackCategory + " attacks!", 1.5f));
-                } else if (affinity == Monster.Affinity.WEAK) {
-                    dmgPrefix = "[" + specialMoveName + "] WEAKNESS! ";
-                    textColor = com.badlogic.gdx.graphics.Color.GOLD;
-                    String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
-                    eventManager.addEvent(new GameEvent(monster.getType() + " is weak to " + attackCategory + " attacks!", 1.5f));
-                } else {
-                    dmgPrefix = "[" + specialMoveName + "] ";
-                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
-                }
-
-                showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
-                lastDamageDealt = actualDamage;
-                lastHitCritOrFinisher = isCrit || (currentMotionProfile != null && currentMotionProfile.isFinisher);
-
-                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(
-                        monster, monster.getMonsterType(), monster.getLevel(), attackModeOf(attackWeapon),
-                        isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
-                                : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT,
-                        actualDamage);
-
-                // --- Open5e Ring of the Ram Trigger ---
-                if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.RAM) > 0) {
-                    player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.RAM);
-                    int forceDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d10");
-                    int ramActual = monster.takeDamage(forceDmg, DamageType.PHYSICAL, false);
-                    monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
-                    eventManager.addEvent(new GameEvent("RAM FORCE! A spectral ram head batters the " + monster.getType() + " for +" + ramActual + " force dmg!", 2.0f));
-                    showDamageText(ramActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "RAM! ", com.badlogic.gdx.graphics.Color.CYAN);
-
-                    if (maze != null && monster.getCurrentHP() > 0) {
-                        int tileX = (int) monster.getPosition().x;
-                        int tileY = (int) monster.getPosition().y;
-                        Direction pushDir = player.getFacing();
-                        com.badlogic.gdx.math.Vector2 pushVec = pushDir.getVector();
-
-                        maze.getMonsters().remove(new GridPoint2(tileX, tileY));
-                        for (int p = 0; p < 2; p++) {
-                            int nextX = tileX + (int) pushVec.x;
-                            int nextY = tileY + (int) pushVec.y;
-                            if (maze.isWallBlocking(tileX, tileY, pushDir) || !maze.isPassable(nextX, nextY) || maze.getMonsters().containsKey(new GridPoint2(nextX, nextY))) {
-                                break;
-                            }
-                            tileX = nextX;
-                            tileY = nextY;
-                        }
-                        monster.getPosition().set(tileX + 0.5f, tileY + 0.5f);
-                        maze.getMonsters().put(new GridPoint2(tileX, tileY), monster);
-                    }
-                }
-
-                // --- Open5e Ring of Shooting Stars Trigger ---
-                if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS) > 0) {
-                    player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS);
-                    int starDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d6");
-                    int starActual = monster.takeDamage(starDmg, DamageType.LIGHT, false);
-                    monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
-                    eventManager.addEvent(new GameEvent("SHOOTING STARS! Dazzling motes of light strike " + monster.getType() + " for +" + starActual + " light dmg!", 2.0f));
-                    showDamageText(starActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "STARS! ", com.badlogic.gdx.graphics.Color.YELLOW);
-                }
-
-                // --- VISCERAL: Feedback ---
-                float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
-                boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;
-
-                // 1. Audio & Hit-Stop
-                boolean isDeflection = isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit);
-                if (isDeflection) {
-                    soundManager.playArmorClang();
-                } else {
-                    if (isCrit || monster.getCurrentHP() <= 0) {
-                        soundManager.playCritImpact(monster.getCurrentHP() <= 0);
-                    }
-                    soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
-                }
-                soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
-
-                // 2. Screen Shake, Hit Stop & Deflection Riposte
-                com.bpm.minotaur.screens.GameScreen gs = (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)
-                        ? (com.bpm.minotaur.screens.GameScreen) game.getScreen() : null;
-                if (gs != null) {
-                    if (isDeflection) {
-                        gs.getWeaponOverlay().triggerDeflectionClang();
-                    } else {
-                        // Decoupled hit-stop (30ms normal, 60ms + 100ms micro-dilation on crit/kill)
-                        gs.getWeaponOverlay().triggerHitStop(isCrit || monster.getCurrentHP() <= 0);
-                        // Coat blade with blood
-                        gs.getWeaponOverlay().addBloodToWeapon();
-                    }
-
-                    // Shake
-                    float extraTrauma = (currentMotionProfile != null) ? currentMotionProfile.screenTrauma : 0f;
-                    float trauma = (isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f)) + extraTrauma;
-                    gs.addTrauma(Math.min(1.0f, trauma));
-
-                    // Pause (Freeze frame)
-                    float pauseDur = isCrit ? 0.15f : (currentMotionProfile != null && currentMotionProfile.isFinisher ? 0.12f : 0.05f);
-                    gs.triggerHitPause(pauseDur);
-                }
-
-                Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
-
-                // 3. Monster Procedural Kinematics
-                Monster.KinematicHitType kinematicType;
-                if (isDeflection) {
-                    kinematicType = Monster.KinematicHitType.DEFLECTED;
-                } else if (weapon != null && (weapon.isRanged() || usesShot(weapon))) {
-                    kinematicType = Monster.KinematicHitType.BALLISTIC_SHOT;
-                } else {
-                    AnimationArchetype arch = (weapon != null) ? AnimationArchetype.fromItem(weapon) : AnimationArchetype.BRAWLING;
-                    if (arch == AnimationArchetype.BLUNT_CRUSHING || arch == AnimationArchetype.FLAIL_WHIP
-                            || arch == AnimationArchetype.BRAWLING || arch == AnimationArchetype.SHIELD) {
-                        kinematicType = Monster.KinematicHitType.BLUNT_CHOP;
-                    } else if (arch == AnimationArchetype.THRUSTING_PIERCE) {
-                        kinematicType = Monster.KinematicHitType.PIERCING_THRUST;
-                    } else if (weapon != null && weapon.isSpiritual()) {
-                        kinematicType = Monster.KinematicHitType.ELEMENTAL_SPELL;
-                    } else {
-                        kinematicType = Monster.KinematicHitType.SLASHING;
-                    }
-                }
-                float cutAngle = (currentMotionProfile != null) ? currentMotionProfile.getCutAngle() : 45.0f;
-                float weaponWeight = (weapon != null) ? Math.max(1.0f, com.bpm.minotaur.gamedata.item.ItemWeights.of(weapon)) : 1.0f;
-                com.bpm.minotaur.gamedata.DamageType kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.PHYSICAL;
-                if (weapon != null && weapon.getDamageType() != null) {
-                    try {
-                        kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.valueOf(weapon.getDamageType().toUpperCase());
-                    } catch (Exception ignored) {}
-                }
-                monster.recordHitKinematics(kinematicType, cutAngle, weaponWeight, kinematicDmgType);
-
-                // 4. 3D Crescent Slash Arc VFX
-                if (gs != null && gs.getWorld3DRenderer() != null && gs.getWorld3DRenderer().getSlashArcManager() != null) {
-                    boolean isRangedAttack = (attackWeapon != null && attackWeapon.isRanged())
-                            || (weapon != null && weapon.isRanged())
-                            || (currentMotionProfile != null && (currentMotionProfile.isRangedDraw || currentMotionProfile.isRangedKick));
-                    if (!isRangedAttack && (kinematicType == Monster.KinematicHitType.SLASHING || kinematicType == Monster.KinematicHitType.BLUNT_CHOP || isCrit)) {
-                        float dx = monster.getPosition().x - player.getPosition().x;
-                        float dy = monster.getPosition().y - player.getPosition().y;
-                        float arcX = monster.getPosition().x - (dx * 0.20f);
-                        float arcZ = -monster.getPosition().y - (-dy * 0.20f);
-                        Vector3 slashPos = new Vector3(arcX, 0.45f, arcZ);
-                        Color arcColor = (currentMotionProfile != null && currentMotionProfile.trailColor != null)
-                                ? currentMotionProfile.trailColor : Color.WHITE;
-                        float arcScale = isCrit ? 1.4f : 1.1f;
-                        gs.getWorld3DRenderer().getSlashArcManager().spawnSlashArc(slashPos, cutAngle, arcColor, isCrit, arcScale);
-                    }
-                }
-
-                // 5. Blood (Scaling)
-                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
-                applyCombatHitWound(monster, totalDamage, weapon);
-                applyWeaponAspectEffects(monster, actualDamage, weapon, isCrit, (currentMotionProfile != null && currentMotionProfile.isFinisher));
-                float wx = cid.x * 36.0f + monster.getPosition().x;
-                float wz = cid.y * 36.0f + monster.getPosition().y;
-                Vector3 hitPos = new Vector3(wx, 0.5f, wz);
-                Vector3 exitDir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.2f, monster.getPosition().y - player.getPosition().y).nor();
-                GoreProfile profile = GoreProfile.fromMonster(monster);
-
-                int bloodIntensity;
-                if (damageRatio < 0.15f) {
-                    // Chip damage
-                    bloodIntensity = 2;
-                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
-                } else if (damageRatio < 0.35f) {
-                    // Solid Hit
-                    bloodIntensity = 5;
-                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
-                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
-                } else {
-                    // Massive Hit
-                    bloodIntensity = 8;
-                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
-                    if (profile.hasGibs) {
-                        maze.getGoreManager().spawnGibExplosion(hitPos, exitDir, 1, profile);
-                    }
-                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
-                }
-
-                // A puff of mist on top: volume in the air that never costs a decal.
-                maze.getGoreManager().spawnBloodMist(hitPos, exitDir, bloodIntensity, profile);
-
-                applyWeaponBlood(bloodIntensity, profile);
-                splatterPlayer(bloodIntensity, profile, false);
-                spawnHitFx(monster, profile, damageRatio, isCrit);
+                int baseDamage = DiceRoller.roll(damageDice);
+                int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                totalDamage = Math.max(1, baseDamage + damageBonus);
             }
+
+            // Combo Damage Multiplier
+            if (currentMotionProfile != null && currentMotionProfile.damageMultiplier > 0f) {
+                totalDamage = Math.max(1, (int) (totalDamage * currentMotionProfile.damageMultiplier));
+            }
+
+            // Brutal Cleave Perk: +20% damage on finisher strikes
+            if (currentMotionProfile != null && currentMotionProfile.isFinisher && player.hasSkill(SkillId.BRUTAL_CLEAVE)) {
+                totalDamage = (int) (totalDamage * 1.20f);
+            }
+
+            // Deadeye Sniper Perk: +25% damage on ranged attack at distance >= 3
+            if (attackWeapon != null && attackWeapon.isRanged() && player.hasSkill(SkillId.DEADEYE_SNIPER)) {
+                float dist = player.getPosition().dst(monster.getPosition());
+                if (dist >= 3.0f) {
+                    totalDamage = (int) (totalDamage * 1.25f);
+                    eventManager.addEvent(new GameEvent("DEADEYE SNIPER! +25% Long-Range Damage!", 1.2f));
+                }
+            }
+
+            // Born Coward: a monster that is hunting you and right beside you hits you where it hurts.
+            float huntedPenalty = com.bpm.minotaur.gamedata.trait.TraitEffects.add("huntedMeleePenalty");
+            if (huntedPenalty > 0f && monster.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING
+                    && player.getPosition().dst(monster.getPosition()) <= 1.5f) {
+                totalDamage = Math.max(1, totalDamage - Math.round(huntedPenalty));
+            }
+
+            float meleeMult = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("meleeDamageMult");
+            if (meleeMult != 1f && (attackWeapon == null || !attackWeapon.isRanged())) {
+                totalDamage = Math.max(1, Math.round(totalDamage * meleeMult));
+            }
+
+            // Glancing Blow: 35% base damage
+            if (isGlancing) {
+                totalDamage = glancingBlowDamage(totalDamage);
+            }
+
+            if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
+                if (dmgType == DamageType.PHYSICAL) {
+                    totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getPhysicalDamageMultiplier()));
+                    eventManager.addEvent(new GameEvent("VOID DAMPENING! Physical -60%", 1f));
+                } else {
+                    totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getSpiritualDamageMultiplier()));
+                    eventManager.addEvent(new GameEvent("VOID RESONANCE! Spiritual +250%", 1f));
+                }
+            }
+
+            if (isCrit) {
+                totalDamage = (int) (totalDamage * player.getCritMultiplier());
+                eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
+            }
+
+            AnimationArchetype attackArch = AnimationArchetype.fromItem(attackWeapon);
+            boolean isPiercing = (attackArch == AnimationArchetype.THRUSTING_PIERCE || attackArch == AnimationArchetype.RANGED_BOW || attackArch == AnimationArchetype.RANGED_FIREARM)
+                    || (attackWeapon != null && attackWeapon.getDamageType() != null && attackWeapon.getDamageType().equalsIgnoreCase("PIERCING"));
+            int monsterHpBefore = monster.getCurrentHP();
+            int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
+            monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+            alertMonsterToPlayer(monster);
+            // Bloodsoaked Saint: what you cut from them knits you back together.
+            float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
+            if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
+                player.getStats().heal(Math.max(1, Math.round(actualDamage * lifesteal)));
+            }
+
+            // Brutal Cleave: Overkill damage cleaves into adjacent monster
+            if (player.hasSkill(SkillId.BRUTAL_CLEAVE) && monster.getCurrentHP() <= 0 && maze != null) {
+                int overkill = totalDamage - monsterHpBefore;
+                if (overkill > 0) {
+                    int cleaveDmg = Math.max(1, overkill / 2);
+                    GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
+                    for (Direction d : Direction.values()) {
+                        GridPoint2 adjPos = new GridPoint2(mPos.x + (int) d.getVector().x, mPos.y + (int) d.getVector().y);
+                        Monster adjMonster = maze.getMonsters().get(adjPos);
+                        if (adjMonster != null && adjMonster != monster && adjMonster.getCurrentHP() > 0) {
+                            int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
+                            adjMonster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                            eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getName() + " for " + cleaved + " dmg!", 1.5f));
+                            showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
+                            if (adjMonster.getCurrentHP() <= 0) {
+                                // The full kill path, so a cleaved monster leaves a body and dies on screen.
+                                handleRemoteKill(adjMonster, KillCause.weapon(heldWeaponKillCause().weapon, false));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Monster.Affinity affinity = monster.getAffinity(dmgType);
+            String dmgPrefix = "";
+            com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
+
+            String specialMoveName = SpecialMoveRegistry.resolveMoveName(currentMotionProfile, attackWeapon, isCrit);
+            String comboTag = "";
+            if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
+                if (currentMotionProfile.isDualStrike) {
+                    comboTag = "DUAL SCISSOR! ";
+                } else if (currentMotionProfile.isFinisher) {
+                    comboTag = "FINISHER! ";
+                } else if (currentMotionProfile.isOffHand) {
+                    comboTag = "OFF-HAND! ";
+                } else {
+                    comboTag = "COMBO x" + (currentMotionProfile.comboStep + 1) + "! ";
+                }
+            }
+
+            if (isCrit) {
+                dmgPrefix = comboTag + "[" + specialMoveName + "] CRIT! ";
+                textColor = com.badlogic.gdx.graphics.Color.RED;
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] CRITICAL HIT on " + monster.getType() + " for " + actualDamage + " dmg!", 1.5f));
+            } else if (isGlancing) {
+                dmgPrefix = "GLANCE! ";
+                textColor = com.badlogic.gdx.graphics.Color.CYAN;
+                eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
+            } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
+                dmgPrefix = comboTag + "[" + specialMoveName + "] ";
+                textColor = com.badlogic.gdx.graphics.Color.MAGENTA;
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
+            } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
+                dmgPrefix = comboTag + "[" + specialMoveName + "] ";
+                textColor = com.badlogic.gdx.graphics.Color.GOLD;
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
+            } else if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
+                dmgPrefix = comboTag + "[" + specialMoveName + "] ";
+                textColor = com.badlogic.gdx.graphics.Color.YELLOW;
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
+            } else if (affinity == Monster.Affinity.RESISTANT) {
+                dmgPrefix = "[" + specialMoveName + "] RESISTED! ";
+                textColor = com.badlogic.gdx.graphics.Color.CYAN;
+                String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
+                eventManager.addEvent(new GameEvent(monster.getType() + " resists " + attackCategory + " attacks!", 1.5f));
+            } else if (affinity == Monster.Affinity.WEAK) {
+                dmgPrefix = "[" + specialMoveName + "] WEAKNESS! ";
+                textColor = com.badlogic.gdx.graphics.Color.GOLD;
+                String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
+                eventManager.addEvent(new GameEvent(monster.getType() + " is weak to " + attackCategory + " attacks!", 1.5f));
+            } else {
+                dmgPrefix = "[" + specialMoveName + "] ";
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
+            }
+
+            showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
+            lastDamageDealt = actualDamage;
+            lastHitCritOrFinisher = isCrit || (currentMotionProfile != null && currentMotionProfile.isFinisher);
+
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(
+                    monster, monster.getMonsterType(), monster.getLevel(), attackModeOf(attackWeapon),
+                    isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
+                            : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT,
+                    actualDamage);
+
+            // --- Open5e Ring of the Ram Trigger ---
+            if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.RAM) > 0) {
+                player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.RAM);
+                int forceDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d10");
+                int ramActual = monster.takeDamage(forceDmg, DamageType.PHYSICAL, false);
+                monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                eventManager.addEvent(new GameEvent("RAM FORCE! A spectral ram head batters the " + monster.getType() + " for +" + ramActual + " force dmg!", 2.0f));
+                showDamageText(ramActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "RAM! ", com.badlogic.gdx.graphics.Color.CYAN);
+
+                if (maze != null && monster.getCurrentHP() > 0) {
+                    int tileX = (int) monster.getPosition().x;
+                    int tileY = (int) monster.getPosition().y;
+                    Direction pushDir = player.getFacing();
+                    com.badlogic.gdx.math.Vector2 pushVec = pushDir.getVector();
+
+                    maze.getMonsters().remove(new GridPoint2(tileX, tileY));
+                    for (int p = 0; p < 2; p++) {
+                        int nextX = tileX + (int) pushVec.x;
+                        int nextY = tileY + (int) pushVec.y;
+                        if (maze.isWallBlocking(tileX, tileY, pushDir) || !maze.isPassable(nextX, nextY) || maze.getMonsters().containsKey(new GridPoint2(nextX, nextY))) {
+                            break;
+                        }
+                        tileX = nextX;
+                        tileY = nextY;
+                    }
+                    monster.getPosition().set(tileX + 0.5f, tileY + 0.5f);
+                    maze.getMonsters().put(new GridPoint2(tileX, tileY), monster);
+                }
+            }
+
+            // --- Open5e Ring of Shooting Stars Trigger ---
+            if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS) > 0) {
+                player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS);
+                int starDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d6");
+                int starActual = monster.takeDamage(starDmg, DamageType.LIGHT, false);
+                monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                eventManager.addEvent(new GameEvent("SHOOTING STARS! Dazzling motes of light strike " + monster.getType() + " for +" + starActual + " light dmg!", 2.0f));
+                showDamageText(starActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "STARS! ", com.badlogic.gdx.graphics.Color.YELLOW);
+            }
+
+            // --- VISCERAL: Feedback ---
+            float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
+            boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;
+
+            // 1. Audio & Hit-Stop
+            boolean isDeflection = isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit);
+            if (isDeflection) {
+                soundManager.playArmorClang();
+            } else {
+                if (isCrit || monster.getCurrentHP() <= 0) {
+                    soundManager.playCritImpact(monster.getCurrentHP() <= 0);
+                }
+                soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
+            }
+            soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
+
+            // 2. Screen Shake, Hit Stop & Deflection Riposte
+            com.bpm.minotaur.screens.GameScreen gs = (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)
+                    ? (com.bpm.minotaur.screens.GameScreen) game.getScreen() : null;
+            if (gs != null) {
+                if (isDeflection) {
+                    gs.getWeaponOverlay().triggerDeflectionClang();
+                } else {
+                    // Decoupled hit-stop (30ms normal, 60ms + 100ms micro-dilation on crit/kill)
+                    gs.getWeaponOverlay().triggerHitStop(isCrit || monster.getCurrentHP() <= 0);
+                    // Coat blade with blood
+                    gs.getWeaponOverlay().addBloodToWeapon();
+                }
+
+                // Shake
+                float extraTrauma = (currentMotionProfile != null) ? currentMotionProfile.screenTrauma : 0f;
+                float trauma = (isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f)) + extraTrauma;
+                gs.addTrauma(Math.min(1.0f, trauma));
+
+                // Pause (Freeze frame)
+                float pauseDur = isCrit ? 0.15f : (currentMotionProfile != null && currentMotionProfile.isFinisher ? 0.12f : 0.05f);
+                gs.triggerHitPause(pauseDur);
+            }
+
+            Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+
+            // 3. Monster Procedural Kinematics
+            Monster.KinematicHitType kinematicType;
+            if (isDeflection) {
+                kinematicType = Monster.KinematicHitType.DEFLECTED;
+            } else if (weapon != null && (weapon.isRanged() || usesShot(weapon))) {
+                kinematicType = Monster.KinematicHitType.BALLISTIC_SHOT;
+            } else {
+                AnimationArchetype arch = (weapon != null) ? AnimationArchetype.fromItem(weapon) : AnimationArchetype.BRAWLING;
+                if (arch == AnimationArchetype.BLUNT_CRUSHING || arch == AnimationArchetype.FLAIL_WHIP
+                        || arch == AnimationArchetype.BRAWLING || arch == AnimationArchetype.SHIELD) {
+                    kinematicType = Monster.KinematicHitType.BLUNT_CHOP;
+                } else if (arch == AnimationArchetype.THRUSTING_PIERCE) {
+                    kinematicType = Monster.KinematicHitType.PIERCING_THRUST;
+                } else if (weapon != null && weapon.isSpiritual()) {
+                    kinematicType = Monster.KinematicHitType.ELEMENTAL_SPELL;
+                } else {
+                    kinematicType = Monster.KinematicHitType.SLASHING;
+                }
+            }
+            float cutAngle = (currentMotionProfile != null) ? currentMotionProfile.getCutAngle() : 45.0f;
+            float weaponWeight = (weapon != null) ? Math.max(1.0f, com.bpm.minotaur.gamedata.item.ItemWeights.of(weapon)) : 1.0f;
+            com.bpm.minotaur.gamedata.DamageType kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.PHYSICAL;
+            if (weapon != null && weapon.getDamageType() != null) {
+                try {
+                    kinematicDmgType = com.bpm.minotaur.gamedata.DamageType.valueOf(weapon.getDamageType().toUpperCase());
+                } catch (Exception ignored) {}
+            }
+            monster.recordHitKinematics(kinematicType, cutAngle, weaponWeight, kinematicDmgType);
+
+            // 4. 3D Crescent Slash Arc VFX
+            if (gs != null && gs.getWorld3DRenderer() != null && gs.getWorld3DRenderer().getSlashArcManager() != null) {
+                boolean isRangedAttack = (attackWeapon != null && attackWeapon.isRanged())
+                        || (weapon != null && weapon.isRanged())
+                        || (currentMotionProfile != null && (currentMotionProfile.isRangedDraw || currentMotionProfile.isRangedKick));
+                if (!isRangedAttack && (kinematicType == Monster.KinematicHitType.SLASHING || kinematicType == Monster.KinematicHitType.BLUNT_CHOP || isCrit)) {
+                    float dx = monster.getPosition().x - player.getPosition().x;
+                    float dy = monster.getPosition().y - player.getPosition().y;
+                    float arcX = monster.getPosition().x - (dx * 0.20f);
+                    float arcZ = -monster.getPosition().y - (-dy * 0.20f);
+                    Vector3 slashPos = new Vector3(arcX, 0.45f, arcZ);
+                    Color arcColor = (currentMotionProfile != null && currentMotionProfile.trailColor != null)
+                            ? currentMotionProfile.trailColor : Color.WHITE;
+                    float arcScale = isCrit ? 1.4f : 1.1f;
+                    gs.getWorld3DRenderer().getSlashArcManager().spawnSlashArc(slashPos, cutAngle, arcColor, isCrit, arcScale);
+                }
+            }
+
+            // 5. Blood (Scaling)
+            GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+            applyCombatHitWound(monster, totalDamage, weapon);
+            applyWeaponAspectEffects(monster, actualDamage, weapon, isCrit, (currentMotionProfile != null && currentMotionProfile.isFinisher));
+            float wx = cid.x * 36.0f + monster.getPosition().x;
+            float wz = cid.y * 36.0f + monster.getPosition().y;
+            Vector3 hitPos = new Vector3(wx, 0.5f, wz);
+            Vector3 exitDir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.2f, monster.getPosition().y - player.getPosition().y).nor();
+            GoreProfile profile = GoreProfile.fromMonster(monster);
+
+            int bloodIntensity;
+            if (damageRatio < 0.15f) {
+                // Chip damage
+                bloodIntensity = 2;
+                maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
+            } else if (damageRatio < 0.35f) {
+                // Solid Hit
+                bloodIntensity = 5;
+                maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
+                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
+            } else {
+                // Massive Hit
+                bloodIntensity = 8;
+                maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
+                if (profile.hasGibs) {
+                    maze.getGoreManager().spawnGibExplosion(hitPos, exitDir, 1, profile);
+                }
+                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
+            }
+
+            // A puff of mist on top: volume in the air that never costs a decal.
+            maze.getGoreManager().spawnBloodMist(hitPos, exitDir, bloodIntensity, profile);
+
+            applyWeaponBlood(bloodIntensity, profile);
+            splatterPlayer(bloodIntensity, profile, false);
+            spawnHitFx(monster, profile, damageRatio, isCrit);
 
         } else {
             // Miss

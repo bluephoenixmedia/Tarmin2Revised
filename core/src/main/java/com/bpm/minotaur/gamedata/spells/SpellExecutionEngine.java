@@ -679,13 +679,6 @@ public class SpellExecutionEngine {
         if (hit != null && hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
             Monster target = hit.hitMonster;
 
-            // Bad / Nasty immunity check (Spiritual Domain)
-            if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                eventManager.addEvent(new GameEvent(target.getType() + " is immune to spiritual magic!", 1.5f));
-                if (combatManager != null) combatManager.showDamageText(0, hit.collisionPoint);
-                return;
-            }
-
             int dmg = calculateSpellDamage(spell, player, target);
 
             int actualDmg = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
@@ -752,12 +745,6 @@ public class SpellExecutionEngine {
 
         Monster target = maze.getMonsters().get(targetPos);
         if (target != null && target.getCurrentHP() > 0) {
-            if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                eventManager.addEvent(new GameEvent(target.getType() + " is immune to spiritual touch!", 1.5f));
-                if (combatManager != null) combatManager.showDamageText(0, targetPos);
-                return;
-            }
-
             int dmg = calculateSpellDamage(spell, player, target);
             int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
@@ -784,10 +771,6 @@ public class SpellExecutionEngine {
             if (Math.abs(pos.x - center.x) <= radius && Math.abs(pos.y - center.y) <= radius) {
                 Monster target = maze.getMonsters().get(pos);
                 if (target == null || target.getCurrentHP() <= 0) continue;
-
-                if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                    continue;
-                }
 
                 int dmg = calculateSpellDamage(spell, player, target);
 

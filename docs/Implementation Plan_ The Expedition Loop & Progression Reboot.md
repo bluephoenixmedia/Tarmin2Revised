@@ -88,8 +88,8 @@ Establish the physical foundation of the Delve-Return loop:
 - Make `playerMeleeStrike` and `playerAttackInstant` the primary, rapid combat resolution path.
 - Resolve weapon damage, modifiers, and dice pools purely mathematical-in-code, rendering floating combat text and audio effects immediately.
 - Enforce Tarmin damage rules:
-  - `BAD` monsters: immune to War damage, vulnerable to Spiritual.
-  - `NASTY` monsters: immune to Spiritual damage, vulnerable to War.
+  - `BAD` monsters: Resistant to War damage, Weak to Spiritual.
+  - `NASTY` monsters: Resistant to Spiritual damage, Weak to War.
   - `HORRIBLE` monsters: vulnerable to both.
 - Ensure monsters accurately deal damage to the player based on armor mitigation.
 
