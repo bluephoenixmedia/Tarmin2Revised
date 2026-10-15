@@ -63,6 +63,15 @@ public class SpellProgressionTest {
     }
 
     @Test
+    public void castingALockedSlotNamesTheLevelThatUnlocksIt() {
+        assertFalse(player.castPreparedSpell(2, maze, eventManager, null));
+        assertTrue("got " + eventManager.getMessageHistory(),
+                eventManager.getMessageHistory().stream()
+                        .anyMatch(m -> m.contains("Spell slot 3 unlocks at level 5.")));
+        assertFalse(eventManager.getMessageHistory().stream().anyMatch(m -> m.contains("Tome")));
+    }
+
+    @Test
     public void levelUpUnlocksSlotsAutomatically() {
         assertEquals(1, player.getUnlockedSpellSlots());
 

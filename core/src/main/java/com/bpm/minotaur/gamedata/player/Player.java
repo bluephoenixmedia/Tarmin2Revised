@@ -517,7 +517,7 @@ public class Player {
             return false;
         }
         if (slot >= unlockedSpellSlots) {
-            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is locked! Study a Tome to unlock it.", 1.5f));
+            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " unlocks at level " + levelForSlot(slot + 1) + ".", 1.5f));
             return false;
         }
         String id = getPreparedSpell(slot);

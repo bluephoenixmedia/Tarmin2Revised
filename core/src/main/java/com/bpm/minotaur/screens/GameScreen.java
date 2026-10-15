@@ -5087,6 +5087,7 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
                         com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getUnlockedStations(),
                         player.getInventory(),
+                        ShelterChest.getInstance(), // a stashed kit is owned, not lost (#102)
                         game.getItemDataManager(),
                         game.getAssetManager());
 

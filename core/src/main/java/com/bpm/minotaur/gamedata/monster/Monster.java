@@ -619,19 +619,7 @@ public class Monster implements Renderable {
         return getAffinity(this.type, damageType);
     }
 
-    public static boolean isImmuneToType(MonsterType type, DamageType damageType) {
-        // Soft resistance replaces hard immunity. Retained for backwards compatibility.
-        return false;
-    }
-
-    public boolean isImmuneToType(DamageType damageType) {
-        return isImmuneToType(this.type, damageType);
-    }
-
     public int takeDamage(int amount, DamageType damageType, boolean isCrit) {
-        if (isImmuneToType(damageType)) {
-            return 0;
-        }
         Affinity affinity = getAffinity(damageType);
         int modifiedAmount = amount;
         if (isCrit) {
@@ -650,9 +638,6 @@ public class Monster implements Renderable {
     }
 
     public int takeDamage(int amount, DamageType damageType, boolean isCrit, boolean isPiercing) {
-        if (isImmuneToType(damageType)) {
-            return 0;
-        }
         Affinity affinity = getAffinity(damageType);
         int modifiedAmount = amount;
         if (isCrit) {
