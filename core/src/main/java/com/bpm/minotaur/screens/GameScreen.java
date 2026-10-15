@@ -68,6 +68,13 @@ public class GameScreen extends BaseScreen {
 
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
+    /** Gameplay keys are read through their Settings binding, never as literals (#171). */
+    private final ActionKeys actionKeys = ActionKeys.live();
+    /** Keys the open combat menu eats so they cannot walk or turn the player. */
+    private static final java.util.List<String> MENU_SWALLOWED_ACTIONS = java.util.List.of(
+            "MOVE_FORWARD", "MOVE_BACK", "TURN_LEFT", "TURN_RIGHT", "ATTACK");
+    private static final java.util.List<String> MOVEMENT_ACTIONS = java.util.List.of(
+            "MOVE_FORWARD", "MOVE_BACK", "TURN_LEFT", "TURN_RIGHT");
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final World3DRenderer world3DRenderer = new World3DRenderer();
     private final com.bpm.minotaur.rendering.EmberOverlay emberOverlay =
@@ -3614,12 +3621,12 @@ public class GameScreen extends BaseScreen {
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
-            if (keycode == Input.Keys.UP) {
+            if (keycode == Input.Keys.UP) { // fixed: Ctrl chord scrolls the chronicle
                 if (hud != null) {
                     hud.scrollChronicle(1);
                     return true;
                 }
-            } else if (keycode == Input.Keys.DOWN) {
+            } else if (keycode == Input.Keys.DOWN) { // fixed: Ctrl chord scrolls the chronicle
                 if (hud != null) {
                     hud.scrollChronicle(-1);
                     return true;
@@ -3664,27 +3671,30 @@ public class GameScreen extends BaseScreen {
                     }
                     return true;
                 }
-                switch (keycode) {
+                if (actionKeys.is(keycode, "SPELLBOOK")) {
+                    openSpellbook();
+                    return true;
+                }
+                if (actionKeys.is(keycode, "MOVE_FORWARD")) {
+                    hud.combatMenu.navigateUp();
+                    return true;
+                }
+                if (actionKeys.is(keycode, "MOVE_BACK")) {
+                    hud.combatMenu.navigateDown();
+                    return true;
+                }
+                // The attack key confirms ATTACK whatever the menu has selected.
+                boolean attackKey = actionKeys.is(keycode, "ATTACK");
+                switch (attackKey ? Input.Keys.ENTER : keycode) {
                     case Input.Keys.I:
                         InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
                                 InventoryScreen.InventoryMode.NORMAL);
                         game.setScreen(invScreen);
                         return true;
-                    case Input.Keys.Q:
-                        openSpellbook();
-                        return true;
-                    case Input.Keys.UP:
-                        hud.combatMenu.navigateUp();
-                        return true;
-                    case Input.Keys.DOWN:
-                        hud.combatMenu.navigateDown();
-                        return true;
                     case Input.Keys.ENTER:
                     case Input.Keys.SPACE:
-                    case Input.Keys.A: // Binding 'A' to Attack for convenience
                         int selection = hud.combatMenu.getSelectedIndex();
-                        // If 'A' pressed, assume Attack regardless of menu unless we want strict nav
-                        if (keycode == Input.Keys.A)
+                        if (attackKey)
                             selection = 0;
 
                         switch (selection) {
@@ -3781,18 +3791,18 @@ public class GameScreen extends BaseScreen {
             // For now, let's just return true for everything except F-keys?
             // Hard to filter easily. Let's just block the main ones if we didn't handle
             // navigation.
-            if (keycode == Input.Keys.W || keycode == Input.Keys.A || keycode == Input.Keys.S || keycode == Input.Keys.D
-                    ||
-                    keycode == Input.Keys.UP || keycode == Input.Keys.LEFT || keycode == Input.Keys.DOWN
-                    || keycode == Input.Keys.RIGHT ||
-                    keycode == Input.Keys.SPACE || keycode == Input.Keys.ENTER) {
+            // Movement must not walk the player out of the menu. The hand and pack keys
+            // fall through: they work in the menu without spending the turn.
+            if (keycode == Input.Keys.W
+                    || actionKeys.resolve(keycode, MENU_SWALLOWED_ACTIONS) != null
+                    || keycode == Input.Keys.SPACE || keycode == Input.Keys.ENTER) {
                 return true;
             }
         }
 
         // --- Debug Shortcuts ---
         if (debugManager.isDebugOverlayVisible()) {
-            if (keycode == Input.Keys.A && (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
+            if (keycode == Input.Keys.A && (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) // fixed: debug chord
                     || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))) {
                 giveAllArmor();
                 return true;
@@ -3802,14 +3812,15 @@ public class GameScreen extends BaseScreen {
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
                 || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
                 || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
-            switch (keycode) {
-                case Input.Keys.S:
+            String handAction = actionKeys.resolve(keycode, ActionKeys.HAND_ACTIONS);
+            switch (handAction == null ? "" : handAction) {
+                case "SWAP_HANDS":
                     player.getInventory().swapHands();
                     // If in Menu, we don't pass turn, just update UI
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
                     return true;
-                case Input.Keys.E:
+                case "SWAP_PACK":
                     if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         Vector2 dir = player.getFacing().getVector();
                         int fx = (int) (player.getPosition().x + dir.x);
@@ -3838,7 +3849,7 @@ public class GameScreen extends BaseScreen {
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
                     return true;
-                case Input.Keys.T:
+                case "ROTATE_PACK":
                     player.getInventory().rotatePack();
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
@@ -3847,8 +3858,8 @@ public class GameScreen extends BaseScreen {
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-            // --- NEW: A/SPACE = Instant Attack ---
-            if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
+            // --- Attack key / SPACE = Instant Attack ---
+            if (actionKeys.is(keycode, "ATTACK") || keycode == Input.Keys.SPACE) {
                 combatManager.playerAttackInstant();
                 return true;
             }
@@ -3949,14 +3960,13 @@ public class GameScreen extends BaseScreen {
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
 
             // --- CONFUSION LOGIC ---
-            if (player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED)) {
-                if (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
-                        keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT) {
+            String worldAction = actionKeys.resolve(keycode, ActionKeys.WORLD_ACTIONS);
+            boolean steering = worldAction != null && MOVEMENT_ACTIONS.contains(worldAction);
 
-                    // Simple random walk
-                    int[] dirs = { Input.Keys.UP, Input.Keys.DOWN, Input.Keys.LEFT, Input.Keys.RIGHT };
-                    keycode = dirs[com.badlogic.gdx.math.MathUtils.random(dirs.length - 1)];
-                }
+            // --- CONFUSION LOGIC ---
+            if (steering && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED)) {
+                // Simple random walk
+                worldAction = MOVEMENT_ACTIONS.get(com.badlogic.gdx.math.MathUtils.random(MOVEMENT_ACTIONS.size() - 1));
             }
             // -----------------------
 
@@ -3966,21 +3976,7 @@ public class GameScreen extends BaseScreen {
                 return true;
             }
 
-            if (keycode == Input.Keys.A) {
-                // Keep 'A' for quick attack or just duplicate space?
-                // Let's map 'A' to open menu too? Or Instant Attack?
-                // Prompt says "access combat menu ANYTIME... pressing space bar".
-                // "The player can then attack anytime... and they can cast any spell".
-                // This implies Space -> Menu -> Attack/Cast.
-                // So "A" might be redundant or legacy.
-                // Let's leave A as "Use Quick Slot" or "Ranged".
-                // Actually existing logic handles A/SPACE as attack.
-                // I should overriding SPACE to open menu.
-                // And A can remain as Quick Slot / Ranged?
-            }
-
-            boolean isMovementKey = (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
-                    keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT ||
+            boolean isMovementKey = (steering ||
                     keycode == Input.Keys.NUMPAD_8 || keycode == Input.Keys.NUMPAD_2 ||
                     keycode == Input.Keys.NUMPAD_4 || keycode == Input.Keys.NUMPAD_6);
             if (isMovementKey && weaponOverlay != null && weaponOverlay.isMovementLocked()) {
@@ -4008,8 +4004,8 @@ public class GameScreen extends BaseScreen {
                 }
             }
 
-            boolean fireKey = keycode == SettingsManager.getInstance().getKey("FIRE_RANGED");
-            if (keycode == Input.Keys.A || fireKey) {
+            boolean fireKey = actionKeys.is(keycode, "FIRE_RANGED");
+            if (actionKeys.is(keycode, "ATTACK") || fireKey) {
                 if (fireHeldRangedWeapon()) {
                     return true;
                 }
@@ -4019,12 +4015,15 @@ public class GameScreen extends BaseScreen {
                 }
             }
 
-            switch (keycode) {
-                case Input.Keys.PERIOD:
-                    hud.addMessage("You wait...");
-                    playerTurnTakesAction();
-                    return true;
-                case Input.Keys.UP: {
+            if (keycode == Input.Keys.PERIOD) {
+                hud.addMessage("You wait...");
+                playerTurnTakesAction();
+                return true;
+            }
+
+            // Rebindable actions, read through their Settings binding (#171).
+            switch (worldAction == null ? "" : worldAction) {
+                case "MOVE_FORWARD": {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x + dir.x);
                     int ty = (int) Math.floor(player.getPosition().y + dir.y);
@@ -4074,7 +4073,7 @@ public class GameScreen extends BaseScreen {
                     needsAsciiRender = false;
                     return true;
                 }
-                case Input.Keys.DOWN: {
+                case "MOVE_BACK": {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x - dir.x);
                     int ty = (int) Math.floor(player.getPosition().y - dir.y);
@@ -4108,31 +4107,61 @@ public class GameScreen extends BaseScreen {
                     needsAsciiRender = false;
                     return true;
                 }
-                case Input.Keys.LEFT:
+                case "TURN_LEFT":
                     weaponOverlay.addTurnSway(-1.0f);
                     player.turnLeft();
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-                case Input.Keys.RIGHT:
+                case "TURN_RIGHT":
                     weaponOverlay.addTurnSway(1.0f);
                     player.turnRight();
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-                case Input.Keys.O:
+                case "INTERACT":
                     interactWithWorldObject();
                     return true;
-                case Input.Keys.P:
+                case "PICKUP_DROP":
                     pickupWorldItem();
                     return true;
-                case Input.Keys.U:
+                case "USE_ITEM":
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze, combatManager);
                     // A Tome study spends its own turns as it is channelled.
                     if (player.getActiveTomeStudy() == null) {
                         playerTurnTakesAction();
                     }
                     return true;
+                case "DESCEND":
+                    ascendOrDescendLadder();
+                    return true;
+                case "FIRST_AID":
+                    // Pressing the First Aid key with nothing to tend is the exact muscle-memory
+                    // moment that caused the "way off again" balance confusion -- R used to be the
+                    // general rest-heal before it was repurposed to open First Aid, and that removal
+                    // shipped with no in-fiction sign anything had changed. Turning this specific
+                    // keypress into the teaching moment costs nothing extra: this branch already
+                    // needed to check for an active injury to decide what to do.
+                    if (player.getInjuryManager() != null && player.getInjuryManager().hasAnyInjuries()) {
+                        openFirstAidModal();
+                    } else {
+                        eventManager.addEvent(new GameEvent(
+                                "Nothing here needs tending. Press " + actionKeys.keyName("REST")
+                                        + " to rest and recover strength.", 2.5f));
+                    }
+                    return true;
+                case "REST":
+                    performFieldRestAction();
+                    return true;
+                case "FIELD_CRAFTING":
+                    openFieldCrafting();
+                    return true;
+                case "FIELD_COOKING":
+                    openFieldCooking();
+                    return true;
+            }
+
+            switch (keycode) {
                 case Input.Keys.Z:
                     if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
                         playerTurnTakesAction();
@@ -4218,35 +4247,6 @@ public class GameScreen extends BaseScreen {
                     InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
                             InventoryScreen.InventoryMode.NORMAL);
                     game.setScreen(invScreen);
-                    return true;
-                case Input.Keys.D:
-                    ascendOrDescendLadder();
-                    return true;
-                case Input.Keys.R:
-                    // Pressing R with nothing to tend is the exact muscle-memory moment that
-                    // caused the "way off again" balance confusion -- R used to be the general
-                    // rest-heal before it was repurposed to open First Aid, and that removal
-                    // shipped with no in-fiction sign anything had changed. Turning this specific
-                    // keypress into the teaching moment costs nothing extra: this branch already
-                    // needed to check for an active injury to decide what to do.
-                    if (player.getInjuryManager() != null && player.getInjuryManager().hasAnyInjuries()) {
-                        openFirstAidModal();
-                    } else {
-                        eventManager.addEvent(new GameEvent(
-                                "Nothing here needs tending. Press H to rest and recover strength.", 2.5f));
-                    }
-                    return true;
-                case Input.Keys.H:
-                    performFieldRestAction();
-                    return true;
-                case Input.Keys.C:
-                    openFieldCrafting();
-                    return true;
-                case Input.Keys.K:
-                    openSkillTree();
-                    return true;
-                case Input.Keys.J:
-                    openFieldCooking();
                     return true;
             }
         }
@@ -5053,10 +5053,11 @@ public class GameScreen extends BaseScreen {
         }
         float yaw = 0f;
         float pitch = 0f;
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) yaw += WINDOW_LOOK_KEY_SPEED * delta;
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) yaw -= WINDOW_LOOK_KEY_SPEED * delta;
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) pitch += WINDOW_LOOK_KEY_SPEED * delta;
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) pitch -= WINDOW_LOOK_KEY_SPEED * delta;
+        SettingsManager keys = SettingsManager.getInstance();
+        if (Gdx.input.isKeyPressed(keys.getKey("TURN_LEFT"))) yaw += WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(keys.getKey("TURN_RIGHT"))) yaw -= WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(keys.getKey("MOVE_FORWARD"))) pitch += WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(keys.getKey("MOVE_BACK"))) pitch -= WINDOW_LOOK_KEY_SPEED * delta;
         yaw -= Gdx.input.getDeltaX() * WINDOW_LOOK_MOUSE_SPEED;
         pitch -= Gdx.input.getDeltaY() * WINDOW_LOOK_MOUSE_SPEED;
         windowLook.turn(yaw, pitch);
@@ -5064,8 +5065,8 @@ public class GameScreen extends BaseScreen {
 
     /** At the window the arrows turn the head; the leave keys step back; nothing else acts. */
     private boolean handleWindowLookKey(int keycode) {
-        if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.E || keycode == Input.Keys.SPACE
-                || keycode == SettingsManager.getInstance().getKey("INTERACT")) {
+        if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.SPACE
+                || actionKeys.is(keycode, "SWAP_PACK") || actionKeys.is(keycode, "INTERACT")) {
             endWindowLook();
         }
         return true;

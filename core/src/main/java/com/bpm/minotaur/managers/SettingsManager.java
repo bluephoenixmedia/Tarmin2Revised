@@ -98,7 +98,7 @@ public class SettingsManager {
         // Load Key Bindings
         keyBindings.clear();
         for (String action : keyBindingDescriptions.keySet()) {
-            int defaultKey = getDefaultKeyForAction(action);
+            int defaultKey = defaultKeyFor(action);
             keyBindings.put(action, prefs.getInteger(action, defaultKey));
         }
 
@@ -209,20 +209,26 @@ public class SettingsManager {
     }
 
     // --- Key Bindings ---
+    /** The key bound to {@code action}; its default until the settings are loaded. */
     public int getKey(String action) {
-        return keyBindings.getOrDefault(action, Input.Keys.UNKNOWN);
+        Integer bound = keyBindings.get(action);
+        return bound != null ? bound : defaultKeyFor(action);
     }
 
     public void setKey(String action, int keycode) {
         keyBindings.put(action, keycode);
-        getPrefs().putInteger(action, keycode).flush();
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putInteger(action, keycode).flush();
+        }
     }
 
     public Map<String, String> getKeyBindingDescriptions() {
         return keyBindingDescriptions;
     }
 
-    private int getDefaultKeyForAction(String action) {
+    /** The shipped default key for {@code action}, or {@code Input.Keys.UNKNOWN}. */
+    public static int defaultKeyFor(String action) {
         switch (action) {
             case "MOVE_FORWARD": return Input.Keys.UP;
             case "MOVE_BACK": return Input.Keys.DOWN;
