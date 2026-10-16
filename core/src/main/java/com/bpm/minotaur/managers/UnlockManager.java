@@ -151,17 +151,35 @@ public class UnlockManager implements SlotScopedState {
         if (t.isArmor)
             score += t.armorClassBonus * 100;
         if (t.isWeapon) {
-            if (t.damageDice != null && t.damageDice.contains("d")) {
-                String[] parts = t.damageDice.split("d");
-                try {
-                    int d = Integer.parseInt(parts[1]);
-                    int n = Integer.parseInt(parts[0]);
-                    score += n * d * 50;
-                } catch (Exception ignored) {
-                }
-            }
+            score += diceScore(t.damageDice);
         }
         return score;
+    }
+
+    private static final java.util.regex.Pattern DICE =
+            java.util.regex.Pattern.compile("\\s*(\\d+)\\s*d\\s*(\\d+)\\s*([+-]\\s*\\d+)?\\s*");
+
+    /**
+     * {@code 50 x n x sides} for an {@code NdS} or {@code NdS+K} weapon die.
+     *
+     * <p>A flat modifier does not count: the weapon floor turned every {@code 1d4} into
+     * {@code 1d4+1} (#195), and that must not push those weapons up an unlock tier.
+     * Before #195 a die with a modifier failed to parse and scored 0, which left
+     * {@code 1d6+1} weapons ungated.
+     */
+    public static int diceScore(String dice) {
+        if (dice == null) {
+            return 0;
+        }
+        java.util.regex.Matcher m = DICE.matcher(dice);
+        if (!m.matches()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(m.group(1)) * Integer.parseInt(m.group(2)) * 50;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public void incrementStat(String statName, int amount) {

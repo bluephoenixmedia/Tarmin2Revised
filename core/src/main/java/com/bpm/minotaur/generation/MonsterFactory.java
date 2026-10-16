@@ -103,14 +103,20 @@ public class MonsterFactory {
     }
 
     private boolean isUserOfWeapons(Monster monster) {
-        String name = monster.getType().name(); // Use getType() which returns Enum
+        return isUserOfWeapons(monster.getType());
+    }
+
+    static boolean isUserOfWeapons(MonsterType type) {
+        String name = type.name();
         // Check for specific humanoid types
         // This list should be more comprehensive or data-driven in future
+        // GIANT is matched exactly: as a substring it also armed GIANT_ANT, GIANT_BEE,
+        // GIANT_SNAKE and the other giant insects and beasts (#195).
         return name.contains("ORC") || name.contains("GOBLIN") || name.contains("KOBOLD")
                 || name.contains("DWARF") || name.contains("GNOME") || name.contains("ELF")
                 || name.contains("HUMAN") || name.contains("SKELETON") || name.contains("ZOMBIE")
                 || name.contains("VAMPIRE") || name.contains("LICH") || name.contains("MINOTAUR")
-                || name.contains("GIANT") || name.contains("HOBGOBLIN") || name.contains("TROGLODYTE");
+                || name.equals("GIANT") || name.contains("HOBGOBLIN") || name.contains("TROGLODYTE");
     }
 
     private void generateWeapon(Monster monster, int tier) {

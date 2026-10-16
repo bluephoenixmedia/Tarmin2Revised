@@ -312,11 +312,16 @@ public class SpawnManager {
         return budget.debrisBudget;
     }
 
+    /** Real dungeon depth, as opposed to {@link #level}, which is the EDL. */
+    private int depth() {
+        return (maze != null) ? maze.getLevel() : level;
+    }
+
     private SpawnContext createSpawnContext() {
         com.bpm.minotaur.gamedata.Alignment alignment = com.bpm.minotaur.gamedata.Alignment.NEUTRAL;
         boolean isGehennom = (level >= 25);
         boolean isContainer = false;
-        int depth = (maze != null) ? maze.getLevel() : level;
+        int depth = depth();
         GridPoint2 cid = (maze != null && maze.getChunkId() != null) ? maze.getChunkId() : null;
         int doomStage = DoomManager.getInstance().getDoomStage();
 
@@ -518,7 +523,7 @@ public class SpawnManager {
             // variants.get(0) when nothing matches the level, so a minLevel is silently
             // ignored. Fixing that properly would change spawning for every item in the
             // game, so this stays narrow -- see FirearmSpawnRule.
-            if (!com.bpm.minotaur.generation.FirearmSpawnRule.canSpawnAtDepth(itemId, level)) {
+            if (!com.bpm.minotaur.generation.FirearmSpawnRule.canSpawnAtDepth(itemId, depth())) {
                 continue;
             }
 
@@ -529,11 +534,9 @@ public class SpawnManager {
                 continue;
             }
 
-            ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-            if (variant == null)
-                continue;
+            ItemColor color = itemDataManager.getSpawnColor(type, level);
 
-            Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
+            Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, color, assetManager);
             if (item != null) {
                 ItemTemplate t = result.getValue();
                 if (t != null && t.friendlyName != null && t.friendlyName.startsWith("Scroll of ")) {
@@ -557,7 +560,7 @@ public class SpawnManager {
                     item.setName(cleanName);
                     item.setFriendlyName(cleanName);
                 }
-                attemptToModifyItem(item, variant.color);
+                attemptToModifyItem(item, color);
                 maze.addItem(item);
 
                 SpawnLogger.getInstance().logItemSpawn(item, "Level Generation (Budget)");
@@ -612,7 +615,7 @@ public class SpawnManager {
      * on the open attempt whether or not the player can actually work the lock.
      */
     private void spawnMimics() {
-        int count = com.bpm.minotaur.generation.MimicSpawnRule.rollCount(level, budget.mimicBudget, random);
+        int count = com.bpm.minotaur.generation.MimicSpawnRule.rollCount(depth(), budget.mimicBudget, random);
 
         for (int i = 0; i < count; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
@@ -661,11 +664,9 @@ public class SpawnManager {
         } catch (IllegalArgumentException e) {
             return;
         }
-        ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-        if (variant == null)
-            return;
-        Item loot = itemDataManager.createItem(type, 0, 0, variant.color, assetManager);
-        attemptToModifyItem(loot, variant.color);
+        ItemColor color = itemDataManager.getSpawnColor(type, level);
+        Item loot = itemDataManager.createItem(type, 0, 0, color, assetManager);
+        attemptToModifyItem(loot, color);
         container.getContents().add(loot);
 
         SpawnLogger.getInstance().logItemSpawn(loot, "Container Loot (Inside " + container.getDisplayName() + ")");

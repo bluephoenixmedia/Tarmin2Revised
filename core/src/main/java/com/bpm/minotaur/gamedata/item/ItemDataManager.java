@@ -77,12 +77,10 @@ public class ItemDataManager {
             ItemType type = getSafeItemType(entry.name);
             if (type != null) {
                 ItemTemplate template = json.readValue(ItemTemplate.class, entry);
-                if (template.probability == 0) {
-                    template.probability = 10;
-                }
+                applyDefaultProbability(entry, template);
                 if (type == ItemType.QUIVER) {
                     template.isAmmunition = true;
-                    if (template.probability < 20) {
+                    if (template.probability > 0 && template.probability < 20) {
                         template.probability = 20;
                     }
                 }
@@ -219,14 +217,12 @@ public class ItemDataManager {
             }
             ItemTemplate template = json.readValue(ItemTemplate.class, entry);
 
-            if (template.probability == 0) {
-                template.probability = 10;
-            }
+            applyDefaultProbability(entry, template);
 
             if (typeName.startsWith("ARROW_") || typeName.startsWith("QUARREL_") || typeName.startsWith("SLING_BULLET_")
                     || typeName.startsWith("BLOWGUN_") || typeName.startsWith("DART")) {
                 template.isAmmunition = true;
-                if (template.probability < 15) {
+                if (template.probability > 0 && template.probability < 15) {
                     template.probability = 15;
                 }
             }
@@ -275,10 +271,7 @@ public class ItemDataManager {
             }
             ItemTemplate template = json.readValue(ItemTemplate.class, entry);
 
-            // FIX: Set default probability if missing
-            if (template.probability == 0) {
-                template.probability = 10;
-            }
+            applyDefaultProbability(entry, template);
 
             itemTemplates.put(type, template);
             if (type == ItemType.LEATHER_BOOTS) {
@@ -308,6 +301,20 @@ public class ItemDataManager {
         applyUnlockGating();
 
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
+    }
+
+    /** Spawn weight for a template whose JSON entry leaves {@code probability} out. */
+    public static final int DEFAULT_PROBABILITY = 10;
+
+    /**
+     * An entry without a {@code probability} gets {@link #DEFAULT_PROBABILITY}; an
+     * explicit {@code "probability": 0} is kept, so 0 in the data means "never from the
+     * world roll". Before #195 the loaders rewrote every 0 to 10, which made 0 a dead knob.
+     */
+    public static void applyDefaultProbability(JsonValue entry, ItemTemplate template) {
+        if (!entry.has("probability")) {
+            template.probability = DEFAULT_PROBABILITY;
+        }
     }
 
     private void crossAlias(ItemType a, ItemType b) {
@@ -919,6 +926,23 @@ public class ItemDataManager {
      * @param level The current dungeon level.
      * @return A valid ItemVariant, or null if none are found.
      */
+    /**
+     * The colour a newly generated item is placed with: a level-fitting variant's colour,
+     * or the EDL colour roll when the template has no variants. Templates without
+     * variants (Tinder Bundle, Meat, the *_ARMS pieces ...) used to be dropped by the
+     * spawner, which left their rolls empty (#195).
+     */
+    public ItemColor getSpawnColor(ItemType type, int level) {
+        ItemTemplate template = getTemplate(type);
+        if (template != null && template.variants != null && !template.variants.isEmpty()) {
+            ItemVariant variant = getRandomVariantForItem(type, level);
+            if (variant != null && variant.color != null) {
+                return variant.color;
+            }
+        }
+        return getColorForEDL(level);
+    }
+
     public ItemVariant getRandomVariantForItem(ItemType type, int level) {
         ItemTemplate template = getTemplate(type);
         if (template.variants == null || template.variants.isEmpty()) {
@@ -1118,7 +1142,7 @@ public class ItemDataManager {
             cross.description = "A simple wooden cross that channels spiritual energy against chaotic fiends.";
             cross.texturePath = "images/weapons/wooden_cross.png";
             cross.isWeapon = true;
-            cross.damageDice = "1d4";
+            cross.damageDice = "1d4+1";
             cross.baseValue = 10;
             cross.scale = createDefaultScale();
             cross.spriteData = new String[] {
