@@ -52,7 +52,7 @@ public class TelemetryManager {
         POTIONS("potionsQuaffed"), SCROLLS("scrollsRead"), DIVINITIES_EARNED("divinitiesEarned"),
         DIVINITIES_SPENT("divinitiesSpent"), INJURIES("injuriesSustained"),
         MERCHANT_FF_DAMAGE("merchantFriendlyFireDamage"), MERCHANT_CLIPS("merchantClips"),
-        FIELD_RESTS("fieldRestUses"), KILLS("kills"), HP_REGENERATED("hpRegenerated"),
+        HP_VENGEANCE("hpVengeance"), KILLS("kills"), HP_REGENERATED("hpRegenerated"),
         MP_REGENERATED("mpRegenerated"), GOLD_GAINED("goldGained"), GOLD_SPENT("goldSpent"),
         XP_GAINED("xpGained"), ITEMS_PICKED_UP("itemsPickedUp"), UNLOCKS_EARNED("unlocksEarned"),
         TURNS_HUNGRY("turnsHungry"), TURNS_THIRSTY("turnsThirsty"), TURNS_COLD("turnsCold"),
@@ -418,13 +418,13 @@ public class TelemetryManager {
         return (int) life[Counter.MERCHANT_CLIPS.ordinal()];
     }
 
-    /** The field Rest action (H) was used this run -- see the "way off again" balance investigation. */
-    public synchronized void recordFieldRestUsed() {
-        life[Counter.FIELD_RESTS.ordinal()]++;
+    /** HP a kill gave back as Vengeance (#190). */
+    public synchronized void recordVengeance(int hp) {
+        life[Counter.HP_VENGEANCE.ordinal()] += Math.max(0, hp);
     }
 
-    public int getFieldRestUses() {
-        return (int) life[Counter.FIELD_RESTS.ordinal()];
+    public int getHpVengeance() {
+        return (int) life[Counter.HP_VENGEANCE.ordinal()];
     }
 
     // ---- Loot and economy ----

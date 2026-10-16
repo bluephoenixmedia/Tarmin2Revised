@@ -831,6 +831,7 @@ public class SpellExecutionEngine {
             maze.removeMonster(target);
             if (target.claimDeath()) {
                 player.addExperience(target.getKillExperience(), eventManager);
+                com.bpm.minotaur.gamedata.player.Vengeance.claim(player, target);
             }
         }
         eventManager.addEvent(new GameEvent("Vanquished " + target.getType() + "!", 2.0f));

@@ -40,7 +40,7 @@ public class SettingsManager {
         keyBindingDescriptions.put("PICKUP_DROP", "Pickup/Drop Item");
         keyBindingDescriptions.put("USE_ITEM", "Use Item");
         keyBindingDescriptions.put("DESCEND", "Descend Ladder");
-        keyBindingDescriptions.put("REST", "Rest");
+        keyBindingDescriptions.put("QUICK_HEAL", "Quick Heal");
         keyBindingDescriptions.put("FIRST_AID", "First Aid");
         keyBindingDescriptions.put("SWAP_HANDS", "Swap Hands");
         keyBindingDescriptions.put("SWAP_PACK", "Swap with Pack");
@@ -99,6 +99,8 @@ public class SettingsManager {
         keyBindings.clear();
         for (String action : keyBindingDescriptions.keySet()) {
             int defaultKey = defaultKeyFor(action);
+            // Quick heal took over the old Rest key (#190): keep a player's rebinding of it.
+            if (action.equals("QUICK_HEAL")) defaultKey = prefs.getInteger("REST", defaultKey);
             keyBindings.put(action, prefs.getInteger(action, defaultKey));
         }
 
@@ -238,7 +240,7 @@ public class SettingsManager {
             case "PICKUP_DROP": return Input.Keys.P;
             case "USE_ITEM": return Input.Keys.U;
             case "DESCEND": return Input.Keys.D;
-            case "REST": return Input.Keys.H;
+            case "QUICK_HEAL": return Input.Keys.H;
             case "FIRST_AID": return Input.Keys.R;
             case "SWAP_HANDS": return Input.Keys.S;
             case "SWAP_PACK": return Input.Keys.E;

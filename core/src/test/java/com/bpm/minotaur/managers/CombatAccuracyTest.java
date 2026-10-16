@@ -42,8 +42,24 @@ public class CombatAccuracyTest {
         stats.setConstitution(18); // mod +4 -> 20 - 8 = 12 turns
         assertEquals(12, stats.getRegenIntervalTurns());
 
-        stats.setConstitution(30); // clamps at the 8-turn floor
+        stats.setConstitution(30); // clamps at the floor
+        assertEquals(PlayerStats.MIN_REGEN_INTERVAL_TURNS, stats.getRegenIntervalTurns());
+    }
+
+    @Test
+    public void testRegenIntervalShortensWithLevel() {
+        PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
+        stats.setConstitution(10);
+        stats.setLevel(1);
+        assertEquals(20, stats.getRegenIntervalTurns());
+        stats.setLevel(5);
+        assertEquals(15, stats.getRegenIntervalTurns());
+        stats.setLevel(10);
         assertEquals(8, stats.getRegenIntervalTurns());
+        stats.setLevel(20);
+        assertEquals(8, stats.getRegenIntervalTurns());
+        stats.setConstitution(14); // CON still shortens it
+        assertEquals(4, stats.getRegenIntervalTurns());
     }
 
     @Test

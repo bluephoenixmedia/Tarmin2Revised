@@ -2918,7 +2918,6 @@ public class GameScreen extends BaseScreen {
         updateMusicTrackForCurrentZone();
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
-        player.tickFieldRestCooldown();
         checkForMimicInFront();
         combatManager.tickReload();
         tickPowderDampness();
@@ -3285,54 +3284,6 @@ public class GameScreen extends BaseScreen {
         hearthLighting = null;
         eventManager.addEvent(new GameEvent("You stop. The hearth stays cold.", 2f));
         return true;
-    }
-
-    /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
-    private static final int FIELD_REST_TICKS_PER_PRESS = 5;
-
-    /**
-     * Field rest & recover (H): a bounded, cooldown-gated HP top-up. Reintroduced
-     * after the "way off again" balance investigation found that the original
-     * R-bound rest was deleted wholesale (not deliberately redesigned) when R was
-     * repurposed to open First Aid, leaving no field-accessible War Strength recovery
-     * besides slow passive regen, rare potions, and shelter-only rest. The actual
-     * heal/cooldown/cost logic lives on Player (attemptFieldRest) so it is
-     * testable without a screen; this method only owns the same
-     * multi-tick-with-interruption risk the original had, so a monster can still
-     * close in mid-rest even though spamming it is no longer possible.
-     */
-    private void performFieldRestAction() {
-        MusicManager.getInstance().setResting(true);
-        Player.FieldRestResult result = player.attemptFieldRest(eventManager);
-        if (!result.success) {
-            MusicManager.getInstance().setResting(false);
-            return; // The refusal message was already queued by attemptFieldRest.
-        }
-
-        int hpBeforeTick = player.getCurrentHP();
-        int ticksElapsed = 0;
-        for (int i = 0; i < FIELD_REST_TICKS_PER_PRESS; i++) {
-            playerTurnTakesAction();
-            ticksElapsed++;
-
-            if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
-                eventManager.addEvent(new GameEvent("Your rest is interrupted!", 2f));
-                break;
-            }
-            if (player.getCurrentHP() < hpBeforeTick) {
-                eventManager.addEvent(new GameEvent("Something attacks you as you rest!", 2f));
-                break;
-            }
-            if (player.getCurrentHP() <= 0) {
-                break;
-            }
-            hpBeforeTick = player.getCurrentHP();
-        }
-        // Each of the ticks just advanced also decremented the cooldown attemptFieldRest just
-        // set, via the same per-turn hook every other action uses -- restore what this rest's
-        // own ticks consumed so the intended full cooldown still holds afterward, whether the
-        // loop ran to completion or was cut short by an interruption above.
-        player.restoreFieldRestCooldown(ticksElapsed);
     }
 
     /**
@@ -3858,6 +3809,13 @@ public class GameScreen extends BaseScreen {
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            // Quick heal (#190) spends the combat turn when it uses something.
+            if (actionKeys.is(keycode, "QUICK_HEAL")) {
+                if (player.quickHeal(discoveryManager, eventManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
             // --- Attack key / SPACE = Instant Attack ---
             if (actionKeys.is(keycode, "ATTACK") || keycode == Input.Keys.SPACE) {
                 combatManager.playerAttackInstant();
@@ -4146,12 +4104,14 @@ public class GameScreen extends BaseScreen {
                         openFirstAidModal();
                     } else {
                         eventManager.addEvent(new GameEvent(
-                                "Nothing here needs tending. Press " + actionKeys.keyName("REST")
-                                        + " to rest and recover strength.", 2.5f));
+                                "Nothing here needs tending. Press " + actionKeys.keyName("QUICK_HEAL")
+                                        + " to heal with a poultice or potion.", 2.5f));
                     }
                     return true;
-                case "REST":
-                    performFieldRestAction();
+                case "QUICK_HEAL":
+                    if (player.quickHeal(discoveryManager, eventManager)) {
+                        playerTurnTakesAction();
+                    }
                     return true;
                 case "FIELD_CRAFTING":
                     openFieldCrafting();

@@ -458,6 +458,7 @@ public class TurnManager {
 
         player.tickForm(eventManager);
         player.tickTrait(maze, eventManager);
+        player.tickPoultice(eventManager);
 
         // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)
         PlayerStats.SatiationState satState = stats.getSatiationState();
@@ -470,9 +471,7 @@ public class TurnManager {
             }
         }
         // MP natural recovery: Paced by Wisdom when hydrated.
-        // Base interval is 24 turns (at WIS 10, mod 0), shortening by 3 turns per WIS mod down to a min of 8 turns (at WIS 20+).
-        int wisMod = Math.max(0, (player.getEffectiveWisdom() - 10) / 2);
-        int mpInterval = Math.max(8, 24 - (wisMod * 3));
+        int mpInterval = PlayerStats.mpRegenIntervalTurns(player.getEffectiveWisdom());
         if (stats.getHydrationFloat() > 0 && (turnCounter % mpInterval == 0)) {
             if (player.getCurrentMP() < stats.getMaxMP()) {
                 player.restoreMP(1);
