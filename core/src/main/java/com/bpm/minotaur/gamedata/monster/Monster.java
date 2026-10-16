@@ -236,6 +236,12 @@ public class Monster implements Renderable {
     private int sealRoad = -1;
     /** {@link #SEAL_LORD}, {@link #SEAL_RETAINER}, or 0 for neither. */
     private int sealRole;
+    /**
+     * Gold this monster carries (#197), rolled by MonsterFactory and dropped as a pile
+     * on death. Kept as a number rather than an inventory item because monster inventory
+     * does not survive a chunk unload; ChunkData.MonsterData carries this instead.
+     */
+    private int carriedGold;
     /** A name for a named figure; null for an ordinary monster. Rebuilt from the history on load. */
     private String displayName;
     /** {@code SealLord.Behaviour} ordinals as bits. Rebuilt from the history on load. */
@@ -1462,6 +1468,10 @@ public class Monster implements Renderable {
     public int getSealRoad() { return sealRoad; }
     public void setSealRoad(int sealRoad) { this.sealRoad = sealRoad; }
     public int getSealRole() { return sealRole; }
+
+    public int getCarriedGold() { return carriedGold; }
+
+    public void setCarriedGold(int gold) { this.carriedGold = Math.max(0, gold); }
     public void setSealRole(int sealRole) { this.sealRole = sealRole; }
     public String getDisplayName() { return displayName; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }

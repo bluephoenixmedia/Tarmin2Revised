@@ -54,7 +54,6 @@ public class ShelterChestScreen extends BaseScreen {
     private TextButton storeAllBtn;
 
     private Label divinityBarLabel;
-    private TextButton upgradeLootRetentionBtn;
 
     private Item selectedItem;
     private Side selectedSide;
@@ -103,24 +102,14 @@ public class ShelterChestScreen extends BaseScreen {
         header.add(subtitle).center().padTop(6).row();
         root.add(header).fillX().padBottom(20).row();
 
-        // --- DIVINITY SHRINE: spend banked Divinities on permanent upgrades ---
+        // --- DIVINITY BALANCE: the Loot Retention upgrade that sat here is gone (#197). Death
+        // is permanent for the Incarnation, and gear comes back only through the Corpse Run;
+        // Divinities are spent at the altar.
         Table shrine = new Table();
         shrine.setBackground(hudSkin.getPanelBg());
         shrine.pad(14, 22, 14, 22);
         divinityBarLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
         shrine.add(divinityBarLabel).left().expandX();
-        upgradeLootRetentionBtn = createActionButton("UPGRADE LOOT RETENTION");
-        upgradeLootRetentionBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                purchaseLootRetentionUpgrade();
-            }
-        });
-        // STASH-1: this cell was a hard 320. "UPGRADE LOOT RETENTION" needs more than that at
-        // the body size, and a TextButton does not clip -- it centres the label and lets it run
-        // out of both ends, over the balance on its left and off the panel on its right. Every
-        // fixed button width on this screen became a minimum for the same reason.
-        shrine.add(upgradeLootRetentionBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right();
         root.add(shrine).fillX().padBottom(20).row();
 
         // --- BODY: Chest | Transfer Rail | Backpack ---
@@ -349,36 +338,9 @@ public class ShelterChestScreen extends BaseScreen {
     }
 
     private void refreshDivinityBar() {
-        DivinityManager dm = DivinityManager.getInstance();
-        int divinities = dm.getCurrentDivinities();
-        int cap = dm.getLootRetentionCap();
-        if (dm.isLootRetentionMaxed()) {
-            divinityBarLabel.setText(String.format(
-                    "%s: %d   |   Loot Retention MAXED -- keep %d unequipped items on death",
-                    DivinityManager.DIVINITY_NAME, divinities, cap));
-            setButtonEnabled(upgradeLootRetentionBtn, false);
-        } else {
-            int nextCost = dm.getNextLootRetentionUpgradeCost();
-            divinityBarLabel.setText(String.format(
-                    "%s: %d   |   Loot Retention Lv %d (keep %d on death)   |   Next: %d %s",
-                    DivinityManager.DIVINITY_NAME, divinities, dm.getLootRetentionUpgradeLevel(), cap,
-                    nextCost, DivinityManager.DIVINITY_NAME));
-            setButtonEnabled(upgradeLootRetentionBtn, divinities >= nextCost);
-        }
-    }
-
-    private void purchaseLootRetentionUpgrade() {
-        DivinityManager dm = DivinityManager.getInstance();
-        if (dm.purchaseLootRetentionUpgrade()) {
-            if (parentScreen != null && parentScreen.getSoundManager() != null) {
-                parentScreen.getSoundManager().playCoins();
-            }
-            statusLabel.setText("Loot Retention upgraded! You'll now keep " + dm.getLootRetentionCap()
-                    + " unequipped items on death.");
-        } else {
-            statusLabel.setText("Not enough Divinities for that upgrade.");
-        }
-        refreshDivinityBar();
+        int divinities = DivinityManager.getInstance().getCurrentDivinities();
+        divinityBarLabel.setText(String.format("%s: %d   |   Spend them at the altar",
+                DivinityManager.DIVINITY_NAME, divinities));
     }
 
     private void updateActionButtons() {

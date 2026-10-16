@@ -1445,10 +1445,10 @@ public class Player {
 
             if (itemAtFeet.getCategory() == ItemCategory.TREASURE) {
                 soundManager.playPickupItemSound();
-                stats.incrementTreasureScore(itemAtFeet.getBaseValue());
+                stats.incrementTreasureScore(itemAtFeet.getTreasureValue());
                 maze.getItems().remove(playerTile2);
                 eventManager.addEvent(new GameEvent("You found " + itemAtFeet.getDisplayName() + "!", 2f));
-                BalanceLogger.getInstance().logEconomy("TREASURE", itemAtFeet.getDisplayName(), itemAtFeet.getBaseValue());
+                BalanceLogger.getInstance().logEconomy("TREASURE", itemAtFeet.getDisplayName(), itemAtFeet.getTreasureValue());
                 return;
             }
 
@@ -1491,13 +1491,13 @@ public class Player {
 
             if (itemInFront.getCategory() == ItemCategory.TREASURE) {
                 soundManager.playPickupItemSound();
-                stats.incrementTreasureScore(itemInFront.getBaseValue());
+                stats.incrementTreasureScore(itemInFront.getTreasureValue());
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "!", 2f));
 
                 // --- LOGGING ---
                 BalanceLogger.getInstance().logEconomy("TREASURE", itemInFront.getDisplayName(),
-                        itemInFront.getBaseValue());
+                        itemInFront.getTreasureValue());
                 // ---------------
                 return;
             }

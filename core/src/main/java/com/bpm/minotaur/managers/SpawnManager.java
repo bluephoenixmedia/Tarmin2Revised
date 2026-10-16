@@ -62,6 +62,8 @@ public class SpawnManager {
 
     public static boolean DEBUG_FORCE_MODIFIERS = false;
 
+    private static final long GOLD_SEED_SALT = 0x601D_601DL;
+
     private static final float BASE_MODIFIER_CHANCE = 0.15f;
     private static final float COLOR_MULTIPLIER_BONUS = 0.1f;
     private static final float SECOND_MODIFIER_CHANCE = 0.25f;
@@ -79,6 +81,11 @@ public class SpawnManager {
     private final ItemSpawner itemSpawner;
     private final MonsterFactory monsterFactory; // New
     private final NetHackRNG rng;
+    /**
+     * Gold piles roll from their own stream (#197) so that adding them does not shift the
+     * rolls of anything spawned before them, nor {@link #predictPortalSpawn}.
+     */
+    private final NetHackRNG goldRng;
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             Maze maze, Difficulty difficulty, int level, int playerLevel, int playerLuck, String[] layout,
@@ -101,6 +108,7 @@ public class SpawnManager {
         // Initialize NetHack Services
         // 1. RNG
         this.rng = new NetHackRNG(new Random(seed));
+        this.goldRng = new NetHackRNG(new Random(seed ^ GOLD_SEED_SALT));
 
         // 2. Build Registries
         Map<String, MonsterTemplate> monsterRegistry = new HashMap<>();
@@ -224,6 +232,7 @@ public class SpawnManager {
         // Milestone Tarmin Tomes placed in designated subterranean strata chunks (x=0, y=0)
         spawnMilestoneTomes();
         spawnChronicleFragment();
+        spawnGoldPiles();
     }
 
     /**
@@ -236,6 +245,26 @@ public class SpawnManager {
         spawnContainers((int) (budget.containerBudget * 0.5f));
         spawnMimics();
         spawnDebris((int) (budget.debrisBudget * 0.5f));
+        spawnGoldPiles();
+    }
+
+    /**
+     * Floor gold at NetHack's rarity (#197): see {@link com.bpm.minotaur.gamedata.economy.Gold}.
+     * Placed last, so it takes only spawn points nothing else wanted.
+     */
+    private void spawnGoldPiles() {
+        int piles = com.bpm.minotaur.gamedata.economy.Gold.rollFloorPiles(goldRng);
+        for (int i = 0; i < piles; i++) {
+            GridPoint2 spawnPoint = getEmptySpawnPoint();
+            if (spawnPoint == null) return;
+            int amount = com.bpm.minotaur.gamedata.economy.Gold.floorPileAmount(level, goldRng);
+            Item pile = com.bpm.minotaur.gamedata.economy.Gold.createPile(itemDataManager, assetManager,
+                    amount, spawnPoint.x, spawnPoint.y);
+            if (pile != null) {
+                maze.addItem(pile);
+                SpawnLogger.getInstance().logItemSpawn(pile, "Level Generation (Gold)");
+            }
+        }
     }
 
     /** Sometimes a piece of the Maze's history lies here (Houses of the Maze plan T1.10). */
