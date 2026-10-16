@@ -47,6 +47,12 @@ public class PlayerSaveData {
     public List<String> unlockedSkills = new ArrayList<>();
 
     public float satiety = 80f;
+    /**
+     * Which scale {@link #satiety} is on: 0 for saves written before #191 (the old 0-120
+     * satiety), {@link #NUTRITION_SCALE_NETHACK} since. Old values are migrated on load.
+     */
+    public int nutritionScale = 0;
+    public static final int NUTRITION_SCALE_NETHACK = 1;
     public float hydration = 80f;
     public float bodyTemperature = 37f;
     /** Blight Taint; 0 on saves written before it existed. */
@@ -171,6 +177,7 @@ public class PlayerSaveData {
             this.experienceToNextLevel = stats.getExperienceToNextLevel();
 
             this.satiety = stats.getSatietyFloat();
+            this.nutritionScale = NUTRITION_SCALE_NETHACK;
             this.hydration = stats.getHydrationFloat();
             this.bodyTemperature = stats.getBodyTemperature();
             this.taint = stats.getTaint();
@@ -318,7 +325,9 @@ public class PlayerSaveData {
             stats.setExperience(experience);
             stats.setExperienceToNextLevel(experienceToNextLevel);
 
-            stats.setSatiety(satiety);
+            stats.setSatiety(nutritionScale >= NUTRITION_SCALE_NETHACK
+                    ? satiety
+                    : com.bpm.minotaur.gamedata.player.Hunger.fromLegacySatiety(satiety));
             stats.setHydration(hydration);
             stats.setBodyTemperature(bodyTemperature);
             stats.setTaint(taint);

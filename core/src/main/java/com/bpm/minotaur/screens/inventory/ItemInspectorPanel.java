@@ -328,8 +328,8 @@ public class ItemInspectorPanel extends Table {
 
     private void buildConsumableInspection(Table table, Item item) {
         if (item.isFood()) {
-            int nut = item.getNutrition() > 0 ? item.getNutrition() : 5;
-            addStatRow(table, "Nutrition:", "+" + nut + " Satiety", COL_UPGRADE);
+            int nut = com.bpm.minotaur.gamedata.player.Player.nutritionOf(item);
+            addStatRow(table, "Nutrition:", "+" + nut, COL_UPGRADE);
             if (item.getHydrationValue() > 0) {
                 addStatRow(table, "Hydration:", "+" + item.getHydrationValue() + " Water", COL_SPIRITUAL);
             }

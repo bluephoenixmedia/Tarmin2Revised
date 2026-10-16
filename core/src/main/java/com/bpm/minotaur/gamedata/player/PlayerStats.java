@@ -82,45 +82,36 @@ public class PlayerStats {
 
     private final float vulnerabilityMultiplier;
 
-    public enum SatiationState {
-        STARVING,
-        HUNGRY,
-        NORMAL,
-        SATIATED,
-        CHOKING
-    }
-
     // --- Survival Stats ---
-    private float satiety = 80.0f; // 0-120 NetHack scale
+    /** Nutrition on NetHack's scale (see {@link Hunger}); negative while Fainting. */
+    private float satiety = Hunger.START;
     private float hydration = 80.0f; // 0-100
     private float bodyTemperature = 37.0f; // Celsius. Normal ~37.
 
-    public static final float MAX_SATIETY = 120.0f;
-    /** Where every new expedition starts: comfortably Normal, not Hungry. Respawns use the same value. */
-    public static final float STARTING_SATIETY = 80.0f;
+    /** The store's cap. Hunger bars fill at {@link Hunger#SATIATED_ABOVE}. */
+    public static final float MAX_SATIETY = Hunger.CHOKE_AT;
+    /** Where every new expedition starts. Respawns use the same value. */
+    public static final float STARTING_SATIETY = Hunger.START;
     public static final float MAX_HYDRATION = 100.0f;
     public static final float BODY_TEMP_NORMAL = 37.0f;
     public static final float BODY_TEMP_FREEZING = 32.0f; // Hypothermia start
     public static final float BODY_TEMP_OVERHEAT = 41.0f; // Hyperthermia start
 
-    public SatiationState getSatiationState() {
-        if (satiety <= 0f) return SatiationState.STARVING;
-        if (satiety <= 25f) return SatiationState.HUNGRY;
-        if (satiety <= 80f) return SatiationState.NORMAL;
-        if (satiety <= 110f + com.bpm.minotaur.gamedata.trait.TraitEffects.add("chokeLimitAdd")) return SatiationState.SATIATED;
-        return SatiationState.CHOKING;
+    public Hunger.Stage getHungerStage() {
+        return Hunger.stageOf(satiety, constitution);
     }
 
     public int getSatiety() {
-        return (int) satiety;
+        return (int) Math.floor(satiety);
     }
 
     public float getSatietyFloat() {
         return satiety;
     }
 
+    /** Clamped between the starvation line and {@link #MAX_SATIETY}. */
     public void setSatiety(float v) {
-        this.satiety = Math.max(0, Math.min(MAX_SATIETY, v));
+        this.satiety = Math.max(Hunger.floor(constitution), Math.min(MAX_SATIETY, v));
     }
 
     public void modifySatiety(float amount) {
@@ -283,7 +274,8 @@ public class PlayerStats {
      */
      public int getToHitBonus() {
          int baseBonus = 2 + (this.level / 2);
-         return Math.max(1, baseBonus + getDexModifier());
+         // Weak and worse from hunger (#191) cost a point to-hit, below the floor of 1.
+         return Math.max(1, baseBonus + getDexModifier()) - getHungerStage().toHitPenalty;
      }
 
     /**
@@ -450,11 +442,11 @@ public class PlayerStats {
     }
 
     public int getFood() {
-        return (int) satiety;
+        return getSatiety();
     }
 
     public void setFood(int food) {
-        this.satiety = food;
+        setSatiety(food);
     }
 
     public int getArrows() {
@@ -700,7 +692,8 @@ public class PlayerStats {
         if (toxicity >= critLow) {
             eff += Math.max(2, (int) (strength * 0.2f));
         }
-        return eff;
+        // Weak and worse from hunger (#191).
+        return eff - getHungerStage().strengthPenalty;
     }
 
     /** Defense multiplier using raw thresholds. */

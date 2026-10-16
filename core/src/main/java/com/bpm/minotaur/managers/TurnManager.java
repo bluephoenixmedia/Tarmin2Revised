@@ -22,15 +22,12 @@ public class TurnManager {
 
     private final float BASE_TURN_COST = 12.0f;
 
-    // Metabolic Constants (Per 1.0 Time Unit). Satiety now decays at the same
-    // pace as hydration (previously half as fast, 0.02f) so it can actually bind
-    // as a real resource pressure across an expedition instead of never mattering.
-    public static final float SATIETY_DECAY = 0.04f; // ~3000 turns to starve from full (120)
+    // Metabolic Constants (Per 1.0 Time Unit). Hunger burns on its own scale; see Hunger.
     public static final float HYDRATION_DECAY = 0.04f; // ~2500 turns to dehydrate from full (100)
     private static final float TEMP_ADJUST_RATE = 0.05f; // Speed of body temp adjustment
     private int ringRechargeCounter = 0;
     private int turnCounter = 0;
-    private PlayerStats.SatiationState lastSatiationState = PlayerStats.SatiationState.NORMAL;
+    private com.bpm.minotaur.gamedata.player.Hunger.Stage lastHungerStage = com.bpm.minotaur.gamedata.player.Hunger.Stage.NOT_HUNGRY;
     private boolean wasParched = false;
     /** Last Taint tier seen, so crossing into a tier is announced once. Null until the first tick. */
     private com.bpm.minotaur.gamedata.blight.Taint.Tier lastTaintTier = null;
@@ -90,7 +87,7 @@ public class TurnManager {
         turnCounter++;
         {
             PlayerStats ts = player.getStats();
-            PlayerStats.SatiationState sat = ts.getSatiationState();
+            com.bpm.minotaur.gamedata.player.Hunger.Stage sat = ts.getHungerStage();
             if (worldManager != null) {
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setContext(
                         worldManager.getDifficulty() != null ? worldManager.getDifficulty().name() : null,
@@ -99,7 +96,7 @@ public class TurnManager {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().onTurn(turnCounter, maze.getLevel(),
                     maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y),
                     player.getCurrentHP(), player.getCurrentMP(),
-                    sat == PlayerStats.SatiationState.HUNGRY || sat == PlayerStats.SatiationState.STARVING,
+                    sat.isHungry(),
                     ts.getHydrationFloat() <= 0,
                     ts.getBodyTemperature() < 35.0f,
                     player.getStatusManager() != null
@@ -396,6 +393,55 @@ public class TurnManager {
         return false;
     }
 
+    /**
+     * Hunger's stage effects, NetHack-style (#191): a notice on every change of stage, a
+     * reminder every 50 turns while Weak or worse, a chance to faint each turn while Fainting,
+     * and death once Starved. Weak's STR and to-hit penalty is applied by PlayerStats.
+     */
+    private void updateHunger(Player player, com.bpm.minotaur.gamedata.player.Hunger.Stage stage, GameEventManager eventManager) {
+        com.bpm.minotaur.gamedata.player.Hunger.Stage previous = lastHungerStage;
+        lastHungerStage = stage;
+        if (stage != previous) {
+            String notice = null;
+            switch (stage) {
+                case SATIATED: notice = "You are satiated."; break;
+                case HUNGRY: notice = "You are beginning to feel hungry."; break;
+                case WEAK: notice = "You are beginning to feel weak."; break;
+                case FAINTING: notice = "You feel faint from hunger."; break;
+                default: break;
+            }
+            if (notice != null && eventManager != null) {
+                eventManager.addEvent(new GameEvent(notice, 2.5f));
+            }
+        } else if (stage.isWeakened() && stage != com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED
+                && turnCounter % 50 == 0 && eventManager != null) {
+            eventManager.addEvent(new GameEvent(stage == com.bpm.minotaur.gamedata.player.Hunger.Stage.WEAK
+                    ? "You are weak from hunger." : "You are fainting from lack of food.", 2.0f));
+        }
+
+        if (stage == com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED) {
+            if (player.getCurrentHP() > 0) {
+                player.takeTrueDamage(player.getCurrentHP());
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You die from starvation.", 2.0f));
+                    eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                }
+            }
+            return;
+        }
+
+        if (stage == com.bpm.minotaur.gamedata.player.Hunger.Stage.FAINTING && player.getStatusManager() != null
+                && !player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLEEP)
+                && Math.random() < com.bpm.minotaur.gamedata.player.Hunger.faintChance(player.getStats().getSatietyFloat())) {
+            // Helpless: SLEEP is the player's existing pass-the-turn state.
+            int turns = com.bpm.minotaur.gamedata.player.Hunger.faintTurns((float) Math.random());
+            player.getStatusManager().addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLEEP, turns, 1, false);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You faint from lack of food.", 2.5f));
+            }
+        }
+    }
+
     private void updateMetabolism(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager, float time) {
         PlayerStats stats = player.getStats();
 
@@ -405,7 +451,7 @@ public class TurnManager {
         // passed in already stretches with the slower step, so that is taken back out here and
         // only the tier's own drain factor remains.
         float load = player.getMetabolicTimeScale();
-        stats.modifySatiety(-SATIETY_DECAY * load * time * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("hungerMult"));
+        stats.modifySatiety(-com.bpm.minotaur.gamedata.player.Hunger.burn(load, time, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("hungerMult")));
         stats.modifyHydration(-HYDRATION_DECAY * load * (isHeatstroke ? 2.0f : 1.0f) * time * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult"));
 
         // 2. Temperature Logic
@@ -492,11 +538,11 @@ public class TurnManager {
         player.tickTrait(maze, eventManager);
         player.tickPoultice(eventManager);
 
-        // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)
-        PlayerStats.SatiationState satState = stats.getSatiationState();
+        // 3. Natural HP & MP Regeneration (NetHack 3-pillar model). Hunger never blocks it (#191).
+        com.bpm.minotaur.gamedata.player.Hunger.Stage satState = stats.getHungerStage();
         int regenInterval = Math.max(1, Math.round(stats.getRegenIntervalTurns() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("regenMult")))
                 * com.bpm.minotaur.gamedata.blight.Taint.regenIntervalMult(stats.getTaint());
-        if (satState != PlayerStats.SatiationState.STARVING && (turnCounter % regenInterval == 0)) {
+        if (turnCounter % regenInterval == 0) {
             if (player.getCurrentHP() < stats.getMaxHP()) {
                 stats.heal(1);
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordRegen(1, 0);
@@ -511,32 +557,8 @@ public class TurnManager {
             }
         }
 
-        // 4. Throttled Satiation & Thirst State Notifications (No per-step log spam)
-        if (satState != lastSatiationState) {
-            lastSatiationState = satState;
-            if (eventManager != null) {
-                switch (satState) {
-                    case HUNGRY:
-                        eventManager.addEvent(new GameEvent("You are starting to feel hungry.", 2.0f));
-                        break;
-                    case STARVING:
-                        eventManager.addEvent(new GameEvent("You are starving!", 2.5f));
-                        break;
-                    case SATIATED:
-                        eventManager.addEvent(new GameEvent("You are satiated.", 2.0f));
-                        break;
-                    case CHOKING:
-                        eventManager.addEvent(new GameEvent("You are choking from overeating!", 2.5f));
-                        break;
-                    default:
-                        break;
-                }
-            }
-        } else if (satState == PlayerStats.SatiationState.STARVING && (turnCounter % 50 == 0)) {
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You are starving!", 2.0f));
-            }
-        }
+        // 4. Throttled hunger notices, then what the stage does (#191)
+        updateHunger(player, satState, eventManager);
 
         boolean isParched = stats.getHydrationFloat() <= 0;
         if (isParched != wasParched) {
@@ -550,15 +572,7 @@ public class TurnManager {
             }
         }
 
-        // 5. Starvation & Dehydration Damage (Every 25 / 20 turns)
-        if (satState == PlayerStats.SatiationState.STARVING && (turnCounter % 25 == 0)) {
-            player.takeTrueDamage(1);
-            if (player.getCurrentHP() <= 0 && eventManager != null) {
-                eventManager.addEvent(new GameEvent("You starved to death!", 2.0f));
-                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-            }
-        }
-
+        // 5. Dehydration Damage (every 20 turns)
         if (isParched && (turnCounter % 20 == 0)) {
             player.takeTrueDamage(1);
             if (player.getCurrentHP() <= 0 && eventManager != null) {

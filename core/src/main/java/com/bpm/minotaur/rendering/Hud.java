@@ -1230,8 +1230,8 @@ public class Hud implements Disposable {
         }
 
         // --- 3. Update Condition & Delve / Combat Card ---
-        foodBar.setValue(player.getFood(), PlayerStats.MAX_SATIETY);
-        foodBar.setBarColor(player.getFood() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
+        foodBar.setValue(Math.max(0, player.getFood()), com.bpm.minotaur.gamedata.player.Hunger.SATIATED_ABOVE);
+        foodBar.setBarColor(player.getStats().getHungerStage().isHungry() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
 
         waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
         waterBar.setBarColor(player.getStats().getHydrationFloat() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
@@ -2763,9 +2763,9 @@ public class Hud implements Disposable {
             wasChilled = chilled;
 
             // 3. Satiation & Dehydration
-            boolean starving = p.getStats().getSatietyFloat() <= 0f;
+            boolean starving = p.getStats().getSatietyFloat() < com.bpm.minotaur.gamedata.player.Hunger.FAINTING_BELOW;
             if (starving && !wasStarving) {
-                showStatusAlertToast("STARVATION! Eat rations before your body collapses!", HudSkin.COL_HP_CRITICAL);
+                showStatusAlertToast("FAINTING! Eat before you pass out or starve!", HudSkin.COL_HP_CRITICAL);
             }
             wasStarving = starving;
 

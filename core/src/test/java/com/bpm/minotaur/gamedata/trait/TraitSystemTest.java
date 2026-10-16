@@ -311,10 +311,9 @@ public class TraitSystemTest {
 
     @Test
     public void ironStomachResistsPoisonAndSicknessButChokesSooner() {
-        player.getStats().setSatiety(105f);
-        assertEquals(com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.SATIATED, player.getStats().getSatiationState());
+        float before = com.bpm.minotaur.gamedata.player.Hunger.chokeAt();
         take("IRON_STOMACH");
-        assertEquals(com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING, player.getStats().getSatiationState());
+        assertEquals(before - 200f, com.bpm.minotaur.gamedata.player.Hunger.chokeAt(), 0.01f);
         player.getStatusManager().addEffect(StatusEffectType.POISONED, 5, 1, false);
         player.getStatusManager().addEffect(StatusEffectType.SICK, 5, 1, false);
         assertFalse(player.getStatusManager().hasEffect(StatusEffectType.POISONED));

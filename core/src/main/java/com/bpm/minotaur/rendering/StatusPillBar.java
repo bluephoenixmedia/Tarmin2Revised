@@ -164,18 +164,25 @@ public class StatusPillBar extends Table {
         // 5. Starvation & Dehydration
         if (player.getStats() != null) {
             PlayerStats stats = player.getStats();
-            if (stats.getSatietyFloat() <= 0f) {
-                addPill("STARV", HudSkin.COL_HP_CRITICAL,
-                        "Severe Starvation",
+            com.bpm.minotaur.gamedata.player.Hunger.Stage hunger = stats.getHungerStage();
+            if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.FAINTING || hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED) {
+                addPill("FAINT", HudSkin.COL_HP_CRITICAL,
+                        "Fainting",
                         "[SURVIVAL]",
-                        "Your body is starving to death! Taking 1 true damage every 25 turns.",
-                        "Consume rations, dried meat, or cooked food immediately.");
-            } else if (stats.getSatiationState() == PlayerStats.SatiationState.HUNGRY) {
+                        "STR -2, to-hit -1. Each turn you may pass out for a few turns. Go on and you starve.",
+                        "Eat a ration or cooked food now.");
+            } else if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.WEAK) {
+                addPill("WEAK", HudSkin.COL_HP_CRITICAL,
+                        "Weak",
+                        "[SURVIVAL]",
+                        "Weak from hunger: STR -2, to-hit -1.",
+                        "Eat soon, before you start to faint.");
+            } else if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.HUNGRY) {
                 addPill("HUNGRY", HudSkin.COL_TEMP_ORANGE,
-                        "Hunger Pang",
+                        "Hungry",
                         "[SURVIVAL]",
-                        "Your stomach growls. Natural HP regeneration is suppressed.",
-                        "Eat food before starvation sets in.");
+                        "Your stomach growls. No penalty yet.",
+                        "Eat before you grow weak.");
             }
 
             if (stats.getHydrationFloat() <= 0f) {

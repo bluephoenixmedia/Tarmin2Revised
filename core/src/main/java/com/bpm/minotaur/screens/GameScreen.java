@@ -1812,7 +1812,7 @@ public class GameScreen extends BaseScreen {
 
         if (player != null && player.getStats() != null) {
             PlayerStats stats = player.getStats();
-            if (stats.getSatiationState() == PlayerStats.SatiationState.STARVING) {
+            if (stats.getHungerStage().isWeakened()) {
                 sb.append(" while starving");
             } else if (stats.getHydrationFloat() <= 0) {
                 sb.append(" while parched");
@@ -5108,10 +5108,11 @@ public class GameScreen extends BaseScreen {
 
     /**
      * Opens the cooking hearth in portable field-kit mode: requires a Cooking Kit in the
-     * pack, and works with carried ingredients only (no Shelter Chest access).
+     * pack, or a field fire beside the player, and works with carried ingredients only (no
+     * Shelter Chest access).
      */
     public void openFieldCooking() {
-        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
+        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT) && !isBesideFieldFire()) {
             hud.addMessage("You need a Cooking Kit in your pack to prepare meals in the field.");
             return;
         }
@@ -5121,6 +5122,14 @@ public class GameScreen extends BaseScreen {
         } catch (Exception e) {
             Gdx.app.error("GameScreen", "Failed to open field cooking", e);
         }
+    }
+
+    /**
+     * Hook for cooking over a Tinder Bundle field fire (#191). The fire itself arrives with
+     * #194; until then there is none to stand beside.
+     */
+    boolean isBesideFieldFire() {
+        return false;
     }
 
     public void openSpellbook() {

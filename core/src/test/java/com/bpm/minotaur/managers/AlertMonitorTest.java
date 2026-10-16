@@ -133,21 +133,21 @@ public class AlertMonitorTest {
                 new com.bpm.minotaur.gamedata.player.PlayerStats(com.bpm.minotaur.gamedata.Difficulty.MEDIUM);
         stats.setMaxHP(20);
         stats.setCurrentHP(5);
-        stats.setSatiety(60f);
+        stats.setSatiety(600f);
         stats.setHydration(60f);
         AlertMonitor.Snapshot fine = AlertMonitor.Snapshot.of(stats);
         assertEquals(0.25f, fine.healthShare(), 0.001f);
         assertEquals(0, fine.hungerRank());
         assertEquals(0, fine.thirstRank());
 
-        stats.setSatiety(10f);
+        stats.setSatiety(100f);
         stats.setHydration(10f);
         assertEquals("hungry", 1, AlertMonitor.Snapshot.of(stats).hungerRank());
         assertEquals("thirsty", 1, AlertMonitor.Snapshot.of(stats).thirstRank());
 
-        stats.setSatiety(0f);
+        stats.setSatiety(40f);
         stats.setHydration(0f);
-        assertEquals("starving", 2, AlertMonitor.Snapshot.of(stats).hungerRank());
+        assertEquals("weak from hunger", 2, AlertMonitor.Snapshot.of(stats).hungerRank());
         assertEquals("parched", 2, AlertMonitor.Snapshot.of(stats).thirstRank());
     }
 

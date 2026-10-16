@@ -49,9 +49,8 @@ public final class AlertMonitor {
 
         public static Snapshot of(com.bpm.minotaur.gamedata.player.PlayerStats stats) {
             int maxHp = Math.max(1, stats.getMaxHP());
-            com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState food = stats.getSatiationState();
-            int hunger = food == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.STARVING ? 2
-                    : food == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.HUNGRY ? 1 : 0;
+            com.bpm.minotaur.gamedata.player.Hunger.Stage food = stats.getHungerStage();
+            int hunger = food.isWeakened() ? 2 : food.isHungry() ? 1 : 0;
             float water = stats.getHydrationFloat();
             int thirst = water <= 0f ? 2 : water <= THIRSTY_BELOW ? 1 : 0;
             int points = stats.getUnallocatedAttributePoints() + stats.getUnallocatedSkillPoints();

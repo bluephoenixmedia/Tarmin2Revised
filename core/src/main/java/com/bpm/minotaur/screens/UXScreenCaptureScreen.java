@@ -127,7 +127,7 @@ public class UXScreenCaptureScreen extends BaseScreen {
         player.getStats().setCurrentMP(48);
         player.getStats().setMaxMP(60);
         player.getStats().setStamina(3);
-        player.getStats().setSatiety(85f);
+        player.getStats().setSatiety(com.bpm.minotaur.gamedata.player.PlayerStats.STARTING_SATIETY);
         player.getStats().setHydration(90f);
         player.getStats().setBodyTemperature(37f);
         player.getStats().setTreasureScore(1450);
