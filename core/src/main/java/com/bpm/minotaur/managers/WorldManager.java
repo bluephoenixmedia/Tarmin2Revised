@@ -711,6 +711,13 @@ public class WorldManager {
             }
         }
 
+        // The early weapon (#196): the chunk an Incarnation wakes in is generated fresh after every
+        // death, so this places exactly one per Incarnation, after everything else has its tile.
+        if (isIncarnationStartChunk(chunkId)) {
+            com.bpm.minotaur.generation.EarlyWeapon.place(newMaze, itemDataManager, assetManager,
+                    new java.util.Random(chunkSeed ^ EARLY_WEAPON_SEED_SALT));
+        }
+
         applyShelterState(newMaze, chunkId);
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
@@ -1075,6 +1082,13 @@ public class WorldManager {
 
     /** Where the player wakes after the last death: a shelter chunk, or null for home. */
     private GridPoint2 respawnChunk;
+
+    private static final long EARLY_WEAPON_SEED_SALT = 0xEA21_3EA9L;
+
+    /** The surface chunk a new Incarnation wakes in, which holds its early weapon (#196). */
+    boolean isIncarnationStartChunk(GridPoint2 chunkId) {
+        return currentLevel == 1 && chunkId != null && chunkId.equals(getRespawnChunk());
+    }
 
     /** The chunk the player wakes in after a death: a remembered road shelter, or home. */
     public GridPoint2 getRespawnChunk() {

@@ -86,6 +86,9 @@ public class SpawnManager {
      * rolls of anything spawned before them, nor {@link #predictPortalSpawn}.
      */
     private final NetHackRNG goldRng;
+    /** Its own stream too, so the herb roll shifts nothing else (#196). */
+    private final Random herbRandom;
+    private static final long HERB_SEED_SALT = 0x11C4_E11CL;
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             Maze maze, Difficulty difficulty, int level, int playerLevel, int playerLuck, String[] layout,
@@ -109,6 +112,7 @@ public class SpawnManager {
         // 1. RNG
         this.rng = new NetHackRNG(new Random(seed));
         this.goldRng = new NetHackRNG(new Random(seed ^ GOLD_SEED_SALT));
+        this.herbRandom = new Random(seed ^ HERB_SEED_SALT);
 
         // 2. Build Registries
         Map<String, MonsterTemplate> monsterRegistry = new HashMap<>();
@@ -152,38 +156,8 @@ public class SpawnManager {
             }
         }
 
-        this.debrisPool = new WeightedRandomList<>();
-        if (spawnTableData.debrisSpawnTable != null) {
-            for (SpawnTableEntry entry : spawnTableData.debrisSpawnTable) {
-                if (entry.type.equals("MYSTERIOUS_PORTAL")) {
-                    if (level < entry.minLevel || level > entry.maxLevel) {
-                        continue;
-                    }
-                }
-                debrisPool.add(entry);
-            }
-        }
-
-        this.containerLootPool = new WeightedRandomList<>();
-        Array<SpawnTableEntry> loot = spawnTableData.containerLoot.get("default");
-        if (loot != null) {
-            for (int i = 0; i < loot.size; i++) {
-                Object obj = loot.get(i);
-                SpawnTableEntry entry;
-                if (obj instanceof com.badlogic.gdx.utils.JsonValue) {
-                    com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
-                    entry = json.readValue(SpawnTableEntry.class, (com.badlogic.gdx.utils.JsonValue) obj);
-                } else if (obj instanceof SpawnTableEntry) {
-                    entry = (SpawnTableEntry) obj;
-                } else {
-                    continue;
-                }
-
-                if (level >= entry.minLevel && level <= entry.maxLevel) {
-                    containerLootPool.add(entry);
-                }
-            }
-        }
+        this.debrisPool = buildLevelDebrisPool(spawnTableData, level);
+        this.containerLootPool = buildContainerLootPool(spawnTableData, level);
         // Ensure logger is initialized
         SpawnLogger.getInstance();
     }
@@ -232,6 +206,7 @@ public class SpawnManager {
         // Milestone Tarmin Tomes placed in designated subterranean strata chunks (x=0, y=0)
         spawnMilestoneTomes();
         spawnChronicleFragment();
+        spawnVitalityHerb();
         spawnGoldPiles();
     }
 
@@ -245,7 +220,25 @@ public class SpawnManager {
         spawnContainers((int) (budget.containerBudget * 0.5f));
         spawnMimics();
         spawnDebris((int) (budget.debrisBudget * 0.5f));
+        spawnVitalityHerb();
         spawnGoldPiles();
+    }
+
+    /** Glowing Lichen by real depth (#196); see {@link com.bpm.minotaur.generation.VitalityHerbRule}. */
+    private void spawnVitalityHerb() {
+        if (!com.bpm.minotaur.generation.VitalityHerbRule.rollLichen(depth(), herbRandom)) {
+            return;
+        }
+        GridPoint2 spawnPoint = getEmptySpawnPoint();
+        if (spawnPoint == null) {
+            return;
+        }
+        Item lichen = itemDataManager.createItem(ItemType.GLOWING_LICHEN, spawnPoint.x, spawnPoint.y,
+                ItemColor.GREEN, assetManager);
+        if (lichen != null) {
+            maze.addItem(lichen);
+            SpawnLogger.getInstance().logItemSpawn(lichen, "Vitality Herb");
+        }
     }
 
     /**
@@ -317,6 +310,50 @@ public class SpawnManager {
     }
 
     // --- Helpers ---
+
+    /**
+     * The debris pool a level actually rolls from: every entry, with only the portal held to
+     * its level band. Public so the loot sampling tests roll what the game rolls (#196).
+     */
+    public static WeightedRandomList<SpawnTableEntry> buildLevelDebrisPool(SpawnTableData data, int level) {
+        WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();
+        if (data.debrisSpawnTable != null) {
+            for (SpawnTableEntry entry : data.debrisSpawnTable) {
+                if (entry.type.equals("MYSTERIOUS_PORTAL")) {
+                    if (level < entry.minLevel || level > entry.maxLevel) {
+                        continue;
+                    }
+                }
+                pool.add(entry);
+            }
+        }
+        return pool;
+    }
+
+    /** What a container can hold at this level, from spawntables.json containerLoot "default". */
+    public static WeightedRandomList<SpawnTableEntry> buildContainerLootPool(SpawnTableData data, int level) {
+        WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();
+        Array<SpawnTableEntry> loot = (data.containerLoot != null) ? data.containerLoot.get("default") : null;
+        if (loot != null) {
+            for (int i = 0; i < loot.size; i++) {
+                Object obj = loot.get(i);
+                SpawnTableEntry entry;
+                if (obj instanceof com.badlogic.gdx.utils.JsonValue) {
+                    com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
+                    entry = json.readValue(SpawnTableEntry.class, (com.badlogic.gdx.utils.JsonValue) obj);
+                } else if (obj instanceof SpawnTableEntry) {
+                    entry = (SpawnTableEntry) obj;
+                } else {
+                    continue;
+                }
+
+                if (level >= entry.minLevel && level <= entry.maxLevel) {
+                    pool.add(entry);
+                }
+            }
+        }
+        return pool;
+    }
 
     public static WeightedRandomList<SpawnTableEntry> buildDebrisPool(SpawnTableData data, int level) {
         WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();

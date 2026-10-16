@@ -1900,6 +1900,7 @@
     },
     "POTION_OF_HEALING": {
         "friendlyName": "Potion of Healing",
+        "probability": 6,
         "description": "A carefully brewed restorative tonic.",
         "texturePath": "images/items/potion_blue.png",
         "baseValue": 60,
@@ -3068,6 +3069,7 @@
     },
     "FOOD": {
         "friendlyName": "Food",
+        "probability": 1,
         "texturePath": "images/items/food.png",
         "spriteData": [
             "........................",
@@ -6446,6 +6448,7 @@
     },
     "TINDER_BUNDLE": {
         "friendlyName": "Tinder Bundle",
+        "category": "TOOL",
         "description": "Dry bark, pitch and shavings bound with twine. Enough to wake a cold shelter hearth and claim the shelter as your own.",
         "texturePath": "images/items/stick.png",
         "scale": {
