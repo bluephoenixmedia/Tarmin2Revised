@@ -44,6 +44,14 @@ public class TelemetryManager {
     /** How an expedition ended. */
     public enum Outcome { RETURNED, DIED, ABANDONED }
 
+    /**
+     * Told when an expedition is about to close, while its counters still describe it: the
+     * unlock roll on a return reads them here (#184), and what it records lands in the file.
+     */
+    public interface ExpeditionEndListener {
+        void onExpeditionEnding(Outcome outcome);
+    }
+
     /** Scalar counters, kept for the whole Life. The JSON key is the camel-cased name. */
     private enum Counter {
         ATTACKS_MADE("attacksMade"), ATTACKS_HIT("attacksHit"), ATTACKS_GLANCED("attacksGlanced"),
@@ -134,6 +142,7 @@ public class TelemetryManager {
     private final Map<Object, Fight> openFights = new IdentityHashMap<>();
     private final List<Fight> closedFights = new ArrayList<>();
     private int currentDepth = 1;
+    private ExpeditionEndListener expeditionEndListener;
 
     private TelemetryManager() {
         startNewRun();
@@ -175,6 +184,15 @@ public class TelemetryManager {
 
     public String getRunId() {
         return runId;
+    }
+
+    /** The one listener told about expedition ends, or null to clear it. */
+    public synchronized void setExpeditionEndListener(ExpeditionEndListener listener) {
+        this.expeditionEndListener = listener;
+    }
+
+    public synchronized ExpeditionEndListener getExpeditionEndListener() {
+        return expeditionEndListener;
     }
 
     // ---- Context ----
@@ -519,6 +537,25 @@ public class TelemetryManager {
         return turnsLived;
     }
 
+    // ---- Expedition accessors: how far each counter moved since the last expedition ended ----
+
+    public synchronized int getExpeditionKills() {
+        return (int) delta(Counter.KILLS);
+    }
+
+    public synchronized int getExpeditionDivinitiesEarned() {
+        return (int) delta(Counter.DIVINITIES_EARNED);
+    }
+
+    public synchronized int getExpeditionTurns() {
+        return turnsLived - expeditionStartTurn;
+    }
+
+    /** The deepest level reached on this expedition. */
+    public synchronized int getExpeditionMaxDepth() {
+        return expeditionMaxDepth;
+    }
+
     public synchronized float getAccuracyPercent() {
         long made = life[Counter.ATTACKS_MADE.ordinal()];
         if (made == 0) {
@@ -545,6 +582,9 @@ public class TelemetryManager {
         }
         if (outcome == Outcome.DIED) {
             this.causeOfDeath = cause;
+        }
+        if (expeditionEndListener != null) {
+            expeditionEndListener.onExpeditionEnding(outcome);
         }
         String closeAs = outcome == Outcome.DIED ? "died" : "abandoned";
         for (Fight f : openFights.values()) {
