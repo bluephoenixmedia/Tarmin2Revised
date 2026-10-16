@@ -54,99 +54,69 @@ public class Player {
     }
 
     // =========================================================================
-    // FIELD REST (H) -- reintroduced after the "way off again" balance
-    // investigation. The old R-bound rest was deleted wholesale when R was
-    // repurposed to open the First Aid modal, leaving no field-accessible HP
-    // recovery besides slow passive regen, rare potions, and shelter-only rest.
-    // Restored deliberately smaller and cooldown-gated: the original was
-    // abusable (camp a cleared room, spend a sliver of the hunger meter,
-    // repeat indefinitely for a free top-up), so this version cannot be spammed
-    // regardless of how much food is banked.
+    // QUICK HEAL (H) and the Poultice (#190). Field rest is gone: healing in the
+    // field is slow regen, Vengeance on kills, poultices and potions.
     // =========================================================================
 
-    /** War Strength restored per successful field rest. */
-    public static final int FIELD_REST_HEAL_AMOUNT = 5;
+    private Poultice activePoultice;
 
-    private int fieldRestCooldownTurns = 0;
-
-    /** Turns remaining before {@link #attemptFieldRest} can succeed again. */
-    public int getFieldRestCooldownTurns() {
-        return fieldRestCooldownTurns;
+    /** The poultice working this turn, or null. */
+    public Poultice getActivePoultice() {
+        return activePoultice;
     }
 
-    /** Advances the cooldown by one turn. Called once per player turn regardless of what action was taken. */
-    public void tickFieldRestCooldown() {
-        if (fieldRestCooldownTurns > 0) {
-            fieldRestCooldownTurns--;
+    /** Presses a poultice to the wounds: it heals over the next turns until a wound tears it off. */
+    public void applyPoultice(Item poultice, GameEventManager eventManager) {
+        inventory.consumeOne(poultice);
+        activePoultice = Poultice.apply(stats.getMaxHP(), stats.getWoundsTaken());
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You bind a poultice to your wounds.", 2f));
         }
+    }
+
+    /** One turn of the active poultice. Called once per turn. */
+    public void tickPoultice(GameEventManager eventManager) {
+        if (activePoultice == null) return;
+        int heal = activePoultice.afterTurn(stats.getWoundsTaken());
+        if (heal < 0) {
+            activePoultice = null;
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("The blow tears your poultice away.", 2f));
+            }
+            return;
+        }
+        if (heal > 0) heal(heal);
+        if (activePoultice.isDone()) activePoultice = null;
     }
 
     /**
-     * Compensates the cooldown for turns consumed by the SAME rest that just set
-     * it. GameScreen advances several world-ticks per rest (so a monster can
-     * close in mid-rest) through the same per-turn hook that decrements this
-     * cooldown for every other cause of turn advancement -- without this, a
-     * rest's own ticks would immediately erode the cooldown it just started,
-     * undermining the anti-spam cooldown's entire purpose.
+     * Uses the best healing item carried (see {@link QuickHeal}). Every refusal says why.
+     *
+     * @return whether an item was used, so the caller spends the turn
      */
-    public void restoreFieldRestCooldown(int ticks) {
-        if (ticks > 0) {
-            fieldRestCooldownTurns += ticks;
+    public boolean quickHeal(DiscoveryManager discoveryManager, GameEventManager eventManager) {
+        int missing = stats.getMaxHP() - stats.getCurrentHP();
+        String refusal = null;
+        Item choice = null;
+        if (missing <= 0) {
+            refusal = "You are unhurt.";
+        } else if (activePoultice != null) {
+            refusal = "Your poultice is still working.";
+        } else {
+            choice = QuickHeal.choose(inventory.getAllItems(), missing, stats.getMaxHP(),
+                    effect -> discoveryManager != null && discoveryManager.isPotionIdentified(effect));
+            if (choice == null) refusal = "You carry nothing to heal with.";
         }
-    }
-
-    /** Outcome of one {@link #attemptFieldRest} call. */
-    public static final class FieldRestResult {
-        public final boolean success;
-        public final String message;
-
-        FieldRestResult(boolean success, String message) {
-            this.success = success;
-            this.message = message;
+        if (refusal != null) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent(refusal, 2f));
+            return false;
         }
-    }
-
-    /**
-     * Spends one point of satiety to heal {@link #FIELD_REST_HEAL_AMOUNT} War
-     * Strength, refusing (at no cost) when already at full strength, out of
-     * food, or still on cooldown from the last use. On success, the cooldown is
-     * set to {@link PlayerStats#getRegenIntervalTurns()} -- the same
-     * Constitution-scaled interval natural passive regen already uses, so this
-     * reads as one coherent healing model (a food-fueled acceleration of it)
-     * rather than a second, disconnected system. Every outcome, including every
-     * refusal, is queued onto {@code eventManager} -- a refusal is still
-     * something the player pressed a key for and needs a reason for, not a
-     * silent no-op.
-     */
-    public FieldRestResult attemptFieldRest(GameEventManager eventManager) {
-        if (fieldRestCooldownTurns > 0) {
-            return refuseFieldRest(eventManager,
-                    "You are still catching your breath. (" + fieldRestCooldownTurns + " turns)");
+        if (choice.getType() == ItemType.POULTICE) {
+            applyPoultice(choice, eventManager);
+        } else {
+            quaff(choice, discoveryManager, eventManager);
         }
-        if (stats.getCurrentHP() >= stats.getMaxHP()) {
-            return refuseFieldRest(eventManager, "You are already at full strength.");
-        }
-        if (stats.getFood() <= 0) {
-            return refuseFieldRest(eventManager, "You are too famished to rest and recover.");
-        }
-
-        stats.setFood(stats.getFood() - 1);
-        heal(FIELD_REST_HEAL_AMOUNT);
-        fieldRestCooldownTurns = stats.getRegenIntervalTurns();
-        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordFieldRestUsed();
-
-        String msg = "You catch your breath and recover. WS: " + stats.getCurrentHP() + "/" + stats.getMaxHP() + ".";
-        if (eventManager != null) {
-            eventManager.addEvent(new GameEvent(msg, 2f));
-        }
-        return new FieldRestResult(true, msg);
-    }
-
-    private FieldRestResult refuseFieldRest(GameEventManager eventManager, String message) {
-        if (eventManager != null) {
-            eventManager.addEvent(new GameEvent(message, 2f));
-        }
-        return new FieldRestResult(false, message);
+        return true;
     }
 
     public boolean canWieldTwoHanded() {
@@ -1605,6 +1575,12 @@ public class Player {
             return;
         }
 
+        // --- Poultice: heals over the next turns (#190) ---
+        if (item.getType() == Item.ItemType.POULTICE) {
+            applyPoultice(item, eventManager);
+            return;
+        }
+
         // --- Ashwater: scours Blight Taint in the field ---
         if (item.getType() == Item.ItemType.ASHWATER) {
             float before = stats.getTaint();
@@ -2036,10 +2012,6 @@ public class Player {
         if (saved != null) {
             activeMealEffects.addAll(saved);
         }
-    }
-
-    public void restoreFieldRestCooldownTurns(int turns) {
-        fieldRestCooldownTurns = Math.max(0, turns);
     }
 
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,

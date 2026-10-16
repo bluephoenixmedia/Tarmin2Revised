@@ -91,26 +91,20 @@ public class TelemetryExportTest {
         assertEquals(0, telemetry.getTurnsLived());
     }
 
-    /**
-     * Added as part of the "way off again" balance investigation: the old
-     * rest-to-heal action left no telemetry trace of its own, which is part of
-     * why its removal went undiagnosed for as long as it did. The reintroduced
-     * field Rest (H) is now visible in every run export, the same way bleed
-     * damage and injury counts already are.
-     */
+    /** Vengeance healing (#190) is visible in every run export. */
     @Test
-    public void testFieldRestUsageIsCountedAndResetsOnNewRun() {
+    public void testVengeanceIsCountedAndResetsOnNewRun() {
         TelemetryManager telemetry = TelemetryManager.getInstance();
-        assertEquals(0, telemetry.getFieldRestUses());
+        assertEquals(0, telemetry.getHpVengeance());
 
-        telemetry.recordFieldRestUsed();
-        telemetry.recordFieldRestUsed();
-        assertEquals(2, telemetry.getFieldRestUses());
+        telemetry.recordVengeance(2);
+        telemetry.recordVengeance(4);
+        assertEquals(6, telemetry.getHpVengeance());
 
         String json = telemetry.toJson();
-        assertTrue("Export must include the new counter", json.contains("\"fieldRestUses\": 2"));
+        assertTrue("Export must include the counter", json.contains("\"hpVengeance\": 6"));
 
         telemetry.startNewRun();
-        assertEquals(0, telemetry.getFieldRestUses());
+        assertEquals(0, telemetry.getHpVengeance());
     }
 }

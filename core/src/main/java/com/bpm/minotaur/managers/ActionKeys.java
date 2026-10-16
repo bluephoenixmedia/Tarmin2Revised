@@ -16,7 +16,7 @@ public final class ActionKeys {
     public static final List<String> WORLD_ACTIONS = List.of(
             "MOVE_FORWARD", "MOVE_BACK", "TURN_LEFT", "TURN_RIGHT",
             "INTERACT", "PICKUP_DROP", "USE_ITEM", "DESCEND",
-            "REST", "FIRST_AID", "FIELD_CRAFTING", "FIELD_COOKING");
+            "QUICK_HEAL", "FIRST_AID", "FIELD_CRAFTING", "FIELD_COOKING");
 
     /** Hand and pack actions, live out of combat, on the player's turn and in the combat menu. */
     public static final List<String> HAND_ACTIONS = List.of("SWAP_HANDS", "SWAP_PACK", "ROTATE_PACK");

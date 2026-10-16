@@ -193,6 +193,9 @@ public class Item implements Renderable {
         // Blighted Marches: the ward slows Taint while carried; Ashwater scours it.
         WARD_CHARM, ASHWATER,
 
+        // Healing over a few turns, bound from moss and root or lichen (#190).
+        POULTICE,
+
         // Powder and ball for firearms. Its own resource, never mixed with arrows.
         SHOT_POUCH,
 

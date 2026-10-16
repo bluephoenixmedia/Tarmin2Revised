@@ -287,4 +287,36 @@ public class CraftingManagerTest {
         }
         return null;
     }
+
+    /** The Poultice (#190) binds from moss and root, or from lichen alone, with the field kit's carried stock. */
+    @Test
+    public void testPoulticeBrewsFromMossAndRootOrLichenInTheField() {
+        craftingManager.setFieldMode(true);
+        com.bpm.minotaur.gamedata.player.Player player = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        List<CraftingManager.AlchemyRecipe> poultices = new java.util.ArrayList<>();
+        for (CraftingManager.AlchemyRecipe r : craftingManager.getAlchemyRecipes()) {
+            if (r.output == ItemType.POULTICE) poultices.add(r);
+        }
+        assertEquals(2, poultices.size());
+
+        player.getInventory().addItem(material(ItemType.MOSS_CLUMP));
+        player.getInventory().addItem(material(ItemType.TWISTED_ROOT));
+        player.getInventory().addItem(material(ItemType.GLOWING_LICHEN));
+        for (CraftingManager.AlchemyRecipe r : poultices) {
+            assertTrue(r.name, craftingManager.canBrew(player, r));
+            assertNotNull(craftingManager.brewPotion(player, r));
+            assertFalse("reagents are spent", craftingManager.canBrew(player, r));
+        }
+        int made = 0;
+        for (Item it : player.getInventory().getAllItems()) {
+            if (it.getType() == ItemType.POULTICE) made++;
+        }
+        assertEquals(2, made);
+    }
+
+    private static Item material(ItemType type) {
+        ItemTemplate t = new ItemTemplate();
+        t.friendlyName = type.name();
+        return Item.fromTemplate(type, t);
+    }
 }

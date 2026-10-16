@@ -39,7 +39,7 @@ public class ActionKeysTest {
         assertEquals("PICKUP_DROP", keys.resolve(Input.Keys.P, ActionKeys.WORLD_ACTIONS));
         assertEquals("USE_ITEM", keys.resolve(Input.Keys.U, ActionKeys.WORLD_ACTIONS));
         assertEquals("DESCEND", keys.resolve(Input.Keys.D, ActionKeys.WORLD_ACTIONS));
-        assertEquals("REST", keys.resolve(Input.Keys.H, ActionKeys.WORLD_ACTIONS));
+        assertEquals("QUICK_HEAL", keys.resolve(Input.Keys.H, ActionKeys.WORLD_ACTIONS));
         assertEquals("FIRST_AID", keys.resolve(Input.Keys.R, ActionKeys.WORLD_ACTIONS));
         assertEquals("FIELD_CRAFTING", keys.resolve(Input.Keys.C, ActionKeys.WORLD_ACTIONS));
         assertEquals("FIELD_COOKING", keys.resolve(Input.Keys.J, ActionKeys.WORLD_ACTIONS));

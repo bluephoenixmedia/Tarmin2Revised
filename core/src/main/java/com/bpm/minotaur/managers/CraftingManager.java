@@ -135,6 +135,13 @@ public class CraftingManager {
         list.add(new AlchemyRecipe("Potion of Vitality", AlchemyCategory.RESTORATIVE,
                 reagentMap(ItemType.GIB_ORGAN, 1, ItemType.PUDDLE_WATER, 2),
                 ItemType.POTION_VITALITY, "A cleansing tonic that scours away exhaustion and weakness."));
+        // The field's slow heal (#190): common forage, so it is the everyday answer to a hard fight.
+        list.add(new AlchemyRecipe("Poultice", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.MOSS_CLUMP, 1, ItemType.TWISTED_ROOT, 1),
+                ItemType.POULTICE, "Moss packed around crushed root. Restores 30% of your health over 5 turns; a wound tears it away."));
+        list.add(new AlchemyRecipe("Lichen Poultice", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.GLOWING_LICHEN, 1),
+                ItemType.POULTICE, "Glowing lichen bound in a wrap. Restores 30% of your health over 5 turns; a wound tears it away."));
 
         list.add(new AlchemyRecipe("Potion of Giant Strength", AlchemyCategory.ENHANCEMENT,
                 reagentMap(ItemType.GIB_BONE, 2, ItemType.GIB_FLESH, 2),

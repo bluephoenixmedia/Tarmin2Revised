@@ -6514,6 +6514,17 @@
         "baseValue": 60,
         "isUsable": true
     },
+    "POULTICE": {
+        "friendlyName": "Poultice",
+        "description": "Moss and root, or glowing lichen, bound in a wrap. Restores 30% of your health over 5 turns; taking a wound tears it away.",
+        "texturePath": "images/items/leaves.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 20,
+        "isUsable": true
+    },
     "BIOME_RETURN_PORTAL": {
         "friendlyName": "Rift Home",
         "texturePath": "images/portals/portal_vortex_still.png",

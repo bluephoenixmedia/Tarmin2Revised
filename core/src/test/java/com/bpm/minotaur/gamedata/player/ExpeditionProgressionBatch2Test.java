@@ -135,26 +135,13 @@ public class ExpeditionProgressionBatch2Test {
 
     @Test
     public void testWisdomMpIntervalFormula() {
-        // Test WIS-scaled interval: Math.max(8, 24 - (wisMod * 3))
-        // WIS 10 -> mod 0 -> 24 turns
-        int wis10Mod = Math.max(0, (10 - 10) / 2);
-        assertEquals(24, Math.max(8, 24 - (wis10Mod * 3)));
-
-        // WIS 14 -> mod 2 -> 18 turns
-        int wis14Mod = Math.max(0, (14 - 10) / 2);
-        assertEquals(18, Math.max(8, 24 - (wis14Mod * 3)));
-
-        // WIS 16 -> mod 3 -> 15 turns
-        int wis16Mod = Math.max(0, (16 - 10) / 2);
-        assertEquals(15, Math.max(8, 24 - (wis16Mod * 3)));
-
-        // WIS 20 -> mod 5 -> 9 turns
-        int wis20Mod = Math.max(0, (20 - 10) / 2);
-        assertEquals(9, Math.max(8, 24 - (wis20Mod * 3)));
-
-        // WIS 22 -> mod 6 -> clamped to minimum 8 turns
-        int wis22Mod = Math.max(0, (22 - 10) / 2);
-        assertEquals(8, Math.max(8, 24 - (wis22Mod * 3)));
+        // 1 MP every 12 turns at WIS 10, a turn faster per WIS modifier, never below 6 (#190).
+        assertEquals(12, PlayerStats.mpRegenIntervalTurns(8));
+        assertEquals(12, PlayerStats.mpRegenIntervalTurns(10));
+        assertEquals(10, PlayerStats.mpRegenIntervalTurns(14));
+        assertEquals(7, PlayerStats.mpRegenIntervalTurns(20));
+        assertEquals(6, PlayerStats.mpRegenIntervalTurns(22));
+        assertEquals(6, PlayerStats.mpRegenIntervalTurns(40));
     }
 
     @Test

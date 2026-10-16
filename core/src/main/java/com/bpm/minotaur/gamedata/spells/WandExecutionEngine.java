@@ -562,6 +562,7 @@ public class WandExecutionEngine {
             maze.removeMonster(target);
             if (target.claimDeath()) {
                 player.addExperience(target.getKillExperience(), eventManager);
+                com.bpm.minotaur.gamedata.player.Vengeance.claim(player, target);
             }
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Killed " + target.getName() + "!", 2f));

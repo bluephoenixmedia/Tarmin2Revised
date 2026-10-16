@@ -115,7 +115,6 @@ public class PlayerSaveData {
     public int illnessTimer;
     public int injuryStepCounter;
     public int bleedDamageThisRun;
-    public Integer fieldRestCooldownTurns;
     public Integer temporaryHP;
     public Integer kindlingCount;
     public Integer cookingWaterCount;
@@ -202,7 +201,6 @@ public class PlayerSaveData {
             }
         }
         this.mealEffects = new ArrayList<>(player.getActiveMealEffects());
-        this.fieldRestCooldownTurns = player.getFieldRestCooldownTurns();
         com.bpm.minotaur.gamedata.injury.InjuryManager injuryManager = player.getInjuryManager();
         if (injuryManager != null) {
             this.injuries = new ArrayList<>();
@@ -352,9 +350,6 @@ public class PlayerSaveData {
         }
         if (mealEffects != null) {
             player.restoreActiveMealEffects(mealEffects);
-        }
-        if (fieldRestCooldownTurns != null) {
-            player.restoreFieldRestCooldownTurns(fieldRestCooldownTurns);
         }
         com.bpm.minotaur.gamedata.injury.InjuryManager injuryManager = player.getInjuryManager();
         if (injuries != null && injuryManager != null) {

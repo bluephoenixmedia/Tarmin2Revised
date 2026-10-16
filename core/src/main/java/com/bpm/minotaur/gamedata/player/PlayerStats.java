@@ -287,12 +287,22 @@ public class PlayerStats {
      }
 
     /**
-     * NetHack-style natural HP regeneration: interval in turns.
-     * Higher Constitution accelerates recovery from 20 turns down to 8 turns.
+     * NetHack-style natural HP regeneration: interval in turns (#190). Level brings it from
+     * 20 turns at level 1 to 8 at level 10; Constitution shortens it further, never below
+     * {@link #MIN_REGEN_INTERVAL_TURNS}.
      */
     public int getRegenIntervalTurns() {
-        int conMod = getConModifier();
-        return Math.max(8, 20 - (conMod * 2));
+        int levelSteps = Math.min(9, Math.max(0, this.level - 1));
+        int byLevel = 20 - Math.round(levelSteps * 12f / 9f);
+        return Math.max(MIN_REGEN_INTERVAL_TURNS, byLevel - getConModifier() * 2);
+    }
+
+    public static final int MIN_REGEN_INTERVAL_TURNS = 4;
+
+    /** Natural MP recovery: 1 MP every 12 turns at WIS 10, a turn faster per WIS modifier, never below 6 (#159, #190). */
+    public static int mpRegenIntervalTurns(int effectiveWisdom) {
+        int wisMod = Math.max(0, (effectiveWisdom - 10) / 2);
+        return Math.max(6, 12 - wisMod);
     }
 
     /**

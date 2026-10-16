@@ -1155,6 +1155,7 @@ public class CombatManager {
             return;
         }
         player.addExperience(m.getKillExperience(), eventManager);
+        claimVengeance(m);
         eventManager.addEvent(new GameEvent("Killed " + nameOf(m) + "!", 2f));
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(m, m.getMonsterType());
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
@@ -2801,6 +2802,18 @@ public class CombatManager {
                 new Animation(Animation.AnimationType.DAMAGE_TEXT, position, text, color, 1.2f, isCrit, false, damageType));
     }
 
+    /** Vengeance (#190): the kill gives back HP, shown as a green "+N HP" over the player. */
+    private void claimVengeance(Monster killed) {
+        int healed = com.bpm.minotaur.gamedata.player.Vengeance.claim(player, killed);
+        if (healed > 0) showPlayerHealText(healed);
+    }
+
+    public void showPlayerHealText(int amount) {
+        if (amount <= 0 || animationManager == null) return;
+        animationManager.addAnimation(new Animation(Animation.AnimationType.DAMAGE_TEXT, null, "+" + amount + " HP",
+                com.badlogic.gdx.graphics.Color.valueOf("5BE36B"), 1.2f, false, true, DamageType.PHYSICAL));
+    }
+
     public void showPlayerDamageText(int damage) {
         showPlayerDamageText(damage, false, DamageType.PHYSICAL);
     }
@@ -3649,6 +3662,7 @@ public class CombatManager {
                 .onMonsterKilled(maze, monster, eventManager);
         // Depth pays through the monster's level, not a separate multiplier (#183).
         player.addExperience(monster.getKillExperience(), eventManager);
+        claimVengeance(monster);
 
         com.bpm.minotaur.gamedata.monster.MonsterTemplate killTemplate = monster.getTemplate();
         if (killTemplate != null) {
