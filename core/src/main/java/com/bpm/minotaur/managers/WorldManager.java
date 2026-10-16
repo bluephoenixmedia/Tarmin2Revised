@@ -475,6 +475,7 @@ public class WorldManager {
 
         // Rearm Shelter Altar commune on venturing into deeper strata
         com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().noteVenturedOut();
 
         Gdx.app.log("WorldManager",
                 "Descending to Level " + currentLevel + " at chunk " + currentPlayerChunkId + ". Pending UP Ladder at " + pendingUpLadderPos);
@@ -1244,6 +1245,7 @@ public class WorldManager {
         noteArrival();
         if (Math.abs(newChunkId.x) >= 2 || Math.abs(newChunkId.y) >= 2 || currentLevel >= 2) {
             com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().noteVenturedOut();
         }
         player.setMaze(newMaze);
         player.setPosition(newPlayerPos);

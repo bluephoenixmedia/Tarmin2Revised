@@ -1942,12 +1942,9 @@ public class GameScreen extends BaseScreen {
         // in the field.
         grantOwedFieldKits();
 
-        // Shelter Altar Provisions tier: extra rations at the start of each expedition
-        int bonusProvisions = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getBonusProvisionCount();
-        for (int i = 0; i < bonusProvisions; i++) {
-            Item bonusFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
-            player.getInventory().pickupToBackpack(bonusFood);
-        }
+        // Shelter Altar Provisions tier: a respawn is a new expedition, so its rations are
+        // handed over on the first step outside (TurnManager), like every expedition's.
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().packProvisionsForNewExpedition();
 
         // A new expedition gets a fresh merchant on each level; without this the
         // claims from the dead run would keep merchants out of the new one.

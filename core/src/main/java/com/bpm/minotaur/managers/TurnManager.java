@@ -50,6 +50,37 @@ public class TurnManager {
         processTurn(maze, player, aiManager, combatManager, worldManager, eventManager, null, null);
     }
 
+    /**
+     * The Shelter Altar's Provisions tree: its rations are handed over on the first turn
+     * of an expedition, i.e. the first turn outside the shelter (#101). Without an item
+     * factory the pack simply waits for a turn that has one.
+     */
+    private void handOverAltarProvisions(Maze maze, Player player, GameEventManager eventManager,
+            ItemDataManager itemDataManager, AssetManager assetManager) {
+        com.bpm.minotaur.gamedata.progression.ShelterAltar altar =
+                com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+        if (maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y)) {
+            altar.onShelterTurn();
+            return;
+        }
+        if (itemDataManager == null) return;
+        int bonusProvisions = altar.claimExpeditionProvisions();
+        if (bonusProvisions <= 0) return;
+        com.bpm.minotaur.gamedata.item.Item bonusFood = itemDataManager.createItem(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.FOOD, 0, 0,
+                com.bpm.minotaur.gamedata.item.ItemColor.TAN, assetManager);
+        if (bonusFood == null) return;
+        bonusFood.setStackCount(bonusProvisions);
+        if (!player.getInventory().pickupToBackpack(bonusFood)) {
+            bonusFood.setPosition((int) player.getPosition().x, (int) player.getPosition().y);
+            maze.addItem(bonusFood);
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("The altar's provisions: " + bonusProvisions
+                    + (bonusProvisions == 1 ? " ration" : " rations") + " packed for the road.", 3f));
+        }
+    }
+
     public void processTurn(Maze maze, Player player, MonsterAiManager aiManager, CombatManager combatManager,
             WorldManager worldManager, GameEventManager eventManager, ItemDataManager itemDataManager,
             AssetManager assetManager) {
@@ -74,6 +105,7 @@ public class TurnManager {
                     player.getStatusManager() != null
                             && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED));
         }
+        handOverAltarProvisions(maze, player, eventManager, itemDataManager, assetManager);
 
         // 1. Calculate Time Elapsed for Player Action
         // Time = Cost / Speed.
