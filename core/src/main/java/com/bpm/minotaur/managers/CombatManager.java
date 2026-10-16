@@ -3121,6 +3121,14 @@ public class CombatManager {
             }
         }
 
+        // 3a. Carried gold (#197): rolled when the monster was made, dropped as a pile.
+        if (monster.getCarriedGold() > 0) {
+            Item pile = com.bpm.minotaur.gamedata.economy.Gold.createPile(itemDataManager,
+                    (game != null) ? game.getAssetManager() : null, monster.getCarriedGold(), pos.x, pos.y);
+            monster.setCarriedGold(0);
+            dropSingleItem(pile, pos, monster);
+        }
+
         // 3b. Mimic Hoard: the chest's worth of loot it was digesting. Rolled here
         // rather than carried on the disguise, because monster inventory does not
         // survive a chunk unload (ChunkData.MonsterData) and a mimic fight can easily
@@ -3645,7 +3653,6 @@ public class CombatManager {
         com.bpm.minotaur.gamedata.monster.MonsterTemplate killTemplate = monster.getTemplate();
         if (killTemplate != null) {
             int divAmount = DivinityManager.getInstance().awardKillDivinities(killTemplate.baseLevel, maze.getLevel());
-            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDivinitiesEarned(divAmount);
             eventManager.addEvent(new GameEvent("+" + divAmount + " " + DivinityManager.DIVINITY_NAME, 2f));
         }
 

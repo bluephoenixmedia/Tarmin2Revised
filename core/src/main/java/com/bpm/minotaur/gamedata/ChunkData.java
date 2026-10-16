@@ -283,6 +283,7 @@ public class ChunkData {
             monster.setSealRoad(data.sealRoad);
             monster.setSealRole(data.sealRole);
             if (data.sealBearerName != null) monster.setDisplayName(data.sealBearerName);
+            monster.setCarriedGold(data.carriedGold);
             maze.addMonster(monster);
         }
 
@@ -560,6 +561,8 @@ public class ChunkData {
         public int trophyHouseId = -1;
         public String heraldry;
         public String trophyName;
+        /** A gold pile's rolled amount (#197); 0 for anything else and on old saves. */
+        public int goldAmount;
 
         public ItemData() {
         }
@@ -576,6 +579,7 @@ public class ChunkData {
             this.mimicSeen = item.isMimicSeen();
             this.mimicRollSpent = item.isMimicRollSpent();
             this.heraldry = item.getHeraldry();
+            this.goldAmount = item.getGoldAmount();
             if (item.getTrophyHouseId() >= 0) {
                 this.trophyHouseId = item.getTrophyHouseId();
                 this.trophyName = item.getFriendlyName();
@@ -606,6 +610,7 @@ public class ChunkData {
             item.setMimicSeen(this.mimicSeen);
             item.setMimicRollSpent(this.mimicRollSpent);
             item.setHeraldry(this.heraldry);
+            if (this.goldAmount > 0) item.setGoldAmount(this.goldAmount);
             if (this.trophyHouseId >= 0) {
                 item.setTrophyHouseId(this.trophyHouseId);
                 if (this.trophyName != null) item.setName(this.trophyName);
@@ -656,6 +661,8 @@ public class ChunkData {
         public int sealRole;
         /** A seal bearer's name ("Grask, bearing the seal of..."): it is no figure to be named again. */
         public String sealBearerName;
+        /** Gold the monster carries (#197); 0 on old saves. */
+        public int carriedGold;
 
         public MonsterData() {
         }
@@ -683,6 +690,7 @@ public class ChunkData {
             this.sealRoad = monster.getSealRoad();
             this.sealRole = monster.getSealRole();
             if (this.sealRole == Monster.SEAL_BEARER) this.sealBearerName = monster.getDisplayName();
+            this.carriedGold = monster.getCarriedGold();
         }
     }
 

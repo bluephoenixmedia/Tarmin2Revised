@@ -294,6 +294,12 @@ public class Item implements Renderable {
      * (see {@link #isStackable()}); everything else is always 1.
      */
     private int stackCount = 1;
+    /**
+     * Gold in a rolled gold pile (#197), or 0 for anything else. A pile is a COINS item
+     * whose worth is rolled where it lies rather than read from the template; see
+     * {@link com.bpm.minotaur.gamedata.economy.Gold}.
+     */
+    private int goldAmount = 0;
     private boolean trapped = false; // chests/doors
 
     // --- Corpse Property ---
@@ -718,6 +724,20 @@ public class Item implements Renderable {
         return baseValue;
     }
 
+    /** Gold in a rolled pile; 0 for every item that is not one. */
+    public int getGoldAmount() {
+        return goldAmount;
+    }
+
+    public void setGoldAmount(int goldAmount) {
+        this.goldAmount = Math.max(0, goldAmount);
+    }
+
+    /** What picking this treasure up adds to the purse: a pile's rolled gold, else the base value. */
+    public int getTreasureValue() {
+        return goldAmount > 0 ? goldAmount : baseValue;
+    }
+
     /**
      * The item's name, with the count when it stands for a stack: "Food x30".
      */
@@ -728,6 +748,9 @@ public class Item implements Renderable {
 
     /** The name of one of these, without a stack count: what you eat, sell or cook. */
     public String getSingleDisplayName() {
+        if (goldAmount > 0)
+            return com.bpm.minotaur.gamedata.economy.Gold.pileName(goldAmount);
+
         if (isPotion)
             return this.friendlyName != null ? this.friendlyName : "Potion";
 

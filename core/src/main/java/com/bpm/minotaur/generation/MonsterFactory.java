@@ -89,17 +89,11 @@ public class MonsterFactory {
             }
         }
 
-        // 4.3 Gold
-        if (monster.getIntelligence() > 5) {
-            int goldAmount = rng.d(difficulty, 10) + difficulty;
-            // We need to create gold item, but ItemDataManager usually handles "Gold" as an
-            // item type or currency.
-            // Assuming ItemCategory.GOLD exists and spawns a gold pile.
-            if (rng.rn2(3) == 0) {
-                generateMiscItem(monster, ItemCategory.GOLD, tier);
-                // Note: Ideally set quantity here, but ItemSpawner just gives template.
-            }
-        }
+        // 4.3 Gold (#197): intelligent monsters carry d(level,10)+level one time in three.
+        // Held as a number on the monster, not an item, so it survives a chunk unload.
+        monster.setCarriedGold(com.bpm.minotaur.gamedata.economy.Gold.rollCarriedGold(
+                com.bpm.minotaur.gamedata.economy.Gold.likesGold(monster.getIntelligence()),
+                difficulty, rng));
     }
 
     private boolean isUserOfWeapons(Monster monster) {
