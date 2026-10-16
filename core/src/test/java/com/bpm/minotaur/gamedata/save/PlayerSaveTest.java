@@ -22,6 +22,31 @@ public class PlayerSaveTest {
     }
 
     @Test
+    public void aPre191SaveHasItsSatietyMigratedToTheNutritionScale() {
+        com.bpm.minotaur.gamedata.player.Player saved = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        PlayerSaveData legacy = new PlayerSaveData(saved);
+        legacy.nutritionScale = 0; // written before #191
+        legacy.satiety = 80f;      // the old fresh start
+        com.bpm.minotaur.gamedata.player.Player loaded = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        legacy.applyToPlayer(loaded, null, null);
+        assertEquals(com.bpm.minotaur.gamedata.player.Hunger.START, loaded.getStats().getSatietyFloat(), 0.01f);
+
+        // A legacy JSON has no nutritionScale field at all.
+        PlayerSaveData parsed = json.fromJson(PlayerSaveData.class, "{\"satiety\":20}");
+        assertEquals(0, parsed.nutritionScale);
+    }
+
+    @Test
+    public void aCurrentSaveKeepsItsNutritionAsIs() {
+        com.bpm.minotaur.gamedata.player.Player saved = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        saved.getStats().setSatiety(-30f);
+        PlayerSaveData data = json.fromJson(PlayerSaveData.class, json.toJson(new PlayerSaveData(saved)));
+        com.bpm.minotaur.gamedata.player.Player loaded = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        data.applyToPlayer(loaded, null, null);
+        assertEquals(-30f, loaded.getStats().getSatietyFloat(), 0.01f);
+    }
+
+    @Test
     public void testPlayerSaveDataDefaults() {
         PlayerSaveData data = new PlayerSaveData();
         assertEquals(20, data.currentHP);

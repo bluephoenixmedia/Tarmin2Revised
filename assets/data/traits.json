@@ -150,10 +150,10 @@
       "id": "IRON_STOMACH",
       "name": "Iron Stomach",
       "good": "Immune to poison and sickness. Raw monster flesh cannot hurt you.",
-      "bad": "You choke on food 10 points of fullness sooner than others do.",
+      "bad": "You choke on food 200 points of fullness sooner than others do.",
       "enabled": true,
       "modifiers": {
-        "chokeLimitAdd": -10
+        "chokeLimitAdd": -200
       },
       "blocks": [
         "POISONED",

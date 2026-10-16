@@ -107,6 +107,8 @@ public class InventoryScreen extends BaseScreen {
         // 1. Cooked Meat with Random Effect
         Item cooked = dm.createItem(ItemType.COOKED_MEAT, (int) player.getPosition().x, (int) player.getPosition().y,
                 com.bpm.minotaur.gamedata.item.ItemColor.RED, am);
+        cooked.setCorpseSource(item.getCorpseSource());
+        cooked.setNutrition(com.bpm.minotaur.gamedata.player.Hunger.cookedPart(item.getType(), item.getCorpseSource()));
 
         com.bpm.minotaur.gamedata.item.PotionEffectType[] effects = com.bpm.minotaur.gamedata.item.PotionEffectType
                 .values();
@@ -995,9 +997,9 @@ public class InventoryScreen extends BaseScreen {
         sRow(leftStatsCol, "Spell Power","+" + player.getSpellPower(),                                   Color.WHITE);
 
         // ── RIGHT COLUMN ─────────────────────────────────────────────
-        int sat = player.getStats().getSatiety();
-        sRow(rightStatsCol, "Satiety",   sat + "%",
-             sat < 20 ? Color.RED : sat < 50 ? Color.YELLOW : Color.WHITE);
+        com.bpm.minotaur.gamedata.player.Hunger.Stage sat = player.getStats().getHungerStage();
+        sRow(rightStatsCol, "Hunger",    sat.label,
+             sat.isWeakened() ? Color.RED : sat.isHungry() ? Color.YELLOW : Color.WHITE);
 
         float temp = player.getStats().getBodyTemperature();
         sRow(rightStatsCol, "Body Temp", String.format("%.1fC", temp),

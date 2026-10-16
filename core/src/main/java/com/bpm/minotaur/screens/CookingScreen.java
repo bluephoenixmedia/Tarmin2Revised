@@ -423,7 +423,7 @@ public class CookingScreen extends BaseScreen {
 
             int skill = player.getStats().getCookingSkill();
             int dur = cookingManager.calculateEffectDuration(skill, false);
-            Label boonLbl = new Label("Guaranteed Boons: HEALTHY, RECOVERING (" + dur + " turns)\nRestores high Satiety (+45), Hydration, and HP.",
+            Label boonLbl = new Label("Guaranteed Boons: HEALTHY, RECOVERING (" + dur + " turns)\nNutrition +" + com.bpm.minotaur.gamedata.player.Hunger.cookedMeal(quickIngredients) + ", and Hydration.",
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_PARCHMENT_AFFORD));
             previewBox.add(boonLbl).left().row();
         }
@@ -698,7 +698,7 @@ public class CookingScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_HP_RED))).left().padBottom(6).row();
         statsBox.add(new Label("- Body Warmth: stabilised to a normal 37.0C",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEMP_ORANGE))).left().padBottom(6).row();
-        statsBox.add(new Label("- Satiety Restored: +20 Sustenance",
+        statsBox.add(new Label("- A Warm Bowl: +" + com.bpm.minotaur.gamedata.player.Hunger.HEARTH_BOWL + " Nutrition",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN))).left().padBottom(6).row();
         statsBox.add(new Label("- Time Advanced: +45 minutes",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT))).left().row();
@@ -768,6 +768,7 @@ public class CookingScreen extends BaseScreen {
                     (int) player.getPosition().x, (int) player.getPosition().y,
                     ItemColor.WHITE, game.getAssetManager());
             cookedItem.setName(mealName);
+            cookedItem.setNutrition(com.bpm.minotaur.gamedata.player.Hunger.cookedMeal(ingredients));
             cookedItem.setMealEffectDuration(duration);
             for (StatusEffectType eff : mealEffects) cookedItem.addMealEffect(eff);
         }
@@ -817,7 +818,7 @@ public class CookingScreen extends BaseScreen {
         int skill = player.getStats().getCookingSkill();
         int healAmt = 15 + (skill * 4);
         player.getStats().healWithTrait(healAmt);
-        player.getStats().modifySatiety(20f);
+        player.getStats().modifySatiety(com.bpm.minotaur.gamedata.player.Hunger.HEARTH_BOWL);
 
         // Warm body temperature to 37.0°C
         player.getStats().setBodyTemperature(com.bpm.minotaur.gamedata.player.PlayerStats.BODY_TEMP_NORMAL);

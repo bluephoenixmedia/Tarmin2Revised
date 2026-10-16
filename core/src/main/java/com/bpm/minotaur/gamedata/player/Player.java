@@ -1128,8 +1128,7 @@ public class Player {
         // first scrap of protection found in the dungeon is a real upgrade
         // rather than a sidegrade on a free +1 AC.
 
-        // One stack, one slot: rations stack, so thirty of them no longer fill
-        // thirty of the forty-eight backpack slots.
+        // One stack, one slot: rations stack.
         Item rations = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
         if (rations != null) {
             rations.setStackCount(STARTING_RATIONS);
@@ -1454,7 +1453,7 @@ public class Player {
 
             if (itemAtFeet.getType() == Item.ItemType.FLOUR_SACK) {
                 soundManager.playPickupItemSound();
-                int foodFound = new Random().nextInt(4) + 6;
+                int foodFound = Hunger.FLOUR_SACK_MIN + new Random().nextInt(Hunger.FLOUR_SACK_MAX - Hunger.FLOUR_SACK_MIN + 1);
                 stats.addFood(foodFound);
                 maze.getItems().remove(playerTile2);
                 eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
@@ -1506,7 +1505,7 @@ public class Player {
             }
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
                 soundManager.playPickupItemSound();
-                int foodFound = new Random().nextInt(4) + 6;
+                int foodFound = Hunger.FLOUR_SACK_MIN + new Random().nextInt(Hunger.FLOUR_SACK_MAX - Hunger.FLOUR_SACK_MIN + 1);
                 stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
@@ -1518,7 +1517,7 @@ public class Player {
             }
             if (itemInFront.getType() == Item.ItemType.MEAT) {
                 soundManager.playPickupItemSound();
-                int foodFound = new Random().nextInt(6) + 10; // 10-15 food value
+                int foodFound = Hunger.RAW_MEAT_MIN + new Random().nextInt(Hunger.RAW_MEAT_MAX - Hunger.RAW_MEAT_MIN + 1);
                 stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You ate the meat. (" + foodFound + " food)", 2f));
@@ -1620,18 +1619,15 @@ public class Player {
 
         // --- NEW: Handle Food & Meal Eating ---
         if (item.isFood()) {
-            if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
-                if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
-                }
-                takeTrueDamage(3);
-                inventory.consumeOne(item);
-                return;
-            }
-
             if (item.getType() == Item.ItemType.MEAL || (item.getMealEffects() != null && !item.getMealEffects().isEmpty())) {
                 feastOnMeal(item, eventManager);
                 inventory.removeItem(item);
+                return;
+            }
+
+            int gain = nutritionOf(item);
+            if (chokesOn(gain, eventManager)) {
+                inventory.consumeOne(item);
                 return;
             }
 
@@ -1641,7 +1637,7 @@ public class Player {
             }
 
             // Basic food value
-            stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 8);
+            stats.addFood(gain);
             stats.addHydration(item.getHydrationValue());
 
             // Weather Survival Exposure: hot meals chase away cold; cold drinks cut through heat
@@ -1954,21 +1950,62 @@ public class Player {
 
     /**
      * Consumes a cooked meal, applying Caves of Qud-style metabolic boons.
-     * Clears previous meal metabolic buffs, resets metabolizing timer, restores satiety, heals HP, and warms temperature.
+     * Clears previous meal metabolic buffs, resets metabolizing timer, restores nutrition (never HP) and warms temperature.
      */
     public void feastOnMeal(Item meal) {
         feastOnMeal(meal, null);
     }
 
+    /**
+     * What a food item is worth on the {@link Hunger} scale. Items carry their own value; a
+     * cooked cut that lost its value (items are rebuilt from templates on load) is valued again
+     * from its part and source.
+     */
+    public static int nutritionOf(Item item) {
+        if (item == null) return 0;
+        if (item.getNutrition() > 0) return item.getNutrition();
+        if (item.getType() == Item.ItemType.FOOD) return Hunger.RATION;
+        if (item.getType() == Item.ItemType.COOKED_MEAT) {
+            return Hunger.cookedPart(Item.ItemType.MEAT, item.getCorpseSource());
+        }
+        return Hunger.DEFAULT_FOOD;
+    }
+
+    /**
+     * Rolls choking for a meal worth {@code gain} (see {@link Hunger#eat}). Returns true when
+     * the meal is lost: the eater vomited, or choked to death.
+     */
+    private boolean chokesOn(float gain, GameEventManager eventManager) {
+        Hunger.EatOutcome outcome = Hunger.eat(stats.getSatietyFloat(), gain, Hunger.chokeAt(), (float) Math.random());
+        switch (outcome) {
+            case VOMIT:
+                stats.modifySatiety(-Hunger.VOMIT_LOSS);
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You stuff yourself and then vomit voluminously.", 2.5f));
+                }
+                return true;
+            case CHOKE_DEATH:
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You choke over your food. You die...", 2.5f));
+                }
+                takeTrueDamage(stats.getCurrentHP());
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                }
+                return true;
+            default:
+                if (stats.getHungerStage() == Hunger.Stage.SATIATED && eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You're having a hard time getting all of it down.", 2f));
+                }
+                return false;
+        }
+    }
+
     public void feastOnMeal(Item meal, GameEventManager eventManager) {
         if (meal == null) return;
 
-        // Choking check if already over-satiated
-        if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
-            }
-            takeTrueDamage(3);
+        int gain = meal.getNutrition() > 0 ? meal.getNutrition() : Hunger.DEFAULT_MEAL;
+        if (chokesOn(gain, eventManager)) {
             return;
         }
 
@@ -1976,8 +2013,7 @@ public class Player {
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
 
         // 1. Satiety, Food, Hydration & Temperature (NetHack model: 0 direct HP heal)
-        stats.modifySatiety(45f);
-        stats.addFood(meal.getNutrition() > 0 ? meal.getNutrition() : 25);
+        stats.addFood(gain);
         stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : 15);
 
         // 2. Warm body temperature toward cozy normal (37°C)
@@ -3807,8 +3843,8 @@ public class Player {
      * player already holds; returns whether the lantern was taken up.
      */
     public static final float LANTERN_STATION_CRIT_BONUS = 0.05f;
-    /** A new game's food: enough that the first delves are about the maze, not the pantry. */
-    public static final int STARTING_RATIONS = 30;
+    /** A new game's food (#191): two rations, then the player cooks what they kill. */
+    public static final int STARTING_RATIONS = Hunger.STARTING_RATIONS;
     /** Tinder Bundles a new character carries: enough to claim the first two shelters. */
     public static final int STARTING_TINDER = 2;
 

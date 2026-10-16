@@ -458,6 +458,11 @@ public class Item implements Renderable {
         return nutrition;
     }
 
+    /** Set when a dish is cooked: its worth comes from what went into the pot. */
+    public void setNutrition(int nutrition) {
+        this.nutrition = Math.max(0, nutrition);
+    }
+
     public float getWarmthBonus() {
         return warmthBonus;
     }

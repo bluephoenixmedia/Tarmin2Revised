@@ -204,7 +204,7 @@
         "isUsable": true,
         "isContainer": false,
         "isRing": false,
-        "nutrition": 10,
+        "nutrition": 100,
         "hydrationValue": 0,
         "scale": {
             "x": 1.0,
@@ -3108,6 +3108,7 @@
         "isUsable": true,
         "isContainer": false,
         "isRing": false,
+        "nutrition": 800,
         "scale": {
             "x": 0.5,
             "y": 0.5

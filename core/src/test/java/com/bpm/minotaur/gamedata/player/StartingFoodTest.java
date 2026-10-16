@@ -11,15 +11,15 @@ public class StartingFoodTest {
     public void everyDifficultyStartsNotHungry() {
         for (Difficulty d : Difficulty.values()) {
             PlayerStats stats = new PlayerStats(d);
-            assertEquals(d + " should start Normal, not Hungry",
-                    PlayerStats.SatiationState.NORMAL, stats.getSatiationState());
+            assertEquals(d + " should start Not Hungry",
+                    Hunger.Stage.NOT_HUNGRY, stats.getHungerStage());
             assertEquals(PlayerStats.STARTING_SATIETY, stats.getSatietyFloat(), 0f);
         }
     }
 
     @Test
-    public void aNewGameCarriesThirtyRationsInOneSlot() {
-        assertEquals(30, Player.STARTING_RATIONS);
+    public void aNewGameCarriesTwoRationsInOneSlot() {
+        assertEquals(2, Player.STARTING_RATIONS);
         assertTrue(Player.STARTING_RATIONS < new com.bpm.minotaur.gamedata.Inventory().getMaxBackpackSize());
     }
 }

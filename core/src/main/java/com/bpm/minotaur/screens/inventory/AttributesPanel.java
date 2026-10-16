@@ -92,7 +92,7 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
 
         // ── Column 3: Survival & Economy ───────────────────────────
         addSectionHeader(col3, "SURVIVAL & RES");
-        stat(col3, "Satiety", player.getStats().getSatiety() + "%", satColor());
+        stat(col3, "Hunger", player.getStats().getHungerStage().label, satColor());
         stat(col3, "Hydration", player.getStats().getHydration() + "%", hydColor());
         stat(col3, "Toxicity", player.getStats().getToxicity() + "%", toxColor());
         float temp = player.getStats().getBodyTemperature();
@@ -146,8 +146,8 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     }
 
     private Color satColor() {
-        int s = player.getStats().getSatiety();
-        return s < 20 ? COL_RED : s < 50 ? Color.ORANGE : COL_GREEN;
+        com.bpm.minotaur.gamedata.player.Hunger.Stage s = player.getStats().getHungerStage();
+        return s.isWeakened() ? COL_RED : s.isHungry() ? Color.ORANGE : COL_GREEN;
     }
 
     private Color hydColor() {
