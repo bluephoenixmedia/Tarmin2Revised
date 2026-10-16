@@ -2321,7 +2321,7 @@ public class Hud implements Disposable {
                         "[SHELTER HUB]",
                         "[ARTISAN WORKBENCH]",
                         "Artisan's Crafting Bench & Forge",
-                        "Hone weapons and armor, salvage dungeon scrap, infuse monster trophies, and carve bone relics. Draws from pack and chest.",
+                        "Hone weapons and armor, salvage dungeon scrap and infuse monster trophies. At the Ossuary, carve three monster bones into a new combat die. Draws from pack and chest.",
                         "[ O ]",
                         "Open Crafting Bench",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }

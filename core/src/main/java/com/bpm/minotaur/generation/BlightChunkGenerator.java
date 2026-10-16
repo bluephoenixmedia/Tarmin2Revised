@@ -679,9 +679,10 @@ public class BlightChunkGenerator implements IChunkGenerator {
             if (Math.hypot(tile.x - MID, tile.y - MID) >= (castleMode ? CASTLE_RING + 1 : 6)) candidates.add(tile);
         }
         if (candidates.isEmpty()) candidates.addAll(reachable);
-        if (!candidates.isEmpty()) {
-            Collections.shuffle(candidates, random);
-            GridPoint2 p = candidates.get(0);
+        if (forcedUpLadderPos != null) candidates.remove(forcedUpLadderPos);
+        List<GridPoint2> anchors = new ArrayList<>();
+        if (forcedUpLadderPos != null) anchors.add(forcedUpLadderPos);
+        for (GridPoint2 p : LadderScatter.pick(candidates, anchors, random)) {
             maze.addLadder(new Ladder(p.x, p.y, Ladder.LadderType.DOWN, Ladder.EntranceStyle.SINKHOLE));
         }
         if (forcedUpLadderPos != null) {

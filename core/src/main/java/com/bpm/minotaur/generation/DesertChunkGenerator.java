@@ -870,11 +870,11 @@ public class DesertChunkGenerator implements IChunkGenerator {
             candidates.addAll(reachable);
         }
 
-        if (!candidates.isEmpty()) {
-            Collections.shuffle(candidates, random);
-            GridPoint2 ladderPos = candidates.get(0);
-            Ladder ladder = new Ladder(ladderPos.x, ladderPos.y, Ladder.LadderType.DOWN, Ladder.EntranceStyle.CAVE_MOUTH);
-            maze.addLadder(ladder);
+        if (forcedUpLadderPos != null) candidates.remove(forcedUpLadderPos);
+        List<GridPoint2> anchors = new ArrayList<>();
+        if (forcedUpLadderPos != null) anchors.add(forcedUpLadderPos);
+        for (GridPoint2 p : LadderScatter.pick(candidates, anchors, random)) {
+            maze.addLadder(new Ladder(p.x, p.y, Ladder.LadderType.DOWN, Ladder.EntranceStyle.CAVE_MOUTH));
         }
     }
 

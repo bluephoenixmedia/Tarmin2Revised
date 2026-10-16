@@ -57,6 +57,27 @@ public class CraftingScreen extends BaseScreen {
     private Stage stage;
     private int currentTab = 0; // 0: Forge, 1: Salvage, 2: Ossuary
 
+    // --- Ossuary text (#198): what the tab is for, and what each slot takes and decides ---
+    static final String OSSUARY_INTRO =
+            "Butcher slain creatures for their bones, then carve three bones into a new six-sided die"
+            + " for your combat dice pool. Pick bones from the list: they fill the slots in order."
+            + " Each bone gives two opposite faces, set by the creature it came from."
+            + " Three bones from one kind of creature resonate.";
+    static final String SLOT_TIP_STRUCTURE =
+            "Structure bone, the first bone you pick. It sets the poles, faces 1 and 6, and the die's colour.";
+    static final String SLOT_TIP_EDGE =
+            "Edge bone, the second bone you pick. It sets the striking faces, 2 and 5.";
+    static final String SLOT_TIP_CORE =
+            "Core bone, the third bone you pick. It sets the balance faces, 3 and 4.";
+    static final String SLOT_TIP_TALISMAN_BONE =
+            "Talisman base. Once all three die slots are full, the next bone you pick goes here."
+            + " It must be in your pack.";
+    static final String SLOT_TIP_TROPHY =
+            "Monster trophy: an eye, claw, tooth, chitin or blood. Its kind decides the talisman's"
+            + " powers. Pick one from the list; it must be in your pack.";
+    static final String SLOT_TIP_SCRAP =
+            "One piece of metal scrap from your pack binds the talisman. Salvage gear for more.";
+
     // Selected Items
     private Item selectedTargetItem; // Weapon/Armor to hone/infuse, or Item to salvage
     private Item selectedTrophy;     // Trophy for infusion or talisman
@@ -133,7 +154,7 @@ public class CraftingScreen extends BaseScreen {
 
         Label subLabel = new Label(fieldMode
                 ? "Working with what's in your pack. The Shelter Chest is out of reach."
-                : "Shelter Hub Forge, Salvage Station & Bone Ossuary",
+                : "Shelter Hub Forge, Salvage Station & Ossuary (bones into dice)",
                 new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
         header.add(subLabel).center().padTop(4).row();
 
@@ -354,16 +375,21 @@ public class CraftingScreen extends BaseScreen {
                 feedbackLabel.setText("Selected Talisman Trophy: " + item.getDisplayName());
             } else {
                 // Fill bone slots
+                String slot;
                 if (boneStructure == null) {
                     boneStructure = item;
+                    slot = "the Structure slot (faces 1 and 6)";
                 } else if (boneEdge == null && item != boneStructure) {
                     boneEdge = item;
+                    slot = "the Edge slot (faces 2 and 5)";
                 } else if (boneCore == null && item != boneStructure && item != boneEdge) {
                     boneCore = item;
+                    slot = "the Core slot (faces 3 and 4)";
                 } else {
                     selectedBone = item;
+                    slot = "the talisman's base";
                 }
-                feedbackLabel.setText("Placed bone into workshop slot.");
+                feedbackLabel.setText(item.getDisplayName() + " placed in " + slot + ".");
             }
         }
         refreshAll();
@@ -724,7 +750,9 @@ public class CraftingScreen extends BaseScreen {
     // --- TAB 2: OSSUARY & RELICS ---
     private void renderOssuaryWorkbench() {
         Label title = new Label("OSSUARY CARVING & BONE RELICS", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        rightPanelContent.add(title).center().padBottom(15).row();
+        rightPanelContent.add(title).center().padBottom(6).row();
+        Label intro = UiLabels.wrapping(OSSUARY_INTRO, new Label.LabelStyle(hudSkin.getFontSmall(), UiTheme.TEXT_DIM));
+        rightPanelContent.add(intro).growX().padBottom(12).row();
 
         // Section A: Custom Combat Die (3 Bones)
         Table diceSection = new Table();
@@ -734,12 +762,13 @@ public class CraftingScreen extends BaseScreen {
         Label dTitle = new Label("1. Carve Custom Combat Die (3 Bones)", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         diceSection.add(dTitle).left().row();
 
-        String slot1 = boneStructure != null ? boneStructure.getDisplayName() : "[ Empty Structure Bone ]";
-        String slot2 = boneEdge != null ? boneEdge.getDisplayName() : "[ Empty Edge Bone ]";
-        String slot3 = boneCore != null ? boneCore.getDisplayName() : "[ Empty Core Bone ]";
-
-        Label slotsLabel = new Label("Slots: 1. Structure: " + slot1 + "   |   2. Edge: " + slot2 + "   |   3. Core: " + slot3, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-        diceSection.add(slotsLabel).left().padTop(4).padBottom(8).row();
+        // One cell per slot, each with a tooltip saying what goes in it and what it decides.
+        Table slotsRow = new Table();
+        slotsRow.defaults().growX().uniformX().pad(0, 0, 0, 6);
+        slotsRow.add(createSlotCell("1. Structure", boneStructure, "faces 1 and 6", SLOT_TIP_STRUCTURE));
+        slotsRow.add(createSlotCell("2. Edge", boneEdge, "faces 2 and 5", SLOT_TIP_EDGE));
+        slotsRow.add(createSlotCell("3. Core", boneCore, "faces 3 and 4", SLOT_TIP_CORE));
+        diceSection.add(slotsRow).growX().padTop(4).padBottom(8).row();
 
         // Fetch bone traits for previewing the 6-sided net
         BoneTrait traitStruct = (boneStructure != null) ? BoneTrait.get(boneStructure.getCorpseSource()) : null;
@@ -859,10 +888,12 @@ public class CraftingScreen extends BaseScreen {
         Label tTitle = new Label("2. Forge Equippable Bone Talisman", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         talismanSection.add(tTitle).left().row();
 
-        String bText = selectedBone != null ? selectedBone.getDisplayName() : "[ Select Bone Base ]";
-        String trText = selectedTrophy != null ? selectedTrophy.getDisplayName() : "[ Select Monster Trophy ]";
-        Label reqLabel = new Label("Ingredients: Bone (" + bText + ") + Trophy (" + trText + ") + 1x Metal Scrap", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-        talismanSection.add(reqLabel).left().padTop(6).padBottom(10).row();
+        Table talismanSlots = new Table();
+        talismanSlots.defaults().growX().uniformX().pad(0, 0, 0, 6);
+        talismanSlots.add(createSlotCell("Bone", selectedBone, "fill the die slots first", SLOT_TIP_TALISMAN_BONE));
+        talismanSlots.add(createSlotCell("Trophy", selectedTrophy, "pick a trophy", SLOT_TIP_TROPHY));
+        talismanSlots.add(createSlotCell("Metal scrap", null, "1 from your pack", SLOT_TIP_SCRAP));
+        talismanSection.add(talismanSlots).growX().padTop(6).padBottom(10).row();
 
         boolean canForge = craftingManager.canForgeTalisman(player, selectedBone, selectedTrophy);
         TextButton forgeBtn = createActionButton("Forge Bone Talisman", canForge);
@@ -888,6 +919,24 @@ public class CraftingScreen extends BaseScreen {
         talismanSection.add(forgeBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left();
 
         rightPanelContent.add(talismanSection).expandX().fillX();
+    }
+
+    /**
+     * One Ossuary ingredient slot: its name, what is in it (or a hint when empty), and a
+     * tooltip saying what goes in it and what it decides (#198).
+     */
+    private Table createSlotCell(String slotName, Item filled, String emptyHint, String tooltip) {
+        Table cell = new Table();
+        cell.setBackground(filled != null ? hudSkin.getSlotActive() : hudSkin.getDoubleBorderPanel());
+        cell.pad(6, 8, 6, 8);
+        cell.add(UiLabels.ellipsized(slotName, UiStyles.caption(hudSkin, HudSkin.COL_GOLD_BRIGHT))).growX().left().row();
+        String content = filled != null ? filled.getDisplayName() : "Empty - " + emptyHint;
+        Color contentColor = filled != null ? UiTheme.TEXT : UiTheme.TEXT_DIM;
+        cell.add(UiLabels.wrapping(content, new Label.LabelStyle(hudSkin.getFontSmall(), contentColor))).growX().left();
+        cell.setTouchable(Touchable.enabled);
+        cell.addListener(new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip(
+                tooltip, hudSkin.getTooltipManager(), hudSkin.getTooltipStyle()));
+        return cell;
     }
 
     private Table createFaceBox(String roleTitle, DieFace face, Color boneColor) {

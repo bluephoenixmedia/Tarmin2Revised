@@ -50,7 +50,7 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG, null),
         STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST, null),
         CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station. Also teaches you to pack Portable Cookware, letting you cook on expedition.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT, com.bpm.minotaur.gamedata.item.Item.ItemType.COOKING_KIT),
-        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
+        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear, with an Ossuary that carves the bones of slain creatures into new combat dice. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
         LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance. Its flame is kept for you: the lantern you carry burns wider and brighter (+1 light radius, +5% crit while you carry it).", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
         TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null),
         ARCHIVE_LECTERN("Archive Lectern", "An illuminated stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ARCHIVE_LECTERN, null),
@@ -171,6 +171,8 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         unlockedStations.clear();
         canCommune = true;
         cartographerDeskTier = 1;
+        provisionsPacked = true;
+        provisionsEarned = false;
     }
 
     public static final int MAX_CARTOGRAPHER_TIER = 3;
@@ -549,6 +551,54 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         return provisionsTier;
     }
 
+    // ---- Provisions: handed over at the start of each expedition (#101) ----
+    // An expedition starts on the first turn outside the shelter. The pack for the
+    // next one is earned by venturing out properly (the same trips that re-arm the
+    // commune) and is packed on coming home, so stepping in and out of the door farms
+    // nothing. A respawn is a new expedition and always gets one.
+
+    /** A pack is waiting for the next step outside. */
+    private boolean provisionsPacked = true;
+    /** This expedition has gone far enough to earn the next pack once home. */
+    private boolean provisionsEarned = false;
+
+    /**
+     * Called on every turn outside the shelter.
+     *
+     * @return how many bonus rations to hand over now: the Provisions tier on the
+     *         first turn of an expedition, otherwise 0
+     */
+    public int claimExpeditionProvisions() {
+        if (!provisionsPacked) return 0;
+        provisionsPacked = false;
+        save();
+        return getBonusProvisionCount();
+    }
+
+    /** Called on every turn inside the shelter: a trip that earned it packs the next pack. */
+    public void onShelterTurn() {
+        if (provisionsEarned) {
+            provisionsEarned = false;
+            provisionsPacked = true;
+            save();
+        }
+    }
+
+    /** The player has ventured out far enough for this to count as an expedition. */
+    public void noteVenturedOut() {
+        if (!provisionsEarned) {
+            provisionsEarned = true;
+            save();
+        }
+    }
+
+    /** A respawn starts a new expedition: pack for it whatever the last one did. */
+    public void packProvisionsForNewExpedition() {
+        provisionsPacked = true;
+        provisionsEarned = false;
+        save();
+    }
+
     /** Per-chunk chance of a statue encounter event, scaling from a 15% baseline to 35% at max tier. */
     public float getStatueEventFrequency() {
         return STATUE_FREQUENCY_BASE + (STATUE_FREQUENCY_MAX - STATUE_FREQUENCY_BASE) * ((float) monumentTier / MAX_TIER);
@@ -685,6 +735,8 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                 data.ascensionTiers.put(entry.getKey().name(), entry.getValue());
             }
             data.cartographerDeskTier = cartographerDeskTier;
+            data.provisionsPacked = provisionsPacked;
+            data.provisionsEarned = provisionsEarned;
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             if (Gdx.app != null) {
@@ -724,6 +776,8 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                         }
                     }
                     cartographerDeskTier = data.cartographerDeskTier > 0 ? data.cartographerDeskTier : 1;
+                    provisionsPacked = data.provisionsPacked;
+                    provisionsEarned = data.provisionsEarned;
                 }
             }
         } catch (Exception e) {
@@ -743,6 +797,9 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         public int crestsOfValor = 0;
         public java.util.Map<String, Integer> ascensionTiers = new java.util.HashMap<>();
         public int cartographerDeskTier = 1;
+        /** Absent (true) in older saves: one pack owed, since none was ever handed over alive. */
+        public boolean provisionsPacked = true;
+        public boolean provisionsEarned = false;
     }
 
     @Override
