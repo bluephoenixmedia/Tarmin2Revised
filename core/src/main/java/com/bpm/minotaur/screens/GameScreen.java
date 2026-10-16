@@ -318,6 +318,7 @@ public class GameScreen extends BaseScreen {
         if (eventManager == null) {
             eventManager = new GameEventManager();
         }
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setExpeditionEndListener(returnUnlockRoller);
 
         if (fbo == null) {
             fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, GAME_HEIGHT, true); // Use GAME_HEIGHT
@@ -1483,7 +1484,7 @@ public class GameScreen extends BaseScreen {
             // icon, and icons are keyed on the item type.
             java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes =
                     com.bpm.minotaur.managers.UnlockManager.getInstance()
-                            .rollRunUnlockTypes(telemetry, depthReached);
+                            .rollRunUnlockTypes(telemetry, telemetry.getExpeditionMaxDepth());
             telemetry.recordUnlocksEarned(newUnlockTypes != null ? newUnlockTypes.size() : 0);
             telemetry.exportRun(epitaphCause);
             // 5. Play visceral death audio and transition to PlayerDeathScreen
@@ -1494,6 +1495,29 @@ public class GameScreen extends BaseScreen {
             return;
         }
     }
+
+    /**
+     * Rolls the unlocks a safe return earned (#184) while telemetry still holds the
+     * expedition's counters. A death rolls its own, for the death screen, so only a return
+     * is handled here; the log carries the news because no screen follows a return.
+     */
+    private final com.bpm.minotaur.telemetry.TelemetryManager.ExpeditionEndListener returnUnlockRoller = outcome -> {
+        if (outcome != com.bpm.minotaur.telemetry.TelemetryManager.Outcome.RETURNED) {
+            return;
+        }
+        com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        com.bpm.minotaur.managers.UnlockManager unlocks = com.bpm.minotaur.managers.UnlockManager.getInstance();
+        java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> earned =
+                unlocks.rollExpeditionUnlockTypes(telemetry, telemetry.getExpeditionMaxDepth(), outcome);
+        telemetry.recordUnlocksEarned(earned.size());
+        if (eventManager == null) {
+            return;
+        }
+        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : earned) {
+            eventManager.addEvent(new GameEvent(
+                    "Your return is remembered: " + unlocks.displayNameFor(type) + " now appears in the maze.", 4f));
+        }
+    };
 
     /**
      * Starts the death cinematic and defers the screen swap until the blood is opaque.
@@ -4588,6 +4612,10 @@ public class GameScreen extends BaseScreen {
     public void dispose() {
         if (isDisposed) return;
         isDisposed = true;
+        com.bpm.minotaur.telemetry.TelemetryManager telemetryOnDispose = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        if (telemetryOnDispose.getExpeditionEndListener() == returnUnlockRoller) {
+            telemetryOnDispose.setExpeditionEndListener(null);
+        }
         warAudio.dispose();
         if (debugLegendFont != null) {
             debugLegendFont.dispose();

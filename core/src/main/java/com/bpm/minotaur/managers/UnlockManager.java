@@ -309,18 +309,39 @@ public class UnlockManager implements SlotScopedState {
     }
 
     /**
-     * Rolls this run's unlocks and returns the item types granted.
+     * Rolls the unlocks for an expedition that ended in death and returns the item types granted.
      *
      * <p>Returns types rather than names because the death screen shows each discovery as a card
      * with its icon, and icons are looked up from the packed atlases by item type.
      */
     public List<com.bpm.minotaur.gamedata.item.Item.ItemType> rollRunUnlockTypes(
             com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached) {
+        return rollExpeditionUnlockTypes(telemetry, maxFloorReached,
+                com.bpm.minotaur.telemetry.TelemetryManager.Outcome.DIED);
+    }
+
+    /**
+     * Rolls the unlocks earned by the expedition that is ending (#184).
+     *
+     * <p>Every expedition end rolls, not only a death. The guaranteed unlock is the
+     * consolation for dying, so only a death grants it; milestones (going below the
+     * first level, kills, Divinity, turns) pay out on a return too. Milestones read the
+     * telemetry's expedition counters, so they are counted per expedition, and the
+     * telemetry must not have closed the expedition yet. An abandoned expedition rolls
+     * nothing.
+     */
+    public List<com.bpm.minotaur.gamedata.item.Item.ItemType> rollExpeditionUnlockTypes(
+            com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached,
+            com.bpm.minotaur.telemetry.TelemetryManager.Outcome outcome) {
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> newlyUnlocked = new ArrayList<>();
-        if (itemDataManager == null || data == null) {
+        if (itemDataManager == null || data == null
+                || outcome == null || outcome == com.bpm.minotaur.telemetry.TelemetryManager.Outcome.ABANDONED) {
             return newlyUnlocked;
         }
 
+        if (telemetry != null) {
+            maxFloorReached = Math.max(maxFloorReached, telemetry.getExpeditionMaxDepth());
+        }
         int strataReached = Math.max(1, (maxFloorReached - 1) / 3 + 1);
         if (telemetry != null && telemetry.getStrataReached() > strataReached) {
             strataReached = telemetry.getStrataReached();
@@ -331,13 +352,13 @@ public class UnlockManager implements SlotScopedState {
             if (maxFloorReached > 1 && (strataReached > 1 || maxFloorReached > data.deepestLevelReached)) {
                 milestoneCount++;
             }
-            if (telemetry.getTotalMonstersKilled() >= 100) {
+            if (telemetry.getExpeditionKills() >= 100) {
                 milestoneCount++;
             }
-            if (telemetry.getDivinitiesEarned() >= 150) {
+            if (telemetry.getExpeditionDivinitiesEarned() >= 150) {
                 milestoneCount++;
             }
-            if (telemetry.getTurnsLived() >= 1000) {
+            if (telemetry.getExpeditionTurns() >= 1000) {
                 milestoneCount++;
             }
         }
@@ -345,7 +366,11 @@ public class UnlockManager implements SlotScopedState {
         // 25 / 50 / 300. Those bars were reachable in an ordinary run, so almost
         // every run hit the cap; lowering the cap alone would have left a strong
         // run indistinguishable from an average one.
-        int unlocksToGrant = Math.min(2, 1 + milestoneCount);
+        boolean died = outcome == com.bpm.minotaur.telemetry.TelemetryManager.Outcome.DIED;
+        int unlocksToGrant = Math.min(2, (died ? 1 : 0) + milestoneCount);
+        if (unlocksToGrant <= 0) {
+            return newlyUnlocked;
+        }
 
         int maxEligibleScore = UNLOCK_SCORE_THRESHOLD + (strataReached * 250);
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> boundedPool = new ArrayList<>();
