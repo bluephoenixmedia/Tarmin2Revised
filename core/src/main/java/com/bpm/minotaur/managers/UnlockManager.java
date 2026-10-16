@@ -26,7 +26,10 @@ public class UnlockManager implements SlotScopedState {
     /** Per-slot file name; resolved against the active slot at load time. */
     public static final String SLOT_SAVE_FILE = "unlocks.json";
     /**
-     * Items scoring at or above this are locked behind meta-progression.
+     * The score at which an item leaves tier 0 unless the base pool names it (#196); see
+     * {@link com.bpm.minotaur.gamedata.item.LootTiers}.
+     *
+     * <p>History: items scoring at or above this used to be locked outright.
      *
      * <p>At 310 -- above the median item score of 210 -- a brand-new save could
      * already see 379 of 544 templates, so the unlock system gated almost
@@ -347,7 +350,8 @@ public class UnlockManager implements SlotScopedState {
         // run indistinguishable from an average one.
         int unlocksToGrant = Math.min(2, 1 + milestoneCount);
 
-        int maxEligibleScore = UNLOCK_SCORE_THRESHOLD + (strataReached * 250);
+        // Unlocks add tiers (#196): tier n becomes eligible once Strata n is reached.
+        int maxEligibleTier = com.bpm.minotaur.gamedata.item.LootTiers.maxTierForStrata(strataReached);
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> boundedPool = new ArrayList<>();
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> fallbackPool = new ArrayList<>();
 
@@ -355,9 +359,8 @@ public class UnlockManager implements SlotScopedState {
             try {
                 com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
                 if (t != null && t.unlockGated && !data.unlockedContent.contains(type.name())) {
-                    int score = calculateItemScore(t);
                     fallbackPool.add(type);
-                    if (score <= maxEligibleScore) {
+                    if (t.lootTier <= maxEligibleTier) {
                         boundedPool.add(type);
                     }
                 }

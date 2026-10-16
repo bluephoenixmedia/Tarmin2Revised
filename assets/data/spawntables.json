@@ -2850,7 +2850,7 @@
             "type": "MOSS_CLUMP",
             "minLevel": 1,
             "maxLevel": 99,
-            "weight": 12
+            "weight": 14
         },
         {
             "type": "PUDDLE_WATER",
@@ -2974,9 +2974,9 @@
         },
         {
             "type": "TWISTED_ROOT",
-            "minLevel": 3,
-            "maxLevel": 12,
-            "weight": 4
+            "minLevel": 1,
+            "maxLevel": 99,
+            "weight": 12
         },
         {
             "type": "FUNGAL_SPORE",
@@ -3039,12 +3039,6 @@
             "weight": 2
         },
         {
-            "type": "GLOWING_LICHEN",
-            "minLevel": 8,
-            "maxLevel": 99,
-            "weight": 2
-        },
-        {
             "type": "STRANGE_METAL",
             "minLevel": 10,
             "maxLevel": 99,
@@ -3063,13 +3057,13 @@
                 "type": "TINDER_BUNDLE",
                 "minLevel": 1,
                 "maxLevel": 99,
-                "weight": 8
+                "weight": 4
             },
             {
                 "type": "FOOD",
                 "minLevel": 1,
                 "maxLevel": 99,
-                "weight": 25
+                "weight": 2
             },
             {
                 "type": "COINS",

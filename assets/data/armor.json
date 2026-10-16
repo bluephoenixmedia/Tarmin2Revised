@@ -5012,6 +5012,7 @@
   },
   "CLOAK": {
     "friendlyName": "Cloak",
+    "probability": 80,
     "description": null,
     "texturePath": "images/armor/cloak.png",
     "modelPath": null,

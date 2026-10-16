@@ -340,12 +340,9 @@ public class ItemDataManager {
             ItemType type = entry.key;
             ItemTemplate t = entry.value;
             if (t == null) continue;
-            if (type == ItemType.AXE) {
-                t.unlockGated = false;
-                continue;
-            }
-            int score = UnlockManager.calculateItemScore(t);
-            t.unlockGated = (score >= UnlockManager.UNLOCK_SCORE_THRESHOLD);
+            // Gated by tier, not by a bare score threshold (#196): the base pool is tier 0.
+            t.lootTier = LootTiers.tierOf(type.name(), t);
+            t.unlockGated = t.lootTier > 0;
         }
     }
 

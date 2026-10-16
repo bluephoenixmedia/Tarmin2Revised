@@ -38,7 +38,11 @@ public class ItemTemplate {
 
     public String unlockId;
     public boolean locked; // Matches JSON "locked": true
-    public boolean unlockGated = false; // Progression meta-unlock gate (score >= UnlockManager.UNLOCK_SCORE_THRESHOLD, 50)
+    public boolean unlockGated = false; // Progression meta-unlock gate: lootTier > 0 (#196)
+    /** Optional loot tier set in the JSON entry; -1 derives it (see {@link LootTiers}). */
+    public int tier = -1;
+    /** The loot tier in force: 0 is the base pool, n is unlocked from Strata n (#196). */
+    public int lootTier;
 
     public String[] spriteData;
     public int baseValue;

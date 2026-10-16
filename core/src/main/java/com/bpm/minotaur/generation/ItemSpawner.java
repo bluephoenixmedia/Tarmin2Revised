@@ -213,7 +213,9 @@ public class ItemSpawner {
             weights.put(ItemCategory.WAND, 15); // 4 -> 15 (Wands requested)
 
             // Standard/Rare
-            weights.put(ItemCategory.TOOL, 8);
+            // Tools were an empty category until #196 tagged the Tinder Bundle; 3 keeps it to
+            // the 1-2 bundles a depth-1 expedition should find.
+            weights.put(ItemCategory.TOOL, 3);
             weights.put(ItemCategory.GEM, 8);
             weights.put(ItemCategory.BOOK, 8); // 4 -> 8
             weights.put(ItemCategory.RING, 6); // 3 -> 6

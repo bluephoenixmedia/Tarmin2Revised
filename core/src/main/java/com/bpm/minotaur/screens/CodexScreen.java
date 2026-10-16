@@ -579,7 +579,7 @@ public class CodexScreen extends BaseScreen {
             descLbl.setWrap(true);
             card.add(descLbl).width(width - 24).left().expand().top().row();
         } else {
-            int reqStrata = Math.max(1, (score - UnlockManager.UNLOCK_SCORE_THRESHOLD) / 250 + 1);
+            int reqStrata = Math.max(1, t.lootTier);
             Label hintLbl = new Label(String.format("Requires Strata %d+ delve to discover.", reqStrata),
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE));
             card.add(hintLbl).left().padBottom(4).row();
