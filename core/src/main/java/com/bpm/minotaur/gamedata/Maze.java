@@ -44,6 +44,7 @@ public class Maze {
     private final Map<GridPoint2, Ladder> ladders = new HashMap<>();
     private final List<Projectile> projectiles = new ArrayList<>();
     private final Map<GridPoint2, Gate> gates = new HashMap<>();
+    private final Gate[][] gateGrid;
     private final Map<GridPoint2, String> eventTriggers = new HashMap<>(); // Encounters
     /** Hidden choice events (data/events.json), kept apart from the statues' encounter triggers. */
     private final Map<GridPoint2, String> choiceEvents = new HashMap<>();
@@ -78,6 +79,7 @@ public class Maze {
         this.height = wallData.length;
         this.width = (height > 0) ? wallData[0].length : 0;
         this.explorationState = new byte[height][width];
+        this.gateGrid = new Gate[height][width];
     }
 
     public List<CorpsePart> getCorpses() {
@@ -248,7 +250,13 @@ public class Maze {
     }
 
     public void addGate(Gate gate) {
-        gates.put(new GridPoint2((int) gate.getPosition().x, (int) gate.getPosition().y), gate);
+        if (gate == null) return;
+        int gx = (int) gate.getPosition().x;
+        int gy = (int) gate.getPosition().y;
+        gates.put(new GridPoint2(gx, gy), gate);
+        if (gateGrid != null && gy >= 0 && gy < height && gx >= 0 && gx < width) {
+            gateGrid[gy][gx] = gate;
+        }
     }
 
     public Map<GridPoint2, Gate> getGates() {
@@ -256,18 +264,17 @@ public class Maze {
     }
 
     public Gate getGateAt(int x, int y) {
-        if (gates == null || gates.isEmpty()) return null;
-        for (Map.Entry<GridPoint2, Gate> entry : gates.entrySet()) {
-            GridPoint2 p = entry.getKey();
-            if (p.x == x && p.y == y) {
-                return entry.getValue();
-            }
+        if (gateGrid != null && y >= 0 && y < height && x >= 0 && x < width) {
+            return gateGrid[y][x];
         }
         return null;
     }
 
     public boolean hasGateAt(int x, int y) {
-        return getGateAt(x, y) != null;
+        if (gateGrid != null && y >= 0 && y < height && x >= 0 && x < width) {
+            return gateGrid[y][x] != null;
+        }
+        return false;
     }
 
     public int getLevel() {

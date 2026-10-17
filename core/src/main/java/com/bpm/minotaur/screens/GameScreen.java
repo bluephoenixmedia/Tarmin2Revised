@@ -644,6 +644,14 @@ public class GameScreen extends BaseScreen {
             // We do NOT update time, combatManager, etc.
             if (hitPauseTimer <= 0)
                 hitPauseTimer = 0;
+        } else if (isDying()) {
+            // Death is active: freeze world updates, combat updates, and turn processing while the death sequence runs
+            time += delta;
+            animationManager.update(delta);
+            if (hud != null)
+                hud.update(delta);
+            eventManager.update(delta);
+            handleSystemEvents();
         } else if (player != null && player.getStatusManager().hasEffect(StatusEffectType.SLEEP) &&
                 (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
                         || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
@@ -1786,7 +1794,9 @@ public class GameScreen extends BaseScreen {
 
     /** True while the death cinematic owns the screen and gameplay input must be refused. */
     public boolean isDying() {
-        return deathSequence.isActive();
+        return (deathSequence != null && deathSequence.isActive())
+                || isDeathTransitionTriggered
+                || (player != null && player.getCurrentHP() <= 0);
     }
 
     /**

@@ -4,6 +4,7 @@
             "id": "EVENT_DRAGON_STATUE",
             "title": "Shrine of the Ancient Wyrm",
             "imagePath": "images/events/statue/dragon_statue.png",
+            "minDepth": 5,
             "text": "A towering obsidian monument of a roaring dragon dominates the chamber. Heat radiates from deep within the stone throat.",
             "choices": [
                 {
@@ -46,6 +47,7 @@
             "id": "EVENT_TARMIN_STATUE",
             "title": "Colossus of Minotaur Tarmin",
             "imagePath": "images/events/statue/tarmin_statue.png",
+            "minDepth": 3,
             "text": "A massive, horned effigy of Minotaur King Tarmin stands grim and watchful. A solemn labyrinth pulse vibrates through your chest.",
             "choices": [
                 {
@@ -209,6 +211,7 @@
             "id": "EVENT_GHOUL_STATUE",
             "title": "The Carrion Gargoyle",
             "imagePath": "images/events/statue/ghoul_statue.png",
+            "minDepth": 2,
             "text": "A crouching, predatory figure carved from slate, its jaws agape in eternal ravenous hunger.",
             "choices": [
                 {
@@ -293,6 +296,7 @@
             "id": "EVENT_GIANT_STATUE",
             "title": "The Titan's Pillar",
             "imagePath": "images/events/statue/giant_statue.png",
+            "minDepth": 4,
             "text": "A colossus carved into the bedrock, its massive stone shoulders bracing the vaulted dungeon roof.",
             "choices": [
                 {
@@ -374,6 +378,7 @@
             "id": "EVENT_CROC_STATUE",
             "title": "Shrine of the Sunken Mire",
             "imagePath": "images/events/statue/croc_statue.png",
+            "minDepth": 2,
             "text": "A squat, algae-slicked statue of a crocodilian ambusher lurks half-submerged at the edge of a stagnant pool.",
             "choices": [
                 {
@@ -416,6 +421,7 @@
             "id": "EVENT_SCORPION_STATUE",
             "title": "The Venom Shrine",
             "imagePath": "images/events/statue/scorpion_statue.png",
+            "minDepth": 2,
             "text": "A hunched scorpion idol looms over a shallow basin of viscous, glistening ichor, its stinger poised and dripping.",
             "choices": [
                 {
@@ -458,6 +464,7 @@
             "id": "EVENT_WRAITH_STATUE",
             "title": "The Void Tomb",
             "imagePath": "images/events/statue/wraith_statue.png",
+            "minDepth": 4,
             "text": "A gaunt, hooded figure looms in cold stone, its hollow eyes seeming to drink the light from the chamber around it.",
             "choices": [
                 {

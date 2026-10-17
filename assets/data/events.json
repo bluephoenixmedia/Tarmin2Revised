@@ -256,7 +256,7 @@
                         { "type": "GIVE_ITEM", "itemPool": ["POTION_GIANT_STRENGTH", "POTION_HEROISM", "BOOTS_OF_SWIFTNESS", "AMULET_OF_INSIGHT"], "text": "Smoke pours out and takes the shape of a bowing figure. It leaves a gift, and is gone." }
                     ],
                     "failure": [
-                        { "type": "SPAWN_MONSTER", "monsterId": "WRAITH", "text": "The smoke pours out howling, and it is not grateful." }
+                        { "type": "SPAWN_MONSTER", "monsterId": "SKELETON", "text": "The smoke pours out howling, taking the form of a rattling skeleton!" }
                     ]
                 },
                 {

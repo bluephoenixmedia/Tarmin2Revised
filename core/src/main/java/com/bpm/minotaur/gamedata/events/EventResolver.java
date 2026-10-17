@@ -373,7 +373,10 @@ public class EventResolver {
             return;
         }
         Monster.MonsterType type = Monster.MonsterType.valueOf(monsterId);
-        int level = player.getStats().getLevel();
+        if (maze.getLevel() <= 2 && type == Monster.MonsterType.WRAITH) {
+            type = Monster.MonsterType.SKELETON;
+        }
+        int level = Math.max(1, maze.getLevel());
         MonsterVariant variant = monsterDataManager.getRandomVariantForMonster(type, level);
         if (variant == null) {
             if (Gdx.app != null) {

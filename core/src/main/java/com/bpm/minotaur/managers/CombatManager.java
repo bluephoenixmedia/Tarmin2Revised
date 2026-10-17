@@ -708,7 +708,9 @@ public class CombatManager {
     }
 
     public void monsterMeleeStrike(Monster attacker) {
-        if (attacker != null && this.monster != attacker && currentState == CombatState.INACTIVE) {
+        if (player == null || player.getCurrentHP() <= 0) return;
+        if (attacker == null || !attacker.isAlive()) return;
+        if (this.monster != attacker && currentState == CombatState.INACTIVE) {
             triggerCombatMusic(attacker);
         }
         soundManager.playMonsterAttackSound(attacker);
@@ -2651,14 +2653,18 @@ public class CombatManager {
             if (!adjacent) {
                 // Shot from range: no blow to trade. It comes on in the world's turn.
             } else if (!isStaggered) {
+                monster.setEnergy(monster.getEnergy() - TurnManager.BASE_TURN_COST);
                 monsterMeleeStrike(monster);
             } else {
+                monster.setEnergy(monster.getEnergy() - TurnManager.BASE_TURN_COST);
                 eventManager.addEvent(new GameEvent(monster.getType() + " is staggered by the blow!", 1.0f));
             }
         }
     }
 
     public boolean performMonsterRangedAttack(Monster attacker) {
+        if (player == null || player.getCurrentHP() <= 0) return false;
+        if (attacker == null || !attacker.isAlive()) return false;
         int range = attacker.getAttackRange();
         Item weapon = (attacker.getInventory() != null) ? attacker.getInventory().getRightHand() : null;
         boolean hasRangedWeapon = (weapon != null && weapon.isRanged());
@@ -2711,7 +2717,7 @@ public class CombatManager {
                         projDef.getColor(), animDuration, projDef.getSpriteData()));
 
         // --- ATTACK ROLL ---
-        int attackBonus = 2 + (attacker.getDexterity() / 5);
+        int attackBonus = calculateMonsterAttackBonus(attacker);
         int d20Roll = DiceRoller.d20();
         boolean isCrit = (d20Roll == 20);
         int attackRoll = d20Roll + attackBonus;
@@ -3434,6 +3440,8 @@ public class CombatManager {
     }
 
     private void performMonsterMeleeAttack() {
+        if (player == null || player.getCurrentHP() <= 0) return;
+        if (monster == null || !monster.isAlive()) return;
         triggerAttackIndicator(monster);
         float dist = monster.getPosition().dst(player.getPosition());
         float animDuration = dist / PROJECTILE_SPEED;
@@ -3449,12 +3457,7 @@ public class CombatManager {
         soundManager.playMonsterAttackSound(monster);
 
         // --- ATTACK ROLL ---
-        int attackBonus = 2; // Base
-        MonsterTemplate t = monster.getTemplate();
-        if (t != null) {
-            // Rough approximation if level isn't directly exposed
-            attackBonus += (t.maxHP / 10);
-        }
+        int attackBonus = calculateMonsterAttackBonus(monster);
 
         int d20Roll = DiceRoller.d20();
         int attackRoll = d20Roll + attackBonus;
@@ -3536,7 +3539,8 @@ public class CombatManager {
 
     // --- FLANK ATTACK LOGIC ---
     public boolean performMonsterFlankAttack(Monster attacker) {
-        if (attacker == null || attacker == this.monster)
+        if (player == null || player.getCurrentHP() <= 0) return false;
+        if (attacker == null || attacker == this.monster || !attacker.isAlive())
             return false; // Can't flank if you are the main duel target
 
         // Check adjacency
@@ -3568,7 +3572,7 @@ public class CombatManager {
         }
 
         // Roll Attack
-        int attackBonus = 2 + (attacker.getDexterity() / 5);
+        int attackBonus = calculateMonsterAttackBonus(attacker);
         int d20Roll = DiceRoller.d20();
         int attackRoll = d20Roll + attackBonus;
         int targetAC = player.getArmorClass();

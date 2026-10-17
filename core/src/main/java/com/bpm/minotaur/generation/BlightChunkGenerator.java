@@ -659,7 +659,7 @@ public class BlightChunkGenerator implements IChunkGenerator {
         for (int i = 0; i < candidates.size() && wanted > 0; i++) {
             GridPoint2 pos = candidates.get(i);
             if (maze.getMonsters().containsKey(pos)) continue;
-            String encounterId = encounterManager.getRandomEncounterId();
+            String encounterId = encounterManager.getRandomEncounterId(maze.getLevel());
             if (encounterId == null) continue;
             maze.addEvent(pos.x, pos.y, encounterId);
             Encounter enc = encounterManager.getEncounter(encounterId);

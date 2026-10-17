@@ -20,7 +20,7 @@ import java.util.List;
 
 public class TurnManager {
 
-    private final float BASE_TURN_COST = 12.0f;
+    public static final float BASE_TURN_COST = 12.0f;
 
     // Metabolic Constants (Per 1.0 Time Unit). Hunger and thirst burn on their own scales;
     // see Hunger and Thirst.

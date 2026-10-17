@@ -1053,7 +1053,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int placed = 0;
         for (int i = 0; i < candidates.size() && placed < numEncounters; i++) {
             GridPoint2 pos = candidates.get(i);
-            String encounterId = encounterManager.getRandomEncounterId();
+            String encounterId = encounterManager.getRandomEncounterId(maze.getLevel());
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
                 com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);

@@ -470,7 +470,8 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
         // The character died and the game was left before they awoke. Their gear is already
         // stripped in this save; finish the respawn instead of resuming at 0 HP.
-        if (worldData != null && worldData.respawnPending) {
+        if ((worldData != null && worldData.respawnPending)
+                || (gameScreen.getPlayer() != null && gameScreen.getPlayer().getCurrentHP() <= 0)) {
             SaveManager.getInstance().setRespawnPending(true);
             com.bpm.minotaur.managers.DoomManager doom = com.bpm.minotaur.managers.DoomManager.getInstance();
             gameScreen.respawnInShelter(0, 0, doom.getDeathCount(), doom.getBridgeIntegrity());

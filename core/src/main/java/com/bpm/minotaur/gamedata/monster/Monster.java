@@ -997,6 +997,7 @@ public class Monster implements Renderable {
     }
 
     public void scaleStats(int level) {
+        this.level = Math.max(1, level);
         if (level <= 1)
             return;
         float multiplier = 1.0f + ((level - 1) * 0.15f);
