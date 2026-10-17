@@ -43,38 +43,32 @@ public class NetHackDifficultyDistributionTest {
 
     @Test
     public void testEffectiveDifficultyFormulaAndSanctuaryBuffer() {
-        // NetHack formula:
+        // Formula (#185, #161):
         // EL = depth + floor(D_xy / 2)
-        // EDL = floor((EL + playerLevel) / 2)
-        // Sanctuary Buffer: D_xy <= 1 on Z = 1 caps EDL at 2
+        // EDL = EL (player level removed so leveling makes protagonist stronger)
+        // Sanctuary Buffer: D_xy <= 1 on depth <= 2 caps EDL at 2; depth 3 caps at 3
 
         // 1. Starting Shelter Chunk (0, 0) at Z = 1 with PL = 1
-        // EL = 1 + 0 = 1, EDL = (1 + 1) / 2 = 1.
         int edl1 = worldManager.calculateEffectiveDifficulty(new GridPoint2(0, 0), 1, 1);
         assertEquals(1, edl1);
 
-        // 2. High level player in Starting Shelter Chunk (0, 0) at Z = 1 with PL = 15
-        // Uncapped EDL = (1 + 15) / 2 = 8 -> Capped at 2 due to Sanctuary Buffer
+        // 2. High level player in Starting Shelter Chunk (0, 0) at Z = 1: remains EDL 1
         int edlSanctuary = worldManager.calculateEffectiveDifficulty(new GridPoint2(0, 0), 1, 15);
-        assertEquals(2, edlSanctuary);
+        assertEquals(1, edlSanctuary);
 
-        // 3. Adjacent chunk (1, 0) (D_xy = 1) at Z = 1 with PL = 20
-        // Uncapped EDL = (1 + 20) / 2 = 10 -> Capped at 2 due to Sanctuary Buffer
+        // 3. Adjacent chunk (1, 0) (D_xy = 1) at Z = 1 with PL = 20: 1 + 0 = 1
         int edlAdj = worldManager.calculateEffectiveDifficulty(new GridPoint2(1, 0), 1, 20);
-        assertEquals(2, edlAdj);
+        assertEquals(1, edlAdj);
 
-        // 4. Overland chunk outside sanctuary (2, 0) (D_xy = 2) at Z = 1 with PL = 10
-        // EL = 1 + (2 / 2) = 2. Uncapped EDL = (2 + 10) / 2 = 6. D_xy > 1 -> NOT capped
+        // 4. Overland chunk outside sanctuary (2, 0) (D_xy = 2) at Z = 1 with PL = 10: 1 + 1 = 2
         int edlOverland = worldManager.calculateEffectiveDifficulty(new GridPoint2(2, 0), 1, 10);
-        assertEquals(6, edlOverland);
+        assertEquals(2, edlOverland);
 
-        // 5. Subterranean Stratum (0, 0) at Z = 3 with PL = 1
-        // EL = 3 + 0 = 3, EDL = (3 + 1) / 2 = 2. Z > 1 -> NOT capped
+        // 5. Subterranean Stratum (0, 0) at Z = 3 with PL = 1: 3 + 0 = 3
         int edlSub = worldManager.calculateEffectiveDifficulty(new GridPoint2(0, 0), 3, 1);
-        assertEquals(2, edlSub);
+        assertEquals(3, edlSub);
 
-        // 6. Deep subterranean with distance: Chunk (2, 2) (D_xy = 4) at Z = 4 with PL = 6
-        // EL = 4 + 2 = 6, EDL = (6 + 6) / 2 = 6
+        // 6. Deep subterranean with distance: Chunk (2, 2) (D_xy = 4) at Z = 4 with PL = 6: 4 + 2 = 6
         int edlDeep = worldManager.calculateEffectiveDifficulty(new GridPoint2(2, 2), 4, 6);
         assertEquals(6, edlDeep);
     }

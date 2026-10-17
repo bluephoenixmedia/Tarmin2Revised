@@ -153,6 +153,7 @@ public class TelemetryManager {
         this.runId = UUID.randomUUID().toString();
         this.runStartMillis = System.currentTimeMillis();
         this.turnsLived = 0;
+        this.currentDepth = 1;
         this.strataReached = 1;
         this.causeOfDeath = null;
         this.killerMonster = null;

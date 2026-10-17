@@ -36,16 +36,23 @@ public final class Vengeance {
     }
 
     /**
-     * The role a kill counts as. Monster roles do not exist yet, so this falls back on the
-     * monster's level relative to the player; the difficulty curve (#185) swaps this method.
+     * The role a kill counts as (#185, decided in #161). Uses the monster's template role
+     * (FODDER / SOLDIER / HEAVY), but monsters far below the player yield TRIVIAL (no HP).
      */
     public static Role roleOf(Monster monster, int playerLevel) {
-        return roleByLevel(monster.getLevel(), playerLevel, isElite(monster));
+        if (monster == null) return Role.TRIVIAL;
+        int delta = monster.getLevel() - playerLevel;
+        if (delta <= -TRIVIAL_LEVELS_BELOW) return Role.TRIVIAL;
+        com.bpm.minotaur.gamedata.monster.MonsterRole mr = monster.getRole();
+        if (mr == com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER) return Role.FODDER;
+        if (mr == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY) return Role.HEAVY;
+        return Role.SOLDIER;
     }
 
-    /** Whether a kill was out of depth. Same fallback, same seam for #185. */
+    /** Whether a kill was out of depth (#185, #161). */
     public static boolean isOutOfDepth(Monster monster, int playerLevel) {
-        return outOfDepthByLevel(monster.getLevel(), playerLevel);
+        if (monster == null) return false;
+        return monster.isOutOfDepth() || outOfDepthByLevel(monster.getLevel(), playerLevel);
     }
 
     static Role roleByLevel(int monsterLevel, int playerLevel, boolean elite) {

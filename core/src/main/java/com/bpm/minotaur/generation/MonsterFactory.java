@@ -54,7 +54,12 @@ public class MonsterFactory {
         monster.scaleStats(level);
         monster.setCurrentHP(monster.getMaxHP());
 
-        // 4. Generate Inventory
+        // 4. Flag out-of-depth (#185): template level exceeds chunk EDL
+        if (ctx != null && template != null && template.baseLevel > ctx.edl()) {
+            monster.setOutOfDepth(true);
+        }
+
+        // 5. Generate Inventory
         generateInventory(monster, level, ctx);
 
         return monster;

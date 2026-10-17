@@ -2156,6 +2156,9 @@ public class World3DRenderer implements Disposable {
                     if (m.isBlighted()) {
                         tint = new Color(tint).mul(Monster.BLIGHTED_TINT);
                     }
+                    if (m.isOutOfDepth()) {
+                        tint = new Color(tint).mul(Monster.OUT_OF_DEPTH_TINT);
+                    }
 
                     float monsterY = 0.0f;
                     if (m.getType() == Monster.MonsterType.PLAYER_GHOST) {

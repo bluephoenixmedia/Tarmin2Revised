@@ -425,20 +425,15 @@ public class WorldManager {
     }
 
     /**
-     * Calculates difficulty based on NetHack EL & EDL formulas:
-     * EL = depth + floor(D_xy / 2)
-     * EDL = floor((EL + playerLevel) / 2)
-     * Sanctuary Buffer: Any chunk within D_xy <= 1 on Z = 1 capped at EDL = 2
+     * Calculates difficulty based on NetHack EL & EDL formulas (#185, #161):
+     * EDL depends on depth and chunk distance only (player level removed so leveling
+     * makes the protagonist stronger relative to the world).
+     * Sanctuary Buffer: Any chunk within D_xy <= 1 on Z <= 2 capped at EDL = 2,
+     * Strata 2 (depth == 3) capped at EDL = 3.
      */
     public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
-        int playerLevel = (playerReference != null) ? playerReference.getLevel() : 1;
-        return calculateEffectiveDifficulty(chunkId, depth, playerLevel);
-    }
-
-    public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth, int playerLevel) {
         int horizontalDistance = (chunkId != null) ? (Math.abs(chunkId.x) + Math.abs(chunkId.y)) : 0;
-        int el = depth + (horizontalDistance / 2);
-        int edl = (el + playerLevel) / 2;
+        int edl = depth + (horizontalDistance / 2);
 
         // Sanctuary Buffer: Any chunk within D_xy <= 1 capped to prevent early player obliteration:
         // Overland (depth <= 1) and Strata 1 (depth == 2) capped at EDL = 2
@@ -452,6 +447,10 @@ public class WorldManager {
         }
 
         return Math.max(1, edl);
+    }
+
+    public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth, int playerLevel) {
+        return calculateEffectiveDifficulty(chunkId, depth);
     }
 
     // --- NEW: Descent Logic ---

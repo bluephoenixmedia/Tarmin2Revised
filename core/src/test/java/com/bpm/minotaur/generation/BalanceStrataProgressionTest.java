@@ -127,8 +127,8 @@ public class BalanceStrataProgressionTest {
     @Test
     public void testWorldManagerSanctuaryBufferCapsLevel6PlayerOnStrata1And2() {
         // Player level 6:
-        // Overland (0, 0) Z=1: EDL capped at 2
-        assertEquals(2, worldManager.calculateEffectiveDifficulty(new GridPoint2(0, 0), 1, 6));
+        // Overland (0, 0) Z=1: EDL is 1 (depth 1, D_xy=0)
+        assertEquals(1, worldManager.calculateEffectiveDifficulty(new GridPoint2(0, 0), 1, 6));
 
         // Strata 1 (0, 0) Z=2: EDL capped at 2
         assertEquals(2, worldManager.calculateEffectiveDifficulty(new GridPoint2(0, 0), 2, 6));

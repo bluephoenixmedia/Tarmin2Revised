@@ -764,6 +764,9 @@ public class EntityRenderer {
             if (monster.isBlighted()) {
                 monsterLight.mul(Monster.BLIGHTED_TINT);
             }
+            if (monster.isOutOfDepth()) {
+                monsterLight.mul(Monster.OUT_OF_DEPTH_TINT);
+            }
 
             // Hit recoil flash: bright red/white tint that fades over ~0.12s
             float hitFlash = monster.getHitFlashProgress();

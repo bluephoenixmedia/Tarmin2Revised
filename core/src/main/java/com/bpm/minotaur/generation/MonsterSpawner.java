@@ -50,12 +50,12 @@ public class MonsterSpawner {
         boolean isOod = false;
         if (ctx.isSubterranean() && rng.rn2(100) < 15) {
             isOod = true;
-            // On shallow strata, clamp OOD bonus so early delve remains survivable:
+            // OOD capped at EDL+2 (#185, #161):
             // Strata 1 (depth <= 2): max OOD bonus +1, capped at baseLevel 3 (e.g. Orc/Wererat, never Ogres/Umber Hulks).
             // Strata 2 (depth == 3): max OOD bonus +1, capped at baseLevel 4 (e.g. Gargoyle, never Ogres/Umber Hulks).
-            // Deeper floors (depth >= 4): +1 + rn2(3).
-            int oodBonus = (ctx.depth() <= 3) ? 1 : (1 + rng.rn2(3));
-            maxLevel = ctx.edl() + oodBonus;
+            // Deeper floors (depth >= 4): +1 or +2 (capped at EDL+2).
+            int oodBonus = (ctx.depth() <= 3) ? 1 : Math.min(2, 1 + rng.rn2(2));
+            maxLevel = Math.min(ctx.edl() + 2, ctx.edl() + oodBonus);
             if (ctx.depth() <= 2) {
                 maxLevel = Math.min(3, maxLevel);
             } else if (ctx.depth() == 3) {

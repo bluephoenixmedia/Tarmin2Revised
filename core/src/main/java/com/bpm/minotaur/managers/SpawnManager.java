@@ -24,6 +24,7 @@ import com.bpm.minotaur.gamedata.spawntables.LevelBudget;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
+import com.bpm.minotaur.gamedata.monster.MonsterRole;
 import com.bpm.minotaur.generation.ItemSpawner;
 import com.bpm.minotaur.generation.MonsterSpawner;
 import com.bpm.minotaur.generation.MonsterFactory; // Added Import
@@ -181,17 +182,26 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        // Dynamic Depth Scaling monster density: Level 1 has 14 monsters, scaling up with strata depth.
+        // Group-based encounter budget (#185, #161):
+        // Depth scales monster density through more and larger groups (Fodder packs 3-6, Soldiers 1-3, Heavies solo).
         // Starter chunk (0, 0) on Strata 1 is gently capped to 8 monsters so unarmored players aren't overwhelmed.
         int currentDepth = Math.max(1, this.level);
-        int scaledBudget;
-        if (maze != null && maze.getChunkId() != null && maze.getChunkId().x == 0 && maze.getChunkId().y == 0 && currentDepth <= 1) {
-            scaledBudget = 8;
+        boolean isStarterChunk = (maze != null && maze.getChunkId() != null
+                && maze.getChunkId().x == 0 && maze.getChunkId().y == 0 && currentDepth <= 1);
+
+        int groupBudget;
+        int maxMonsters;
+        if (isStarterChunk) {
+            groupBudget = 2 + random.nextInt(2); // 2-3 small groups
+            maxMonsters = 8;
         } else {
-            scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+            // Group count scales with depth: 3-4 at depth 1, 4-5 at depth 2, up to 7-9 deep
+            int baseGroups = 3 + (currentDepth - 1) * 2 / 3;
+            groupBudget = baseGroups + random.nextInt(2);
+            // Cap total monsters to valid floor points and depth ceiling
+            maxMonsters = Math.min(validSpawnPoints.size(), 14 + currentDepth * 4);
         }
-        int monsterBudget = Math.min(validSpawnPoints.size(), scaledBudget);
-        spawnMonsters(monsterBudget);
+        spawnMonsters(groupBudget, maxMonsters);
 
         // 1.2x keeps item density roughly 1:1 with monsters (Nethack-style scarcity).
         spawnItems((int) (budget.itemBudget * 1.2f));
@@ -452,15 +462,16 @@ public class SpawnManager {
         return false;
     }
 
-    private void spawnMonsters(int budget) {
+    private void spawnMonsters(int groupBudget, int maxMonsters) {
         if (dataManager == null)
             return;
 
         SpawnContext ctx = createSpawnContext();
+        int currentDepth = Math.max(1, this.level);
+        int totalSpawned = 0;
 
-        for (int i = 0; i < budget; i++) {
-            GridPoint2 spawnPoint = getEmptySpawnPointForMonster();
-            if (spawnPoint == null)
+        for (int g = 0; g < groupBudget && totalSpawned < maxMonsters; g++) {
+            if (validSpawnPoints.isEmpty())
                 break;
 
             Optional<Map.Entry<String, MonsterTemplate>> result = monsterSpawner.spawnRandomMonster(ctx);
@@ -477,23 +488,73 @@ public class SpawnManager {
                 continue;
             }
 
-            // Use Factory
-            Monster monster = monsterFactory.createMonster(type, level, ctx);
+            int groupSize = determineGroupSize(template, currentDepth);
+            groupSize = Math.min(groupSize, maxMonsters - totalSpawned);
 
-            // Set Position (Factory created it at 0,0)
-            monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+            GridPoint2 origin = getEmptySpawnPointForMonster();
+            if (origin == null)
+                break;
 
-            // Manual Scaling Removed - Factory handles it in createMonster via scaleStats
-            // monster.scaleStats(level);
+            spawnMonsterAt(type, origin, ctx);
+            totalSpawned++;
 
-            maze.addMonster(monster);
-
-            SpawnLogger.getInstance().logMonsterSpawn(monster, "Level Generation (Budget)");
+            for (int m = 1; m < groupSize && totalSpawned < maxMonsters; m++) {
+                GridPoint2 nearby = getNearbySpawnPointForMonster(origin, 3.5f);
+                if (nearby == null) {
+                    nearby = getNearbySpawnPointForMonster(origin, 5.5f);
+                }
+                if (nearby == null) {
+                    break;
+                }
+                spawnMonsterAt(type, nearby, ctx);
+                totalSpawned++;
+            }
 
             if ((template.generationFlags & MonsterTemplate.G_UNIQ) != 0) {
                 uniqueMonstersSpawned.add(monsterId);
             }
         }
+    }
+
+    private int determineGroupSize(MonsterTemplate template, int currentDepth) {
+        if ((template.generationFlags & MonsterTemplate.G_UNIQ) != 0) {
+            return 1;
+        }
+        MonsterRole role = template.getRole();
+        if (role == null) {
+            role = MonsterRole.SOLDIER;
+        }
+
+        switch (role) {
+            case HEAVY:
+                return 1;
+            case FODDER:
+                // Fodder packs: 3-6 monsters. At depth 1, keep it 3-4 so early characters aren't swarmed.
+                if (currentDepth <= 1) {
+                    return 3 + random.nextInt(2); // 3-4
+                } else if (currentDepth <= 3) {
+                    return 3 + random.nextInt(3); // 3-5
+                } else {
+                    return 3 + random.nextInt(4); // 3-6
+                }
+            case SOLDIER:
+            default:
+                // Soldiers: 1-3 monsters. At depth 1, mostly solo with occasional pair.
+                if (currentDepth <= 1) {
+                    return (random.nextFloat() < 0.25f) ? 2 : 1;
+                } else if (currentDepth <= 3) {
+                    return 1 + random.nextInt(2); // 1-2
+                } else {
+                    return 1 + random.nextInt(3); // 1-3
+                }
+        }
+    }
+
+    private void spawnMonsterAt(MonsterType type, GridPoint2 spawnPoint, SpawnContext ctx) {
+        Monster monster = monsterFactory.createMonster(type, level, ctx);
+        monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+        maze.addMonster(monster);
+        SpawnLogger.getInstance().logMonsterSpawn(monster, "Level Generation (Group)");
     }
 
     public void spawnPeriodicMonster(Player player) {
@@ -858,6 +919,36 @@ public class SpawnManager {
         if (displayName.contains("+"))
             displayName = "+" + value;
         item.addModifier(new ItemModifier(modInfo.type, value, displayName));
+    }
+
+    private GridPoint2 getNearbySpawnPointForMonster(GridPoint2 origin, float maxDistance) {
+        if (validSpawnPoints.isEmpty() || origin == null)
+            return null;
+
+        boolean hasSanctuary = !maze.getSanctuaryTiles().isEmpty();
+
+        for (int i = 0; i < validSpawnPoints.size(); i++) {
+            GridPoint2 pt = validSpawnPoints.get(i);
+            if (pt.dst(origin) <= maxDistance) {
+                if (hasSanctuary) {
+                    if (pt.dst(17, 20) < 6.0f) {
+                        continue;
+                    }
+                    boolean tooCloseToHome = false;
+                    for (GridPoint2 ht : maze.getSanctuaryTiles()) {
+                        if (pt.dst(ht) < 6.0f) {
+                            tooCloseToHome = true;
+                            break;
+                        }
+                    }
+                    if (tooCloseToHome) {
+                        continue;
+                    }
+                }
+                return validSpawnPoints.remove(i);
+            }
+        }
+        return null;
     }
 
     private GridPoint2 getEmptySpawnPointForMonster() {

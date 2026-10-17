@@ -126,12 +126,20 @@ public class RangedAttackPursuitTest {
         player.getStats().setDexterity(10);
         player.getStats().setStrength(10);
 
-        // Ghoul with astronomically high AC (e.g. 99) so the attack roll is guaranteed to miss
         Monster ghoul = new Monster(Monster.MonsterType.GHOUL, 100, 99, 9f, 5f);
         ghoul.setState(Monster.MonsterState.IDLE);
         maze.addMonster(ghoul);
 
-        combatManager.playerAttackInstant();
+        // Ghoul with astronomically high AC (e.g. 99) so the attack roll misses.
+        // A natural 20 critically hits regardless of AC (5% chance), so retry if a crit occurs.
+        for (int i = 0; i < 10; i++) {
+            ghoul.setCurrentHP(100);
+            ghoul.setState(Monster.MonsterState.IDLE);
+            combatManager.playerAttackInstant();
+            if (ghoul.getCurrentHP() == 100) {
+                break;
+            }
+        }
 
         // Monster took no damage because attack whiffed
         assertEquals("Monster HP should be untouched on whiff", 100, ghoul.getCurrentHP());

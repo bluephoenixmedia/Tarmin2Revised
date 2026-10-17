@@ -65,6 +65,12 @@ public class MonsterTemplate {
 
     /** Kill XP comes from {@link MonsterXp} on baseLevel; this lifts elites and bosses above it (#183). */
     public float xpMultiplier = 1.0f;
+    /** Fodder, Soldier or Heavy (#185): how the spawner groups it and what its kill restores. */
+    public MonsterRole role;
+
+    public MonsterRole getRole() {
+        return (role != null) ? role : MonsterRole.SOLDIER;
+    }
     public MonsterFamily family; // libGDX Json automatically converts "BEAST" string to MonsterFamily.BEAST
     public String texturePath;
     public String idleAnimationPath;

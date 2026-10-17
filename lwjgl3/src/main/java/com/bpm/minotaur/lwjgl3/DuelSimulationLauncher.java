@@ -11,6 +11,7 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterColor;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
@@ -51,6 +52,7 @@ import java.util.Random;
  * </pre>
  *
  * Options: --trials=N, --minLevel / --maxLevel (monster base level band), --playerLevel=L,
+ * --edl=E (scale monsters to that Effective Difficulty Level, as a chunk at depth E does),
  * --difficulty=MEDIUM, --hp=N (override max HP), --weapon=ITEM_TYPE, --chain=N (back-to-back
  * runs), --seed=S, --csv=path.
  */
@@ -66,8 +68,11 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private int minLevel = 1;
     private int maxLevel = 1;
     private int playerLevel = 1;
+    /** The Effective Difficulty Level the monster is scaled to, as the spawner does (#185). */
+    private int edl = 1;
     private Difficulty difficulty = Difficulty.MEDIUM;
     private int hpOverride = -1;
+    private int acOverride = -1;
     private Item.ItemType weaponOverride;
     private int chainRuns = 500;
     private long seed = 42L;
@@ -174,8 +179,8 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 difficulty, probe.getLevel(), probe.getMaxHP(),
                 probe.getInventory().getRightHand() != null ? probe.getInventory().getRightHand().getType() : "none",
                 probe.getArmorClass(), probe.getToHitBonus(), probe.getEffectiveSpeed());
-        System.out.printf(Locale.ROOT, "monster band: base level %d-%d (%d species), %d duels each, seed %d%n%n",
-                minLevel, maxLevel, band.size(), trials, seed);
+        System.out.printf(Locale.ROOT, "monster band: base level %d-%d (%d species) scaled to EDL %d, %d duels each, seed %d%n%n",
+                minLevel, maxLevel, band.size(), edl, trials, seed);
 
         System.out.printf(Locale.ROOT, "%-18s %3s %4s %6s %9s %9s %7s %7s %8s %7s%n",
                 "monster", "lvl", "spd", "win%", "hpLost%", "swings", "hit%", "glnc%", "mHit%", "mAct/t");
@@ -232,6 +237,8 @@ public class DuelSimulationLauncher implements ApplicationListener {
         player.setFacing(Direction.EAST);
 
         Monster monster = new Monster(type, 4, 3, colorFor(type), monsterDataManager, assetManager);
+        monster.scaleStats(edl); // MonsterFactory scales every spawn to its chunk's EDL
+        monster.setCurrentHP(monster.getMaxHP());
         maze.addMonster(monster);
 
         CombatManager combat = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
@@ -313,6 +320,14 @@ public class DuelSimulationLauncher implements ApplicationListener {
             p.getStats().setMaxHP(hpOverride);
         }
         p.getStats().setCurrentHP(p.getMaxHP());
+        if (acOverride > 0) {
+            ItemTemplate chest = new ItemTemplate();
+            chest.friendlyName = "Sim Armor";
+            chest.isArmor = true;
+            chest.armorClassBonus = Math.max(0, acOverride - p.getArmorClass());
+            Item armor = Item.fromTemplate(Item.ItemType.HAUBERK, chest);
+            p.getEquipment().setWornChest(armor);
+        }
         if (weaponOverride != null) {
             Item sword = p.getInventory().getRightHand();
             if (sword != null) p.getInventory().pickupToBackpack(sword);
@@ -365,8 +380,10 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "minLevel": minLevel = Integer.parseInt(v); break;
                 case "maxLevel": maxLevel = Integer.parseInt(v); break;
                 case "playerLevel": playerLevel = Integer.parseInt(v); break;
+                case "edl": edl = Integer.parseInt(v); break;
                 case "difficulty": difficulty = Difficulty.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "hp": hpOverride = Integer.parseInt(v); break;
+                case "ac": acOverride = Integer.parseInt(v); break;
                 case "weapon": weaponOverride = Item.ItemType.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;
