@@ -53,10 +53,17 @@ public class PlayerSaveData {
      */
     public int nutritionScale = 0;
     public static final int NUTRITION_SCALE_NETHACK = 1;
-    public float hydration = 80f;
+    /**
+     * Which scale {@link #hydration} is on: 0 for saves written before #193 (the old 0-100
+     * hydration), {@link #THIRST_SCALE_NETHACK} since. Old values are migrated on load.
+     */
+    public int thirstScale = 0;
+    public static final int THIRST_SCALE_NETHACK = 1;
+    public float hydration = com.bpm.minotaur.gamedata.player.Thirst.START;
     public float bodyTemperature = 37f;
     /** Blight Taint; 0 on saves written before it existed. */
     public float taint = 0f;
+    public boolean waterborneIllness = false;
     public int toxicity = 0;
     public int arrows = 0;
     public int shot = 0;
@@ -179,6 +186,7 @@ public class PlayerSaveData {
             this.satiety = stats.getSatietyFloat();
             this.nutritionScale = NUTRITION_SCALE_NETHACK;
             this.hydration = stats.getHydrationFloat();
+            this.thirstScale = THIRST_SCALE_NETHACK;
             this.bodyTemperature = stats.getBodyTemperature();
             this.taint = stats.getTaint();
             this.toxicity = stats.getToxicity();
@@ -226,6 +234,7 @@ public class PlayerSaveData {
             this.illnessTimer = injuryManager.getIllnessTimer();
             this.injuryStepCounter = injuryManager.getStepCounter();
             this.bleedDamageThisRun = injuryManager.getBleedDamageThisRun();
+            this.waterborneIllness = injuryManager.isWaterborneIllness();
         }
 
         // Equipment
@@ -328,7 +337,9 @@ public class PlayerSaveData {
             stats.setSatiety(nutritionScale >= NUTRITION_SCALE_NETHACK
                     ? satiety
                     : com.bpm.minotaur.gamedata.player.Hunger.fromLegacySatiety(satiety));
-            stats.setHydration(hydration);
+            stats.setHydration(thirstScale >= THIRST_SCALE_NETHACK
+                    ? hydration
+                    : com.bpm.minotaur.gamedata.player.Thirst.fromLegacyHydration(hydration));
             stats.setBodyTemperature(bodyTemperature);
             stats.setTaint(taint);
             stats.setToxicity(toxicity);
@@ -373,6 +384,7 @@ public class PlayerSaveData {
                 injuryManager.restoreInjury(record);
             }
             injuryManager.restoreClocks(illnessStage, illnessTimer, injuryStepCounter, bleedDamageThisRun);
+            injuryManager.setWaterborneIllness(waterborneIllness);
         }
 
         // Equipment

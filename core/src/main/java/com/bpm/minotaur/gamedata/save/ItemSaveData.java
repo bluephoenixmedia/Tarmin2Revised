@@ -29,6 +29,12 @@ public class ItemSaveData {
     public int trophyHouseId = -1;
     /** A tabard's doctrine colours (Living War W24); null otherwise. */
     public String heraldry;
+    /** Waterskin charges / drinks remaining (#193). */
+    public int currentCharges;
+    /** Waterskin liquid contents. */
+    public com.bpm.minotaur.gamedata.liquid.LiquidType liquidContent;
+    /** Whether waterskin liquid was drawn from strata depths (10% illness). */
+    public boolean strataSource;
 
     public ItemSaveData() {
     }
@@ -52,6 +58,9 @@ public class ItemSaveData {
             this.stackCount = item.getStackCount();
             this.trophyHouseId = item.getTrophyHouseId();
             this.heraldry = item.getHeraldry();
+            this.currentCharges = item.getCurrentCharges();
+            this.liquidContent = item.getLiquidContent();
+            this.strataSource = item.isStrataSource();
         }
     }
 
@@ -79,6 +88,14 @@ public class ItemSaveData {
         }
         item.setTrophyHouseId(trophyHouseId);
         item.setHeraldry(heraldry);
+        if (type == Item.ItemType.WATERSKIN) {
+            item.setMaxCharges(5);
+            item.setCurrentCharges(currentCharges);
+            if (liquidContent != null) {
+                item.setLiquidContent(liquidContent);
+            }
+            item.setStrataSource(strataSource);
+        }
         return item;
     }
 }

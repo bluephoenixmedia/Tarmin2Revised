@@ -85,20 +85,26 @@ public class PlayerStats {
     // --- Survival Stats ---
     /** Nutrition on NetHack's scale (see {@link Hunger}); negative while Fainting. */
     private float satiety = Hunger.START;
-    private float hydration = 80.0f; // 0-100
+    /** Hydration on NetHack's scale (see {@link Thirst}); negative while Collapsed. */
+    private float hydration = Thirst.START;
     private float bodyTemperature = 37.0f; // Celsius. Normal ~37.
 
     /** The store's cap. Hunger bars fill at {@link Hunger#SATIATED_ABOVE}. */
     public static final float MAX_SATIETY = Hunger.CHOKE_AT;
     /** Where every new expedition starts. Respawns use the same value. */
     public static final float STARTING_SATIETY = Hunger.START;
-    public static final float MAX_HYDRATION = 100.0f;
+    public static final float MAX_HYDRATION = Thirst.MAX_STORE;
+    public static final float STARTING_HYDRATION = Thirst.START;
     public static final float BODY_TEMP_NORMAL = 37.0f;
     public static final float BODY_TEMP_FREEZING = 32.0f; // Hypothermia start
     public static final float BODY_TEMP_OVERHEAT = 41.0f; // Hyperthermia start
 
     public Hunger.Stage getHungerStage() {
         return Hunger.stageOf(satiety, constitution);
+    }
+
+    public Thirst.Stage getThirstStage() {
+        return Thirst.stageOf(hydration, constitution);
     }
 
     public int getSatiety() {
@@ -119,7 +125,7 @@ public class PlayerStats {
     }
 
     public int getHydration() {
-        return (int) hydration;
+        return (int) Math.floor(hydration);
     }
 
     public float getHydrationFloat() {
@@ -127,11 +133,15 @@ public class PlayerStats {
     }
 
     public void setHydration(float v) {
-        this.hydration = Math.max(0, Math.min(MAX_HYDRATION, v));
+        this.hydration = Math.max(Thirst.floor(constitution), Math.min(MAX_HYDRATION, v));
     }
 
     public void modifyHydration(float amount) {
         setHydration(this.hydration + amount);
+    }
+
+    public void addHydration(float amount) {
+        modifyHydration(amount);
     }
 
     public float getBodyTemperature() {
@@ -617,7 +627,8 @@ public class PlayerStats {
     }
 
     public int getDexterity() {
-        return dexterity + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.DEXTERITY);
+        int base = dexterity + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.DEXTERITY);
+        return base - getThirstStage().dexterityPenalty;
     }
 
     public void setDexterity(int dexterity) {
@@ -670,7 +681,7 @@ public class PlayerStats {
 
     // --- Primary Attribute Modifiers (NetHack-style: (stat-10)/2) ---
     public int getStrModifier() { return (strength - 10) / 2; }
-    public int getDexModifier() { return (dexterity - 10) / 2; }
+    public int getDexModifier() { return (getDexterity() - 10) / 2; }
     public int getConModifier() { return (constitution - 10) / 2; }
     public int getIntModifier() { return (intelligence - 10) / 2; }
     public int getWisModifier() { return (wisdom - 10) / 2; }

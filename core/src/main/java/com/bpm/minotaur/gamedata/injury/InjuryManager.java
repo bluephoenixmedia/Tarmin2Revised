@@ -62,6 +62,7 @@ public class InjuryManager {
 
     private final Map<BodyPart, InjuryRecord> injuries = new EnumMap<>(BodyPart.class);
     private IllnessStage illnessStage = IllnessStage.HEALTHY;
+    private boolean waterborneIllness = false;
     private int illnessTimer = 0;
     private int stepCounter = 0;
     private int bleedDamageThisRun = 0;
@@ -101,6 +102,35 @@ public class InjuryManager {
 
     public void setIllnessStage(IllnessStage stage) {
         this.illnessStage = stage;
+        this.illnessTimer = 0;
+    }
+
+    public boolean isWaterborneIllness() {
+        return waterborneIllness;
+    }
+
+    public void setWaterborneIllness(boolean waterborne) {
+        this.waterborneIllness = waterborne;
+    }
+
+    /**
+     * Contracts a waterborne illness from drinking standing water, blood or muck (#193).
+     * Unlike wound infection, waterborne illness worsens untreated even if wounds are clean,
+     * and requires POTION_VITALITY or sanctuary rest to cure.
+     */
+    public void contractWaterborneIllness(IllnessStage startingStage) {
+        if (startingStage == null || startingStage == IllnessStage.HEALTHY) return;
+        this.waterborneIllness = true;
+        if (this.illnessStage.getSeverityLevel() < startingStage.getSeverityLevel()) {
+            this.illnessStage = startingStage;
+        }
+        this.illnessTimer = 0;
+    }
+
+    /** Breaks fevers, infections and waterborne disease completely. */
+    public void cureIllness() {
+        this.illnessStage = IllnessStage.HEALTHY;
+        this.waterborneIllness = false;
         this.illnessTimer = 0;
     }
 
@@ -244,6 +274,7 @@ public class InjuryManager {
     public void cureAll() {
         injuries.clear();
         illnessStage = IllnessStage.HEALTHY;
+        waterborneIllness = false;
         illnessTimer = 0;
         stepCounter = 0;
         bleedDamageThisRun = 0;
@@ -324,9 +355,7 @@ public class InjuryManager {
         // 3. Antidote / Vitality Potions & Lichen (Curing Illness / Fever)
         if (itemName.equals("POTION_VITALITY") || itemName.equals("GLOWING_LICHEN")) {
             if (illnessStage.isIll()) {
-                IllnessStage old = illnessStage;
-                illnessStage = IllnessStage.HEALTHY;
-                illnessTimer = 0;
+                cureIllness();
                 if (player != null) player.getInventory().removeItem(item);
                 return new TreatmentResult(true, "Applied " + item.getDisplayName() + "! Fever and bodily infection broken.", 12, 5, false);
             } else if (record != null && record.isInfected()) {
@@ -511,17 +540,18 @@ public class InjuryManager {
             }
         }
 
-        // No festering source left: the body fights the infection back down a
-        // stage instead of marching to sepsis regardless of treatment.
-        if (!hasInfectedWound && illnessStage.isIll()) {
+        // No festering source left and not a systemic waterborne illness:
+        // the body fights the infection back down a stage instead of marching
+        // to sepsis regardless of treatment.
+        if (!hasInfectedWound && !waterborneIllness && illnessStage.isIll()) {
             recoverIllnessStage(eventManager);
             return;
         }
 
-        if (hasInfectedWound && illnessStage == IllnessStage.HEALTHY) {
+        if (illnessStage == IllnessStage.HEALTHY) {
             illnessStage = IllnessStage.STAGE_1_INFECTED_WOUND;
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("Your untreated wound throbs hot with infection! (Stage 1: Infected)", 2.5f));
+                eventManager.addEvent(new GameEvent("Your untreated infection throbs with fever! (Stage 1: Infected)", 2.5f));
             }
         } else if (illnessStage == IllnessStage.STAGE_1_INFECTED_WOUND) {
             illnessStage = IllnessStage.STAGE_2_ACUTE_FEVER;
@@ -591,8 +621,7 @@ public class InjuryManager {
         }
 
         if (illnessStage != IllnessStage.HEALTHY) {
-            illnessStage = IllnessStage.HEALTHY;
-            illnessTimer = 0;
+            cureIllness();
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Warm shelter and restful sleep break your fever!", 3.0f));
             }
