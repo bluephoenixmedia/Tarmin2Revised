@@ -58,15 +58,12 @@ public class BalanceLethalityTest {
         Monster kobold = new Monster(Monster.MonsterType.KOBOLD, 8, 12);
         kobold.setTemplate(koboldT);
         int koboldBonus = CombatManager.calculateMonsterAttackBonus(kobold);
-        // The statMod floor dropped from 2 to 1 (see the "way off again" balance
-        // investigation): rest-to-heal was removed from the game without retuning
-        // monster accuracy to compensate, so a fresh player facing several
-        // low-tier fights back-to-back with no recovery window had no realistic
-        // out. Pinned to the exact value (not a loose lower bound) so a future
-        // change to this formula can't silently drift back to the old +4 without
-        // this test noticing.
-        assertEquals("Level 1 Kobold attack bonus should be exactly +3 (profBonus 2 + statMod floor 1)",
-                3, koboldBonus);
+        // The statMod floor dropped from 1 to 0 (#177 combat feel targets):
+        // rest-to-heal was removed from the game without retuning monster accuracy
+        // to compensate, so a fresh player facing several low-tier fights back-to-back
+        // with no recovery window had no realistic out. Pinned to the exact value.
+        assertEquals("Level 1 Kobold attack bonus should be exactly +2 (profBonus 2 + statMod floor 0)",
+                2, koboldBonus);
 
         // Level 1 Giant Ant (Beast)
         MonsterTemplate antT = new MonsterTemplate();

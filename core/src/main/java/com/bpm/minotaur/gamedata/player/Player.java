@@ -1017,6 +1017,8 @@ public class Player {
         this.stats = new PlayerStats(Difficulty.MEDIUM);
         this.statusManager = new StatusManager();
         this.statusManager.initialize(null, this);
+        syncKeepsakeBonuses();
+        stats.setCurrentHP(stats.getMaxHP());
         initStartingSpells();
     }
 
@@ -1064,6 +1066,8 @@ public class Player {
         for (int i = unlockedSpellSlots; i < preparedSpells.length; i++) {
             preparedSpells[i] = null;
         }
+        syncKeepsakeBonuses();
+        stats.setCurrentHP(stats.getMaxHP());
     }
 
     public Player(float startX, float startY, Difficulty difficulty,
@@ -1115,6 +1119,9 @@ public class Player {
         }
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
+
+        syncKeepsakeBonuses();
+        stats.setCurrentHP(stats.getMaxHP());
 
         // Initialize Spells
         initStartingSpells();
@@ -2597,8 +2604,23 @@ public class Player {
         stats.setCurrentHP(hp);
     }
 
+    /**
+     * Whether the Father's Sword (the starting weapon, a Keepsake) is carried in hands,
+     * quickslots, or backpack (#177). Its perk applies while carried, wielded or not.
+     */
+    public boolean carriesFathersSword() {
+        return inventory != null && inventory.hasItemOfType(com.bpm.minotaur.gamedata.item.FathersSword.TYPE);
+    }
+
+    public void syncKeepsakeBonuses() {
+        if (stats == null) return;
+        int bonusHp = carriesFathersSword() ? com.bpm.minotaur.gamedata.item.FathersSword.currentPerk().maxHpBonus : 0;
+        stats.setBonusMaxHP(bonusHp);
+    }
+
     public int getMaxHP() {
-        return stats.getMaxHP();
+        syncKeepsakeBonuses();
+        return stats.getMaxHP() + equipment.getEquippedModifierSum(ModifierType.BONUS_MAX_HP);
     }
 
     public int getCurrentMP() {
@@ -3797,6 +3819,9 @@ public class Player {
         chance += Math.max(0, (getEffectiveDexterity() - 10) / 2) * 0.02f; // effective DEX
         chance += getLuck() * 0.005f;                                        // effective luck (incl. equipment)
         chance += equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_CHANCE) / 100f;
+        if (carriesFathersSword()) {
+            chance += com.bpm.minotaur.gamedata.item.FathersSword.currentPerk().critBonus;
+        }
         if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
         if (hasLantern()) {
             chance += 0.10f;

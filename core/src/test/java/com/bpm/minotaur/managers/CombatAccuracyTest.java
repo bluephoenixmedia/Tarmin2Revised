@@ -19,17 +19,17 @@ public class CombatAccuracyTest {
     public void testToHitBonusFormula() {
         PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
 
-        // Base bonus: 2 + (level / 2) + DEX modifier. DEX 10 = mod 0.
+        // Base bonus: 4 + (level / 2) + DEX modifier. DEX 10 = mod 0.
         stats.setLevel(1);
         stats.setDexterity(10);
-        assertEquals(2, stats.getToHitBonus());
+        assertEquals(4, stats.getToHitBonus());
 
         stats.setLevel(4);
-        assertEquals(4, stats.getToHitBonus());
+        assertEquals(6, stats.getToHitBonus());
 
         // DEX 16 -> mod +3
         stats.setDexterity(16);
-        assertEquals(7, stats.getToHitBonus());
+        assertEquals(9, stats.getToHitBonus());
     }
 
     @Test

@@ -905,13 +905,13 @@ public class CombatManager {
      * Doom escalation curve) is the smallest lever that fixes the specific
      * compounding effect without touching anything else.
      */
-    private static final int MONSTER_STAT_MOD_FLOOR = 1;
+    private static final int MONSTER_STAT_MOD_FLOOR = 0;
 
     public static int calculateMonsterAttackBonus(Monster attacker) {
         if (attacker == null) return 2;
         int monsterLevel = Math.max(1, attacker.getLevel());
         int profBonus = 2 + (monsterLevel / 3);
-        int statMod = 1;
+        int statMod = 0;
         MonsterTemplate t = attacker.getTemplate();
         if (t != null) {
             if (t.dexterity >= 12 && t.family == com.bpm.minotaur.gamedata.monster.MonsterFamily.BEAST) {

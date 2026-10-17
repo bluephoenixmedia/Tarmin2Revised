@@ -4,7 +4,7 @@
     "frequency": 10,
     "baseAC": 7,
     "magicResistance": 0,
-    "moveSpeed": 18,
+    "moveSpeed": 16,
     "alignment": "NEUTRAL",
     "maxHP": 12,
     "maxMP": 8,
@@ -41,7 +41,7 @@
       "x": 0.82,
       "y": 0.55
     },
-    "damageDice": "1d6",
+    "damageDice": "1d5",
     "damageType": "PHYSICAL",
     "intelligence": 0,
     "dexterity": 12,
@@ -3197,11 +3197,11 @@
           "x": 0.54,
           "y": 0.54
       },
-      "damageDice": "1d4",
+      "damageDice": "1d3",
       "damageType": "PHYSICAL",
       "intelligence": 2,
       "dexterity": 16,
-      "moveSpeed": 22,
+      "moveSpeed": 16,
       "onHitEffects": [
           {
               "type": "BLEEDING",
@@ -3258,11 +3258,11 @@
           "x": 0.45,
           "y": 0.45
       },
-      "damageDice": "1d4",
+      "damageDice": "1d3",
       "damageType": "PHYSICAL",
       "intelligence": 1,
       "dexterity": 16,
-      "moveSpeed": 20,
+      "moveSpeed": 16,
       "onHitEffects": [
           {
               "type": "POISONED",

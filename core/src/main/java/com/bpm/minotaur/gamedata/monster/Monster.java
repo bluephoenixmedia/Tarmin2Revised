@@ -625,7 +625,7 @@ public class Monster implements Renderable {
             }
         } else {
             if (affinity == Affinity.RESISTANT) {
-                modifiedAmount = Math.max(1, amount / 2);
+                modifiedAmount = Math.max(1, (amount * 2) / 3);
             } else if (affinity == Affinity.WEAK) {
                 modifiedAmount = (int) (amount * 1.5f);
             }
@@ -643,7 +643,7 @@ public class Monster implements Renderable {
             }
         } else {
             if (affinity == Affinity.RESISTANT) {
-                modifiedAmount = Math.max(1, amount / 2);
+                modifiedAmount = Math.max(1, (amount * 2) / 3);
             } else if (affinity == Affinity.WEAK) {
                 modifiedAmount = (int) (amount * 1.5f);
             }

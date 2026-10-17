@@ -171,7 +171,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private void run(List<Monster.MonsterType> band) throws IOException {
         Player probe = newPlayer();
         System.out.printf(Locale.ROOT, "DUEL SIMULATION  difficulty=%s playerLevel=%d hp=%d weapon=%s AC=%d toHit=+%d speed=%d%n",
-                difficulty, probe.getLevel(), probe.getStats().getMaxHP(),
+                difficulty, probe.getLevel(), probe.getMaxHP(),
                 probe.getInventory().getRightHand() != null ? probe.getInventory().getRightHand().getType() : "none",
                 probe.getArmorClass(), probe.getToHitBonus(), probe.getEffectiveSpeed());
         System.out.printf(Locale.ROOT, "monster band: base level %d-%d (%d species), %d duels each, seed %d%n%n",
@@ -237,7 +237,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
         CombatManager combat = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
                 itemDataManager, null, null, null, null);
 
-        d.maxHp = player.getStats().getMaxHP();
+        d.maxHp = player.getMaxHP();
         int hpAtStart = player.getCurrentHP();
         int playerSpeed = Math.max(1, player.getEffectiveSpeed());
         float energy = rng.nextFloat() * TURN_COST; // who strikes first is a matter of footing
@@ -312,8 +312,10 @@ public class DuelSimulationLauncher implements ApplicationListener {
         if (hpOverride > 0) {
             p.getStats().setMaxHP(hpOverride);
         }
-        p.getStats().setCurrentHP(p.getStats().getMaxHP());
+        p.getStats().setCurrentHP(p.getMaxHP());
         if (weaponOverride != null) {
+            Item sword = p.getInventory().getRightHand();
+            if (sword != null) p.getInventory().pickupToBackpack(sword);
             p.getInventory().setRightHand(itemDataManager.createItem(weaponOverride, 0, 0, ItemColor.GRAY, assetManager));
         }
         return p;
