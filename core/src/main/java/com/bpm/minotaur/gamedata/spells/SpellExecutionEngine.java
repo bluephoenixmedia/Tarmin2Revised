@@ -249,7 +249,8 @@ public class SpellExecutionEngine {
                 totalDmg += actual;
             }
             if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint);
-            eventManager.addEvent(new GameEvent("Magic Missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
+            eventManager.addEvent(new GameEvent("Magic Missiles strike " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + totalDmg + " damage!", 1.8f));
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
             if (target.getCurrentHP() <= 0) {
                 handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
@@ -422,11 +423,12 @@ public class SpellExecutionEngine {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                     com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
             if (target.getCurrentHP() <= 0) {
                 // Killed outright: it dies where it stood. Pushing a corpse is
                 // what used to strand it on the map, killable again for free.
-                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
+                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + "!", 1.8f));
                 handleKill(target, targetTile, player, maze, combatManager, eventManager, archetype);
                 return;
             }
@@ -439,9 +441,9 @@ public class SpellExecutionEngine {
             GridPoint2 pushTile = new GridPoint2(targetTile.x + fx, targetTile.y + fy);
             if (!maze.isWall(pushTile.x, pushTile.y) && !maze.getMonsters().containsKey(pushTile)) {
                 maze.moveMonster(target, pushTile.x, pushTile.y);
-                eventManager.addEvent(new GameEvent("THUNDERWAVE blasts " + target.getType() + " back!", 1.8f));
+                eventManager.addEvent(new GameEvent("THUNDERWAVE blasts " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " back!", 1.8f));
             } else {
-                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
+                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + "!", 1.8f));
             }
         } else {
             eventManager.addEvent(new GameEvent("A deafening thunderclap rings through the hallway!", 1.5f));
@@ -685,7 +687,8 @@ public class SpellExecutionEngine {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                     com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actualDmg);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
-            eventManager.addEvent(new GameEvent(spell.getName() + " hits " + target.getType() + " for " + actualDmg + "!", 1.5f));
+            eventManager.addEvent(new GameEvent(spell.getName() + " hits " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actualDmg + "!", 1.5f));
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
             if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()
                     && !com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
@@ -751,6 +754,7 @@ public class SpellExecutionEngine {
                     com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
             if (target.getCurrentHP() <= 0) {
                 handleKill(target, targetPos, player, maze, combatManager, eventManager, archetype);
@@ -778,6 +782,7 @@ public class SpellExecutionEngine {
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                         com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
+                postAffinity(eventManager, target, DamageType.SPIRITUAL);
                 hits++;
 
                 if (target.getCurrentHP() <= 0) {
@@ -834,7 +839,7 @@ public class SpellExecutionEngine {
                 com.bpm.minotaur.gamedata.player.Vengeance.claim(player, target);
             }
         }
-        eventManager.addEvent(new GameEvent("Vanquished " + target.getType() + "!", 2.0f));
+        eventManager.addEvent(new GameEvent("Vanquished " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + "!", 2.0f));
     }
 
     public static Color getColorForDamageType(String damageType) {
@@ -880,5 +885,12 @@ public class SpellExecutionEngine {
             default:
                 return ExplosionType.STANDARD;
         }
+    }
+
+    /** #172: the War / Spiritual line after a spell or wand hit, as on every other damage path. */
+    private static void postAffinity(GameEventManager eventManager, Monster target, DamageType type) {
+        if (eventManager == null || target == null) return;
+        String line = com.bpm.minotaur.ui.AffinityText.hitLine(target, type, false);
+        if (line != null) eventManager.addEvent(new GameEvent(line, 1.5f));
     }
 }

@@ -108,6 +108,8 @@ public class Hud implements Disposable {
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
+    /** "Resists War / Weak to Spiritual" for the monster on the combat card (#172). */
+    private final Label monsterAffinityLabel;
     private final Label logLabel; // Replaces messageLabel for backward compatibility
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
@@ -643,6 +645,9 @@ public class Hud implements Disposable {
 
         monsterStrengthLabel = new Label("", headerStyle);
         combatStatusLabel = new Label("", labelStyle);
+        monsterAffinityLabel = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_EXP_AMBER));
+        monsterAffinityLabel.setEllipsis(true);
+        monsterStrengthLabel.setEllipsis(true);
         monsterHpBar = new ModernStatBar("HP", HudSkin.COL_HP_RED, hudSkin);
 
         // Sub-table 1: Delve exploration info (survival "BODY" bars)
@@ -660,7 +665,8 @@ public class Hud implements Disposable {
 
         // Sub-table 2: Combat monster card
         combatMonsterTable.top().left();
-        combatMonsterTable.add(monsterStrengthLabel).left().padBottom(2).row();
+        combatMonsterTable.add(monsterStrengthLabel).left().width(300f).minWidth(0f).padBottom(2).row();
+        combatMonsterTable.add(monsterAffinityLabel).left().width(300f).minWidth(0f).padBottom(4).row();
         combatMonsterTable.add(monsterHpBar).width(210).height(20).padBottom(4).row();
         combatMonsterTable.add(combatStatusLabel).left().padBottom(6).row();
         combatMonsterTable.setVisible(false);
@@ -1267,30 +1273,24 @@ public class Hud implements Disposable {
         }
         checkStatusTransitions(player);
 
-        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
-                && combatManager.getMonster() != null) {
+        boolean inCombat = combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
+                && combatManager.getMonster() != null;
+        // #172: in bump combat the state stays INACTIVE, so the card used to appear only with the
+        // Space menu open. The monster you are facing now gets the same card, badge and all.
+        Monster facedMonster = inCombat ? null : facedLiveMonster();
+        if (inCombat || facedMonster != null) {
             delveInfoTable.setVisible(false);
             combatMonsterTable.setVisible(true);
 
-            Monster monster = combatManager.getMonster();
-            String catBadge = "";
-            if (monster.getType() != null && monster.getType().getCategory() != null) {
-                switch (monster.getType().getCategory()) {
-                    case BAD:
-                        catBadge = " [BAD: Holy/Spiritual]";
-                        break;
-                    case NASTY:
-                        catBadge = " [NASTY: Weak to War]";
-                        break;
-                    case HORRIBLE:
-                        catBadge = " [HORRIBLE: Balanced]";
-                        break;
-                }
-            }
-            monsterStrengthLabel.setText(checkScramble(monster.getMonsterType() + catBadge));
+            Monster monster = inCombat ? combatManager.getMonster() : facedMonster;
+            monsterStrengthLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.nameOf(monster)));
+            monsterAffinityLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.badge(monster)));
             monsterHpBar.setValue(monster.getCurrentHP(), monster.getMaxHP());
 
             switch (combatManager.getCurrentState()) {
+                case INACTIVE:
+                    combatStatusLabel.setText("");
+                    break;
                 case PLAYER_TURN:
                     combatStatusLabel.setText(checkScramble(">>> YOUR TURN <<<"));
                     combatStatusLabel.setColor(HudSkin.COL_FOOD_GREEN);
@@ -1300,7 +1300,7 @@ public class Hud implements Disposable {
                     combatStatusLabel.setColor(HudSkin.COL_HP_CRITICAL);
                     break;
                 default:
-                    combatStatusLabel.setText(checkScramble(combatManager.getCurrentState().toString()));
+                    combatStatusLabel.setText(checkScramble(com.bpm.minotaur.ui.UiNames.caps(combatManager.getCurrentState())));
                     combatStatusLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
             }
@@ -1314,6 +1314,19 @@ public class Hud implements Disposable {
 
         // --- 5. Update World Interaction Modal Card ---
         updateWorldInteractionCard();
+    }
+
+    /**
+     * The living, hostile, visible monster on the tile the player faces, or null. Allies, peaceful
+     * folk and anything the player cannot see get no card, so the card never gives them away.
+     */
+    private Monster facedLiveMonster() {
+        if (maze == null || player == null || maze.getMonsters() == null) return null;
+        Vector2 dir = player.getFacing().getVector();
+        GridPoint2 front = new GridPoint2((int) (player.getPosition().x + dir.x), (int) (player.getPosition().y + dir.y));
+        Monster m = maze.getMonsters().get(front);
+        if (m == null || !m.isAlive() || m.isAlly() || m.isPeaceful() || m.isInvisible() || m.isHidden()) return null;
+        return m;
     }
 
     private static class ParsedLogLine {

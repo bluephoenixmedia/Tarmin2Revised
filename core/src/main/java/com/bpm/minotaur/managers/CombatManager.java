@@ -807,6 +807,7 @@ public class CombatManager {
                     int retaliateDmg = Math.max(3, actualDamage / 2);
                     attacker.takeDamage(retaliateDmg, DamageType.SPIRITUAL);
                     eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Spiritual Ward retributively shocks " + attacker.getName() + " for " + retaliateDmg + "!", 2.0f));
+                    postAffinityLine(attacker, DamageType.SPIRITUAL, false);
                 }
 
                 // Tactical Venom DoT: Snakes & Spiders
@@ -1497,7 +1498,8 @@ public class CombatManager {
                 showDamageText(actual, hit.collisionPoint);
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                         com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
-                eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
+                eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " dmg!", 1.5f));
+                postAffinityLine(target, DamageType.PHYSICAL, false);
 
                 if (target.getCurrentHP() <= 0) {
                     KillCause thrownCause = KillCause.weapon(AnimationArchetype.fromItem(weapon), false);
@@ -1861,6 +1863,7 @@ public class CombatManager {
                 soundManager.playWeaponImpact(true);
                 gs.addTrauma(0.28f);
                 eventManager.addEvent(new GameEvent("SHIELD BASH! Staggered " + target.getName() + " for " + actual, 1.2f));
+                postAffinityLine(target, DamageType.PHYSICAL, false);
                 showDamageText(actual, new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y), "BASH! ", com.badlogic.gdx.graphics.Color.ORANGE);
             });
         }
@@ -2349,6 +2352,7 @@ public class CombatManager {
                             int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
                             adjMonster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                             eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getName() + " for " + cleaved + " dmg!", 1.5f));
+                            postAffinityLine(adjMonster, DamageType.PHYSICAL, false);
                             showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                             if (adjMonster.getCurrentHP() <= 0) {
                                 // The full kill path, so a cleaved monster leaves a body and dies on screen.
@@ -2378,40 +2382,43 @@ public class CombatManager {
                 }
             }
 
+            // #172: the monster is named through UiNames, not its enum, and the War / Spiritual
+            // line is posted after whichever damage line this hit took -- a crit, glance, combo or
+            // finisher on a resistant monster used to say nothing about the resistance.
+            String who = com.bpm.minotaur.ui.AffinityText.nameOf(monster);
             if (isCrit) {
                 dmgPrefix = comboTag + "[" + specialMoveName + "] CRIT! ";
                 textColor = com.badlogic.gdx.graphics.Color.RED;
-                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] CRITICAL HIT on " + monster.getType() + " for " + actualDamage + " dmg!", 1.5f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] CRITICAL HIT on " + who + " for " + actualDamage + " dmg!", 1.5f));
             } else if (isGlancing) {
                 dmgPrefix = "GLANCE! ";
                 textColor = com.badlogic.gdx.graphics.Color.CYAN;
-                eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
+                eventManager.addEvent(new GameEvent("Glancing blow on " + who + " for " + actualDamage + " dmg!", 1.2f));
             } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
                 dmgPrefix = comboTag + "[" + specialMoveName + "] ";
                 textColor = com.badlogic.gdx.graphics.Color.MAGENTA;
-                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + who + "!", 1.5f));
             } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
                 dmgPrefix = comboTag + "[" + specialMoveName + "] ";
                 textColor = com.badlogic.gdx.graphics.Color.GOLD;
-                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + who + "!", 1.5f));
             } else if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
                 dmgPrefix = comboTag + "[" + specialMoveName + "] ";
                 textColor = com.badlogic.gdx.graphics.Color.YELLOW;
-                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + who + "!", 1.2f));
             } else if (affinity == Monster.Affinity.RESISTANT) {
                 dmgPrefix = "[" + specialMoveName + "] RESISTED! ";
                 textColor = com.badlogic.gdx.graphics.Color.CYAN;
-                String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
-                eventManager.addEvent(new GameEvent(monster.getType() + " resists " + attackCategory + " attacks!", 1.5f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + who + "!", 1.2f));
             } else if (affinity == Monster.Affinity.WEAK) {
                 dmgPrefix = "[" + specialMoveName + "] WEAKNESS! ";
                 textColor = com.badlogic.gdx.graphics.Color.GOLD;
-                String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
-                eventManager.addEvent(new GameEvent(monster.getType() + " is weak to " + attackCategory + " attacks!", 1.5f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + who + "!", 1.2f));
             } else {
                 dmgPrefix = "[" + specialMoveName + "] ";
-                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
+                eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + who + "!", 1.2f));
             }
+            postAffinityLine(monster, dmgType, isCrit);
 
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
             lastDamageDealt = actualDamage;
@@ -2429,7 +2436,7 @@ public class CombatManager {
                 int forceDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d10");
                 int ramActual = monster.takeDamage(forceDmg, DamageType.PHYSICAL, false);
                 monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
-                eventManager.addEvent(new GameEvent("RAM FORCE! A spectral ram head batters the " + monster.getType() + " for +" + ramActual + " force dmg!", 2.0f));
+                eventManager.addEvent(new GameEvent("RAM FORCE! A spectral ram head batters the " + com.bpm.minotaur.ui.AffinityText.nameOf(monster) + " for +" + ramActual + " force dmg!", 2.0f));
                 showDamageText(ramActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "RAM! ", com.badlogic.gdx.graphics.Color.CYAN);
 
                 if (maze != null && monster.getCurrentHP() > 0) {
@@ -2459,7 +2466,8 @@ public class CombatManager {
                 int starDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d6");
                 int starActual = monster.takeDamage(starDmg, DamageType.LIGHT, false);
                 monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
-                eventManager.addEvent(new GameEvent("SHOOTING STARS! Dazzling motes of light strike " + monster.getType() + " for +" + starActual + " light dmg!", 2.0f));
+                eventManager.addEvent(new GameEvent("SHOOTING STARS! Dazzling motes of light strike " + com.bpm.minotaur.ui.AffinityText.nameOf(monster) + " for +" + starActual + " light dmg!", 2.0f));
+                postAffinityLine(monster, DamageType.LIGHT, false);
                 showDamageText(starActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "STARS! ", com.badlogic.gdx.graphics.Color.YELLOW);
             }
 
@@ -2785,6 +2793,18 @@ public class CombatManager {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Posts "X resists War attacks!" / "X is weak to Spiritual!" for a hit that just landed, or
+     * nothing when the monster takes that damage normally. Every damage path calls this (#172).
+     */
+    public void postAffinityLine(Monster monster, DamageType type, boolean crit) {
+        if (eventManager == null) return;
+        String line = com.bpm.minotaur.ui.AffinityText.hitLine(monster, type, crit);
+        if (line != null) {
+            eventManager.addEvent(new GameEvent(line, 1.5f));
         }
     }
 

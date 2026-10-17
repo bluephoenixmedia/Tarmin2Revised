@@ -337,7 +337,8 @@ public class WandExecutionEngine {
                     com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                             com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.ORANGE);
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + target.getType() + " for " + actual + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     if (target.getCurrentHP() <= 0) {
                         handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
@@ -358,7 +359,8 @@ public class WandExecutionEngine {
                         target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
                     }
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.CYAN);
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + target.getType() + " for " + actual + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     if (target.getCurrentHP() <= 0) {
                         handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
@@ -379,7 +381,8 @@ public class WandExecutionEngine {
                                 com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, dartDmg);
                     }
                     if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint, "", Color.CYAN);
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + totalDmg + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     if (target.getCurrentHP() <= 0) {
                         handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
@@ -397,7 +400,8 @@ public class WandExecutionEngine {
                     com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                             com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.valueOf("E67E22"));
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("The concussive beam blasts " + target.getType() + " for " + actual + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("The concussive beam blasts " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.PHYSICAL);
 
                     // Pushback: push monster back 1 tile along beam direction if open
                     int pushX = hit.collisionPoint.x + (int) dir.getVector().x;
@@ -466,9 +470,10 @@ public class WandExecutionEngine {
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.YELLOW);
                     if (eventManager != null) {
                         String desc = isUndeadOrDark
-                                ? "The searing sunlance incinerates " + target.getType() + " for " + actual + " radiant damage!"
-                                : "The lance of light burns " + target.getType() + " for " + actual + " damage!";
+                                ? "The searing sunlance incinerates " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " radiant damage!"
+                                : "The lance of light burns " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!";
                         eventManager.addEvent(new GameEvent(desc, 1.8f));
+                        postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     }
                     if (target.getCurrentHP() <= 0) {
                         handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
@@ -568,5 +573,12 @@ public class WandExecutionEngine {
                 eventManager.addEvent(new GameEvent("Killed " + target.getName() + "!", 2f));
             }
         }
+    }
+
+    /** #172: the War / Spiritual line after a spell or wand hit, as on every other damage path. */
+    private static void postAffinity(GameEventManager eventManager, Monster target, DamageType type) {
+        if (eventManager == null || target == null) return;
+        String line = com.bpm.minotaur.ui.AffinityText.hitLine(target, type, false);
+        if (line != null) eventManager.addEvent(new GameEvent(line, 1.5f));
     }
 }
