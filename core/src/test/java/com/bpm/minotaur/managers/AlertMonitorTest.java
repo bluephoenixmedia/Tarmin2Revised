@@ -151,6 +151,24 @@ public class AlertMonitorTest {
         assertEquals("parched", 2, AlertMonitor.Snapshot.of(stats).thirstRank());
     }
 
+    @Test
+    public void everyReasonHasAChronicleLineTheFontCanDraw() {
+        AlertMonitor.Snapshot low = new AlertMonitor.Snapshot(0.2f, 1, 1, 1);
+        AlertMonitor.Snapshot empty = new AlertMonitor.Snapshot(0.2f, 1, 2, 2);
+        assertEquals("Low health!", AlertMonitor.message(AlertMonitor.Reason.LOW_HEALTH, low));
+        assertEquals("You are being hunted!", AlertMonitor.message(AlertMonitor.Reason.NOTICED, low));
+        assertEquals("Hungry.", AlertMonitor.message(AlertMonitor.Reason.HUNGER, low));
+        assertEquals("Starving!", AlertMonitor.message(AlertMonitor.Reason.HUNGER, empty));
+        assertEquals("Thirsty.", AlertMonitor.message(AlertMonitor.Reason.THIRST, low));
+        assertEquals("Parched!", AlertMonitor.message(AlertMonitor.Reason.THIRST, empty));
+        for (AlertMonitor.Reason r : AlertMonitor.Reason.values()) {
+            String line = AlertMonitor.message(r, low);
+            assertNotNull(r.name(), line);
+            assertEquals(line, com.bpm.minotaur.ui.UiGlyphs.sanitize(line));
+        }
+        assertNull(AlertMonitor.message(null, low));
+    }
+
     private static void elapse(AlertMonitor monitor, float seconds, AlertMonitor.Snapshot snapshot) {
         for (float t = 0; t < seconds; t += DT) {
             monitor.update(DT, snapshot);

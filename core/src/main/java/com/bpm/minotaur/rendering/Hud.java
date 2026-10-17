@@ -415,7 +415,7 @@ public class Hud implements Disposable {
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
-        doomLabel = new Label("TARMIN'S HUNGER 0 - 0%", smallStyle);
+        doomLabel = new Label("HUNGER 0/50", smallStyle);
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
@@ -493,6 +493,15 @@ public class Hud implements Disposable {
         divinitiesLabel.setEllipsis(true);
         doomLabel.setEllipsis(true);
         ammoLabel.setEllipsis(true);
+        // #173: what these two numbers mean, on hover. The Hunger cell keeps a short label;
+        // the full text, the next stage and the boss warning live in the tooltip.
+        addReadoutTooltip(divinitiesLabel, () -> com.bpm.minotaur.ui.HudReadouts.divinityTip(
+                DivinityManager.getInstance().getCurrentDivinities()));
+        addReadoutTooltip(doomLabel, () -> {
+            DoomManager d = DoomManager.getInstance();
+            return com.bpm.minotaur.ui.HudReadouts.hungerTip(d.getDeathCount(), DoomManager.maxDeaths(),
+                    d.isBridgeBossActive());
+        });
         Table divDoomCol = new Table();
         divDoomCol.add(dayNightLabel).left().growX().row();
         divDoomCol.add(divinitiesLabel).left().growX().padTop(2).row();
@@ -1091,27 +1100,22 @@ public class Hud implements Disposable {
         }
 
         DivinityManager dm = DivinityManager.getInstance();
-        divinitiesLabel.setText("DIV: " + dm.getCurrentDivinities());
+        divinitiesLabel.setText(com.bpm.minotaur.ui.HudReadouts.divinityLabel(dm.getCurrentDivinities()));
         divinitiesLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
 
         DoomManager doom = DoomManager.getInstance();
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
-        if (doom.isBridgeBossActive()) {
-            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%% - BOSS", deaths, bridge));
+        // #173 / #188: "TARMIN'S HUNGER n - nn% - BOSS SOON" ran far past this cell and lost its
+        // boss suffix to the ellipsis. Short label here; the whole story is in the tooltip.
+        doomLabel.setText(com.bpm.minotaur.ui.HudReadouts.hungerLabel(deaths, DoomManager.maxDeaths(),
+                doom.isBridgeBossActive()));
+        if (doom.isBridgeBossActive() || bridge >= 75f) {
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
-        } else if (bridge >= 90f) {
-            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%% - BOSS SOON", deaths, bridge));
-            doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
+        } else if (bridge >= 40f) {
+            doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
         } else {
-            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%%", deaths, bridge));
-            if (bridge >= 75f) {
-                doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
-            } else if (bridge >= 40f) {
-                doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
-            } else {
-                doomLabel.setColor(Color.LIGHT_GRAY);
-            }
+            doomLabel.setColor(HudSkin.COL_TEXT_ON_DARK);
         }
 
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -1314,6 +1318,26 @@ public class Hud implements Disposable {
 
         // --- 5. Update World Interaction Modal Card ---
         updateWorldInteractionCard();
+    }
+
+    /** Shows a status-style tooltip over a HUD readout while the pointer is on it. */
+    private void addReadoutTooltip(final Label label, final java.util.function.Supplier<com.bpm.minotaur.ui.HudReadouts.Tip> tip) {
+        label.setTouchable(Touchable.enabled);
+        label.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
+                com.bpm.minotaur.ui.HudReadouts.Tip t = tip.get();
+                Vector2 pos = label.localToStageCoordinates(new Vector2(0, 0));
+                hudTooltip.showStatus(t.title, t.category, t.details, t.remedy,
+                        pos.x + label.getWidth() / 2f, pos.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                hudTooltip.hide();
+            }
+        });
     }
 
     /**

@@ -109,6 +109,19 @@ public class DoomManager implements SlotScopedState {
         save();
     }
 
+    /** The death count at which the Bridge falls and the bridge boss comes. */
+    public static int maxDeaths() {
+        return MAX_DEATHS_ALLOWED;
+    }
+
+    /** The death count at which the next death stage begins, or -1 past the last one. */
+    public static int nextDeathStageAt(int deaths) {
+        if (deaths < DEATHS_FOR_STAGE_2) return DEATHS_FOR_STAGE_2;
+        if (deaths < DEATHS_FOR_STAGE_3) return DEATHS_FOR_STAGE_3;
+        if (deaths < DEATHS_FOR_STAGE_4) return DEATHS_FOR_STAGE_4;
+        return -1;
+    }
+
     public int getDeathCount() {
         return deathCount;
     }

@@ -129,6 +129,28 @@ public final class AlertMonitor {
         return chosen;
     }
 
+    /**
+     * The chronicle line that names why the alert fired (#173). The flash and the sound on their
+     * own told the player something was wrong but not what.
+     */
+    public static String message(Reason reason, Snapshot s) {
+        if (reason == null) return null;
+        switch (reason) {
+            case LOW_HEALTH:
+                return "Low health!";
+            case NOTICED:
+                return "You are being hunted!";
+            case HUNGER:
+                return s != null && s.hungerRank() >= 2 ? "Starving!" : "Hungry.";
+            case THIRST:
+                return s != null && s.thirstRank() >= 2 ? "Parched!" : "Thirsty.";
+            case UNSPENT_POINTS:
+            default:
+                // The snapshot sums attribute and skill points, so it names neither.
+                return "Unspent points to spend!";
+        }
+    }
+
     private static Reason first(Reason... candidates) {
         for (Reason r : candidates) {
             if (r != null) {
