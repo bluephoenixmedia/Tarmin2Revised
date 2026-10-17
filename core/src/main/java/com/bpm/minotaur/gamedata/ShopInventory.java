@@ -72,6 +72,9 @@ public class ShopInventory {
         Inventory inv = shopkeeper.getInventory();
         int level = Math.max(1, dungeonLevel);
 
+        // One waterskin, always, stocked first so a full pack never squeezes it out:
+        // a lost skin must be replaceable (#208).
+        addRandomItems(inv, new ItemType[] { ItemType.WATERSKIN }, 1, itemDataManager, assetManager, level);
         // 3-5 weapons
         addRandomItems(inv, WEAPON_POOL, rng.nextInt(3) + 3, itemDataManager, assetManager, level);
         // 2-3 armor pieces

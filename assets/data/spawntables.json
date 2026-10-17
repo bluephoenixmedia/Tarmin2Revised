@@ -3066,6 +3066,12 @@
                 "weight": 2
             },
             {
+                "type": "WATERSKIN",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 3
+            },
+            {
                 "type": "COINS",
                 "minLevel": 1,
                 "maxLevel": 99,
