@@ -139,6 +139,17 @@ public class ModernStatBar extends Actor {
         float textX = x + (w - layout.width) / 2f;
         float textY = y + (h + layout.height) / 2f - 1f;
 
+        // #108: the value is centred, so on a part-full gauge its digits straddled the fill edge,
+        // half on bright fill and half on dark track. A dark plate behind the text gives every
+        // glyph the same ground whatever the fill level.
+        if (skin.getWhitePixel() != null && h > pad * 2) {
+            float plateW = Math.min(w - pad * 2, layout.width + 10f);
+            Color plate = HudSkin.COL_SHADOW_DEEP;
+            batch.setColor(plate.r, plate.g, plate.b, 0.62f * parentAlpha);
+            batch.draw(skin.getWhitePixel(), x + (w - plateW) / 2f, y + pad, plateW, h - pad * 2);
+        }
+        batch.setColor(1f, 1f, 1f, parentAlpha);
+
         // Shadow
         font.setColor(0f, 0f, 0f, 0.85f * parentAlpha);
         font.draw(batch, text, textX + 1f, textY - 1f);

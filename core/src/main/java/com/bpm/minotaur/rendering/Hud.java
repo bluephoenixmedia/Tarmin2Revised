@@ -147,7 +147,8 @@ public class Hud implements Disposable {
     private int lastHistoryRevision = -1;
     private int lastRenderedScrollOffset = -1;
     private final List<DisplayRow> cachedDisplayRows = new ArrayList<>();
-    private final Label[] chronicleLabels = new Label[5];
+    /** One label per chronicle row; how many is budgeted from the log font (HudLayout). */
+    private Label[] chronicleLabels = new Label[0];
     /** Text width of the chronicle zone, inside its own padding. */
     private static final float CHRONICLE_W = 636f;
 
@@ -475,11 +476,20 @@ public class Hud implements Disposable {
         // own bars -- the same fixed-width-versus-content failure the UX standard warns about.
         final float VITALS_WIDTH = 300f;
 
+        // #108: the stat block under the bars is four small-font lines, and with 22-unit bars the
+        // column was a few units taller than the band, so its last line sat on the HUD's lower
+        // border. The bar height is now whatever leaves the block room, from the font's metrics.
+        final float statLineGap = 2f;
+        float statBlock = Math.max(52f, 4f * hudSkin.getFontSmall().getLineHeight() + 3f * statLineGap);
+        final float barGap = 3f;
+        final float barsToStats = 4f;
+        float barH = HudLayout.vitalsBarHeight(16f, 2f * barGap + barsToStats, statBlock);
+
         Table barsCol = new Table();
-        barsCol.add(hpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
-        barsCol.add(mpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
+        barsCol.add(hpBar).width(VITALS_WIDTH).height(barH).padBottom(barGap).row();
+        barsCol.add(mpBar).width(VITALS_WIDTH).height(barH).padBottom(barGap).row();
         // Matches HP/MP height: at 14px an empty EXP gauge read as a text line, not a bar.
-        barsCol.add(expBar).width(VITALS_WIDTH).height(22).padBottom(6).row();
+        barsCol.add(expBar).width(VITALS_WIDTH).height(barH).padBottom(barsToStats).row();
 
         Table vitalsSubRow = new Table();
         vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
@@ -504,9 +514,9 @@ public class Hud implements Disposable {
         });
         Table divDoomCol = new Table();
         divDoomCol.add(dayNightLabel).left().growX().row();
-        divDoomCol.add(divinitiesLabel).left().growX().padTop(2).row();
-        divDoomCol.add(doomLabel).left().growX().padTop(2).row();
-        divDoomCol.add(ammoLabel).left().growX().padTop(2).row();
+        divDoomCol.add(divinitiesLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(doomLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(ammoLabel).left().growX().padTop(statLineGap).row();
         vitalsSubRow.add(divDoomCol).left().growX().minWidth(0f);
 
         barsCol.add(vitalsSubRow).width(VITALS_WIDTH).left().row();
@@ -756,21 +766,19 @@ public class Hud implements Disposable {
             }
         });
 
-        // LEVELUP-4 / HUD-6: all five lines were single-line and ellipsized, so the message
-        // that just arrived -- the only one a player is actually reading -- was the one most
-        // likely to be cut off mid-sentence. The four older lines stay ellipsized, because
-        // they are context and a wall of wrapped history is worse than a short one. The newest
-        // line wraps instead, and the zone has room for it to take a second line.
-        for (int i = 0; i < 4; i++) {
+        // LEVELUP-4 / HUD-6 / #108: messages are pre-wrapped into rows (wrapMessage), so every
+        // row is one line. How many rows is no longer a literal: it is what fits under the header
+        // in the band, from the real line heights, so the panel is neither crammed nor overflowing.
+        int chronicleRows = HudLayout.chronicleRows(12f,
+                hudSkin.getFontSmall().getLineHeight() + 2f,
+                hudSkin.getFontLog().getLineHeight() + 1f);
+        chronicleLabels = new Label[chronicleRows];
+        for (int i = 0; i < chronicleRows; i++) {
             chronicleLabels[i] = new Label("", logLabelStyle);
             chronicleLabels[i].setEllipsis(true);
-            chronicleZone.add(chronicleLabels[i]).left().growX().padBottom(1).row();
+            chronicleZone.add(chronicleLabels[i]).left().growX().minWidth(0f).padBottom(1).row();
         }
-        chronicleLabels[4] = new Label("", logLabelStyle);
-        chronicleLabels[4].setWrap(true);
-        chronicleZone.add(chronicleLabels[4]).left().top().growX()
-                .maxHeight(hudSkin.getFontLog().getLineHeight() * 2f).padBottom(1).row();
-        logLabel = chronicleLabels[4]; // Alias for backward compatibility
+        logLabel = chronicleLabels[chronicleRows - 1]; // Alias for backward compatibility
 
         // --- Assemble Bottom Bar Table ---
         bottomBarTable.setBackground(hudSkin.getDashboardBg());
@@ -1539,7 +1547,8 @@ public class Hud implements Disposable {
             }
         }
 
-        int maxOffset = Math.max(0, cachedDisplayRows.size() - 5);
+        int rowsShown = chronicleLabels.length;
+        int maxOffset = Math.max(0, cachedDisplayRows.size() - rowsShown);
         if (chronicleScrollOffset > maxOffset) {
             chronicleScrollOffset = maxOffset;
         }
@@ -1592,23 +1601,21 @@ public class Hud implements Disposable {
             chronicleDownLabel.setColor(chronicleScrollOffset > 0 ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_TEXT_MUTED);
         }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < rowsShown; i++) {
             chronicleLabels[i].setText("");
         }
 
-        int available = Math.min(5, cachedDisplayRows.size() - chronicleScrollOffset);
+        int available = Math.min(rowsShown, cachedDisplayRows.size() - chronicleScrollOffset);
         if (available <= 0) return;
-
-        float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
 
         for (int i = 0; i < available; i++) {
             int rowIdx = chronicleScrollOffset + (available - 1 - i);
             DisplayRow row = cachedDisplayRows.get(rowIdx);
-            int labelIndex = (5 - available) + i;
+            int labelIndex = (rowsShown - available) + i;
 
             chronicleLabels[labelIndex].setText(checkScramble(row.text));
             Color c = row.color != null ? row.color : HudSkin.COL_TEXT_ON_DARK;
-            float alpha = (chronicleScrollOffset > 0) ? 0.95f : alphas[labelIndex];
+            float alpha = (chronicleScrollOffset > 0) ? 0.95f : HudLayout.chronicleRowAlpha(labelIndex, rowsShown);
             chronicleLabels[labelIndex].setColor(c.r, c.g, c.b, alpha);
         }
     }
