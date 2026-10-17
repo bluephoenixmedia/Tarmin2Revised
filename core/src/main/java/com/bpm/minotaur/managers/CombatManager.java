@@ -889,8 +889,8 @@ public class CombatManager {
     }
 
     /**
-     * 5e Standard Monster To-Hit accuracy formula: Proficiency (2 + level/3) + Stat Modifier.
-     * Nimble beasts/skirmishers scale from DEX; brute humanoids/undead scale from STR/HP.
+     * Monster to-hit, after the 5e formula: Proficiency (1 + level/3) + Stat Modifier.
+     * Nimble beasts/skirmishers scale from DEX (at half weight); brute humanoids/undead scale from HP.
      */
     /**
      * Minimum stat modifier contribution to a monster's attack bonus, regardless
@@ -910,12 +910,16 @@ public class CombatManager {
     public static int calculateMonsterAttackBonus(Monster attacker) {
         if (attacker == null) return 2;
         int monsterLevel = Math.max(1, attacker.getLevel());
-        int profBonus = 2 + (monsterLevel / 3);
+        // Proficiency 2 -> 1 and the beast Dex modifier halved ((dex-10)/2 -> /4) for the
+        // depth-1 targets (#207): against an unarmoured player (AC 10) a level-1 monster with
+        // no stat bonus hits 60%, and the nimble beasts (Bat, Spider) 65% rather than 75-80%.
+        // The target band is 55-65% (docs/balance/0.0.2-targets.md).
+        int profBonus = 1 + (monsterLevel / 3);
         int statMod = 0;
         MonsterTemplate t = attacker.getTemplate();
         if (t != null) {
             if (t.dexterity >= 12 && t.family == com.bpm.minotaur.gamedata.monster.MonsterFamily.BEAST) {
-                statMod = Math.max(MONSTER_STAT_MOD_FLOOR, (t.dexterity - 10) / 2);
+                statMod = Math.max(MONSTER_STAT_MOD_FLOOR, (t.dexterity - 10) / 4);
             } else {
                 statMod = Math.max(MONSTER_STAT_MOD_FLOOR, t.maxHP / 14);
             }
