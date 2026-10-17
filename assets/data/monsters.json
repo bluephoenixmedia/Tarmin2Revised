@@ -6,7 +6,7 @@
     "magicResistance": 0,
     "moveSpeed": 16,
     "alignment": "NEUTRAL",
-    "maxHP": 12,
+    "maxHP": 18,
     "maxMP": 8,
     "armorClass": 12,
     "family": "BEAST",
@@ -416,7 +416,7 @@
   "SKELETON": {
     "baseLevel": 1,
     "frequency": 10,
-    "maxHP": 12,
+    "maxHP": 18,
     "maxMP": 10,
     "armorClass": 12,
     "intelligence": 3,
@@ -880,7 +880,7 @@
     "magicResistance": 0,
     "moveSpeed": 16,
     "alignment": "NEUTRAL",
-    "maxHP": 10,
+    "maxHP": 15,
     "maxMP": 10,
     "armorClass": 14,
     "family": "BEAST",
@@ -1675,7 +1675,7 @@
   },
   "KOBOLD": {
     "baseLevel": 1,
-    "maxHP": 8,
+    "maxHP": 12,
     "maxMP": 4,
     "armorClass": 12,
     "family": "HUMANOID",
@@ -1738,7 +1738,7 @@
   },
   "GOBLIN": {
     "baseLevel": 1,
-    "maxHP": 8,
+    "maxHP": 12,
     "maxMP": 5,
     "armorClass": 12,
     "family": "HUMANOID",
@@ -3162,7 +3162,7 @@
   "BAT": {
       "baseLevel": 1,
     "frequency": 5,
-      "maxHP": 5,
+      "maxHP": 8,
       "maxMP": 0,
       "armorClass": 13,
       "family": "BEAST",
