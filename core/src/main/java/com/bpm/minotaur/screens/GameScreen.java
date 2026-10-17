@@ -401,6 +401,7 @@ public class GameScreen extends BaseScreen {
             weaponOverlay.setEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
         }
         updateMusicTrackForCurrentZone();
+        checkArrivalHint();
     }
 
     public void updateMusicTrackForCurrentZone() {
@@ -560,6 +561,7 @@ public class GameScreen extends BaseScreen {
         int gained = dm.tryAwardChunkDivinities(key, level);
         if (gained > 0) {
             hud.addMessage("+" + gained + " " + DivinityManager.DIVINITY_NAME + " (new area)");
+            HintManager.getInstance().checkDivinity(eventManager);
         }
 
         if (worldManager != null && player != null && maze != null) {
@@ -569,6 +571,7 @@ public class GameScreen extends BaseScreen {
                 worldManager.getWeatherManager().onBiomeChanged(currentBiome);
             }
         }
+        checkArrivalHint();
     }
 
     // ---- End Divinity helpers ----
@@ -1614,6 +1617,56 @@ public class GameScreen extends BaseScreen {
             if (hud != null) {
                 hud.addMessage(com.bpm.minotaur.managers.AlertMonitor.message(alert, snapshot));
             }
+            if (alert == com.bpm.minotaur.managers.AlertMonitor.Reason.HUNGER) {
+                HintManager.getInstance().checkHunger(eventManager);
+            } else if (alert == com.bpm.minotaur.managers.AlertMonitor.Reason.THIRST) {
+                HintManager.getInstance().checkThirst(eventManager);
+            }
+        }
+        checkMonsterHints();
+    }
+
+    private void checkArrivalHint() {
+        if (player != null && maze != null && eventManager != null) {
+            int px = (int) player.getPosition().x;
+            int py = (int) player.getPosition().y;
+            if (maze.isSanctuaryTile(px, py)) {
+                HintManager.getInstance().checkArrival(eventManager);
+            }
+        }
+    }
+
+    private void checkMonsterHints() {
+        HintManager hm = HintManager.getInstance();
+        boolean needBad = !hm.hasSeen(HintManager.HintId.BAD_MONSTER);
+        boolean needNasty = !hm.hasSeen(HintManager.HintId.NASTY_MONSTER);
+        if (!needBad && !needNasty) return;
+        if (!SettingsManager.getInstance().isShowHints()) return;
+        if (maze == null || player == null || eventManager == null) return;
+
+        Vector2 from = player.getPosition();
+        for (Monster monster : maze.getMonsters().values()) {
+            if (monster == null || !monster.isAlive() || monster.getTameness() > 0
+                    || monster.isHidden() || monster.isInvisible()) {
+                continue;
+            }
+            Vector2 at = monster.getPosition();
+            if (from.dst(at) <= com.bpm.minotaur.gamedata.monster.HostileSight.SIGHT_RANGE_TILES
+                    && com.bpm.minotaur.gamedata.laser.LaserBurst.hasLineOfSight(maze, from, at)) {
+                Monster.MonsterType mt = monster.getType();
+                if (mt != null) {
+                    if (needBad && mt.getCategory() == Monster.Category.BAD) {
+                        hm.checkBadMonster(monster, eventManager);
+                        needBad = false;
+                    } else if (needNasty && mt.getCategory() == Monster.Category.NASTY) {
+                        hm.checkNastyMonster(monster, eventManager);
+                        needNasty = false;
+                    }
+                    if (!needBad && !needNasty) {
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -1997,6 +2050,7 @@ public class GameScreen extends BaseScreen {
         }
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
+            HintManager.getInstance().checkDoom(eventManager);
         }
         soundManager.playDoorOpenSound();
 

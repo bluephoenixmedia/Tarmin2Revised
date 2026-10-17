@@ -493,6 +493,7 @@ public class Player {
             return false;
         }
         if (slot >= unlockedSpellSlots) {
+            com.bpm.minotaur.managers.HintManager.getInstance().checkLockedSpellSlot(eventManager);
             eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " unlocks at level " + levelForSlot(slot + 1) + ".", 1.5f));
             return false;
         }

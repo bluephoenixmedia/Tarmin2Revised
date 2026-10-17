@@ -319,6 +319,9 @@ public class TurnManager {
         lastExposureBand = band;
 
         boolean cold = band.isCold();
+        if (cold && eventManager != null) {
+            com.bpm.minotaur.managers.HintManager.getInstance().checkCold(eventManager);
+        }
         boolean hypothermic = band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC;
         boolean heatstroke = bodyTemp > com.bpm.minotaur.gamedata.player.Exposure.HOT_ABOVE;
 
