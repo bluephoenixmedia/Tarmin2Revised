@@ -330,7 +330,8 @@ public class Item implements Renderable {
     private int range; // Removed final
     private int hydrationValue; // New
     private int nutrition; // New
-    private float warmthBonus; // New
+    private float warmthBonus; // Exposure insulation, in degrees C (#194)
+    private float coverage; // Fraction of rain kept off, cloaks and hoods (#194)
     private Vector2 scale; // Removed final
 
     private float offsetX = 0f;
@@ -516,6 +517,11 @@ public class Item implements Renderable {
         this.nutrition = Math.max(0, nutrition);
     }
 
+    /** How much rain this keeps off, 0..1: cloaks and hoods (#194). */
+    public float getCoverage() {
+        return coverage;
+    }
+
     public float getWarmthBonus() {
         return warmthBonus;
     }
@@ -561,6 +567,7 @@ public class Item implements Renderable {
         item.hydrationValue = template.hydrationValue;
         item.nutrition = template.nutrition;
         item.warmthBonus = template.warmthBonus;
+        item.coverage = template.coverage;
         item.maxCharges = template.maxCharges;
         item.currentCharges = template.maxCharges;
 

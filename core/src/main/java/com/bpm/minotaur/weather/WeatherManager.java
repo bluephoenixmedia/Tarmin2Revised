@@ -639,95 +639,16 @@ public class WeatherManager {
         return 0.0f;
     }
 
+    /**
+     * The surface air for a biome now: its base, colder at night (every biome, #194), and the
+     * weather. The rules live in {@link com.bpm.minotaur.gamedata.player.Exposure#surfaceAmbient}.
+     */
     public float getAmbientTemperature(Biome biome) {
-        if (biome == Biome.MAZE) {
-            // Subterranean dungeon / shelter: stable, insulated cave climate
-            return 20.0f; // 68°F - temperate baseline
+        float timeOfDay = 0.5f; // Default midday if DayNightManager unavailable
+        if (worldManager != null && worldManager.getDayNightManager() != null) {
+            timeOfDay = worldManager.getDayNightManager().getTimeOfDay();
         }
-
-        float baseTemp = 20.0f; // Default temperate baseline
-
-        switch (biome) {
-            case LAKELANDS:
-                baseTemp = 18.0f; // 64.4°F - damp, chilly wetland
-                break;
-            case FOREST:
-                baseTemp = 20.0f; // 68°F
-                break;
-            case MOUNTAINS:
-                baseTemp = 15.0f; // 59°F - crisp alpine elevation
-                break;
-            case DESERT:
-                float timeOfDay = 0.5f; // Default midday if DayNightManager unavailable
-                if (worldManager != null && worldManager.getDayNightManager() != null) {
-                    timeOfDay = worldManager.getDayNightManager().getTimeOfDay();
-                }
-                // Solar elevation: sin curve with 0 at dawn (0.25), 1 at noon (0.50), 0 at dusk (0.75), -1 at midnight (0.0/1.0)
-                float sunElevation = (float) Math.sin((timeOfDay - 0.25f) * 2.0f * Math.PI);
-                if (sunElevation > 0f) {
-                    baseTemp = 24.0f + 18.0f * sunElevation; // 24°C at dawn/dusk up to 42°C at solar noon
-                } else {
-                    baseTemp = 24.0f + 10.0f * sunElevation; // 24°C at dawn/dusk down to 14°C at midnight
-                }
-                break;
-            case OCEAN:
-                baseTemp = 19.0f; // 66.2°F - maritime breeze
-                break;
-            case TUNDRA:
-                baseTemp = -12.0f; // 10.4°F - Siberian permafrost baseline
-                break;
-            default:
-                baseTemp = 20.0f;
-                break;
-        }
-
-        // Weather modifiers - temperatures do NOT become extreme unless weather supports it
-        switch (currentWeather) {
-            case CLEAR:
-                if (biome == Biome.DESERT) {
-                    baseTemp += (currentIntensity == WeatherIntensity.EXTREME) ? 6.0f : 2.0f;
-                } else {
-                    baseTemp += 2.0f; // Pleasant sunny warmth
-                }
-                break;
-            case FOG:
-                baseTemp -= 1.0f; // Slight damp chill
-                break;
-            case RAIN:
-                baseTemp -= 2.0f; // Mild cooling rain (e.g. 18°C)
-                break;
-            case STORM:
-                baseTemp -= 3.0f; // Cool thunderstorm (e.g. 17°C)
-                break;
-            case TORNADO:
-                baseTemp -= 3.0f; // Strong wind chill
-                break;
-            case SNOW:
-                // Winter weather: drops near freezing
-                baseTemp = (biome == Biome.TUNDRA) ? -18.0f : (biome == Biome.MOUNTAINS) ? -2.0f : 1.0f;
-                break;
-            case BLIZZARD:
-                // Severe winter weather: extreme sub-zero freezing
-                float blizzardBase = (biome == Biome.TUNDRA) ? -26.0f : (biome == Biome.MOUNTAINS) ? -16.0f : -10.0f;
-                if (currentIntensity == WeatherIntensity.HEAVY) {
-                    blizzardBase -= 3.0f;
-                } else if (currentIntensity == WeatherIntensity.EXTREME) {
-                    blizzardBase -= 6.0f;
-                }
-                baseTemp = blizzardBase;
-                break;
-        }
-
-        // Subtle intensity adjustments for rain/storm
-        if (currentWeather == WeatherType.RAIN || currentWeather == WeatherType.STORM) {
-            if (currentIntensity == WeatherIntensity.HEAVY) {
-                baseTemp -= 1.0f;
-            } else if (currentIntensity == WeatherIntensity.EXTREME) {
-                baseTemp -= 2.0f;
-            }
-        }
-
-        return baseTemp;
+        return com.bpm.minotaur.gamedata.player.Exposure.surfaceAmbient(biome, currentWeather, currentIntensity, timeOfDay);
     }
 
     public boolean isPrecipitation() {

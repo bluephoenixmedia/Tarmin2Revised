@@ -510,6 +510,25 @@ public class Maze {
         }
     }
 
+    /** Tinder Bundle field fires burning in this chunk (#194). Not saved, like the lights. */
+    private final List<com.bpm.minotaur.gamedata.shelter.FieldFire> fieldFires = new ArrayList<>();
+
+    public List<com.bpm.minotaur.gamedata.shelter.FieldFire> getFieldFires() {
+        return fieldFires;
+    }
+
+    public void addFieldFire(com.bpm.minotaur.gamedata.shelter.FieldFire fire) {
+        if (fire != null) fieldFires.add(fire);
+    }
+
+    /** A burning field fire whose warmth reaches this tile, or null. */
+    public com.bpm.minotaur.gamedata.shelter.FieldFire fieldFireWarming(int x, int y) {
+        for (com.bpm.minotaur.gamedata.shelter.FieldFire f : fieldFires) {
+            if (f.warms(x, y)) return f;
+        }
+        return null;
+    }
+
     public void removeLightAt(float x, float y) {
         for (int i = lights.size - 1; i >= 0; i--) {
             com.bpm.minotaur.lighting.LightSource l = lights.get(i);

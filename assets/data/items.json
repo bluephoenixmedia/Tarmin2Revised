@@ -6449,14 +6449,14 @@
     "TINDER_BUNDLE": {
         "friendlyName": "Tinder Bundle",
         "category": "TOOL",
-        "description": "Dry bark, pitch and shavings bound with twine. Enough to wake a cold shelter hearth and claim the shelter as your own.",
+        "description": "Dry bark, pitch and shavings bound with twine. Wakes a cold shelter hearth and claims the shelter, or, used in the field, kindles a fire that burns about 100 turns: it warms, dries and cooks, and monsters see it.",
         "texturePath": "images/items/stick.png",
         "scale": {
             "x": 0.5,
             "y": 0.5
         },
         "baseValue": 15,
-        "isUsable": false
+        "isUsable": true
     },
     "SHELTER_HEARTH_COLD": {
         "friendlyName": "Cold Hearth",

@@ -61,27 +61,29 @@ public class StatusPillBar extends Table {
                     "Apply direct pressure, spider silk sutures, or clean bandages.");
         }
 
-        // 2. Temperature exposure
+        // 2. Exposure (#194): the band once it bites, and wetness while it multiplies the cold.
         if (player.getStats() != null) {
-            float temp = player.getStats().getBodyTemperature();
-            if (temp < 32.0f) {
-                addPill(String.format("HYPO %.0fC", temp), Color.valueOf("8CD6FF"),
-                        "Hypothermia Exposure",
-                        "[ENVIRONMENT]",
-                        "Extreme cold gnaws at your body (1 HP damage every 10 turns, blurred vision).",
-                        "Stand near a lit Campfire or Lantern, drink warm broth, or equip warmth rings.");
-            } else if (temp < 35.0f) {
-                addPill(String.format("CHILL %.0fC", temp), HudSkin.COL_WATER_CYAN,
-                        "Chilled Exposure",
-                        "[ENVIRONMENT]",
-                        "Bitter cold slows your reflexes (-20% move and attack speed).",
-                        "Warm yourself by a campfire, equip heavier fur/armor, or seek shelter.");
-            } else if (temp > 38.0f) {
-                addPill(String.format("HEAT %.0fC", temp), HudSkin.COL_TEMP_ORANGE,
-                        "Heatstroke / Hyperthermia",
-                        "[ENVIRONMENT]",
-                        "Overheating causes heavy perspiration (doubled thirst decay and exhaustion).",
-                        "Drink cool water, rest in cooler biomes or shadow.");
+            PlayerStats ps = player.getStats();
+            com.bpm.minotaur.gamedata.player.Exposure.Band band = ps.getExposureBand();
+            com.bpm.minotaur.gamedata.player.Exposure.Wetness wet = ps.getWetnessLevel();
+            String pill = null;
+            Color accent = HudSkin.exposureColor(band);
+            switch (band) {
+                case HOT: pill = "HEAT"; break;
+                case CHILLY: pill = "CHILLY"; break;
+                case COLD: pill = "COLD"; break;
+                case FREEZING: pill = "FREEZING"; break;
+                case HYPOTHERMIC: pill = "HYPO"; break;
+                default: break;
+            }
+            if (pill != null) {
+                com.bpm.minotaur.ui.HudReadouts.Tip tip = com.bpm.minotaur.ui.HudReadouts.exposureTip(band, wet);
+                addPill(pill, accent, tip.title, tip.category, tip.details, tip.remedy);
+            }
+            if (wet != com.bpm.minotaur.gamedata.player.Exposure.Wetness.DRY) {
+                com.bpm.minotaur.ui.HudReadouts.Tip tip = com.bpm.minotaur.ui.HudReadouts.wetnessTip(wet);
+                addPill(wet.label.toUpperCase(java.util.Locale.ROOT), HudSkin.COL_WATER_CYAN,
+                        tip.title, tip.category, tip.details, tip.remedy);
             }
         }
 

@@ -662,8 +662,11 @@ public class Hud implements Disposable {
         dungeonLevelLabel = new Label("DUNGEON LVL 1", headerStyle);
         foodBar = new ModernStatBar("FOOD", HudSkin.COL_FOOD_GREEN, hudSkin);
         waterBar = new ModernStatBar("H2O", HudSkin.COL_WATER_CYAN, hudSkin);
-        tempBar = new ModernStatBar("TEMP", HudSkin.COL_TEMP_ORANGE, hudSkin);
-        tempBar.setTemperatureMode(true);
+        // The Exposure meter (#194): the band by name, filled with warmth. It keeps the old TEMP
+        // gauge's cell in the condition column, clear of the vitals budget (HudLayout).
+        tempBar = new ModernStatBar("EXPOSURE", HudSkin.COL_EXPOSURE_COMFORT, hudSkin);
+        addReadoutTooltip(tempBar, () -> com.bpm.minotaur.ui.HudReadouts.exposureTip(
+                player.getStats().getExposureBand(), player.getStats().getWetnessLevel()));
         toxBar = new ModernStatBar("TOX", HudSkin.COL_TOX, hudSkin);
 
         monsterStrengthLabel = new Label("", headerStyle);
@@ -1260,14 +1263,10 @@ public class Hud implements Disposable {
         waterBar.setBarColor(player.getStats().getThirstStage().isThirsty() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
 
         float temp = player.getStats().getBodyTemperature();
-        tempBar.setValue(temp, 50f);
-        if (temp < 35f) {
-            tempBar.setBarColor(HudSkin.COL_WATER_CYAN);
-        } else if (temp > 38.5f) {
-            tempBar.setBarColor(HudSkin.COL_HP_CRITICAL);
-        } else {
-            tempBar.setBarColor(HudSkin.COL_TEMP_ORANGE);
-        }
+        com.bpm.minotaur.gamedata.player.Exposure.Band band = player.getStats().getExposureBand();
+        tempBar.setValue(com.bpm.minotaur.ui.HudReadouts.exposureMeterFill(temp), 1f);
+        tempBar.setCustomText(com.bpm.minotaur.ui.HudReadouts.exposureMeterText(band));
+        tempBar.setBarColor(HudSkin.exposureColor(band));
 
         toxBar.setValue(player.getStats().getToxicity(), player.getStats().getMaxToxicity());
 
@@ -1336,7 +1335,7 @@ public class Hud implements Disposable {
     }
 
     /** Shows a status-style tooltip over a HUD readout while the pointer is on it. */
-    private void addReadoutTooltip(final Label label, final java.util.function.Supplier<com.bpm.minotaur.ui.HudReadouts.Tip> tip) {
+    private void addReadoutTooltip(final Actor label, final java.util.function.Supplier<com.bpm.minotaur.ui.HudReadouts.Tip> tip) {
         label.setTouchable(Touchable.enabled);
         label.addListener(new InputListener() {
             @Override
@@ -2820,14 +2819,14 @@ public class Hud implements Disposable {
 
         // 2. Temperature
         if (p.getStats() != null) {
-            float temp = p.getStats().getBodyTemperature();
-            boolean hypothermic = temp < 32.0f;
-            boolean chilled = temp < 35.0f && !hypothermic;
+            com.bpm.minotaur.gamedata.player.Exposure.Band band = p.getStats().getExposureBand();
+            boolean hypothermic = band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC;
+            boolean chilled = band.isCold() && !hypothermic;
 
             if (hypothermic && !wasHypothermic) {
-                showStatusAlertToast("HYPOTHERMIA SETS IN! Violent shivering and frostbite!", Color.valueOf("8CD6FF"));
+                showStatusAlertToast("HYPOTHERMIA SETS IN! Find a fire or a hearth now!", HudSkin.COL_FROST);
             } else if (chilled && !wasChilled) {
-                showStatusAlertToast("BITING CHILL - Movement and attack speed slowed!", HudSkin.COL_WATER_CYAN);
+                showStatusAlertToast("BITING COLD - Movement and attack speed slowed!", HudSkin.COL_WATER_CYAN);
             }
             wasHypothermic = hypothermic;
             wasChilled = chilled;

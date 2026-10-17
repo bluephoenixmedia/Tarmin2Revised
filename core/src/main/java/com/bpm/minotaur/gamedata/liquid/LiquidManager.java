@@ -128,10 +128,8 @@ public class LiquidManager {
                     if (exposureSteps == 1 && eventManager != null) {
                         eventManager.addEvent(new GameEvent("Freezing slush numbs your boots!", 2.0f));
                     }
-                    if (player.getStats() != null) {
-                        float cur = player.getStats().getBodyTemperature();
-                        player.getStats().setBodyTemperature(Math.max(30.0f, cur - 0.20f));
-                    }
+                    // The chill itself is Exposure's (#194): TurnManager soaks the player and
+                    // takes the plunge off their body temperature on the way in.
                 } else if (type == LiquidType.PACKED_ICE) {
                     if (exposureSteps == 1 && eventManager != null) {
                         eventManager.addEvent(new GameEvent("Glacial ice! The slick surface offers no purchase.", 1.5f));
@@ -192,7 +190,7 @@ public class LiquidManager {
                 || name.contains("breastplate") || name.contains("hauberk");
     }
 
-    private boolean isImmuneToLiquid(Player player, LiquidType type) {
+    public boolean isImmuneToLiquid(Player player, LiquidType type) {
         if (player.getEquipment() == null) return false;
 
         // Ring of Levitation

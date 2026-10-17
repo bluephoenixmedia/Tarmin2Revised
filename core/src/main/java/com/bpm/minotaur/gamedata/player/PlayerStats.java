@@ -148,6 +148,25 @@ public class PlayerStats {
         this.bodyTemperature = v;
     }
 
+    /** How wet the player is, 0..100 (#194); see {@link Exposure#wetnessOf}. */
+    private float wetness = 0f;
+
+    public float getWetness() {
+        return wetness;
+    }
+
+    public void setWetness(float wetness) {
+        this.wetness = Math.max(0f, Math.min(Exposure.WETNESS_MAX, wetness));
+    }
+
+    public Exposure.Wetness getWetnessLevel() {
+        return Exposure.wetnessOf(wetness);
+    }
+
+    public Exposure.Band getExposureBand() {
+        return Exposure.bandOf(bodyTemperature);
+    }
+
     public PlayerStats(Difficulty difficulty) {
         // Set stats based on difficulty
         this.currentHP = difficulty.startWarStrength; // Note: Difficulty field names might still be old

@@ -1876,6 +1876,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setCurrentHP(player.getStats().getMaxHP());
         player.getStats().setCurrentMP(player.getStats().getMaxMP());
         player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
+        player.getStats().setWetness(0f); // a new expedition starts dry (#194)
         player.getStats().setSatiety(PlayerStats.STARTING_SATIETY);
         player.getStats().setHydration(PlayerStats.STARTING_HYDRATION);
         player.getStats().setToxicity(0);
@@ -5121,7 +5122,7 @@ public class GameScreen extends BaseScreen {
      */
     public void openFieldCooking() {
         if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT) && !isBesideFieldFire()) {
-            hud.addMessage("You need a Cooking Kit in your pack to prepare meals in the field.");
+            hud.addMessage("You need a Cooking Kit, or a field fire beside you, to cook in the field.");
             return;
         }
         try {
@@ -5133,11 +5134,12 @@ public class GameScreen extends BaseScreen {
     }
 
     /**
-     * Hook for cooking over a Tinder Bundle field fire (#191). The fire itself arrives with
-     * #194; until then there is none to stand beside.
+     * Cooking over a Tinder Bundle field fire (#191, #194): true while a burning field fire's
+     * warmth reaches the player. One fire warms and cooks.
      */
     boolean isBesideFieldFire() {
-        return false;
+        return maze != null && player != null
+                && maze.fieldFireWarming((int) player.getPosition().x, (int) player.getPosition().y) != null;
     }
 
     public void openSpellbook() {

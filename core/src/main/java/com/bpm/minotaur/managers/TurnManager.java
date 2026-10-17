@@ -292,38 +292,57 @@ public class TurnManager {
         return true;
     }
 
+    /** The Exposure band seen last turn, so each change is announced once. */
+    private com.bpm.minotaur.gamedata.player.Exposure.Band lastExposureBand =
+            com.bpm.minotaur.gamedata.player.Exposure.Band.COMFORTABLE;
+    /** Whether the player stood in freezing water last turn: the plunge is felt on entry. */
+    private boolean wasInFreezingWater = false;
+
     /**
-     * Tiered exposure debuffs driven by current body temperature:
-     * - Below 35.0C: CHILLED (-20% move/attack speed, via Player#getEffectiveSpeed).
-     * - Below 32.0C: HYPOTHERMIA (1 damage every 10 turns, shivers, blurred vision).
-     * - Above 38.0C: HEATSTROKE (double thirst decay -- applied in updateMetabolism --
-     *   and stamina exhaustion).
-     * A small hysteresis band avoids the effect flickering on/off at the boundary.
+     * What each Exposure band does (#194), from the body temperature:
+     * - Chilly: a warning.
+     * - Cold: -10% speed; Freezing: -20% and no natural regen (both applied where speed and
+     *   regen are computed). CHILLED marks Cold and colder.
+     * - Hypothermic: HYPOTHERMIA, 1 damage every 10 turns and an occasional lost action.
+     * - Above 38.0C: HEATSTROKE (double thirst decay -- applied in updateMetabolism -- and
+     *   stamina exhaustion), unchanged.
      */
     public void applyExposureTiers(Player player, PlayerStats stats, GameEventManager eventManager, float bodyTemp) {
         StatusManager sm = player.getStatusManager();
+        com.bpm.minotaur.gamedata.player.Exposure.Band band =
+                com.bpm.minotaur.gamedata.player.Exposure.bandOf(bodyTemp);
 
-        boolean chilled = bodyTemp < 35.0f;
-        boolean hypothermic = bodyTemp < 32.0f;
-        boolean heatstroke = bodyTemp > 38.0f;
+        if (band != lastExposureBand && eventManager != null) {
+            String notice = exposureNotice(band, lastExposureBand);
+            if (notice != null) eventManager.addEvent(new GameEvent(notice, 2.5f));
+        }
+        lastExposureBand = band;
 
-        if (chilled && !sm.hasEffect(StatusEffectType.CHILLED)) {
+        boolean cold = band.isCold();
+        boolean hypothermic = band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC;
+        boolean heatstroke = bodyTemp > com.bpm.minotaur.gamedata.player.Exposure.HOT_ABOVE;
+
+        if (cold && !sm.hasEffect(StatusEffectType.CHILLED)) {
             sm.addEffect(StatusEffectType.CHILLED, 999, 1, false);
-            if (eventManager != null) eventManager.addEvent(new GameEvent("The cold seeps into your bones. You feel CHILLED.", 2.0f));
-        } else if (!chilled && bodyTemp > 35.5f && sm.hasEffect(StatusEffectType.CHILLED)) {
+        } else if (!cold && sm.hasEffect(StatusEffectType.CHILLED)) {
             sm.removeEffect(StatusEffectType.CHILLED);
         }
 
         if (hypothermic && !sm.hasEffect(StatusEffectType.HYPOTHERMIA)) {
             sm.addEffect(StatusEffectType.HYPOTHERMIA, 999, 1, false);
-            if (eventManager != null) eventManager.addEvent(new GameEvent("HYPOTHERMIA sets in! Your body violently shivers.", 2.5f));
-        } else if (!hypothermic && bodyTemp > 32.5f && sm.hasEffect(StatusEffectType.HYPOTHERMIA)) {
+        } else if (!hypothermic && sm.hasEffect(StatusEffectType.HYPOTHERMIA)) {
             sm.removeEffect(StatusEffectType.HYPOTHERMIA);
         }
 
-        if (hypothermic && (turnCounter % 10 == 0)) {
+        if (hypothermic && (turnCounter % com.bpm.minotaur.gamedata.player.Exposure.HYPOTHERMIA_DAMAGE_EVERY == 0)) {
             player.takeTrueDamage(1);
             if (eventManager != null) eventManager.addEvent(new GameEvent("The cold gnaws at your flesh.", 1.5f));
+        }
+        if (hypothermic && !sm.hasEffect(StatusEffectType.SLEEP)
+                && Math.random() < com.bpm.minotaur.gamedata.player.Exposure.HYPOTHERMIA_LOST_ACTION_CHANCE) {
+            // SLEEP is the player's existing pass-the-turn state, as fainting uses it.
+            sm.addEffect(StatusEffectType.SLEEP, 1, 1, false);
+            if (eventManager != null) eventManager.addEvent(new GameEvent("You shake uncontrollably and lose a moment.", 1.5f));
         }
 
         if (heatstroke && !sm.hasEffect(StatusEffectType.HEATSTROKE)) {
@@ -336,28 +355,207 @@ public class TurnManager {
         }
     }
 
-    private static final float HEAT_SOURCE_RADIUS = 3.5f;
-    private static final float HEAT_SOURCE_WARM_RATE = 0.4f; // deg C per time unit, within radius
-
-    /** Warms the player toward 37C when standing near a lit Campfire or Lantern light source. */
-    private float applyNearbyHeatSourceWarming(Player player, Maze maze, float currentTemp, float time) {
-        if (maze == null || currentTemp >= 37.0f) {
-            return currentTemp;
+    /** The line for moving into {@code band}, or null when the move needs none. */
+    static String exposureNotice(com.bpm.minotaur.gamedata.player.Exposure.Band band,
+                                 com.bpm.minotaur.gamedata.player.Exposure.Band previous) {
+        boolean colder = band.ordinal() > previous.ordinal();
+        switch (band) {
+            case WARM: return previous.ordinal() > com.bpm.minotaur.gamedata.player.Exposure.Band.COMFORTABLE.ordinal()
+                    ? "Warmth floods back into your limbs." : null;
+            case CHILLY: return colder ? "You feel chilly. Find a fire or a cloak before it bites." : null;
+            case COLD: return colder ? "You are cold. Your movements stiffen." : "You are a little less cold.";
+            case FREEZING: return colder ? "You are freezing. Your wounds will not knit until you are warm."
+                    : "The worst of the cold lets go.";
+            case HYPOTHERMIC: return "HYPOTHERMIA sets in! Your body violently shivers.";
+            default: return null;
         }
-        com.badlogic.gdx.utils.Array<com.bpm.minotaur.lighting.LightSource> lights = maze.getLights();
-        if (lights == null) return currentTemp;
+    }
 
+    /**
+     * One turn of Exposure (#194): the air (surface biome, hour and weather, or the stratum
+     * underground), the worn warmth (rags included), the strongest heat in reach, and wetness
+     * from rain, wading and freezing water. Moves the body temperature and applies the bands.
+     */
+    private void updateExposure(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager,
+                                float time) {
+        PlayerStats stats = player.getStats();
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        boolean underground = maze.getLevel() > 1;
+        boolean sheltered = !underground && maze.isHomeTile(px, py);
+
+        Biome biome = null;
+        com.bpm.minotaur.weather.WeatherType weather = null;
+        boolean night = false;
+        float ambient;
+        if (underground) {
+            ambient = com.bpm.minotaur.gamedata.player.Exposure.strataAmbient(maze.getStratum());
+        } else if (worldManager != null && worldManager.getWeatherManager() != null) {
+            biome = worldManager.getBiomeManager() != null
+                    ? worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId()) : maze.getBiome();
+            ambient = worldManager.getWeatherManager().getAmbientTemperature(biome);
+            weather = worldManager.getWeatherManager().getCurrentWeather();
+            DayNightManager dnm = worldManager.getDayNightManager();
+            night = dnm != null && (dnm.getPhase() == DayNightManager.Phase.NIGHT
+                    || dnm.getPhase() == DayNightManager.Phase.DUSK);
+            if (biome == Biome.DESERT && isPlayerInDesertShade(player, maze)) {
+                ambient -= 12.0f;
+            }
+        } else {
+            return; // no world to feel
+        }
+        if (sheltered) {
+            // Under a shelter's roof: out of the wind and the rain, if not yet warm.
+            ambient = Math.max(ambient, com.bpm.minotaur.gamedata.player.Exposure.SHELTER_AMBIENT_FLOOR);
+            weather = null;
+        }
+
+        // Clothing
+        float warmth = com.bpm.minotaur.gamedata.player.Exposure.RAGS_WARMTH;
+        float coverage = 0f;
+        if (player.getEquipment() != null) {
+            for (com.bpm.minotaur.gamedata.item.Item i : player.getEquipment().getAllEquipped()) {
+                if (i == null) continue;
+                warmth += i.getWarmthBonus();
+                coverage += i.getCoverage();
+            }
+            if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WARMTH)) {
+                warmth += com.bpm.minotaur.gamedata.player.Exposure.RING_OF_WARMTH;
+            }
+        }
+
+        com.bpm.minotaur.gamedata.player.Exposure.Heat heat = heatAt(player, maze, worldManager, sheltered, px, py);
+
+        // Water underfoot
+        float wetness = stats.getWetness();
+        com.bpm.minotaur.gamedata.liquid.LiquidType liquid = maze.getLiquidAt(px, py);
+        boolean inFreezingWater = false;
+        if (com.bpm.minotaur.gamedata.player.Exposure.wets(liquid) && !isImmuneTo(maze, player, liquid)) {
+            if (com.bpm.minotaur.gamedata.player.Exposure.isFreezingWater(liquid, biome, night, ambient)) {
+                inFreezingWater = true;
+                wetness = com.bpm.minotaur.gamedata.player.Exposure.afterSoaking();
+                if (!wasInFreezingWater) {
+                    stats.setBodyTemperature(Math.max(com.bpm.minotaur.gamedata.player.Exposure.BODY_FLOOR,
+                            stats.getBodyTemperature() - com.bpm.minotaur.gamedata.player.Exposure.FREEZING_WATER_PLUNGE));
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("The freezing water knocks the breath out of you. You are SOAKED.", 2.5f));
+                    }
+                }
+            } else {
+                wetness = com.bpm.minotaur.gamedata.player.Exposure.afterWading(wetness);
+            }
+        }
+        wasInFreezingWater = inFreezingWater;
+
+        // Rain, then drying
+        float rain = (underground || weather == null) ? 0f : com.bpm.minotaur.gamedata.player.Exposure.rainPerTurn(weather);
+        com.bpm.minotaur.gamedata.player.Exposure.Wetness before = stats.getWetnessLevel();
+        stats.setWetness(com.bpm.minotaur.gamedata.player.Exposure.wetnessAfter(wetness, rain, coverage, heat, time));
+        com.bpm.minotaur.gamedata.player.Exposure.Wetness after = stats.getWetnessLevel();
+        if (after != before && eventManager != null) {
+            if (after == com.bpm.minotaur.gamedata.player.Exposure.Wetness.DRY) {
+                eventManager.addEvent(new GameEvent("You are dry again.", 1.5f));
+            } else if (after.ordinal() > before.ordinal() && !inFreezingWater) {
+                eventManager.addEvent(new GameEvent(after == com.bpm.minotaur.gamedata.player.Exposure.Wetness.SOAKED
+                        ? "You are SOAKED through. The cold bites three times as hard."
+                        : "You are WET. The cold bites twice as hard.", 2.0f));
+            }
+        }
+
+        float newTemp = com.bpm.minotaur.gamedata.player.Exposure.step(stats.getBodyTemperature(), ambient, warmth,
+                stats.getWetnessLevel(), heat, time);
+        stats.setBodyTemperature(newTemp);
+        applyExposureTiers(player, stats, eventManager, newTemp);
+    }
+
+    private static boolean isImmuneTo(Maze maze, Player player, com.bpm.minotaur.gamedata.liquid.LiquidType liquid) {
+        return maze.getLiquidManager() != null && maze.getLiquidManager().isImmuneToLiquid(player, liquid);
+    }
+
+    /**
+     * The strongest heat in reach: Molten Fire beside you, a lit shelter's hearth, a field fire
+     * or campfire within {@link com.bpm.minotaur.gamedata.player.Exposure#FIRE_RADIUS}, then a lit
+     * carried lantern.
+     */
+    private com.bpm.minotaur.gamedata.player.Exposure.Heat heatAt(Player player, Maze maze, WorldManager worldManager,
+                                                                 boolean sheltered, int px, int py) {
+        int mr = com.bpm.minotaur.gamedata.player.Exposure.MOLTEN_RADIUS;
+        for (int dy = -mr; dy <= mr; dy++) {
+            for (int dx = -mr; dx <= mr; dx++) {
+                if (maze.getLiquidAt(px + dx, py + dy) == com.bpm.minotaur.gamedata.liquid.LiquidType.MOLTEN_FIRE) {
+                    return com.bpm.minotaur.gamedata.player.Exposure.Heat.MOLTEN;
+                }
+            }
+        }
+        if (sheltered && maze.isSanctuary()) {
+            return com.bpm.minotaur.gamedata.player.Exposure.Heat.HEARTH;
+        }
+        if (maze.fieldFireWarming(px, py) != null || isBesideCampfireLight(maze, px, py)) {
+            return com.bpm.minotaur.gamedata.player.Exposure.Heat.FIELD_FIRE;
+        }
+        if (player.hasLantern() && worldManager != null && worldManager.getLightingManager() != null
+                && worldManager.getLightingManager().isLanternLit()) {
+            return com.bpm.minotaur.gamedata.player.Exposure.Heat.LANTERN;
+        }
+        return com.bpm.minotaur.gamedata.player.Exposure.Heat.NONE;
+    }
+
+    /** A campfire, cook pot or hearth light within fire radius: the world's own fires warm as a field fire does. */
+    private static boolean isBesideCampfireLight(Maze maze, int px, int py) {
+        com.badlogic.gdx.utils.Array<com.bpm.minotaur.lighting.LightSource> lights = maze.getLights();
+        if (lights == null) return false;
+        int r = com.bpm.minotaur.gamedata.player.Exposure.FIRE_RADIUS;
         for (com.bpm.minotaur.lighting.LightSource light : lights) {
             if (!light.isActive() || light.getId() == null) continue;
             String id = light.getId();
-            boolean isHeatSource = id.contains("campfire") || id.contains("cook_pot") || id.contains("lantern");
-            if (!isHeatSource) continue;
+            if (!(id.contains("campfire") || id.contains("cook_pot") || id.contains("hearth"))) continue;
+            int lx = (int) Math.floor(light.getPosition().x);
+            int ly = (int) Math.floor(light.getPosition().y);
+            if (Math.max(Math.abs(lx - px), Math.abs(ly - py)) <= r) return true;
+        }
+        return false;
+    }
 
-            if (light.getPosition().dst(player.getPosition()) <= HEAT_SOURCE_RADIUS) {
-                return Math.min(37.0f, currentTemp + HEAT_SOURCE_WARM_RATE * time);
+    /**
+     * Burns the chunk's field fires a turn (#194). A fire that goes out takes its flames and
+     * light with it. While it burns, monsters that can see it within
+     * {@link com.bpm.minotaur.gamedata.shelter.FieldFire#SIGHT_RADIUS} come to look.
+     */
+    void tickFieldFires(Maze maze, GameEventManager eventManager) {
+        if (maze == null || maze.getFieldFires().isEmpty()) return;
+        java.util.Iterator<com.bpm.minotaur.gamedata.shelter.FieldFire> it = maze.getFieldFires().iterator();
+        while (it.hasNext()) {
+            com.bpm.minotaur.gamedata.shelter.FieldFire fire = it.next();
+            if (fire.burn()) {
+                it.remove();
+                maze.removeLight(fire.lightId());
+                Scenery s = maze.getScenery().get(new GridPoint2(fire.x, fire.y));
+                if (s != null && s.getTexturePath() != null && s.getTexturePath().contains("campfire")) {
+                    maze.removeScenery(fire.x, fire.y);
+                }
+                if (eventManager != null) eventManager.addEvent(new GameEvent("Your fire gutters out to ash.", 2.0f));
+                continue;
+            }
+            if (turnCounter % com.bpm.minotaur.gamedata.shelter.FieldFire.SIGHT_EVERY == 0) {
+                drawMonstersToFire(maze, fire);
             }
         }
-        return currentTemp;
+    }
+
+    /** Monsters that can see the flames turn toward them, as a gunshot turns them toward its sound. */
+    static int drawMonstersToFire(Maze maze, com.bpm.minotaur.gamedata.shelter.FieldFire fire) {
+        com.badlogic.gdx.math.Vector2 at = new com.badlogic.gdx.math.Vector2(fire.x + 0.5f, fire.y + 0.5f);
+        float r2 = com.bpm.minotaur.gamedata.shelter.FieldFire.SIGHT_RADIUS * com.bpm.minotaur.gamedata.shelter.FieldFire.SIGHT_RADIUS;
+        int drawn = 0;
+        for (Monster m : maze.getMonsters().values()) {
+            if (m == null || !m.isAlive() || m.getState() == Monster.MonsterState.HUNTING) continue;
+            if (m.getPosition().dst2(at) > r2) continue;
+            if (!com.bpm.minotaur.gamedata.laser.LaserBurst.hasLineOfSight(maze, m.getPosition(), at)) continue;
+            m.setState(Monster.MonsterState.HUNTING);
+            m.setLastKnownTargetPos(new GridPoint2(fire.x, fire.y));
+            drawn++;
+        }
+        return drawn;
     }
 
     private boolean isPlayerInDesertShade(Player player, Maze maze) {
@@ -519,83 +717,9 @@ public class TurnManager {
                 (isHeatstroke ? 2.0f : 1.0f) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult")));
         refillWaterskinInRain(player, maze, worldManager, eventManager);
 
-        // 2. Temperature Logic
-        if (worldManager != null && worldManager.getWeatherManager() != null) {
-            Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
-            float ambientTemp = worldManager.getWeatherManager().getAmbientTemperature(biome);
-            if (biome == Biome.DESERT && isPlayerInDesertShade(player, maze)) {
-                ambientTemp -= 12.0f;
-            }
-            float currentTemp = stats.getBodyTemperature();
-
-            // Simple insulation: basic clothes reduce rate of change towards ambient
-            // TODO: Query armor warmth
-            // Simple insulation: basic clothes reduce rate of change towards ambient
-            // TODO: Query armor warmth
-
-            // If freezing, armor helps. If hot, armor hurts (maybe?).
-            // For now, let's assume body naturally returns to 37 if ambient is reasonable.
-
-            // Approach ambient
-
-            // Body Homeostasis: The body fights to stay at 37.
-            // If ambient is < 37, body loses heat.
-            // If ambient > 37, body gains heat.
-
-            // Let's model "Feels Like" vs Body Temp.
-            // If ambient is 20C, body maintains 37C easily.
-            // Only EXTREME temps shift body temp.
-
-            float totalWarmth = 0f;
-            if (player.getEquipment() != null) {
-                for (com.bpm.minotaur.gamedata.item.Item i : player.getEquipment().getAllEquipped()) {
-                    if (i != null)
-                        totalWarmth += i.getWarmthBonus();
-                }
-                if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WARMTH)) {
-                    totalWarmth += 20f;
-                }
-            }
-
-            float stress = 0f;
-            if (ambientTemp < 5.0f) {
-                // True cold stress (Snow / Blizzard)
-                float effectiveCold = (5.0f - ambientTemp) - totalWarmth;
-                if (effectiveCold > 0) {
-                    stress = -effectiveCold * 0.003f;
-                } else {
-                    if (currentTemp < 37.0f) {
-                        stress = 0.01f;
-                    }
-                }
-            } else if (ambientTemp > 35.0f) {
-                // True heat stress (Extreme Desert Heatwave)
-                stress = (ambientTemp - 35.0f) * 0.005f;
-            } else {
-                // Natural homeostasis comfort zone (5°C to 35°C):
-                // Body naturally regulates toward healthy 37.0°C
-                if (currentTemp < 37.0f)
-                    stress = 0.02f;
-                if (currentTemp > 37.0f)
-                    stress = -0.02f;
-                // Snap if close
-                if (Math.abs(currentTemp - 37.0f) < 0.1f) {
-                    stats.setBodyTemperature(37.0f);
-                    stress = 0f;
-                }
-            }
-
-            // Body temp clamped to a non-lethal safe floor of 30.0°C -- low enough to
-            // sustain the Hypothermia exposure tier (< 32.0°C) without being fatal outright.
-            float newTemp = Math.max(30.0f, Math.min(41.0f, currentTemp + (stress * time)));
-
-            // Warming up near a lit Campfire / Shelter Lantern
-            newTemp = applyNearbyHeatSourceWarming(player, maze, newTemp, time);
-
-            stats.setBodyTemperature(newTemp);
-
-            applyExposureTiers(player, stats, eventManager, newTemp);
-        }
+        // 2. Exposure (#194): air, wetness, clothing and heat move the body temperature
+        updateExposure(player, maze, worldManager, eventManager, time);
+        tickFieldFires(maze, eventManager);
 
         updateTaint(player, maze, worldManager, eventManager, time);
 
@@ -610,7 +734,9 @@ public class TurnManager {
         // A waterborne illness blocks it until cured (#193); thirst never does.
         boolean illnessBlocksRegen = player.getInjuryManager() != null
                 && player.getInjuryManager().blocksNaturalRegen();
-        if (!illnessBlocksRegen && turnCounter % regenInterval == 0) {
+        // Freezing and Hypothermic stop it too (#194).
+        boolean coldBlocksRegen = stats.getExposureBand().blocksRegen;
+        if (!illnessBlocksRegen && !coldBlocksRegen && turnCounter % regenInterval == 0) {
             if (player.getCurrentHP() < stats.getMaxHP()) {
                 stats.heal(1);
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordRegen(1, 0);
