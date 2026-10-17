@@ -14,7 +14,7 @@ public final class BuildInfo {
     }
 
     /** Must match {@code projectVersion} in {@code gradle.properties}. */
-    public static final String VERSION = "0.0.2-SNAPSHOT";
+    public static final String VERSION = "0.0.3-SNAPSHOT";
 
     /** The version as it should appear on screen. */
     public static String displayVersion() {

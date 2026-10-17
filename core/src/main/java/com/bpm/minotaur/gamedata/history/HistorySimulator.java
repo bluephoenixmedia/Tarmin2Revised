@@ -355,7 +355,7 @@ public final class HistorySimulator {
 
     private void lifeAndDeath() {
         for (Figure f : new ArrayList<>(world.figures)) {
-            if (!f.isAlive() || f.ageless) continue;
+            if (f == null || !f.isAlive() || f.ageless) continue;
             int age = f.ageAt(world.season);
             float p = age > 40 ? (age - 40) * 0.0016f : 0.0008f;
             if (rng.nextFloat() < p) {

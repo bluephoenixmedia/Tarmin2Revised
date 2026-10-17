@@ -236,3 +236,7 @@ scratch/
 # Pre-normalisation paperdoll layers, written by tools/bake_paperdoll_layers.py.
 # Git history is the real backup; this is a local convenience copy.
 tools/paperdoll_prebake_backup/
+
+# Save game backups
+saves_backup*/
+

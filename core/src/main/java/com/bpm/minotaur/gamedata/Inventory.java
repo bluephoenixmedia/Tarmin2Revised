@@ -11,7 +11,7 @@ public class Inventory {
     // "Main Inventory" - The expanded storage (Backpack Screen)
     // Matches the modern inventory UI's 8x6 backpack grid (BackpackPanel.SLOT_COUNT).
     private final List<Item> mainInventory = new ArrayList<>();
-    private final int MAX_BACKPACK_SIZE = 48;
+    private final int MAX_BACKPACK_SIZE = 42;
 
     private Item rightHand = null;
     private Item leftHand = null;

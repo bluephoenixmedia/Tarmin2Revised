@@ -64,6 +64,10 @@ public class ModernInventoryUI {
 
     private final Table root;
     private Table rightBottomContainer;
+    private Table fullStatsContainer;
+    private Table alchemyContainer;
+    private com.bpm.minotaur.ui.UiTabs rightPageTabs;
+    private com.bpm.minotaur.rendering.HudSkin hudSkin;
     private final Label tooltipLabel;
 
     // Owned by us — dispose on close
@@ -213,51 +217,64 @@ public class ModernInventoryUI {
                                config.getY(InventoryLayoutConfig.QUICKSLOTS));
         root.addActor(quickSlots);
 
-        // ── Right page: lower box (Tabbed Attributes / Item Details) ──
+        hudSkin = new com.bpm.minotaur.rendering.HudSkin();
+
+        // ── Bookmark Tabs on Right Page (INV-8) ──────────────────────
+        rightPageTabs = new com.bpm.minotaur.ui.UiTabs(hudSkin);
+        rightPageTabs.addTab(1, "Backpack");
+        rightPageTabs.addTab(2, "Alchemy");
+        rightPageTabs.addTab(3, "Stats");
+        rightPageTabs.setPosition(1040f, 960f);
+        rightPageTabs.setSize(760f, 40f);
+        root.addActor(rightPageTabs);
+
+        // ── Right page: lower box (Item Inspector on Backpack page) ──
         rightBottomContainer = new Table();
         rightBottomContainer.top().left();
         rightBottomContainer.setSize(760f, 240f);
         rightBottomContainer.setPosition(config.getX(InventoryLayoutConfig.ATTRIBUTES),
                                          config.getY(InventoryLayoutConfig.ATTRIBUTES));
-
-        Table tabBar = new Table();
-        Label tabAttributes = new Label("[ Attributes ]",
-                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_BORDER_DARK));
-        Label tabInspect = new Label("[ Item Details ]",
-                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));
-        tabAttributes.setTouchable(Touchable.enabled);
-        tabInspect.setTouchable(Touchable.enabled);
-        tabBar.add(tabAttributes).padRight(18);
-        tabBar.add(tabInspect);
-        rightBottomContainer.add(tabBar).top().left().padLeft(14).padBottom(4).row();
-
-        Stack panelStack = new Stack();
-        panelStack.add(attributes);
-        panelStack.add(inspector);
-        inspector.setVisible(false);
-
-        rightBottomContainer.add(panelStack).expand().fill();
+        rightBottomContainer.add(inspector).expand().fill();
         root.addActor(rightBottomContainer);
 
-        tabAttributes.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (SoundManager.getInstance() != null) SoundManager.getInstance().playBookFlip();
-                attributes.setVisible(true);
-                inspector.setVisible(false);
-                tabAttributes.setColor(InventorySkin.COL_BORDER_DARK);
-                tabInspect.setColor(InventorySkin.COL_TEXT_MUTED);
-            }
-        });
-        tabInspect.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (SoundManager.getInstance() != null) SoundManager.getInstance().playBookFlip();
-                attributes.setVisible(false);
-                inspector.setVisible(true);
-                tabInspect.setColor(InventorySkin.COL_BORDER_DARK);
-                tabAttributes.setColor(InventorySkin.COL_TEXT_MUTED);
-            }
+        // ── Right page: Full Stats View (Tab 3) ──────────────────────
+        fullStatsContainer = new Table();
+        fullStatsContainer.top().left();
+        fullStatsContainer.setSize(760f, 800f);
+        fullStatsContainer.setPosition(1040f, 140f);
+        fullStatsContainer.add(attributes).expand().fill();
+        fullStatsContainer.setVisible(false);
+        root.addActor(fullStatsContainer);
+
+        // ── Right page: Alchemy Crafting View (Tab 2) ─────────────────
+        alchemyContainer = new Table();
+        alchemyContainer.top();
+        alchemyContainer.setSize(760f, 800f);
+        alchemyContainer.setPosition(1040f, 140f);
+
+        Label alchemyTitle = new Label("ALCHEMY CRAFTING",
+                new Label.LabelStyle(skin.getFontHeader(), InventorySkin.COL_TEXT_HEADER));
+        alchemyContainer.add(alchemyTitle).padTop(30).padBottom(20).row();
+        alchemy.pack();
+        alchemyContainer.add(alchemy).padBottom(30).row();
+
+        Label alchemyHint = new Label("Place ingredients in the 3x3 grid to brew potions and elixirs.",
+                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));
+        alchemyContainer.add(alchemyHint).padBottom(15).row();
+        alchemyContainer.setVisible(false);
+        root.addActor(alchemyContainer);
+
+        rightPageTabs.onSelect(index -> {
+            if (SoundManager.getInstance() != null) SoundManager.getInstance().playBookFlip();
+            boolean isBackpack = (index == 0);
+            boolean isAlchemy = (index == 1);
+            boolean isStats = (index == 2);
+
+            backpack.setVisible(isBackpack);
+            quickSlots.setVisible(isBackpack);
+            rightBottomContainer.setVisible(isBackpack);
+            alchemyContainer.setVisible(isAlchemy);
+            fullStatsContainer.setVisible(isStats);
         });
 
         // EventBus listener for live slot inspection
@@ -266,28 +283,22 @@ public class ModernInventoryUI {
             public void onItemInspected(Item item) {
                 if (item != null) {
                     inspector.inspect(item);
-                    attributes.setVisible(false);
-                    inspector.setVisible(true);
-                    tabInspect.setColor(InventorySkin.COL_BORDER_DARK);
-                    tabAttributes.setColor(InventorySkin.COL_TEXT_MUTED);
                 }
             }
         });
 
-        // Core stats are displayed comprehensively in the Attributes panel.
-        coreStats.pack();
-        coreStats.setPosition(config.getX(InventoryLayoutConfig.CORESTATS),
-                              config.getY(InventoryLayoutConfig.CORESTATS));
-
+        // Spells stay on their own dedicated screen (Q, SPELL-1..6, INV-8)
         spellbook.pack();
-        spellbook.setPosition(config.getX(InventoryLayoutConfig.SPELLBOOK),
-                              config.getY(InventoryLayoutConfig.SPELLBOOK));
-        root.addActor(spellbook);
+        spellbook.setVisible(false);
 
-        alchemy.pack();
-        alchemy.setPosition(config.getX(InventoryLayoutConfig.ALCHEMY),
-                            config.getY(InventoryLayoutConfig.ALCHEMY));
-        root.addActor(alchemy);
+        // ── KeyHint Legend at page foot (INV-7) ──────────────────────
+        com.bpm.minotaur.ui.KeyHintLegend legend = new com.bpm.minotaur.ui.KeyHintLegend(hudSkin);
+        legend.hint("1-3", "Tab");
+        legend.hint("R-Click", "Use/Drop");
+        legend.hint("Drag", "Move");
+        legend.escapeHint("Close");
+        legend.setPosition(1920f - 460f, 25f);
+        root.addActor(legend);
 
         // ── Debug overlay (hidden by default — press F3 to show) ─────
         debugOverlay = new InventoryDebugOverlay(skin.getFontSmall());
@@ -331,17 +342,20 @@ public class ModernInventoryUI {
         tooltipTable.add(tooltipLabel).padBottom(18);
         stage.addActor(tooltipTable);
 
-        // F3 toggles the debug overlay — listener lives on the stage so it
-        // receives key events regardless of which actor has keyboard focus.
+        // F3 toggles the debug overlay; number keys switch bookmark tabs.
         stage.addListener(new EventListener() {
             @Override
             public boolean handle(Event event) {
                 if (event instanceof InputEvent) {
                     InputEvent ie = (InputEvent) event;
-                    if (ie.getType() == InputEvent.Type.keyDown
-                            && ie.getKeyCode() == Input.Keys.F3) {
-                        debugOverlay.setVisible(!debugOverlay.isVisible());
-                        return true;
+                    if (ie.getType() == InputEvent.Type.keyDown) {
+                        if (ie.getKeyCode() == Input.Keys.F3) {
+                            debugOverlay.setVisible(!debugOverlay.isVisible());
+                            return true;
+                        }
+                        if (rightPageTabs != null && rightPageTabs.handleKey(ie.getKeyCode())) {
+                            return true;
+                        }
                     }
                 }
                 return false;

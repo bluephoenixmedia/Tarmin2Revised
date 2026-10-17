@@ -115,11 +115,7 @@ public class BackpackPanel extends WidgetGroup implements InventoryEventBus.List
         // player should not be the last to know (SPEC section 6, "Backpack capacity").
         int used = items.size();
         int capacity = inventory.getMaxBackpackSize();
-        if (used > SLOT_COUNT) {
-            countLabel.setText(used + " / " + capacity + " carried - " + SLOT_COUNT + " shown");
-        } else {
-            countLabel.setText(used + " / " + Math.min(capacity, SLOT_COUNT) + " slots");
-        }
+        countLabel.setText(used + " / " + SLOT_COUNT + " slots");
     }
 
     // ── EventBus listener ─────────────────────────────────────────────
