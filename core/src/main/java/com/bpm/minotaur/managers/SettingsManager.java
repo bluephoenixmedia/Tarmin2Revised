@@ -43,7 +43,7 @@ public class SettingsManager {
         keyBindingDescriptions.put("QUICK_HEAL", "Quick Heal");
         keyBindingDescriptions.put("FIRST_AID", "First Aid");
         keyBindingDescriptions.put("SWAP_HANDS", "Swap Hands");
-        keyBindingDescriptions.put("SWAP_PACK", "Swap with Pack");
+        keyBindingDescriptions.put("SWAP_PACK", "Use / Loot / Equip, else Swap with Pack");
         keyBindingDescriptions.put("ROTATE_PACK", "Rotate Pack");
         keyBindingDescriptions.put("ATTACK", "Attack (Combat)");
         keyBindingDescriptions.put("FIRE_RANGED", "Fire Ranged Weapon");
