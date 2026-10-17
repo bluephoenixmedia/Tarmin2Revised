@@ -46,6 +46,10 @@ public class LoadingScreen extends ScreenAdapter {
     private boolean musicStarted = false;
     private final boolean autoProceed;
     private boolean proceeded = false;
+    /** The face breathing behind the loading text, from the end of the stinger to the flyover. */
+    private final com.bpm.minotaur.video.LoadingBackdrop backdrop = new com.bpm.minotaur.video.LoadingBackdrop();
+    /** Captures must be identical run to run, so they never play the loop. */
+    private final boolean captureMode = Tarmin2.isCaptureBaseline() || Tarmin2.isCapturePolished();
 
     public LoadingScreen(Tarmin2 game) {
         this(game, true);
@@ -119,7 +123,7 @@ public class LoadingScreen extends ScreenAdapter {
                 // Ensure music is started if user skipped before video started
                 if (!musicStarted) {
                     musicStarted = true;
-                    MusicManager.getInstance().playTrack("sounds/music/tarmin_core.mp3");
+                    MusicManager.getInstance().playTrack("sounds/music/Crown_of_Molten_Steel.mp3");
                 }
             }
         }
@@ -128,9 +132,14 @@ public class LoadingScreen extends ScreenAdapter {
         if (!musicStarted && videoPlayer != null && !videoFinished && !videoError) {
             if (videoPlayer.isPlaying() || videoPlayer.getTexture() != null) {
                 musicStarted = true;
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_core.mp3");
-                Gdx.app.log("LoadingScreen", "Started music playback in sync with video: tarmin_core.mp3");
+                MusicManager.getInstance().playTrack("sounds/music/Crown_of_Molten_Steel.mp3");
+                Gdx.app.log("LoadingScreen", "Started music playback in sync with video: Crown_of_Molten_Steel.mp3");
             }
+        }
+
+        // The stinger is done (finished, skipped, or switched off): the face starts breathing.
+        if (videoFinished && !captureMode && !backdrop.isStarted()) {
+            backdrop.start();
         }
 
         // --- 1. Clear the Screen ---
@@ -154,6 +163,10 @@ public class LoadingScreen extends ScreenAdapter {
 
         float screenWidth = game.getViewport().getWorldWidth();
         float screenHeight = game.getViewport().getWorldHeight();
+
+        if (videoFinished) {
+            backdrop.draw(batch, delta, screenWidth, screenHeight); // behind the loading text
+        }
 
         if (videoPlayer != null && !videoFinished && !videoError) {
             Texture frame = videoPlayer.getTexture();
@@ -230,6 +243,7 @@ public class LoadingScreen extends ScreenAdapter {
     @Override
     public void hide() {
         font.dispose();
+        backdrop.dispose();
         if (videoPlayer != null) {
             videoPlayer.dispose();
             videoPlayer = null;

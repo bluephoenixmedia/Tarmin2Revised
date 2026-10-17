@@ -297,7 +297,7 @@ public class CreatureDevScreen extends BaseScreen {
                 Gdx.app.error("CreatureDevScreen", "Bake failed: " + id);
             }
         }
-        gridStatus = "Baked " + partEntries.size() + " parts  |  [E] export  [←/→] facing  [TAB] creature view  [ESC] back";
+        gridStatus = "Baked " + partEntries.size() + " parts  |  E export   < > facing   TAB creature view   ESC back";
     }
 
     // ── Creature generation ───────────────────────────────────────────────────

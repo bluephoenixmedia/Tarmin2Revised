@@ -114,14 +114,21 @@ public class UXScreenCaptureScreen extends BaseScreen {
     private void populateMockPlayerState(Player player, Maze maze) {
         if (player == null) return;
 
+        // A new character is offered starting traits, and the game screen opens the choice
+        // the moment it renders -- which takes the screen away from this harness and stalls
+        // every capture that shows the game. Settle the offer up front.
+        if (player.needsTraitOffer()) player.offerTraits();
+        java.util.List<String> offer = player.getPendingTraitOffer();
+        player.chooseTrait(offer.isEmpty() ? null : offer.get(0));
+
         // Rich stats
         player.getStats().setCurrentHP(82);
         player.getStats().setMaxHP(100);
         player.getStats().setCurrentMP(48);
         player.getStats().setMaxMP(60);
         player.getStats().setStamina(3);
-        player.getStats().setSatiety(85f);
-        player.getStats().setHydration(90f);
+        player.getStats().setSatiety(com.bpm.minotaur.gamedata.player.PlayerStats.STARTING_SATIETY);
+        player.getStats().setHydration(com.bpm.minotaur.gamedata.player.PlayerStats.STARTING_HYDRATION);
         player.getStats().setBodyTemperature(37f);
         player.getStats().setTreasureScore(1450);
         DivinityManager.getInstance().addDivinities(350);
@@ -226,7 +233,7 @@ public class UXScreenCaptureScreen extends BaseScreen {
 
         // 07: Game Over
         tasks.add(new CaptureTask("07_game_over", "Game Over Screen", () -> {
-            GameOverScreen s = new GameOverScreen(game, false);
+            GameOverScreen s = new GameOverScreen(game);
             setSubScreen(s, null);
         }));
 
@@ -400,9 +407,66 @@ public class UXScreenCaptureScreen extends BaseScreen {
         }));
 
         // 24: Castle Map
-        tasks.add(new CaptureTask("24_castle_map", "Castle Overview & Exploration Map", () -> {
-            CastleMapScreen s = new CastleMapScreen(game, sharedPlayer, sharedMaze, sharedGameScreen);
+        tasks.add(new CaptureTask("24_castle_map", "Expedition Map, region view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
             setSubScreen(s, null);
+        }));
+        // Face pressed to the shelter's barred window, looking out.
+        tasks.add(new CaptureTask("24d_window_look", "Looking out the shelter window", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    // The home window is in the west wall: stand east of it, facing it.
+                    sharedPlayer.setPosition(w.x + 1.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen,
+                    () -> Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ESCAPE));
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.E);
+        }));
+        // Looking up and to the left from the bars: the sky and the castle must turn with the view.
+        tasks.add(new CaptureTask("24f_window_look_up", "Looking up from the shelter window", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    sharedPlayer.setPosition(w.x + 1.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen,
+                    () -> Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ESCAPE));
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.E);
+            sharedGameScreen.turnWindowLook(25f, 30f);
+        }));
+        // The same window seen from the room, a step back from it.
+        tasks.add(new CaptureTask("24e_window_room", "The shelter window from inside", () -> {
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, Object> e : sharedMaze.getGameObjects().entrySet()) {
+                if (e.getValue() instanceof com.bpm.minotaur.gamedata.Window) {
+                    com.badlogic.gdx.math.GridPoint2 w = e.getKey();
+                    sharedPlayer.setPosition(w.x + 2.5f, w.y + 0.5f);
+                    sharedPlayer.setFacing(com.bpm.minotaur.gamedata.Direction.WEST);
+                    break;
+                }
+            }
+            setSubScreen(sharedGameScreen, null);
+        }));
+        // The map reopens at the view it was left in, so these step from the region view above.
+        tasks.add(new CaptureTask("24b_map_world", "Expedition Map, world view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
+            setSubScreen(s, null);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.MINUS);
+        }));
+        tasks.add(new CaptureTask("24c_map_chunk", "Expedition Map, chunk view", () -> {
+            com.bpm.minotaur.screens.map.ExpeditionMapScreen s = new com.bpm.minotaur.screens.map.ExpeditionMapScreen(
+                    game, sharedPlayer, sharedMaze, sharedGameScreen);
+            setSubScreen(s, null);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ENTER);
+            Gdx.input.getInputProcessor().keyDown(com.badlogic.gdx.Input.Keys.ENTER);
         }));
 
         // 25: Encounter Window (Shrine)
@@ -424,6 +488,17 @@ public class UXScreenCaptureScreen extends BaseScreen {
             sharedGameScreen.getHud().getEncounterWindow().show(enc);
 
             setSubScreen(sharedGameScreen, () -> sharedGameScreen.getHud().getEncounterWindow().close());
+        }));
+
+        // 25b: Choice Event (data/events.json) -- one with a gate and a check, so both tags show
+        tasks.add(new CaptureTask("25b_choice_event", "Choice Event Window", () -> {
+            com.bpm.minotaur.gamedata.events.EventDefinition def =
+                    com.bpm.minotaur.gamedata.events.EventCatalog.getInstance().get("EVENT_CORAL_ALTAR");
+            sharedGameScreen.getHud().getEventWindow().configure(sharedPlayer, sharedMaze,
+                    sharedGameScreen.getEventManager(), game.getItemDataManager(), game.getMonsterDataManager(),
+                    game.getAssetManager());
+            sharedGameScreen.getHud().getEventWindow().show(def, "LAKELANDS");
+            setSubScreen(sharedGameScreen, () -> sharedGameScreen.getHud().getEventWindow().close());
         }));
 
         // 26: Bones Awaken Modal
@@ -450,6 +525,70 @@ public class UXScreenCaptureScreen extends BaseScreen {
             TormentPactScreen s = new TormentPactScreen(game, null);
             setSubScreen(s, null);
         }));
+
+        // 29: A surface battle with the lines closed around the player (Houses of the Maze T2.4)
+        tasks.add(new CaptureTask("29_battle", "Surface battle, lines closed", () -> {
+            com.bpm.minotaur.managers.WorldManager wm = sharedGameScreen.getWorldManager();
+            com.bpm.minotaur.managers.HistoryManager history = wm.getHistory();
+            java.util.List<com.bpm.minotaur.gamedata.history.War> wars = history.world().activeWars();
+            if (!wars.isEmpty()) {
+                com.bpm.minotaur.gamedata.history.War war = wars.get(0);
+                com.badlogic.gdx.math.GridPoint2 here = wm.getCurrentPlayerChunkId();
+                com.bpm.minotaur.gamedata.history.war.Front front =
+                        new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
+                com.bpm.minotaur.managers.BattleDirector battle = new com.bpm.minotaur.managers.BattleDirector(
+                        front, here, 0, history.world(), com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), 29L);
+                com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2((int) sharedPlayer.getPosition().x, (int) sharedPlayer.getPosition().y);
+                for (int i = 0; i < com.bpm.minotaur.managers.BattleDirector.WARNING_TURNS + 1; i++) {
+                    battle.tick(sharedMaze, at, wm::recruit, (m, near, loser, lordFell) -> { });
+                }
+                int soldiers = 0;
+                for (com.bpm.minotaur.gamedata.monster.Monster m : sharedMaze.getMonsters().values()) {
+                    if (m.isWarBand()) soldiers++;
+                }
+                Gdx.app.log("UXCapture", "Battle " + battle.phase() + ": " + soldiers + " soldiers on the field, "
+                        + "maze is the game's own: " + (sharedMaze == sharedGameScreen.getMaze()));
+            }
+            setSubScreen(sharedGameScreen, null);
+        }));
+
+        // 30: Talking with a town's reeve (Houses of the Maze T4.3)
+        tasks.add(new CaptureTask("30_talk", "Talking with a town's folk", () -> {
+            com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
+            com.bpm.minotaur.gamedata.history.town.Town town = history.town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(2, 3, 4));
+            com.bpm.minotaur.managers.TownTalk.Pack pack = new com.bpm.minotaur.managers.TownTalk.Pack() {
+                public boolean hasSignet(int houseId) { return false; }
+                public boolean giveSignet(int houseId) { return false; }
+                public void reward(String what) { }
+            };
+            com.bpm.minotaur.managers.TownTalk talk = new com.bpm.minotaur.managers.TownTalk(history, town,
+                    town.folk(com.bpm.minotaur.gamedata.history.town.Town.Role.QUESTGIVER),
+                    java.util.Collections.singletonList(com.bpm.minotaur.gamedata.history.town.Town.keyOf(3, 9, 9)),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(), pack);
+            talk.quest();
+            for (int i = 0; i < 3; i++) history.onSleep();
+            TalkScreen s = new TalkScreen(game, sharedGameScreen, talk, () -> { });
+            setSubScreen(s, null);
+        }));
+
+        // 28: The Archive Lectern's Annals of the Maze, with some history learned
+        tasks.add(new CaptureTask("28_annals", "Archive Lectern, Annals of the Maze", () -> {
+            com.bpm.minotaur.managers.HistoryManager history = sharedGameScreen.getWorldManager().getHistory();
+            for (com.bpm.minotaur.gamedata.history.FragmentKind kind : com.bpm.minotaur.gamedata.history.FragmentKind.values()) {
+                for (int i = 0; i < 4; i++) history.readFragment(kind);
+            }
+            CodexScreen s = new CodexScreen(game, sharedGameScreen, sharedPlayer).openOn(CodexScreen.Tab.ANNALS);
+            setSubScreen(s, null);
+        }));
+
+        // --capture-only=<prefix>[,<prefix>...] captures just the screens whose id starts with
+        // one of them, so checking one screen does not mean waiting on all of them.
+        String only = com.bpm.minotaur.Tarmin2.captureOnly();
+        if (only != null) {
+            java.util.List<String> prefixes = java.util.Arrays.asList(only.split(","));
+            tasks.removeIf(t -> prefixes.stream().noneMatch(t.id::startsWith));
+        }
     }
 
     private void setSubScreen(Screen screen, Runnable cleanup) {

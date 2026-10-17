@@ -237,4 +237,22 @@ public class PaperDoll2DTest {
         }
         assertTrue("mapped layers missing calibration: " + orphans, orphans.isEmpty());
     }
+
+    /** All eight doctrine tabards (Living War W24) exist, decode as PNGs, and match standard dimensions. */
+    @Test
+    public void testHouseTabardsExistAndHaveStandardDimensions() throws IOException {
+        String[] doctrines = {
+                "antlered_host", "ashen_penitents", "chainwrights", "flensed_choir",
+                "gilded_rot", "glass_hunger", "hollow_court", "ossuary_lords"
+        };
+        for (String doctrine : doctrines) {
+            String path = "assets/images/paperdoll/chest/tabard_" + doctrine + ".png";
+            File file = resolveFile(path);
+            assertTrue("Tabard file should exist: " + path, file.exists());
+            BufferedImage img = ImageIO.read(file);
+            assertNotNull("Should decode as image: " + path, img);
+            assertEquals("Width must be 1024 for " + path, EXPECTED_WIDTH, img.getWidth());
+            assertEquals("Height must be 1536 for " + path, EXPECTED_HEIGHT, img.getHeight());
+        }
+    }
 }

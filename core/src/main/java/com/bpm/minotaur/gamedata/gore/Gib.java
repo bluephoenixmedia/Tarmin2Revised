@@ -141,10 +141,15 @@ public class Gib implements Pool.Poolable {
     }
 
     public void update(float delta) {
-        lifeTimer -= delta;
+        update(delta, false);
+    }
+
+    /** @param persistent true when gibs stay until recycled (see {@link GoreLevel#persistent()}) */
+    public void update(float delta, boolean persistent) {
+        if (!persistent) lifeTimer -= delta;
 
         // Fade out at end of life
-        if (lifeTimer <= FADE_DURATION) {
+        if (!persistent && lifeTimer <= FADE_DURATION) {
             color.a = MathUtils.clamp(lifeTimer / FADE_DURATION, 0f, 1f) * baseColor.a;
         } else {
             color.a = baseColor.a;

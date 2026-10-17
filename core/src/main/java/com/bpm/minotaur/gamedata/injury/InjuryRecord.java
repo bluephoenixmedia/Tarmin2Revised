@@ -83,6 +83,17 @@ public class InjuryRecord {
         return injuryType == InjuryType.LACERATION_BLEEDING || injuryType == InjuryType.PUNCTURE_WOUND;
     }
 
+    /**
+     * Puts back the running state of a saved wound. The constructor starts every wound fresh
+     * (untreated, full bleed pool), which is exactly what a reload must not do.
+     */
+    public void restoreState(boolean treated, boolean infected, int turnsUntreated, int bleedTicksRemaining) {
+        this.treated = treated;
+        this.infected = infected;
+        this.turnsUntreated = Math.max(0, turnsUntreated);
+        this.bleedTicksRemaining = Math.max(0, bleedTicksRemaining);
+    }
+
     /** Consumes one bleed tick. */
     public void consumeBleedTick() {
         if (bleedTicksRemaining > 0) {

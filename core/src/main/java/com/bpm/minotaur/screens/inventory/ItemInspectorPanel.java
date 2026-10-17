@@ -134,7 +134,11 @@ public class ItemInspectorPanel extends Table {
             modTable.top().left();
             for (ItemModifier mod : item.getModifiers()) {
                 String modText = (mod.value >= 0 ? "+" : "") + mod.value + " " + (mod.type != null ? mod.type.name().replace('_', ' ') : "");
-                Label modLabel = new Label("• " + modText, new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
+                if (mod.type == com.bpm.minotaur.gamedata.ModifierType.BONUS_MAGIC_RESISTANCE) {
+                    // A percentage, and it should read as one.
+                    modText = (mod.value >= 0 ? "+" : "") + mod.value + "% Magic Resistance";
+                }
+                Label modLabel = new Label("- " + modText, new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
                 modTable.add(modLabel).left().row();
             }
             contentTable.add(modTable).left().padBottom(4).row();
@@ -225,13 +229,13 @@ public class ItemInspectorPanel extends Table {
         if (item == null) return false;
         if (item.isFood() || item.isPotion() || item.isScroll()) return true;
         if (item.isSpellbook()) return true;
-        if (item.getType() != null && item.getType().name().startsWith("TOME_")) return true;
+        if (item.isTome()) return true;
         return item.isUsable() && !item.isWeapon() && !item.isArmor();
     }
 
     public String getActionVerb(Item item) {
         if (item == null) return "USE ITEM";
-        if (item.getType() != null && item.getType().name().startsWith("TOME_")) return "STUDY TOME";
+        if (item.isTome()) return "STUDY TOME";
         if (item.isSpellbook()) return "STUDY SPELLBOOK";
         if (item.isScroll()) return "READ SCROLL";
         if (item.isPotion()) return "DRINK POTION";
@@ -324,8 +328,8 @@ public class ItemInspectorPanel extends Table {
 
     private void buildConsumableInspection(Table table, Item item) {
         if (item.isFood()) {
-            int nut = item.getNutrition() > 0 ? item.getNutrition() : 5;
-            addStatRow(table, "Nutrition:", "+" + nut + " Satiety", COL_UPGRADE);
+            int nut = com.bpm.minotaur.gamedata.player.Player.nutritionOf(item);
+            addStatRow(table, "Nutrition:", "+" + nut, COL_UPGRADE);
             if (item.getHydrationValue() > 0) {
                 addStatRow(table, "Hydration:", "+" + item.getHydrationValue() + " Water", COL_SPIRITUAL);
             }

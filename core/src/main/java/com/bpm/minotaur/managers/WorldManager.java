@@ -15,11 +15,13 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.generation.BlightChunkGenerator;
 import com.bpm.minotaur.generation.DesertChunkGenerator;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
 import com.bpm.minotaur.generation.LakelandsChunkGenerator;
 import com.bpm.minotaur.generation.MazeChunkGenerator;
+import com.bpm.minotaur.generation.TundraChunkGenerator;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -68,9 +70,14 @@ public class WorldManager {
     private final SoundManager soundManager;
 
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
+
+    /** Choice events already placed this run, so none is placed twice. Cleared with the world. */
+    private final java.util.Set<String> seenChoiceEvents = new java.util.LinkedHashSet<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
 
-    private final BiomeManager biomeManager;
+    private BiomeManager biomeManager;
+    /** Which algorithm lays out this world; see WorldConstants.WORLD_GEN_*. */
+    private int worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
     private final GoreManager goreManager;
@@ -78,6 +85,8 @@ public class WorldManager {
     // --- NEW: Master Seed ---
     private long worldSeed;
     private FactionMatrix factionMatrix;
+    private HistoryManager history;
+    private com.bpm.minotaur.gamedata.history.HistorySaveData pendingHistorySave;
 
     // --- NEW: Track where to place the return ladder ---
     private GridPoint2 pendingUpLadderPos = null;
@@ -123,13 +132,16 @@ public class WorldManager {
             Gdx.app.log("WorldManager", "World Initialized with Seed: " + this.worldSeed);
         }
 
-        this.biomeManager = new BiomeManager();
+        this.biomeManager = new BiomeManager(this.worldSeed, this.worldGenVersion);
         this.dataManager = dataManager;
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
         this.encounterManager = encounterManager;
         this.spawnTableData = spawnTableData;
         this.soundManager = soundManager;
+        if (this.soundManager != null) {
+            this.goreManager.setListener(this.soundManager::playGibLand);
+        }
         this.cookingManager = new CookingManager();
 
         this.weatherManager = new WeatherManager(this);
@@ -146,12 +158,227 @@ public class WorldManager {
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
         DesertChunkGenerator desertGen = new DesertChunkGenerator();
         LakelandsChunkGenerator lakelandsGen = new LakelandsChunkGenerator();
+        TundraChunkGenerator tundraGen = new TundraChunkGenerator();
+        BlightChunkGenerator blightGen = new BlightChunkGenerator();
+        blightGen.setCastleSite(biomeManager.getCastleSite());
 
         this.generators.put(Biome.MAZE, mazeGen);
         this.generators.put(Biome.FOREST, forestGen);
         this.generators.put(Biome.DESERT, desertGen);
         this.generators.put(Biome.LAKELANDS, lakelandsGen);
+        this.generators.put(Biome.TUNDRA, tundraGen);
+        this.generators.put(Biome.BLIGHT, blightGen);
         this.currentLevelTheme = getThemeForLevel(initialLevel);
+    }
+
+    /**
+     * The RETRO theme a chunk should wear, by biome. Shared by generation and by
+     * the save-reload path so the two cannot disagree.
+     */
+    private RetroTheme.Theme themeForBiome(Biome biome, GridPoint2 chunkId, int unusedEffectiveLevel) {
+        if (biome == null) return this.currentLevelTheme;
+        switch (biome) {
+            case FOREST:
+                return RetroTheme.FOREST_THEME;
+            case DESERT:
+                return RetroTheme.DESERT_THEME;
+            case LAKELANDS:
+                return RetroTheme.LAKELANDS_THEME;
+            case TUNDRA:
+                return RetroTheme.TUNDRA_THEME;
+            case BLIGHT:
+                return RetroTheme.BLIGHT_THEME;
+            case MAZE:
+            default:
+                return retroThemeForMazePalette(getAppearanceSeed(this.currentLevel, chunkId.x, chunkId.y));
+        }
+    }
+
+    /**
+     * The RETRO colour theme matching a maze chunk's wall palette, so a chunk the
+     * player knows as grey does not turn green when they switch renderer.
+     */
+    private static RetroTheme.Theme retroThemeForMazePalette(long chunkSeed) {
+        return com.bpm.minotaur.rendering.mesh.WallVariants.paletteFor(chunkSeed)
+                == com.bpm.minotaur.rendering.mesh.WallVariants.Palette.GREY
+                ? RetroTheme.ADVANCED_COLOR_THEME_GREY
+                : RetroTheme.ADVANCED_COLOR_THEME_GREEN;
+    }
+
+    /**
+     * Stands the bridge guardian in its chunk, if this is that chunk.
+     *
+     * <p>Not a themed champion: themed chunks lock their gates on entry, and
+     * this boss is meant to be fled from and chased. It is an ordinary monster
+     * carrying a flag, so every existing system -- pursuit, combat, saving --
+     * already knows what to do with it.
+     */
+    private void placeBridgeBossIfDue(Maze maze, GridPoint2 chunkId, int level) {
+        if (maze == null || chunkId == null) return;
+
+        DoomManager doom = DoomManager.getInstance();
+        if (!doom.isBridgeBossActive()) return;
+        if (!com.bpm.minotaur.gamedata.boss.BridgeBoss.isBossChunk(
+                worldSeed, doom.getBridgeBossSummons(), level, chunkId)) {
+            return;
+        }
+        for (com.bpm.minotaur.gamedata.monster.Monster existing : maze.getMonsters().values()) {
+            if (existing != null && existing.isBridgeBoss()) return; // already standing
+        }
+
+        GridPoint2 seat = findBossSeat(maze);
+        if (seat == null) {
+            Gdx.app.error("WorldManager", "Bridge boss chunk " + chunkId + " has nowhere to stand");
+            return;
+        }
+
+        com.bpm.minotaur.gamedata.monster.Monster boss = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.boss.BridgeBoss.TYPE,
+                seat.x, seat.y, com.bpm.minotaur.gamedata.monster.MonsterColor.RED,
+                this.dataManager, this.assetManager);
+        boss.setBridgeBoss(true);
+        boss.setMaxHP(boss.getMaxHP()
+                + doom.getBridgeBossHpBonus(com.bpm.minotaur.gamedata.boss.BridgeBoss.BASE_HP_BONUS));
+        boss.setCurrentHP(boss.getMaxHP());
+        boss.setMoveSpeed(com.bpm.minotaur.gamedata.boss.BridgeBoss.MOVE_SPEED);
+        if (boss.getScale() != null) {
+            // Exactly the renderer's width clamp, so all the height survives and
+            // the boss can be seen over the walls.
+            boss.getScale().set(com.bpm.minotaur.gamedata.boss.BridgeBoss.SCALE_X,
+                    com.bpm.minotaur.gamedata.boss.BridgeBoss.SCALE_Y);
+        }
+        boss.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+        maze.addMonster(boss);
+
+        Gdx.app.log("WorldManager", "Bridge guardian stands in chunk " + chunkId + " at " + seat);
+    }
+
+    /**
+     * Seats the lord who holds this seal road's gash, with its sworn swords, two strata beneath
+     * the seal site (Houses of the Maze T1.12). Also re-seats a court whose lord died some way
+     * other than at the player's hand, so a seal is never lost.
+     */
+    private void ensureSealCourt(Maze maze, GridPoint2 chunkId, int level) {
+        if (maze == null || chunkId == null || biomeManager == null) return;
+        int road = biomeManager.getSealRoad(chunkId);
+        boolean held = road >= 0 && com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(road);
+        if (!SealCourt.isCourt(level, road, held)) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getSealRole() == com.bpm.minotaur.gamedata.monster.Monster.SEAL_LORD) return;
+        }
+        GridPoint2 seat = findBossSeat(maze);
+        if (seat == null) {
+            Gdx.app.error("WorldManager", "Seal court " + chunkId + " has nowhere to stand");
+            return;
+        }
+        com.bpm.minotaur.gamedata.boss.SealLord.Spec spec = com.bpm.minotaur.gamedata.boss.SealLord.compose(
+                getHistory().world(), com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(road),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        com.bpm.minotaur.gamedata.history.Figure holder = getHistory().world().figure(spec.figureId);
+        if (holder == null || !holder.isAlive()) {
+            // The lord fell in its court and the house has not crowned an heir yet: the hall stands empty.
+            return;
+        }
+        com.bpm.minotaur.gamedata.monster.Monster lord = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(spec.monsterType), seat.x, seat.y,
+                com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        SealCourt.dressLord(lord, spec, road, calculateEffectiveDifficulty(chunkId, level));
+        maze.addMonster(lord);
+        for (com.bpm.minotaur.gamedata.boss.SealLord.Retainer r : spec.retinue) {
+            GridPoint2 at = findSafeArrivalTile(maze, seat.x + 1, seat.y);
+            if (at == null) break;
+            com.bpm.minotaur.gamedata.monster.Monster sword = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(r.monsterType), at.x, at.y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
+            SealCourt.dressRetainer(sword, r, spec, road);
+            maze.addMonster(sword);
+        }
+        Gdx.app.log("WorldManager", spec.name + " holds court in chunk " + chunkId + " at " + seat);
+    }
+
+    /** A saved court keeps only who its members are; the history supplies the rest. */
+    private void restoreSealCourt(Maze maze, GridPoint2 chunkId) {
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        // The gash changed hands while the player was away: the old court is gone, the new lord sits.
+        for (com.bpm.minotaur.gamedata.monster.Monster deposed : SealCourt.deposed(maze, getHistory().world(), catalog)) {
+            maze.removeMonster(deposed);
+        }
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.holdsCourt()) {
+                SealCourt.reapply(m, getHistory().world(), catalog, calculateEffectiveDifficulty(chunkId, this.currentLevel));
+            }
+        }
+        ensureSealCourt(maze, chunkId, this.currentLevel);
+    }
+
+    /**
+     * A monster that was a named figure of the Maze's history has died at the player's hand:
+     * the history records it, and a seal lord gives up its seal.
+     */
+    public void onMonsterSlain(com.bpm.minotaur.gamedata.monster.Monster m, GameEventManager events) {
+        // A soldier of the Maze slain: its house thinks less of the seeker, and a contract may be kept (W19, W25).
+        int house = houseOf(m);
+        if (m != null && house >= 0 && m.getMegabeastId() < 0 && getHistory().onSoldierSlain(house, m.getFigureId())
+                && events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(
+                    "A contract kept. Return to a war camp of your house to be paid.", 5f));
+        }
+        String message = SealCourt.onSlain(m, getHistory(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
+        if (message != null && events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(message, 6f));
+        }
+    }
+
+    /**
+     * {@code killer}, not the seeker, slew {@code fallen}, a seal's holder: a lord dies in the history
+     * at the killer's house's hand (or no house's), and the killer carries the seal off. Told to the
+     * player if they are there to see it.
+     */
+    public void onSealTaken(com.bpm.minotaur.gamedata.monster.Monster killer, com.bpm.minotaur.gamedata.monster.Monster fallen,
+            GameEventManager events) {
+        if (killer == null || fallen == null) return;
+        if (fallen.getSealRole() == com.bpm.minotaur.gamedata.monster.Monster.SEAL_LORD && fallen.getFigureId() >= 0) {
+            int house = killer.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.MAZE_HOUSE ? killer.getHouseId() : -1;
+            getHistory().recordLordSlainInCourt(fallen.getFigureId(), house);
+        }
+        String gash = getHistory().world().gashName(com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(fallen.getSealRoad()));
+        String fell = fallen.getName();
+        String slayer = killer.getName();
+        SealCourt.takeSeal(killer, fallen, gash);
+        if (events != null) {
+            events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    fell + " falls, and " + slayer + " takes the seal."), 6f));
+        }
+    }
+
+    /** A walkable tile away from the edges, so the boss is not born in a doorway. */
+    private GridPoint2 findBossSeat(Maze maze) {
+        int cx = maze.getWidth() / 2;
+        int cy = maze.getHeight() / 2;
+        for (int radius = 0; radius < Math.max(maze.getWidth(), maze.getHeight()); radius++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dx = -radius; dx <= radius; dx++) {
+                    int x = cx + dx;
+                    int y = cy + dy;
+                    if (x < 1 || y < 1 || x >= maze.getWidth() - 1 || y >= maze.getHeight() - 1) continue;
+                    if (maze.isWall(x, y)) continue;
+                    if (maze.isHomeTile(x, y)) continue;
+                    if (maze.getMonsters().containsKey(new GridPoint2(x, y))) continue;
+                    return new GridPoint2(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Seed for a chunk's <em>appearance</em>: wall palette and RETRO theme.
+     *
+     * <p>Deliberately keyed on the real depth, never on effective difficulty.
+     * {@link #calculateEffectiveDifficulty} folds in the player's level and the
+     * difficulty offset, so seeding appearance from it made a fixed chunk change
+     * colour as the player levelled up, and gave the texture palette and the
+     * RETRO tint two different answers for the same chunk.
+     */
+    public long getAppearanceSeed(int level, int chunkX, int chunkY) {
+        return getChunkSeed(level, chunkX, chunkY);
     }
 
     /**
@@ -183,6 +410,7 @@ public class WorldManager {
         }
         Maze maze = loadChunk(currentPlayerChunkId);
         syncLightsForChunk(maze);
+        noteArrival();
         return maze;
     }
 
@@ -196,63 +424,33 @@ public class WorldManager {
         Gdx.app.log("WorldManager", "Saving has been enabled.");
     }
 
-    // --- NEW: Difficulty Persistence ---
-    private int difficultyOffset = 0;
-
     /**
-     * Calculates difficulty based on NetHack EL & EDL formulas:
-     * EL = depth + floor(D_xy / 2)
-     * EDL = floor((EL + playerLevel) / 2)
-     * Sanctuary Buffer: Any chunk within D_xy <= 1 on Z = 1 capped at EDL = 2
+     * Calculates difficulty based on NetHack EL & EDL formulas (#185, #161):
+     * EDL depends on depth and chunk distance only (player level removed so leveling
+     * makes the protagonist stronger relative to the world).
+     * Sanctuary Buffer: Any chunk within D_xy <= 1 on Z <= 2 capped at EDL = 2,
+     * Strata 2 (depth == 3) capped at EDL = 3.
      */
     public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
-        int playerLevel = (playerReference != null) ? playerReference.getLevel() : 1;
-        return calculateEffectiveDifficulty(chunkId, depth, playerLevel);
+        int horizontalDistance = (chunkId != null) ? (Math.abs(chunkId.x) + Math.abs(chunkId.y)) : 0;
+        int edl = depth + (horizontalDistance / 2);
+
+        // Sanctuary Buffer: Any chunk within D_xy <= 1 capped to prevent early player obliteration:
+        // Overland (depth <= 1) and Strata 1 (depth == 2) capped at EDL = 2
+        // Strata 2 (depth == 3) capped at EDL = 3
+        if (chunkId != null && Math.abs(chunkId.x) <= 1 && Math.abs(chunkId.y) <= 1) {
+            if (depth <= 2) {
+                edl = Math.min(edl, 2);
+            } else if (depth == 3) {
+                edl = Math.min(edl, 3);
+            }
+        }
+
+        return Math.max(1, edl);
     }
 
     public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth, int playerLevel) {
-        int horizontalDistance = (chunkId != null) ? (Math.abs(chunkId.x) + Math.abs(chunkId.y)) : 0;
-        int el = depth + (horizontalDistance / 2);
-        int edl = (el + playerLevel) / 2;
-
-        // Sanctuary Buffer: Any chunk within D_xy <= 1 on Z = 1 capped at EDL = 2
-        if (chunkId != null && Math.abs(chunkId.x) <= 1 && Math.abs(chunkId.y) <= 1 && depth <= 1) {
-            edl = Math.min(edl, 2);
-        }
-
-        return Math.max(1, edl + difficultyOffset);
-    }
-
-    public void resetWorldKeepDifficulty() {
-        Gdx.app.log("WorldManager", "RESETTING WORLD - PRESERVING DIFFICULTY");
-
-        // 1. Increase Difficulty Offset
-        // If we are at Level 5, we want next run's Level 1 to feel like Level 6 (or
-        // similar).
-        // effectiveLevel = 1 + offset.
-        // We want 1 + offset = currentLevel + 1?
-        // Let's simply add currentLevel to offset.
-        this.difficultyOffset += this.currentLevel;
-        Gdx.app.log("WorldManager", "Difficulty Offset increased to: " + difficultyOffset);
-
-        // 2. Clear Loaded State
-        loadedChunks.clear();
-        levelThemes.clear();
-        currentPlayerChunkId.set(0, 0);
-        this.currentLevel = 1;
-        this.currentLevelTheme = getThemeForLevel(1);
-        this.pendingUpLadderPos = null;
-
-        // 3. Delete Chunk Save Files (Keep Discovery, Keep Player meta if stored
-        // separately)
-        FileHandle saveDir = Gdx.files.local(getChunkSaveDir());
-        if (saveDir.exists()) {
-            for (FileHandle file : saveDir.list()) {
-                if (file.name().startsWith("chunk_")) {
-                    file.delete();
-                }
-            }
-        }
+        return calculateEffectiveDifficulty(chunkId, depth);
     }
 
     // --- NEW: Descent Logic ---
@@ -276,6 +474,7 @@ public class WorldManager {
 
         // Rearm Shelter Altar commune on venturing into deeper strata
         com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().noteVenturedOut();
 
         Gdx.app.log("WorldManager",
                 "Descending to Level " + currentLevel + " at chunk " + currentPlayerChunkId + ". Pending UP Ladder at " + pendingUpLadderPos);
@@ -285,6 +484,7 @@ public class WorldManager {
         if (playerReference != null) {
             BalanceLogger.getInstance().logPlayerState(playerReference);
         }
+        noteArrival();
     }
 
     // --- NEW: Ascent Logic ---
@@ -303,6 +503,7 @@ public class WorldManager {
         // Retain currentPlayerChunkId so player returns to the same coordinate column
 
         Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel + " at chunk " + currentPlayerChunkId);
+        noteArrival();
         return true;
     }
 
@@ -331,7 +532,10 @@ public class WorldManager {
 
         if (loadedChunks.containsKey(chunkId)) {
             Gdx.app.log("WorldManager", "Loading chunk from cache: " + chunkId);
-            return loadedChunks.get(chunkId);
+            Maze cached = loadedChunks.get(chunkId);
+            // A station bought, or a shelter claimed, since this chunk was cached still shows.
+            applyShelterState(cached, chunkId);
+            return cached;
         }
 
         Biome biome;
@@ -361,6 +565,21 @@ public class WorldManager {
                 } else {
                     Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                     maze.setGoreManager(this.goreManager);
+                    restoreSealCourt(maze, chunkId);
+                    dressStratum(maze, chunkId, getChunkSeed(this.currentLevel, chunkId.x, chunkId.y), false);
+                    settleTown(maze, chunkId, false);
+                    // ChunkData persists none of identity, biome or theme, and the
+                    // generation path sets all three. Without this a reloaded chunk
+                    // came back as an anonymous MAZE chunk at (0,0): forest chunks
+                    // silently lost their cliff walls, and anything deriving from
+                    // the chunk id read the shelter's.
+                    maze.setChunkId(chunkId);
+                    Biome reloadedBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
+                    if (reloadedBiome != null) {
+                        maze.setBiome(reloadedBiome);
+                        maze.setTheme(themeForBiome(reloadedBiome, chunkId,
+                                calculateEffectiveDifficulty(chunkId, this.currentLevel)));
+                    }
                     if (this.goreManager != null) {
                         this.goreManager.importChunkGore(chunkId, data);
                     }
@@ -371,6 +590,7 @@ public class WorldManager {
                         }
                         pendingUpLadderPos = null;
                     }
+                    applyShelterState(maze, chunkId);
                     loadedChunks.put(chunkId, maze);
                     return maze;
                 }
@@ -398,28 +618,17 @@ public class WorldManager {
             } else if (generator instanceof LakelandsChunkGenerator) {
                 ((LakelandsChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof TundraChunkGenerator) {
+                ((TundraChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof BlightChunkGenerator) {
+                ((BlightChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
             }
         }
         // ---------------------------------------------------
 
-        RetroTheme.Theme themeToGenerate;
-        switch (biome) {
-            case MAZE:
-                themeToGenerate = this.currentLevelTheme;
-                break;
-            case FOREST:
-                themeToGenerate = RetroTheme.FOREST_THEME;
-                break;
-            case DESERT:
-                themeToGenerate = RetroTheme.DESERT_THEME;
-                break;
-            case LAKELANDS:
-                themeToGenerate = RetroTheme.LAKELANDS_THEME;
-                break;
-            default:
-                themeToGenerate = this.currentLevelTheme;
-                break;
-        }
+        RetroTheme.Theme themeToGenerate = themeForBiome(biome, chunkId, effectiveLevel);
 
         // Pass currentLevel as layoutLevel (for visuals) and effectiveLevel for
         // difficulty (spawns)
@@ -432,6 +641,11 @@ public class WorldManager {
 
         newMaze.setGoreManager(this.goreManager);
         newMaze.setChunkId(chunkId);
+        buildShelterRoadSites(newMaze, chunkId, biome);
+        placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
+        ensureSealCourt(newMaze, chunkId, currentLevel);
+        dressStratum(newMaze, chunkId, chunkSeed, true);
+        settleTown(newMaze, chunkId, true);
 
         // Themed Chunk Decoration
         com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
@@ -440,6 +654,16 @@ public class WorldManager {
             com.bpm.minotaur.generation.theme.ChunkThemeDecorator.decorate(
                     newMaze, theme, chunkSeed, this.dataManager, this.itemDataManager, this.assetManager);
         }
+
+        // Water: common on the surface, scarce in the strata (#193).
+        com.bpm.minotaur.generation.WaterSupply.apply(newMaze, biome, currentLevel, chunkSeed);
+
+        // Hidden choice events (data/events.json). Statues are placed by the generators and are
+        // a separate feature; see docs/DEsign/events.md.
+        boolean isShelterChunk = (currentLevel == 1 && chunkId.x == 0 && chunkId.y == 0);
+        com.bpm.minotaur.gamedata.events.EventPlacer.place(newMaze, biome.name(), currentLevel, isShelterChunk,
+                com.bpm.minotaur.gamedata.events.EventCatalog.getInstance(), seenChoiceEvents,
+                new java.util.Random(chunkSeed ^ 0x5EED_E7E7L));
 
         // Stamp target chunk themes on boundary gates so glowing runes reveal the theme ahead
         for (Gate gate : newMaze.getGates().values()) {
@@ -489,6 +713,14 @@ public class WorldManager {
             }
         }
 
+        // The early weapon (#196): the chunk an Incarnation wakes in is generated fresh after every
+        // death, so this places exactly one per Incarnation, after everything else has its tile.
+        if (isIncarnationStartChunk(chunkId)) {
+            com.bpm.minotaur.generation.EarlyWeapon.place(newMaze, itemDataManager, assetManager,
+                    new java.util.Random(chunkSeed ^ EARLY_WEAPON_SEED_SALT));
+        }
+
+        applyShelterState(newMaze, chunkId);
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
 
@@ -578,6 +810,30 @@ public class WorldManager {
 
     public void setCurrentChunk(GridPoint2 chunkId) {
         this.currentPlayerChunkId = chunkId;
+        noteArrival();
+    }
+
+    /**
+     * What the expedition map and the HUD minimap show, read from this world: its roads, the
+     * shelter network, map knowledge, and the chunks entered on each floor. The chunk the
+     * player stands in counts as entered before its first save.
+     */
+    public com.bpm.minotaur.gamedata.map.MapModel buildMapModel() {
+        int maxFloor = Math.max(currentLevel, getMaxVisitedLevel());
+        return new com.bpm.minotaur.gamedata.map.MapModel(biomeManager,
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance(),
+                com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance(), floor -> {
+                    Set<GridPoint2> visited = new HashSet<>(getVisitedChunkIds(floor));
+                    if (floor == currentLevel && currentPlayerChunkId != null) visited.add(new GridPoint2(currentPlayerChunkId));
+                    return visited;
+                }, maxFloor);
+    }
+
+    /** Tells the map what the player can see from the chunk they now stand in. */
+    private void noteArrival() {
+        if (gameMode != GameMode.ADVANCED || currentPlayerChunkId == null || biomeManager == null) return;
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().recordArrival(currentLevel, currentPlayerChunkId,
+                biomeManager, com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
     }
 
     public int getCurrentLevel() {
@@ -597,6 +853,9 @@ public class WorldManager {
         DoomManager.getInstance().setCurrentLevel(level);
         UnlockManager.getInstance().updateDeepestLevel(level);
         this.currentLevelTheme = getThemeForLevel(level);
+        if (level == 1 && soundManager != null && weatherManager != null) {
+            soundManager.updateWeatherAudio(weatherManager.getCurrentWeather(), weatherManager.getCurrentIntensity());
+        }
         Gdx.app.log("WorldManager", "Set current level to: " + level);
     }
 
@@ -620,6 +879,7 @@ public class WorldManager {
         if (!savingEnabled || gameMode == GameMode.CLASSIC)
             return;
         try {
+            rememberBeastWounds(maze);
             ChunkData data = new ChunkData(maze);
             if (this.goreManager != null) {
                 this.goreManager.exportChunkGore(chunkId, data);
@@ -657,6 +917,15 @@ public class WorldManager {
         if (currentLevel == 1) {
             weatherManager.update(delta);
 
+            // Ensure ambient rain sound is always playing when raining on level 1
+            if (soundManager != null && weatherManager != null) {
+                com.bpm.minotaur.weather.WeatherType wType = weatherManager.getCurrentWeather();
+                if ((wType == com.bpm.minotaur.weather.WeatherType.RAIN || wType == com.bpm.minotaur.weather.WeatherType.STORM)
+                        && !soundManager.isRainPlaying()) {
+                    soundManager.updateWeatherAudio(wType, weatherManager.getCurrentIntensity());
+                }
+            }
+
             // Audio Dampening Check
             if (playerReference != null) {
                 if (currentMaze != null) {
@@ -674,6 +943,10 @@ public class WorldManager {
         }
 
         if (goreManager != null) {
+            if (playerReference != null && currentPlayerChunkId != null) {
+                goreManager.setViewer(currentPlayerChunkId.x * 36.0f + playerReference.getPosition().x,
+                        currentPlayerChunkId.y * 36.0f + playerReference.getPosition().y);
+            }
             goreManager.update(delta, currentMaze, this);
         }
     }
@@ -787,6 +1060,7 @@ public class WorldManager {
     public void wipeExploredWorldOnDeath() {
         loadedChunks.clear();
         levelThemes.clear();
+        seenChoiceEvents.clear();
         FileHandle dir = Gdx.files.local(getChunkSaveDir());
         if (dir.exists()) {
             for (FileHandle f : dir.list()) {
@@ -795,12 +1069,150 @@ public class WorldManager {
                 }
             }
         }
+        com.bpm.minotaur.generation.ShelterRoads oldRoads = biomeManager.getRoads();
         this.worldSeed = new java.util.Random().nextLong();
+        // Every chunk file is gone, so nothing old can meet the new layout:
+        // a legacy world moves to the current algorithm here.
+        this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
+        rebuildBiomeManager();
+        // The new world remembers how far the player got along each road.
+        this.respawnChunk = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
+                .carryOverDeath(oldRoads, biomeManager.getRoads());
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
         Gdx.app.log("WorldManager", "Explored world wiped on death. New world seed: " + this.worldSeed);
+    }
+
+    /** Where the player wakes after the last death: a shelter chunk, or null for home. */
+    private GridPoint2 respawnChunk;
+
+    private static final long EARLY_WEAPON_SEED_SALT = 0xEA21_3EA9L;
+
+    /** The surface chunk a new Incarnation wakes in, which holds its early weapon (#196). */
+    boolean isIncarnationStartChunk(GridPoint2 chunkId) {
+        return currentLevel == 1 && chunkId != null && chunkId.equals(getRespawnChunk());
+    }
+
+    /** The chunk the player wakes in after a death: a remembered road shelter, or home. */
+    public GridPoint2 getRespawnChunk() {
+        return respawnChunk == null ? new GridPoint2(0, 0) : new GridPoint2(respawnChunk);
+    }
+
+    /**
+     * A save laid out before the shelter roads is wiped and laid out again, once, on load.
+     * No penalty: the old world simply had no roads to remember.
+     *
+     * @return true if the world was upgraded
+     */
+    public boolean upgradeWorldIfOutdated() {
+        if (worldGenVersion >= com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT) return false;
+        loadedChunks.clear();
+        levelThemes.clear();
+        seenChoiceEvents.clear();
+        FileHandle dir = Gdx.files.local(getChunkSaveDir());
+        if (dir.exists()) {
+            for (FileHandle f : dir.list()) {
+                if (!f.isDirectory() && f.name().endsWith(".json")) f.delete();
+            }
+        }
+        this.worldGenVersion = com.bpm.minotaur.generation.WorldConstants.WORLD_GEN_CURRENT;
+        rebuildBiomeManager();
+        com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().carryOverDeath(null, biomeManager.getRoads());
+        com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().forgetWorld();
+        this.currentLevel = 1;
+        this.currentPlayerChunkId = new GridPoint2(0, 0);
+        log("World laid out again for world-gen version " + worldGenVersion);
+        return true;
+    }
+
+    /** Stamps this chunk's outpost shelter or seal site, if the roads put one here. */
+    private void buildShelterRoadSites(Maze maze, GridPoint2 chunkId, Biome biome) {
+        if (currentLevel != 1 || biome == Biome.MAZE || gameMode == GameMode.CLASSIC) return;
+        com.bpm.minotaur.generation.ShelterRoads.Site site = biomeManager.getShelterSite(chunkId);
+        if (site != null) {
+            com.bpm.minotaur.generation.ShelterBuilder.buildOutpost(maze, biome, itemDataManager, assetManager);
+            // Tinder turns up more often along the roads: half the shelters keep a bundle by the door.
+            GridPoint2 step = maze.getShelterEntry();
+            if (step != null && itemDataManager != null
+                    && new java.util.Random(getChunkSeed(1, chunkId.x, chunkId.y) ^ 0x7111DE5L).nextBoolean()) {
+                GridPoint2 at = findSafeArrivalTile(maze, step.x + 1, step.y);
+                Item tinder = at == null ? null : itemDataManager.createItem(Item.ItemType.TINDER_BUNDLE, at.x, at.y,
+                        com.bpm.minotaur.gamedata.item.ItemColor.TAN, assetManager);
+                if (tinder != null) maze.addItem(tinder);
+            }
+            return;
+        }
+        int sealRoad = biomeManager.getSealRoad(chunkId);
+        if (sealRoad >= 0) {
+            com.bpm.minotaur.generation.ShelterBuilder.buildSealSite(maze,
+                    com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(sealRoad), assetManager);
+        }
+    }
+
+    /**
+     * Brings a shelter chunk in line with the shelter network: a claimed shelter is lit and
+     * furnished with every unlocked station, and lights lost on save come back.
+     */
+    private void applyShelterState(Maze maze, GridPoint2 chunkId) {
+        if (maze == null || currentLevel != 1) return;
+        boolean home = chunkId.x == 0 && chunkId.y == 0;
+        if (!home && maze.getHearthTile() == null) return;
+        if (!home && !maze.isSanctuary()
+                && com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().isClaimed(chunkId)) {
+            com.bpm.minotaur.generation.ShelterBuilder.light(maze, itemDataManager, assetManager);
+        }
+        if (maze.isSanctuary()) {
+            com.bpm.minotaur.generation.ShelterBuilder.relightHearth(maze);
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().furnish(maze, itemDataManager, assetManager);
+        }
+    }
+
+    /**
+     * Claims the shelter the player stands in: lights it, furnishes it, and records it.
+     *
+     * @return false if this chunk holds no cold shelter
+     */
+    public boolean claimShelter(Maze maze) {
+        if (maze == null || maze.getChunkId() == null || maze.getHearthTile() == null || maze.isSanctuary()) {
+            return false;
+        }
+        com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().claim(maze.getChunkId());
+        applyShelterState(maze, maze.getChunkId());
+        saveCurrentChunk(maze);
+        return true;
     }
 
     public BiomeManager getBiomeManager() {
         return biomeManager;
+    }
+
+    public MonsterDataManager getMonsterDataManager() {
+        return dataManager;
+    }
+
+    public AssetManager getAssetManager() {
+        return assetManager;
+    }
+
+    public int getWorldGenVersion() {
+        return worldGenVersion;
+    }
+
+    /**
+     * Sets the algorithm a loaded save was laid out with. Must run before any
+     * wilderness chunk loads, or that chunk is placed by the wrong rule.
+     */
+    public void setWorldGenVersion(int version) {
+        this.worldGenVersion = version;
+        rebuildBiomeManager();
+    }
+
+    /** Biome layout derives from seed and version; both setters and the wipes come through here. */
+    private void rebuildBiomeManager() {
+        this.biomeManager = new BiomeManager(this.worldSeed, this.worldGenVersion);
+        BlightChunkGenerator blight = (BlightChunkGenerator) generators.get(Biome.BLIGHT);
+        if (blight != null) {
+            blight.setCastleSite(biomeManager.getCastleSite());
+        }
     }
 
     public GameMode getGameMode() {
@@ -812,6 +1224,10 @@ public class WorldManager {
     }
 
     public GridPoint2 getCurrentPlayerChunkId() {
+        return currentPlayerChunkId;
+    }
+
+    public GridPoint2 getCurrentChunk() {
         return currentPlayerChunkId;
     }
 
@@ -842,8 +1258,10 @@ public class WorldManager {
                 return;
         }
         this.currentPlayerChunkId = newChunkId;
+        noteArrival();
         if (Math.abs(newChunkId.x) >= 2 || Math.abs(newChunkId.y) >= 2 || currentLevel >= 2) {
             com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().noteVenturedOut();
         }
         player.setMaze(newMaze);
         player.setPosition(newPlayerPos);
@@ -945,10 +1363,11 @@ public class WorldManager {
 
         DoomManager doom = DoomManager.getInstance();
         doom.advanceExpeditionTurn();
+        noteDoomStageForHistory();
         int interval = doom.getSpawnInterval();
 
         // Periodic Spawn Check using dynamic Doom Clock interval
-        if (turnCount > 0 && turnCount % interval == 0) {
+        if (turnCount > 0 && turnCount % interval == 0 && !SealCourt.inSession(loadedChunks.get(currentPlayerChunkId))) {
             int edlWithDoom = calculateEffectiveDifficulty(currentPlayerChunkId, currentLevel) + doom.getDoomEDLBonus();
             SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
                     loadedChunks.get(currentPlayerChunkId), difficulty, edlWithDoom, player.getLevel(),
@@ -1000,10 +1419,325 @@ public class WorldManager {
         return factionMatrix;
     }
 
+    /** Choice events placed so far this run; saved with the world. */
+    public java.util.Set<String> getSeenChoiceEvents() {
+        return seenChoiceEvents;
+    }
+
+    public void setSeenChoiceEvents(java.util.Collection<String> ids) {
+        seenChoiceEvents.clear();
+        if (ids != null) {
+            seenChoiceEvents.addAll(ids);
+        }
+    }
+
+    /**
+     * The Maze's history, built from its own seed on first use. It survives death: dying
+     * re-rolls the world seed, never the history's (ADR 0004).
+     */
+    public HistoryManager getHistory() {
+        if (history == null) {
+            history = HistoryManager.fromSave(worldSeed, pendingHistorySave,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            pendingHistorySave = null;
+            attachHouseRelations();
+        }
+        return history;
+    }
+
+    /** Restores a saved history and rebuilds it now. Null means a save from before the history. */
+    public void setHistorySave(com.bpm.minotaur.gamedata.history.HistorySaveData save) {
+        this.pendingHistorySave = save;
+        this.history = null;
+        getHistory();
+    }
+
+    /**
+     * Passes the Doom Clock's stage to the history, which chronicles each new peak as
+     * Tarmin-Zul's ascendancy. Only once the history exists: it is built at game start, and a
+     * headless test ticking turns has none.
+     */
+    public void noteDoomStageForHistory() {
+        if (history != null) history.noteDoomStage(DoomManager.getInstance().getDoomStage());
+    }
+
+    /** The Maze house a monster fights for: its own, Tarmin-Zul's for the Legion, else -1. */
+    public int houseOf(com.bpm.minotaur.gamedata.monster.Monster m) {
+        if (m == null) return -1;
+        if (m.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.MAZE_HOUSE) return m.getHouseId();
+        if (m.getFaction() == com.bpm.minotaur.gamedata.monster.Faction.TARMIN_LEGION && history != null
+                && history.world().tarminHouse() != null) {
+            return history.world().tarminHouse().id;
+        }
+        return -1;
+    }
+
+    /**
+     * Where the houses sit in this world, or null in a world laid out before the shelter roads,
+     * which has no seal sites to seat them at.
+     */
+    public com.bpm.minotaur.gamedata.history.war.SeatMap houseSeats() {
+        if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
+        return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
+                biomeManager.getCastleSite(), worldSeed);
+    }
+
+    /**
+     * Gives a strata chunk its stratum (plan T4.1): props scattered once, when it is first made,
+     * and its glow relit on every load, since lights are not saved.
+     */
+    private void dressStratum(Maze maze, GridPoint2 chunkId, long chunkSeed, boolean fresh) {
+        if (maze == null || currentLevel <= 1) return;
+        com.bpm.minotaur.generation.Stratum stratum = com.bpm.minotaur.generation.StratumMap.of(worldSeed, chunkId, currentLevel);
+        // Under a seal site, down to the court, the strata are the gash's: its holder's doctrine (T1.13).
+        if (biomeManager != null && history != null) {
+            com.bpm.minotaur.generation.Stratum gash = com.bpm.minotaur.generation.GashInterior.of(getHistory().world(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), biomeManager.getSealRoad(chunkId), currentLevel);
+            if (gash != null) stratum = gash;
+        }
+        maze.setStratum(stratum);
+        if (fresh) com.bpm.minotaur.generation.StratumDecorator.decorate(maze, stratum, chunkSeed, assetManager);
+        com.bpm.minotaur.generation.StratumDecorator.light(maze, stratum, chunkSeed);
+    }
+
+    /** The town standing in the player's chunk, or null (plan T4.2). */
+    public com.bpm.minotaur.gamedata.history.town.Town townHere() {
+        if (currentPlayerChunkId == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, currentPlayerChunkId, currentLevel)) {
+            return null;
+        }
+        return getHistory().town(com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, currentPlayerChunkId.x, currentPlayerChunkId.y));
+    }
+
+    private void settleTown(Maze maze, GridPoint2 chunkId, boolean fresh) {
+        if (maze == null || !com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, chunkId, currentLevel)) return;
+        String key = com.bpm.minotaur.gamedata.history.town.Town.keyOf(currentLevel, chunkId.x, chunkId.y);
+        getHistory().seatExile(key);
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(key);
+        if (fresh) TownBuilder.raise(maze, town, itemDataManager, assetManager);
+        TownBuilder.populate(maze, town, dataManager, itemDataManager, assetManager,
+                getHistory().standing().isHostile(town), this::recruit);
+    }
+
+    /**
+     * The player struck one of a town's guards: a crime. The town and its sisters hear of it, and
+     * every guard of the town here turns on the player (plan D41). Returns what is said, or null.
+     */
+    public String onTownCrime(com.bpm.minotaur.gamedata.monster.Monster struck, Maze maze) {
+        if (struck == null || struck.getTownKey() == null || !struck.isPeaceful()) return null;
+        com.bpm.minotaur.gamedata.history.town.Town town = getHistory().town(struck.getTownKey());
+        getHistory().standing().change(town, com.bpm.minotaur.gamedata.history.town.Standing.CRIME);
+        if (maze != null) {
+            for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                if (m != null && town.key.equals(m.getTownKey())) {
+                    m.setPeaceful(false);
+                    m.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+                }
+            }
+        }
+        return com.bpm.minotaur.ui.UiGlyphs.sanitize("You have drawn steel in " + town.name + ". Its guards come for you.");
+    }
+
+    /** Other towns a reeve might send a message to: those on the strata near here (plan T4.5). */
+    public java.util.List<String> nearbyTowns(String exceptKey) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (currentPlayerChunkId == null) return out;
+        for (int level = com.bpm.minotaur.gamedata.history.town.TownSites.MIN_LEVEL;
+             level <= com.bpm.minotaur.gamedata.history.town.TownSites.MAX_LEVEL; level++) {
+            for (int dx = -NEARBY_TOWN_RADIUS; dx <= NEARBY_TOWN_RADIUS; dx++) {
+                for (int dy = -NEARBY_TOWN_RADIUS; dy <= NEARBY_TOWN_RADIUS; dy++) {
+                    GridPoint2 c = new GridPoint2(currentPlayerChunkId.x + dx, currentPlayerChunkId.y + dy);
+                    if (!com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldSeed, c, level)) continue;
+                    String key = com.bpm.minotaur.gamedata.history.town.Town.keyOf(level, c.x, c.y);
+                    if (!key.equals(exceptKey)) out.add(key);
+                }
+            }
+        }
+        return out;
+    }
+
+    static final int NEARBY_TOWN_RADIUS = 6;
+
+    /** A megabeast's wounds outlast the chunk it was hurt in. */
+    private void rememberBeastWounds(Maze maze) {
+        if (history == null || maze == null) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() >= 0) history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
+        }
+    }
+
+    /**
+     * Brings the megabeast the tracks put here, and sends away one that has roamed on (plan T3.3).
+     * Called each turn and on arrival. Returns what the player notices, or null.
+     */
+    public String tendMegabeasts(Maze maze, com.badlogic.gdx.math.Vector2 playerPos) {
+        if (history == null || maze == null || currentPlayerChunkId == null) return null;
+        com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts =
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
+        if (beasts == null) return null;
+        com.bpm.minotaur.gamedata.history.Megabeast present = com.bpm.minotaur.gamedata.history.beast.BeastTracks.presentAt(
+                history.world(), worldSeed, history.warClock(), currentPlayerChunkId, currentLevel, history.hunt());
+        com.bpm.minotaur.gamedata.monster.Monster here = null;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() >= 0) here = m;
+        }
+        if (here != null && present != null && present.id == here.getMegabeastId() && !present.isPacified()
+                && BeastForge.takeOffering(maze, new GridPoint2((int) here.getPosition().x, (int) here.getPosition().y)) != null) {
+            // A trophy of the houses laid before it: it takes the offering, and the player's peace with it (T4.5).
+            history.recordMegabeastPacified(present.id);
+            here.setPeaceful(true);
+            here.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.IDLE);
+            return present.name + " takes the offering and turns from you. It will not hunt you now.";
+        }
+        if (here != null && (present == null || present.id != here.getMegabeastId())) {
+            if (here.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) {
+                // Hunting the player: it stays with them, wherever its range would have taken it.
+                history.startHunt(here.getMegabeastId(), currentPlayerChunkId, currentLevel);
+                history.hunt().readyAt = history.warClock();
+                return null;
+            }
+            history.setBeastHp(here.getMegabeastId(), here.getCurrentHP());
+            maze.removeMonster(here);
+            return null;
+        }
+        if (present == null || here != null) return null;
+        com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt = history.hunt();
+        boolean followed = hunt != null && hunt.beastId == present.id;
+        GridPoint2 at = followed && playerPos != null
+                ? findSafeArrivalTile(maze, (int) playerPos.x + 5, (int) playerPos.y)
+                : findBossSeat(maze);
+        if (at == null) return null;
+        com.bpm.minotaur.gamedata.monster.Monster beast;
+        try {
+            beast = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(beasts.archetype(present.archetypeId).body), at.x, at.y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        BeastForge.dress(beast, present, beasts, history.beastHp(present.id, Integer.MAX_VALUE));
+        if (followed) beast.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+        maze.addMonster(beast);
+        return followed ? present.name + " has followed you." : "The ground trembles. Something enormous is near.";
+    }
+
+    /** The player is leaving: a megabeast hunting them nearby follows, a few turns behind. */
+    public void megabeastsFollow(Maze maze, com.badlogic.gdx.math.Vector2 playerPos, GridPoint2 toChunk, int toLevel) {
+        if (history == null || maze == null || playerPos == null || toChunk == null) return;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
+            if (m == null || m.getMegabeastId() < 0 || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
+            if (Math.abs(m.getPosition().x - playerPos.x) + Math.abs(m.getPosition().y - playerPos.y) > FOLLOW_REACH) continue;
+            history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
+            history.startHunt(m.getMegabeastId(), toChunk, toLevel);
+            maze.removeMonster(m);
+        }
+    }
+
+    /** How near a hunting megabeast must be to follow the player out. */
+    static final int FOLLOW_REACH = 12;
+
+    /** A soldier for a surface battle: a monster of a monsters.json type, standing at a tile. */
+    public com.bpm.minotaur.gamedata.monster.Monster recruit(String monsterType, int x, int y) {
+        try {
+            // Near-shelter sanctuary bounding for surface battles:
+            // Within 2 chunks of starter shelter on Level 1, substitute endgame doctrine shock troops
+            // with appropriate tier 1-3 soldiers so starter shelter isn't overrun with Minotaurs / Fallen Angels.
+            if (currentLevel == 1 && currentPlayerChunkId != null
+                    && Math.abs(currentPlayerChunkId.x) <= 2 && Math.abs(currentPlayerChunkId.y) <= 2) {
+                if ("MINOTAUR".equals(monsterType)) monsterType = "ORC";
+                else if ("FALL_ANGEL".equals(monsterType)) monsterType = "LIZARD_WARRIOR";
+                else if ("GIANT".equals(monsterType) || "UMBER_HULK".equals(monsterType)) monsterType = "SKELETON";
+                else if ("IRON_GOLEM".equals(monsterType) || "TROLL".equals(monsterType)) monsterType = "HOBGOBLIN";
+                else if ("MIND_FLAYER".equals(monsterType)) monsterType = "GHOUL";
+                else if ("BRINGER_OF_DEATH".equals(monsterType) || "LICH".equals(monsterType)) monsterType = "CLOAKED_SKELETON";
+                else if ("DEMON_SLIME".equals(monsterType)) monsterType = "ZOMBIE";
+                else if ("WEREWOLF".equals(monsterType)) monsterType = "GIANT_CENTIPEDE";
+            }
+
+            return new com.bpm.minotaur.gamedata.monster.Monster(
+                    com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(monsterType), x, y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** The front over the player's chunk on the surface, or null. */
+    public com.bpm.minotaur.gamedata.history.war.Front frontHere() {
+        if (currentLevel != 1 || currentPlayerChunkId == null) return null;
+        return com.bpm.minotaur.gamedata.history.war.FrontPlanner.at(currentFronts(), currentPlayerChunkId);
+    }
+
+    /**
+     * Every war's front right now, and the pitched battle an expedition brings to the player (Living
+     * War W4); empty in a world with no seats.
+     */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
+        if (seats == null) return java.util.Collections.emptyList();
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Front> fronts = new java.util.ArrayList<>(getHistory().fronts(seats));
+        long clock = getHistory().warClock();
+        for (com.bpm.minotaur.gamedata.history.war.Encounter e : currentEncounters()) {
+            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) {
+                fronts.add(new com.bpm.minotaur.gamedata.history.war.Front(e.warId, e.houseA, e.houseB, e.chunkAt(clock)));
+            }
+        }
+        return fronts;
+    }
+
+    private java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> encountersNow = java.util.Collections.emptyList();
+    private long encountersAt = Long.MIN_VALUE;
+    private GridPoint2 encountersFor;
+    private int encountersLevel;
+
+    /**
+     * The surface war under way now (Living War W2): what the player can walk into, and the fights
+     * out of sight. Worked out once a turn, for wherever the player stands.
+     */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentEncounters() {
+        HistoryManager history = getHistory();
+        long clock = history.warClock();
+        if (clock != encountersAt || currentLevel != encountersLevel
+                || (currentPlayerChunkId != null && !currentPlayerChunkId.equals(encountersFor))) {
+            encountersNow = new java.util.ArrayList<>(history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats()));
+            // The siege of the castle, heard and seen across the overland (W34).
+            encountersNow.addAll(com.bpm.minotaur.gamedata.history.war.Siege.at(history.world(), castleSite()));
+            encountersAt = clock;
+            encountersLevel = currentLevel;
+            encountersFor = currentPlayerChunkId == null ? null : new GridPoint2(currentPlayerChunkId);
+        }
+        return encountersNow;
+    }
+
+    /** Every war's camps, one each side of its front (Living War W2); empty in a world with no seats. */
+    public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentCamps() {
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
+        if (seats == null) return java.util.Collections.emptyList();
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> camps = new java.util.ArrayList<>(
+                com.bpm.minotaur.gamedata.history.war.EncounterScheduler.camps(getHistory().world(), seats));
+        camps.addAll(com.bpm.minotaur.gamedata.history.war.Siege.camps(getHistory().world(), castleSite()));
+        return camps;
+    }
+
+    /** Castle Tarmin's chunk, or null in a world laid out before it. */
+    public GridPoint2 castleSite() {
+        return biomeManager != null ? biomeManager.getCastleSite() : null;
+    }
+
+    /** Lets Maze houses (and the Legion, Tarmin-Zul's house) infight as the history says. */
+    private void attachHouseRelations() {
+        if (factionMatrix != null && history != null) {
+            factionMatrix.setHouseRelations(history.world().houseRelations());
+        }
+    }
+
     public void setFactionMatrix(FactionMatrix factionMatrix) {
         if (factionMatrix != null) {
             this.factionMatrix = factionMatrix;
+            attachHouseRelations();
         }
+    }
+
+    public Difficulty getDifficulty() {
+        return difficulty;
     }
 
     public long getWorldSeed() {
@@ -1012,6 +1746,7 @@ public class WorldManager {
 
     public void setWorldSeed(long worldSeed) {
         this.worldSeed = worldSeed;
+        rebuildBiomeManager();
         if (this.factionMatrix == null) {
             this.factionMatrix = new FactionMatrix(worldSeed);
         }
@@ -1039,8 +1774,13 @@ public class WorldManager {
         com.bpm.minotaur.generation.theme.ChunkTheme theme = themes[debugThemeCursor % themes.length];
         debugThemeCursor++;
 
-        // Park debug chunks far from anywhere the player would organically walk.
+        // Park debug chunks far from anywhere the player would organically walk -- and never on a
+        // chunk already saved from an earlier warp, which would load as it was, unthemed by this one.
         GridPoint2 target = new GridPoint2(500 + debugThemeCursor, 500);
+        while (Gdx.files != null && Gdx.files.local(getChunkSaveDir()
+                + getChunkFileName(this.currentLevel, target.x, target.y)).exists()) {
+            target.y++;
+        }
         themeOverrides.put(new GridPoint2(target), theme);
 
         // Drop any cached copy so the chunk regenerates under the override.
@@ -1085,7 +1825,15 @@ public class WorldManager {
 
         PortalWarp warp;
         String message;
-        if (portal != null) {
+        if (portal != null && portal.getDestination() == Biome.BLIGHT && biomeManager.isLegacy()) {
+            // A legacy world has no Blight. It takes the current layout when it is next
+            // wiped (death or world reset), and the gate opens from then on.
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                        "The Crimson Gate finds no Blight in this old world. It will open once the world is reborn.", 3.0f));
+            }
+            return true;
+        } else if (portal != null) {
             warp = prepareBiomeWarp(portal);
             message = "You step through the " + portal.getDisplayName() + "...";
         } else if (target.getType() == Item.ItemType.BIOME_RETURN_PORTAL) {
@@ -1133,7 +1881,16 @@ public class WorldManager {
     public PortalWarp prepareBiomeWarp(com.bpm.minotaur.gamedata.progression.BiomePortal portal) {
         if (portal == null) return null;
 
-        GridPoint2 target = findNearestChunkOfBiome(portal.getDestination());
+        // Portals land beside a shelter in their biome: the first on the castle road, so they
+        // skip ahead toward the castle, else the nearest to home on any road.
+        GridPoint2 target = portalShelterIn(portal.getDestination());
+        if (target == null) {
+            // Older worlds have no roads. The Crimson Gate lands on the castle corridor, the
+            // one Blight guaranteed to reach the castle.
+            target = (portal.getDestination() == Biome.BLIGHT && biomeManager.getCastleSite() != null)
+                    ? biomeManager.findCorridorBlightEntry()
+                    : findNearestChunkOfBiome(portal.getDestination());
+        }
         if (target == null) {
             log("No chunk of biome " + portal.getDestination() + " found within scan range.");
             return null;
@@ -1142,12 +1899,29 @@ public class WorldManager {
         Maze destination = loadChunk(target);
         if (destination == null) return null;
 
-        GridPoint2 arrival = findSafeArrivalTile(destination,
-                destination.getWidth() / 2, destination.getHeight() / 2);
+        GridPoint2 arrival = arrivalBesideShelter(destination);
         if (arrival == null) return null;
 
         placeReturnPortalNear(destination, arrival);
         return new PortalWarp(target, arrival);
+    }
+
+    /** Where a warp lands: just outside the shelter's door if the chunk has one, else mid-chunk. */
+    public static GridPoint2 arrivalBesideShelter(Maze maze) {
+        if (maze == null) return null;
+        GridPoint2 entry = maze.getShelterEntry();
+        return findSafeArrivalTile(maze,
+                entry != null ? entry.x : maze.getWidth() / 2,
+                entry != null ? entry.y - 1 : maze.getHeight() / 2);
+    }
+
+    /**
+     * Where a portal to this biome lands: the first castle-road shelter in it, else the
+     * road shelter in it nearest home, else null (a world without roads, or no shelter there).
+     */
+    public GridPoint2 portalShelterIn(Biome biome) {
+        com.bpm.minotaur.generation.ShelterRoads roads = biomeManager.getRoads();
+        return roads == null ? null : roads.portalArrival(biome, biomeManager::getBiome);
     }
 
     /** Sends the player from a return portal back to the shelter. */
@@ -1286,9 +2060,19 @@ public class WorldManager {
         com.bpm.minotaur.generation.theme.ChunkTheme forced = themeOverrides.get(chunkId);
         if (forced != null) return forced;
 
+        // Beneath Castle Tarmin: its halls, where a siege's assault fights its way in (Living War W36).
+        if (level == com.bpm.minotaur.gamedata.history.war.Siege.HALLS_LEVEL && biomeManager != null
+                && chunkId.equals(biomeManager.getCastleSite())) {
+            return com.bpm.minotaur.generation.theme.ChunkTheme.RUINED_CASTLE;
+        }
+
         if (chunkId.x == 0 && chunkId.y == 0 && level == 1) {
             return null; // Shelter chunk is never themed
         }
+
+        // The bridge guardian used to be a themed chunk fixed at (0, 1), which
+        // sealed its gates on entry. It is a roaming monster now, placed by
+        // placeBridgeBossIfDue, so it is not themed at all.
 
         Biome chunkBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
 

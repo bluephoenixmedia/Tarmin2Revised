@@ -156,6 +156,28 @@ public class AssetIntegrationTest {
     }
 
     @Test
+    public void testAttractModeAssetsExist() {
+        String[] attractAssets = {
+                "models/skybox/castle_citadel.obj",
+                "models/skybox/castle_citadel.mtl",
+                "models/skybox/south_spire.obj",
+                "models/skybox/south_spire.mtl",
+                "models/skybox/celestial_dome.obj",
+                "shaders/world3d.vert",
+                "shaders/world3d.frag",
+                "images/wall.png",
+                "images/floor.png",
+                "sounds/wind.ogg",
+                "sounds/rain.ogg",
+                "sounds/music/tarmin_enter_fx.ogg"
+        };
+        for (String assetPath : attractAssets) {
+            File f = getAssetFile(assetPath);
+            assertTrue("Attract mode asset must exist: " + assetPath, f.exists() && f.length() > 0);
+        }
+    }
+
+    @Test
     public void testEmptyPixmap() {
         new com.badlogic.gdx.utils.SharedLibraryLoader().load("gdx");
         try {

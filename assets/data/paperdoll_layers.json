@@ -49,7 +49,7 @@
       "layer": "banded",
       "slot": "chest"
     },
-    "BARD_S_FRIEND": {
+    "BARDS_FRIEND": {
       "layer": "bard_s_friend",
       "slot": "weapon"
     },
@@ -361,7 +361,7 @@
       "layer": "crossbow_disk",
       "slot": "weapon"
     },
-    "DRAGON_S_PAW": {
+    "DRAGONS_PAW": {
       "layer": "dragon_s_paw",
       "slot": "weapon"
     },
@@ -397,7 +397,7 @@
       "layer": "flail_chain",
       "slot": "weapon"
     },
-    "FLAIL_FOOTMAN_S": {
+    "FLAIL_FOOTMANS": {
       "layer": "flail_footman",
       "slot": "weapon"
     },
@@ -405,7 +405,7 @@
       "layer": "flail_footman",
       "slot": "weapon"
     },
-    "FLAIL_HORSEMAN_S": {
+    "FLAIL_HORSEMANS": {
       "layer": "flail_horseman",
       "slot": "weapon"
     },
@@ -473,11 +473,11 @@
       "layer": "gauntlets",
       "slot": "hands"
     },
-    "GLADIATOR_S_FRIEND_FOOTMAN_S": {
+    "GLADIATORS_FRIEND_FOOTMANS": {
       "layer": "gladiators_friend",
       "slot": "weapon"
     },
-    "GLADIATOR_S_FRIEND_HORSEMAN_S": {
+    "GLADIATORS_FRIEND_HORSEMANS": {
       "layer": "gladiators_friend",
       "slot": "weapon"
     },
@@ -673,7 +673,7 @@
       "layer": "knife_throwing",
       "slot": "weapon"
     },
-    "KNIFE_WIDOW_S": {
+    "KNIFE_WIDOWS": {
       "layer": "knife_throwing",
       "slot": "weapon"
     },
@@ -793,11 +793,11 @@
       "layer": "mace_footman",
       "slot": "weapon"
     },
-    "MACE_FOOTMAN_S": {
+    "MACE_FOOTMANS": {
       "layer": "mace_footman",
       "slot": "weapon"
     },
-    "MACE_FOOTMAN_S_WHISTLING": {
+    "MACE_FOOTMANS_WHISTLING": {
       "layer": "mace_footman",
       "slot": "weapon"
     },
@@ -809,11 +809,11 @@
       "layer": "great_mace",
       "slot": "weapon"
     },
-    "MACE_HORSEMAN_S": {
+    "MACE_HORSEMANS": {
       "layer": "mace_horseman",
       "slot": "weapon"
     },
-    "MACE_HORSEMAN_S_WHISTLING": {
+    "MACE_HORSEMANS_WHISTLING": {
       "layer": "mace_horseman",
       "slot": "weapon"
     },
@@ -877,11 +877,11 @@
       "layer": "peshkabz",
       "slot": "weapon"
     },
-    "PICK_FOOTMAN_S": {
+    "PICK_FOOTMANS": {
       "layer": "pick_footman_s",
       "slot": "weapon"
     },
-    "PICK_HORSEMAN_S": {
+    "PICK_HORSEMANS": {
       "layer": "pick_horseman",
       "slot": "weapon"
     },
@@ -1057,6 +1057,10 @@
       "layer": "body_shield_1",
       "slot": "shield"
     },
+    "SHIELD_MEDIUM": {
+      "layer": "body_shield_1",
+      "slot": "shield"
+    },
     "SHIELD_BODY_2": {
       "layer": "body_shield_2",
       "slot": "shield"
@@ -1209,7 +1213,7 @@
       "layer": "splint_mail_leggings",
       "slot": "legs"
     },
-    "STAFF_HAMANU_S": {
+    "STAFF_HAMANUS": {
       "layer": "staff_hamanu_s",
       "slot": "weapon"
     },
@@ -1345,7 +1349,7 @@
       "layer": "sword_mandible",
       "slot": "weapon"
     },
-    "SWORD_MARINER_S": {
+    "SWORD_MARINERS": {
       "layer": "sword_mariners",
       "slot": "weapon"
     },
@@ -1433,7 +1437,7 @@
       "layer": "chain_whip",
       "slot": "weapon"
     },
-    "WHIP_MASTER_S": {
+    "WHIP_MASTERS": {
       "layer": "whip",
       "slot": "weapon"
     },

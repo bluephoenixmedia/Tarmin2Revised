@@ -264,4 +264,93 @@ public class SpellSystemTest {
         assertEquals("MISTY_STEP", player.getPreparedSpell(1));
         assertFalse("Scroll should be consumed from inventory", player.getInventory().getMainInventory().contains(scroll));
     }
+
+    @Test
+    public void testHealingSpellsFlagAndArchetypes() {
+        SpellDataManager.getInstance().load();
+
+        String[] radiantHealingSpells = {
+                "AID", "CURE_WOUNDS", "GOODBERRY", "GREATER_RESTORATION", "HEAL",
+                "HEALING_WORD", "LESSER_RESTORATION", "MASS_CURE_WOUNDS", "MASS_HEAL",
+                "MASS_HEALING_WORD", "PRAYER_OF_HEALING", "REGENERATE", "REVIVIFY",
+                "TRUE_RESURRECTION"
+        };
+
+        for (String id : radiantHealingSpells) {
+            SpellTemplate spell = SpellDataManager.getSpell(id);
+            assertNotNull("Spell should exist: " + id, spell);
+            assertTrue("Spell " + id + " must have isHealing() == true", spell.isHealing());
+            assertEquals("Spell " + id + " must have HOLY_RADIANCE archetype",
+                    VisualArchetype.HOLY_RADIANCE, spell.getVisualArchetypeEnum());
+        }
+
+        SpellTemplate beacon = SpellDataManager.getSpell("BEACON_OF_HOPE");
+        assertNotNull(beacon);
+        assertTrue("Beacon of Hope must have isHealing() == true", beacon.isHealing());
+        assertEquals(VisualArchetype.ARCANE_WARD, beacon.getVisualArchetypeEnum());
+
+        SpellTemplate fireball = SpellDataManager.getSpell("FIREBALL");
+        assertNotNull(fireball);
+        assertFalse("Fireball must not be healing", fireball.isHealing());
+
+        SpellTemplate magicMissile = SpellDataManager.getSpell("MAGIC_MISSILE");
+        assertNotNull(magicMissile);
+        assertFalse("Magic Missile must not be healing", magicMissile.isHealing());
+    }
+
+    @Test
+    public void testReauthoredVisualArchetypes() {
+        SpellDataManager.getInstance().load();
+
+        // Enchantment / Mind spells re-authored to PSYCHIC_SHOCK
+        for (String id : new String[] { "CHARM_PERSON", "COMMAND", "CONFUSION", "SUGGESTION", "HIDEOUS_LAUGHTER" }) {
+            SpellTemplate spell = SpellDataManager.getSpell(id);
+            assertNotNull(spell);
+            assertEquals(id + " should be PSYCHIC_SHOCK", VisualArchetype.PSYCHIC_SHOCK, spell.getVisualArchetypeEnum());
+        }
+
+        // Illusion / Warp spells re-authored to SPATIAL_WARP
+        for (String id : new String[] { "INVISIBILITY", "SEEMING", "SIMULACRUM", "COLOR_SPRAY", "CREATION" }) {
+            SpellTemplate spell = SpellDataManager.getSpell(id);
+            assertNotNull(spell);
+            assertEquals(id + " should be SPATIAL_WARP", VisualArchetype.SPATIAL_WARP, spell.getVisualArchetypeEnum());
+        }
+
+        // Evocation / Element spells re-authored appropriately
+        assertEquals(VisualArchetype.FLAME_BOLT, SpellDataManager.getSpell("CONTINUAL_FLAME").getVisualArchetypeEnum());
+        assertEquals(VisualArchetype.FROST_RAY, SpellDataManager.getSpell("SLEET_STORM").getVisualArchetypeEnum());
+        assertEquals(VisualArchetype.THUNDER_CONCUSSION, SpellDataManager.getSpell("EARTHQUAKE").getVisualArchetypeEnum());
+        assertEquals(VisualArchetype.THUNDER_CONCUSSION, SpellDataManager.getSpell("GUST_OF_WIND").getVisualArchetypeEnum());
+        assertEquals(VisualArchetype.ARCANE_WARD, SpellDataManager.getSpell("FORCECAGE").getVisualArchetypeEnum());
+        assertEquals(VisualArchetype.ARCANE_WARD, SpellDataManager.getSpell("WALL_OF_FORCE").getVisualArchetypeEnum());
+
+        // Canonical kinetic/force spells retaining FORCE_MISSILE
+        for (String id : new String[] { "MAGIC_MISSILE", "ELDRITCH_BLAST", "ARCANE_HAND", "SPIRITUAL_WEAPON", "TELEKINESIS" }) {
+            SpellTemplate spell = SpellDataManager.getSpell(id);
+            assertNotNull(spell);
+            assertEquals(id + " should retain FORCE_MISSILE", VisualArchetype.FORCE_MISSILE, spell.getVisualArchetypeEnum());
+        }
+    }
+
+    @Test
+    public void testExplosionForArchetypes() {
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.FIRE,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.FLAME_BOLT));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.ICE,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.FROST_RAY));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.ELECTRIC,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.LIGHTNING_ARC));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.CONCUSSIVE,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.FORCE_MISSILE));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.HOLY_CROSS,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.HOLY_RADIANCE));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.TOXIC,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.NECROTIC_DRAIN));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.TOXIC,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.TOXIC_CLOUD));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.VOID,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.SPATIAL_WARP));
+        assertEquals(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.STANDARD,
+                SpellExecutionEngine.getExplosionForArchetype(VisualArchetype.ARCANE_WARD));
+    }
 }

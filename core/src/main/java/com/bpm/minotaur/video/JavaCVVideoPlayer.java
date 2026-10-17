@@ -28,6 +28,8 @@ public class JavaCVVideoPlayer implements Disposable {
     private int width, height;
     private boolean newFrameReady = false;
     private volatile boolean muted = false;
+    /** When set, the video starts again from the beginning instead of finishing. */
+    private volatile boolean looping = false;
 
     private OnCompletionListener completionListener;
 
@@ -45,6 +47,10 @@ public class JavaCVVideoPlayer implements Disposable {
 
     public boolean isMuted() {
         return muted;
+    }
+
+    public void setLooping(boolean looping) {
+        this.looping = looping;
     }
 
     public void play(FileHandle file) {
@@ -100,11 +106,22 @@ public class JavaCVVideoPlayer implements Disposable {
                 long lastVideoTime = System.nanoTime();
                 long frameDurationNs = (long) (1_000_000_000.0 / frameRate);
 
+                int framesSinceRewind = 0;
                 while (isPlaying) {
                     Frame frame = grabber.grab();
                     if (frame == null) {
-                        break;
+                        // A pass that yielded nothing would rewind forever: treat it as the end.
+                        if (!looping || !isPlaying || framesSinceRewind == 0) {
+                            break;
+                        }
+                        framesSinceRewind = 0;
+                        // Back to the first frame; the clock restarts with it so the loop never races.
+                        grabber.setTimestamp(0L);
+                        lastVideoTime = System.nanoTime();
+                        continue;
                     }
+
+                    framesSinceRewind++;
 
                     // Handle Audio (Process immediately)
                     if (!muted && frame.samples != null && audioDevice != null) {

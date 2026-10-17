@@ -43,6 +43,26 @@ public class MonsterSpawner {
         TreeMap<Long, Map.Entry<String, MonsterTemplate>> heavyBag = new TreeMap<>();
         long totalWeight = 0;
 
+        // NetHack Out-of-Depth (OOD) generation:
+        // Surface (Z <= 1): 0% OOD chance (baseLevel <= ctx.edl())
+        // Subterranean (Z >= 2): 15% OOD chance rolled ONCE per spawn attempt.
+        int maxLevel = ctx.edl();
+        boolean isOod = false;
+        if (ctx.isSubterranean() && rng.rn2(100) < 15) {
+            isOod = true;
+            // OOD capped at EDL+2 (#185, #161):
+            // Strata 1 (depth <= 2): max OOD bonus +1, capped at baseLevel 3 (e.g. Orc/Wererat, never Ogres/Umber Hulks).
+            // Strata 2 (depth == 3): max OOD bonus +1, capped at baseLevel 4 (e.g. Gargoyle, never Ogres/Umber Hulks).
+            // Deeper floors (depth >= 4): +1 or +2 (capped at EDL+2).
+            int oodBonus = (ctx.depth() <= 3) ? 1 : Math.min(2, 1 + rng.rn2(2));
+            maxLevel = Math.min(ctx.edl() + 2, ctx.edl() + oodBonus);
+            if (ctx.depth() <= 2) {
+                maxLevel = Math.min(3, maxLevel);
+            } else if (ctx.depth() == 3) {
+                maxLevel = Math.min(4, maxLevel);
+            }
+        }
+
         for (Map.Entry<String, MonsterTemplate> entry : registry.entrySet()) {
             String id = entry.getKey();
             MonsterTemplate template = entry.getValue();
@@ -60,33 +80,44 @@ public class MonsterSpawner {
             }
 
             // NetHack lower-bound pruning: Skip if baseLevel < max(1, ctx.edl() / 4)
-            int minLevel = Math.max(1, ctx.edl() / 4);
+            // Capped at 14 to preserve highest-tier foes (baseLevel 14-18) at extreme EDL.
+            int minLevel = Math.min(14, Math.max(1, ctx.edl() / 4));
             if (template.baseLevel < minLevel) {
                 continue;
             }
 
-            // NetHack Out-of-Depth (OOD) generation:
-            // Surface (Z <= 1): 0% OOD chance (baseLevel <= ctx.edl())
-            // Subterranean (Z >= 2): 15% OOD chance allowing baseLevel <= ctx.edl() + 1 + rng.rn2(3)
-            int maxLevel = ctx.edl();
-            if (ctx.isSubterranean() && rng.rn2(100) < 15) {
-                maxLevel = ctx.edl() + 1 + rng.rn2(3);
-            }
             if (template.baseLevel > maxLevel) {
                 continue;
             }
 
-            // Strata 1 Near-Shelter Threat Bounding (within 2 chunks of shelter 0,0)
+            // Surface Near-Shelter Threat Bounding (within 2 chunks of shelter 0,0)
             // Strictly bounds foes to Tier 1 (MCR <= 100, baseLevel <= 2).
-            // NOTE: every real baseLevel<=2 monster in monsters.json scores between 58
-            // (Skeleton) and 98 (Hobgoblin) on this HP+MP+AC*3+DEX+ranged scale, so a
-            // cap of 55 rejected 100% of them -- silently zeroing monster spawns within
-            // 2 chunks of the shelter. 100 keeps every real Tier 1 monster eligible while
-            // still guarding against an unexpectedly high-stat baseLevel<=2 outlier.
             if (ctx.depth() <= 1 && ctx.chunkId() != null
                     && Math.abs(ctx.chunkId().x) <= 2 && Math.abs(ctx.chunkId().y) <= 2) {
                 int mcr = calculateMCR(template);
                 if (mcr > 100 || template.baseLevel > 2) {
+                    continue;
+                }
+            }
+
+            // Strata 1 Near-Shelter Column Threat Bounding (depth == 2, within 2 chunks of shelter column 0,0)
+            // Strictly bounds foes to early delve tier (MCR <= 110, baseLevel <= 3).
+            // Prevents any Tier 4+ monsters or high-threat beasts (Ogres, Owlbears, Umber Hulks) from spawning right under shelter.
+            if (ctx.depth() == 2 && ctx.chunkId() != null
+                    && Math.abs(ctx.chunkId().x) <= 2 && Math.abs(ctx.chunkId().y) <= 2) {
+                int mcr = calculateMCR(template);
+                if (mcr > 110 || template.baseLevel > 3) {
+                    continue;
+                }
+            }
+
+            // Strata 2 Near-Origin Column Threat Bounding (depth == 3, within 2 chunks of origin 0,0)
+            // Strictly bounds foes to Tier 2 (MCR <= 160, baseLevel <= 4).
+            // Guarantees no Tier 5/6 behemoths (Ogres, Trolls, Umber Hulks) near the central descent shaft.
+            if (ctx.depth() == 3 && ctx.chunkId() != null
+                    && Math.abs(ctx.chunkId().x) <= 2 && Math.abs(ctx.chunkId().y) <= 2) {
+                int mcr = calculateMCR(template);
+                if (mcr > 160 || template.baseLevel > 4) {
                     continue;
                 }
             }
@@ -115,6 +146,12 @@ public class MonsterSpawner {
             long effectiveWeight = weight;
             if (template.baseLevel <= ctx.playerLevel() * 2) {
                 effectiveWeight += 1;
+            }
+
+            // Out-of-Depth discount: if this monster exceeds native EDL, discount its weight
+            // so out-of-depth spawns are rare encounters rather than dominant spawns.
+            if (isOod && template.baseLevel > ctx.edl()) {
+                effectiveWeight = Math.max(1, effectiveWeight / 3);
             }
 
             if (effectiveWeight > 0) {

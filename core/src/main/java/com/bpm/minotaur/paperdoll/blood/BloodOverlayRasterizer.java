@@ -122,7 +122,16 @@ public final class BloodOverlayRasterizer {
         float cr = lerp(fr, fr * 0.42f, dry);
         float cg = lerp(fg, fg * 0.15f, dry);
         float cb = lerp(fb, fb * 0.15f, dry);
-        float alpha = lerp(0.92f, 0.86f, dry);
+        float alpha;
+        if (s.age <= DRY_TURNS) {
+            alpha = lerp(0.92f, 0.86f, dry);
+        } else {
+            float fadeProgress = Math.min(1f, (s.age - DRY_TURNS) / (float) (com.bpm.minotaur.gamedata.gore.BloodCoat.FADE_END_AGE - DRY_TURNS));
+            alpha = lerp(0.86f, 0.0f, fadeProgress);
+        }
+        if (alpha <= 0.01f) {
+            return;
+        }
 
         int gx = Math.round(shape.cx - shape.r * 0.35f);
         int gy = Math.round(shape.cy - shape.r * 0.35f);

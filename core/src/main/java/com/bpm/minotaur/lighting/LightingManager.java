@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Disposable;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
@@ -15,7 +16,7 @@ import java.util.Comparator;
  * Core lighting subsystem managing dynamic point lights, line-of-sight shadow casting,
  * shelter warmth, and dungeon darkness.
  */
-public class LightingManager {
+public class LightingManager implements Disposable {
 
     private static final String TAG = "LightingManager";
 
@@ -24,13 +25,13 @@ public class LightingManager {
     public static final float LANTERN_RADIUS = 5.5f;
 
     public static final float TORCH_INTENSITY = 1.40f;           // 40% boost for personal light (was 1.0f)
-    public static final float LANTERN_INTENSITY = 1.61f;         // 40% boost for equipped brass lantern (was 1.15f)
+    public static final float LANTERN_INTENSITY = 1.45f;         // carried brass lantern (1.61 read a little hot; was 1.15 originally)
     public static final float MOUNTED_LANTERN_INTENSITY = 1.40f; // 40% boost for mounted lanterns (was 1.0f)
 
     public static final Color COLOR_TORCH = new Color(1.0f, 0.62f, 0.26f, 1.0f);     // Pine torch flame
     public static final Color COLOR_LANTERN = new Color(1.0f, 0.80f, 0.44f, 1.0f);   // Warm vintage golden incandescence
     public static final Color COLOR_CAMPFIRE = new Color(1.0f, 0.45f, 0.16f, 1.0f);  // Deep ember orange-red
-    public static final Color COLOR_COLD_VOID = new Color(0.04f, 0.045f, 0.08f, 1f); // Chilling unlit dungeon darkness
+    public static final Color COLOR_COLD_VOID = new Color(0.005f, 0.006f, 0.012f, 1f); // Oppressive unlit dungeon darkness
     public static final Color COLOR_SHELTER_AMBIENT = new Color(0.35f, 0.28f, 0.22f, 1.0f); // Warm safe haven shelter glow
     public static final Color COLOR_MOTE = new Color(0.85f, 0.92f, 1.0f, 1.0f); // Warm mystical wisp radiance
 
@@ -44,6 +45,7 @@ public class LightingManager {
 
     private Vector2 currentQueryOrigin = new Vector2();
     private final LightSource shopkeeperLight;
+    private final LanternShadowBuffer lanternShadowBuffer = new LanternShadowBuffer();
 
     public LightingManager() {
         this.playerLight = new LightSource(
@@ -75,9 +77,33 @@ public class LightingManager {
     /**
      * Updates all active lights, animation wave accumulators, and player light positioning.
      */
+    /** Seconds the lights still tremble for: a battle overhead shaking the stone (Living War W9). */
+    private float tremor;
+    private float tremorTime;
+    static final float TREMOR_DIP = 0.35f;
+
+    /** The stone shakes: every light gutters for {@code seconds}. */
+    public void tremble(float seconds) {
+        tremor = Math.max(tremor, seconds);
+    }
+
+    /** How much of its light a source gives now: one, or less while the stone shakes. */
+    float tremorFactor() {
+        if (tremor <= 0f) return 1f;
+        float fade = Math.min(1f, tremor / 0.4f);
+        return 1f - TREMOR_DIP * fade * (0.5f + 0.5f * (float) Math.abs(Math.sin(tremorTime * 37f)));
+    }
+
     public void update(float delta, Player player, Maze maze) {
+        if (tremor > 0f) {
+            tremor = Math.max(0f, tremor - delta);
+            tremorTime += delta;
+        }
         if (player != null) {
             updatePlayerLight(player, maze);
+            if (maze != null) {
+                lanternShadowBuffer.update(player.getPosition().x, player.getPosition().y, maze);
+            }
         }
 
         playerLight.update(delta);
@@ -110,9 +136,26 @@ public class LightingManager {
         return this.lanternLit;
     }
 
-    // Underground chunks (any level below the overworld) get a brighter carried lantern,
-    // since natural light is entirely absent there.
-    private static final float UNDERGROUND_LANTERN_BOOST = 1.5f;
+    // Underground (any level below the overworld) there is no daylight at all, so
+    // the carried lantern reaches further. Reach, mostly -- not glare: a x1.5 on
+    // intensity as well put a wall one tile away near the shader's cap (1.87 of
+    // 2.2) and washed the corridor out. Now it is ~1.25, still above the surface.
+    private static final float UNDERGROUND_LANTERN_RADIUS_BOOST = 1.35f;
+    private static final float UNDERGROUND_LANTERN_INTENSITY_BOOST = 1.15f;
+
+    /** What owning the Shelter Lantern station does for the lantern you carry: it burns wider and brighter. */
+    public static final float STATION_LANTERN_RADIUS_BONUS = 1.0f;
+    public static final float STATION_LANTERN_INTENSITY_FACTOR = 1.10f;
+
+    public static float carriedLanternRadius(boolean underground, boolean stationOwned) {
+        float radius = LANTERN_RADIUS + (stationOwned ? STATION_LANTERN_RADIUS_BONUS : 0f);
+        return radius * (underground ? UNDERGROUND_LANTERN_RADIUS_BOOST : 1.0f);
+    }
+
+    public static float carriedLanternIntensity(boolean underground, boolean stationOwned) {
+        float intensity = LANTERN_INTENSITY * (stationOwned ? STATION_LANTERN_INTENSITY_FACTOR : 1.0f);
+        return intensity * (underground ? UNDERGROUND_LANTERN_INTENSITY_BOOST : 1.0f);
+    }
 
     /**
      * Syncs player light coordinates and upgrades to Brass Lantern if equipped in either hand.
@@ -120,10 +163,7 @@ public class LightingManager {
     private void updatePlayerLight(Player player, Maze maze) {
         playerLight.setPosition(player.getPosition().x, player.getPosition().y);
 
-        Item offHand = (player.getInventory() != null) ? player.getInventory().getLeftHand() : null;
-        Item mainHand = (player.getInventory() != null) ? player.getInventory().getRightHand() : null;
-        boolean hasLantern = (offHand != null && offHand.getType() == ItemType.BRASS_LANTERN)
-                || (mainHand != null && mainHand.getType() == ItemType.BRASS_LANTERN);
+        boolean hasLantern = player.hasLantern();
 
         boolean isUnderground = maze != null && maze.getLevel() > 1;
 
@@ -138,17 +178,25 @@ public class LightingManager {
             playerLight.setProfile(LightSource.FlickerProfile.STEADY);
         } else if (hasLantern) {
             playerLight.setActive(lanternLit);
-            float boost = isUnderground ? UNDERGROUND_LANTERN_BOOST : 1.0f;
-            playerLight.setBaseRadius(LANTERN_RADIUS * boost);
-            playerLight.setBaseIntensity(LANTERN_INTENSITY * boost);
+            boolean stationOwned = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
+                    .hasStation(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN);
+            playerLight.setBaseRadius(carriedLanternRadius(isUnderground, stationOwned));
+            playerLight.setBaseIntensity(carriedLanternIntensity(isUnderground, stationOwned));
             playerLight.setBaseColor(COLOR_LANTERN);
-            playerLight.setProfile(LightSource.FlickerProfile.LANTERN_BREATH);
+            // A flame you carry wavers; LANTERN_BREATH's +/-2% swell was too calm
+            // to see, which is why the flicker vanished once everyone started
+            // with a lantern instead of a torch.
+            playerLight.setProfile(LightSource.FlickerProfile.LANTERN_FLAME);
         } else {
             playerLight.setActive(true);
             playerLight.setBaseRadius(TORCH_RADIUS);
             playerLight.setBaseIntensity(TORCH_INTENSITY);
             playerLight.setBaseColor(COLOR_TORCH);
             playerLight.setProfile(LightSource.FlickerProfile.TORCH_FLUTTER);
+        }
+        float traitLight = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lightAdd") + com.bpm.minotaur.gamedata.trait.TraitEffects.add(isUnderground ? "lightUnderground" : "lightSurface");
+        if (traitLight != 0f && !hasMote) {
+            playerLight.setBaseRadius(playerLight.getBaseRadius() + traitLight);
         }
     }
 
@@ -277,6 +325,15 @@ public class LightingManager {
             applyLightSource(shopkeeperLight, x, y, maze, outColor);
         }
 
+        // 4. The stone shaking under a battle overhead makes every flame gutter.
+        float shake = tremorFactor();
+        if (shake < 1f) {
+            float floorR = baseCol.r * baseAmbient, floorG = baseCol.g * baseAmbient, floorB = baseCol.b * baseAmbient;
+            outColor.r = floorR + (outColor.r - floorR) * shake;
+            outColor.g = floorG + (outColor.g - floorG) * shake;
+            outColor.b = floorB + (outColor.b - floorB) * shake;
+        }
+
         // Clamp values to valid visual HDR range
         outColor.r = MathUtils.clamp(outColor.r, 0.0f, 1.8f);
         outColor.g = MathUtils.clamp(outColor.g, 0.0f, 1.8f);
@@ -327,5 +384,20 @@ public class LightingManager {
         }
 
         return outArray;
+    }
+
+    public LanternShadowBuffer getLanternShadowBuffer() {
+        return lanternShadowBuffer;
+    }
+
+    public boolean isPlayerLightLit() {
+        return playerLight != null && playerLight.isActive();
+    }
+
+    @Override
+    public void dispose() {
+        if (lanternShadowBuffer != null) {
+            lanternShadowBuffer.dispose();
+        }
     }
 }

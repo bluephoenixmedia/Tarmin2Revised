@@ -23,6 +23,7 @@ public enum SkillId {
     SPELL_WEAVER(Discipline.ARCANA, 1),
     PRIMORDIAL_FOCUS(Discipline.ARCANA, 2),
     RUNIC_CONSERVATION(Discipline.ARCANA, 2),
+    ASTRAL_RECALL(Discipline.ARCANA, 2),
     ARCHMAGES_SURGE(Discipline.ARCANA, 3);
 
     public enum Discipline {

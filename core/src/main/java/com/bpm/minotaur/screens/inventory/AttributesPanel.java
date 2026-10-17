@@ -20,6 +20,21 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private final Table col2 = new Table();
     private final Table col3 = new Table();
 
+    /**
+     * INV-1: the three columns were 250 + 14 + 225 + 14 + 250 = 753 units wide, inside a panel
+     * with 24 units of its own padding, inside a container the book's art gives 760 units. The
+     * sum overran the page edge, so the third column was cut off. And each column's key and
+     * value widths added up to exactly the column width, leaving no gutter, so a long value
+     * ran straight into the next column. These constants add back to less than the box, with
+     * room between the columns and between each key and its value.
+     */
+    private static final float BOX_W   = 760f;
+    private static final float PAD_H   = 12f;
+    private static final float GUTTER  = 16f;
+    private static final float COL_W   = (BOX_W - 2 * PAD_H - 2 * GUTTER) / 3f;  // 234
+    private static final float KEY_W   = COL_W * 0.58f;
+    private static final float VALUE_W = COL_W * 0.38f;
+
     private static final Color COL_HEADER = Color.valueOf("4A2E10FF");
     private static final Color COL_KEY    = Color.valueOf("2C1A08FF");
     private static final Color COL_VAL    = Color.valueOf("111111FF");
@@ -33,11 +48,11 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         this.skin = skin;
 
         top().left();
-        pad(4, 12, 4, 12);
+        pad(4, PAD_H, 4, PAD_H);
 
-        add(col1).top().left().width(250f).padRight(14);
-        add(col2).top().left().width(225f).padRight(14);
-        add(col3).top().left().width(250f);
+        add(col1).top().left().width(COL_W).padRight(GUTTER);
+        add(col2).top().left().width(COL_W).padRight(GUTTER);
+        add(col3).top().left().width(COL_W);
 
         buildRows();
     }
@@ -73,15 +88,18 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         stat(col2, "Wisdom", String.valueOf(player.getEffectiveWisdom()), COL_VAL);
         stat(col2, "Charisma", String.valueOf(player.getEffectiveCharisma()), COL_VAL);
         stat(col2, "Luck", String.valueOf(player.getLuck()), COL_VAL);
+        stat(col2, "Magic Resist", player.getMagicResistance() + "%", COL_BLUE);
 
         // ── Column 3: Survival & Economy ───────────────────────────
         addSectionHeader(col3, "SURVIVAL & RES");
-        stat(col3, "Satiety", player.getStats().getSatiety() + "%", satColor());
-        stat(col3, "Hydration", player.getStats().getHydration() + "%", hydColor());
+        stat(col3, "Hunger", player.getStats().getHungerStage().label, satColor());
+        stat(col3, "Thirst", player.getStats().getThirstStage().label, hydColor());
         stat(col3, "Toxicity", player.getStats().getToxicity() + "%", toxColor());
         float temp = player.getStats().getBodyTemperature();
         stat(col3, "Body Temp", String.format("%.0f C", temp), tempColor(temp));
         stat(col3, "Stamina Pool", player.getEffectiveStamina() + " Dice", COL_VAL);
+        stat(col3, "Carry", Math.round(player.getCarriedWeight()) + " / " + Math.round(player.getCarryCapacity()),
+                carryColor());
         stat(col3, "Arrows", String.valueOf(player.getArrows()), COL_VAL);
         stat(col3, "Treasure", String.valueOf(player.getTreasureScore()), COL_GOLD);
         stat(col3, "Cook Skill", String.valueOf(player.getStats().getCookingSkill()), COL_VAL);
@@ -95,11 +113,26 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private void stat(Table col, String key, String value, Color valueColor) {
         Label k = new Label(key + ":", new Label.LabelStyle(skin.getFontSmall(), COL_KEY));
         Label v = new Label(value, new Label.LabelStyle(skin.getFontSmall(), valueColor));
-        col.add(k).left().width(130f).padBottom(1);
-        col.add(v).right().width(95f).padBottom(1).row();
+        k.setEllipsis(true);
+        v.setEllipsis(true);
+        col.add(k).left().width(KEY_W).padBottom(1);
+        col.add(v).right().width(VALUE_W).padBottom(1).row();
     }
 
     // ── Colour helpers ────────────────────────────────────────────────
+
+    /** Green while the load is fine, then orange, then red as the tiers bite. */
+    private Color carryColor() {
+        switch (player.getEncumbrance()) {
+            case BURDENED:
+                return Color.ORANGE;
+            case STRESSED:
+            case OVERLOADED:
+                return COL_RED;
+            default:
+                return COL_VAL;
+        }
+    }
 
     private Color hpColor() {
         int cur = player.getCurrentHP();
@@ -113,13 +146,13 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     }
 
     private Color satColor() {
-        int s = player.getStats().getSatiety();
-        return s < 20 ? COL_RED : s < 50 ? Color.ORANGE : COL_GREEN;
+        com.bpm.minotaur.gamedata.player.Hunger.Stage s = player.getStats().getHungerStage();
+        return s.isWeakened() ? COL_RED : s.isHungry() ? Color.ORANGE : COL_GREEN;
     }
 
     private Color hydColor() {
-        int h = player.getStats().getHydration();
-        return h < 20 ? COL_RED : h < 50 ? Color.ORANGE : COL_GREEN;
+        com.bpm.minotaur.gamedata.player.Thirst.Stage s = player.getStats().getThirstStage();
+        return s.isDehydrated() ? COL_RED : s.isThirsty() ? Color.ORANGE : COL_GREEN;
     }
 
     private Color tempColor(float t) {

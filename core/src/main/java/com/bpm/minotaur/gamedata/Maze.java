@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.gore.GoreManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.effects.area.AreaEffectManager;
 import com.bpm.minotaur.gamedata.liquid.LiquidManager;
 import com.bpm.minotaur.gamedata.liquid.LiquidType;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -24,6 +25,18 @@ public class Maze {
     private byte[][] explorationState;
 
     private final Set<GridPoint2> homeTiles = new HashSet<>();
+    /**
+     * False for a shelter that stands cold: its walls and roof are there (the home tiles),
+     * but it is no sanctuary until its hearth is lit. See ShelterNetwork.
+     */
+    private boolean sanctuary = true;
+    /** Where each shelter station stands in this chunk; empty outside a shelter. */
+    private final Map<com.bpm.minotaur.gamedata.progression.ShelterAltar.Station, List<GridPoint2>> stationSlots =
+            new java.util.EnumMap<>(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.class);
+    /** An outpost shelter's altar, hearth, and the tile outside its door. Null in the home shelter. */
+    private GridPoint2 altarTile;
+    private GridPoint2 hearthTile;
+    private GridPoint2 shelterEntry;
 
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
     private final Map<GridPoint2, Item> items = new HashMap<>();
@@ -31,9 +44,13 @@ public class Maze {
     private final Map<GridPoint2, Ladder> ladders = new HashMap<>();
     private final List<Projectile> projectiles = new ArrayList<>();
     private final Map<GridPoint2, Gate> gates = new HashMap<>();
+    private final Gate[][] gateGrid;
     private final Map<GridPoint2, String> eventTriggers = new HashMap<>(); // Encounters
+    /** Hidden choice events (data/events.json), kept apart from the statues' encounter triggers. */
+    private final Map<GridPoint2, String> choiceEvents = new HashMap<>();
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
+    private final List<Scenery> backdropScenery = new ArrayList<>();
     private final Map<GridPoint2, Float> bloodMap = new HashMap<>();
     private LiquidManager liquidManager = new LiquidManager();
 
@@ -53,6 +70,8 @@ public class Maze {
         this.shopkeeper = shopkeeper;
     }
 
+    private AreaEffectManager areaEffects;
+
     public Maze(int level, int[][] wallData) {
         this.level = level;
         this.wallData = wallData;
@@ -60,6 +79,7 @@ public class Maze {
         this.height = wallData.length;
         this.width = (height > 0) ? wallData[0].length : 0;
         this.explorationState = new byte[height][width];
+        this.gateGrid = new Gate[height][width];
     }
 
     public List<CorpsePart> getCorpses() {
@@ -67,6 +87,19 @@ public class Maze {
     }
 
     private GridPoint2 chunkId = new GridPoint2(0, 0);
+
+    /**
+     * A badly wounded monster leaves blood on the tile it is leaving, so the
+     * player can follow it and the level remembers where it ran.
+     */
+    public void bleedTrail(Monster monster, int fromTileX, int fromTileY) {
+        if (goreManager == null || monster == null) return;
+        com.bpm.minotaur.gamedata.gore.GoreProfile profile = com.bpm.minotaur.gamedata.gore.GoreProfile.fromMonster(monster);
+        if (!GoreManager.leavesBloodTrail(monster.getCurrentHP(), monster.getMaxHP(), profile)) return;
+        int cx = (chunkId != null) ? chunkId.x : 0;
+        int cy = (chunkId != null) ? chunkId.y : 0;
+        goreManager.spawnWoundTrail(cx * 36.0f + fromTileX + 0.5f, cy * 36.0f + fromTileY + 0.5f, profile);
+    }
 
     public GridPoint2 getChunkId() {
         return chunkId;
@@ -103,6 +136,41 @@ public class Maze {
         homeTiles.add(pos);
     }
 
+    /**
+     * Lingering tile effects -- clouds -- in this chunk.
+     *
+     * <p>Created on first use and never serialised: the world is regenerated from a seed, so a
+     * cloud belongs to the chunk it was cast in and dies with it.
+     */
+    public AreaEffectManager getAreaEffects() {
+        if (areaEffects == null) {
+            areaEffects = new AreaEffectManager(getWidth(), getHeight());
+        }
+        return areaEffects;
+    }
+
+    /** True when any lingering tile effect is active, so callers can skip the work entirely. */
+    public boolean hasAreaEffects() {
+        return areaEffects != null && areaEffects.activeTileCount() > 0;
+    }
+
+    /**
+     * Whether obscuring fog stands on a tile.
+     *
+     * <p>Here rather than at each call site because five of them -- monster sight, hostile
+     * detection, the projectile raycast, the fog wash and the status sync -- would otherwise
+     * each write the same {@code hasAreaEffects() && getAreaEffects().isObscured(...)} walk,
+     * and each would have to remember the null-and-empty guard.
+     */
+    public boolean isObscured(int x, int y) {
+        return hasAreaEffects() && areaEffects.isObscured(x, y);
+    }
+
+    /** Whether obscuring fog lies on the line between two tiles. See {@link #isObscured}. */
+    public boolean fogBlocksSight(int x0, int y0, int x1, int y1) {
+        return hasAreaEffects() && areaEffects.blocksSight(x0, y0, x1, y1);
+    }
+
     public LiquidManager getLiquidManager() {
         return liquidManager;
     }
@@ -125,6 +193,49 @@ public class Maze {
         return homeTiles.contains(pos);
     }
 
+    /** A tile monsters may not enter or spawn in: a home tile of a lit shelter. */
+    public boolean isSanctuaryTile(int x, int y) {
+        return sanctuary && homeTiles.contains(new GridPoint2(x, y));
+    }
+
+    public boolean isSanctuaryTile(GridPoint2 pos) {
+        return sanctuary && homeTiles.contains(pos);
+    }
+
+    /** The home tiles while the shelter is lit; empty while it stands cold. */
+    public Set<GridPoint2> getSanctuaryTiles() {
+        return sanctuary ? homeTiles : java.util.Collections.emptySet();
+    }
+
+    public boolean isSanctuary() {
+        return sanctuary;
+    }
+
+    public void setSanctuary(boolean sanctuary) {
+        this.sanctuary = sanctuary;
+    }
+
+    public void addStationSlot(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station station, int x, int y) {
+        GridPoint2 pt = new GridPoint2(x, y);
+        List<GridPoint2> list = stationSlots.computeIfAbsent(station, k -> new ArrayList<>());
+        if (!list.contains(pt)) list.add(pt);
+    }
+
+    public List<GridPoint2> getStationSlots(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station station) {
+        return stationSlots.getOrDefault(station, java.util.Collections.emptyList());
+    }
+
+    public Map<com.bpm.minotaur.gamedata.progression.ShelterAltar.Station, List<GridPoint2>> getAllStationSlots() {
+        return stationSlots;
+    }
+
+    public GridPoint2 getAltarTile() { return altarTile; }
+    public void setAltarTile(GridPoint2 tile) { this.altarTile = tile; }
+    public GridPoint2 getHearthTile() { return hearthTile; }
+    public void setHearthTile(GridPoint2 tile) { this.hearthTile = tile; }
+    public GridPoint2 getShelterEntry() { return shelterEntry; }
+    public void setShelterEntry(GridPoint2 tile) { this.shelterEntry = tile; }
+
     public boolean isIndoors(int x, int y) {
         return level > 1 || isHomeTile(x, y);
     }
@@ -139,7 +250,13 @@ public class Maze {
     }
 
     public void addGate(Gate gate) {
-        gates.put(new GridPoint2((int) gate.getPosition().x, (int) gate.getPosition().y), gate);
+        if (gate == null) return;
+        int gx = (int) gate.getPosition().x;
+        int gy = (int) gate.getPosition().y;
+        gates.put(new GridPoint2(gx, gy), gate);
+        if (gateGrid != null && gy >= 0 && gy < height && gx >= 0 && gx < width) {
+            gateGrid[gy][gx] = gate;
+        }
     }
 
     public Map<GridPoint2, Gate> getGates() {
@@ -147,18 +264,17 @@ public class Maze {
     }
 
     public Gate getGateAt(int x, int y) {
-        if (gates == null || gates.isEmpty()) return null;
-        for (Map.Entry<GridPoint2, Gate> entry : gates.entrySet()) {
-            GridPoint2 p = entry.getKey();
-            if (p.x == x && p.y == y) {
-                return entry.getValue();
-            }
+        if (gateGrid != null && y >= 0 && y < height && x >= 0 && x < width) {
+            return gateGrid[y][x];
         }
         return null;
     }
 
     public boolean hasGateAt(int x, int y) {
-        return getGateAt(x, y) != null;
+        if (gateGrid != null && y >= 0 && y < height && x >= 0 && x < width) {
+            return gateGrid[y][x] != null;
+        }
+        return false;
     }
 
     public int getLevel() {
@@ -191,6 +307,22 @@ public class Maze {
 
     public Map<GridPoint2, String> getEventTriggers() {
         return eventTriggers;
+    }
+
+    public void addChoiceEvent(int x, int y, String id) {
+        choiceEvents.put(new GridPoint2(x, y), id);
+    }
+
+    public String getChoiceEventAt(int x, int y) {
+        return choiceEvents.get(new GridPoint2(x, y));
+    }
+
+    public void removeChoiceEvent(int x, int y) {
+        choiceEvents.remove(new GridPoint2(x, y));
+    }
+
+    public Map<GridPoint2, String> getChoiceEvents() {
+        return choiceEvents;
     }
 
     public boolean isVisited(int x, int y) {
@@ -249,7 +381,7 @@ public class Maze {
         if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
             return true;
         }
-        return wallData[y][x] == 1 || (getWallDataAt(x, y) & 0b1111) == 0b1111;
+        return wallData[y][x] == 1 || (getWallDataAt(x, y) & 0b1111) == 0b1111 || (getWallDataAt(x, y) & 0b01010101) == 0b01010101;
     }
 
     public void setTile(int x, int y, int type) {
@@ -321,6 +453,34 @@ public class Maze {
         monsters.put(new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), monster);
     }
 
+    /**
+     * Takes this monster off the map, wherever it is filed.
+     *
+     * <p>Removing by {@code monster.getPosition()} is only right while the map
+     * key and the position agree. When they drifted apart -- a push that moved
+     * the key but not the position -- a kill removed nothing, and the corpse
+     * stayed on the map to be killed again for experience, forever.
+     *
+     * @return whether it was on the map
+     */
+    public boolean removeMonster(Monster monster) {
+        if (monster == null) return false;
+        return monsters.values().removeIf(m -> m == monster);
+    }
+
+    /**
+     * Moves a monster to another tile, keeping its map key and its position
+     * together. Every push and knockback goes through here so the two cannot
+     * drift apart.
+     */
+    public void moveMonster(Monster monster, int tileX, int tileY) {
+        if (monster == null) return;
+        bleedTrail(monster, (int) monster.getPosition().x, (int) monster.getPosition().y);
+        removeMonster(monster);
+        monster.getPosition().set(tileX + 0.5f, tileY + 0.5f);
+        monsters.put(new GridPoint2(tileX, tileY), monster);
+    }
+
     public Map<GridPoint2, Ladder> getLadders() {
         return ladders;
     }
@@ -357,6 +517,25 @@ public class Maze {
         }
     }
 
+    /** Tinder Bundle field fires burning in this chunk (#194). Not saved, like the lights. */
+    private final List<com.bpm.minotaur.gamedata.shelter.FieldFire> fieldFires = new ArrayList<>();
+
+    public List<com.bpm.minotaur.gamedata.shelter.FieldFire> getFieldFires() {
+        return fieldFires;
+    }
+
+    public void addFieldFire(com.bpm.minotaur.gamedata.shelter.FieldFire fire) {
+        if (fire != null) fieldFires.add(fire);
+    }
+
+    /** A burning field fire whose warmth reaches this tile, or null. */
+    public com.bpm.minotaur.gamedata.shelter.FieldFire fieldFireWarming(int x, int y) {
+        for (com.bpm.minotaur.gamedata.shelter.FieldFire f : fieldFires) {
+            if (f.warms(x, y)) return f;
+        }
+        return null;
+    }
+
     public void removeLightAt(float x, float y) {
         for (int i = lights.size - 1; i >= 0; i--) {
             com.bpm.minotaur.lighting.LightSource l = lights.get(i);
@@ -385,6 +564,16 @@ public class Maze {
     }
 
     private com.bpm.minotaur.generation.Biome biome = com.bpm.minotaur.generation.Biome.MAZE;
+    /** What this stratum chunk is made of (Houses of the Maze T4.1); MAZE on the surface. Not saved: it is recomputed. */
+    private com.bpm.minotaur.generation.Stratum stratum = com.bpm.minotaur.generation.Stratum.MAZE;
+
+    public com.bpm.minotaur.generation.Stratum getStratum() {
+        return stratum;
+    }
+
+    public void setStratum(com.bpm.minotaur.generation.Stratum stratum) {
+        this.stratum = stratum == null ? com.bpm.minotaur.generation.Stratum.MAZE : stratum;
+    }
 
     public void setBiome(com.bpm.minotaur.generation.Biome biome) {
         this.biome = biome;
@@ -427,6 +616,30 @@ public class Maze {
         return false;
     }
 
+    /**
+     * Whether a melee blow can cross from (px,py) into the adjacent tile (tx,ty): the edge
+     * between them is open and the target tile holds no closed door or gate.
+     *
+     * <p>Deliberately does not ask {@link #isWall}. That treats wall data of exactly 1 as a
+     * solid block, but 1 is also WEST's edge mask, so a tile whose only wall is its west
+     * edge read as solid and a monster standing in it could not be struck.
+     */
+    public boolean canMeleeInto(int px, int py, int tx, int ty) {
+        if (tx < 0 || tx >= getWidth() || ty < 0 || ty >= getHeight()) {
+            return false;
+        }
+        Direction dir = Direction.fromDelta(tx - px, ty - py);
+        if (dir != null && isWallBlocking(px, py, dir)) {
+            return false;
+        }
+        Object obj = getGameObjectAt(tx, ty);
+        if (obj instanceof Door door
+                && (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING)) {
+            return false;
+        }
+        return !(obj instanceof Gate gate && gate.getState() != Gate.GateState.OPEN);
+    }
+
     public boolean isPassable(int x, int y) {
         if (x < 0 || x >= wallData[0].length || y < 0 || y >= wallData.length) {
             return false;
@@ -447,6 +660,11 @@ public class Maze {
         // Check for impassable items (props)
         Item item = items.get(new GridPoint2(x, y));
         if (item != null && item.isImpassable()) {
+            return false;
+        }
+
+        // A chasm of molten fire is crossed by bridges or not at all.
+        if (liquidManager != null && liquidManager.getLiquidAt(x, y).isImpassable()) {
             return false;
         }
 
@@ -485,6 +703,23 @@ public class Maze {
             return;
         GridPoint2 pos = new GridPoint2((int) s.getPosition().x, (int) s.getPosition().y);
         scenery.put(pos, s);
+    }
+
+    /**
+     * Render-only scenery: the extra trunks that thicken a forest's trail edges.
+     * Kept out of the tile map so they never block movement, take a tile, or
+     * turn up in anything that reads scenery for game logic.
+     */
+    public List<Scenery> getBackdropScenery() {
+        return backdropScenery;
+    }
+
+    public void addBackdropScenery(Scenery s) {
+        if (s != null) backdropScenery.add(s);
+    }
+
+    public void removeScenery(int x, int y) {
+        scenery.remove(new GridPoint2(x, y));
     }
 
     public void update(float delta) {

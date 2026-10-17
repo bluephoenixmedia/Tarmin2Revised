@@ -103,6 +103,11 @@ public class WeatherManager {
         updateAtmosphereTargets();
         this.currentFogDistance = this.targetFogDistance;
         this.currentFogColor.set(this.targetFogColor);
+
+        // Notify SoundManager of initial weather loops (rain/wind/blizzard)
+        if (worldManager != null && worldManager.getSoundManager() != null) {
+            worldManager.getSoundManager().updateWeatherAudio(this.currentWeather, this.currentIntensity);
+        }
     }
 
     private float wetness = 0.0f;
@@ -232,32 +237,47 @@ public class WeatherManager {
         }
     }
 
-    private WeatherType pickWeatherForBiome(Biome biome) {
+    /**
+     * Picks weather for a given biome.
+     * Due to the unstable nature of the Maelstrom in which the maze exists,
+     * snowfall and blizzards can manifest randomly in ANY biome.
+     */
+    WeatherType pickWeatherForBiome(Biome biome) {
         float roll = MathUtils.random();
         switch (biome) {
             case MAZE:
             case FOREST:
-                if (roll < 0.35f)
+                if (roll < 0.30f)
                     return WeatherType.CLEAR;
-                if (roll < 0.55f)
+                if (roll < 0.45f)
                     return WeatherType.FOG;
-                if (roll < 0.80f)
+                if (roll < 0.65f)
                     return WeatherType.RAIN;
-                if (roll < 0.98f)
+                if (roll < 0.80f)
                     return WeatherType.STORM;
+                if (roll < 0.93f)
+                    return WeatherType.SNOW;
+                if (roll < 0.98f)
+                    return WeatherType.BLIZZARD;
                 return WeatherType.TORNADO;
             case LAKELANDS:
                 if (roll < 0.20f)
                     return WeatherType.CLEAR;
-                if (roll < 0.55f)
+                if (roll < 0.45f)
                     return WeatherType.FOG;
-                if (roll < 0.85f)
-                    return WeatherType.RAIN;
-                return WeatherType.STORM;
-            case MOUNTAINS:
-                if (roll < 0.35f)
-                    return WeatherType.CLEAR;
                 if (roll < 0.70f)
+                    return WeatherType.RAIN;
+                if (roll < 0.85f)
+                    return WeatherType.STORM;
+                if (roll < 0.96f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
+            case MOUNTAINS:
+                if (roll < 0.25f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.45f)
+                    return WeatherType.FOG;
+                if (roll < 0.75f)
                     return WeatherType.SNOW;
                 return WeatherType.BLIZZARD;
             case OCEAN:
@@ -265,13 +285,75 @@ public class WeatherManager {
                     return WeatherType.CLEAR;
                 if (roll < 0.30f)
                     return WeatherType.RAIN;
-                return WeatherType.STORM;
+                if (roll < 0.65f)
+                    return WeatherType.STORM;
+                if (roll < 0.90f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
             case DESERT:
-                if (roll < 0.80f)
+                if (roll < 0.70f)
                     return WeatherType.CLEAR;
-                return WeatherType.TORNADO;
+                if (roll < 0.85f)
+                    return WeatherType.TORNADO;
+                if (roll < 0.97f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
+            case BLIGHT:
+                // Castle Tarmin's shadow: never clear, only murk and falling ash -- and,
+                // as everywhere under the Maelstrom, the rare snow.
+                if (roll < 0.38f)
+                    return WeatherType.FOG;
+                if (roll < 0.95f)
+                    return WeatherType.ASHFALL;
+                return WeatherType.SNOW;
+            case TUNDRA:
+                if (roll < 0.15f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.45f)
+                    return WeatherType.FOG;
+                if (roll < 0.80f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
             default:
+                if (roll < 0.20f)
+                    return WeatherType.SNOW;
                 return WeatherType.CLEAR;
+        }
+    }
+
+    public boolean isWeatherAllowedInBiome(WeatherType type, Biome biome) {
+        if (biome == null || type == null) return true;
+        switch (biome) {
+            case TUNDRA:
+            case MOUNTAINS:
+                return type == WeatherType.CLEAR || type == WeatherType.FOG
+                        || type == WeatherType.SNOW || type == WeatherType.BLIZZARD;
+            case DESERT:
+                return type == WeatherType.CLEAR || type == WeatherType.TORNADO
+                        || type == WeatherType.SNOW || type == WeatherType.BLIZZARD;
+            case BLIGHT:
+                return type == WeatherType.FOG || type == WeatherType.ASHFALL || type == WeatherType.SNOW;
+            default:
+                // Ash falls only where the Blight burns; leaving it clears the sky.
+                return type != WeatherType.ASHFALL;
+        }
+    }
+
+    public void onBiomeChanged(Biome newBiome) {
+        if (newBiome == null) return;
+        if (!isWeatherAllowedInBiome(currentWeather, newBiome)) {
+            WeatherType nextWeather = pickWeatherForBiome(newBiome);
+            WeatherIntensity nextIntensity = pickIntensityForWeather(nextWeather);
+            this.currentWeather = nextWeather;
+            this.currentIntensity = nextIntensity;
+            this.weatherTimer = MathUtils.random(MIN_WEATHER_DURATION, MAX_WEATHER_DURATION);
+            if (worldManager != null && worldManager.getSoundManager() != null) {
+                worldManager.getSoundManager().updateWeatherAudio(nextWeather, nextIntensity);
+            }
+            updateAtmosphereTargets();
+            if (Gdx.app != null) {
+                Gdx.app.log("WeatherManager", "Biome changed to " + newBiome + "; transitioned weather to " + nextIntensity + " " + nextWeather);
+            }
         }
     }
 
@@ -392,6 +474,31 @@ public class WeatherManager {
                         break;
                 }
                 break;
+            case ASHFALL:
+                // Grey ash sifting through crimson murk: close, dim, never white.
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 18f;
+                        targetFogColor.set(0.42f, 0.36f, 0.33f, 1f);
+                        globalLightDimmer = 0.70f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 14f;
+                        targetFogColor.set(0.38f, 0.32f, 0.30f, 1f);
+                        globalLightDimmer = 0.62f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 11f;
+                        targetFogColor.set(0.34f, 0.28f, 0.26f, 1f);
+                        globalLightDimmer = 0.55f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 8f;
+                        targetFogColor.set(0.30f, 0.24f, 0.22f, 1f);
+                        globalLightDimmer = 0.48f;
+                        break;
+                }
+                break;
             case FOG:
                 switch (currentIntensity) {
                     case LIGHT:
@@ -453,6 +560,14 @@ public class WeatherManager {
         return globalLightDimmer;
     }
 
+    /**
+     * Tarmin's Knell passing overhead lights the maze below as lightning does, without lightning's
+     * own thunder: the gong is the only sound (plan K5).
+     */
+    public void knellFlash(float strength) {
+        flashIntensity = Math.max(flashIntensity, strength);
+    }
+
     public float getFlashIntensity() {
         return flashIntensity;
     }
@@ -511,99 +626,29 @@ public class WeatherManager {
         weatherTimer = 30f;
     }
 
+    /**
+     * How hard a tornado shakes the view, 0-1. Also scales the 3D camera's wind jitter
+     * (World3DRenderer). Halved from 1.0: full strength was too violent to play through.
+     */
+    public static final float TORNADO_SHAKE = 0.5f;
+
     public float getTraumaLevel() {
         if (currentWeather == WeatherType.TORNADO) {
-            return 1.0f;
+            return TORNADO_SHAKE;
         }
         return 0.0f;
     }
 
+    /**
+     * The surface air for a biome now: its base, colder at night (every biome, #194), and the
+     * weather. The rules live in {@link com.bpm.minotaur.gamedata.player.Exposure#surfaceAmbient}.
+     */
     public float getAmbientTemperature(Biome biome) {
-        if (biome == Biome.MAZE) {
-            // Subterranean dungeon / shelter: stable, insulated cave climate
-            return 20.0f; // 68°F - temperate baseline
+        float timeOfDay = 0.5f; // Default midday if DayNightManager unavailable
+        if (worldManager != null && worldManager.getDayNightManager() != null) {
+            timeOfDay = worldManager.getDayNightManager().getTimeOfDay();
         }
-
-        float baseTemp = 20.0f; // Default temperate baseline
-
-        switch (biome) {
-            case LAKELANDS:
-                baseTemp = 18.0f; // 64.4°F - damp, chilly wetland
-                break;
-            case FOREST:
-                baseTemp = 20.0f; // 68°F
-                break;
-            case MOUNTAINS:
-                baseTemp = 15.0f; // 59°F - crisp alpine elevation
-                break;
-            case DESERT:
-                float timeOfDay = 0.5f; // Default midday if DayNightManager unavailable
-                if (worldManager != null && worldManager.getDayNightManager() != null) {
-                    timeOfDay = worldManager.getDayNightManager().getTimeOfDay();
-                }
-                // Solar elevation: sin curve with 0 at dawn (0.25), 1 at noon (0.50), 0 at dusk (0.75), -1 at midnight (0.0/1.0)
-                float sunElevation = (float) Math.sin((timeOfDay - 0.25f) * 2.0f * Math.PI);
-                if (sunElevation > 0f) {
-                    baseTemp = 24.0f + 18.0f * sunElevation; // 24°C at dawn/dusk up to 42°C at solar noon
-                } else {
-                    baseTemp = 24.0f + 10.0f * sunElevation; // 24°C at dawn/dusk down to 14°C at midnight
-                }
-                break;
-            case OCEAN:
-                baseTemp = 19.0f; // 66.2°F - maritime breeze
-                break;
-            default:
-                baseTemp = 20.0f;
-                break;
-        }
-
-        // Weather modifiers - temperatures do NOT become extreme unless weather supports it
-        switch (currentWeather) {
-            case CLEAR:
-                if (biome == Biome.DESERT) {
-                    baseTemp += (currentIntensity == WeatherIntensity.EXTREME) ? 6.0f : 2.0f;
-                } else {
-                    baseTemp += 2.0f; // Pleasant sunny warmth
-                }
-                break;
-            case FOG:
-                baseTemp -= 1.0f; // Slight damp chill
-                break;
-            case RAIN:
-                baseTemp -= 2.0f; // Mild cooling rain (e.g. 18°C)
-                break;
-            case STORM:
-                baseTemp -= 3.0f; // Cool thunderstorm (e.g. 17°C)
-                break;
-            case TORNADO:
-                baseTemp -= 3.0f; // Strong wind chill
-                break;
-            case SNOW:
-                // Winter weather: drops near freezing
-                baseTemp = (biome == Biome.MOUNTAINS) ? -2.0f : 1.0f;
-                break;
-            case BLIZZARD:
-                // Severe winter weather: extreme sub-zero freezing
-                float blizzardBase = (biome == Biome.MOUNTAINS) ? -16.0f : -10.0f;
-                if (currentIntensity == WeatherIntensity.HEAVY) {
-                    blizzardBase -= 3.0f;
-                } else if (currentIntensity == WeatherIntensity.EXTREME) {
-                    blizzardBase -= 6.0f;
-                }
-                baseTemp = blizzardBase;
-                break;
-        }
-
-        // Subtle intensity adjustments for rain/storm
-        if (currentWeather == WeatherType.RAIN || currentWeather == WeatherType.STORM) {
-            if (currentIntensity == WeatherIntensity.HEAVY) {
-                baseTemp -= 1.0f;
-            } else if (currentIntensity == WeatherIntensity.EXTREME) {
-                baseTemp -= 2.0f;
-            }
-        }
-
-        return baseTemp;
+        return com.bpm.minotaur.gamedata.player.Exposure.surfaceAmbient(biome, currentWeather, currentIntensity, timeOfDay);
     }
 
     public boolean isPrecipitation() {
@@ -657,6 +702,8 @@ public class WeatherManager {
                     case HEAVY: return 0.80f;
                     case EXTREME: default: return 0.92f;
                 }
+            case ASHFALL:
+                return 0.95f;
             case BLIZZARD:
             case TORNADO:
             default:
@@ -687,6 +734,9 @@ public class WeatherManager {
                 break;
             case SNOW:
                 out.set(-0.6f * intensityMod, 0f, 0.25f * intensityMod); // gentle drift
+                break;
+            case ASHFALL:
+                out.set(-0.35f * intensityMod, 0f, 0.15f * intensityMod); // ash hangs, barely drifting
                 break;
             default:
                 out.set(-0.2f, 0f, 0.1f);

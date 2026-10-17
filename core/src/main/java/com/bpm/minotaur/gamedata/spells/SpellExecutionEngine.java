@@ -6,12 +6,14 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.gamedata.DamageType;
 import com.bpm.minotaur.gamedata.Direction;
+import com.bpm.minotaur.gamedata.effects.area.AreaEffectType;
 import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.utils.DiceRoller;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.monster.CharmRules;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.CombatManager.HitResult;
 import com.bpm.minotaur.managers.GameEventManager;
@@ -53,6 +55,8 @@ public class SpellExecutionEngine {
             if (player.hasSkill(SkillId.SPELL_WEAVER)) {
                 effectiveCost = Math.max(1, effectiveCost - 1);
             }
+            effectiveCost = Math.max(1, Math.round(effectiveCost * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("spellCostMult")
+                    + com.bpm.minotaur.gamedata.trait.TraitEffects.add("spellCostFlat")));
             if (player.hasSkill(SkillId.RUNIC_CONSERVATION) && com.badlogic.gdx.math.MathUtils.randomBoolean(0.25f)) {
                 effectiveCost = 0;
                 eventManager.addEvent(new GameEvent("RUNIC CONSERVATION: Free spell cast!", 1.5f));
@@ -74,6 +78,11 @@ public class SpellExecutionEngine {
         // 1. Trigger First-Person Hand-Raise Animation with Glowing Mystic Rune on Palm
         if (gs != null && gs.getSpellCastOverlay() != null) {
             gs.getSpellCastOverlay().triggerCast(0.8f, null, spell.getRuneSchool(), archetype.getPrimaryColor());
+        }
+
+        if (gs != null) {
+            SpellFx spellFx = SpellFx.getInstance();
+            gs.getScreenFx().play(spellFx.castClip(), 0.5f, 0.30f, spellFx.castSize());
         }
 
         // 2. Trigger Domain-Specific Synthesized Audio
@@ -111,6 +120,21 @@ public class SpellExecutionEngine {
             return true;
         } else if ("SHIELD".equalsIgnoreCase(bespoke)) {
             resolveShieldBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("WORD_OF_RECALL".equalsIgnoreCase(bespoke)) {
+            resolveWordOfRecallBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("FOG_CLOUD".equalsIgnoreCase(bespoke)) {
+            resolveFogCloudBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("POLYMORPH".equalsIgnoreCase(bespoke)) {
+            resolvePolymorphBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("CHARM".equalsIgnoreCase(bespoke)) {
+            resolveCharmBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("COMPREHEND_LANGUAGES".equalsIgnoreCase(bespoke)) {
+            resolveComprehendLanguagesBespoke(spell, archetype, player, eventManager, gs);
             return true;
         }
 
@@ -170,6 +194,7 @@ public class SpellExecutionEngine {
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(ExplosionType.FIRE, impact3d, 1.8f, 0.65f);
             combatManager.getAnimationManager().spawnArchetypeCascade(impact3d, VisualArchetype.EXPLOSIVE_BURST, 40);
+            playImpactFx(combatManager, VisualArchetype.EXPLOSIVE_BURST, impact3d);
         }
 
         // 3. Lingering Environmental Scorch Marks
@@ -209,6 +234,7 @@ public class SpellExecutionEngine {
             Vector3 target3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(ExplosionType.CONCUSSIVE, target3d, 1.2f, 0.40f);
             combatManager.getAnimationManager().spawnArchetypeCascade(target3d, VisualArchetype.FORCE_MISSILE, 15);
+            playImpactFx(combatManager, VisualArchetype.FORCE_MISSILE, target3d);
         }
 
         // Hit resolution: deals 3 distinct dart strikes
@@ -217,18 +243,103 @@ public class SpellExecutionEngine {
             int totalDmg = 0;
             for (int i = 0; i < 3; i++) {
                 int dartDmg = DiceRoller.roll("1d4") + 1;
-                int actual = target.takeDamage(dartDmg, DamageType.SPIRITUAL, false);
+                int actual = target.takeSpellDamage(dartDmg, DamageType.SPIRITUAL, false);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                        com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 totalDmg += actual;
             }
             if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint);
-            eventManager.addEvent(new GameEvent("Magic Missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
+            eventManager.addEvent(new GameEvent("Magic Missiles strike " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + totalDmg + " damage!", 1.8f));
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
             if (target.getCurrentHP() <= 0) {
-                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
+            } else if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
         } else {
             eventManager.addEvent(new GameEvent("Magic Missiles detonate against the corridor wall.", 1.2f));
         }
+    }
+
+
+    /**
+     * Charm Person and the Dominate spells: bring the first monster down the facing to the player's
+     * side, for a time or for good. Magic Resistance can throw it off; the rules of who can be held,
+     * and for how long, are in {@link CharmRules}.
+     */
+    private static void resolveCharmBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                            GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        CharmRules.Kind kind = CharmRules.Kind.forSpell(spell.getId());
+        HitResult hit = (combatManager != null)
+                ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(),
+                        Math.min(12, Math.max(2, spell.getRange())), true, true)
+                : null;
+        if (kind == null || hit == null || hit.type != HitResult.HitType.MONSTER || hit.hitMonster == null) {
+            eventManager.addEvent(new GameEvent("There is nothing there to bend to your will.", 1.5f));
+            return;
+        }
+        Monster target = hit.hitMonster;
+        String who = com.bpm.minotaur.ui.UiNames.of(target.getType());
+        int casterLevel = player.getStats().getLevel();
+
+        String refusal = CharmRules.refusal(kind, target, casterLevel);
+        if (refusal != null) {
+            eventManager.addEvent(new GameEvent("The " + who + " cannot be charmed: " + refusal + ".", 2.5f));
+            return;
+        }
+        if (com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
+            eventManager.addEvent(new GameEvent("The " + who + " shrugs off your spell!", 2.0f));
+            return;
+        }
+        if (kind.isPermanent()) {
+            int held = 0;
+            for (Monster m : maze.getMonsters().values()) {
+                if (m != null && m.getAllyTurns() == CharmRules.PERMANENT) {
+                    held++;
+                }
+            }
+            if (held >= CharmRules.permanentCap(player.getEffectiveCharisma() / 2 - 5)) {
+                eventManager.addEvent(new GameEvent("Your will cannot bind another servant.", 2.5f));
+                return;
+            }
+        } else {
+            // Only one timed charm at a time: casting again replaces the last.
+            for (Monster m : maze.getMonsters().values()) {
+                if (m != null && m != target && m.getAllyTurns() > 0) {
+                    m.endAlly();
+                    eventManager.addEvent(new GameEvent("The " + com.bpm.minotaur.ui.UiNames.of(m.getType())
+                            + " shakes off the old charm.", 2.0f));
+                }
+            }
+        }
+        target.setAllyTurns(CharmRules.duration(kind, casterLevel));
+        eventManager.addEvent(new GameEvent("The " + who + " falls under your sway!", 2.5f));
+        playImpactFx(combatManager, archetype, new Vector3(hit.collisionPoint.x + 0.5f, 0.5f, hit.collisionPoint.y + 0.5f));
+    }
+
+
+    /**
+     * Polymorph and True Polymorph: the monster in front changes into another, or failing that an
+     * item in front does, or failing that the caster does. True Polymorph ignores the level window.
+     */
+    private static void resolvePolymorphBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        boolean anyLevel = "TRUE_POLYMORPH".equalsIgnoreCase(spell.getId());
+        HitResult hit = (combatManager != null)
+                ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(),
+                        Math.min(12, Math.max(2, spell.getRange())), true, true)
+                : null;
+        if (hit != null && hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
+            com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphMonster(
+                    hit.hitMonster, maze, player, combatManager, eventManager, anyLevel);
+            return;
+        }
+        if (hit != null && hit.collisionPoint != null
+                && com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, hit.collisionPoint, player, eventManager)) {
+            return;
+        }
+        com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphSelf(player, eventManager, anyLevel);
     }
 
     private static void resolveMistyStepBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
@@ -256,12 +367,20 @@ public class SpellExecutionEngine {
 
         if (dest != null) {
             player.setPosition(dest);
+            if (gs != null) {
+                SpellFx spellFx = SpellFx.getInstance();
+                gs.getScreenFx().play(spellFx.warpDepartClip(), 0.5f, 0.5f, spellFx.warpSize());
+            }
             eventManager.addEvent(new GameEvent("You dissolve in mist and step across space!", 2.0f));
 
             if (combatManager != null && combatManager.getAnimationManager() != null) {
                 Vector3 dest3d = new Vector3(dest.x + 0.5f, 0.5f, dest.y + 0.5f);
                 combatManager.getAnimationManager().spawnExplosion(ExplosionType.WIND, dest3d, 1.5f, 0.50f);
                 combatManager.getAnimationManager().spawnArchetypeCascade(dest3d, VisualArchetype.SPATIAL_WARP, 25);
+            }
+            if (gs != null) {
+                SpellFx spellFx = SpellFx.getInstance();
+                gs.getScreenFx().play(spellFx.warpArriveClip(), 0.5f, 0.5f, spellFx.warpSize());
             }
         } else {
             eventManager.addEvent(new GameEvent("The space ahead is blocked!", 1.5f));
@@ -286,6 +405,7 @@ public class SpellExecutionEngine {
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(ExplosionType.CONCUSSIVE, front3d, 1.7f, 0.50f);
             combatManager.getAnimationManager().spawnArchetypeCascade(front3d, VisualArchetype.THUNDER_CONCUSSION, 30);
+            playImpactFx(combatManager, VisualArchetype.THUNDER_CONCUSSION, front3d);
         }
 
         // Crack decal on the floor
@@ -298,30 +418,117 @@ public class SpellExecutionEngine {
         Monster target = maze.getMonsters().get(targetTile);
 
         if (target != null && target.getCurrentHP() > 0) {
-            int dmg = calculateSpellDamage(spell, player);
-            int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+            int dmg = calculateSpellDamage(spell, player, target);
+            int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                    com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
+
+            if (target.getCurrentHP() <= 0) {
+                // Killed outright: it dies where it stood. Pushing a corpse is
+                // what used to strand it on the map, killable again for free.
+                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + "!", 1.8f));
+                handleKill(target, targetTile, player, maze, combatManager, eventManager, archetype);
+                return;
+            }
+
+            if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
+            }
 
             // Pushback mechanic: attempt to push monster back 1 tile
             GridPoint2 pushTile = new GridPoint2(targetTile.x + fx, targetTile.y + fy);
             if (!maze.isWall(pushTile.x, pushTile.y) && !maze.getMonsters().containsKey(pushTile)) {
-                maze.getMonsters().remove(targetTile);
-                maze.getMonsters().put(pushTile, target);
-                eventManager.addEvent(new GameEvent("THUNDERWAVE blasts " + target.getType() + " back!", 1.8f));
+                maze.moveMonster(target, pushTile.x, pushTile.y);
+                eventManager.addEvent(new GameEvent("THUNDERWAVE blasts " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " back!", 1.8f));
             } else {
-                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
-            }
-
-            if (target.getCurrentHP() <= 0) {
-                handleKill(target, targetTile, player, maze, combatManager, eventManager);
+                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + "!", 1.8f));
             }
         } else {
             eventManager.addEvent(new GameEvent("A deafening thunderclap rings through the hallway!", 1.5f));
         }
     }
 
+    /** How far down your facing the cloud can be placed. */
+    private static final int FOG_MAX_RANGE = 6;
+    /** Steps the cloud spreads from where it lands. */
+    private static final int FOG_RADIUS_TILES = 2;
+    /** World turns a cloud lasts in still air. */
+    private static final int FOG_DURATION_TURNS = 10;
+
+    /**
+     * Fog Cloud: a bank of obscuring vapour that occupies tiles rather than dealing damage.
+     *
+     * <p>Cast down the facing, so it can be dropped at your feet to cover a retreat or thrown
+     * into a doorway to seal a room you are not standing in. Where it lands, it spreads by
+     * flood fill -- through openings, around corners, never into stone.
+     *
+     * <p>It does no damage. That is not an omission: the generated entry said 2d6 FORCE, which
+     * is wrong for this spell in every edition, and a utility spell that also chips for seven
+     * is a worse-designed spell rather than a more generous one.
+     */
+    private static void resolveFogCloudBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                               GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        if (maze == null) {
+            return;
+        }
+
+        int castRange = Math.min(FOG_MAX_RANGE, Math.max(1, spell.getRange()));
+        // Fog does not block fog: a second cast should be able to reach past the cloud you are
+        // already standing in and extend it, not stop at its own edge.
+        HitResult hit = (combatManager != null)
+                ? combatManager.raycastIgnoringFog(player.getPosition(), player.getFacing(), castRange)
+                : null;
+
+        // Where the ray stopped is where the cloud wells up. On a wall hit that is the last
+        // open tile before it, because fog cannot form inside stone.
+        Direction facing = player.getFacing();
+        int fx = (int) facing.getVector().x;
+        int fy = (int) facing.getVector().y;
+        int centerX;
+        int centerY;
+        if (hit != null && hit.collisionPoint != null) {
+            centerX = hit.collisionPoint.x;
+            centerY = hit.collisionPoint.y;
+            if (maze.isWall(centerX, centerY)) {
+                centerX -= fx;
+                centerY -= fy;
+            }
+        } else {
+            centerX = (int) player.getPosition().x + fx * castRange;
+            centerY = (int) player.getPosition().y + fy * castRange;
+        }
+        if (maze.isWall(centerX, centerY)) {
+            centerX = (int) player.getPosition().x;
+            centerY = (int) player.getPosition().y;
+        }
+
+        int tiles = maze.getAreaEffects().apply(maze, centerX, centerY,
+                AreaEffectType.OBSCURING, FOG_RADIUS_TILES, FOG_DURATION_TURNS);
+
+        if (tiles <= 0) {
+            eventManager.addEvent(new GameEvent("The vapour finds nowhere to gather.", 1.5f));
+            return;
+        }
+
+        // A pale swell rather than a detonation.
+        if (gs != null && gs.getSpellPostProcessor() != null) {
+            gs.getSpellPostProcessor().triggerVignette(archetype.getPrimaryColor(), 0.55f, 0.9f);
+        }
+        if (combatManager != null && combatManager.getAnimationManager() != null) {
+            Vector3 center3d = new Vector3(centerX + 0.5f, 0.5f, centerY + 0.5f);
+            combatManager.getAnimationManager().spawnArchetypeCascade(center3d, archetype, 26);
+            playImpactFx(combatManager, archetype, center3d);
+        }
+
+        eventManager.addEvent(new GameEvent("Grey fog boils up and fills the passage.", 2f));
+    }
+
     private static void resolveShieldBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                              GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        playSelfFx(spell, archetype, gs);
+
         // 1. Protective Cyan Vignette
         if (gs != null && gs.getSpellPostProcessor() != null) {
             gs.getSpellPostProcessor().triggerVignette(new Color(0.25f, 0.75f, 1.0f, 1.0f), 0.9f, 0.6f);
@@ -338,17 +545,56 @@ public class SpellExecutionEngine {
         eventManager.addEvent(new GameEvent("A crystalline force barrier envelops you! (+AC)", 2.0f));
     }
 
+    private static void resolveWordOfRecallBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                                   GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        if (gs == null) {
+            return;
+        }
+        if (gs.getWorldManager() != null
+                && gs.getWorldManager().getCurrentLevel() == 1
+                && gs.getWorldManager().getCurrentChunk() != null
+                && gs.getWorldManager().getCurrentChunk().equals(new GridPoint2(0, 0))) {
+            eventManager.addEvent(new GameEvent("You are already within the safety of the Shelter.", 2.0f));
+            return;
+        }
+        if (gs.getSpellPostProcessor() != null) {
+            gs.getSpellPostProcessor().triggerArchetypeFX(VisualArchetype.SPATIAL_WARP, 0.7f, 0.8f);
+        }
+        if (combatManager != null && combatManager.getSoundManager() != null) {
+            combatManager.getSoundManager().playSpellSound(VisualArchetype.SPATIAL_WARP);
+        }
+        gs.getScreenFx().play(SpellFx.getInstance().warpDepartClip(), 0.5f, 0.5f, SpellFx.getInstance().warpSize());
+        eventManager.addEvent(new GameEvent("A blinding glyph surrounds you! You are pulled back to the Shelter.", 3.0f));
+        gs.returnToShelter();
+    }
+
+    private static void resolveComprehendLanguagesBespoke(SpellTemplate spell, VisualArchetype archetype,
+                                                          Player player, GameEventManager eventManager, GameScreen gs) {
+        playSelfFx(spell, archetype, gs);
+
+        if (gs != null && gs.getSpellPostProcessor() != null) {
+            gs.getSpellPostProcessor().triggerVignette(new Color(1.0f, 0.85f, 0.35f, 1.0f), 0.8f, 0.6f);
+        }
+
+        player.getStatusManager().addEffect(StatusEffectType.COMPREHEND_LANGUAGES, 150, 1, false);
+        eventManager.addEvent(new GameEvent("An arcane clarity washes over you; all monster tongues become clear!", 3.0f));
+    }
+
     // =========================================================================
     // STANDARD ARCHETYPE HANDLERS
     // =========================================================================
 
     private static boolean isHealing(SpellTemplate spell) {
+        if (spell == null) return false;
+        if (spell.isHealing()) return true;
         String name = spell.getName().toLowerCase();
-        return name.contains("cure") || name.contains("heal") || name.equals("aid") || name.contains("restoration");
+        return name.contains("cure") || name.contains("heal") || name.equals("aid")
+                || name.contains("restoration") || name.contains("regenerat");
     }
 
     private static void resolveSelfSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                          GameEventManager eventManager, GameScreen gs) {
+        playSelfFx(spell, archetype, gs);
         // Healing
         if (isHealing(spell)) {
             int amount = DiceRoller.roll(spell.getDamageDice());
@@ -382,6 +628,26 @@ public class SpellExecutionEngine {
         eventManager.addEvent(new GameEvent("Arcane barrier envelops you! (+AC)", 2.0f));
     }
 
+    /** The glow over the view for a spell cast on oneself; what it looks like is chosen by spellfx.json. */
+    private static void playSelfFx(SpellTemplate spell, VisualArchetype archetype, GameScreen gs) {
+        if (gs == null) {
+            return;
+        }
+        SpellFx spellFx = SpellFx.getInstance();
+        List<String> clips = spellFx.selfClipsFor(spell.getName(), archetype);
+        for (String clip : clips) {
+            gs.getScreenFx().play(clip, 0.5f, 0.45f, spellFx.selfSize());
+        }
+    }
+
+    /** The impact flash for a spell's archetype, played where the spell lands. */
+    public static void playImpactFx(CombatManager combatManager, VisualArchetype archetype, Vector3 at) {
+        SpellFx.Impact impact = SpellFx.getInstance().impactFor(archetype);
+        if (impact != null && combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnFx(impact.clip, at, impact.scale);
+        }
+    }
+
     private static void resolveProjectileSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int maxRange = Math.max(2, spell.getRange());
@@ -402,6 +668,7 @@ public class SpellExecutionEngine {
 
             Vector3 hit3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), hit3d, 1.4f, 0.45f);
+            playImpactFx(combatManager, archetype, hit3d);
             combatManager.getAnimationManager().spawnArchetypeCascade(hit3d, archetype, 18);
         }
 
@@ -414,20 +681,17 @@ public class SpellExecutionEngine {
         if (hit != null && hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
             Monster target = hit.hitMonster;
 
-            // Bad / Nasty immunity check (Spiritual Domain)
-            if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                eventManager.addEvent(new GameEvent(target.getType() + " is immune to spiritual magic!", 1.5f));
-                if (combatManager != null) combatManager.showDamageText(0, hit.collisionPoint);
-                return;
-            }
+            int dmg = calculateSpellDamage(spell, player, target);
 
-            int dmg = calculateSpellDamage(spell, player);
-
-            int actualDmg = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+            int actualDmg = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                    com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actualDmg);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
-            eventManager.addEvent(new GameEvent(spell.getName() + " hits " + target.getType() + " for " + actualDmg + "!", 1.5f));
+            eventManager.addEvent(new GameEvent(spell.getName() + " hits " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actualDmg + "!", 1.5f));
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
-            if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()) {
+            if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()
+                    && !com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
                 try {
                     StatusEffectType effect = StatusEffectType.valueOf(spell.getStatusEffect().toUpperCase());
                     target.getStatusManager().addEffect(effect, 5, 1, false);
@@ -436,7 +700,9 @@ public class SpellExecutionEngine {
             }
 
             if (target.getCurrentHP() <= 0) {
-                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
+            } else if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
         } else {
             eventManager.addEvent(new GameEvent(spell.getName() + " impacts the corridor wall.", 1.0f));
@@ -455,6 +721,7 @@ public class SpellExecutionEngine {
         Vector3 center3d = new Vector3(center.x + 0.5f, 0.5f, center.y + 0.5f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), center3d, 1.8f, 0.60f);
+            playImpactFx(combatManager, archetype, center3d);
             combatManager.getAnimationManager().spawnArchetypeCascade(center3d, archetype, 25);
         }
 
@@ -476,23 +743,23 @@ public class SpellExecutionEngine {
         Vector3 touch3d = new Vector3(targetPos.x + 0.5f, 0.5f, targetPos.y + 0.5f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), touch3d, 1.2f, 0.40f);
+            playImpactFx(combatManager, archetype, touch3d);
         }
 
         Monster target = maze.getMonsters().get(targetPos);
         if (target != null && target.getCurrentHP() > 0) {
-            if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                eventManager.addEvent(new GameEvent(target.getType() + " is immune to spiritual touch!", 1.5f));
-                if (combatManager != null) combatManager.showDamageText(0, targetPos);
-                return;
-            }
-
-            int dmg = calculateSpellDamage(spell, player);
-            int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+            int dmg = calculateSpellDamage(spell, player, target);
+            int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                    com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
+            postAffinity(eventManager, target, DamageType.SPIRITUAL);
 
             if (target.getCurrentHP() <= 0) {
-                handleKill(target, targetPos, player, maze, combatManager, eventManager);
+                handleKill(target, targetPos, player, maze, combatManager, eventManager, archetype);
+            } else if (combatManager != null) {
+                combatManager.alertMonsterToPlayer(target);
             }
         } else {
             eventManager.addEvent(new GameEvent("You reach out with " + spell.getName() + ", but find only empty air.", 1.0f));
@@ -509,22 +776,42 @@ public class SpellExecutionEngine {
                 Monster target = maze.getMonsters().get(pos);
                 if (target == null || target.getCurrentHP() <= 0) continue;
 
-                if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                    continue;
-                }
+                int dmg = calculateSpellDamage(spell, player, target);
 
-                int dmg = calculateSpellDamage(spell, player);
-
-                int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+                int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                        com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
+                postAffinity(eventManager, target, DamageType.SPIRITUAL);
                 hits++;
 
                 if (target.getCurrentHP() <= 0) {
-                    handleKill(target, pos, player, maze, combatManager, eventManager);
+                    handleKill(target, pos, player, maze, combatManager, eventManager, spell.getVisualArchetypeEnum());
+                } else if (combatManager != null) {
+                    combatManager.alertMonsterToPlayer(target);
                 }
             }
         }
         return hits;
+    }
+
+    /** As above, plus Ghost Whisperer's extra damage per die against the undead. */
+    private static int calculateSpellDamage(SpellTemplate spell, Player player, Monster target) {
+        int dmg = calculateSpellDamage(spell, player);
+        float perDie = com.bpm.minotaur.gamedata.trait.TraitEffects.add("undeadSpellDicePlus");
+        if (perDie > 0f && target != null && target.getFamily() == com.bpm.minotaur.gamedata.monster.MonsterFamily.UNDEAD) {
+            dmg += Math.round(perDie * diceCount(spell.getDamageDice()));
+        }
+        return dmg;
+    }
+
+    private static int diceCount(String dice) {
+        try {
+            int d = dice.toLowerCase().indexOf('d');
+            return d <= 0 ? 1 : Integer.parseInt(dice.substring(0, d).trim());
+        } catch (Exception e) {
+            return 1;
+        }
     }
 
     private static int calculateSpellDamage(SpellTemplate spell, Player player) {
@@ -536,18 +823,23 @@ public class SpellExecutionEngine {
     }
 
     private static void handleKill(Monster target, GridPoint2 pos, Player player, Maze maze,
-                                   CombatManager combatManager, GameEventManager eventManager) {
+                                   CombatManager combatManager, GameEventManager eventManager,
+                                   VisualArchetype archetype) {
         if (combatManager != null) {
+            com.bpm.minotaur.gamedata.gore.KillCause cause = com.bpm.minotaur.gamedata.gore.KillCause.spell(archetype);
             if (target == combatManager.getMonster()) {
-                combatManager.handleMonsterDeath();
+                combatManager.handleMonsterDeath(cause);
             } else {
-                combatManager.handleRemoteKill(target);
+                combatManager.handleRemoteKill(target, cause);
             }
         } else {
-            maze.getMonsters().remove(pos);
-            player.getStats().addExperience(target.getBaseExperience());
+            maze.removeMonster(target);
+            if (target.claimDeath()) {
+                player.addExperience(target.getKillExperience(), eventManager);
+                com.bpm.minotaur.gamedata.player.Vengeance.claim(player, target);
+            }
         }
-        eventManager.addEvent(new GameEvent("Vanquished " + target.getType() + "!", 2.0f));
+        eventManager.addEvent(new GameEvent("Vanquished " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + "!", 2.0f));
     }
 
     public static Color getColorForDamageType(String damageType) {
@@ -593,5 +885,12 @@ public class SpellExecutionEngine {
             default:
                 return ExplosionType.STANDARD;
         }
+    }
+
+    /** #172: the War / Spiritual line after a spell or wand hit, as on every other damage path. */
+    private static void postAffinity(GameEventManager eventManager, Monster target, DamageType type) {
+        if (eventManager == null || target == null) return;
+        String line = com.bpm.minotaur.ui.AffinityText.hitLine(target, type, false);
+        if (line != null) eventManager.addEvent(new GameEvent(line, 1.5f));
     }
 }

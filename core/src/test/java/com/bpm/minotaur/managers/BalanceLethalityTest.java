@@ -58,15 +58,11 @@ public class BalanceLethalityTest {
         Monster kobold = new Monster(Monster.MonsterType.KOBOLD, 8, 12);
         kobold.setTemplate(koboldT);
         int koboldBonus = CombatManager.calculateMonsterAttackBonus(kobold);
-        // The statMod floor dropped from 2 to 1 (see the "way off again" balance
-        // investigation): rest-to-heal was removed from the game without retuning
-        // monster accuracy to compensate, so a fresh player facing several
-        // low-tier fights back-to-back with no recovery window had no realistic
-        // out. Pinned to the exact value (not a loose lower bound) so a future
-        // change to this formula can't silently drift back to the old +4 without
-        // this test noticing.
-        assertEquals("Level 1 Kobold attack bonus should be exactly +3 (profBonus 2 + statMod floor 1)",
-                3, koboldBonus);
+        // The statMod floor dropped from 1 to 0 (#177) and proficiency from 2 to 1
+        // (#207): a level-1 monster with no stat bonus hits an unarmoured player
+        // (AC 10) 60% of the time, inside the 55-65% target. Pinned to the exact value.
+        assertEquals("Level 1 Kobold attack bonus should be exactly +1 (profBonus 1 + statMod floor 0)",
+                1, koboldBonus);
 
         // Level 1 Giant Ant (Beast)
         MonsterTemplate antT = new MonsterTemplate();
@@ -77,10 +73,10 @@ public class BalanceLethalityTest {
         Monster ant = new Monster(Monster.MonsterType.GIANT_ANT, 12, 12);
         ant.setTemplate(antT);
         int antBonus = CombatManager.calculateMonsterAttackBonus(ant);
-        // Also floor-dominated (BEAST branch: max(2, (12-10)/2=1) was hitting the
-        // same floor) -- same fix, same reasoning as the Kobold above.
-        assertEquals("Level 1 Giant Ant attack bonus should be exactly +3 (profBonus 2 + statMod floor 1)",
-                3, antBonus);
+        // BEAST branch: the Dex modifier counts at half weight since #207,
+        // max(0, (12-10)/4 = 0), so the Ant hits like the Kobold above.
+        assertEquals("Level 1 Giant Ant attack bonus should be exactly +1 (profBonus 1 + statMod 0)",
+                1, antBonus);
 
         // Level 2 Ghoul
         MonsterTemplate ghoulT = new MonsterTemplate();
@@ -91,7 +87,7 @@ public class BalanceLethalityTest {
         Monster ghoul = new Monster(Monster.MonsterType.GHOUL, 35, 12);
         ghoul.setTemplate(ghoulT);
         int ghoulBonus = CombatManager.calculateMonsterAttackBonus(ghoul);
-        assertTrue("Level 2 Ghoul attack bonus should be at least +4", ghoulBonus >= 4);
+        assertTrue("Level 2 Ghoul attack bonus should be at least +3", ghoulBonus >= 3);
 
         // Level 6 Troll
         MonsterTemplate trollT = new MonsterTemplate();
@@ -113,7 +109,7 @@ public class BalanceLethalityTest {
         Monster minotaur = new Monster(Monster.MonsterType.MINOTAUR, 100, 14);
         minotaur.setTemplate(minotaurT);
         int minotaurBonus = CombatManager.calculateMonsterAttackBonus(minotaur);
-        assertTrue("Level 15 Minotaur attack bonus should be at least +14", minotaurBonus >= 14);
+        assertTrue("Level 15 Minotaur attack bonus should be at least +13", minotaurBonus >= 13);
     }
 
     @Test

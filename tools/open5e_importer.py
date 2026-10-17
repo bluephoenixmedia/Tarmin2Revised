@@ -331,6 +331,7 @@ def calibrate_weapons():
         "SWORD_SCIMITAR": {"dice": "1d6", "type": "SLASHING", "finesse": True, "thrown": False, "reach": False, "versatile": None, "twoHanded": False, "range": 1},
         "SWORD_RAPIER": {"dice": "1d8", "type": "PIERCING", "finesse": True, "thrown": False, "reach": False, "versatile": None, "twoHanded": False, "range": 1},
         "SWORD_LONG": {"dice": "1d8", "type": "SLASHING", "finesse": False, "thrown": False, "reach": False, "versatile": "1d10", "twoHanded": False, "range": 1},
+        "SWORD": {"dice": "1d8", "type": "SLASHING", "finesse": False, "thrown": False, "reach": False, "versatile": "1d10", "twoHanded": False, "range": 1},
         "SWORD_BROAD": {"dice": "1d8", "type": "SLASHING", "finesse": False, "thrown": False, "reach": False, "versatile": "1d10", "twoHanded": False, "range": 1},
         "SWORD_BASTARD_ONE_HANDED": {"dice": "1d8", "type": "SLASHING", "finesse": False, "thrown": False, "reach": False, "versatile": "1d10", "twoHanded": False, "range": 1},
         "SWORD_BASTARD_TWO_HANDED": {"dice": "1d10", "type": "SLASHING", "finesse": False, "thrown": False, "reach": False, "versatile": None, "twoHanded": True, "range": 1},

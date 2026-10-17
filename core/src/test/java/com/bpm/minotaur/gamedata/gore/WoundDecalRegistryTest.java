@@ -17,7 +17,8 @@ public class WoundDecalRegistryTest {
                 WoundDecalRegistry.SLICE_INDICES,
                 WoundDecalRegistry.STAB_INDICES,
                 WoundDecalRegistry.PUNCTURE_INDICES,
-                WoundDecalRegistry.CRUSH_INDICES
+                WoundDecalRegistry.CRUSH_INDICES,
+                WoundDecalRegistry.SCORCH_INDICES
         };
 
         for (int[] category : allCategories) {
@@ -41,13 +42,16 @@ public class WoundDecalRegistryTest {
         assertTrue("Decal #6 should be in both SLASH and SLICE", slashSet.contains(6) && sliceSet.contains(6));
         assertTrue("Decal #10 should be in both SLASH and SLICE", slashSet.contains(10) && sliceSet.contains(10));
 
-        // Entry cavity #1, #4, #5 should be in both STAB and PUNCTURE
-        assertTrue("Decal #1 should be in both STAB and PUNCTURE", stabSet.contains(1) && punctureSet.contains(1));
-        assertTrue("Decal #4 should be in both STAB and PUNCTURE", stabSet.contains(4) && punctureSet.contains(4));
+        // Small entry holes #13 and #33 fit both a thrust and a point
+        assertTrue("Decal #13 should be in both STAB and PUNCTURE", stabSet.contains(13) && punctureSet.contains(13));
+        assertTrue("Decal #33 should be in both STAB and PUNCTURE", stabSet.contains(33) && punctureSet.contains(33));
 
-        // Decal #14 and #24 should overlap with CRUSH
-        assertTrue("Decal #14 should be in SLASH and CRUSH", slashSet.contains(14) && crushSet.contains(14));
-        assertTrue("Decal #24 should be in PUNCTURE and CRUSH", punctureSet.contains(24) && crushSet.contains(24));
+        // The crush pool is bruises and abrasions only: nothing shared with the blade pools
+        for (int idx : WoundDecalRegistry.CRUSH_INDICES) {
+            assertFalse("Decal #" + idx + " must not be a slash", slashSet.contains(idx));
+            assertFalse("Decal #" + idx + " must not be a slice", sliceSet.contains(idx));
+            assertFalse("Decal #" + idx + " must not be a stab", stabSet.contains(idx));
+        }
     }
 
     @Test

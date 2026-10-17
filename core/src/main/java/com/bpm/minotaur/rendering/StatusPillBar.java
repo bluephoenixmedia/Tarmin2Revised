@@ -1,5 +1,6 @@
 package com.bpm.minotaur.rendering;
 
+import com.bpm.minotaur.gamedata.player.Encumbrance;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -60,28 +61,54 @@ public class StatusPillBar extends Table {
                     "Apply direct pressure, spider silk sutures, or clean bandages.");
         }
 
-        // 2. Temperature exposure
+        // 2. Exposure (#194): the band once it bites, and wetness while it multiplies the cold.
         if (player.getStats() != null) {
-            float temp = player.getStats().getBodyTemperature();
-            if (temp < 32.0f) {
-                addPill(String.format("HYPO %.0f°", temp), Color.valueOf("8CD6FF"),
-                        "Hypothermia Exposure",
-                        "[ENVIRONMENT]",
-                        "Extreme cold gnaws at your body (1 HP damage every 10 turns, blurred vision).",
-                        "Stand near a lit Campfire or Lantern, drink warm broth, or equip warmth rings.");
-            } else if (temp < 35.0f) {
-                addPill(String.format("CHILL %.0f°", temp), HudSkin.COL_WATER_CYAN,
-                        "Chilled Exposure",
-                        "[ENVIRONMENT]",
-                        "Bitter cold slows your reflexes (-20% move and attack speed).",
-                        "Warm yourself by a campfire, equip heavier fur/armor, or seek shelter.");
-            } else if (temp > 38.0f) {
-                addPill(String.format("HEAT %.0f°", temp), HudSkin.COL_TEMP_ORANGE,
-                        "Heatstroke / Hyperthermia",
-                        "[ENVIRONMENT]",
-                        "Overheating causes heavy perspiration (doubled thirst decay and exhaustion).",
-                        "Drink cool water, rest in cooler biomes or shadow.");
+            PlayerStats ps = player.getStats();
+            com.bpm.minotaur.gamedata.player.Exposure.Band band = ps.getExposureBand();
+            com.bpm.minotaur.gamedata.player.Exposure.Wetness wet = ps.getWetnessLevel();
+            String pill = null;
+            Color accent = HudSkin.exposureColor(band);
+            switch (band) {
+                case HOT: pill = "HEAT"; break;
+                case CHILLY: pill = "CHILLY"; break;
+                case COLD: pill = "COLD"; break;
+                case FREEZING: pill = "FREEZING"; break;
+                case HYPOTHERMIC: pill = "HYPO"; break;
+                default: break;
             }
+            if (pill != null) {
+                com.bpm.minotaur.ui.HudReadouts.Tip tip = com.bpm.minotaur.ui.HudReadouts.exposureTip(band, wet);
+                addPill(pill, accent, tip.title, tip.category, tip.details, tip.remedy);
+            }
+            if (wet != com.bpm.minotaur.gamedata.player.Exposure.Wetness.DRY) {
+                com.bpm.minotaur.ui.HudReadouts.Tip tip = com.bpm.minotaur.ui.HudReadouts.wetnessTip(wet);
+                addPill(wet.label.toUpperCase(java.util.Locale.ROOT), HudSkin.COL_WATER_CYAN,
+                        tip.title, tip.category, tip.details, tip.remedy);
+            }
+        }
+
+        // 2a. Blight Taint. Shown only while there is some: it is the Marches' clock, and it
+        // follows the player home, so they need to see it outside the Blight too.
+        if (player.getStats() != null && player.getStats().getTaint() > 0f) {
+            float taint = player.getStats().getTaint();
+            com.bpm.minotaur.gamedata.blight.Taint.Tier tier = com.bpm.minotaur.gamedata.blight.Taint.tierOf(taint);
+            addPill("TAINT " + (int) Math.ceil(taint), HudSkin.COL_TAINT,
+                    com.bpm.minotaur.gamedata.blight.Taint.title(tier),
+                    "[BLIGHT]",
+                    com.bpm.minotaur.gamedata.blight.Taint.effect(tier),
+                    com.bpm.minotaur.gamedata.blight.Taint.remedy());
+        }
+
+        // 2b. Obscuring fog. Positional rather than inflicted, so it has no countdown: it
+        // lasts exactly as long as the player stands in the cloud. Worth a pill because it is
+        // the reason their shots are being swallowed, and nothing else on screen says so.
+        if (player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.OBSCURED)) {
+            addPill("FOG", Color.valueOf("D2D6DA"),
+                    "Heavily Obscured",
+                    "[VAPOUR]",
+                    "You cannot see out of the fog and nothing can see in. Ranged attacks and spells "
+                            + "are swallowed at its edge, in both directions; melee still lands.",
+                    "Walk out of the cloud, or wait for it to disperse.");
         }
 
         // 3. Poison & Toxicity
@@ -117,29 +144,68 @@ public class StatusPillBar extends Table {
                     "Take medicinal curative potions or rest at sanctuary.");
         }
 
+        // 4b. Load. Present the moment the player carries more than Strength allows, because the
+        // slowdown is otherwise unexplained.
+        Encumbrance.Tier load = player.getEncumbrance();
+        if (load != Encumbrance.Tier.UNENCUMBERED) {
+            boolean drainsFood = load.drainFactor > 1f;
+            String drain = drainsFood
+                    ? " You also burn through food and water " + Math.round((load.drainFactor - 1f) * 100) + "% faster."
+                    : "";
+            Color accent = load == Encumbrance.Tier.OVERLOADED ? HudSkin.COL_HP_CRITICAL
+                    : drainsFood ? HudSkin.COL_HP_RED : HudSkin.COL_TEMP_ORANGE;
+            addPill(load.label.toUpperCase(), accent,
+                    load.label + " by Weight",
+                    "[LOAD]",
+                    "You carry " + Math.round(player.getCarriedWeight()) + " of the "
+                            + Math.round(player.getCarryCapacity()) + " your Strength allows. Move speed is down to "
+                            + Math.round(load.speedFactor * 100) + "%." + drain,
+                    "Drop or stash heavy gear, spend consumables, or raise Strength.");
+        }
+
         // 5. Starvation & Dehydration
         if (player.getStats() != null) {
             PlayerStats stats = player.getStats();
-            if (stats.getSatietyFloat() <= 0f) {
-                addPill("STARV", HudSkin.COL_HP_CRITICAL,
-                        "Severe Starvation",
+            com.bpm.minotaur.gamedata.player.Hunger.Stage hunger = stats.getHungerStage();
+            if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.FAINTING || hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED) {
+                addPill("FAINT", HudSkin.COL_HP_CRITICAL,
+                        "Fainting",
                         "[SURVIVAL]",
-                        "Your body is starving to death! Taking 1 true damage every 25 turns.",
-                        "Consume rations, dried meat, or cooked food immediately.");
-            } else if (stats.getSatiationState() == PlayerStats.SatiationState.HUNGRY) {
+                        "STR -2, to-hit -1. Each turn you may pass out for a few turns. Go on and you starve.",
+                        "Eat a ration or cooked food now.");
+            } else if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.WEAK) {
+                addPill("WEAK", HudSkin.COL_HP_CRITICAL,
+                        "Weak",
+                        "[SURVIVAL]",
+                        "Weak from hunger: STR -2, to-hit -1.",
+                        "Eat soon, before you start to faint.");
+            } else if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.HUNGRY) {
                 addPill("HUNGRY", HudSkin.COL_TEMP_ORANGE,
-                        "Hunger Pang",
+                        "Hungry",
                         "[SURVIVAL]",
-                        "Your stomach growls. Natural HP regeneration is suppressed.",
-                        "Eat food before starvation sets in.");
+                        "Your stomach growls. No penalty yet.",
+                        "Eat before you grow weak.");
             }
 
-            if (stats.getHydrationFloat() <= 0f) {
-                addPill("PARCHED", HudSkin.COL_HP_CRITICAL,
-                        "Extreme Dehydration",
+            com.bpm.minotaur.gamedata.player.Thirst.Stage thirst = stats.getThirstStage();
+            if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.COLLAPSE || thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEAD) {
+                addPill("COLLAPSE", HudSkin.COL_HP_CRITICAL,
+                        "Collapsing",
                         "[SURVIVAL]",
-                        "You are parched with thirst! Taking 1 true damage every 20 turns.",
-                        "Drink fresh water or water flask immediately.");
+                        "DEX -2 and slowed. Each turn you may pass out for a few turns. Go on and you die of thirst.",
+                        "Drink from your waterskin or any liquid now.");
+            } else if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEHYDRATED) {
+                addPill("DRY", HudSkin.COL_HP_CRITICAL,
+                        "Dehydrated",
+                        "[SURVIVAL]",
+                        "Dehydrated: DEX -2, every action slower.",
+                        "Drink soon, before you collapse.");
+            } else if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.THIRSTY) {
+                addPill("THIRSTY", HudSkin.COL_TEMP_ORANGE,
+                        "Thirsty",
+                        "[SURVIVAL]",
+                        "Your throat is dry. No penalty yet.",
+                        "Drink before you dehydrate.");
             }
         }
 
@@ -163,9 +229,14 @@ public class StatusPillBar extends Table {
                 addPill("LIGHT", Color.valueOf("FFF099"),
                         "Mote of Light", "[ENCHANTMENT]", "Radiating pure ambient light through the darkness.", "Illuminates corridors.");
             }
-            if (player.getStatusManager().hasEffect(StatusEffectType.HEROISM)) {
-                addPill("HEROIC", HudSkin.COL_GOLD_BRIGHT,
-                        "Heroism", "[BOON]", "Immunity to fear and grants temporary vitality.", "Courageous aura.");
+            int tempHp = player.getStats() != null ? player.getStats().getTemporaryHP() : 0;
+            if (player.getStatusManager().hasEffect(StatusEffectType.HEROISM) || tempHp > 0) {
+                String pillText = tempHp > 0 ? "HEROIC [+" + tempHp + "]" : "HEROIC";
+                String desc = tempHp > 0
+                        ? "Grants +" + tempHp + " temporary vitality and immunity to fear."
+                        : "Immunity to fear and heroic courage.";
+                addPill(pillText, HudSkin.COL_GOLD_BRIGHT,
+                        "Heroism", "[BOON]", desc, "Courageous aura.");
             }
         }
 

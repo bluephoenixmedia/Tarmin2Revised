@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens.inventory;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
 import com.badlogic.gdx.utils.Align;
@@ -13,7 +14,15 @@ public class BackpackPanel extends WidgetGroup implements InventoryEventBus.List
 
     private static final int   COLS       = 7;  // number of columns in the grid (7x6 = 42 slots)
     private static final int   ROWS       = 6;  // number of rows in the grid
-    private static final int   SLOT_COUNT = COLS * ROWS; // 42 total slots (Inventory.MAX_BACKPACK_SIZE)
+    /**
+     * Cells the painted page has room for.
+     *
+     * <p>This is 42 because {@code new_inventory.png} has 42 slot outlines drawn on it and a
+     * "[42/42 Slots]" caption painted beneath them. {@code Inventory.MAX_BACKPACK_SIZE} is 48.
+     * They must be made to agree -- see SPEC section 6 -- and until then the counter below
+     * reports the difference instead of swallowing it.
+     */
+    private static final int   SLOT_COUNT = COLS * ROWS;
 
     /** Visual size of each slot icon in stage pixels. */
     private static final float SLOT_SIZE  = 56f;
@@ -33,8 +42,14 @@ public class BackpackPanel extends WidgetGroup implements InventoryEventBus.List
     private static final float GRID_H     = ROWS * CELL_H;  // total grid height = 438
     private static final float PREF_H     = GRID_H + 26f;   // + room for count label above
 
+    /** Where the painted "[nn/nn Slots]" sits, relative to this panel's origin. */
+    private static final float COUNT_Y = -25f;
+    private static final float COUNT_W = 190f;
+    private static final float COUNT_H = 22f;
+
     private final InventorySlot[] slots = new InventorySlot[SLOT_COUNT];
     private final Label           countLabel;
+    private final Image           countBacking;
     private final Inventory       inventory;
 
     public BackpackPanel(Inventory inventory, InventorySkin skin,
@@ -58,12 +73,21 @@ public class BackpackPanel extends WidgetGroup implements InventoryEventBus.List
             }
         }
 
-        // Count label floats just above the grid
+        // INV-4: the live counter sat above the grid, on top of the painted "Backpack Storage"
+        // header bar, while the page art carries its own "[42/42 Slots]" below the grid -- so
+        // the player saw two different counters in two places, one of them a picture that
+        // never changes. The live one moves onto the painted one and brings an opaque
+        // parchment backing with it, so there is one counter and it is the true one.
+        countBacking = new Image(skin.getWhitePixel());
+        countBacking.setColor(InventorySkin.COL_PAGE_LIGHT);
+        countBacking.setBounds(GRID_W - COUNT_W, COUNT_Y, COUNT_W, COUNT_H);
+        addActor(countBacking);
+
         countLabel = new Label("",
-                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));
+                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_BORDER_DARK));
         countLabel.setAlignment(Align.right);
-        countLabel.setPosition(0f, GRID_H + 4f);
-        countLabel.setWidth(GRID_W);
+        countLabel.setPosition(0f, COUNT_Y + 1f);
+        countLabel.setWidth(GRID_W - 6f);
         addActor(countLabel);
 
         setSize(GRID_W, PREF_H);
@@ -85,8 +109,17 @@ public class BackpackPanel extends WidgetGroup implements InventoryEventBus.List
         for (int i = 0; i < SLOT_COUNT; i++) {
             slots[i].setItem(i < items.size() ? items.get(i) : null);
         }
-        int used = Math.min(items.size(), SLOT_COUNT);
-        countLabel.setText("[" + used + "/" + SLOT_COUNT + " Slots]");
+        // One counter, reading used over what the book can actually show. If the pack is
+        // carrying more than the page has cells for, say so rather than hiding the difference:
+        // Inventory.MAX_BACKPACK_SIZE and this grid disagree, and until that is settled the
+        // player should not be the last to know (SPEC section 6, "Backpack capacity").
+        int used = items.size();
+        int capacity = inventory.getMaxBackpackSize();
+        if (used > SLOT_COUNT) {
+            countLabel.setText(used + " / " + capacity + " carried - " + SLOT_COUNT + " shown");
+        } else {
+            countLabel.setText(used + " / " + Math.min(capacity, SLOT_COUNT) + " slots");
+        }
     }
 
     // ── EventBus listener ─────────────────────────────────────────────

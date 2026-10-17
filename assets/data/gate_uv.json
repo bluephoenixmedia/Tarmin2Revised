@@ -1,0 +1,5 @@
+{
+  "frame": { "flipV": true, "offsetU": 0.0000, "offsetV": 0.0000, "scaleU": 1.0000, "scaleV": 1.0000, "rotation": 0.00 },
+  "doorLeft": { "flipV": true, "offsetU": 0.0000, "offsetV": 0.0000, "scaleU": 1.0000, "scaleV": 1.0000, "rotation": 0.00 },
+  "doorRight": { "flipV": true, "offsetU": 0.0000, "offsetV": 0.0000, "scaleU": 1.0000, "scaleV": 1.0000, "rotation": 0.00 }
+}

@@ -23,6 +23,18 @@ public class ItemSaveData {
     public int studyProgress;
     public String spellId;
     public String friendlyName;
+    /** Rations in this stack. 0 in saves from before stacking, which read as 1. */
+    public int stackCount;
+    /** The house a trophy was taken from, or -1. */
+    public int trophyHouseId = -1;
+    /** A tabard's doctrine colours (Living War W24); null otherwise. */
+    public String heraldry;
+    /** A waterskin's drinks remaining (#193); 0 for every other item. */
+    public int currentCharges;
+    /** What a waterskin holds; null for every other item. */
+    public com.bpm.minotaur.gamedata.liquid.LiquidType liquidContent;
+    /** Whether waterskin liquid was drawn from strata depths (10% illness). */
+    public boolean strataSource;
 
     public ItemSaveData() {
     }
@@ -43,6 +55,14 @@ public class ItemSaveData {
             this.studyProgress = item.getStudyProgress();
             this.spellId = item.getSpellId();
             this.friendlyName = item.getFriendlyName();
+            this.stackCount = item.getStackCount();
+            this.trophyHouseId = item.getTrophyHouseId();
+            this.heraldry = item.getHeraldry();
+            if (item.getType() == Item.ItemType.WATERSKIN) {
+                this.currentCharges = item.getCurrentCharges();
+                this.liquidContent = item.getLiquidContent();
+                this.strataSource = item.isStrataSource();
+            }
         }
     }
 
@@ -64,6 +84,19 @@ public class ItemSaveData {
         if (friendlyName != null) {
             item.setFriendlyName(friendlyName);
             item.setName(friendlyName);
+        }
+        if (stackCount > 1) {
+            item.setStackCount(stackCount);
+        }
+        item.setTrophyHouseId(trophyHouseId);
+        item.setHeraldry(heraldry);
+        if (type == Item.ItemType.WATERSKIN) {
+            item.setMaxCharges(com.bpm.minotaur.gamedata.player.Thirst.WATERSKIN_CAPACITY);
+            item.setCurrentCharges(currentCharges);
+            if (liquidContent != null) {
+                item.setLiquidContent(liquidContent);
+            }
+            item.setStrataSource(strataSource);
         }
         return item;
     }

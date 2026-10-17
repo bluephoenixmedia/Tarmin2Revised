@@ -22,22 +22,11 @@ public class WorldMeshCache implements Disposable {
     private Maze currentMaze = null;
     private int currentLevel = -1;
     private final GridPoint2 lastCenterChunk = new GridPoint2(Integer.MIN_VALUE, Integer.MIN_VALUE);
+    private Texture canopyTexture;
 
-    /**
-     * Retrieves or builds all visible chunk sub-meshes for the current player location and maze.
-     */
-    public List<ChunkSubMesh> getVisibleSubMeshes(
-            Maze maze,
-            float playerX,
-            float playerY,
-            int level,
-            boolean isIndoors,
-            Texture wallTexture,
-            Texture floorTexture,
-            Texture ceilingTexture,
-            WorldManager worldManager
-    ) {
-        return getVisibleSubMeshes(maze, playerX, playerY, level, isIndoors, wallTexture, floorTexture, null, null, ceilingTexture, worldManager);
+    /** The leaf ceiling over surface forest chunks; null leaves them open to the sky. */
+    public void setCanopyTexture(Texture canopyTexture) {
+        this.canopyTexture = canopyTexture;
     }
 
     public List<ChunkSubMesh> getVisibleSubMeshes(
@@ -48,10 +37,12 @@ public class WorldMeshCache implements Disposable {
             boolean isIndoors,
             Texture wallTexture,
             Texture floorTexture,
-            Texture forestWallTexture,
-            Texture forestFloorTexture,
+            BiomeSurfaces biomeSurfaces,
             Texture ceilingTexture,
-            WorldManager worldManager
+            WorldManager worldManager,
+            WallTextureProvider wallProvider,
+            SurfaceTextureSet floorSet,
+            SurfaceTextureSet ceilingSet
     ) {
         List<ChunkSubMesh> result = new ArrayList<>();
 
@@ -67,19 +58,21 @@ public class WorldMeshCache implements Disposable {
             this.lastCenterChunk.set(currentChunkId.x, currentChunkId.y);
         }
 
-        Texture currentWall = (maze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestWallTexture != null) ? forestWallTexture : wallTexture;
-        Texture currentFloor = (maze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestFloorTexture != null) ? forestFloorTexture : floorTexture;
+        Texture currentWall = biomeSurfaces.wallFor(maze.getBiome(), wallTexture);
+        Texture currentFloor = biomeSurfaces.floorFor(maze.getBiome(), floorTexture);
 
         if (level > 1) {
             // --- DUNGEONS (Level > 1): Static Single-Floor Bake ---
             String dungeonKey = "DUNGEON_L" + level;
             List<ChunkSubMesh> dungeonMeshes = cachedChunks.get(dungeonKey);
             if (dungeonMeshes == null) {
+                long dungeonSeed = seedFor(worldManager, level, currentChunkId);
                 dungeonMeshes = ChunkMeshBuilder.buildChunk(
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
                         currentWall, currentFloor, ceilingTexture,
-                        true, 0f, 0f
+                        true, 0f, 0f,
+                        wallProvider, dungeonSeed, floorSet, ceilingSet
                 );
                 cachedChunks.put(dungeonKey, dungeonMeshes);
             }
@@ -89,12 +82,16 @@ public class WorldMeshCache implements Disposable {
             String currentChunkKey = "SECTOR_" + currentChunkId.x + "_" + currentChunkId.y;
             List<ChunkSubMesh> currentMeshes = cachedChunks.get(currentChunkKey);
             if (currentMeshes == null) {
+                long sectorSeed = seedFor(worldManager, level, currentChunkId);
                 currentMeshes = ChunkMeshBuilder.buildChunk(
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
                         currentWall, currentFloor, ceilingTexture,
-                        false, 0f, 0f
+                        false, 0f, 0f,
+                        wallProvider, sectorSeed, floorSet, ceilingSet,
+                        biomeSurfaces.shelterWallFor(maze.getBiome())
                 );
+                addCanopy(currentMeshes, maze, 0f, 0f);
                 cachedChunks.put(currentChunkKey, currentMeshes);
             }
             result.addAll(currentMeshes);
@@ -115,14 +112,18 @@ public class WorldMeshCache implements Disposable {
                             if (neighborMeshes == null) {
                                 Maze neighborMaze = worldManager.requestLoadChunk(targetId);
                                 if (neighborMaze != null) {
-                                    Texture neighborWall = (neighborMaze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestWallTexture != null) ? forestWallTexture : wallTexture;
-                                    Texture neighborFloor = (neighborMaze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestFloorTexture != null) ? forestFloorTexture : floorTexture;
+                                    Texture neighborWall = biomeSurfaces.wallFor(neighborMaze.getBiome(), wallTexture);
+                                    Texture neighborFloor = biomeSurfaces.floorFor(neighborMaze.getBiome(), floorTexture);
+                                    long neighborSeed = seedFor(worldManager, level, targetId);
                                     neighborMeshes = ChunkMeshBuilder.buildChunk(
                                             neighborMaze,
                                             0, 0, neighborMaze.getWidth(), neighborMaze.getHeight(),
                                             neighborWall, neighborFloor, ceilingTexture,
-                                            false, offsetX, offsetZ
+                                            false, offsetX, offsetZ,
+                                            wallProvider, neighborSeed, floorSet, ceilingSet,
+                                            biomeSurfaces.shelterWallFor(neighborMaze.getBiome())
                                     );
+                                    addCanopy(neighborMeshes, neighborMaze, offsetX, offsetZ);
                                     cachedChunks.put(neighborKey, neighborMeshes);
                                 }
                             }
@@ -138,9 +139,25 @@ public class WorldMeshCache implements Disposable {
         return result;
     }
 
+    private void addCanopy(List<ChunkSubMesh> meshes, Maze chunk, float offsetX, float offsetZ) {
+        ChunkSubMesh canopy = CanopyMeshBuilder.build(chunk, canopyTexture, offsetX, offsetZ);
+        if (canopy != null) meshes.add(canopy);
+    }
+
     /**
      * Clears and disposes all cached GPU meshes.
      */
+    /**
+     * The chunk's own deterministic seed. A neighbour chunk must be seeded from
+     * its own id, or every streamed chunk would wear the palette of the one the
+     * player is standing in.
+     */
+    private static long seedFor(WorldManager worldManager, int level, GridPoint2 chunkId) {
+        if (worldManager == null || chunkId == null) return 0L;
+        return worldManager.getAppearanceSeed(level, chunkId.x, chunkId.y);
+    }
+
+
     public void invalidate() {
         for (List<ChunkSubMesh> subMeshes : cachedChunks.values()) {
             for (ChunkSubMesh subMesh : subMeshes) {

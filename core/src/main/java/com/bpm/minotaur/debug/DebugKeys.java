@@ -1,0 +1,101 @@
+package com.bpm.minotaur.debug;
+
+import com.badlogic.gdx.Input;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * The debug keys, in one table that both handles them and draws the on-screen legend, so the legend
+ * can never list a key the game does not honour (or miss one it does).
+ */
+public final class DebugKeys {
+
+    public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL, FIRE_CHOICE_EVENT,
+        WARP_CASTLE_ROAD_SHELTER, WARP_SEAL_SITE, CLAIM_ROAD, GRANT_SEAL,
+        DESCEND_HERE, WARP_SEAL_COURT, WARP_TOWN, BATTLE_HERE, MEGABEAST_HERE }
+
+    public static final class Entry {
+        public final int keycode;
+        public final String keyName;
+        public final String description;
+        /** Null for the always-available keys that are only listed. */
+        public final Action action;
+
+        Entry(int keycode, String keyName, String description, Action action) {
+            this.keycode = keycode;
+            this.keyName = keyName;
+            this.description = description;
+            this.action = action;
+        }
+    }
+
+    /** Active only while debug mode (F5) is on. */
+    public static final Entry[] DEBUG_ONLY = {
+        new Entry(Input.Keys.INSERT, "Insert", "learn every spell", Action.LEARN_ALL_SPELLS),
+        new Entry(Input.Keys.PAGE_UP, "PgUp", "level up one level", Action.LEVEL_UP),
+        new Entry(Input.Keys.HOME, "Home", "open a chest with one of every item", Action.OPEN_ALL_ITEMS_CHEST),
+        new Entry(Input.Keys.END, "End", "refill HP, MP, food and water", Action.REFILL),
+        new Entry(Input.Keys.PAGE_DOWN, "PgDn", "open a random choice event for this place", Action.FIRE_CHOICE_EVENT),
+        new Entry(Input.Keys.SEMICOLON, ";", "warp to the next castle-road shelter", Action.WARP_CASTLE_ROAD_SHELTER),
+        new Entry(Input.Keys.APOSTROPHE, "'", "warp to the next seal site", Action.WARP_SEAL_SITE),
+        new Entry(Input.Keys.BACKSLASH, "\\", "claim every shelter on the last road warped to", Action.CLAIM_ROAD),
+        new Entry(Input.Keys.SLASH, "/", "grant the seal of the last seal road warped to", Action.GRANT_SEAL),
+        new Entry(Input.Keys.NUMPAD_7, "Num7", "descend one stratum here", Action.DESCEND_HERE),
+        new Entry(Input.Keys.NUMPAD_9, "Num9", "warp beside the next unbroken seal lord", Action.WARP_SEAL_COURT),
+        new Entry(Input.Keys.NUMPAD_0, "Num0", "warp into the nearest underground town", Action.WARP_TOWN),
+        new Entry(Input.Keys.NUMPAD_MULTIPLY, "Num*", "sound the horns: a battle here", Action.BATTLE_HERE),
+        new Entry(Input.Keys.NUMPAD_DIVIDE, "Num/", "call a megabeast to this chunk", Action.MEGABEAST_HERE),
+    };
+
+    /** Always available while developing; listed here for reference. */
+    public static final String[][] ALWAYS = {
+        { "F1", "debug overlay" },
+        { "F2", "Modern / Retro" },
+        { "F3", "force monster modifiers" },
+        { "F4", "warp to next themed chunk" },
+        { "F6", "CRT filter" },
+        { "F7", "render engine" },
+        { "F8", "predict portals (log)" },
+        { "F9", "dump exploration (log)" },
+        { "F10", "weather intensity" },
+        { "Shift+F11", "cycle weather" },
+        { "F11", "weapon view tuner" },
+        { "Ctrl+F11", "gate texture tuner" },
+        { "F12", "monster debug overlay" },
+        { "[ ]", "field of view" },
+    };
+
+    private DebugKeys() {
+    }
+
+    /** The debug-only action bound to this key, or null. Always null when debug mode is off. */
+    public static Action actionFor(int keycode, boolean debugMode) {
+        if (!debugMode) {
+            return null;
+        }
+        for (Entry e : DEBUG_ONLY) {
+            if (e.keycode == keycode) {
+                return e.action;
+            }
+        }
+        return null;
+    }
+
+    /** The legend as lines of text, ready to draw. */
+    public static List<String> legend(boolean debugMode) {
+        List<String> lines = new ArrayList<>();
+        lines.add("DEBUG MODE (F5): " + (debugMode ? "ON - all shelter features unlocked" : "OFF - press F5"));
+        lines.add("");
+        lines.add("Only while debug mode is on:");
+        for (Entry e : DEBUG_ONLY) {
+            lines.add(String.format("  %-9s %s", e.keyName, e.description));
+        }
+        lines.add("");
+        lines.add("Always available:");
+        for (String[] k : ALWAYS) {
+            lines.add(String.format("  %-9s %s", k[0], k[1]));
+        }
+        return lines;
+    }
+}

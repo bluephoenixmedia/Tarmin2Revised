@@ -16,7 +16,9 @@
             "name": "Lwjgl3Launcher",
             "request": "launch",
             "mainClass": "com.bpm.minotaur.lwjgl3.Lwjgl3Launcher",
-            "projectName": "Tarmin2-lwjgl3"
+            "projectName": "Tarmin2-lwjgl3",
+            // C2 JIT crashes on this machine (see hs_err_pid*.log); C1 only until the hardware is checked.
+            "vmArgs": "-XX:TieredStopAtLevel=1"
         },
         {
             "type": "java",
@@ -30,7 +32,9 @@
             "name": "Play Tarmin 2",
             "request": "launch",
             "mainClass": "com.bpm.minotaur.lwjgl3.Lwjgl3Launcher",
-            "projectName": "lwjgl3"
+            "projectName": "lwjgl3",
+            // C2 JIT crashes on this machine (see hs_err_pid*.log); C1 only until the hardware is checked.
+            "vmArgs": "-XX:TieredStopAtLevel=1"
         },
         {
             "type": "java",

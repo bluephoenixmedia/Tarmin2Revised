@@ -167,6 +167,7 @@ public class InventorySlot extends Table {
             case "Feet":   return it.isBoots();
             case "Ring":
             case "Ring 2": return it.isRing();
+            case "Belt":   return it.isBeltClip();
             default:       return restrictType != null && it.getType() == restrictType;
         }
     }

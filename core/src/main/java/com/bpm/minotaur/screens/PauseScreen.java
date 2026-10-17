@@ -141,7 +141,7 @@ public class PauseScreen extends BaseScreen {
         saveQuitBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                saveAndQuit();
+                confirmQuit();
             }
         });
         panel.add(saveQuitBtn).minWidth(400).height(54).padBottom(14).row();
@@ -172,10 +172,47 @@ public class PauseScreen extends BaseScreen {
     }
 
     private void saveAndQuit() {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().endExpedition(com.bpm.minotaur.telemetry.TelemetryManager.Outcome.ABANDONED, null);
         if (gameScreen != null && gameScreen.getPlayer() != null) {
             SaveManager.getInstance().saveActiveSlot(gameScreen.getPlayer(), gameScreen.getWorldManager());
         }
         game.setScreen(new MainMenuScreen(game));
+    }
+
+    private void confirmQuit() {
+        Dialog dialog = new Dialog("SAVE AND QUIT",
+                new Window.WindowStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT, hudSkin.getDoubleBorderPanel())) {
+            @Override
+            protected void result(Object object) {
+                if (Boolean.TRUE.equals(object)) {
+                    saveAndQuit();
+                }
+            }
+        };
+
+        TextButton.TextButtonStyle confirmBtnStyle = new TextButton.TextButtonStyle();
+        confirmBtnStyle.font = hudSkin.getFontSmall();
+        confirmBtnStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+        confirmBtnStyle.up = hudSkin.getPrimaryButtonUp();
+        confirmBtnStyle.down = hudSkin.getPrimaryButtonDown();
+        confirmBtnStyle.over = hudSkin.getPrimaryButtonDown();
+
+        TextButton.TextButtonStyle cancelBtnStyle = new TextButton.TextButtonStyle();
+        cancelBtnStyle.font = hudSkin.getFontSmall();
+        cancelBtnStyle.fontColor = Color.WHITE;
+        cancelBtnStyle.up = hudSkin.getSlotRecessed();
+        cancelBtnStyle.down = hudSkin.getSlotActive();
+        cancelBtnStyle.over = hudSkin.getSlotActive();
+
+        dialog.getContentTable().pad(25);
+        dialog.getButtonTable().pad(20);
+        dialog.getButtonTable().defaults().pad(8).height(48);
+
+        dialog.text(new Label("Save your progress and return to the main menu?",
+                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE)));
+        dialog.button("SAVE AND QUIT", true, confirmBtnStyle);
+        dialog.button("CANCEL", false, cancelBtnStyle);
+        dialog.show(stage);
     }
 
     private void confirmAbandon() {
@@ -211,7 +248,7 @@ public class PauseScreen extends BaseScreen {
         dialog.getButtonTable().pad(20);
         dialog.getButtonTable().defaults().pad(8).height(48);
 
-        dialog.text(new Label("Are you sure you want to abandon this expedition?\nYou will succumb to the Doom and leave your gear where you fell.",
+        dialog.text(new Label("Are you sure you want to abandon this expedition?\nYou will feed Tarmin's Hunger and leave your gear where you fell.",
                 new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE)));
         dialog.button("YES, ABANDON", true, alertBtnStyle);
         dialog.button("CANCEL", false, cancelBtnStyle);
@@ -233,7 +270,7 @@ public class PauseScreen extends BaseScreen {
             return true;
         }
         if (keycode == Input.Keys.Q) {
-            saveAndQuit();
+            confirmQuit();
             return true;
         }
         if (keycode == Input.Keys.A) {

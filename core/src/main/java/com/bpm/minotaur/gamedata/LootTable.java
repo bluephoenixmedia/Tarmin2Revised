@@ -62,6 +62,9 @@ public class LootTable {
             // Simple Bane
             new ModInfo(ModifierType.BANE_ANIMAL, 3, 10, 2, 4, "Hunter's", ItemCategory.WAR_WEAPON),
 
+            // Bleed Damage (Tier 1)
+            new ModInfo(ModifierType.ADD_BLEED_DAMAGE, 1, 10, 1, 2, "Barbed", ItemCategory.WAR_WEAPON),
+
             // --- TIER 2 (Levels 6-12) ---
             // Upgraded numerical bonuses
             new ModInfo(ModifierType.BONUS_DAMAGE, 6, 15, 2, 3, "+2", ItemCategory.WAR_WEAPON),
@@ -69,10 +72,11 @@ public class LootTable {
             new ModInfo(ModifierType.BONUS_AC, 6, 15, 2, 3, "+2", ItemCategory.ARMOR),
             new ModInfo(ModifierType.BONUS_AC, 6, 15, 2, 3, "+2", ItemCategory.RING),
 
-            // Elemental Damage
+            // Elemental / Status Damage
             new ModInfo(ModifierType.ADD_FIRE_DAMAGE, 7, 15, 2, 5, "Fiery", ItemCategory.WAR_WEAPON),
             new ModInfo(ModifierType.ADD_ICE_DAMAGE, 7, 15, 2, 5, "Icy", ItemCategory.WAR_WEAPON),
             new ModInfo(ModifierType.ADD_POISON_DAMAGE, 8, 16, 1, 3, "Venomous", ItemCategory.WAR_WEAPON),
+            new ModInfo(ModifierType.ADD_BLEED_DAMAGE, 6, 15, 2, 4, "Serrated", ItemCategory.WAR_WEAPON),
 
             // More Resistances
             new ModInfo(ModifierType.RESIST_POISON, 8, 16, 2, 4, "Antidotal", ItemCategory.RING),
@@ -163,6 +167,14 @@ public class LootTable {
             new ModInfo(ModifierType.BONUS_SPELL_POWER,  6, 15, 2, 2, "Potent",  ItemCategory.RING),
             new ModInfo(ModifierType.BONUS_SPELL_POWER, 13, 99, 3, 3, "Supreme", ItemCategory.SPIRITUAL_WEAPON),
             new ModInfo(ModifierType.BONUS_SPELL_POWER, 13, 99, 3, 3, "Supreme", ItemCategory.RING),
+
+            // --- MAGIC RESISTANCE (percentage points off spell damage; stacks, capped at 75) ---
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  3, 12,  5,  5, "Warded",    ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  8, 99, 10, 10, "Spellproof", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE, 14, 99, 15, 15, "Aegis",     ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  6, 99,  5,  5, "Warding",   ItemCategory.WAR_WEAPON),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  5, 14,  5,  5, "Warding",   ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE, 13, 99, 10, 10, "Spellward", ItemCategory.RING),
 
             // --- STAMINA (extra dice selectable per combat round) ---
             new ModInfo(ModifierType.BONUS_STAMINA,  5, 14, 1, 1, "Vigorous", ItemCategory.ARMOR),

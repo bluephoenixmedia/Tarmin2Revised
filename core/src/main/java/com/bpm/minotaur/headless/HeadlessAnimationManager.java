@@ -40,4 +40,9 @@ public class HeadlessAnimationManager extends AnimationManager {
     public void renderDamageText(SpriteBatch batch, Viewport viewport, Player player, float[] depthBuffer) {
         // No-op
     }
+
+    @Override
+    public void renderMonsterSpeech(SpriteBatch batch, Viewport viewport, Player player, Maze maze, float[] depthBuffer) {
+        // No-op
+    }
 }

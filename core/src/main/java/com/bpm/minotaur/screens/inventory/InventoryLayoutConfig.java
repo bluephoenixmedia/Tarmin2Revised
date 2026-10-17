@@ -41,8 +41,12 @@ class InventoryLayoutConfig {
         positions.put(QUICKSLOTS, new float[]{1036f, 371f});
         positions.put(ATTRIBUTES, new float[]{1040f,  40f});
         positions.put(CORESTATS,  new float[]{  20f,  20f});
-        positions.put(SPELLBOOK,  new float[]{ 120f,  45f});
-        positions.put(ALCHEMY,    new float[]{ 755f, 100f});
+        // INV-2: measured off new_inventory.png rather than guessed. The spellbook box's
+        // inner area runs y 48..200; at 45 the panel's last line fell below the painted frame.
+        // The alchemy grid is painted at x 748..878, y 76..214; the panel used to start at
+        // y 100 and stand 150 tall, which put its top across the "Alchemy Crafting:" title.
+        positions.put(SPELLBOOK,  new float[]{ 118f,  62f});
+        positions.put(ALCHEMY,    new float[]{ 748f,  78f});
         load();
     }
 

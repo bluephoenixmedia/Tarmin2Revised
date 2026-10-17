@@ -153,6 +153,7 @@ public class WandExecutionEngine {
             case LIGHT:
                 return VisualArchetype.HOLY_RADIANCE;
             case TELEPORTATION:
+            case POLYMORPH:
                 return VisualArchetype.SPATIAL_WARP;
             default:
                 return VisualArchetype.FORCE_MISSILE;
@@ -173,6 +174,7 @@ public class WandExecutionEngine {
             case LIGHT:
                 return ExplosionType.HOLY_CROSS;
             case TELEPORTATION:
+            case POLYMORPH:
                 return ExplosionType.VOID;
             default:
                 return ExplosionType.STANDARD;
@@ -192,6 +194,8 @@ public class WandExecutionEngine {
                 return "DIVINATION";
             case TELEPORTATION:
                 return "CONJURATION";
+            case POLYMORPH:
+                return "TRANSMUTATION";
             default:
                 return "EVOCATION";
         }
@@ -233,6 +237,7 @@ public class WandExecutionEngine {
             case LIGHT:
                 gs.getSpellPostProcessor().triggerVignette(new Color(1f, 0.95f, 0.6f, 1f), 0.9f, 0.7f);
                 break;
+            case POLYMORPH:
             case TELEPORTATION:
                 gs.getSpellPostProcessor().triggerGlitch(0.85f, 0.40f);
                 gs.getSpellPostProcessor().triggerChromaticAberration(0.80f, 0.45f);
@@ -295,6 +300,7 @@ public class WandExecutionEngine {
             Vector3 target3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(explosionType, target3d, 1.3f, 0.45f);
             combatManager.getAnimationManager().spawnArchetypeCascade(target3d, VisualArchetype.FORCE_MISSILE, 20);
+            SpellExecutionEngine.playImpactFx(combatManager, VisualArchetype.FORCE_MISSILE, target3d);
         } else {
             // Standard single projectile spell animation
             combatManager.getAnimationManager().addAnimation(new Animation(
@@ -306,6 +312,7 @@ public class WandExecutionEngine {
             Vector3 hit3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(explosionType, hit3d, 1.5f, 0.55f);
             combatManager.getAnimationManager().spawnArchetypeCascade(hit3d, archetype, 22);
+            SpellExecutionEngine.playImpactFx(combatManager, archetype, hit3d);
         }
 
         // Elemental floor decal on impact
@@ -325,17 +332,15 @@ public class WandExecutionEngine {
         switch (effect) {
             case FIRE:
                 if (target != null) {
-                    if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                        if (eventManager != null) eventManager.addEvent(new GameEvent(target.getType() + " is immune to fire magic!", 1.5f));
-                        if (combatManager != null) combatManager.showDamageText(0, hit.collisionPoint);
-                        return;
-                    }
                     int dmg = DiceRoller.roll("3d6") + 2;
-                    int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+                    int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.ORANGE);
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + target.getType() + " for " + actual + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -346,18 +351,18 @@ public class WandExecutionEngine {
 
             case COLD:
                 if (target != null) {
-                    if (Monster.isImmuneToType(target.getType(), DamageType.SPIRITUAL)) {
-                        if (eventManager != null) eventManager.addEvent(new GameEvent(target.getType() + " is immune to frost magic!", 1.5f));
-                        if (combatManager != null) combatManager.showDamageText(0, hit.collisionPoint);
-                        return;
-                    }
                     int dmg = DiceRoller.roll("2d8") + 2;
-                    int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
-                    target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
+                    int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
+                    if (!com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
+                        target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
+                    }
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.CYAN);
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + target.getType() + " for " + actual + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -371,12 +376,15 @@ public class WandExecutionEngine {
                     int totalDmg = 0;
                     for (int i = 0; i < 3; i++) {
                         int dartDmg = DiceRoller.roll("1d4") + 1;
-                        totalDmg += target.takeDamage(dartDmg, DamageType.SPIRITUAL, false);
+                        totalDmg += target.takeSpellDamage(dartDmg, DamageType.SPIRITUAL, false);
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                                com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, dartDmg);
                     }
                     if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint, "", Color.CYAN);
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + totalDmg + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -389,20 +397,26 @@ public class WandExecutionEngine {
                 if (target != null) {
                     int dmg = DiceRoller.roll("3d6");
                     int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.valueOf("E67E22"));
-                    if (eventManager != null) eventManager.addEvent(new GameEvent("The concussive beam blasts " + target.getType() + " for " + actual + " damage!", 1.8f));
+                    if (eventManager != null) eventManager.addEvent(new GameEvent("The concussive beam blasts " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!", 1.8f));
+                    postAffinity(eventManager, target, DamageType.PHYSICAL);
 
                     // Pushback: push monster back 1 tile along beam direction if open
                     int pushX = hit.collisionPoint.x + (int) dir.getVector().x;
                     int pushY = hit.collisionPoint.y + (int) dir.getVector().y;
                     GridPoint2 pushTile = new GridPoint2(pushX, pushY);
-                    if (!maze.isWall(pushX, pushY) && !maze.getMonsters().containsKey(pushTile)) {
-                        maze.getMonsters().remove(hit.collisionPoint);
-                        maze.getMonsters().put(pushTile, target);
+                    // Only the living are pushed; a corpse dies where it stood
+                    // (see the Thunderwave fix). moveMonster keeps the map key
+                    // and the position together.
+                    if (target.getCurrentHP() > 0
+                            && !maze.isWall(pushX, pushY) && !maze.getMonsters().containsKey(pushTile)) {
+                        maze.moveMonster(target, pushX, pushY);
                     }
 
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -450,16 +464,19 @@ public class WandExecutionEngine {
                 if (target != null) {
                     boolean isUndeadOrDark = isUndeadOrDemon(target);
                     int dmg = isUndeadOrDark ? DiceRoller.roll("3d8") : DiceRoller.roll("1d6");
-                    int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+                    int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
+                            com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.SPELL, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.YELLOW);
                     if (eventManager != null) {
                         String desc = isUndeadOrDark
-                                ? "The searing sunlance incinerates " + target.getType() + " for " + actual + " radiant damage!"
-                                : "The lance of light burns " + target.getType() + " for " + actual + " damage!";
+                                ? "The searing sunlance incinerates " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " radiant damage!"
+                                : "The lance of light burns " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " damage!";
                         eventManager.addEvent(new GameEvent(desc, 1.8f));
+                        postAffinity(eventManager, target, DamageType.SPIRITUAL);
                     }
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -503,6 +520,17 @@ public class WandExecutionEngine {
                     }
                 }
                 break;
+
+            case POLYMORPH:
+                if (target != null) {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphMonster(target, maze, player, combatManager, eventManager, false);
+                } else if (hit != null && hit.collisionPoint != null
+                        && com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, hit.collisionPoint, player, eventManager)) {
+                    // an item on the floor changed
+                } else if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("The shimmering bolt finds nothing to change.", 1.5f));
+                }
+                break;
         }
     }
 
@@ -531,15 +559,26 @@ public class WandExecutionEngine {
     }
 
     private static void handleKill(Monster target, GridPoint2 targetPos, Player player, Maze maze,
-                                   CombatManager combatManager, GameEventManager eventManager) {
+                                   CombatManager combatManager, GameEventManager eventManager,
+                                   VisualArchetype archetype) {
         if (combatManager != null) {
-            combatManager.handleRemoteKill(target);
+            combatManager.handleRemoteKill(target, com.bpm.minotaur.gamedata.gore.KillCause.spell(archetype));
         } else {
-            maze.getMonsters().remove(targetPos);
-            player.getStats().addExperience(target.getBaseExperience());
+            maze.removeMonster(target);
+            if (target.claimDeath()) {
+                player.addExperience(target.getKillExperience(), eventManager);
+                com.bpm.minotaur.gamedata.player.Vengeance.claim(player, target);
+            }
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("Killed " + target.getMonsterType() + "!", 2f));
+                eventManager.addEvent(new GameEvent("Killed " + target.getName() + "!", 2f));
             }
         }
+    }
+
+    /** #172: the War / Spiritual line after a spell or wand hit, as on every other damage path. */
+    private static void postAffinity(GameEventManager eventManager, Monster target, DamageType type) {
+        if (eventManager == null || target == null) return;
+        String line = com.bpm.minotaur.ui.AffinityText.hitLine(target, type, false);
+        if (line != null) eventManager.addEvent(new GameEvent(line, 1.5f));
     }
 }

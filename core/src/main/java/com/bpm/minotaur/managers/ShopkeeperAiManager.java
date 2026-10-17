@@ -81,6 +81,12 @@ public class ShopkeeperAiManager {
 
         // 2. Player adjacent → trigger shop
         int distToPlayer = manDist(shopPos, playerPos);
+        if (distToPlayer == 1 && shopkeeper.getTradingCooldown() == 0 && com.bpm.minotaur.gamedata.trait.TraitEffects.add("noTrade") > 0f) {
+            // Lucky Pariah: he knows a bad omen when one walks up to his stall.
+            shopkeeper.setTradingCooldown(TRADING_COOLDOWN);
+            eventManager.addEvent(new GameEvent("The merchant takes one look at you and turns his back.", 2.5f));
+            return;
+        }
         if (distToPlayer == 1 && shopkeeper.getTradingCooldown() == 0) {
             shopkeeper.setState(ShopkeeperNpc.ShopkeeperState.TRADING);
             shopkeeper.setTradingCooldown(TRADING_COOLDOWN);
@@ -148,7 +154,7 @@ public class ShopkeeperAiManager {
         if (monster.getCurrentHP() <= 0) {
             GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
             maze.getMonsters().remove(mPos);
-            eventManager.addEvent(new GameEvent("The merchant defeated the " + monster.getMonsterType() + "!", 2.5f));
+            eventManager.addEvent(new GameEvent("The merchant defeated the " + monster.getName() + "!", 2.5f));
         }
     }
 
@@ -236,7 +242,7 @@ public class ShopkeeperAiManager {
         }
         GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
         maze.getMonsters().remove(mPos);
-        eventManager.addEvent(new GameEvent("The merchant's beam cuts down the " + monster.getMonsterType() + "!", 2.5f));
+        eventManager.addEvent(new GameEvent("The merchant's beam cuts down the " + monster.getName() + "!", 2.5f));
     }
 
     /** Nearest living monster within the laser's range that he has a clear line of sight to. */
@@ -245,7 +251,7 @@ public class ShopkeeperAiManager {
         Monster best = null;
         float bestDistance = Float.MAX_VALUE;
         for (Monster monster : maze.getMonsters().values()) {
-            if (monster.getCurrentHP() <= 0) {
+            if (monster.getCurrentHP() <= 0 || monster.isAlly()) {
                 continue;
             }
             float distance = origin.dst(monster.getPosition());

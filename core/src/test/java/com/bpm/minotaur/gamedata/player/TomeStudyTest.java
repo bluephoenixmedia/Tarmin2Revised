@@ -74,19 +74,18 @@ public class TomeStudyTest {
     }
 
     @Test
-    public void choosingASpellUnlocksTheSlotAndPreparesTheSpellInIt() {
+    public void choosingASpellTeachesItPermanentlyAndConsumesTheTome() {
         Maze shelter = new Maze(1, new int[12][12]);
         shelter.addHomeTile(new GridPoint2(1, 1));
         Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
         player.beginTomeStudy(tome, shelter, events);
-        assertEquals("Nothing is granted until a spell is chosen", 1, player.getUnlockedSpellSlots());
+        assertEquals("Slots are unlocked by leveling, not Tomes", 1, player.getUnlockedSpellSlots());
 
         String chosen = chooseFirstOption();
 
         assertNull(player.getPendingTomeChoice());
-        assertEquals(2, player.getUnlockedSpellSlots());
-        assertTrue(player.getKnownSpellIds().contains(chosen));
-        assertEquals("The spell goes straight into the new slot", chosen, player.getPreparedSpell(1));
+        assertEquals("Slot count does not change from studying a Tome", 1, player.getUnlockedSpellSlots());
+        assertTrue("Chosen spell is permanently known", player.getPermanentSpellIds().contains(chosen));
         assertFalse("The Tome is used up", player.getInventory().getMainInventory().contains(tome));
     }
 
@@ -119,22 +118,7 @@ public class TomeStudyTest {
     }
 
     @Test
-    public void aRepeatTomeWithNothingLeftToTeachIsKept() {
-        player.setUnlockedSpellSlots(2);
-        for (String id : com.bpm.minotaur.gamedata.spells.TomeChoice.candidates(
-                com.bpm.minotaur.gamedata.spells.Tome.INITIATE, java.util.Collections.emptyList(),
-                com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getTomeChoicePerks())) {
-            player.learnSpellId(id);
-        }
-        Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
-
-        assertFalse(player.beginTomeStudy(tome, field, events));
-        assertNull(player.getActiveTomeStudy());
-        assertTrue(player.getInventory().getMainInventory().contains(tome));
-    }
-
-    @Test
-    public void fieldStudyTakesTheTomesTurnsThenUnlocksItsSlot() {
+    public void fieldStudyTakesTheTomesTurnsThenTeachesSpellPermanently() {
         Item tome = tome(Item.ItemType.TOME_OF_ELEMENTS);
         int turns = TomeStudy.turnsToStudy(Item.ItemType.TOME_OF_ELEMENTS);
         assertEquals(15, turns);
@@ -149,8 +133,9 @@ public class TomeStudyTest {
 
         assertEquals(TomeStudy.Step.COMPLETE, player.advanceTomeStudy(field, events));
         assertNull(player.getActiveTomeStudy());
-        chooseFirstOption();
-        assertEquals(3, player.getUnlockedSpellSlots());
+        String chosen = chooseFirstOption();
+        assertEquals("Slots do not unlock from Tomes", 1, player.getUnlockedSpellSlots());
+        assertTrue(player.getPermanentSpellIds().contains(chosen));
         assertFalse(player.getInventory().getMainInventory().contains(tome));
     }
 
@@ -198,21 +183,24 @@ public class TomeStudyTest {
     }
 
     @Test
-    public void aFirstTimeTomeWithNothingToTeachStillUnlocksItsSlotAndIsKept() {
-        for (String id : com.bpm.minotaur.gamedata.spells.TomeChoice.candidates(
-                com.bpm.minotaur.gamedata.spells.Tome.INITIATE, java.util.Collections.emptyList(),
-                com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getTomeChoicePerks())) {
-            player.learnSpellId(id);
+    public void tomeOffersFallbackMpBonusWhenAllSpellsKnown() {
+        for (com.bpm.minotaur.gamedata.spells.SpellTemplate spell : com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getAllSpells()) {
+            if (spell.getLevel() <= com.bpm.minotaur.gamedata.spells.Tome.INITIATE.getMaxSpellLevel()) {
+                player.learnSpellId(spell.getId());
+            }
         }
         Maze shelter = new Maze(1, new int[12][12]);
         shelter.addHomeTile(new GridPoint2(1, 1));
         Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
 
         assertTrue(player.beginTomeStudy(tome, shelter, events));
+        assertNotNull(player.getPendingTomeChoice());
+        assertTrue("Fallback MP bonus offered", player.getPendingTomeChoice().getOptions().contains(com.bpm.minotaur.gamedata.spells.TomeChoice.FALLBACK_MP_BONUS_ID));
 
-        assertNull(player.getPendingTomeChoice());
-        assertEquals(2, player.getUnlockedSpellSlots());
-        assertTrue("Nothing to teach: the Tome is kept to sell", player.getInventory().getMainInventory().contains(tome));
+        int oldMaxMp = player.getStats().getMaxMP();
+        player.chooseTomeSpell(com.bpm.minotaur.gamedata.spells.TomeChoice.FALLBACK_MP_BONUS_ID, events);
+        assertEquals("+5 Max MP gained", oldMaxMp + 5, player.getStats().getMaxMP());
+        assertFalse("Tome is consumed on study completion", player.getInventory().getMainInventory().contains(tome));
     }
 
     @Test

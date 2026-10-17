@@ -369,6 +369,9 @@ public class ThemeObjectiveManager {
         int crests = def != null ? def.getCrestAward() : 1;
 
         ShelterAltar.getInstance().addCrestsOfValor(crests);
+        // The bridge guardian is no longer a themed champion: it roams, so its
+        // death is handled in CombatManager rather than by an objective that
+        // only resolves inside a sealed chunk.
         announce(eventManager, "The seal breaks! You claim " + crests
                 + (crests == 1 ? " Crest of Valor." : " Crests of Valor."));
 

@@ -21,8 +21,12 @@ public class SettingsManager {
     private Difficulty currentDifficulty;
     private boolean isAdvancedMode;
     private boolean skipIntroVideo;
+    private boolean showHints = true;
     private float musicVolume = 0.70f;
     private float sfxVolume = 0.80f;
+    /** Tarmin's Knell has its own volume, and its red bleed can be turned off (plan K5). */
+    private float knellVolume = 1.0f;
+    private boolean knellVignette = true;
     private final Map<String, Integer> keyBindings = new LinkedHashMap<>();
     private final Map<String, String> keyBindingDescriptions = new LinkedHashMap<>();
 
@@ -37,18 +41,23 @@ public class SettingsManager {
         keyBindingDescriptions.put("PICKUP_DROP", "Pickup/Drop Item");
         keyBindingDescriptions.put("USE_ITEM", "Use Item");
         keyBindingDescriptions.put("DESCEND", "Descend Ladder");
-        keyBindingDescriptions.put("REST", "Rest");
+        keyBindingDescriptions.put("QUICK_HEAL", "Quick Heal");
         keyBindingDescriptions.put("FIRST_AID", "First Aid");
         keyBindingDescriptions.put("SWAP_HANDS", "Swap Hands");
-        keyBindingDescriptions.put("SWAP_PACK", "Swap with Pack");
+        keyBindingDescriptions.put("SWAP_PACK", "Use / Loot / Equip, else Swap with Pack");
         keyBindingDescriptions.put("ROTATE_PACK", "Rotate Pack");
         keyBindingDescriptions.put("ATTACK", "Attack (Combat)");
+        keyBindingDescriptions.put("FIRE_RANGED", "Fire Ranged Weapon");
         keyBindingDescriptions.put("MAP", "Castle Map");
         keyBindingDescriptions.put("FIELD_CRAFTING", "Field Crafting");
         keyBindingDescriptions.put("FIELD_COOKING", "Field Cooking");
         keyBindingDescriptions.put("SKILL_TREE", "Skill Tree & Perks");
         keyBindingDescriptions.put("TOGGLE_LANTERN", "Toggle Lantern");
         keyBindingDescriptions.put("SPELLBOOK", "Spellbook");
+        keyBindingDescriptions.put("MAP_WAYPOINT", "Map: Set Waypoint");
+        keyBindingDescriptions.put("MAP_SUGGEST", "Map: Take Suggested Step");
+        keyBindingDescriptions.put("MAP_PIN", "Map: Pin");
+        keyBindingDescriptions.put("MAP_RECENTER", "Map: Centre on You");
     }
 
     public static SettingsManager getInstance() {
@@ -76,15 +85,26 @@ public class SettingsManager {
         // Load Skip Intro Video
         skipIntroVideo = prefs.getBoolean("skipIntroVideo", false);
 
+        // Load Show Hints (#169: default on)
+        showHints = prefs.getBoolean("showHints", true);
+
         // Load Audio Volumes (Defaults: Music 70%, SFX 80%)
         musicVolume = prefs.getFloat("musicVolume", 0.70f);
         sfxVolume = prefs.getFloat("sfxVolume", 0.80f);
+        knellVolume = prefs.getFloat("knellVolume", 1.0f);
+        knellVignette = prefs.getBoolean("knellVignette", true);
+
+        // Gore level: one process-wide value the gore systems read.
+        com.bpm.minotaur.gamedata.gore.GoreLevel.setCurrent(
+                com.bpm.minotaur.gamedata.gore.GoreLevel.parse(prefs.getString("goreLevel", null)));
         MusicManager.getInstance().setMasterVolume(musicVolume);
 
         // Load Key Bindings
         keyBindings.clear();
         for (String action : keyBindingDescriptions.keySet()) {
-            int defaultKey = getDefaultKeyForAction(action);
+            int defaultKey = defaultKeyFor(action);
+            // Quick heal took over the old Rest key (#190): keep a player's rebinding of it.
+            if (action.equals("QUICK_HEAL")) defaultKey = prefs.getInteger("REST", defaultKey);
             keyBindings.put(action, prefs.getInteger(action, defaultKey));
         }
 
@@ -123,6 +143,31 @@ public class SettingsManager {
         }
     }
 
+    // --- Tarmin's Knell ---
+    public float getKnellVolume() {
+        return knellVolume;
+    }
+
+    public void setKnellVolume(float volume) {
+        this.knellVolume = Math.max(0f, Math.min(1f, volume));
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putFloat("knellVolume", this.knellVolume).flush();
+        }
+    }
+
+    public boolean isKnellVignette() {
+        return knellVignette;
+    }
+
+    public void setKnellVignette(boolean on) {
+        this.knellVignette = on;
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putBoolean("knellVignette", on).flush();
+        }
+    }
+
     // --- Skip Intro Video ---
     public boolean isSkipIntroVideo() {
         return skipIntroVideo || Boolean.getBoolean("minotaur.skipIntro");
@@ -133,6 +178,32 @@ public class SettingsManager {
         Preferences prefs = getPrefs();
         if (prefs != null) {
             prefs.putBoolean("skipIntroVideo", skip).flush();
+        }
+    }
+
+    // --- Show Hints (#169) ---
+    public boolean isShowHints() {
+        return showHints;
+    }
+
+    public void setShowHints(boolean showHints) {
+        this.showHints = showHints;
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putBoolean("showHints", showHints).flush();
+        }
+    }
+
+    // --- Gore Level ---
+    public com.bpm.minotaur.gamedata.gore.GoreLevel getGoreLevel() {
+        return com.bpm.minotaur.gamedata.gore.GoreLevel.current();
+    }
+
+    public void setGoreLevel(com.bpm.minotaur.gamedata.gore.GoreLevel level) {
+        com.bpm.minotaur.gamedata.gore.GoreLevel.setCurrent(level);
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putString("goreLevel", com.bpm.minotaur.gamedata.gore.GoreLevel.current().name()).flush();
         }
     }
 
@@ -157,20 +228,26 @@ public class SettingsManager {
     }
 
     // --- Key Bindings ---
+    /** The key bound to {@code action}; its default until the settings are loaded. */
     public int getKey(String action) {
-        return keyBindings.getOrDefault(action, Input.Keys.UNKNOWN);
+        Integer bound = keyBindings.get(action);
+        return bound != null ? bound : defaultKeyFor(action);
     }
 
     public void setKey(String action, int keycode) {
         keyBindings.put(action, keycode);
-        getPrefs().putInteger(action, keycode).flush();
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putInteger(action, keycode).flush();
+        }
     }
 
     public Map<String, String> getKeyBindingDescriptions() {
         return keyBindingDescriptions;
     }
 
-    private int getDefaultKeyForAction(String action) {
+    /** The shipped default key for {@code action}, or {@code Input.Keys.UNKNOWN}. */
+    public static int defaultKeyFor(String action) {
         switch (action) {
             case "MOVE_FORWARD": return Input.Keys.UP;
             case "MOVE_BACK": return Input.Keys.DOWN;
@@ -180,18 +257,24 @@ public class SettingsManager {
             case "PICKUP_DROP": return Input.Keys.P;
             case "USE_ITEM": return Input.Keys.U;
             case "DESCEND": return Input.Keys.D;
-            case "REST": return Input.Keys.H;
+            case "QUICK_HEAL": return Input.Keys.H;
             case "FIRST_AID": return Input.Keys.R;
             case "SWAP_HANDS": return Input.Keys.S;
             case "SWAP_PACK": return Input.Keys.E;
             case "ROTATE_PACK": return Input.Keys.T;
             case "ATTACK": return Input.Keys.A;
+            case "FIRE_RANGED": return Input.Keys.F;
             case "MAP": return Input.Keys.M;
             case "FIELD_CRAFTING": return Input.Keys.C;
             case "FIELD_COOKING": return Input.Keys.J;
             case "SKILL_TREE": return Input.Keys.K;
             case "TOGGLE_LANTERN": return Input.Keys.L;
             case "SPELLBOOK": return Input.Keys.Q;
+            // Read only while the map is open, so they may share keys with the world.
+            case "MAP_WAYPOINT": return Input.Keys.W;
+            case "MAP_SUGGEST": return Input.Keys.G;
+            case "MAP_PIN": return Input.Keys.P;
+            case "MAP_RECENTER": return Input.Keys.C;
             default: return Input.Keys.UNKNOWN;
         }
     }

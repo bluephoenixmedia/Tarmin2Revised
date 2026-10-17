@@ -39,10 +39,11 @@ public class PlayerStats {
     private java.util.List<com.bpm.minotaur.gamedata.dice.Artifact> artifacts = new java.util.ArrayList<>();
     private int stamina = 3; // Initial stamina for dice selection
 
-    // XP curve: BASE * LOG_BASE^(level-1). LOG_BASE 1.7 raises L2 wall to ~425,
-    // L3 to ~722, slowing the early snowball versus the previous 1.6 base.
-    private static final int BASE_XP_REQUIRED = 300;
-    private static final double LOG_BASE = 1.7;
+    // XP curve: BASE * LOG_BASE^(level-1) (#183). It grows at the same rate as monster XP
+    // (MonsterXp.GROWTH), so every level costs 9 on-level kills of a common colour
+    // (1.2x): 90 * 1.2 = 108 = 9 * 10 * 1.2. L2 requires 108 XP, L3 130, L4 156.
+    private static final int BASE_XP_REQUIRED = 90;
+    private static final double LOG_BASE = com.bpm.minotaur.gamedata.monster.MonsterXp.GROWTH;
 
     private int treasureScore = 0;
 
@@ -51,6 +52,8 @@ public class PlayerStats {
 
     // --- Toxic Communion Stats ---
     private int toxicity = 0;
+    /** Blighted Marches rot, 0-100. See gamedata.blight.Taint. Persists until the shelter bed clears it. */
+    private float taint = 0f;
     private int maxToxicity = 100;
 
     public int getToxicity() {
@@ -79,43 +82,42 @@ public class PlayerStats {
 
     private final float vulnerabilityMultiplier;
 
-    public enum SatiationState {
-        STARVING,
-        HUNGRY,
-        NORMAL,
-        SATIATED,
-        CHOKING
-    }
-
     // --- Survival Stats ---
-    private float satiety = 80.0f; // 0-120 NetHack scale
-    private float hydration = 80.0f; // 0-100
+    /** Nutrition on NetHack's scale (see {@link Hunger}); negative while Fainting. */
+    private float satiety = Hunger.START;
+    /** Hydration on NetHack's scale (see {@link Thirst}); negative while Collapsed. */
+    private float hydration = Thirst.START;
     private float bodyTemperature = 37.0f; // Celsius. Normal ~37.
 
-    public static final float MAX_SATIETY = 120.0f;
-    public static final float MAX_HYDRATION = 100.0f;
+    /** The store's cap. Hunger bars fill at {@link Hunger#SATIATED_ABOVE}. */
+    public static final float MAX_SATIETY = Hunger.CHOKE_AT;
+    /** Where every new expedition starts. Respawns use the same value. */
+    public static final float STARTING_SATIETY = Hunger.START;
+    public static final float MAX_HYDRATION = Thirst.MAX_STORE;
+    public static final float STARTING_HYDRATION = Thirst.START;
     public static final float BODY_TEMP_NORMAL = 37.0f;
     public static final float BODY_TEMP_FREEZING = 32.0f; // Hypothermia start
     public static final float BODY_TEMP_OVERHEAT = 41.0f; // Hyperthermia start
 
-    public SatiationState getSatiationState() {
-        if (satiety <= 0f) return SatiationState.STARVING;
-        if (satiety <= 25f) return SatiationState.HUNGRY;
-        if (satiety <= 80f) return SatiationState.NORMAL;
-        if (satiety <= 110f) return SatiationState.SATIATED;
-        return SatiationState.CHOKING;
+    public Hunger.Stage getHungerStage() {
+        return Hunger.stageOf(satiety, constitution);
+    }
+
+    public Thirst.Stage getThirstStage() {
+        return Thirst.stageOf(hydration, constitution);
     }
 
     public int getSatiety() {
-        return (int) satiety;
+        return (int) Math.floor(satiety);
     }
 
     public float getSatietyFloat() {
         return satiety;
     }
 
+    /** Clamped between the starvation line and {@link #MAX_SATIETY}. */
     public void setSatiety(float v) {
-        this.satiety = Math.max(0, Math.min(MAX_SATIETY, v));
+        this.satiety = Math.max(Hunger.floor(constitution), Math.min(MAX_SATIETY, v));
     }
 
     public void modifySatiety(float amount) {
@@ -123,7 +125,7 @@ public class PlayerStats {
     }
 
     public int getHydration() {
-        return (int) hydration;
+        return (int) Math.floor(hydration);
     }
 
     public float getHydrationFloat() {
@@ -131,7 +133,7 @@ public class PlayerStats {
     }
 
     public void setHydration(float v) {
-        this.hydration = Math.max(0, Math.min(MAX_HYDRATION, v));
+        this.hydration = Math.max(Thirst.floor(constitution), Math.min(MAX_HYDRATION, v));
     }
 
     public void modifyHydration(float amount) {
@@ -146,11 +148,30 @@ public class PlayerStats {
         this.bodyTemperature = v;
     }
 
+    /** How wet the player is, 0..100 (#194); see {@link Exposure#wetnessOf}. */
+    private float wetness = 0f;
+
+    public float getWetness() {
+        return wetness;
+    }
+
+    public void setWetness(float wetness) {
+        this.wetness = Math.max(0f, Math.min(Exposure.WETNESS_MAX, wetness));
+    }
+
+    public Exposure.Wetness getWetnessLevel() {
+        return Exposure.wetnessOf(wetness);
+    }
+
+    public Exposure.Band getExposureBand() {
+        return Exposure.bandOf(bodyTemperature);
+    }
+
     public PlayerStats(Difficulty difficulty) {
         // Set stats based on difficulty
         this.currentHP = difficulty.startWarStrength; // Note: Difficulty field names might still be old
         this.currentMP = difficulty.startSpiritualStrength;
-        this.satiety = difficulty.startFood; // Map startFood to Satiety
+        this.satiety = STARTING_SATIETY;
         this.arrows = difficulty.startArrows;
         this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 
@@ -171,13 +192,52 @@ public class PlayerStats {
         this.experienceToNextLevel = calculateXpForLevel(2);
     }
 
+    /**
+     * Death is permanent for the Incarnation (#187): the character level, experience,
+     * trained attributes, unspent and spent attribute/skill points, the HP and MP maxima
+     * and carried ammunition go back to what a new game at {@code difficulty} starts with.
+     *
+     * <p>Only what belongs to the body is reset here. Altar Ascension is read from
+     * {@link com.bpm.minotaur.gamedata.progression.ShelterAltar} on top of these values and
+     * survives; vitals, the dice pool and gear are handled by the respawn itself.
+     */
+    public void beginNewIncarnation(Difficulty difficulty) {
+        PlayerStats fresh = new PlayerStats(difficulty);
+
+        this.level = fresh.level;
+        this.experience = fresh.experience;
+        this.experienceToNextLevel = fresh.experienceToNextLevel;
+
+        this.strength = fresh.strength;
+        this.dexterity = fresh.dexterity;
+        this.constitution = fresh.constitution;
+        this.intelligence = fresh.intelligence;
+        this.wisdom = fresh.wisdom;
+        this.agility = fresh.agility;
+        this.charisma = fresh.charisma;
+
+        this.unallocatedAttributePoints = 0;
+        this.unallocatedSkillPoints = 0;
+        this.unlockedSkills.clear();
+
+        this.maxHP = fresh.maxHP;
+        this.maxMP = fresh.maxMP;
+        this.temporaryHP = 0;
+        this.currentHP = getMaxHP();
+        this.currentMP = this.maxMP;
+
+        this.arrows = fresh.arrows;
+        this.shot = fresh.shot;
+        this.powderDampness = 0f;
+    }
+
     // --- Stat-Only Logic Methods ---
 
     private int calculateXpForLevel(int targetLevel) {
         if (targetLevel <= 1)
             return 0;
         // Formula: base * (log_base ^ (level -1))
-        return (int) (BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
+        return (int) Math.round(BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
     }
 
     /**
@@ -204,6 +264,9 @@ public class PlayerStats {
         return this.experience >= this.experienceToNextLevel;
     }
 
+    /** The least health a level gives, whatever the seeker's Constitution. */
+    public static final int MIN_HP_PER_LEVEL = 2;
+
     public void performLevelUp() {
         if (!canLevelUp())
             return;
@@ -212,8 +275,10 @@ public class PlayerStats {
         this.level++;
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
-        // HP scales with CON, MP scales with INT. Base 3 ± 1, minimum 1.
-        int hpIncrease = Math.max(1, 2 + getConModifier() + new Random().nextInt(3));
+        // HP scales with CON, MP scales with INT. HP: base 5 ± 1, at least MIN_HP_PER_LEVEL. It was
+        // 3 ± 1, and the seal-lord duels found seekers of levels 13-23 at 47-77 hit points against
+        // strata whose beasts and courts strike for twenty a blow (Houses of the Maze balance).
+        int hpIncrease = Math.max(MIN_HP_PER_LEVEL, 4 + getConModifier() + new Random().nextInt(3));
         int mpIncrease = Math.max(1, 2 + getIntModifier() + new Random().nextInt(3));
 
         this.maxHP += hpIncrease;
@@ -221,7 +286,7 @@ public class PlayerStats {
 
         // Partial heal (25% of new max) — rewarding but not HP-resetting.
         // Full heals trivialized early floors by enabling HP-farming on weak mobs.
-        this.currentHP = Math.min(this.maxHP, this.currentHP + this.maxHP / 4);
+        this.currentHP = Math.min(getMaxHP(), this.currentHP + getMaxHP() / 4);
         this.currentMP = Math.min(this.maxMP, this.currentMP + this.maxMP / 4);
 
         // Progression Reboot: award 2 Attribute Points and 1 Skill Point per level
@@ -230,20 +295,31 @@ public class PlayerStats {
     }
 
     /**
-     * To-hit bonus: Standard RPG bounded accuracy: Base bonus 2 + (level / 2) + DEX modifier.
+     * To-hit bonus: Standard RPG bounded accuracy: Base bonus 4 + (level / 2) + DEX modifier (#177).
      */
      public int getToHitBonus() {
-         int baseBonus = 2 + (this.level / 2);
-         return Math.max(1, baseBonus + getDexModifier());
+         int baseBonus = 4 + (this.level / 2);
+         // Weak and worse from hunger (#191) cost a point to-hit, below the floor of 1.
+         return Math.max(1, baseBonus + getDexModifier()) - getHungerStage().toHitPenalty;
      }
 
     /**
-     * NetHack-style natural HP regeneration: interval in turns.
-     * Higher Constitution accelerates recovery from 20 turns down to 8 turns.
+     * NetHack-style natural HP regeneration: interval in turns (#190). Level brings it from
+     * 20 turns at level 1 to 8 at level 10; Constitution shortens it further, never below
+     * {@link #MIN_REGEN_INTERVAL_TURNS}.
      */
     public int getRegenIntervalTurns() {
-        int conMod = getConModifier();
-        return Math.max(8, 20 - (conMod * 2));
+        int levelSteps = Math.min(9, Math.max(0, this.level - 1));
+        int byLevel = 20 - Math.round(levelSteps * 12f / 9f);
+        return Math.max(MIN_REGEN_INTERVAL_TURNS, byLevel - getConModifier() * 2);
+    }
+
+    public static final int MIN_REGEN_INTERVAL_TURNS = 4;
+
+    /** Natural MP recovery: 1 MP every 12 turns at WIS 10, a turn faster per WIS modifier, never below 6 (#159, #190). */
+    public static int mpRegenIntervalTurns(int effectiveWisdom) {
+        int wisMod = Math.max(0, (effectiveWisdom - 10) / 2);
+        return Math.max(6, 12 - wisMod);
     }
 
     /**
@@ -297,7 +373,10 @@ public class PlayerStats {
     }
 
     public void incrementTreasureScore(int amount) {
+        amount = Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("foundTreasureMult")); // Lucky Pariah finds more
+
         this.treasureScore += amount;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(amount);
     }
 
     // --- Getters and Setters ---
@@ -350,6 +429,18 @@ public class PlayerStats {
 
     private int woundsTaken;
 
+    /**
+     * Pulls current HP down to a maximum that has shrunk (Blight Taint). Unlike
+     * {@link #setCurrentHP}, this is not damage: no wound is counted and
+     * temporary HP is untouched.
+     */
+    public void clampCurrentHPToMax() {
+        int max = getMaxHP();
+        if (currentHP > max) {
+            currentHP = max;
+        }
+    }
+
     public int getCurrentMP() {
         return currentMP;
     }
@@ -376,11 +467,11 @@ public class PlayerStats {
     }
 
     public int getFood() {
-        return (int) satiety;
+        return getSatiety();
     }
 
     public void setFood(int food) {
-        this.satiety = food;
+        setSatiety(food);
     }
 
     public int getArrows() {
@@ -446,7 +537,41 @@ public class PlayerStats {
         this.treasureScore = treasureScore;
     }
 
+    private int bonusMaxHP = 0;
+
+    public int getBonusMaxHP() {
+        return bonusMaxHP;
+    }
+
+    public void setBonusMaxHP(int bonusMaxHP) {
+        this.bonusMaxHP = bonusMaxHP;
+        if (this.currentHP > getMaxHP()) {
+            this.currentHP = getMaxHP();
+        }
+    }
+
+    /** Maximum HP, after any personality trait (Fasting Monk, Lucky Fool...) and keepsake bonus (#177). */
     public int getMaxHP() {
+        int base = Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")
+                * com.bpm.minotaur.gamedata.blight.Taint.maxHpMult(taint)));
+        return base + bonusMaxHP;
+    }
+
+    public float getTaint() {
+        return taint;
+    }
+
+    public void setTaint(float taint) {
+        this.taint = com.bpm.minotaur.gamedata.blight.Taint.clamp(taint);
+    }
+
+    /** Adds (or with a negative amount, removes) Taint, clamped to 0-100. */
+    public void addTaint(float amount) {
+        setTaint(this.taint + amount);
+    }
+
+    /** The stored maximum, before any trait. This is what a save records and what level-ups build on. */
+    public int getBaseMaxHP() {
         return maxHP;
     }
 
@@ -481,12 +606,17 @@ public class PlayerStats {
      * 
      * @param amount The amount to heal.
      */
+    /** Healing from a potion, a meal or a spell, scaled by the player's trait (Cowardly Alchemist). */
+    public void healWithTrait(int amount) {
+        heal(Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("healMult")));
+    }
+
     public void heal(int amount) {
         if (amount <= 0)
             return;
         this.currentHP += amount;
-        if (this.currentHP > this.maxHP) {
-            this.currentHP = this.maxHP;
+        if (this.currentHP > getMaxHP()) {
+            this.currentHP = getMaxHP();
         }
     }
 
@@ -517,6 +647,10 @@ public class PlayerStats {
 
     public void setDexterity(int dexterity) {
         this.dexterity = dexterity;
+    }
+
+    public void modifyDexterity(int amount) {
+        this.dexterity += amount;
     }
 
     public int getStrength() {
@@ -561,7 +695,8 @@ public class PlayerStats {
 
     // --- Primary Attribute Modifiers (NetHack-style: (stat-10)/2) ---
     public int getStrModifier() { return (strength - 10) / 2; }
-    public int getDexModifier() { return (dexterity - 10) / 2; }
+    /** Dehydrated and worse (#193) cost 2 DEX here, never in the stored stat. */
+    public int getDexModifier() { return (dexterity - getThirstStage().dexterityPenalty - 10) / 2; }
     public int getConModifier() { return (constitution - 10) / 2; }
     public int getIntModifier() { return (intelligence - 10) / 2; }
     public int getWisModifier() { return (wisdom - 10) / 2; }
@@ -597,7 +732,8 @@ public class PlayerStats {
         if (toxicity >= critLow) {
             eff += Math.max(2, (int) (strength * 0.2f));
         }
-        return eff;
+        // Weak and worse from hunger (#191).
+        return eff - getHungerStage().strengthPenalty;
     }
 
     /** Defense multiplier using raw thresholds. */
@@ -679,6 +815,7 @@ public class PlayerStats {
 
     public int getCookingSkill() { return cookingSkill; }
     public void incrementCookingSkill() { this.cookingSkill++; }
+    public void setCookingSkill(int skill) { this.cookingSkill = Math.max(0, skill); }
 
     // --- Progression Reboot: Attribute & Skill Allocation Methods ---
 
@@ -730,9 +867,28 @@ public class PlayerStats {
         return hasSkill(com.bpm.minotaur.gamedata.progression.SkillId.DUAL_WIELDER);
     }
 
+    /**
+     * The most a point can raise an attribute to. It caps the <i>trained</i> value only:
+     * Ascension bonuses from the Shelter altar sit on top and never use up the headroom.
+     */
+    public static final int MAX_ATTRIBUTE_CAP = 20;
+
+    /** An attribute as trained with level-up points, without Ascension bonuses. */
+    public int getBaseStat(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        if (stat == null) return 10;
+        switch (stat) {
+            case STRENGTH: return strength;
+            case DEXTERITY: return dexterity;
+            case CONSTITUTION: return constitution;
+            case INTELLIGENCE: return intelligence;
+            case WISDOM: return wisdom;
+            case AGILITY: return agility;
+            default: return 10;
+        }
+    }
+
     public boolean allocateAttribute(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
         if (unallocatedAttributePoints <= 0 || stat == null) return false;
-        final int MAX_ATTRIBUTE_CAP = 20;
 
         switch (stat) {
             case STRENGTH:

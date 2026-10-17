@@ -47,6 +47,8 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         final float headingRadians;
         final float northProgress;
         final float doom;
+        /** Seconds into Tarmin's Knell, or negative for a quiet sky. */
+        float knellAge = -1f;
 
         Shot(String name, float timeOfDay, WeatherType weather, float cloudCover,
              boolean stormy, float flash, float headingRadians, float northProgress) {
@@ -102,7 +104,51 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             new Shot("13_noon_doom_50", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 0.5f),
             new Shot("14_noon_doom_100", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 1f),
             new Shot("15_night_doom_100", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 1f),
+
+            // Shelter beacons ahead: the next castle-road shelter, a claimed one, an off-road
+            // shelter's smoke and a seal pillar, by day and by night.
+            new Shot("16_noon_beacons_north", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("17_night_beacons_north", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+
+            // Tarmin's Knell (plan K5): lightning ripples out of the castle, due north, and sweeps
+            // the sky -- the front leaving the horizon, overhead, and the red afterglow.
+            knell(new Shot("18_knell_015", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.15f),
+            knell(new Shot("19_knell_045", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.45f),
+            knell(new Shot("20_knell_080", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 0.80f),
+            knell(new Shot("21_knell_130", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 1.30f),
+            knell(new Shot("22_knell_220", 0.50f, WeatherType.STORM, 0.9f, true, 0f, NORTH, 0f), 2.20f),
+
+            // The Living War (W10): smoke over the fights ahead -- a skirmish next door, a far
+            // battle, a front on the horizon -- black by day, lit from below by night.
+            new Shot("23_noon_war_smoke", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("24_night_war_smoke", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            // Arrows over the fight next door, and a house's beacons lit toward its battle (W10.3-4).
+            new Shot("25_noon_war_volleys", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("26_night_war_signals", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
     };
+
+    private static Shot knell(Shot shot, float age) {
+        shot.knellAge = age;
+        return shot;
+    }
+
+    /** The beacons the beacon shots stand up, north of the camera. */
+    private static java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> sampleBeacons() {
+        java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> list = new java.util.ArrayList<>();
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(1, 9),
+                1f, 9f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(0), false));
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(-5, 4),
+                -5f, 4f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.GLOW,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(0), false));
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(8, 10),
+                8f, 10f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.SMOKE,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(-1), false));
+        list.add(new com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon(new com.badlogic.gdx.math.GridPoint2(-9, 12),
+                -9f, 12f, com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Kind.PILLAR,
+                com.bpm.minotaur.gamedata.shelter.BeaconPalette.roadColor(1), false));
+        return list;
+    }
 
     /** Banner dimensions for the RETRO raycaster's static directional skyboxes. */
     private static final int BANNER_WIDTH = 1024;
@@ -207,6 +253,34 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         state.chunkYProgress = shot.northProgress * 25f;
         state.chunkX = 0;
         state.timeOverride = CAPTURE_TIME;
+        state.beacons = shot.name.contains("beacons") ? sampleBeacons() : null;
+        if (shot.name.contains("war_smoke")) {
+            state.warSmoke = new float[]{-1f, 2f, 2f, 4.5f, 0.5f, 9f, -6f, 14f};
+            state.warSmokeCount = 4;
+        } else {
+            state.warSmokeCount = 0;
+        }
+        if (shot.name.contains("volleys")) {
+            state.warSmoke = new float[]{0.4f, 1f};
+            state.warSmokeCount = 1;
+            state.volleys = new float[]{0.4f, 1f};
+            state.volleyCount = 1;
+        } else {
+            state.volleyCount = 0;
+        }
+        if (shot.name.contains("signals")) {
+            state.warSmoke = new float[]{1f, 3f};
+            state.warSmokeCount = 1;
+            state.beacons3 = new float[]{-9f, 14f, -6f, 10f, -3f, 6.5f, -1f, 4f};
+            state.beaconLit = 4;
+        } else {
+            state.beaconLit = 0;
+        }
+        // Only the knell shots put the castle due north; the rest keep the defaults they were made with.
+        state.hasCastleSite = shot.knellAge >= 0f;
+        state.castleDX = 0f;
+        state.castleDY = shot.knellAge >= 0f ? 10f : 0f;
+        skybox.setKnellAgeForCapture(shot.knellAge);
 
         skybox.renderDirect(viewport, state, 1f / 60f);
 

@@ -66,6 +66,7 @@ public class BonesData {
         addItemIfNotNull(extractedItems, playerData.wornRing, dataManager, assetManager);
         addItemIfNotNull(extractedItems, playerData.wornRing2, dataManager, assetManager);
         addItemIfNotNull(extractedItems, playerData.wornShield, dataManager, assetManager);
+        addItemIfNotNull(extractedItems, playerData.wornBelt, dataManager, assetManager);
         addItemIfNotNull(extractedItems, playerData.rightHand, dataManager, assetManager);
         addItemIfNotNull(extractedItems, playerData.leftHand, dataManager, assetManager);
 

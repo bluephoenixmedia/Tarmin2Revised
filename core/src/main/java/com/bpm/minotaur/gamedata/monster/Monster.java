@@ -36,6 +36,14 @@ public class Monster implements Renderable {
         HARPY(Category.NASTY),
         GARGOYLE(Category.NASTY),
         WERERAT(Category.NASTY),
+        // Added with the first batch of new sprites: the undead casters.
+        SPECTER(Category.NASTY),
+        SKELETAL_WIZARD(Category.NASTY),
+
+        // Humanoids the Spiritual Weapons are strong against
+        LIZARD_WARRIOR(Category.BAD),
+        JESTER(Category.BAD),
+        SAGE(Category.BAD),
 
         // Horrible Monsters (Vulnerable to both War and Spiritual)
         GIANT_ANT(Category.HORRIBLE),
@@ -72,7 +80,15 @@ public class Monster implements Renderable {
         AGIS(Category.HORRIBLE),
         DEMON_SLIME(Category.HORRIBLE),
         BRINGER_OF_DEATH(Category.HORRIBLE),
-        FALL_ANGEL(Category.HORRIBLE);
+        FALL_ANGEL(Category.HORRIBLE),
+        // Added with the first batch of new sprites: beasts and the things that crawl.
+        BAT(Category.HORRIBLE),
+        GIANT_BEE(Category.HORRIBLE),
+        GIANT_SNAIL(Category.HORRIBLE),
+        GIANT_CENTIPEDE(Category.HORRIBLE),
+        LANDSTALKER(Category.HORRIBLE),
+        COCKATRICE(Category.HORRIBLE),
+        BEETLESCRATCH(Category.HORRIBLE);
 
         private final Category category;
 
@@ -98,8 +114,11 @@ public class Monster implements Renderable {
     private int maxMP;
     private String damageDice;
     private int armorClass;
+    private int bleedTurns = 0;
+    private int bleedDamagePerTurn = 0;
+    private int stunTurns = 0;
     private int magicResistance; // 0-100%
-    private int moveSpeed;
+    private int moveSpeed = 12;
     private int baseExperience;
     private int level = 1;
 
@@ -209,8 +228,64 @@ public class Monster implements Renderable {
     private MonsterState state = MonsterState.IDLE;
 
     private Faction faction = Faction.BEASTS_AND_VERMIN;
+    /** The Maze house this monster serves when its faction is MAZE_HOUSE; -1 otherwise. */
+    private int houseId = -1;
+    /** The named figure of the Maze's history this monster is, or -1 (Houses of the Maze T1.12). */
+    private int figureId = -1;
+    /** The seal road whose gash this monster guards, or -1. */
+    private int sealRoad = -1;
+    /** {@link #SEAL_LORD}, {@link #SEAL_RETAINER}, or 0 for neither. */
+    private int sealRole;
+    /**
+     * Gold this monster carries (#197), rolled by MonsterFactory and dropped as a pile
+     * on death. Kept as a number rather than an inventory item because monster inventory
+     * does not survive a chunk unload; ChunkData.MonsterData carries this instead.
+     */
+    private int carriedGold;
+    /** A name for a named figure; null for an ordinary monster. Rebuilt from the history on load. */
+    private String displayName;
+    /** {@code SealLord.Behaviour} ordinals as bits. Rebuilt from the history on load. */
+    private int sealBehaviours;
+    /** One-shot trait reactions already spent this life: berserk, retinue called. Not saved. */
+    private boolean sealRageSpent;
+    private boolean sealCallSpent;
+
+    /** Fighting in a surface battle between two houses (Houses of the Maze T2.4). Not saved. */
+    private boolean warBand;
+    /**
+     * Where a soldier on the march is bound, across the chunk (Living War W2): a column walks to it
+     * when it has nothing to fight, and leaves the chunk there. Null for everyone else. Not saved.
+     */
+    private com.badlogic.gdx.math.GridPoint2 marchTarget;
+    /**
+     * Keeps its peace toward a seeker who has struck no one in its fight: a battle's gate guard
+     * (Living War W15), a herald's escort (W29). Not saved.
+     */
+    private transient boolean gateGuard;
+    /** Turns spent beside a disguised seeker (W16); at {@code Disguise.SCRUTINY_TURNS} it sees through them. */
+    private transient int disguiseScrutiny;
+    /** The megabeast of the history this monster is, or -1 (T3.3). Megabeasts are never saved in a chunk. */
+    private int megabeastId = -1;
+    /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
+    private DamageType extraWeakness;
+    /** The town this monster guards, or null (T4.4). A guard is placed on every load and never saved. */
+    private String townKey;
+    /** A guard at peace with the player: it does not hunt them. */
+    private boolean peaceful;
+
+    public static final int SEAL_LORD = 1;
+    public static final int SEAL_RETAINER = 2;
+    /** Not of the court: whoever killed a seal's holder, and carries the seal off now. */
+    public static final int SEAL_BEARER = 3;
+    /** The seeker has struck this monster at least once; a seal lord's seal is theirs if it falls. */
+    private transient boolean seekerDrewBlood;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
+
+    // Native language speech barks
+    private String currentSpeech = null;
+    private float speechTimer = 0f;
+    private float speechCooldown = (float) (Math.random() * 4.0 + 2.0);
 
     // Grace flag: true for the first turn after spawn so the auto-adjacent attack
     // cannot one-shot a monster before it has been rendered even once.
@@ -219,7 +294,50 @@ public class Monster implements Renderable {
     private int turnsSinceLastSeen = 0;
     private boolean isTagged = false; // Persistent minimap tracking
     private boolean themeChampion = false; // Designated champion of a themed chunk
+    /**
+     * The bridge guardian summoned when integrity reaches 100%.
+     *
+     * <p>Deliberately separate from {@link #themeChampion}: that flag is bound
+     * to the themed-chunk system, which locks the chunk's gates on entry. This
+     * boss roams and can be fled from, so it must not inherit the seal.
+     */
+    private boolean bridgeBoss = false;
+    /** minX, minY, maxX, maxY a monster may not leave, or null: the Bringer holds his island. */
+    private int[] tether;
     private boolean invulnerable = false; // Objective-critical NPC; damage is discarded
+    /**
+     * Rotted by the Blighted Marches: drawn ashen, tougher, and its blows add Taint.
+     * See docs/DEsign/Requirements_ Procedural World &amp; The Blighted Marches.md section 9.
+     */
+    private boolean blighted = false;
+    /** Ash-grey with an ember cast, multiplied into the sprite's tint. */
+    public static final com.badlogic.gdx.graphics.Color BLIGHTED_TINT =
+            new com.badlogic.gdx.graphics.Color(0.72f, 0.56f, 0.50f, 1f);
+
+    /**
+     * Out-of-depth monster (#185, #161): spawned above chunk EDL.
+     * Recognisable with an amber tint and awards bonus XP.
+     */
+    private boolean outOfDepth = false;
+    /** Golden amber aura / tint for out-of-depth monsters (#185, #161). */
+    public static final com.badlogic.gdx.graphics.Color OUT_OF_DEPTH_TINT =
+            new com.badlogic.gdx.graphics.Color(1.0f, 0.85f, 0.45f, 1f);
+
+    public boolean isOutOfDepth() {
+        return outOfDepth;
+    }
+
+    public void setOutOfDepth(boolean outOfDepth) {
+        this.outOfDepth = outOfDepth;
+    }
+
+    /** The encounter role this monster plays: Fodder, Soldier, or Heavy (#185). */
+    public MonsterRole getRole() {
+        MonsterTemplate t = getTemplate();
+        return MonsterRole.of(t);
+    }
+    private int stunImmunityTurns = 0; // Concussion resilience: turns of stun immunity after recovering
+    private int staggerTurns = 0;      // Staggered status: breaks poise, reduces effective AC and accuracy
 
     // Public constructor for unit testing combat mechanics without LibGDX asset loaders
     public Monster(MonsterType type, int hp, int ac) {
@@ -257,7 +375,7 @@ public class Monster implements Renderable {
         MonsterTemplate template = dataManager.getTemplate(type);
 
         this.armorClass = template.armorClass;
-        this.magicResistance = template.magicResistance;
+        this.magicResistance = com.bpm.minotaur.gamedata.MagicResistance.clampForMonster(template.magicResistance);
 
         this.maxHP = template.maxHP;
         this.currentHP = this.maxHP;
@@ -266,18 +384,23 @@ public class Monster implements Renderable {
         this.currentMP = this.maxMP;
         this.damageDice = template.damageDice != null ? template.damageDice : "1d4";
 
-        this.baseExperience = template.baseExperience;
+        this.baseExperience = MonsterXp.forTemplate(template);
         this.level = template.baseLevel;
         this.moveSpeed = template.moveSpeed; // Init speed
 
         this.family = template.family;
         this.faction = Faction.getDefaultFaction(type != null ? type.name() : "", this.family);
         this.spriteData = template.spriteData;
-        this.scale = new Vector2(template.scale.x, template.scale.y);
+        this.scale = (template.scale != null)
+                ? new Vector2(template.scale.x, template.scale.y)
+                : new Vector2(1f, 1f);
         this.statusManager = new StatusManager();
-        if (template.texturePath != null && !template.texturePath.isEmpty()) {
-            if (assetManager.isLoaded(template.texturePath, Texture.class)) {
-                this.texture = assetManager.get(template.texturePath, Texture.class);
+        // A colourway may have its own sprite (a Specter that burns looks different from one that freezes).
+        final MonsterVariant variant = MonsterVariant.forColor(template.variants, color);
+        final String spritePath = MonsterVariant.textureFor(template.variants, color, template.texturePath);
+        if (spritePath != null && !spritePath.isEmpty()) {
+            if (assetManager != null && assetManager.isLoaded(spritePath, Texture.class)) {
+                this.texture = assetManager.get(spritePath, Texture.class);
                 if (template.isSpriteSheet) {
                     this.isSpriteSheet = true;
                     this.frameDuration = template.spriteFrameDuration;
@@ -299,7 +422,41 @@ public class Monster implements Renderable {
                 }
             } else {
                 com.badlogic.gdx.Gdx.app.error("Monster",
-                        "CRITICAL: Texture not loaded for " + type + "! Path: " + template.texturePath);
+                        "CRITICAL: Texture not loaded for " + type + "! Path: " + spritePath);
+            }
+        }
+
+        // Check for idle animation spritesheet (images/monsters/idle/)
+        String idlePath = (template.idleAnimationPath != null) ? template.idleAnimationPath : null;
+        if (idlePath == null && MonsterIdleAnimationRegistry.hasIdleAnimation(type)) {
+            idlePath = MonsterIdleAnimationRegistry.getConfig(type).texturePath;
+        }
+
+        if (idlePath != null && assetManager != null && assetManager.isLoaded(idlePath, Texture.class)) {
+            MonsterIdleAnimationRegistry.IdleConfig cfg = MonsterIdleAnimationRegistry.getConfig(type);
+            int cols = (cfg != null) ? cfg.cols : 3;
+            int rows = (cfg != null) ? cfg.rows : 3;
+            float dur = (cfg != null) ? cfg.frameDuration : 0.15f;
+
+            Texture idleTex = assetManager.get(idlePath, Texture.class);
+            this.isSpriteSheet = true;
+            this.frameDuration = dur;
+            int frameWidth = idleTex.getWidth() / cols;
+            int frameHeight = idleTex.getHeight() / rows;
+            TextureRegion[][] tmp = TextureRegion.split(idleTex, frameWidth, frameHeight);
+            this.animationFrames = new TextureRegion[cols * rows];
+            int index = 0;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    this.animationFrames[index++] = tmp[r][c];
+                }
+            }
+            this.animStartFrame = 0;
+            this.animEndFrame = this.animationFrames.length - 1;
+            // Desynchronize random start frame across monsters in the maze
+            this.currentFrame = (int) (Math.random() * this.animationFrames.length);
+            if (this.texture == null) {
+                this.texture = idleTex;
             }
         }
 
@@ -324,6 +481,12 @@ public class Monster implements Renderable {
         this.rangedProjectile = template.rangedProjectile != null ? template.rangedProjectile : "ARROW";
         this.rangedDamageDice = template.rangedDamageDice;
         this.rangedDamageType = template.rangedDamageType;
+        if (variant != null && variant.rangedProjectile != null) {
+            this.rangedProjectile = variant.rangedProjectile;
+        }
+        if (variant != null && variant.rangedDamageType != null) {
+            this.rangedDamageType = variant.rangedDamageType;
+        }
         this.rangedEffect = template.rangedEffect;
         this.rangedEffectChance = template.rangedEffectChance;
         this.rangedPreferredDistance = template.rangedPreferredDistance > 0 ? template.rangedPreferredDistance : 4f;
@@ -334,16 +497,6 @@ public class Monster implements Renderable {
             this.maxHP = Math.max(1, (int) (this.maxHP * colorMult));
             this.currentHP = this.maxHP;
         }
-
-        // --- Tarmin's Hunger Scaling (The Meat Grinder) ---
-        float scaling = com.bpm.minotaur.managers.DoomManager.getInstance().getEnemyScalingMultiplier(template.baseLevel);
-        if (scaling > 1.0f) {
-            this.maxHP = (int) (this.maxHP * scaling);
-            this.currentHP = this.maxHP;
-            com.badlogic.gdx.Gdx.app.log("Monster", "Spawned " + type + " with Doom Scaling: x"
-                    + String.format("%.2f", scaling) + " HP: " + this.maxHP);
-        }
-        // --------------------------------------------------
 
         // --- AI Initialization ---
         this.aiType = template.aiType != null ? template.aiType : MonsterTemplate.AiType.AGGRESSIVE;
@@ -363,7 +516,7 @@ public class Monster implements Renderable {
                     this.intelligence,
                     this.level,
                     template.spellSchools,
-                    template.innateSpells,
+                    (variant != null && variant.innateSpells != null) ? variant.innateSpells : template.innateSpells,
                     com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance());
         }
 
@@ -481,22 +634,11 @@ public class Monster implements Renderable {
     }
 
     public Affinity getAffinity(DamageType damageType) {
+        if (extraWeakness != null && damageType == extraWeakness) return Affinity.WEAK;
         return getAffinity(this.type, damageType);
     }
 
-    public static boolean isImmuneToType(MonsterType type, DamageType damageType) {
-        // Soft resistance replaces hard immunity. Retained for backwards compatibility.
-        return false;
-    }
-
-    public boolean isImmuneToType(DamageType damageType) {
-        return isImmuneToType(this.type, damageType);
-    }
-
     public int takeDamage(int amount, DamageType damageType, boolean isCrit) {
-        if (isImmuneToType(damageType)) {
-            return 0;
-        }
         Affinity affinity = getAffinity(damageType);
         int modifiedAmount = amount;
         if (isCrit) {
@@ -506,7 +648,7 @@ public class Monster implements Renderable {
             }
         } else {
             if (affinity == Affinity.RESISTANT) {
-                modifiedAmount = Math.max(1, amount / 2);
+                modifiedAmount = Math.max(1, (amount * 2) / 3);
             } else if (affinity == Affinity.WEAK) {
                 modifiedAmount = (int) (amount * 1.5f);
             }
@@ -514,11 +656,51 @@ public class Monster implements Renderable {
         return takeDamage(modifiedAmount, isCrit);
     }
 
+    public int takeDamage(int amount, DamageType damageType, boolean isCrit, boolean isPiercing) {
+        Affinity affinity = getAffinity(damageType);
+        int modifiedAmount = amount;
+        if (isCrit) {
+            // Critical strikes pierce category resistance completely
+            if (affinity == Affinity.WEAK) {
+                modifiedAmount = (int) (amount * 1.5f);
+            }
+        } else {
+            if (affinity == Affinity.RESISTANT) {
+                modifiedAmount = Math.max(1, (amount * 2) / 3);
+            } else if (affinity == Affinity.WEAK) {
+                modifiedAmount = (int) (amount * 1.5f);
+            }
+        }
+        return takeDamage(modifiedAmount, isCrit, isPiercing);
+    }
+
     public int takeDamage(int amount, DamageType damageType) {
         return takeDamage(amount, damageType, false);
     }
 
+    /**
+     * Damage from a spell or wand: cut by this monster's magic resistance, then taken like any
+     * other hit. Weapon blows go through {@code takeDamage} and ignore resistance.
+     */
+    public int takeSpellDamage(int amount, DamageType damageType, boolean isCrit) {
+        return takeDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, magicResistance),
+                damageType, isCrit);
+    }
+
+    /** Untyped spell damage, for effects that have no element to name. */
+    public int takeSpellDamage(int amount) {
+        return takeDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, magicResistance));
+    }
+
+    public void setMagicResistance(int percent) {
+        this.magicResistance = com.bpm.minotaur.gamedata.MagicResistance.clampForMonster(percent);
+    }
+
     public int takeDamage(int amount, boolean isCrit) {
+        return takeDamage(amount, isCrit, false);
+    }
+
+    public int takeDamage(int amount, boolean isCrit, boolean isPiercing) {
         // Objective-critical NPCs shrug off everything. A themed chunk seals its
         // gates, so letting a stray arrow kill the Gravedigger would strand the
         // player behind an objective that can no longer be completed.
@@ -528,34 +710,171 @@ public class Monster implements Renderable {
         }
         // AC >= 14 provides partial damage soak (every 2 AC above 14 = -1 damage).
         // Creatures with AC 10-13 rely on evasion (to-hit d20 gate) with 0 flat soak.
-        // Critical strikes bypass armor soak completely.
-        int reduction = isCrit ? 0 : Math.max(0, (armorClass - 14) / 2);
+        // Critical strikes and piercing strikes bypass armor soak completely.
+        int reduction = (isCrit || isPiercing) ? 0 : Math.max(0, (armorClass - 14) / 2);
         int taken = Math.max(1, amount - reduction);
+        // Measured before the clamp below: HP stops at 0, so reading it after
+        // a kill always said the blow landed exactly enough.
+        lastOverkill = Math.max(0, taken - Math.max(0, this.currentHP));
         this.currentHP -= taken;
         if (this.currentHP < 0) {
             this.currentHP = 0;
         }
         lastHitTimeMillis = System.currentTimeMillis();
+        lastHitWeight = com.bpm.minotaur.gamedata.gore.HitReaction.weight(taken, getMaxHP(), isCrit);
         return taken;
     }
 
     // --- Hit Recoil / Flash Feedback ---
     private long lastHitTimeMillis = -1L;
-    private static final float HIT_FLASH_DURATION_SEC = 0.12f;
-    private static final float HIT_RECOIL_DISTANCE = 0.18f;
+    /** How heavy the last blow was, 0..1 (see HitReaction): scales recoil and flash. */
+    private float lastHitWeight = 0f;
+    /** Damage the last blow dealt beyond what HP it had left; what makes a gib death. */
+    private int lastOverkill = 0;
+
+    public int getLastOverkill() {
+        return lastOverkill;
+    }
 
     /** 0.0 = just hit, 1.0 = flash fully faded (or never hit). */
     public float getHitFlashProgress() {
         if (lastHitTimeMillis < 0) return 1f;
         float elapsed = (System.currentTimeMillis() - lastHitTimeMillis) / 1000f;
-        return Math.min(1f, elapsed / HIT_FLASH_DURATION_SEC);
+        return Math.min(1f, elapsed / com.bpm.minotaur.gamedata.gore.HitReaction.flashSeconds(lastHitWeight));
     }
 
-    /** Spring-back displacement magnitude for the current moment, easing to 0. */
+    /**
+     * Spring-back displacement for the current moment: a scratch flinches, a
+     * crit staggers. Eases out so the snap back reads as weight, not a slide.
+     */
     public float getHitRecoilOffset() {
         float progress = getHitFlashProgress();
         if (progress >= 1f) return 0f;
-        return HIT_RECOIL_DISTANCE * (1f - progress);
+        float remaining = 1f - progress;
+        return com.bpm.minotaur.gamedata.gore.HitReaction.recoilDistance(lastHitWeight) * remaining * remaining;
+    }
+
+    // --- Procedural Kinematics & Telegraphs ---
+    public enum KinematicHitType {
+        SLASHING,
+        BLUNT_CHOP,
+        PIERCING_THRUST,
+        BALLISTIC_SHOT,
+        ELEMENTAL_SPELL,
+        DEFLECTED
+    }
+
+    public enum TelegraphArchetype {
+        BEAST_CROUCH,
+        HUMANOID_COIL,
+        COLOSSUS_SEISMIC,
+        CASTER_PULSE
+    }
+
+    private KinematicHitType lastKinematicHitType = KinematicHitType.SLASHING;
+    private float lastCutAngle = 0f;
+    private com.bpm.minotaur.gamedata.DamageType lastDamageType = null;
+
+    public void recordHitKinematics(KinematicHitType type, float cutAngle, float weight, com.bpm.minotaur.gamedata.DamageType damageType) {
+        this.lastKinematicHitType = type;
+        this.lastCutAngle = cutAngle;
+        this.lastHitWeight = weight;
+        this.lastDamageType = damageType;
+        this.lastHitTimeMillis = System.currentTimeMillis();
+    }
+
+    public KinematicHitType getLastKinematicHitType() {
+        return lastKinematicHitType;
+    }
+
+    public float getLastCutAngle() {
+        return lastCutAngle;
+    }
+
+    public float getKinematicInertiaFactor() {
+        // Megabeasts and heavy monsters have high mass -> lower deformation displacement
+        if (type == MonsterType.MINOTAUR || type == MonsterType.DRAGON || type == MonsterType.IRON_GOLEM
+                || type == MonsterType.GIANT || type == MonsterType.OGRE || type == MonsterType.TROLL) {
+            return 0.45f;
+        }
+        float hpFactor = com.badlogic.gdx.math.MathUtils.clamp(1.0f - (getMaxHP() - 15f) / 120f, 0.40f, 1.0f);
+        return hpFactor;
+    }
+
+    public float getKinematicRollDegrees() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 0f;
+        float remaining = 1f - progress;
+        if (lastKinematicHitType == KinematicHitType.SLASHING) {
+            float maxRoll = com.badlogic.gdx.math.MathUtils.clamp(lastCutAngle * 0.35f, -18f, 18f);
+            return maxRoll * remaining * remaining * getKinematicInertiaFactor();
+        }
+        return 0f;
+    }
+
+    public float getKinematicScaleX() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 1.0f;
+        float remaining = 1f - progress;
+        if (lastKinematicHitType == KinematicHitType.BLUNT_CHOP) {
+            float stretch = 0.15f * remaining * remaining * getKinematicInertiaFactor();
+            return 1.0f + stretch;
+        }
+        return 1.0f;
+    }
+
+    public float getKinematicScaleY() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 1.0f;
+        float remaining = 1f - progress;
+        if (lastKinematicHitType == KinematicHitType.BLUNT_CHOP) {
+            float squash = 0.20f * remaining * remaining * getKinematicInertiaFactor();
+            return 1.0f - squash;
+        }
+        return 1.0f;
+    }
+
+    public TelegraphArchetype getTelegraphArchetype() {
+        if (type == null) return TelegraphArchetype.HUMANOID_COIL;
+        switch (type) {
+            case BAT:
+            case SPIDER:
+            case WEREWOLF:
+            case WERERAT:
+            case GIANT_SNAKE:
+            case GIANT_SCORPION:
+            case ALLIGATOR:
+            case DISPLACER_BEAST:
+            case OWLBEAR:
+            case GIANT_ANT:
+            case GIANT_CENTIPEDE:
+            case LANDSTALKER:
+                return TelegraphArchetype.BEAST_CROUCH;
+
+            case DRAGON:
+            case MINOTAUR:
+            case IRON_GOLEM:
+            case GIANT:
+            case OGRE:
+            case TROLL:
+            case PURPLE_WORM:
+            case HYDRA:
+            case CHIMERA:
+                return TelegraphArchetype.COLOSSUS_SEISMIC;
+
+            case PLAYER_GHOST:
+            case WRAITH:
+            case SPECTER:
+            case LICH:
+            case SKELETAL_WIZARD:
+            case SAGE:
+            case FALL_ANGEL:
+            case BRINGER_OF_DEATH:
+                return TelegraphArchetype.CASTER_PULSE;
+
+            default:
+                return TelegraphArchetype.HUMANOID_COIL;
+        }
     }
 
     public int takeDamage(int amount) {
@@ -574,9 +893,10 @@ public class Monster implements Renderable {
     }
 
     public void updateAnimation(float delta) {
+        updateSpeech(delta);
         if (isSpriteSheet && animationFrames != null && animationFrames.length > 0) {
             animTimer += delta;
-            if (animTimer >= frameDuration) {
+            while (animTimer >= frameDuration && frameDuration > 0f) {
                 animTimer -= frameDuration;
                 currentFrame++;
                 if (currentFrame > animEndFrame) currentFrame = animStartFrame;
@@ -586,10 +906,55 @@ public class Monster implements Renderable {
 
         if (southFrames == null || southFrames.length <= 1) return;
         animTimer += delta;
-        if (animTimer >= frameDuration) {
+        while (animTimer >= frameDuration && frameDuration > 0f) {
             animTimer -= frameDuration;
             currentFrame = (currentFrame + 1) % southFrames.length;
         }
+    }
+
+    public void speak(String phrase, float duration) {
+        this.currentSpeech = phrase;
+        this.speechTimer = duration;
+    }
+
+    public String getCurrentSpeech() {
+        return currentSpeech;
+    }
+
+    public boolean hasSpeech() {
+        return currentSpeech != null && speechTimer > 0;
+    }
+
+    public void updateSpeech(float delta) {
+        if (speechTimer > 0) {
+            speechTimer -= delta;
+            if (speechTimer <= 0) {
+                currentSpeech = null;
+            }
+        }
+        if (speechCooldown > 0) {
+            speechCooldown -= delta;
+        }
+    }
+
+    public boolean canSpeak() {
+        return speechCooldown <= 0;
+    }
+
+    public void resetSpeechCooldown(float cooldown) {
+        this.speechCooldown = cooldown;
+    }
+
+    public int getCurrentFrame() {
+        return currentFrame;
+    }
+
+    public boolean isSpriteSheet() {
+        return isSpriteSheet;
+    }
+
+    public int getTotalAnimationFrames() {
+        return (animationFrames != null) ? animationFrames.length : 0;
     }
 
     /**
@@ -632,6 +997,7 @@ public class Monster implements Renderable {
     }
 
     public void scaleStats(int level) {
+        this.level = Math.max(1, level);
         if (level <= 1)
             return;
         float multiplier = 1.0f + ((level - 1) * 0.15f);
@@ -642,8 +1008,7 @@ public class Monster implements Renderable {
 
         // Maybe improve AC slightly?
         this.armorClass += (level / 5); // +1 AC every 5 levels
-
-        this.baseExperience = (int) (this.baseExperience * (1.0f + ((level - 1) * 0.25f)));
+        // XP is not scaled here: it comes from the monster's own level (MonsterXp, #183).
     }
 
     public MonsterType getType() {
@@ -654,6 +1019,14 @@ public class Monster implements Renderable {
         return type.name();
     }
 
+    /**
+     * What the player reads: a named figure's name, else the type as words ("GIANT BEE", never
+     * the constant, whose underscore the font draws as an arrow).
+     */
+    public String getName() {
+        return displayName != null ? displayName : com.bpm.minotaur.ui.UiNames.caps(type);
+    }
+
     @Override
     public Vector2 getPosition() {
         return position;
@@ -661,6 +1034,24 @@ public class Monster implements Renderable {
 
     public int getCurrentHP() {
         return currentHP;
+    }
+
+    /** Set once this monster's death has been paid out. */
+    private boolean deathClaimed = false;
+
+    /**
+     * Claims this monster's death for whoever is about to pay it out --
+     * experience, divinities, the corpse, the kill count. True for the first
+     * caller only: a monster dies once, however many kill paths reach it.
+     */
+    public boolean claimDeath() {
+        if (deathClaimed) return false;
+        deathClaimed = true;
+        return true;
+    }
+
+    public boolean isDeathClaimed() {
+        return deathClaimed;
     }
 
     // Deprecated alias for compatibility if needed, but better to remove
@@ -674,6 +1065,15 @@ public class Monster implements Renderable {
 
     public int getBaseExperience() {
         return baseExperience;
+    }
+
+    /** XP the player gets for killing this monster: its XP times its colour's multiplier, +50% if out of depth. */
+    public int getKillExperience() {
+        int xp = MonsterXp.forKill(baseExperience, getMonsterColor());
+        if (outOfDepth) {
+            xp = Math.round(xp * 1.5f);
+        }
+        return xp;
     }
 
     public void setCurrentHP(int hp) {
@@ -730,6 +1130,16 @@ public class Monster implements Renderable {
 
     public int getIntelligence() {
         return intelligence;
+    }
+
+    /**
+     * Whether this monster can use a wall-piercing spell without a clear line: tagged in its
+     * template, or of extreme intelligence. Only half of the rule; the spell must pierce too.
+     */
+    public boolean canCastThroughWalls() {
+        MonsterTemplate t = getTemplate();
+        return (t != null && t.wallPiercingCaster)
+                || intelligence >= com.bpm.minotaur.gamedata.spells.MonsterSpellSight.EXTREME_INTELLIGENCE;
     }
 
     public StatusManager getStatusManager() {
@@ -830,6 +1240,18 @@ public class Monster implements Renderable {
     }
 
     public int getArmorClass() {
+        int ac = armorClass;
+        if (isStaggered()) {
+            ac -= 2;
+        }
+        return ac;
+    }
+
+    public int getEffectiveArmorClass() {
+        return getArmorClass();
+    }
+
+    public int getBaseArmorClass() {
         return armorClass;
     }
 
@@ -850,6 +1272,46 @@ public class Monster implements Renderable {
 
     public int getTameness() {
         return tameness;
+    }
+
+    // --- Charm / dominate: a monster that fights for the player ---
+    /** 0 = not an ally, {@link CharmRules#PERMANENT} = for good, otherwise turns of charm left. */
+    private int allyTurns = 0;
+
+    public boolean isAlly() {
+        return allyTurns != 0;
+    }
+
+    public int getAllyTurns() {
+        return allyTurns;
+    }
+
+    /** Makes this monster the player's ally for the given turns (or permanently); 0 ends it. */
+    public void setAllyTurns(int turns) {
+        this.allyTurns = turns;
+        // An ally counts as untamed-for-calm-actions purposes the same way a tame monster does.
+        this.tameness = turns != 0 ? Math.max(1, tameness) : 0;
+        this.targetMonster = null;
+    }
+
+    /** One turn passes. True when a timed charm has just run out. */
+    public boolean tickAlly() {
+        if (allyTurns > 0) {
+            allyTurns--;
+            if (allyTurns == 0) {
+                tameness = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Ends the alliance: the monster is hostile again and goes straight for the player. */
+    public void endAlly() {
+        allyTurns = 0;
+        tameness = 0;
+        targetMonster = null;
+        state = MonsterState.HUNTING;
     }
 
     public void setTameness(int tameness) {
@@ -888,6 +1350,7 @@ public class Monster implements Renderable {
         this.testTemplate = template;
         if (template != null) {
             this.level = template.baseLevel;
+            this.baseExperience = MonsterXp.forTemplate(template);
             this.family = template.family;
             this.maxHP = template.maxHP;
             this.currentHP = template.maxHP;
@@ -974,6 +1437,40 @@ public class Monster implements Renderable {
         this.themeChampion = themeChampion;
     }
 
+    /** Keeps this monster within the tiles minX..maxX, minY..maxY, inclusive. */
+    public void setTether(int minX, int minY, int maxX, int maxY) {
+        this.tether = new int[]{minX, minY, maxX, maxY};
+    }
+
+    public int[] getTether() {
+        return tether;
+    }
+
+    public void setTether(int[] bounds) {
+        this.tether = bounds != null && bounds.length == 4 ? bounds.clone() : null;
+    }
+
+    /** Whether this monster may stand at (x, y): anywhere, unless it is tethered. */
+    public boolean mayStandAt(int x, int y) {
+        return tether == null || (x >= tether[0] && y >= tether[1] && x <= tether[2] && y <= tether[3]);
+    }
+
+    public boolean isBridgeBoss() {
+        return bridgeBoss;
+    }
+
+    public boolean isBlighted() {
+        return blighted;
+    }
+
+    public void setBlighted(boolean blighted) {
+        this.blighted = blighted;
+    }
+
+    public void setBridgeBoss(boolean bridgeBoss) {
+        this.bridgeBoss = bridgeBoss;
+    }
+
     /**
      * True for objective-critical NPCs such as the Graveyard's Gravedigger.
      *
@@ -992,6 +1489,63 @@ public class Monster implements Renderable {
 
     public Faction getFaction() {
         return faction;
+    }
+
+    public int getFigureId() { return figureId; }
+    public void setFigureId(int figureId) { this.figureId = figureId; }
+    public int getSealRoad() { return sealRoad; }
+    public void setSealRoad(int sealRoad) { this.sealRoad = sealRoad; }
+    public int getSealRole() { return sealRole; }
+
+    public int getCarriedGold() { return carriedGold; }
+
+    public void setCarriedGold(int gold) { this.carriedGold = Math.max(0, gold); }
+    public void setSealRole(int sealRole) { this.sealRole = sealRole; }
+    public String getDisplayName() { return displayName; }
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
+    public int getSealBehaviours() { return sealBehaviours; }
+    public void setSealBehaviours(int sealBehaviours) { this.sealBehaviours = sealBehaviours; }
+    public boolean isSealRageSpent() { return sealRageSpent; }
+    public void setSealRageSpent(boolean spent) { this.sealRageSpent = spent; }
+    public boolean isSealCallSpent() { return sealCallSpent; }
+    public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
+
+    public boolean isWarBand() { return warBand; }
+    public String getTownKey() { return townKey; }
+    public void setTownKey(String townKey) { this.townKey = townKey; }
+    public boolean isPeaceful() { return peaceful; }
+    public void setPeaceful(boolean peaceful) { this.peaceful = peaceful; }
+    public int getMegabeastId() { return megabeastId; }
+    public void setMegabeastId(int megabeastId) { this.megabeastId = megabeastId; }
+    public DamageType getExtraWeakness() { return extraWeakness; }
+    public void setExtraWeakness(DamageType extraWeakness) { this.extraWeakness = extraWeakness; }
+    public void setWarBand(boolean warBand) { this.warBand = warBand; }
+    public com.badlogic.gdx.math.GridPoint2 getMarchTarget() { return marchTarget; }
+    public void setMarchTarget(com.badlogic.gdx.math.GridPoint2 marchTarget) { this.marchTarget = marchTarget; }
+    public boolean isGateGuard() { return gateGuard; }
+    public void setGateGuard(boolean gateGuard) { this.gateGuard = gateGuard; }
+    public int getDisguiseScrutiny() { return disguiseScrutiny; }
+    public void setDisguiseScrutiny(int turns) { this.disguiseScrutiny = turns; }
+
+    /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
+    public boolean seekerDrewBlood() {
+        return seekerDrewBlood;
+    }
+
+    public void markSeekerDrewBlood() {
+        this.seekerDrewBlood = true;
+    }
+
+    public boolean holdsCourt() {
+        return sealRole != 0;
+    }
+
+    public int getHouseId() {
+        return houseId;
+    }
+
+    public void setHouseId(int houseId) {
+        this.houseId = houseId;
     }
 
     public void setFaction(Faction faction) {
@@ -1066,6 +1620,11 @@ public class Monster implements Renderable {
         this.baseExperience = exp;
     }
 
+    /** Base speed before status effects; 12 matches the player. */
+    public int getMoveSpeed() {
+        return moveSpeed;
+    }
+
     public void setMoveSpeed(int moveSpeed) {
         this.moveSpeed = moveSpeed;
     }
@@ -1122,5 +1681,106 @@ public class Monster implements Renderable {
 
     public void setSearchTurnsRemaining(int searchTurnsRemaining) {
         this.searchTurnsRemaining = searchTurnsRemaining;
+    }
+
+    public void applyBleed(int turns, int damagePerTurn) {
+        if (turns > this.bleedTurns) {
+            this.bleedTurns = turns;
+        }
+        if (damagePerTurn > this.bleedDamagePerTurn) {
+            this.bleedDamagePerTurn = damagePerTurn;
+        }
+        if (statusManager != null) {
+            statusManager.addEffect(StatusEffectType.BLEEDING, turns, damagePerTurn, false);
+        }
+    }
+
+    public int getBleedTurns() {
+        return bleedTurns;
+    }
+
+    public int getBleedDamagePerTurn() {
+        return bleedDamagePerTurn;
+    }
+
+    public int applyBleedTick() {
+        if (bleedTurns <= 0 || bleedDamagePerTurn <= 0) return 0;
+        int dmg = takeDamage(bleedDamagePerTurn, DamageType.PHYSICAL, false);
+        bleedTurns--;
+        if (bleedTurns <= 0) {
+            bleedDamagePerTurn = 0;
+            if (statusManager != null && statusManager.hasEffect(StatusEffectType.BLEEDING)) {
+                statusManager.removeEffect(StatusEffectType.BLEEDING);
+            }
+        }
+        return dmg;
+    }
+
+    public boolean applyStun(int turns) {
+        if (turns <= 0 || isStunImmune() || isStunned()) {
+            return false;
+        }
+        this.stunTurns = turns;
+        if (statusManager != null) {
+            statusManager.addEffect(StatusEffectType.PARALYZED, turns, 0, false);
+        }
+        return true;
+    }
+
+    public boolean isStunned() {
+        return stunTurns > 0;
+    }
+
+    public int getStunTurns() {
+        return stunTurns;
+    }
+
+    public void decrementStun() {
+        if (stunTurns > 0) {
+            stunTurns--;
+            if (stunTurns <= 0) {
+                if (statusManager != null && statusManager.hasEffect(StatusEffectType.PARALYZED)) {
+                    statusManager.removeEffect(StatusEffectType.PARALYZED);
+                }
+                // Concussion Resilience: 2 turns of stun immunity after recovering from stun
+                this.stunImmunityTurns = 2;
+            }
+        }
+    }
+
+    public boolean isStunImmune() {
+        return stunImmunityTurns > 0;
+    }
+
+    public int getStunImmunityTurns() {
+        return stunImmunityTurns;
+    }
+
+    public void setStunImmunityTurns(int turns) {
+        this.stunImmunityTurns = Math.max(0, turns);
+    }
+
+    public void decrementStunImmunity() {
+        if (stunImmunityTurns > 0) {
+            stunImmunityTurns--;
+        }
+    }
+
+    public boolean isStaggered() {
+        return staggerTurns > 0;
+    }
+
+    public int getStaggerTurns() {
+        return staggerTurns;
+    }
+
+    public void applyStagger(int turns) {
+        this.staggerTurns = Math.max(this.staggerTurns, turns);
+    }
+
+    public void decrementStagger() {
+        if (staggerTurns > 0) {
+            staggerTurns--;
+        }
     }
 }

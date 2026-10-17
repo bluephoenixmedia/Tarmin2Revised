@@ -133,7 +133,8 @@ public class Tarmin2 extends Game {
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_maze.mp3");
-        MusicManager.getInstance().loadMusic("sounds/music/tarmin_core.mp3");
+        MusicManager.getInstance().loadMusic("sounds/music/Crown_of_Molten_Steel.mp3");
+        MusicManager.getInstance().loadMusic("sounds/music/Exsurge_Gloria.mp3");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_catacombs_drone.wav");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_boss_tension.wav");
 
@@ -147,6 +148,10 @@ public class Tarmin2 extends Game {
         // never finished loading and ShopkeeperNpc.getTexture() stayed null)
         assetManager.load(com.bpm.minotaur.gamedata.ShopkeeperNpc.TEXTURE_PATH,
                 com.badlogic.gdx.graphics.Texture.class);
+        if (Gdx.files.internal(com.bpm.minotaur.gamedata.ShopkeeperNpc.IDLE_TEXTURE_PATH).exists()) {
+            assetManager.load(com.bpm.minotaur.gamedata.ShopkeeperNpc.IDLE_TEXTURE_PATH,
+                    com.badlogic.gdx.graphics.Texture.class);
+        }
 
         // Queue 3D Skybox models if present
         if (Gdx.files.internal("models/skybox/castle_tarmin.obj").exists()) {
@@ -181,16 +186,30 @@ public class Tarmin2 extends Game {
                 "images/forest/rock_boulder_02.png",
                 "images/forest/rock_boulder_03.png",
                 "images/forest/stump_pine_01.png",
-                "images/forest/tree_birch_01.png",
-                "images/forest/tree_birch_02.png",
-                "images/forest/tree_dead_01.png",
-                "images/forest/tree_pine_01.png",
-                "images/forest/tree_pine_02.png",
-                "images/forest/tree_pine_03.png",
                 "images/floor_forest.png",
-                "images/forest_cliff.png"
+                "images/forest_cliff.png",
+                "images/floor_lakelands.png",
+                "images/lakelands_cliff.png",
+                "images/floor_tundra.png",
+                "images/tundra_cliff.png",
+                "images/floor_blight.png",
+                "images/blight_cliff.png",
+                "images/shelter_wall_forest.png",
+                "images/shelter_wall_desert.png",
+                "images/shelter_wall_lakelands.png",
+                "images/shelter_wall_tundra.png",
+                "images/shelter_wall_blight.png"
         };
-        for (String assetPath : forestAssets) {
+        java.util.List<String> forestQueue = new java.util.ArrayList<>(java.util.Arrays.asList(forestAssets));
+        java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.PINE_TEXTURES);
+        java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.DEAD_TREE_TEXTURES);
+        java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.propVariantTextures());
+        java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.scatterTextures());
+        forestQueue.addAll(com.bpm.minotaur.generation.DesertChunkGenerator.textures());
+        forestQueue.addAll(com.bpm.minotaur.generation.LakelandsChunkGenerator.textures());
+        forestQueue.addAll(com.bpm.minotaur.generation.TundraChunkGenerator.textures());
+        forestQueue.addAll(com.bpm.minotaur.generation.BlightChunkGenerator.textures());
+        for (String assetPath : forestQueue) {
             if (Gdx.files.internal(assetPath).exists()) {
                 assetManager.load(assetPath, com.badlogic.gdx.graphics.Texture.class);
             }
@@ -232,6 +251,14 @@ public class Tarmin2 extends Game {
             return;
         }
 
+        // Plays the Houses of the Maze for a while and writes down what it saw:
+        //   ./gradlew lwjgl3:run --args="--playtest"
+        if (hasArg("--playtest") || hasArgPrefix("--playtest=")) {
+            Gdx.app.log("Tarmin2", "Booting straight into the QA Playtest Runner");
+            new com.bpm.minotaur.playtest.PlaytestRunner(this).start();
+            return;
+        }
+
         if (isCaptureBaseline()) {
             Gdx.app.log("Tarmin2", "Booting straight into UXScreenCaptureScreen (BASELINE)");
             this.setScreen(new com.bpm.minotaur.screens.UXScreenCaptureScreen(this, "baseline"));
@@ -245,6 +272,26 @@ public class Tarmin2 extends Game {
 
         // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));
+    }
+
+    public static String[] getStartupArgs() {
+        return startupArgs;
+    }
+
+    public static boolean hasArg(String flag) {
+        if (startupArgs == null) return false;
+        for (String a : startupArgs) {
+            if (flag.equalsIgnoreCase(a)) return true;
+        }
+        return false;
+    }
+
+    public static boolean hasArgPrefix(String prefix) {
+        if (startupArgs == null) return false;
+        for (String a : startupArgs) {
+            if (a != null && a.toLowerCase().startsWith(prefix.toLowerCase())) return true;
+        }
+        return false;
     }
 
     public static boolean isCaptureBaseline() {
@@ -269,6 +316,19 @@ public class Tarmin2 extends Game {
             }
         }
         return false;
+    }
+
+    /** The {@code --capture-only=<prefix>} filter for a capture run, or null to capture every screen. */
+    public static String captureOnly() {
+        String[] args = startupArgs;
+        if (args != null) {
+            for (String a : args) {
+                if (a != null && a.startsWith("--capture-only=")) {
+                    return a.substring("--capture-only=".length());
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean bootToPaperdollEditor() {
@@ -314,6 +374,7 @@ public class Tarmin2 extends Game {
 
         MusicManager.getInstance().dispose();
         com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance().dispose();
+        com.bpm.minotaur.rendering.vfx.FxClips.disposeShared();
     }
 
     @Override

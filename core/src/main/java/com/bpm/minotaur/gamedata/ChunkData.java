@@ -31,6 +31,35 @@ public class ChunkData {
     public byte[][] explorationState;
 
     public List<GridPoint2> homeTiles = new ArrayList<>();
+    /** False for a cold shelter. Null on saves from before outpost shelters: a sanctuary. */
+    public Boolean sanctuary;
+    public List<StationSlotData> stationSlots = new ArrayList<>();
+    public int[] altarTile;
+    public int[] hearthTile;
+    public int[] shelterEntry;
+
+    public static class StationSlotData {
+        public String station;
+        public int x;
+        public int y;
+
+        public StationSlotData() {
+        }
+
+        StationSlotData(String station, int x, int y) {
+            this.station = station;
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    private static int[] pack(GridPoint2 p) {
+        return p == null ? null : new int[]{p.x, p.y};
+    }
+
+    private static GridPoint2 unpack(int[] p) {
+        return (p == null || p.length != 2) ? null : new GridPoint2(p[0], p[1]);
+    }
 
     public List<ItemData> items = new ArrayList<>();
     public List<MonsterData> monsters = new ArrayList<>();
@@ -40,6 +69,8 @@ public class ChunkData {
     public List<LadderData> ladders = new ArrayList<>();
     public List<SceneryData> scenery = new ArrayList<>();
     public List<EventData> events = new ArrayList<>();
+    /** Hidden choice events; absent on saves written before they existed. */
+    public List<EventData> choiceEvents = new ArrayList<>();
     public List<DecalData> surfaceDecals = new ArrayList<>();
     public List<WallDecalData> wallDecals = new ArrayList<>();
     public List<GibData> gibs = new ArrayList<>();
@@ -57,9 +88,9 @@ public class ChunkData {
     public ChunkData() {
     }
 
-    /** True if this chunk's saved data marks it as containing the player's home shelter. */
+    /** True if this chunk holds a shelter of the player's: the home shelter, or an outpost they have lit. */
     public boolean hasShelter() {
-        return homeTiles != null && !homeTiles.isEmpty();
+        return homeTiles != null && !homeTiles.isEmpty() && (sanctuary == null || sanctuary);
     }
 
     public boolean hasUpLadder() {
@@ -86,12 +117,31 @@ public class ChunkData {
         this.explorationState = maze.getExplorationState();
 
         this.homeTiles.addAll(maze.getHomeTiles());
+        this.sanctuary = maze.isSanctuary();
+        for (Map.Entry<com.bpm.minotaur.gamedata.progression.ShelterAltar.Station, List<GridPoint2>> e
+                : maze.getAllStationSlots().entrySet()) {
+            for (GridPoint2 p : e.getValue()) {
+                this.stationSlots.add(new StationSlotData(e.getKey().name(), p.x, p.y));
+            }
+        }
+        this.altarTile = pack(maze.getAltarTile());
+        this.hearthTile = pack(maze.getHearthTile());
+        this.shelterEntry = pack(maze.getShelterEntry());
 
         for (Map.Entry<GridPoint2, Item> entry : maze.getItems().entrySet()) {
             this.items.add(new ItemData(entry.getValue()));
         }
 
         for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+            // A dead monster still on the map is a bug, never something to keep:
+            // saving it would bring a killable corpse back on every load.
+            if (entry.getValue().getCurrentHP() <= 0) continue;
+            // A megabeast is wherever its tracks say, not wherever it was last seen (T3.3).
+            if (entry.getValue().getMegabeastId() >= 0) continue;
+            // A town's guards are posted on every load, at peace or not as the town decides.
+            if (entry.getValue().getTownKey() != null) continue;
+            // A battle the player walked away from marches on without them.
+            if (entry.getValue().isWarBand()) continue;
             this.monsters.add(new MonsterData(entry.getValue()));
         }
 
@@ -115,8 +165,13 @@ public class ChunkData {
             this.events.add(new EventData(entry.getKey().x, entry.getKey().y, entry.getValue()));
         }
 
+        for (Map.Entry<GridPoint2, String> entry : maze.getChoiceEvents().entrySet()) {
+            this.choiceEvents.add(new EventData(entry.getKey().x, entry.getKey().y, entry.getValue()));
+        }
+
         if (maze.getScenery() != null) {
             for (Scenery s : maze.getScenery().values()) {
+                if (s.isTownsfolk()) continue; // a town's folk are placed on every load
                 this.scenery.add(new SceneryData(s));
             }
         }
@@ -144,6 +199,20 @@ public class ChunkData {
         if (this.homeTiles != null) {
             maze.setHomeTiles(this.homeTiles);
         }
+        maze.setSanctuary(this.sanctuary == null || this.sanctuary);
+        if (this.stationSlots != null) {
+            for (StationSlotData slot : this.stationSlots) {
+                try {
+                    maze.addStationSlot(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.valueOf(slot.station),
+                            slot.x, slot.y);
+                } catch (Exception ignored) {
+                    // A station removed since this chunk was saved.
+                }
+            }
+        }
+        maze.setAltarTile(unpack(this.altarTile));
+        maze.setHearthTile(unpack(this.hearthTile));
+        maze.setShelterEntry(unpack(this.shelterEntry));
 
         if (this.chunkTheme != null) {
             try {
@@ -184,8 +253,37 @@ public class ChunkData {
 
         for (MonsterData data : monsters) {
             Monster monster = new Monster(data.type, data.x, data.y, data.color, dataManager, assetManager);
+            // Restore overrides before HP, so a boss keeps a sane HP ratio
+            // rather than carrying its bonus hit points against a template
+            // maximum. Older saves record 0 for these and keep the template's.
+            if (data.maxHP > 0) {
+                monster.setMaxHP(data.maxHP);
+            }
+            if (data.moveSpeed > 0) {
+                monster.setMoveSpeed(data.moveSpeed);
+            }
+            if (data.scaleX > 0f && data.scaleY > 0f && monster.getScale() != null) {
+                monster.getScale().set(data.scaleX, data.scaleY);
+            }
+            monster.setBridgeBoss(data.bridgeBoss);
+            monster.setTether(data.tether);
             monster.setCurrentHP(data.warStrength);
             monster.setCurrentMP(data.spiritualStrength);
+            monster.setAllyTurns(data.allyTurns);
+            monster.setBlighted(data.blighted);
+            if (data.faction != null) {
+                try {
+                    monster.setFaction(com.bpm.minotaur.gamedata.monster.Faction.valueOf(data.faction));
+                } catch (IllegalArgumentException ignored) {
+                    // A renamed faction keeps the template default rather than failing the chunk.
+                }
+            }
+            monster.setHouseId(data.houseId);
+            monster.setFigureId(data.figureId);
+            monster.setSealRoad(data.sealRoad);
+            monster.setSealRole(data.sealRole);
+            if (data.sealBearerName != null) monster.setDisplayName(data.sealBearerName);
+            monster.setCarriedGold(data.carriedGold);
             maze.addMonster(monster);
         }
 
@@ -268,6 +366,23 @@ public class ChunkData {
             if (s == null) {
                 s = new Scenery(data.type, data.x, data.y, data.texturePath);
             }
+            if (data.corpseMonsterName != null) {
+                s.setCorpseMonsterName(data.corpseMonsterName);
+            }
+            if (data.deathAnimId != null) {
+                s.setDeathAnimId(data.deathAnimId);
+                s.setDeathWidth(data.deathWidth);
+                s.setDeathHeight(data.deathHeight);
+            }
+            if (data.corpseFinish != null) {
+                s.setCorpseFinish(com.bpm.minotaur.gamedata.gore.CorpseFinish.parse(data.corpseFinish));
+            }
+            if (data.bonesData != null) {
+                s.setBonesData(data.bonesData);
+            }
+            if (data.impassable != null) {
+                s.setImpassable(data.impassable);
+            }
             if (data.texturePath != null && assetManager != null) {
                 if (Gdx.files != null && Gdx.files.internal(data.texturePath).exists()) {
                     if (!assetManager.isLoaded(data.texturePath)) {
@@ -283,6 +398,12 @@ public class ChunkData {
         if (this.events != null) {
             for (EventData data : events) {
                 maze.addEvent(data.x, data.y, data.eventId);
+            }
+        }
+
+        if (this.choiceEvents != null) {
+            for (EventData data : choiceEvents) {
+                maze.addChoiceEvent(data.x, data.y, data.eventId);
             }
         }
 
@@ -383,6 +504,23 @@ public class ChunkData {
         public String propId;
         public boolean objectiveMarker;
         public boolean objectiveConsumed;
+        public String corpseMonsterName;
+        /** Monster texture whose death art this corpse shows; null for older saves. */
+        public String deathAnimId;
+        public float deathWidth;
+        public float deathHeight;
+        /** {@link com.bpm.minotaur.gamedata.gore.CorpseFinish} name; null for plain bodies and older saves. */
+        public String corpseFinish;
+        public Boolean impassable;
+        /**
+         * A dead hero's bones: ghost state, epitaph and grave loot.
+         *
+         * <p>Never persisted before. Chunks rebuild on every gate and ladder, so
+         * the data was lost almost immediately -- and because the interaction
+         * dispatch treated a corpse with no bones data as a monster carcass,
+         * real hero remains silently became butcherable meat.
+         */
+        public com.bpm.minotaur.gamedata.bones.BonesData bonesData;
 
         public SceneryData() {
         }
@@ -395,6 +533,14 @@ public class ChunkData {
             this.propId = s.getPropId();
             this.objectiveMarker = s.isObjectiveMarker() || s.isObjectiveConsumed();
             this.objectiveConsumed = s.isObjectiveConsumed();
+            this.corpseMonsterName = s.getCorpseMonsterName();
+            this.deathAnimId = s.getDeathAnimId();
+            this.deathWidth = s.getDeathWidth();
+            this.deathHeight = s.getDeathHeight();
+            this.corpseFinish = (s.getCorpseFinish() != com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE)
+                    ? s.getCorpseFinish().name() : null;
+            this.impassable = s.isImpassable();
+            this.bonesData = s.getBonesData();
         }
     }
 
@@ -406,9 +552,17 @@ public class ChunkData {
         public List<ItemModifier> modifiers = new ArrayList<>();
         public List<ItemData> contents = new ArrayList<>();
         public int studyProgress;
+        /** Rations in a stack on the floor; 0 in older saves, read as 1. */
+        public int stackCount;
         public boolean isMimic;
         public boolean mimicSeen;
         public boolean mimicRollSpent;
+        /** A trophy's house and the name it was given for it; -1 and null for anything else. */
+        public int trophyHouseId = -1;
+        public String heraldry;
+        public String trophyName;
+        /** A gold pile's rolled amount (#197); 0 for anything else and on old saves. */
+        public int goldAmount;
 
         public ItemData() {
         }
@@ -420,9 +574,16 @@ public class ChunkData {
             this.y = (int) item.getPosition().y;
             this.modifiers = new ArrayList<>(item.getModifiers());
             this.studyProgress = item.getStudyProgress();
+            this.stackCount = item.getStackCount();
             this.isMimic = item.isMimic();
             this.mimicSeen = item.isMimicSeen();
             this.mimicRollSpent = item.isMimicRollSpent();
+            this.heraldry = item.getHeraldry();
+            this.goldAmount = item.getGoldAmount();
+            if (item.getTrophyHouseId() >= 0) {
+                this.trophyHouseId = item.getTrophyHouseId();
+                this.trophyName = item.getFriendlyName();
+            }
             if (item.getContents() != null && !item.getContents().isEmpty()) {
                 for (Item inside : item.getContents()) {
                     if (inside != null) {
@@ -442,9 +603,18 @@ public class ChunkData {
                 return;
             }
             item.setStudyProgress(this.studyProgress);
+            if (this.stackCount > 1) {
+                item.setStackCount(this.stackCount);
+            }
             item.setMimic(this.isMimic);
             item.setMimicSeen(this.mimicSeen);
             item.setMimicRollSpent(this.mimicRollSpent);
+            item.setHeraldry(this.heraldry);
+            if (this.goldAmount > 0) item.setGoldAmount(this.goldAmount);
+            if (this.trophyHouseId >= 0) {
+                item.setTrophyHouseId(this.trophyHouseId);
+                if (this.trophyName != null) item.setName(this.trophyName);
+            }
         }
     }
 
@@ -455,6 +625,44 @@ public class ChunkData {
         public int y;
         public int warStrength;
         public int spiritualStrength;
+        /**
+         * Identity that must survive a chunk unload.
+         *
+         * <p>Chunks are saved and rebuilt on every gate and every ladder, not
+         * just on quit, and rebuilding constructs a plain template monster. Any
+         * boss flag, scale override or hit-point bonus that lived only in memory
+         * evaporated the first time the player walked through a door, turning
+         * the bridge guardian back into an ordinary golem. Added fields default
+         * benignly on old saves.
+         */
+        public boolean bridgeBoss = false;
+        /** A tethered monster's bounds (the Bringer's island), or null. */
+        public int[] tether;
+        public float scaleX = 0f;
+        public float scaleY = 0f;
+        public int maxHP = 0;
+        public int moveSpeed = 0;
+        /** Charm state: 0 none, -1 permanent, else turns left. Old saves read 0. */
+        public int allyTurns = 0;
+        /** Blighted Marches variant; false on old saves. */
+        public boolean blighted = false;
+        /**
+         * Faction name. Null on old saves, which keep the template default. Blight
+         * Legion patrols need it: Taint 100 rouses TARMIN_LEGION, and a patrol that
+         * reloaded as vermin would never answer.
+         */
+        public String faction;
+
+        /** The monster's Maze house; -1 on old saves and for every non-Maze monster. */
+        public int houseId = -1;
+        /** Named-figure identity (Houses of the Maze T1.12); stats are rebuilt from the history. */
+        public int figureId = -1;
+        public int sealRoad = -1;
+        public int sealRole;
+        /** A seal bearer's name ("Grask, bearing the seal of..."): it is no figure to be named again. */
+        public String sealBearerName;
+        /** Gold the monster carries (#197); 0 on old saves. */
+        public int carriedGold;
 
         public MonsterData() {
         }
@@ -466,6 +674,23 @@ public class ChunkData {
             this.y = (int) monster.getPosition().y;
             this.warStrength = monster.getWarStrength();
             this.spiritualStrength = monster.getSpiritualStrength();
+            this.bridgeBoss = monster.isBridgeBoss();
+            this.tether = monster.getTether();
+            if (monster.getScale() != null) {
+                this.scaleX = monster.getScale().x;
+                this.scaleY = monster.getScale().y;
+            }
+            this.maxHP = monster.getMaxHP();
+            this.moveSpeed = monster.getMoveSpeed();
+            this.allyTurns = monster.getAllyTurns();
+            this.blighted = monster.isBlighted();
+            this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
+            this.houseId = monster.getHouseId();
+            this.figureId = monster.getFigureId();
+            this.sealRoad = monster.getSealRoad();
+            this.sealRole = monster.getSealRole();
+            if (this.sealRole == Monster.SEAL_BEARER) this.sealBearerName = monster.getDisplayName();
+            this.carriedGold = monster.getCarriedGold();
         }
     }
 
@@ -576,6 +801,8 @@ public class ChunkData {
         public float b;
         public float a;
         public float lifeTimer;
+        /** How far the splat's drip had run; 0 for older saves. */
+        public float dripLength;
 
         public WallDecalData() {}
     }

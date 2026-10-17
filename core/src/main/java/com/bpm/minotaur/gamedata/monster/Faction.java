@@ -11,7 +11,12 @@ public enum Faction {
     BEASTS_AND_VERMIN("Beasts & Vermin", "Wild predators, giant arachnids, serpents, and feral denizens."),
     OUTCASTS_AND_HERMITS("Outcasts & Hermits", "Rogue cultists, exiled sorcerers, and subterranean vagabonds."),
     CHAOS_BERSERK("Chaos Berserkers", "Blood-maddened combatants who attack any living or dead creature on sight."),
-    NEUTRAL("Neutral", "Merchants, passive observers, and non-combatants.");
+    NEUTRAL("Neutral", "Merchants, passive observers, and non-combatants."),
+    /**
+     * A house of the Maze. Which house is the monster's house id; how houses stand toward each
+     * other comes from the history through {@link HouseRelations} (ADR 0004).
+     */
+    MAZE_HOUSE("The Maze", "The warring houses of the Maze, come through the gashes.");
 
     private final String displayName;
     private final String description;
@@ -45,7 +50,8 @@ public enum Faction {
         if (family == MonsterFamily.UNDEAD || lower.contains("skeleton") || lower.contains("ghoul") || lower.contains("wraith") || lower.contains("zombie")) {
             return UNDEAD;
         }
-        if (lower.contains("cultist") || lower.contains("sorcerer") || lower.contains("hermit") || lower.contains("outcast") || lower.contains("bandit")) {
+        if (lower.contains("cultist") || lower.contains("sorcerer") || lower.contains("hermit") || lower.contains("outcast") || lower.contains("bandit")
+                || lower.contains("sage") || lower.contains("jester")) {
             return OUTCASTS_AND_HERMITS;
         }
         if (family == MonsterFamily.BEAST || family == MonsterFamily.DEMON || family == MonsterFamily.MAGICAL || family == MonsterFamily.MYTHICAL) {

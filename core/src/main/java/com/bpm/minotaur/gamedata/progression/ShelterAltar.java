@@ -11,7 +11,7 @@ import com.bpm.minotaur.managers.SaveManager;
  * banked Divinities. Like Divinities themselves, altar tiers survive death and
  * world resets, and are only cleared by a full Apocalypse wipe.
  */
-public class ShelterAltar {
+public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
 
     public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT, ARCANE_ATTUNEMENT, ASCENSION }
 
@@ -50,13 +50,16 @@ public class ShelterAltar {
         BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG, null),
         STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST, null),
         CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station. Also teaches you to pack Portable Cookware, letting you cook on expedition.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT, com.bpm.minotaur.gamedata.item.Item.ItemType.COOKING_KIT),
-        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
-        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
+        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear, with an Ossuary that carves the bones of slain creatures into new combat dice. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
+        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance. Its flame is kept for you: the lantern you carry burns wider and brighter (+1 light radius, +5% crit while you carry it).", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
         TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null),
         ARCHIVE_LECTERN("Archive Lectern", "An illuminated stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ARCHIVE_LECTERN, null),
+        CARTOGRAPHER_DESK("Cartographer's Desk", "A sturdy drafting desk strewn with parchment, ink, and calipers. Surveys the surrounding seeded world, revealing biomes, roads, war fronts, and monster dens.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CARTOGRAPHER_DESK, null),
         PORTAL_FOREST("Verdant Gate", "A rune-carved arch that tears open onto the forest eaves, eleven chunks beyond the maze. Saves the long walk out.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_FOREST, null, 3),
         PORTAL_DESERT("Dune Gate", "A rune-carved arch shimmering with heat distortion that opens onto the sun-scorched desert dunes. Saves a grueling trek.", 35, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_DESERT, null, 5),
-        PORTAL_LAKELANDS("Mist Gate", "A rune-carved arch dripping with cold dew that opens onto the murky shallows of the Lakelands. Saves wading the long miles.", 45, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_LAKELANDS, null, 7);
+        PORTAL_LAKELANDS("Mist Gate", "A rune-carved arch dripping with cold dew that opens onto the murky shallows of the Lakelands. Saves wading the long miles.", 45, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_LAKELANDS, null, 7),
+        PORTAL_TUNDRA("Frost Gate", "A rune-carved arch rimmed with perpetual hoarfrost that opens onto the frozen Siberian wastes of the Tundra. Saves crossing the bitter permafrost.", 55, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_TUNDRA, null, 9),
+        PORTAL_BLIGHT("Crimson Gate", "A rune-carved arch weeping ash and ember that opens onto the Blighted Marches, at the road to Castle Tarmin itself. Saves the long march through the far wastes.", 65, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_BLIGHT, null, 11);
 
         private final String displayName;
         private final String description;
@@ -135,9 +138,9 @@ public class ShelterAltar {
     private int arcaneTier = 0;
 
     private static final int[] ARCANE_COSTS = { 15, 25, 40 };
-    private static final String[][] ARCANE_UNLOCKED_SPELLS = {
+    public static final String[][] ARCANE_UNLOCKED_SPELLS = {
             { "MAGIC_MISSILE", "SHIELD", "BURNING_HANDS" },
-            { "MISTY_STEP", "ACID_ARROW", "SCORCHING_RAY" },
+            { "MISTY_STEP", "ACID_ARROW", "SCORCHING_RAY", "WORD_OF_RECALL" },
             { "FIREBALL", "LIGHTNING_BOLT" }
     };
 
@@ -147,6 +150,8 @@ public class ShelterAltar {
 
     private ShelterAltar() {
         load();
+        // Follow the active slot; see SlotScopedState.
+        com.bpm.minotaur.managers.SaveManager.register(this);
     }
 
     public static ShelterAltar getInstance() {
@@ -165,13 +170,36 @@ public class ShelterAltar {
         ascensionTiers.clear();
         unlockedStations.clear();
         canCommune = true;
+        cartographerDeskTier = 1;
+        provisionsPacked = true;
+        provisionsEarned = false;
+    }
+
+    public static final int MAX_CARTOGRAPHER_TIER = 3;
+    private int cartographerDeskTier = 1;
+
+    private boolean debugAllUnlocked = false;
+
+    public boolean isDebugAllUnlocked() {
+        return debugAllUnlocked;
+    }
+
+    public void setDebugAllUnlocked(boolean debugAllUnlocked) {
+        this.debugAllUnlocked = debugAllUnlocked;
+        BiomePortal.DEBUG_UNLOCK_ALL = debugAllUnlocked;
+        if (debugAllUnlocked) {
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
+            this.cartographerDeskTier = MAX_CARTOGRAPHER_TIER;
+        }
     }
 
     public boolean hasStation(Station station) {
+        if (debugAllUnlocked) return true;
         return unlockedStations.contains(station);
     }
 
     public boolean isSkillTreeUnlocked() {
+        if (debugAllUnlocked) return true;
         return hasStation(Station.TRAINING_DUMMY);
     }
 
@@ -211,6 +239,146 @@ public class ShelterAltar {
         return stationLocations.getOrDefault(station, java.util.Collections.emptyList());
     }
 
+    /**
+     * Materializes every shelter station into the current maze chunk.
+     * Used by the debug F5 sandbox toggle to instantiate all amenities in-place.
+     */
+    public void materialiseAllStations(com.bpm.minotaur.gamedata.Maze currentMaze,
+                                       com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                                       com.badlogic.gdx.assets.AssetManager am) {
+        if (currentMaze == null || idm == null) return;
+        for (Station station : Station.values()) {
+            placeStation(currentMaze, station, idm, am);
+        }
+        java.util.List<com.badlogic.gdx.math.GridPoint2> lecterns = currentMaze.getStationSlots(Station.ARCHIVE_LECTERN);
+        if (!lecterns.isEmpty()) {
+            placeWarTable(currentMaze, lecterns.get(0), idm, am);
+        }
+    }
+
+    /**
+     * Stands every unlocked station in a lit shelter, and relights the ones already there.
+     *
+     * <p>Unlocks are global, so a station bought in one shelter appears in every
+     * shelter the next time it loads. Lights are not saved with a chunk, so this
+     * also restores the fire pot's and lantern's light on a reload.
+     */
+    public void furnish(com.bpm.minotaur.gamedata.Maze maze,
+                        com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                        com.badlogic.gdx.assets.AssetManager am) {
+        if (maze == null || !maze.isSanctuary()) return;
+        for (Station station : Station.values()) {
+            if (hasStation(station)) {
+                placeStation(maze, station, idm, am);
+            }
+        }
+        com.badlogic.gdx.math.GridPoint2 altar = maze.getAltarTile();
+        if (altar != null && idm != null && !maze.getItems().containsKey(altar)) {
+            com.bpm.minotaur.gamedata.item.Item item = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ALTAR,
+                    altar.x, altar.y, com.bpm.minotaur.gamedata.item.ItemColor.GOLD, am);
+            if (item != null) maze.addItem(item);
+        }
+    }
+
+    /**
+     * The War Table stands beside the Archive Lectern (Living War W27): the chronicle tells what the
+     * houses did, the table where they are fighting now. On the first free floor beside it.
+     */
+    public void placeWarTable(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 lectern,
+                               com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                               com.badlogic.gdx.assets.AssetManager am) {
+        if (idm == null) return;
+        int[][] around = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        for (int[] d : around) {
+            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(lectern.x + d[0], lectern.y + d[1]);
+            com.bpm.minotaur.gamedata.item.Item there = maze.getItems().get(at);
+            if (there != null && there.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE) return;
+        }
+        for (int[] d : around) {
+            int x = lectern.x + d[0], y = lectern.y + d[1];
+            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(x, y);
+            if (!maze.isHomeTile(x, y) || !maze.isPassable(x, y) || maze.getItems().containsKey(at)
+                    || isStationSlot(maze, at) || at.equals(maze.getAltarTile()) || at.equals(maze.getHearthTile())) continue;
+            com.bpm.minotaur.gamedata.item.Item table = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE,
+                    x, y, com.bpm.minotaur.gamedata.item.ItemColor.TAN, am);
+            if (table != null) maze.addItem(table);
+            return;
+        }
+    }
+
+    private static boolean isStationSlot(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at) {
+        for (java.util.List<com.badlogic.gdx.math.GridPoint2> slots : maze.getAllStationSlots().values()) {
+            if (slots.contains(at)) return true;
+        }
+        return false;
+    }
+
+    /** Puts one station at each of its slots in this maze, skipping slots already occupied. */
+    private void placeStation(com.bpm.minotaur.gamedata.Maze maze, Station station,
+                              com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                              com.badlogic.gdx.assets.AssetManager am) {
+        java.util.List<com.badlogic.gdx.math.GridPoint2> points = maze.getStationSlots(station);
+        if (points.isEmpty() && station == Station.CARTOGRAPHER_DESK) {
+            java.util.List<com.badlogic.gdx.math.GridPoint2> lecterns = maze.getStationSlots(Station.ARCHIVE_LECTERN);
+            if (!lecterns.isEmpty()) {
+                com.badlogic.gdx.math.GridPoint2 lectern = lecterns.get(0);
+                com.badlogic.gdx.math.GridPoint2 kSlot = new com.badlogic.gdx.math.GridPoint2(lectern.x + 1, lectern.y - 1);
+                if (maze.isHomeTile(kSlot.x, kSlot.y) && maze.isPassable(kSlot.x, kSlot.y)) {
+                    maze.addStationSlot(Station.CARTOGRAPHER_DESK, kSlot.x, kSlot.y);
+                    points = maze.getStationSlots(Station.CARTOGRAPHER_DESK);
+                } else {
+                    kSlot = new com.badlogic.gdx.math.GridPoint2(lectern.x, lectern.y - 1);
+                    if (maze.isHomeTile(kSlot.x, kSlot.y) && maze.isPassable(kSlot.x, kSlot.y)) {
+                        maze.addStationSlot(Station.CARTOGRAPHER_DESK, kSlot.x, kSlot.y);
+                        points = maze.getStationSlots(Station.CARTOGRAPHER_DESK);
+                    }
+                }
+            }
+        }
+        if (points.isEmpty()) return;
+        BiomePortal portal = BiomePortal.forStation(station);
+        if (portal != null) {
+            // Portals clear their placeholder archway and bring their own
+            // light, so they cannot use the generic station placement.
+            if (idm != null && am != null) {
+                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+                    portal.materialise(maze, pt, idm, am);
+                }
+            }
+            return;
+        }
+        for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+            com.bpm.minotaur.gamedata.item.Item existing = maze.getItems().get(pt);
+            if (existing == null && idm != null) {
+                com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
+                        ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
+                        : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
+                com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);
+                if (item != null) {
+                    maze.addItem(item);
+                    existing = item;
+                }
+            }
+            if (existing == null || existing.getType() != station.getItemType()) continue;
+            if (station == Station.ARCHIVE_LECTERN) placeWarTable(maze, pt, idm, am);
+            if (station == Station.CAMPFIRE) {
+                maze.removeLight("shelter_cook_pot");
+                maze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
+                        pt.x + 0.5f, pt.y + 0.5f,
+                        com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                        com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+            } else if (station == Station.LANTERN) {
+                String id = "shelter_lantern_" + pt.x + "_" + pt.y;
+                maze.removeLight(id);
+                maze.addLight(new com.bpm.minotaur.lighting.LightSource(id,
+                        pt.x + 0.5f, pt.y + 0.5f,
+                        com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
+                        com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
+                        com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
+            }
+        }
+    }
+
     public boolean unlockStation(Station station, com.bpm.minotaur.gamedata.Maze currentMaze,
                                  com.bpm.minotaur.gamedata.item.ItemDataManager idm,
                                  com.badlogic.gdx.assets.AssetManager am) {
@@ -223,40 +391,9 @@ public class ShelterAltar {
         unlockedStations.add(station);
         save();
 
+        // Stands up in the shelter the player is in; every other shelter gets it on its next load.
         if (currentMaze != null && idm != null && am != null) {
-            java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
-            if (points != null) {
-                BiomePortal portal = BiomePortal.forStation(station);
-                if (portal != null) {
-                    // Portals clear their placeholder archway and bring their own
-                    // light, so they cannot use the generic station placement.
-                    for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                        portal.materialise(currentMaze, pt, idm, am);
-                    }
-                    return true;
-                }
-
-                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                    com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
-                            ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
-                            : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
-                    com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);
-                    currentMaze.addItem(item);
-
-                    if (station == Station.CAMPFIRE) {
-                        currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
-                                pt.x + 0.5f, pt.y + 0.5f,
-                                com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
-                                com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
-                    } else if (station == Station.LANTERN) {
-                        currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_lantern_" + pt.x + "_" + pt.y,
-                                pt.x + 0.5f, pt.y + 0.5f,
-                                com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
-                                com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
-                                com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
-                    }
-                }
-            }
+            placeStation(currentMaze, station, idm, am);
         }
         return true;
     }
@@ -327,6 +464,9 @@ public class ShelterAltar {
     }
 
     public int getTier(Tree tree) {
+        if (debugAllUnlocked && tree != Tree.ASCENSION) {
+            return MAX_TIER;
+        }
         switch (tree) {
             case PROVISIONS: return provisionsTier;
             case REPERTOIRE: return repertoireTier;
@@ -399,26 +539,64 @@ public class ShelterAltar {
     }
 
     /**
-     * True if the given spell id belongs to one of the Arcane Attunement circles
-     * but hasn't been unsealed yet by the current tier. Spells outside the
-     * attunement circles entirely are never considered sealed.
+     * Spells are no longer hard-sealed by Arcane Attunement (retired in Phase 1 overhaul).
+     * Always returns false.
      */
     public boolean isSpellSealed(String spellId) {
-        if (spellId == null) return false;
-        String upper = spellId.toUpperCase();
-        for (int tier = 0; tier < ARCANE_UNLOCKED_SPELLS.length; tier++) {
-            for (String id : ARCANE_UNLOCKED_SPELLS[tier]) {
-                if (id.equals(upper)) {
-                    return tier >= arcaneTier;
-                }
-            }
-        }
         return false;
     }
 
     /** Extra bread/waterskin/bandages granted at the start of each expedition. */
     public int getBonusProvisionCount() {
         return provisionsTier;
+    }
+
+    // ---- Provisions: handed over at the start of each expedition (#101) ----
+    // An expedition starts on the first turn outside the shelter. The pack for the
+    // next one is earned by venturing out properly (the same trips that re-arm the
+    // commune) and is packed on coming home, so stepping in and out of the door farms
+    // nothing. A respawn is a new expedition and always gets one.
+
+    /** A pack is waiting for the next step outside. */
+    private boolean provisionsPacked = true;
+    /** This expedition has gone far enough to earn the next pack once home. */
+    private boolean provisionsEarned = false;
+
+    /**
+     * Called on every turn outside the shelter.
+     *
+     * @return how many bonus rations to hand over now: the Provisions tier on the
+     *         first turn of an expedition, otherwise 0
+     */
+    public int claimExpeditionProvisions() {
+        if (!provisionsPacked) return 0;
+        provisionsPacked = false;
+        save();
+        return getBonusProvisionCount();
+    }
+
+    /** Called on every turn inside the shelter: a trip that earned it packs the next pack. */
+    public void onShelterTurn() {
+        if (provisionsEarned) {
+            provisionsEarned = false;
+            provisionsPacked = true;
+            save();
+        }
+    }
+
+    /** The player has ventured out far enough for this to count as an expedition. */
+    public void noteVenturedOut() {
+        if (!provisionsEarned) {
+            provisionsEarned = true;
+            save();
+        }
+    }
+
+    /** A respawn starts a new expedition: pack for it whatever the last one did. */
+    public void packProvisionsForNewExpedition() {
+        provisionsPacked = true;
+        provisionsEarned = false;
+        save();
     }
 
     /** Per-chunk chance of a statue encounter event, scaling from a 15% baseline to 35% at max tier. */
@@ -443,6 +621,7 @@ public class ShelterAltar {
     }
 
     public int getAscensionTier(StatType stat) {
+        if (debugAllUnlocked) return MAX_ASCENSION_TIER;
         return ascensionTiers.getOrDefault(stat, 0);
     }
 
@@ -475,6 +654,58 @@ public class ShelterAltar {
         return true;
     }
 
+    // ---- Cartographer's Desk Progression ----
+
+    public int getCartographerDeskTier() {
+        if (debugAllUnlocked) return MAX_CARTOGRAPHER_TIER;
+        return cartographerDeskTier;
+    }
+
+    public void setCartographerDeskTier(int tier) {
+        this.cartographerDeskTier = Math.max(1, Math.min(MAX_CARTOGRAPHER_TIER, tier));
+        save();
+    }
+
+    public int getCartographerSurveyRadius() {
+        if (!hasStation(Station.CARTOGRAPHER_DESK)) return 0;
+        return getCartographerDeskTier();
+    }
+
+    public int getCartographerUpgradeCrestCost() {
+        int tier = getCartographerDeskTier();
+        if (tier == 1) return 4;
+        if (tier == 2) return 8;
+        return -1;
+    }
+
+    public int getCartographerUpgradeDivinityCost() {
+        int tier = getCartographerDeskTier();
+        if (tier == 1) return 10;
+        if (tier == 2) return 20;
+        return -1;
+    }
+
+    public boolean canUpgradeCartographerDesk() {
+        if (!hasStation(Station.CARTOGRAPHER_DESK)) return false;
+        int crestCost = getCartographerUpgradeCrestCost();
+        int divinityCost = getCartographerUpgradeDivinityCost();
+        if (crestCost < 0 || divinityCost < 0) return false;
+        return crestsOfValor >= crestCost && DivinityManager.getInstance().getDivinities() >= divinityCost;
+    }
+
+    public boolean upgradeCartographerDesk() {
+        if (!canUpgradeCartographerDesk()) return false;
+        int crestCost = getCartographerUpgradeCrestCost();
+        int divinityCost = getCartographerUpgradeDivinityCost();
+        if (DivinityManager.getInstance().spendDivinities(divinityCost)) {
+            crestsOfValor -= crestCost;
+            cartographerDeskTier++;
+            save();
+            return true;
+        }
+        return false;
+    }
+
     // ---- Persistence ----
 
     private String getSaveFilePath() {
@@ -503,6 +734,9 @@ public class ShelterAltar {
             for (java.util.Map.Entry<StatType, Integer> entry : ascensionTiers.entrySet()) {
                 data.ascensionTiers.put(entry.getKey().name(), entry.getValue());
             }
+            data.cartographerDeskTier = cartographerDeskTier;
+            data.provisionsPacked = provisionsPacked;
+            data.provisionsEarned = provisionsEarned;
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             if (Gdx.app != null) {
@@ -541,6 +775,9 @@ public class ShelterAltar {
                             } catch (Exception ignored) {}
                         }
                     }
+                    cartographerDeskTier = data.cartographerDeskTier > 0 ? data.cartographerDeskTier : 1;
+                    provisionsPacked = data.provisionsPacked;
+                    provisionsEarned = data.provisionsEarned;
                 }
             }
         } catch (Exception e) {
@@ -559,5 +796,21 @@ public class ShelterAltar {
         public boolean canCommune = true;
         public int crestsOfValor = 0;
         public java.util.Map<String, Integer> ascensionTiers = new java.util.HashMap<>();
+        public int cartographerDeskTier = 1;
+        /** Absent (true) in older saves: one pack owed, since none was ever handed over alive. */
+        public boolean provisionsPacked = true;
+        public boolean provisionsEarned = false;
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        reset();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        reset();
+        save();
     }
 }

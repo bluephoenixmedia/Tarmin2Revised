@@ -20,6 +20,7 @@ public class WorldInteractionCard extends Table {
     private final HudSkin skin;
     private final Label tagLabel;
     private final Label subTagLabel;
+    private final Label comparisonLabel;
     private final Label titleLabel;
     private final Label descLabel;
     private final Label keyBadgeLabel;
@@ -27,6 +28,15 @@ public class WorldInteractionCard extends Table {
     private final Label hintLabel;
 
     private Runnable onAction;
+
+    /**
+     * Where the bottom of the card sits, in stage units.
+     *
+     * <p>HUD-1: this was a literal 208, chosen to clear the 200-unit dashboard -- but the spell
+     * hotbar also starts just above the dashboard, so a centred prompt was drawn across the
+     * right-hand spell slots. The HUD sets this from whatever is actually below the card.
+     */
+    private float anchorY = 208f;
 
     public WorldInteractionCard(HudSkin skin) {
         this.skin = skin;
@@ -36,6 +46,7 @@ public class WorldInteractionCard extends Table {
 
         Label.LabelStyle tagStyle = new Label.LabelStyle(skin.getFontSmall(), HudSkin.COL_PARCHMENT_HEADING);
         Label.LabelStyle subTagStyle = new Label.LabelStyle(skin.getFontSmall(), HudSkin.COL_PARCHMENT_HEADING);
+        Label.LabelStyle compStyle = new Label.LabelStyle(skin.getFontSmall(), Color.WHITE);
         Label.LabelStyle titleStyle = new Label.LabelStyle(skin.getFontHeader(), HudSkin.COL_PARCHMENT_TEXT);
         Label.LabelStyle descStyle = new Label.LabelStyle(skin.getFontSmall(), HudSkin.COL_PARCHMENT_TEXT);
         Label.LabelStyle keyStyle = new Label.LabelStyle(skin.getFontHeader(), HudSkin.COL_PARCHMENT_HEADING);
@@ -44,6 +55,7 @@ public class WorldInteractionCard extends Table {
 
         tagLabel = new Label("", tagStyle);
         subTagLabel = new Label("", subTagStyle);
+        comparisonLabel = new Label("", compStyle);
         titleLabel = new Label("", titleStyle);
         descLabel = new Label("", descStyle);
         descLabel.setAlignment(Align.left);
@@ -57,6 +69,7 @@ public class WorldInteractionCard extends Table {
         Table tagTable = new Table();
         tagTable.add(tagLabel).left();
         tagTable.add(subTagLabel).left().padLeft(8f);
+        tagTable.add(comparisonLabel).left().padLeft(12f);
         tagTable.add().expandX();
         add(tagTable).fillX().left().row();
 
@@ -100,6 +113,12 @@ public class WorldInteractionCard extends Table {
 
     public void show(String tag, String subTag, String title, String description,
                      String keyBadge, String actionText, Runnable onAction) {
+        show(tag, subTag, title, description, keyBadge, actionText, onAction, null, null);
+    }
+
+    public void show(String tag, String subTag, String title, String description,
+                     String keyBadge, String actionText, Runnable onAction,
+                     String comparisonBadge, Color comparisonColor) {
         this.tagLabel.setText(tag != null ? tag : "");
         this.subTagLabel.setText(subTag != null ? subTag : "");
         this.titleLabel.setText(title != null ? title : "");
@@ -108,14 +127,30 @@ public class WorldInteractionCard extends Table {
         this.actionTextLabel.setText(actionText != null ? actionText : "");
         this.onAction = onAction;
 
+        if (comparisonBadge != null && !comparisonBadge.isEmpty()) {
+            this.comparisonLabel.setText(comparisonBadge);
+            this.comparisonLabel.setColor(comparisonColor != null ? comparisonColor : Color.WHITE);
+            this.comparisonLabel.setVisible(true);
+        } else {
+            this.comparisonLabel.setText("");
+            this.comparisonLabel.setVisible(false);
+        }
+
         pack();
 
-        // Center horizontally in virtual 1920 viewport, sit at Y=208f (above 200px HUD)
+        // Centred in the 1920-unit viewport, resting on whatever the HUD says is below it.
         float posX = (1920f - getWidth()) / 2f;
-        float posY = 208f;
-        setPosition(posX, posY);
+        setPosition(posX, anchorY);
         toFront();
         setVisible(true);
+    }
+
+    /** Sets the bottom edge of the card, so it clears whatever the HUD has put above the bar. */
+    public void setAnchorY(float anchorY) {
+        this.anchorY = anchorY;
+        if (isVisible()) {
+            setPosition((1920f - getWidth()) / 2f, anchorY);
+        }
     }
 
     public void hide() {

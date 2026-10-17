@@ -37,6 +37,10 @@ public class HeadlessSoundManager extends SoundManager {
     }
 
     @Override
+    public void playCombatStartSound(Monster monster) {
+    }
+
+    @Override
     public void playPlayerDeathSound() {
     }
 

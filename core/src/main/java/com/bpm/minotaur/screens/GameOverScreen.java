@@ -57,15 +57,8 @@ public class GameOverScreen extends BaseScreen {
             "..##......##............",
     };
 
-    private final boolean shouldClearSaves;
-
     public GameOverScreen(Tarmin2 game) {
-        this(game, true);
-    }
-
-    public GameOverScreen(Tarmin2 game, boolean shouldClearSaves) {
         super(game);
-        this.shouldClearSaves = shouldClearSaves;
         this.hudSkin = new com.bpm.minotaur.rendering.HudSkin();
 
         // --- FIX: Initialize DebugManager before SoundManager to avoid null pointers
@@ -87,62 +80,8 @@ public class GameOverScreen extends BaseScreen {
         // Create the reaper texture from our data, using a ghostly white color
         this.reaperTexture = createTextureFromData(REAPER_DATA, Color.MAGENTA);
 
-        // --- MOVED: clearWorldSaves() is now called in show() ---
     }
 
-    /**
-     * [NEW ROBUST VERSION]
-     * Deletes all files within the 'saves/world/' directory, one by one,
-     * with detailed logging.
-     */
-    private void clearWorldSaves() {
-        Gdx.app.log("GameOverScreen", "Attempting to clear world saves...");
-        FileHandle dirHandle = Gdx.files.local("saves/world/");
-
-        // First, check if the directory handle is valid
-        if (!dirHandle.exists()) {
-            Gdx.app.error("GameOverScreen", "Directory does not exist: " + dirHandle.path());
-            Gdx.app.error("GameOverScreen", "Check if game working directory is set to project root!");
-            return;
-        }
-
-        if (!dirHandle.isDirectory()) {
-            Gdx.app.error("GameOverScreen", "Handle is a file, not a directory: " + dirHandle.path());
-            return;
-        }
-
-        // Get the list of files
-        FileHandle[] files = dirHandle.list();
-        if (files.length == 0) {
-            Gdx.app.log("GameOverScreen", "'saves/world/' is already empty. Nothing to do.");
-            return;
-        }
-
-        Gdx.app.log("GameOverScreen", "Found " + files.length + " files to delete...");
-
-        int deleteCount = 0;
-        try {
-            // Iterate and delete each file
-            for (FileHandle file : files) {
-                // We only care about our json files, leave other things alone
-                if (file.extension().equalsIgnoreCase("json")) {
-                    if (file.delete()) {
-                        Gdx.app.log("GameOverScreen", "  > DELETED: " + file.name());
-                        deleteCount++;
-                    } else {
-                        // This is the key log message!
-                        Gdx.app.error("GameOverScreen", "  > FAILED TO DELETE: " + file.name());
-                    }
-                } else {
-                    Gdx.app.log("GameOverScreen", "  > Skipping non-json file: " + file.name());
-                }
-            }
-        } catch (Exception e) {
-            Gdx.app.error("GameOverScreen", "Failed to clear world saves with exception.", e);
-        }
-
-        Gdx.app.log("GameOverScreen", "Clear saves complete. Deleted " + deleteCount + "/" + files.length + " files.");
-    }
     // --- [END NEW METHOD] ---
 
     /**
@@ -193,16 +132,14 @@ public class GameOverScreen extends BaseScreen {
 
     @Override
     public void show() {
-        // --- NEW: Tarmin's Hunger Death Logic ---
-        if (shouldClearSaves) {
-            com.bpm.minotaur.managers.DoomManager.getInstance().incrementDeaths();
-        }
-        // ----------------------------------------
+        // No death is recorded here. GameScreen has already called DoomManager.recordDeath for
+        // this demise before swapping to this screen; counting it again here made the 50th
+        // death count twice and re-ran the apocalypse wipe (#106).
 
-        // --- FIX: Execute deletion HERE, after GameScreen has hidden and saved ---
-        if (shouldClearSaves) {
-            clearWorldSaves();
-        }
+        // A wipe here used to clear "saves/world/", a pre-multislot directory
+        // the game has not written to since chunks moved under
+        // saves/slot_N/chunks/. It logged "directory does not exist" and did
+        // nothing. Slot lifecycle owns this now.
 
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override

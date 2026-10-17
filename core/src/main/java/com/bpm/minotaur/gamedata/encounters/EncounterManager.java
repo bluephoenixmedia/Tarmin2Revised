@@ -152,7 +152,12 @@ public class EncounterManager {
                         com.bpm.minotaur.gamedata.monster.Monster.MonsterType mType = com.bpm.minotaur.gamedata.monster.Monster.MonsterType
                                 .valueOf(result.monsterId);
 
-                        int level = player.getStats().getLevel();
+                        // Safety check: Never spawn a high-threat horror on shallow depths
+                        if (maze.getLevel() <= 2 && mType == com.bpm.minotaur.gamedata.monster.Monster.MonsterType.WRAITH) {
+                            mType = com.bpm.minotaur.gamedata.monster.Monster.MonsterType.SKELETON;
+                        }
+
+                        int level = Math.max(1, maze.getLevel());
                         com.bpm.minotaur.gamedata.monster.MonsterVariant variant = monsterDataManager
                                 .getRandomVariantForMonster(mType, level);
 
@@ -208,6 +213,20 @@ public class EncounterManager {
             }
         }
         return new com.badlogic.gdx.math.GridPoint2(px, py);
+    }
+
+    public String getRandomEncounterId(int depth) {
+        List<String> valid = new ArrayList<>();
+        for (String id : allEncounterIds) {
+            Encounter enc = encounters.get(id);
+            if (enc != null && enc.minDepth <= depth && depth <= enc.maxDepth) {
+                valid.add(id);
+            }
+        }
+        if (valid.isEmpty()) {
+            return getRandomEncounterId();
+        }
+        return valid.get(random.nextInt(valid.size()));
     }
 
     public String getRandomEncounterId() {

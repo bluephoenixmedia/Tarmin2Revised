@@ -36,7 +36,22 @@ public enum BiomePortal {
             Biome.LAKELANDS,
             Item.ItemType.BIOME_PORTAL_LAKELANDS,
             new Color(0.30f, 0.80f, 0.95f, 1f),
-            "Mist Gate");
+            "Mist Gate"),
+
+    TUNDRA(
+            ShelterAltar.Station.PORTAL_TUNDRA,
+            Biome.TUNDRA,
+            Item.ItemType.BIOME_PORTAL_TUNDRA,
+            new Color(0.70f, 0.90f, 1.0f, 1f),
+            "Frost Gate"),
+
+    // The fifth niche. Lands on the castle road, not merely the nearest Blight.
+    BLIGHT(
+            ShelterAltar.Station.PORTAL_BLIGHT,
+            Biome.BLIGHT,
+            Item.ItemType.BIOME_PORTAL_BLIGHT,
+            new Color(0.90f, 0.22f, 0.12f, 1f),
+            "Crimson Gate");
 
     /**
      * Tint for the return portal left at an arrival point. It has no biome of
@@ -137,6 +152,8 @@ public enum BiomePortal {
             }
         }
 
+        // Replaced, never stacked: a shelter is furnished again every time it loads.
+        maze.removeLight("shelter_portal_" + name());
         maze.addLight(new com.bpm.minotaur.lighting.LightSource(
                 "shelter_portal_" + name(), tile.x + 0.5f, tile.y + 0.5f,
                 tint, 4.0f, 1.1f,
@@ -157,8 +174,7 @@ public enum BiomePortal {
         if (!DEBUG_UNLOCK_ALL || maze == null) return;
 
         for (BiomePortal portal : values()) {
-            for (com.badlogic.gdx.math.GridPoint2 tile
-                    : ShelterAltar.getInstance().getStationLocations(portal.getStation())) {
+            for (com.badlogic.gdx.math.GridPoint2 tile : maze.getStationSlots(portal.getStation())) {
                 portal.materialise(maze, tile, itemDataManager, assetManager);
             }
         }

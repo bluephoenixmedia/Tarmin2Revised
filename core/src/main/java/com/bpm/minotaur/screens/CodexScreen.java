@@ -1,5 +1,7 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiGlyphs;
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
@@ -27,6 +29,12 @@ import com.bpm.minotaur.managers.SoundManager;
 import com.bpm.minotaur.managers.UnlockManager;
 import com.bpm.minotaur.rendering.DiscoveryCard;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiContexts;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiTabs;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -48,7 +56,7 @@ import java.util.List;
 public class CodexScreen extends BaseScreen {
 
     public enum Tab {
-        ARMORY, ARCANE, CAMP
+        ARMORY, ARCANE, CAMP, ANNALS
     }
 
     public enum CategoryFilter {
@@ -75,14 +83,17 @@ public class CodexScreen extends BaseScreen {
     private final HudSkin hudSkin;
 
     private Stage stage;
+    /** This screen's entry on the input-context stack (SPEC 5.6). */
+    private static final String CONTEXT = "CHRONICLE";
+
     private Tab activeTab = Tab.ARMORY;
+    /** The house the Annals tab is filtered to; -1 for every house. */
+    private int annalsHouse = -1;
     private CategoryFilter categoryFilter = CategoryFilter.ALL;
     private StatusFilter statusFilter = StatusFilter.ALL;
 
     private Table bodyContainer;
-    private TextButton tabArmoryBtn;
-    private TextButton tabArcaneBtn;
-    private TextButton tabCampBtn;
+    private UiTabs tabs;
     private Texture mysteryTexture;
 
     public CodexScreen(Tarmin2 game, GameScreen parentScreen, Player player) {
@@ -90,6 +101,12 @@ public class CodexScreen extends BaseScreen {
         this.parentScreen = parentScreen;
         this.player = player;
         this.hudSkin = new HudSkin();
+    }
+
+    /** Opens on {@code tab} instead of the Armory. */
+    public CodexScreen openOn(Tab tab) {
+        this.activeTab = tab;
+        return this;
     }
 
     @Override
@@ -105,11 +122,12 @@ public class CodexScreen extends BaseScreen {
                     returnToShelter();
                     return true;
                 }
-                return false;
+                return tabs != null && tabs.handleKey(keycode);
             }
         });
         Gdx.input.setInputProcessor(multiplexer);
 
+        UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
         createMysteryTexture();
         buildUI();
     }
@@ -147,7 +165,7 @@ public class CodexScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         header.add(title).center().row();
 
-        Label subtitle = new Label("Compendium of Unearthed Relics, Arcane Mysteries, and Haven Renovations",
+        Label subtitle = new Label("Compendium of Unearthed Relics, Arcane Mysteries, Haven Renovations and the Maze's Past",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         header.add(subtitle).center().padTop(4).row();
 
@@ -156,25 +174,35 @@ public class CodexScreen extends BaseScreen {
         // --- TOP TAB BAR & RETURN BUTTON ---
         Table navBar = new Table();
 
-        Table tabBar = new Table();
-        tabArmoryBtn = createTabButton("1. ARMORY & RELICS", Tab.ARMORY);
-        tabArcaneBtn = createTabButton("2. ARCANE MYSTERIES", Tab.ARCANE);
-        tabCampBtn = createTabButton("3. CAMP RENOVATIONS", Tab.CAMP);
+        // CHRON-1/CHRON-10 (RC5): three tabs at a hard 280 each, with "1." baked into the
+        // label text so the number sat outside the tab once the name overflowed. The shared
+        // widget puts the number in a keycap of its own and lets each tab be as wide as its
+        // name. The Return button was pinned to 290, which its own label overflowed, and the
+        // "(ESC)" in that label is what the legend is for.
+        tabs = new UiTabs(hudSkin)
+                .addTab(1, "Armory & Relics")
+                .addTab(2, "Arcane Mysteries")
+                .addTab(3, "Camp Renovations")
+                .addTab(4, "Annals");
+        tabs.onSelect(index -> {
+            Tab picked = Tab.values()[index];
+            if (activeTab != picked) {
+                activeTab = picked;
+                playPageSound();
+            }
+            refreshView();
+        });
+        tabs.setSelectedSilently(activeTab.ordinal());
+        navBar.add(tabs).left().expandX();
 
-        tabBar.add(tabArmoryBtn).width(280).height(46).padRight(8);
-        tabBar.add(tabArcaneBtn).width(280).height(46).padRight(8);
-        tabBar.add(tabCampBtn).width(280).height(46);
-
-        navBar.add(tabBar).left().expandX();
-
-        TextButton backBtn = createActionButton("RETURN TO SHELTER (ESC)", false);
+        TextButton backBtn = createActionButton("RETURN", false);
         backBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 returnToShelter();
             }
         });
-        navBar.add(backBtn).right().width(290).height(46);
+        navBar.add(backBtn).right().minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H);
 
         root.add(navBar).fillX().padBottom(12).row();
 
@@ -182,31 +210,13 @@ public class CodexScreen extends BaseScreen {
         bodyContainer = new Table();
         root.add(bodyContainer).expand().fill().padBottom(8).row();
 
+        root.add(new KeyHintLegend(hudSkin)
+                .hint("1-4", "Tab")
+                .escapeHint("Return to shelter")).right().row();
+
         stage.addActor(root);
 
         refreshView();
-    }
-
-    private TextButton createTabButton(String text, Tab tab) {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontMain();
-        style.up = hudSkin.getPanelBg();
-        style.down = hudSkin.getPrimaryButtonDown();
-        style.over = hudSkin.getSlotRecessed();
-        style.fontColor = HudSkin.COL_GOLD_MUTED;
-
-        TextButton btn = new TextButton(text, style);
-        btn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (activeTab != tab) {
-                    activeTab = tab;
-                    playPageSound();
-                    refreshView();
-                }
-            }
-        });
-        return btn;
     }
 
     private TextButton createActionButton(String text, boolean gold) {
@@ -237,25 +247,7 @@ public class CodexScreen extends BaseScreen {
         return btn;
     }
 
-    private void updateTabStyles() {
-        setTabStyle(tabArmoryBtn, activeTab == Tab.ARMORY);
-        setTabStyle(tabArcaneBtn, activeTab == Tab.ARCANE);
-        setTabStyle(tabCampBtn, activeTab == Tab.CAMP);
-    }
-
-    private void setTabStyle(TextButton btn, boolean selected) {
-        TextButton.TextButtonStyle style = btn.getStyle();
-        if (selected) {
-            style.up = hudSkin.getPrimaryButtonDown();
-            style.fontColor = HudSkin.COL_GOLD_BRIGHT;
-        } else {
-            style.up = hudSkin.getPanelBg();
-            style.fontColor = HudSkin.COL_GOLD_MUTED;
-        }
-    }
-
     private void refreshView() {
-        updateTabStyles();
         bodyContainer.clear();
 
         switch (activeTab) {
@@ -268,7 +260,89 @@ public class CodexScreen extends BaseScreen {
             case CAMP:
                 buildCampTab();
                 break;
+            case ANNALS:
+                buildAnnalsTab();
+                break;
         }
+    }
+
+    // =========================================================================
+    // TAB 4: ANNALS OF THE MAZE (Houses of the Maze plan T1.11)
+    // =========================================================================
+
+    /**
+     * What the player has learned of the Maze's history from fragments and rumours, by house and
+     * by era. Each entry shows both sides' accounts next to each other, because they disagree.
+     */
+    private void buildAnnalsTab() {
+        com.bpm.minotaur.managers.HistoryManager history = parentScreen.getWorldManager().getHistory();
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+        java.util.Set<Integer> unlocked = history.unlockedEvents();
+
+        if (unlocked.isEmpty()) {
+            Label none = UiLabels.wrapping("Nothing is written here yet. Banners, proclamations and chronicle pages lie "
+                    + "where the houses have passed, and every shelter hears rumours while you sleep.",
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED));
+            bodyContainer.add(none).growX().top().pad(UiTheme.PAD_XL).row();
+            return;
+        }
+
+        bodyContainer.add(UiLabels.ellipsized(UiGlyphs.sanitize("The Maze calls you "
+                        + com.bpm.minotaur.gamedata.history.text.Epithets.player(world) + "."),
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE)))
+                .left().growX().padBottom(UiTheme.PAD_MD).row();
+
+        Table houses = new Table();
+        houses.top().left();
+        houses.add(createFilterPill("All Houses", annalsHouse < 0, () -> { annalsHouse = -1; refreshView(); }))
+                .growX().height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
+        for (com.bpm.minotaur.gamedata.history.House h : com.bpm.minotaur.gamedata.history.text.Annals.knownHouses(world, unlocked)) {
+            final int id = h.id;
+            TextButton pill = createFilterPill(UiGlyphs.sanitize(h.name), annalsHouse == id, () -> { annalsHouse = id; refreshView(); });
+            pill.getLabel().setEllipsis(true);
+            houses.add(pill).growX().height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
+        }
+        ScrollPane houseScroll = new ScrollPane(houses, UiStyles.scrollPane(hudSkin));
+        houseScroll.setFadeScrollBars(false);
+
+        Table content = new Table();
+        content.top().left();
+        for (com.bpm.minotaur.gamedata.history.text.Annals.Era era : com.bpm.minotaur.gamedata.history.text.Annals.entries(
+                world, unlocked, annalsHouse,
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+            content.add(UiLabels.ellipsized(era.title, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                    .left().growX().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_SM).row();
+            for (com.bpm.minotaur.gamedata.history.text.Annals.Entry entry : era.entries) {
+                Table row = new Table();
+                row.setBackground(hudSkin.getDoubleBorderPanel());
+                row.pad(UiTheme.PAD_MD);
+                row.add(UiLabels.of("Year " + entry.year, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE)))
+                        .colspan(2).left().padBottom(UiTheme.PAD_SM).row();
+                row.add(annalsAccount(entry.ownSide)).grow().uniformX().top().padRight(UiTheme.PAD_SM);
+                row.add(annalsAccount(entry.otherSide)).grow().uniformX().top().padLeft(UiTheme.PAD_SM);
+                content.add(row).growX().padBottom(UiTheme.PAD_SM).row();
+            }
+        }
+        ScrollPane scroll = new ScrollPane(content, UiStyles.scrollPane(hudSkin));
+        scroll.setFadeScrollBars(false);
+        scroll.setScrollingDisabled(true, false);
+
+        Table split = new Table();
+        split.add(houseScroll).width(UiTheme.LIST_COLUMN_W).growY().top().padRight(UiTheme.PAD_MD);
+        split.add(scroll).grow();
+        bodyContainer.add(split).expand().fill().row();
+    }
+
+    private Table annalsAccount(com.bpm.minotaur.gamedata.history.text.Annals.Account account) {
+        Table t = new Table();
+        t.setBackground(hudSkin.getSlotRecessed());
+        t.top().left().pad(UiTheme.PAD_SM);
+        t.add(UiLabels.ellipsized(UiGlyphs.sanitize(account.byline),
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE))).growX().left().row();
+        t.add(UiLabels.wrapping(UiGlyphs.sanitize(account.text),
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED))).growX().left().padTop(UiTheme.PAD_SM).row();
+        return t;
     }
 
     // =========================================================================
@@ -279,14 +353,29 @@ public class CodexScreen extends BaseScreen {
         ItemDataManager itemData = game.getItemDataManager();
         UnlockManager unlockManager = UnlockManager.getInstance();
 
-        // 1. Collect and classify gated items
+        // Synchronize any items currently carried by the player or stored in the shelter chest
+        if (player != null && player.getInventory() != null) {
+            for (Item item : player.getInventory().getAllItems()) {
+                if (item != null) {
+                    unlockManager.recordItemEncountered(item);
+                }
+            }
+        }
+        for (Item item : com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().getItems()) {
+            if (item != null) {
+                unlockManager.recordItemEncountered(item);
+            }
+        }
+
+        // 1. Collect and classify items (weapons, armor, relics, and progression-gated gear)
         List<Item.ItemType> allGated = new ArrayList<>();
         int unlockedCount = 0;
 
         for (Item.ItemType type : Item.ItemType.values()) {
             try {
                 ItemTemplate t = (itemData != null) ? itemData.getTemplate(type) : null;
-                if (t != null && t.unlockGated) {
+                if (t != null && t.friendlyName != null && !t.friendlyName.isEmpty()
+                        && (t.unlockGated || t.isWeapon || t.isArmor || unlockManager.isUnlocked(type.name()))) {
                     allGated.add(type);
                     if (unlockManager.isUnlocked(type.name())) {
                         unlockedCount++;
@@ -388,7 +477,7 @@ public class CodexScreen extends BaseScreen {
             grid.add(emptyLbl).padTop(80).expandX().center();
         }
 
-        ScrollPane scroll = new ScrollPane(grid);
+        ScrollPane scroll = new ScrollPane(grid, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
         bodyContainer.add(scroll).expand().fill().row();
@@ -420,30 +509,42 @@ public class CodexScreen extends BaseScreen {
         Table nameScoreCol = new Table();
         nameScoreCol.top().left();
 
+        // CHRON-2: three things shared this row -- the name, a "[RELIC] Score: n" subtitle and
+        // an UNLOCKED badge -- and all three were sized by hand. The name was pinned to
+        // width-155, which left the badge no room, so it crossed the card's own border. The
+        // name column now takes whatever is left after the icon and the badge, and truncates
+        // with a tooltip rather than silently: two different rings both truncating to "Ring of
+        // Resistance" made them indistinguishable in the grid.
         String displayName = isUnlocked ? ItemName.natural(t.friendlyName) : "???";
         Color titleCol = isUnlocked ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY;
-        Label nameLbl = new Label(displayName, new Label.LabelStyle(hudSkin.getFontMain(), titleCol));
-        nameLbl.setEllipsis(true);
-        nameScoreCol.add(nameLbl).width(width - 155).left().row();
+        Label nameLbl = UiLabels.ellipsized(displayName, new Label.LabelStyle(hudSkin.getFontMain(), titleCol));
+        if (isUnlocked) {
+            nameLbl.addListener(new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip(
+                    displayName, hudSkin.getTooltipManager(), hudSkin.getTooltipStyle()));
+        }
+        nameScoreCol.add(nameLbl).growX().left().row();
 
         // Subtitle row: Category & Score
         String catName;
-        if (t.isWeapon) catName = "WEAPON";
-        else if (t.isArmor) catName = "ARMOR";
-        else catName = "RELIC";
+        if (t.isWeapon) catName = "Weapon";
+        else if (t.isArmor) catName = "Armor";
+        else catName = "Relic";
 
         String subText = isUnlocked
-                ? String.format("[%s]  Score: %d", catName, score)
-                : String.format("[%s]  Score %d+", catName, score);
-        Label subLbl = new Label(subText, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        nameScoreCol.add(subLbl).left().row();
+                ? catName + "  -  Score " + score
+                : catName + "  -  Score " + score + "+";
+        Label subLbl = UiLabels.ellipsized(subText, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        nameScoreCol.add(subLbl).growX().left().row();
 
-        headerRow.add(nameScoreCol).expandX().left();
+        headerRow.add(nameScoreCol).growX().left();
 
-        // Status badge on far right
-        Label statusBadge = new Label(isUnlocked ? "UNLOCKED" : "LOCKED",
-                new Label.LabelStyle(hudSkin.getFontSmall(), isUnlocked ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_HP_RED));
-        headerRow.add(statusBadge).top().right();
+        // Status as a compact chip, sized to itself, so it can never push past the card edge.
+        Label statusBadge = new Label(isUnlocked ? "+" : "-",
+                new Label.LabelStyle(hudSkin.getFontMain(), isUnlocked ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_TEXT_MUTED));
+        statusBadge.addListener(new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip(
+                isUnlocked ? "Unlocked" : "Not yet discovered",
+                hudSkin.getTooltipManager(), hudSkin.getTooltipStyle()));
+        headerRow.add(statusBadge).top().right().padLeft(UiTheme.PAD_SM).width(UiTheme.ICON_SM);
 
         card.add(headerRow).fillX().padBottom(6).row();
 
@@ -478,7 +579,7 @@ public class CodexScreen extends BaseScreen {
             descLbl.setWrap(true);
             card.add(descLbl).width(width - 24).left().expand().top().row();
         } else {
-            int reqStrata = Math.max(1, (score - UnlockManager.UNLOCK_SCORE_THRESHOLD) / 250 + 1);
+            int reqStrata = Math.max(1, t.lootTier);
             Label hintLbl = new Label(String.format("Requires Strata %d+ delve to discover.", reqStrata),
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE));
             card.add(hintLbl).left().padBottom(4).row();
@@ -509,9 +610,9 @@ public class CodexScreen extends BaseScreen {
         };
 
         String[] circleNames = {
-                "CIRCLE I — NOVICE INVOCATIONS (ARCANE ATTUNEMENT TIER 1)",
-                "CIRCLE II — ADEPT EVOCATIONS (ARCANE ATTUNEMENT TIER 2)",
-                "CIRCLE III — MASTER CONVOCATIONS (ARCANE ATTUNEMENT TIER 3)"
+                "CIRCLE I - NOVICE INVOCATIONS (ARCANE ATTUNEMENT TIER 1)",
+                "CIRCLE II - ADEPT EVOCATIONS (ARCANE ATTUNEMENT TIER 2)",
+                "CIRCLE III - MASTER CONVOCATIONS (ARCANE ATTUNEMENT TIER 3)"
         };
 
         String[] circlePerks = {
@@ -530,32 +631,43 @@ public class CodexScreen extends BaseScreen {
 
             // Circle Header
             Table headRow = new Table();
-            Label cTitle = new Label(circleNames[circle],
+            Label cTitle = UiLabels.ellipsized(circleNames[circle],
                     new Label.LabelStyle(hudSkin.getFontHeader(), circleUnlocked ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY));
-            headRow.add(cTitle).left().expandX();
+            headRow.add(cTitle).left().growX();
 
-            Label cStatus = new Label(circleUnlocked ? "[ UNSEALED ]" : "[ SEALED ]",
+            Label cStatus = UiLabels.of(circleUnlocked ? "Unsealed" : "Sealed",
                     new Label.LabelStyle(hudSkin.getFontMain(), circleUnlocked ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_HP_RED));
-            headRow.add(cStatus).right();
+            headRow.add(cStatus).right().padLeft(UiTheme.PAD_MD);
             circleSection.add(headRow).fillX().padBottom(6).row();
 
-            Label perkLbl = new Label(circlePerks[circle],
+            Label perkLbl = UiLabels.wrapping(circlePerks[circle],
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-            circleSection.add(perkLbl).left().padBottom(12).row();
+            circleSection.add(perkLbl).growX().left().padBottom(12).row();
 
-            // Spell cards row
+            // CHRON-3: the spell cards were laid out in one unbounded row, so three 540-wide
+            // cards made this section wider than the screen. Everything anchored to the
+            // section's right edge -- the circle's own status included -- was dragged off with
+            // them, which is where "3][ SEALED ]" came from. Two per row keeps the section
+            // inside the viewport.
             Table spellsRow = new Table();
+            int spellCol = 0;
             for (String spellId : spellsByCircle[circle]) {
-                boolean spellUnsealed = !altar.isSpellSealed(spellId);
+                // CHRON-6: a spell inside a sealed circle used to advertise itself as
+                // AVAILABLE, because its own seal was checked without asking whether the
+                // circle holding it was open.
+                boolean spellUnsealed = circleUnlocked && !altar.isSpellSealed(spellId);
                 Table spellCard = buildSpellCard(spellId, circleTier, spellUnsealed);
-                spellsRow.add(spellCard).width(540).height(120).padRight(12);
+                spellsRow.add(spellCard).width(540).height(120).padRight(12).padBottom(8);
+                if (++spellCol % 2 == 0) {
+                    spellsRow.row();
+                }
             }
             circleSection.add(spellsRow).left().row();
 
             content.add(circleSection).fillX().padBottom(16).row();
         }
 
-        ScrollPane scroll = new ScrollPane(content);
+        ScrollPane scroll = new ScrollPane(content, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         bodyContainer.add(scroll).expand().fill().row();
     }
@@ -566,21 +678,28 @@ public class CodexScreen extends BaseScreen {
         card.top().left().pad(10, 14, 10, 14);
 
         Table topRow = new Table();
-        String formattedName = spellId.replace('_', ' ');
-        Label nameLbl = new Label(formattedName,
+        // CHRON-5: the card showed the spell id with its underscores swapped for spaces, when
+        // the spell data already carries a name and a description written for a player.
+        com.bpm.minotaur.gamedata.spells.SpellTemplate template =
+                com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+        String formattedName = (template != null && template.getName() != null && !template.getName().isEmpty())
+                ? template.getName()
+                : UiNames.fromConstant(spellId);
+        Label nameLbl = UiLabels.ellipsized(formattedName,
                 new Label.LabelStyle(hudSkin.getFontMain(), unsealed ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY));
-        topRow.add(nameLbl).left().expandX();
+        topRow.add(nameLbl).left().growX();
 
-        Label badge = new Label(unsealed ? "AVAILABLE" : ("TIER " + tier + " LOCK"),
+        Label badge = UiLabels.of(unsealed ? "Available" : ("Tier " + tier + " lock"),
                 new Label.LabelStyle(hudSkin.getFontSmall(), unsealed ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_HP_RED));
-        topRow.add(badge).right();
+        topRow.add(badge).right().padLeft(UiTheme.PAD_SM);
         card.add(topRow).fillX().padBottom(6).row();
 
-        String desc = getSpellDescription(spellId);
-        Label descLbl = new Label(desc,
+        String desc = (template != null && template.getDescription() != null && !template.getDescription().isEmpty())
+                ? template.getDescription()
+                : getSpellDescription(spellId);
+        Label descLbl = UiLabels.wrapping(desc,
                 new Label.LabelStyle(hudSkin.getFontSmall(), unsealed ? HudSkin.COL_GOLD_MUTED : Color.DARK_GRAY));
-        descLbl.setWrap(true);
-        card.add(descLbl).width(510).left().expand().top().row();
+        card.add(descLbl).growX().left().expand().top().row();
 
         return card;
     }
@@ -628,20 +747,23 @@ public class CodexScreen extends BaseScreen {
             sCard.setBackground(built ? hudSkin.getDoubleBorderPanel() : hudSkin.getSlotRecessed());
             sCard.top().left().pad(12);
 
+            // CHRON-3: the name took every unit it wanted and the cost tag was anchored right,
+            // so "BED / SLEEPING BAG" and "[ 15 DIVINITIES ]" were drawn over each other. The
+            // cost keeps its own cell; the name takes what is left of the card.
             Table topRow = new Table();
-            Label sName = new Label(station.getDisplayName().toUpperCase(),
+            Label sName = UiLabels.ellipsized(station.getDisplayName().toUpperCase(),
                     new Label.LabelStyle(hudSkin.getFontMain(), built ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY));
-            topRow.add(sName).left().expandX();
+            topRow.add(sName).left().growX();
 
-            Label sBadge = new Label(built ? "[ CONSTRUCTED ]" : ("[ " + station.getCost() + " DIVINITIES ]"),
+            Label sBadge = UiLabels.of(built ? "Constructed"
+                            : UiNames.plural(station.getCost(), "Divinity", "Divinities"),
                     new Label.LabelStyle(hudSkin.getFontSmall(), built ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_GOLD_MUTED));
-            topRow.add(sBadge).right();
+            topRow.add(sBadge).right().padLeft(UiTheme.PAD_MD);
             sCard.add(topRow).fillX().padBottom(6).row();
 
-            Label sDesc = new Label(station.getDescription(),
+            Label sDesc = UiLabels.wrapping(station.getDescription(),
                     new Label.LabelStyle(hudSkin.getFontSmall(), built ? HudSkin.COL_GOLD_MUTED : Color.DARK_GRAY));
-            sDesc.setWrap(true);
-            sCard.add(sDesc).width(520).left().expand().top().row();
+            sCard.add(sDesc).growX().left().expand().top().row();
 
             stationGrid.add(sCard).size(550, 140).pad(6);
             sCol++;
@@ -659,6 +781,8 @@ public class CodexScreen extends BaseScreen {
 
         Table treesGrid = new Table();
         treesGrid.top().left();
+        // Four 415-wide cards in one unbroken row came to more than the panel had, so the
+        // fourth sat off the right edge. Three per row, like the stations above.
 
         // Provisions
         int provTier = altar.getProvisionsTier();
@@ -680,6 +804,7 @@ public class CodexScreen extends BaseScreen {
                 "Consecrated stone pillars increasing frequency of divine statue encounter shrines in the strata.",
                 String.format("Current Benefit: %.0f%% shrine event frequency.", altar.getStatueEventFrequency() * 100)))
                 .size(415, 150).pad(6);
+        treesGrid.row();
 
         // Arcane Attunement
         int arcTier = altar.getTier(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
@@ -729,7 +854,7 @@ public class CodexScreen extends BaseScreen {
         }
         content.add(ascGrid).fillX().row();
 
-        ScrollPane scroll = new ScrollPane(content);
+        ScrollPane scroll = new ScrollPane(content, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         bodyContainer.add(scroll).expand().fill().row();
     }
@@ -784,6 +909,11 @@ public class CodexScreen extends BaseScreen {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+    }
+
+    @Override
+    public void hide() {
+        UiContexts.pop(CONTEXT);
     }
 
     @Override

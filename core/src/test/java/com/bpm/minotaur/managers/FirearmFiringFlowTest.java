@@ -305,4 +305,18 @@ public class FirearmFiringFlowTest {
         assertSame(distant, combatManager.getMonster());
         assertEquals(4, player.getStats().getShot());
     }
+
+    @Test
+    public void aShotFromExplorationStaysInFastCombatAndOpensNoMenu() {
+        equipMusket();
+        player.getStats().setShot(5);
+        Monster distant = targetInLine();
+
+        combatManager.playerAttackInstant();
+
+        assertSame(distant, combatManager.getMonster());
+        assertTrue("fast combat, as bump melee: no menu combat",
+                combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
+                        || combatManager.getCurrentState() == CombatManager.CombatState.VICTORY);
+    }
 }

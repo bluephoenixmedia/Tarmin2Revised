@@ -1,5 +1,6 @@
 package com.bpm.minotaur.rendering;
 
+import com.bpm.minotaur.rendering.mesh.WallVariants;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -177,6 +178,48 @@ public class FirstPersonRenderer {
         this.currentDoorDarkColor = theme.doorDark;
     }
 
+    /**
+     * The wall texture for one raycast hit, matching what PLANAR_3D bakes.
+     *
+     * <p>The 3D path buckets wall quads by variant at bake time; the raycaster
+     * has no mesh, so it resolves the same choice per column. Both read the same
+     * appearance seed and the same face index, so a chunk looks the same in
+     * either engine -- otherwise switching renderer would repaint the world.
+     */
+    private Texture wallTextureFor(Maze maze, WorldManager worldManager, RaycastResult result) {
+        if (maze == null || worldManager == null || result == null) return wallTexture;
+        if (maze.getBiome() != com.bpm.minotaur.generation.Biome.MAZE) return wallTexture;
+        // The shelter tiles its masonry into a taller ceiling, which would
+        // repeat a bordered variant panel across the wall. See ChunkMeshBuilder.
+        if (maze.isHomeTile(result.mapX, result.mapY)) return wallTexture;
+
+        com.badlogic.gdx.math.GridPoint2 chunkId = maze.getChunkId();
+        if (chunkId == null) return wallTexture;
+
+        long seed = worldManager.getAppearanceSeed(maze.getLevel(), chunkId.x, chunkId.y);
+        int face = faceOf(result);
+        String path = WallVariants.texturePath(
+                WallVariants.paletteFor(seed),
+                WallVariants.variantFor(seed, result.mapX, result.mapY, face));
+        Texture variant = getTexture(path);
+        return variant != null ? variant : wallTexture;
+    }
+
+    /**
+     * Which of the tile's four faces the ray struck.
+     *
+     * <p>{@code side} alone only distinguishes vertical from horizontal walls,
+     * which would give two faces where the mesh builder gives four. The hit
+     * point resolves it: north is the higher-Y edge, matching the mesh builder's
+     * Z = -(y + 1) convention.
+     */
+    private int faceOf(RaycastResult result) {
+        if (result.side == 0) {
+            return (result.hitX >= result.mapX + 0.5f) ? WallVariants.FACE_EAST : WallVariants.FACE_WEST;
+        }
+        return (result.hitY >= result.mapY + 0.5f) ? WallVariants.FACE_NORTH : WallVariants.FACE_SOUTH;
+    }
+
     private Texture getTexture(String path) {
         if (path == null)
             return null;
@@ -295,6 +338,14 @@ public class FirstPersonRenderer {
                 fogDistance = 2.0f;
             }
             fogColor.set(biome.getFogColor());
+        }
+
+        // A stratum has its own air: spore-green, drowned blue, bone dust, ember smoke (T4.1).
+        com.bpm.minotaur.generation.Stratum stratumHere = maze != null ? maze.getStratum() : null;
+        if (currentLevel > 1 && stratumHere != null && stratumHere.fogColor != null) {
+            fogEnabled = true;
+            fogDistance = stratumHere.fogDistance;
+            fogColor.set(stratumHere.fogColor);
         }
 
         // --- Themed chunk signature (contract slot g) ---
@@ -515,7 +566,7 @@ public class FirstPersonRenderer {
             if (retroLogTimer >= 1f) {
                 retroLogTimer = 0f;
                 Gdx.app.log("FirstPersonRenderer [RETRO]",
-                        "Wall render summary — wallColumns=" + retroWallsRendered
+                        "Wall render summary - wallColumns=" + retroWallsRendered
                         + " skyColumns=" + retroSkyColumns
                         + " wallColor=" + currentWallColor
                         + " fog=" + fogEnabled
@@ -608,6 +659,7 @@ public class FirstPersonRenderer {
         floorShader.setUniformf("u_lightIntensity", floorLight);
         floorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
         uploadFloorLightingUniforms(floorShader, player, maze, worldManager, isIndoors);
+        uploadLiquidMap(floorShader, maze);
 
         spriteBatch.setColor(Color.WHITE);
 
@@ -625,6 +677,22 @@ public class FirstPersonRenderer {
         spriteBatch.setShader(null); // Important to reset!
 
         return 1;
+    }
+
+    private final LiquidFloorMap liquidFloorMap = new LiquidFloorMap();
+
+    /** The maze's liquids for the floor shader, on texture unit 1 (the batch keeps unit 0). */
+    private void uploadLiquidMap(ShaderProgram shader, Maze maze) {
+        Texture liquids = liquidFloorMap.update(maze);
+        if (liquids == null) {
+            shader.setUniformf("u_hasLiquids", 0f);
+            return;
+        }
+        liquids.bind(1);
+        Gdx.gl.glActiveTexture(com.badlogic.gdx.graphics.GL20.GL_TEXTURE0);
+        shader.setUniformi("u_liquidMap", 1);
+        shader.setUniformf("u_mazeSize", maze.getWidth(), maze.getHeight());
+        shader.setUniformf("u_hasLiquids", 1f);
     }
 
     // Retro floor rendering (Removed Blood Support)
@@ -652,6 +720,7 @@ public class FirstPersonRenderer {
         retroFloorShader.setUniformf("u_lightIntensity", floorLight);
         retroFloorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
         uploadFloorLightingUniforms(retroFloorShader, player, maze, worldManager, isIndoors);
+        uploadLiquidMap(retroFloorShader, maze);
 
         // Pass Floor Color (Theme color)
         retroFloorShader.setUniformf("u_floorColor", currentFloorColor.r, currentFloorColor.g, currentFloorColor.b);
@@ -933,7 +1002,7 @@ public class FirstPersonRenderer {
                     lightIntensity, fogEnabled, fogDistance, fogColor);
         } else {
             // STANDARD WALL
-            Texture texture = wallTexture; // Always wall for non-doors
+            Texture texture = wallTextureFor(maze, worldManager, result);
             applyDynamicLighting(Color.WHITE, sampleX, sampleY, maze, worldManager, fogLerpColor, sliceIndoors);
             if (fogEnabled) {
                 float fogAmount = Math.max(0, Math.min(1f,
@@ -1271,10 +1340,11 @@ public class FirstPersonRenderer {
 
         } else {
             // --- WINDOW RENDERING ---
-            float holeYStart = drawStart + height * 0.25f;
-            float holeYEnd = drawStart + height * 0.75f;
+            // The same opening the 3D window mesh cuts.
+            float holeYStart = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_SILL_Y;
+            float holeYEnd = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_LINTEL_Y;
 
-            float margin = 0.25f; // 25% margin on left/right
+            float margin = 0.5f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_HALF_WIDTH; // wall either side of the opening
             boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
 
             // Shading
@@ -1295,7 +1365,7 @@ public class FirstPersonRenderer {
                     // Assuming texture 0 is TOP.
                     // Bottom of wall is Texture 0.75 to 1.0.
                     // srcY = 0.75 * H.
-                    int srcY = (int) (wallH * 0.75f);
+                    int srcY = (int) (wallH * (1f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_SILL_Y));
                     int srcHeight = wallH - srcY;
 
                     if (srcHeight > 0) {
@@ -1309,7 +1379,7 @@ public class FirstPersonRenderer {
                 float topHeight = drawEnd - holeYEnd;
                 if (topHeight > 0) {
                     // Top 25% of texture -> srcY = 0
-                    int srcHeight = (int) (wallH * 0.25f);
+                    int srcHeight = (int) (wallH * (1f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_LINTEL_Y));
 
                     if (srcHeight > 0) {
                         spriteBatch.draw(wallTexture, screenX, holeYEnd, 1, topHeight, texX, 0, 1, srcHeight, false,
@@ -1379,13 +1449,11 @@ public class FirstPersonRenderer {
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float height = drawEnd - drawStart;
 
-        // Window Dimensions (50% size centered)
-        // Hole starts at 25% height and ends at 75% height
-        // Hole starts at 25% width and ends at 75% width
-        float holeYStart = drawStart + height * 0.25f;
-        float holeYEnd = drawStart + height * 0.75f;
+        // The window's opening: the same one the 3D window mesh cuts.
+        float holeYStart = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_SILL_Y;
+        float holeYEnd = drawStart + height * com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_LINTEL_Y;
 
-        float margin = 0.25f; // 25% margin on left/right for the hole
+        float margin = 0.5f - com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.WINDOW_HALF_WIDTH; // wall either side of the opening
         boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
 
         // Track Stencil Hole (Removed)
@@ -2008,6 +2076,7 @@ public class FirstPersonRenderer {
     }
 
     public void dispose() {
+        liquidFloorMap.dispose();
         if (skybox3DRenderer != null) {
             skybox3DRenderer.dispose();
         }

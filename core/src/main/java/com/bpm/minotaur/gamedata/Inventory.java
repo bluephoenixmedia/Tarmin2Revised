@@ -25,8 +25,13 @@ public class Inventory {
         if (item == null)
             return false;
 
-        // 1. Consumables and usable tools automatically route into empty Quick Slots first
-        if (item.isConsumableOrTool()) {
+        com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+
+        // 0. A ration joins the rations already carried rather than taking a slot.
+        if (mergeIntoStack(item)) return true;
+
+        // 1. Consumables, usable tools, and Tomes automatically route into empty Quick Slots first
+        if (item.isConsumableOrTool() || item.isTome()) {
             for (int i = 0; i < quickSlots.length; i++) {
                 if (quickSlots[i] == null) {
                     quickSlots[i] = item;
@@ -68,6 +73,14 @@ public class Inventory {
      * Use this for bulk loot like butchering results.
      */
     public boolean pickupToBackpack(Item item) {
+        if (item == null)
+            return false;
+
+        com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+
+        // 0. A ration joins the rations already carried rather than taking a slot.
+        if (mergeIntoStack(item)) return true;
+
         // 1. Try Main Inventory (Backpack)
         if (mainInventory.size() < MAX_BACKPACK_SIZE) {
             mainInventory.add(item);
@@ -83,6 +96,74 @@ public class Inventory {
         }
 
         return false; // Inventory Full
+    }
+
+    /** A carried stack {@code item} can join, or null. Hands first, then quick slots, then the pack. */
+    private Item findStackFor(Item item) {
+        if (item == null || !item.isStackable()) return null;
+        if (item.canStackWith(rightHand)) return rightHand;
+        if (item.canStackWith(leftHand)) return leftHand;
+        for (Item q : quickSlots) {
+            if (item.canStackWith(q)) return q;
+        }
+        for (Item m : mainInventory) {
+            if (item.canStackWith(m)) return m;
+        }
+        return null;
+    }
+
+    /** Folds a stackable item into a stack already carried. False when there is none. */
+    private boolean mergeIntoStack(Item item) {
+        Item stack = findStackFor(item);
+        if (stack == null) return false;
+        stack.addToStack(item.getStackCount());
+        return true;
+    }
+
+    /**
+     * Uses up one of {@code item}: one ration off a stack, or the whole item
+     * when it is the last (or does not stack). Eating, cooking and selling go
+     * through here so a stack is never spent all at once.
+     *
+     * @return whether the item was carried
+     */
+    public boolean consumeOne(Item item) {
+        if (item == null) return false;
+        if (item.getStackCount() > 1 && contains(item)) {
+            item.setStackCount(item.getStackCount() - 1);
+            return true;
+        }
+        return removeItem(item);
+    }
+
+    /**
+     * Merges loose stackable items into single stacks. Saves from before
+     * rations stacked carry thirty loose rations in thirty slots; loading
+     * folds them back into one.
+     */
+    public void consolidateStacks() {
+        // A stackable in a quick slot folds into any other stack carried;
+        // counts are conserved whichever one absorbs the other.
+        for (int i = 0; i < quickSlots.length; i++) {
+            Item q = quickSlots[i];
+            if (q == null || !q.isStackable()) continue;
+            Item stack = findStackFor(q);
+            if (stack != null) {
+                stack.addToStack(q.getStackCount());
+                quickSlots[i] = null;
+            }
+        }
+        for (int i = 0; i < mainInventory.size(); i++) {
+            Item m = mainInventory.get(i);
+            if (!m.isStackable()) continue;
+            for (int j = mainInventory.size() - 1; j > i; j--) {
+                Item other = mainInventory.get(j);
+                if (m.canStackWith(other)) {
+                    m.addToStack(other.getStackCount());
+                    mainInventory.remove(j);
+                }
+            }
+        }
     }
 
     public void swapHands() {
@@ -152,6 +233,9 @@ public class Inventory {
 
     public void setRightHand(Item item) {
         this.rightHand = item;
+        if (item != null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+        }
         // Two-handed weapon automatically unequips off-hand shield/weapon to backpack
         if (item != null && item.isTwoHanded() && leftHand != null) {
             Item offhand = leftHand;
@@ -172,6 +256,9 @@ public class Inventory {
             pickupToBackpack(twoHander);
         }
         this.leftHand = item;
+        if (item != null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+        }
     }
 
     /**
@@ -249,5 +336,17 @@ public class Inventory {
             quickSlots[i] = null;
         }
         mainInventory.clear();
+    }
+
+    public void clearQuickSlots() {
+        for (int i = 0; i < quickSlots.length; i++) {
+            quickSlots[i] = null;
+        }
+    }
+
+    public void setQuickSlot(int index, Item item) {
+        if (index >= 0 && index < quickSlots.length) {
+            quickSlots[index] = item;
+        }
     }
 }

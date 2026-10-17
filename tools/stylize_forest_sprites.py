@@ -1,0 +1,285 @@
+"""
+stylize_forest_sprites.py
+
+Turns the raw lit frames from tools/blender/bake_forest_models.py into the
+forest's pixel-art billboards, the same treatment creature_stylize.frag gives
+monsters, done offline:
+
+  1. Box-downsample to the art canvas (RAW_SCALE -> 1), median-filter the
+     colour to drop render noise, and hard-threshold alpha.
+  2. Sort each pixel into green (needles, leaves, moss) or not (bark, stone)
+     by hue.
+  3. Quantize luminance into four tones of that material's palette. Which
+     palettes a sprite uses depends on what it is (see GROUPS). Thresholds are
+     percentiles over every frame of the group together, so a dark tree stays
+     darker than a pale one rather than each being stretched alone.
+  4. Draw a 1px darkest-tone outline on the inside of the silhouette.
+  5. Add a faint ember rim under each top edge: the volcanic sky catching the
+     side that faces it.
+
+It also quantizes the forest's tiling floor and cliff textures from their
+Synty sources into the same palettes (no outline: they tile).
+
+Run after the Blender bake:
+    python tools/stylize_forest_sprites.py [game_assets_dir]
+Reads build/forest_raw/*.png, writes assets/images/forest/<name>.png, and
+writes assets/images/floor_forest.png and forest_cliff.png.
+"""
+
+import glob
+import os
+import sys
+
+import numpy as np
+from PIL import Image, ImageFilter
+
+REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+RAW_DIR = os.path.join(REPO, "build", "forest_raw")
+OUT_DIR = os.path.join(REPO, "assets", "images", "forest")
+IMG_DIR = os.path.join(REPO, "assets", "images")
+
+RAW_SCALE = 2  # must match bake_forest_models.py
+
+OUTLINE = (8, 15, 12)
+NEEDLES = [(18, 34, 24), (28, 52, 34), (41, 72, 44), (58, 94, 54)]
+BARK = [(24, 20, 18), (42, 33, 27), (61, 47, 36), (84, 66, 48)]
+STONE = [(30, 32, 31), (48, 51, 49), (68, 71, 67), (92, 95, 88)]
+MOSS = [(20, 28, 17), (31, 42, 24), (44, 57, 31), (58, 72, 38)]
+UMBER = [(22, 17, 13), (36, 27, 19), (52, 39, 26), (70, 53, 34)]
+CAP = [(40, 16, 14), (72, 28, 22), (104, 46, 34), (150, 110, 84)]
+PETAL = [(60, 58, 52), (96, 92, 80), (140, 132, 112), (176, 168, 140)]
+TEAL = [(14, 38, 40), (24, 70, 70), (50, 120, 112), (120, 200, 180)]
+CACTUS = [(20, 38, 22), (34, 62, 32), (56, 92, 42), (88, 126, 58)]
+SANDSTONE = [(64, 26, 16), (112, 50, 28), (160, 82, 44), (206, 132, 78)]
+BONE = [(70, 58, 44), (130, 112, 86), (184, 168, 136), (226, 214, 184)]
+STRAW = [(58, 42, 24), (102, 78, 44), (150, 118, 70), (196, 164, 108)]
+DRY_SCRUB = [(50, 44, 24), (84, 76, 38), (122, 108, 56), (160, 146, 84)]
+DRIFTWOOD = [(44, 34, 28), (82, 66, 52), (126, 106, 84), (168, 150, 120)]
+WET_WOOD = [(22, 24, 25), (42, 45, 46), (65, 70, 72), (95, 100, 102)]
+REED_GOLD = [(32, 38, 22), (54, 64, 34), (82, 94, 48), (122, 138, 72)]
+LILYPAD = [(14, 36, 28), (24, 62, 46), (42, 102, 74), (72, 154, 112)]
+MUCK_MOUND = [(20, 18, 16), (36, 32, 28), (56, 48, 42), (78, 68, 58)]
+EMBER_RIM = (112, 44, 26)
+FROST_RIM = (130, 215, 250)
+
+# Tundra Siberian Palettes
+SNOW = [(150, 175, 200), (185, 205, 225), (220, 235, 245), (250, 252, 255)]
+ICE = [(25, 55, 80), (45, 95, 135), (75, 145, 185), (140, 210, 240)]
+SNOW_PINE = [(18, 30, 28), (30, 52, 46), (54, 82, 70), (160, 195, 215)]
+FROZEN_BARK = [(22, 20, 24), (44, 40, 46), (72, 66, 76), (150, 175, 200)]
+FROST_WOOD = [(28, 25, 26), (62, 54, 48), (120, 105, 92), (230, 240, 250)]
+FROST_STONE = [(25, 30, 36), (50, 58, 68), (85, 98, 115), (220, 235, 250)]
+FIRE_CAMP = [(55, 22, 18), (135, 45, 20), (220, 110, 25), (255, 215, 85)]
+
+# Sprite name prefix -> (palette for green pixels, palette for the rest). The first
+# matching prefix wins, so specific names sit above the general ones.
+GROUPS = {
+    "tree_": (NEEDLES, BARK),
+    "bush_": (NEEDLES, BARK),
+    "rock_": (MOSS, STONE),
+    "stump_": (MOSS, BARK),
+    "log_": (MOSS, BARK),
+    "landmark_campfire": (MOSS, BARK),
+    "landmark_camp_tent": (MOSS, BARK),
+    "landmark_bramble": (NEEDLES, BARK),
+    "landmark_": (MOSS, STONE),
+    "scatter_mushroom": (NEEDLES, CAP),
+    "scatter_flowers": (NEEDLES, PETAL),
+    "scatter_glowcap": (TEAL, TEAL),
+    "scatter_moss": (MOSS, STONE),
+    "scatter_branch": (MOSS, BARK),
+    "scatter_": (NEEDLES, BARK),
+    "desert_cactus_": (CACTUS, SANDSTONE),
+    "desert_palm_": (CACTUS, BARK),
+    "desert_reeds_": (CACTUS, BARK),
+    "desert_tree_agave": (CACTUS, BARK),
+    "desert_tree_": (CACTUS, DRIFTWOOD),
+    "desert_bones_": (BONE, BONE),
+    "desert_skull_": (BONE, BONE),
+    "desert_beast_skull": (BONE, BONE),
+    "desert_titan_skull": (BONE, BONE),
+    "desert_scrub_": (DRY_SCRUB, DRY_SCRUB),
+    "desert_tumbleweed": (STRAW, STRAW),
+    "desert_campfire": (CACTUS, BARK),
+    "desert_camp_tent": (CACTUS, BARK),
+    "desert_": (SANDSTONE, SANDSTONE),
+    "lakelands_reeds_": (REED_GOLD, BARK),
+    "lakelands_swamp_grass_": (REED_GOLD, MOSS),
+    "lakelands_tall_grass": (REED_GOLD, MOSS),
+    "lakelands_swamp_plant": (LILYPAD, MOSS),
+    "lakelands_swamp_fern": (LILYPAD, MOSS),
+    "lakelands_tropical_bush": (MOSS, BARK),
+    "lakelands_water_kelp": (TEAL, LILYPAD),
+    "lakelands_lilypads_": (LILYPAD, TEAL),
+    "lakelands_dock_": (WET_WOOD, WET_WOOD),
+    "lakelands_boat_": (WET_WOOD, WET_WOOD),
+    "lakelands_shrine_": (MOSS, STONE),
+    "lakelands_statue_": (MOSS, STONE),
+    "lakelands_mound_": (MOSS, MUCK_MOUND),
+    "lakelands_bones_": (BONE, BONE),
+    "lakelands_beast_skull": (BONE, BONE),
+    "lakelands_glowplant": (TEAL, TEAL),
+    "lakelands_underwater_plant": (TEAL, LILYPAD),
+    "lakelands_root_": (MOSS, DRIFTWOOD),
+    "lakelands_rock_": (MOSS, STONE),
+    "lakelands_tree_": (MOSS, DRIFTWOOD),
+    "lakelands_": (MOSS, STONE),
+    "tundra_tree_pine_": (SNOW_PINE, FROZEN_BARK),
+    "tundra_tree_snag_": (FROST_WOOD, FROZEN_BARK),
+    "tundra_snow_mound_": (SNOW, SNOW),
+    "tundra_pine_stump_": (FROST_WOOD, FROST_WOOD),
+    "tundra_log_snow_": (FROST_WOOD, FROST_WOOD),
+    "tundra_stalactite_": (ICE, ICE),
+    "tundra_cairn_": (FROST_STONE, FROST_STONE),
+    "tundra_campfire_": (FIRE_CAMP, FROST_STONE),
+    "tundra_wood_pile_": (FROST_WOOD, FROST_WOOD),
+    "tundra_ice_hut_": (FROST_WOOD, FROST_WOOD),
+    "tundra_": (SNOW, FROST_STONE),
+}
+
+# Where a sprite is written, by name prefix: landmark_<id> is the forest's own
+# variant of the shared prop <id>, so it lives apart from the other themes' art.
+OUTPUT_BY_PREFIX = {
+    "landmark_": os.path.join(OUT_DIR, "props"),
+    "desert_": os.path.join(IMG_DIR, "desert"),
+    "lakelands_": os.path.join(IMG_DIR, "lakelands"),
+    "tundra_": os.path.join(IMG_DIR, "tundra"),
+}
+
+# Where each material's tone boundaries fall, as luminance percentiles.
+TONE_PERCENTILES = (22, 52, 82)
+
+# Tiling ground textures: (output, Synty source under the Alpine pack, size, green palette,
+# other palette, green ratio). Downsampling averages grass blades into the needles around
+# them, so the floor needs a looser green test than the sprites to keep any moss at all.
+GROUND_MEDIAN = 5
+ALPINE_TEXTURES = os.path.join("POLYGON_NatureBiomes_AlpineMountain_SourceFiles_v3", "Textures")
+GROUND = [
+    ("floor_forest.png", "Synty_Alpine_Ground_GrassPine_01_basecolor.png", 128, MOSS, UMBER, 0.9),
+    ("forest_cliff.png", "Synty_Alpine_Ground_MossyRockPine_01_basecolor.png", 128, MOSS, STONE, 1.0),
+    ("floor_tundra.png", "Snow_01.png", 128, SNOW, SNOW, 2.0),
+    ("tundra_cliff.png", "IceWall.png", 128, ICE, ICE, 2.0),
+]
+
+
+def load(path):
+    raw = Image.open(path).convert("RGBA")
+    small = raw.reduce(RAW_SCALE)
+    # Eevee's soft shadows leave single-pixel noise that quantizes into speckle.
+    rgb = np.asarray(small.convert("RGB").filter(ImageFilter.MedianFilter(3))).astype(np.float32)
+    mask = np.asarray(small)[..., 3] > 127
+    return rgb, mask
+
+
+def luminance(rgb):
+    return rgb[..., 0] * 0.299 + rgb[..., 1] * 0.587 + rgb[..., 2] * 0.114
+
+
+def is_green(rgb, ratio=1.08):
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    return (g > r * ratio) & (g > b)
+
+
+def thresholds(frames, green, ratio=1.08):
+    values = [luminance(rgb)[mask & (is_green(rgb, ratio) == green)] for rgb, mask in frames]
+    values = [v for v in values if v.size]
+    return np.percentile(np.concatenate(values), TONE_PERCENTILES) if values else np.array([64.0, 128.0, 192.0])
+
+
+def quantize(rgb, mask, green_cuts, other_cuts, palettes, ratio=1.08):
+    out = np.zeros(rgb.shape[:2] + (4,), dtype=np.uint8)
+    lum = luminance(rgb)
+    green = is_green(rgb, ratio)
+    for material, cuts, tones in ((True, green_cuts, palettes[0]), (False, other_cuts, palettes[1])):
+        sel = mask & (green == material)
+        out[sel, :3] = np.array(tones, dtype=np.uint8)[np.digitize(lum, cuts)[sel]]
+    out[..., 3] = np.where(mask, 255, 0)
+    return out
+
+
+def stylize(rgb, mask, green_cuts, other_cuts, palettes=(NEEDLES, BARK), rim_color=EMBER_RIM):
+    out = quantize(rgb, mask, green_cuts, other_cuts, palettes)
+
+    # Inside edge: an opaque pixel with any transparent 4-neighbour.
+    padded = np.pad(mask, 1, constant_values=False)
+    edge = mask & ~(padded[:-2, 1:-1] & padded[2:, 1:-1] & padded[1:-1, :-2] & padded[1:-1, 2:])
+    # Rim: the pixel just under a top edge, i.e. one whose upper neighbour is an edge
+    # pixel that has open sky directly above it.
+    top_edge = edge & ~padded[:-2, 1:-1]
+    rim = np.zeros_like(mask)
+    rim[1:, :] = top_edge[:-1, :]
+    rim &= mask & ~edge
+
+    out[rim, :3] = rim_color
+    out[edge, :3] = OUTLINE
+    return Image.fromarray(out, "RGBA")
+
+
+def group_of(name):
+    for prefix, palettes in GROUPS.items():
+        if name.startswith(prefix):
+            return prefix, palettes
+    raise SystemExit("No palette group for " + name)
+
+
+def stylize_sprites():
+    paths = sorted(glob.glob(os.path.join(RAW_DIR, "*.png")))
+    if not paths:
+        raise SystemExit("No raw frames in " + RAW_DIR + "; run tools/blender/bake_forest_models.py first.")
+    by_group = {}
+    for path in paths:
+        prefix, palettes = group_of(os.path.basename(path))
+        by_group.setdefault(prefix, (palettes, []))[1].append((path, load(path)))
+
+    for prefix, (palettes, items) in by_group.items():
+        frames = [frame for _, frame in items]
+        green_cuts = thresholds(frames, True)
+        other_cuts = thresholds(frames, False)
+        rim = FROST_RIM if prefix.startswith("tundra_") else EMBER_RIM
+        for path, (rgb, mask) in items:
+            out = output_path(os.path.basename(path))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            stylize(rgb, mask, green_cuts, other_cuts, palettes, rim_color=rim).save(out, optimize=True)
+            print("wrote", out)
+
+
+def output_path(name):
+    for prefix, directory in OUTPUT_BY_PREFIX.items():
+        if name.startswith(prefix):
+            return os.path.join(directory, name[len(prefix):])
+    return os.path.join(OUT_DIR, name)
+
+
+def stylize_ground(packs):
+    for out_name, source, size, green_palette, other_palette, ratio in GROUND:
+        src = os.path.join(packs, ALPINE_TEXTURES, source)
+        if not os.path.exists(src):
+            print("MISSING", src)
+            continue
+        # A box reduce keeps the texture tiling as long as the source is a multiple of size.
+        img = Image.open(src).convert("RGB").resize((size, size), Image.BOX)
+        # Per-pixel noise reads as static, not pixel art: merge it into clusters with a
+        # median filter run over a 3x3 tiling, so the seams filter like the middle.
+        tiled = Image.new("RGB", (size * 3, size * 3))
+        for ox in range(3):
+            for oy in range(3):
+                tiled.paste(img, (ox * size, oy * size))
+        img = tiled.filter(ImageFilter.MedianFilter(GROUND_MEDIAN)).crop((size, size, size * 2, size * 2))
+        rgb = np.asarray(img).astype(np.float32)
+        mask = np.ones(rgb.shape[:2], dtype=bool)
+        frames = [(rgb, mask)]
+        out = quantize(rgb, mask, thresholds(frames, True, ratio), thresholds(frames, False, ratio),
+                       (green_palette, other_palette), ratio)
+        dst = os.path.join(IMG_DIR, out_name)
+        Image.fromarray(out[..., :3], "RGB").save(dst, optimize=True)
+        print("wrote", dst)
+
+
+def main():
+    packs = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "docs", "game_assets")
+    stylize_sprites()
+    stylize_ground(packs)
+
+
+if __name__ == "__main__":
+    main()

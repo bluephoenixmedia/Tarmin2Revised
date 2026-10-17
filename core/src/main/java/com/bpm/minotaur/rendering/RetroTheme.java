@@ -235,6 +235,26 @@ public class RetroTheme {
         INTV_GREY_DARK                     // Door Dark
     );
 
+    public static final Theme TUNDRA_THEME = new Theme(
+        "Tundra",
+        INTV_WHITE,                        // Floor (Snow / Permafrost)
+        new Color(0.18f, 0.28f, 0.42f, 1), // Ceiling (Polar twilight sky)
+        INTV_CYAN_LIGHT,                   // Wall (Glacial ice crags)
+        INTV_CYAN_DARK,                    // Wall Dark (Crevasse ice)
+        INTV_BLUE_LIGHT,                   // Door
+        INTV_BLUE_DARK                     // Door Dark
+    );
+
+    public static final Theme BLIGHT_THEME = new Theme(
+        "Blighted Marches",
+        INTV_GREY_DARK,                    // Floor (Ash and cinder)
+        new Color(0.30f, 0.13f, 0.09f, 1), // Ceiling (Crimson-ochre murk)
+        INTV_BROWN_DARK,                   // Wall (Charred ridges)
+        INTV_RED_DARK,                     // Wall Dark (Ember-lit rock)
+        INTV_GREY_LIGHT,                   // Door
+        INTV_GREY_DARK                     // Door Dark
+    );
+
     private static final Theme[] ADVANCED_THEMES = new Theme[] {
         ADVANCED_COLOR_THEME_RED,
         ADVANCED_COLOR_THEME_BLUE,

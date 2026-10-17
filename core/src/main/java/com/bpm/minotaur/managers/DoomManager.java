@@ -8,30 +8,49 @@ import com.badlogic.gdx.utils.JsonWriter.OutputType;
 
 /**
  * Manages the "Tarmin's Hunger" mechanic:
- * - Tracks total deaths (DoomCounter).
- * - Calculates enemy scaling (Meat Grinder).
+ * - Tracks total deaths (DoomCounter), which raise a slow stage baseline.
+ * - Escalates the stage with turns spent inside one Expedition.
  * - Calculates resource scarcity (Starvation Curve).
  * - Tracks Bridge Integrity (Apocalypse condition).
  * 
  * Persists data separately from world saves to allow "Resurrection" mechanics
  * where the world resets but the meta-difficulty increases.
  */
-public class DoomManager {
+public class DoomManager implements SlotScopedState {
     private static DoomManager instance;
 
-    // --- Core Variable ---
+    // --- Core Variables ---
     private int deathCount = 0;
+    private boolean bridgeBossActive = false;
+    private boolean apocalypseTriggered = false;
+    /**
+     * How many times the bridge boss has been summoned in this run.
+     *
+     * <p>Load-bearing, because killing the boss resets the death count to zero.
+     * With a fixed-difficulty boss that would permanently remove the 50-death
+     * cap for any player who can beat it once, and the apocalypse would become
+     * unreachable. Each summon makes the next fight harder instead.
+     */
+    private int bridgeBossSummons = 0;
 
     // --- Constants ---
     private static final int MAX_DEATHS_ALLOWED = 50; // The Hard Cap
-    private static final float DAMAGE_SCALE_PER_DEATH = 0.025f; // +2.5% per death (Reduced from 5%)
+    /**
+     * Deaths raise a slow stage baseline across all 50 (#176 / #188): stage 2 from 10, stage 3
+     * from 25, stage 4 from 40. Deaths no longer scale monster damage; unlocks and altar
+     * stations are what offset the growing Hunger.
+     */
+    private static final int DEATHS_FOR_STAGE_2 = 10;
+    private static final int DEATHS_FOR_STAGE_3 = 25;
+    private static final int DEATHS_FOR_STAGE_4 = 40;
     private static final float LOOT_DECAY_RATE = 0.02f; // -2% loot chance per death
     private String getSaveFilePath() {
         return SaveManager.getInstance().getActiveSlotFilePath("doom_state.json");
     }
 
     private DoomManager() {
-        // Private constructor for singleton
+        // Follow the active slot; see SlotScopedState.
+        SaveManager.register(this);
     }
 
     public static DoomManager getInstance() {
@@ -57,7 +76,6 @@ public class DoomManager {
 
     public void incrementDeaths() {
         this.deathCount++;
-        save();
         if (Gdx.app != null) {
             Gdx.app.log("DoomManager", "Death Count increased to: " + deathCount);
         }
@@ -66,13 +84,42 @@ public class DoomManager {
                     "Deaths: " + deathCount + " | Bridge: " + getBridgeIntegrity() + "%");
         }
         if (this.deathCount >= MAX_DEATHS_ALLOWED) {
-            SaveManager.getInstance().wipeActiveSlotOnApocalypse();
+            if (!this.bridgeBossActive) {
+                // First time reaching 100% integrity (50 deaths):
+                // Instead of wiping the save, the Bringer of Death spawns!
+                this.bridgeBossActive = true;
+                this.bridgeBossSummons++;
+                if (Gdx.app != null) {
+                    Gdx.app.log("DoomManager", "Bridge integrity reached 100%! Summoning Bridge Boss!");
+                }
+            } else {
+                // Next death while the boss is active wipes the slot!
+                this.apocalypseTriggered = true;
+                SaveManager.getInstance().wipeActiveSlotOnApocalypse();
+            }
         }
+        save();
     }
 
     public void resetDeaths() {
         this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
+        this.bridgeBossSummons = 0;
         save();
+    }
+
+    /** The death count at which the Bridge falls and the bridge boss comes. */
+    public static int maxDeaths() {
+        return MAX_DEATHS_ALLOWED;
+    }
+
+    /** The death count at which the next death stage begins, or -1 past the last one. */
+    public static int nextDeathStageAt(int deaths) {
+        if (deaths < DEATHS_FOR_STAGE_2) return DEATHS_FOR_STAGE_2;
+        if (deaths < DEATHS_FOR_STAGE_3) return DEATHS_FOR_STAGE_3;
+        if (deaths < DEATHS_FOR_STAGE_4) return DEATHS_FOR_STAGE_4;
+        return -1;
     }
 
     public int getDeathCount() {
@@ -95,19 +142,20 @@ public class DoomManager {
     }
 
     /**
-     * Returns the current Doom stage (1..4) based on both expedition turn count and total deaths.
-     * - Stage 1: Quiescent (Turns 0–400, 0 deaths)
-     * - Stage 2: Restless (Turns 401–800, or 1st Death)
-     * - Stage 3: Corrupted (Turns 801–1200, or 2nd Death)
-     * - Stage 4: Tarmin's Wrath (Turns 1201+, or 3+ Deaths)
+     * Returns the current Doom stage (1..4): the higher of the expedition turn stage and the
+     * death baseline. Turns reset each expedition; deaths only ever climb.
+     * - Stage 1: Quiescent (Turns 0-400, 0-9 deaths)
+     * - Stage 2: Restless (Turns 401-800, or 10+ deaths)
+     * - Stage 3: Corrupted (Turns 801-1200, or 25+ deaths)
+     * - Stage 4: Tarmin's Wrath (Turns 1201+, or 40+ deaths)
      */
     public int getDoomStage() {
         int deathStage = 1;
-        if (deathCount >= 3) {
+        if (deathCount >= DEATHS_FOR_STAGE_4) {
             deathStage = 4;
-        } else if (deathCount == 2) {
+        } else if (deathCount >= DEATHS_FOR_STAGE_3) {
             deathStage = 3;
-        } else if (deathCount == 1) {
+        } else if (deathCount >= DEATHS_FOR_STAGE_2) {
             deathStage = 2;
         }
 
@@ -174,27 +222,6 @@ public class DoomManager {
     }
 
     /**
-     * @param level The dungeon depth or monster base level.
-     * @return Multiplier for Enemy Stats (HP/Damage).
-     *         Level 1 is strictly 1.0 (no doom penalty).
-     *         Level 2+ scales dynamically with depth up to full scaling at Level 5+.
-     */
-    public float getEnemyScalingMultiplier(int level) {
-        if (level <= 1) {
-            return 1.0f;
-        }
-        float depthWeight = Math.min(1.0f, (level - 1) / 4.0f);
-        return Math.min(1.5f, 1.0f + (DAMAGE_SCALE_PER_DEATH * deathCount * depthWeight));
-    }
-
-    /**
-     * @return Multiplier for Enemy Stats using the current tracked dungeon level.
-     */
-    public float getEnemyScalingMultiplier() {
-        return getEnemyScalingMultiplier(this.currentLevel);
-    }
-
-    /**
      * @return Multiplier for base loot chance. Base is 1.0.
      *         Formula: (1 - 0.02) ^ Deaths
      */
@@ -213,10 +240,55 @@ public class DoomManager {
     }
 
     /**
-     * @return True if the bridge is complete (Game Over / Wipe).
+     * @return True if the bridge is complete and apocalypse triggered (Game Over / Wipe).
      */
     public boolean isApocalypse() {
-        return deathCount >= MAX_DEATHS_ALLOWED;
+        return apocalypseTriggered;
+    }
+
+    public boolean isBridgeBossActive() {
+        return bridgeBossActive;
+    }
+
+    public void setBridgeBossActive(boolean active) {
+        this.bridgeBossActive = active;
+        save();
+    }
+
+    /**
+     * The boss is dead: bridge integrity returns to zero.
+     *
+     * <p>A full reset, not a partial cut. The counterweight is
+     * {@link #getBridgeBossSummons()}: each victory makes the next summoning
+     * harder, so the cap reasserts itself over a long campaign rather than
+     * being removed by a single competent fight.
+     */
+    public void onBridgeBossDefeated() {
+        this.bridgeBossActive = false;
+        this.deathCount = 0;
+        this.apocalypseTriggered = false;
+        save();
+        if (Gdx.app != null) {
+            Gdx.app.log("DoomManager", "Bridge Boss defeated! Integrity reset to 0. Summons so far: "
+                    + bridgeBossSummons);
+        }
+    }
+
+    /** How many times the boss has been summoned; 1 during the first fight. */
+    public int getBridgeBossSummons() {
+        return bridgeBossSummons;
+    }
+
+    /**
+     * Extra champion hit points for this summoning.
+     *
+     * <p>The first fight uses the authored value; each later one adds half
+     * again, so a player who keeps resetting the bridge meets a boss that keeps
+     * outgrowing them.
+     */
+    public int getBridgeBossHpBonus(int baseHpBonus) {
+        int extraSummons = Math.max(0, bridgeBossSummons - 1);
+        return baseHpBonus + Math.round(baseHpBonus * 0.5f * extraSummons);
     }
 
     /**
@@ -224,6 +296,8 @@ public class DoomManager {
      */
     public void reset() {
         this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
         save();
         if (Gdx.app != null) {
             Gdx.app.log("DoomManager", "DOOM RESET. The cycle begins anew.");
@@ -244,6 +318,10 @@ public class DoomManager {
 
             DoomState state = new DoomState();
             state.deathCount = this.deathCount;
+            state.bridgeBossActive = this.bridgeBossActive;
+            state.apocalypseTriggered = this.apocalypseTriggered;
+            state.bridgeBossSummons = this.bridgeBossSummons;
+            state.expeditionTurns = this.expeditionTurns;
 
             file.writeString(json.prettyPrint(state), false);
             if (Gdx.app != null) {
@@ -264,8 +342,12 @@ public class DoomManager {
                 DoomState state = json.fromJson(DoomState.class, file);
                 if (state != null) {
                     this.deathCount = state.deathCount;
+                    this.bridgeBossActive = state.bridgeBossActive;
+                    this.apocalypseTriggered = state.apocalypseTriggered;
+                    this.bridgeBossSummons = state.bridgeBossSummons;
+                    this.expeditionTurns = state.expeditionTurns;
                     if (Gdx.app != null) {
-                        Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount);
+                        Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount + " | BridgeBoss: " + bridgeBossActive);
                     }
                 }
             } else {
@@ -283,5 +365,30 @@ public class DoomManager {
     // --- Data Class for JSON ---
     public static class DoomState {
         public int deathCount = 0;
+        public boolean bridgeBossActive = false;
+        public boolean apocalypseTriggered = false;
+        public int bridgeBossSummons = 0;
+        /** Feeds the Doom stage; absent (0) in saves written before it was persisted. */
+        public int expeditionTurns = 0;
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
+        this.bridgeBossSummons = 0;
+        resetExpeditionTurns();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
+        this.bridgeBossSummons = 0;
+        resetExpeditionTurns();
+        save();
     }
 }

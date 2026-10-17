@@ -1,0 +1,34 @@
+{
+  "_comment": "Megabeasts of the Maze's history (Houses of the Maze plan D33, T3.1). An archetype gives the body (a monsters.json type, for its sprite) and the hit points; a material, a breath and a weakness are rolled onto it. Every name and phrase must survive UiGlyphs.sanitize.",
+  "archetypes": [
+    {"id": "wyrm", "title": "Wyrm", "body": "DRAGON", "hp": 420, "scaleY": 2.0},
+    {"id": "titan", "title": "Titan", "body": "GIANT", "hp": 480, "scaleY": 2.5},
+    {"id": "hive", "title": "Colossal Hive", "body": "GIANT_BEE", "hp": 360, "scaleY": 2.2},
+    {"id": "drowned", "title": "Drowned Thing", "body": "HYDRA", "hp": 440, "scaleY": 2.0},
+    {"id": "bone_choir", "title": "Bone-Choir", "body": "BRINGER_OF_DEATH", "hp": 400, "scaleY": 2.3},
+    {"id": "fungal_mother", "title": "Fungal Mother", "body": "GELATINOUS_CUBE", "hp": 520, "scaleY": 2.0}
+  ],
+  "materials": [
+    {"id": "obsidian", "adjective": "Obsidian", "armor": 3, "hpMult": 1.1, "damage": 0},
+    {"id": "brass", "adjective": "Brass", "armor": 4, "hpMult": 1.0, "damage": 0},
+    {"id": "bone", "adjective": "Bone", "armor": 1, "hpMult": 1.0, "damage": 2},
+    {"id": "glass", "adjective": "Glass", "armor": -1, "hpMult": 0.9, "damage": 4},
+    {"id": "rot", "adjective": "Rotting", "armor": -2, "hpMult": 1.35, "damage": 1},
+    {"id": "salt", "adjective": "Salt", "armor": 2, "hpMult": 1.05, "damage": 1}
+  ],
+  "breaths": [
+    {"id": "cinders", "phrase": "breathes cinders", "damage": 4},
+    {"id": "frost", "phrase": "breathes a killing frost", "damage": 3},
+    {"id": "plague", "phrase": "breathes plague", "damage": 3},
+    {"id": "madness", "phrase": "sings men mad", "damage": 2},
+    {"id": "acid", "phrase": "weeps acid", "damage": 4}
+  ],
+  "weaknesses": [
+    {"damageType": "FIRE", "phrase": "fears fire"},
+    {"damageType": "ICE", "phrase": "fears the cold"},
+    {"damageType": "LIGHT", "phrase": "cannot bear the light"},
+    {"damageType": "SPIRITUAL", "phrase": "bleeds at a prayer"},
+    {"damageType": "POISON", "phrase": "sickens on poison"}
+  ],
+  "givenNames": ["Ulgrath", "Vessaroth", "Kharn", "Mother Silt", "Oozeleth", "Gharmock", "Thessaly", "Brool", "Naggareth", "Quorm", "Old Hunger", "Sorrowmaw", "Ysslith", "Drevorak", "Pale Agnes"]
+}

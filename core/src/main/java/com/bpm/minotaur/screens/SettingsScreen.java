@@ -30,8 +30,12 @@ public class SettingsScreen extends BaseScreen {
 
     private TextButton difficultyButton;
     private TextButton modeButton;
+    private TextButton goreButton;
     private Label musicVolLabel;
     private Label sfxVolLabel;
+    private Label knellVolLabel;
+    private TextButton knellVignetteButton;
+    private TextButton hintsButton;
 
     public SettingsScreen(Tarmin2 game) {
         super(game);
@@ -73,7 +77,7 @@ public class SettingsScreen extends BaseScreen {
 
         // 1. Difficulty
         card.add(new Label("Difficulty", labelStyle)).left().padRight(40).padBottom(16);
-        difficultyButton = new TextButton(settingsManager.getDifficulty().name(), btnStyle);
+        difficultyButton = new TextButton(com.bpm.minotaur.ui.UiNames.of(settingsManager.getDifficulty()), btnStyle);
         difficultyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -91,7 +95,15 @@ public class SettingsScreen extends BaseScreen {
                 toggleGameMode();
             }
         });
-        card.add(modeButton).minWidth(240).height(48).padBottom(16).row();
+        card.add(modeButton).minWidth(240).height(48).padBottom(2).row();
+        // TITLE-8: the title screen used to advertise "M: MODE [ADVANCED]" with nothing
+        // anywhere saying what a mode is. The toggle belongs here, and here it can explain
+        // itself.
+        Label modeHelp = com.bpm.minotaur.ui.UiLabels.wrapping(
+                "Advanced uses the modern rules and the 3D view. Original plays by the 1982 "
+                        + "cartridge's rules, in its palette.",
+                com.bpm.minotaur.ui.UiStyles.caption(hudSkin));
+        card.add(modeHelp).colspan(2).width(520f).left().padBottom(16).row();
 
         // 3. Music Volume
         card.add(new Label("Music Volume", labelStyle)).left().padRight(40).padBottom(16);
@@ -145,9 +157,68 @@ public class SettingsScreen extends BaseScreen {
             }
         });
         sfxTable.add(sfxPlus).width(48).height(44);
-        card.add(sfxTable).width(240).padBottom(28).row();
+        card.add(sfxTable).width(240).padBottom(16).row();
 
-        // 5. Controls CTA Button
+        // 4b. Tarmin's Knell (plan K5): its own volume, and its red bleed on or off.
+        card.add(new Label("Knell Volume", labelStyle)).left().padRight(40).padBottom(28);
+        Table knellTable = new Table();
+        TextButton knellMinus = new TextButton("-", btnStyle);
+        knellMinus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustKnellVolume(-0.10f);
+            }
+        });
+        knellTable.add(knellMinus).width(48).height(44);
+        knellVolLabel = new Label(Math.round(settingsManager.getKnellVolume() * 100) + "%", labelStyle);
+        knellVolLabel.setAlignment(Align.center);
+        knellTable.add(knellVolLabel).width(140);
+        TextButton knellPlus = new TextButton("+", btnStyle);
+        knellPlus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustKnellVolume(0.10f);
+            }
+        });
+        knellTable.add(knellPlus).width(48).height(44);
+        card.add(knellTable).width(240).padBottom(16).row();
+
+        card.add(new Label("Knell Vignette", labelStyle)).left().padRight(40).padBottom(28);
+        knellVignetteButton = new TextButton(settingsManager.isKnellVignette() ? "On" : "Off", btnStyle);
+        knellVignetteButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                settingsManager.setKnellVignette(!settingsManager.isKnellVignette());
+                knellVignetteButton.setText(settingsManager.isKnellVignette() ? "On" : "Off");
+            }
+        });
+        card.add(knellVignetteButton).minWidth(240).height(48).padBottom(28).row();
+
+        // 5. Gore
+        card.add(new Label("Gore", labelStyle)).left().padRight(40).padBottom(28);
+        goreButton = new TextButton(com.bpm.minotaur.ui.UiNames.of(settingsManager.getGoreLevel()), btnStyle);
+        goreButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                settingsManager.setGoreLevel(settingsManager.getGoreLevel().next());
+                goreButton.setText(com.bpm.minotaur.ui.UiNames.of(settingsManager.getGoreLevel()));
+            }
+        });
+        card.add(goreButton).minWidth(240).height(48).padBottom(28).row();
+
+        // 5b. Show Hints (#169)
+        card.add(new Label("Show Hints", labelStyle)).left().padRight(40).padBottom(28);
+        hintsButton = new TextButton(settingsManager.isShowHints() ? "On" : "Off", btnStyle);
+        hintsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                settingsManager.setShowHints(!settingsManager.isShowHints());
+                hintsButton.setText(settingsManager.isShowHints() ? "On" : "Off");
+            }
+        });
+        card.add(hintsButton).minWidth(240).height(48).padBottom(28).row();
+
+        // 6. Controls CTA Button
         TextButton.TextButtonStyle ctaStyle = new TextButton.TextButtonStyle();
         ctaStyle.font = hudSkin.getFontMain();
         ctaStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
@@ -165,7 +236,7 @@ public class SettingsScreen extends BaseScreen {
         });
         card.add(controlsButton).colspan(2).minWidth(400).height(54).padBottom(16).center().row();
 
-        // 6. Back Button
+        // 7. Back Button
         TextButton backButton = new TextButton("BACK TO MAIN MENU  [ESC]", btnStyle);
         backButton.addListener(new ChangeListener() {
             @Override
@@ -192,7 +263,7 @@ public class SettingsScreen extends BaseScreen {
         Difficulty nextDifficulty = allDifficulties[nextIndex];
 
         settingsManager.setDifficulty(nextDifficulty);
-        difficultyButton.setText(nextDifficulty.name());
+        difficultyButton.setText(com.bpm.minotaur.ui.UiNames.of(nextDifficulty));
     }
 
     private void toggleGameMode() {
@@ -207,6 +278,17 @@ public class SettingsScreen extends BaseScreen {
         settingsManager.setMusicVolume(newVol);
         if (musicVolLabel != null) {
             musicVolLabel.setText(Math.round(newVol * 100) + "%");
+        }
+    }
+
+    private void adjustKnellVolume(float delta) {
+        float newVol = Math.max(0.0f, Math.min(1.0f, Math.round((settingsManager.getKnellVolume() + delta) * 10f) / 10f));
+        settingsManager.setKnellVolume(newVol);
+        if (knellVolLabel != null) {
+            knellVolLabel.setText(Math.round(newVol * 100) + "%");
+        }
+        if (SoundManager.getInstance() != null) {
+            SoundManager.getInstance().playKnell();
         }
     }
 

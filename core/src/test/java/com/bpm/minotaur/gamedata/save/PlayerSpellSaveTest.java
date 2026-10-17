@@ -76,7 +76,8 @@ public class PlayerSpellSaveTest {
         assertEquals(com.bpm.minotaur.gamedata.spells.Tome.ELEMENTS, loaded.getPendingTomeChoice().getTome());
 
         assertTrue(loaded.chooseTomeSpell(offered.get(0), new com.bpm.minotaur.managers.GameEventManager()));
-        assertEquals(3, loaded.getUnlockedSpellSlots());
+        assertEquals(1, loaded.getUnlockedSpellSlots());
+        assertTrue(loaded.getPermanentSpellIds().contains(offered.get(0)));
         assertFalse("The reloaded Tome is the one used up",
                 loaded.getInventory().hasItemOfType(com.bpm.minotaur.gamedata.item.Item.ItemType.TOME_OF_ELEMENTS));
     }

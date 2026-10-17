@@ -69,6 +69,20 @@ public class FirstPersonWeaponOverlay {
     private float comboWindowTimer = 0f;
     private static final float COMBO_WINDOW_MAX = 0.55f;
 
+    // Hit-stop and micro-dilation
+    private float hitStopTimer = 0f;
+    private float microDilationTimer = 0f;
+    public static final float HIT_STOP_NORMAL = 0.030f;
+    public static final float HIT_STOP_CRIT = 0.060f;
+    public static final float MICRO_DILATION_DURATION = 0.100f;
+
+    // Armor deflection and riposte
+    private float deflectionRiposteTimer = 0f;
+    private boolean wasDeflected = false;
+
+    // Lethal / Crit anticipation
+    private boolean lethalAnticipationActive = false;
+
     // Persistent stance dynamics (bobbing speeds slowed by 25% from original 2.2f and 8.5f)
     public static final float IDLE_BOB_SPEED = 1.65f;
     public static final float WALK_BOB_SPEED = 6.375f;
@@ -109,6 +123,11 @@ public class FirstPersonWeaponOverlay {
     private float buffGlowPulseTimer = 0f;
     private static final float BUFF_GLOW_PULSE_SPEED = 4f;
     private static final float BUFF_GLOW_MAX_STRENGTH = 0.4f;
+    /** #199: the halo's size over the sprite, and its additive alpha at the pulse's peak. */
+    private static final float BUFF_HALO_SCALE = 1.07f;
+    private static final float BUFF_HALO_MAX_ALPHA = 0.55f;
+    /** 1 while the weapon rests, eased to 0 for a swing so the glow belongs to the idle pose. */
+    private float buffGlowIdleStrength = 1f;
 
     // Tome Weapon Attack: page-flutter particles spawned when swinging a book.
     private static class PageParticle {
@@ -219,20 +238,48 @@ public class FirstPersonWeaponOverlay {
      * Triggers the next attack in the combo chain.
      */
     public void triggerAttack(Item weapon) {
+        triggerAttack(weapon, false);
+    }
+
+    /**
+     * Triggers an attack with optional lethal finisher or crit anticipation telegraph.
+     */
+    public void triggerAttack(Item weapon, boolean isLethalOrCrit) {
         setEquipment(weapon, this.offHandItem);
 
-        if (comboChain.isEmpty()) {
-            rebuildComboChain();
-        }
+        boolean isDualWielding = (mainHandItem != null && offHandItem != null
+                && mainHandItem.isWeapon() && offHandItem.isWeapon());
 
-        // Advance combo if within the window, else reset to opener
-        if (comboWindowTimer > 0f && !comboChain.isEmpty()) {
-            comboIndex = (comboIndex + 1) % comboChain.size();
+        if (wasDeflected && deflectionRiposteTimer > 0f) {
+            this.currentProfile = CombatMotionProfile.getNextContinuousStrike(
+                    mainHandArchetype, mainHandItem, currentProfile, false, false, false, true);
+            wasDeflected = false;
+            deflectionRiposteTimer = 0f;
+        } else if (comboWindowTimer > 0f && currentProfile != null) {
+            comboIndex++;
+            if (comboIndex > 2) {
+                comboIndex = 0;
+            }
+            boolean isFinisherStep = (comboIndex == 2);
+            this.currentProfile = CombatMotionProfile.getNextContinuousStrike(
+                    mainHandArchetype, mainHandItem, currentProfile, isLethalOrCrit, isFinisherStep, isDualWielding, false);
         } else {
             comboIndex = 0;
+            this.currentProfile = CombatMotionProfile.getNextContinuousStrike(
+                    mainHandArchetype, mainHandItem, null, isLethalOrCrit, false, isDualWielding, false);
         }
 
-        this.currentProfile = comboChain.get(comboIndex);
+        boolean isRangedAttack = (weapon != null && weapon.isRanged())
+                || mainHandArchetype == AnimationArchetype.RANGED_BOW
+                || mainHandArchetype == AnimationArchetype.RANGED_FIREARM
+                || (currentProfile != null && (currentProfile.isRangedDraw || currentProfile.isRangedKick));
+
+        this.lethalAnticipationActive = isLethalOrCrit && !isRangedAttack;
+        if (isLethalOrCrit && currentProfile != null && !isRangedAttack) {
+            currentProfile.anticipationRatio = Math.max(currentProfile.anticipationRatio, 0.32f);
+            currentProfile.duration += 0.08f;
+        }
+
         this.active = true;
         this.attackTimer = 0f;
         this.hasFiredHitFrame = false;
@@ -241,7 +288,7 @@ public class FirstPersonWeaponOverlay {
         // Configure trail color based on weapon elemental/category
         configureTrailColor(weapon);
         trailRenderer.clear();
-        trailRenderer.setEmitting(true);
+        trailRenderer.setEmitting(!isRangedAttack);
 
         // Tome Weapon Attack: fluttering pages instead of a normal weapon swing feel
         if (com.bpm.minotaur.managers.CombatManager.isBookWeapon(weapon)) {
@@ -395,6 +442,7 @@ public class FirstPersonWeaponOverlay {
     }
 
     public void addBloodToWeapon() {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
         this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
     }
 
@@ -546,6 +594,7 @@ public class FirstPersonWeaponOverlay {
      * and blended with realistic translucent opacity.
      */
     public void addBloodDecals(int count, Color color, TextureRegion texture) {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
         Color baseColor = (color != null) ? color : com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
         for (int i = 0; i < count; i++) {
             if (weaponBloodDecals.size() >= MAX_WEAPON_BLOOD_DECALS) {
@@ -609,6 +658,29 @@ public class FirstPersonWeaponOverlay {
     }
 
     /** Sets the active Buff Aura Glow tint, or null to clear it (no active buff). */
+    /**
+     * #199: an additive, slightly enlarged copy of the sprite drawn behind it, so the buff shows
+     * as a coloured rim around the resting weapon rather than only as a tint on it. Drawn
+     * before the sprite (blood or not), and faded out while a swing plays.
+     */
+    private void renderBuffHalo(SpriteBatch batch, float drawX, float drawY, float originX, float originY,
+                                float width, float height, float scaleX, float rotation) {
+        if (buffGlowColor == null || buffGlowIdleStrength <= 0.01f) return;
+        float pulse = 0.6f + 0.4f * MathUtils.sin(buffGlowPulseTimer);
+        float alpha = BUFF_HALO_MAX_ALPHA * pulse * buffGlowIdleStrength;
+        int srcRgb = batch.getBlendSrcFunc();
+        int dstRgb = batch.getBlendDstFunc();
+        int srcA = batch.getBlendSrcFuncAlpha();
+        int dstA = batch.getBlendDstFuncAlpha();
+        Color previous = batch.getColor().cpy();
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        batch.setColor(buffGlowColor.r, buffGlowColor.g, buffGlowColor.b, alpha);
+        batch.draw(mainHandTexture, drawX, drawY, originX, originY, width, height,
+                scaleX * BUFF_HALO_SCALE, BUFF_HALO_SCALE, rotation);
+        batch.setBlendFunctionSeparate(srcRgb, dstRgb, srcA, dstA);
+        batch.setColor(previous);
+    }
+
     public void setBuffGlow(Color color) {
         this.buffGlowColor = color;
     }
@@ -720,6 +792,7 @@ public class FirstPersonWeaponOverlay {
         if (buffGlowColor != null) {
             buffGlowPulseTimer += delta * BUFF_GLOW_PULSE_SPEED;
         }
+        buffGlowIdleStrength = BuffGlow.approach(buffGlowIdleStrength, !active, delta);
 
         if (!pageParticles.isEmpty()) {
             updatePageFlutter(delta);
@@ -754,12 +827,28 @@ public class FirstPersonWeaponOverlay {
             guardFlinchTimer -= delta;
         }
 
+        // Count down hit-stop, micro-dilation, and deflection riposte timers
+        if (hitStopTimer > 0f) {
+            hitStopTimer -= delta;
+        }
+        if (microDilationTimer > 0f) {
+            microDilationTimer -= delta;
+        }
+        if (deflectionRiposteTimer > 0f) {
+            deflectionRiposteTimer -= delta;
+            if (deflectionRiposteTimer <= 0f) {
+                wasDeflected = false;
+            }
+        }
+
         // Update trail renderer
         trailRenderer.update(delta);
 
         // Update attack animation
         if (active && currentProfile != null) {
-            attackTimer += delta;
+            if (hitStopTimer <= 0f) {
+                attackTimer += delta;
+            }
             float progress = attackTimer / currentProfile.duration;
 
             // Stop emitting trail once past impact follow-through
@@ -773,13 +862,14 @@ public class FirstPersonWeaponOverlay {
                 if (hitFrameCallback != null) {
                     hitFrameCallback.onHitFrame(currentProfile);
                 }
-                // Open combo chaining window
-                comboWindowTimer = COMBO_WINDOW_MAX;
+                // Open combo chaining window using dynamic archetype tempo
+                comboWindowTimer = CombatMotionProfile.getComboWindowMax(mainHandArchetype, mainHandItem);
             }
 
             if (attackTimer >= currentProfile.duration) {
                 active = false;
                 attackTimer = 0f;
+                lethalAnticipationActive = false;
                 trailRenderer.setEmitting(false);
             }
         } else {
@@ -792,6 +882,35 @@ public class FirstPersonWeaponOverlay {
                 }
             }
         }
+    }
+
+    public void triggerHitStop(boolean isCritOrFinisher) {
+        this.hitStopTimer = isCritOrFinisher ? HIT_STOP_CRIT : HIT_STOP_NORMAL;
+        if (isCritOrFinisher) {
+            this.microDilationTimer = MICRO_DILATION_DURATION;
+        }
+    }
+
+    public void triggerDeflectionClang() {
+        this.wasDeflected = true;
+        this.deflectionRiposteTimer = 0.35f;
+        if (this.currentProfile != null) {
+            this.attackTimer = this.currentProfile.duration * this.currentProfile.impactRatio;
+        }
+    }
+
+    public boolean isMicroDilationActive() {
+        return microDilationTimer > 0f;
+    }
+
+    public float getAttackProgress() {
+        return (active && currentProfile != null && currentProfile.duration > 0f)
+                ? MathUtils.clamp(attackTimer / currentProfile.duration, 0f, 1f) : 0f;
+    }
+
+    public boolean isLethalAnticipationActive() {
+        return active && lethalAnticipationActive && currentProfile != null
+                && (attackTimer / currentProfile.duration < currentProfile.impactRatio);
     }
 
     public boolean isActive() {
@@ -923,13 +1042,16 @@ public class FirstPersonWeaponOverlay {
             weaponColor = new Color(1.0f, 1.0f - (bloodLevel * 0.45f), 1.0f - (bloodLevel * 0.55f), 1.0f);
         } else if (buffGlowColor != null) {
             // Buff Aura Glow: pulsating edge tint matching the active buff's element
-            float pulse = (0.5f + 0.5f * MathUtils.sin(buffGlowPulseTimer)) * BUFF_GLOW_MAX_STRENGTH;
+            float pulse = (0.5f + 0.5f * MathUtils.sin(buffGlowPulseTimer)) * BUFF_GLOW_MAX_STRENGTH
+                    * buffGlowIdleStrength;
             weaponColor = new Color(
                     1f + (buffGlowColor.r - 1f) * pulse,
                     1f + (buffGlowColor.g - 1f) * pulse,
                     1f + (buffGlowColor.b - 1f) * pulse,
                     1.0f);
         }
+
+        renderBuffHalo(batch, drawX, drawY, originX, originY, targetWidth, targetHeight, scaleX, rotation);
 
         if (!weaponBloodDecals.isEmpty() && Gdx.gl != null) {
             renderMaskedWeaponWithDecals(batch, viewport, drawX, drawY, originX, originY,

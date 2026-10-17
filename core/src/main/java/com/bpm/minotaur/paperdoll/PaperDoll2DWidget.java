@@ -478,6 +478,11 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
     private List<String> getCandidateNames(Item item) {
         List<String> candidates = new ArrayList<>();
 
+        // 0. A tabard wears its house's colours (Living War W24): tabard_<doctrine>.png in its slot.
+        if (item.getHeraldry() != null) {
+            candidates.add("tabard_" + item.getHeraldry());
+        }
+
         // 1. From template texture path (e.g. images/armor/bascinet.png -> bascinet)
         if (item.getTemplate() != null && item.getTemplate().texturePath != null) {
             String path = item.getTemplate().texturePath;

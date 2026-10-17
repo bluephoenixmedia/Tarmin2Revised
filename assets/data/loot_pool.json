@@ -1,0 +1,31 @@
+{
+  "_comment": "The base loot pool (#196): the plain version of every category, findable from life one. Every listed type is tier 0 and never unlock-gated. Anything not listed is tier 0 only if it scores below UnlockManager.UNLOCK_SCORE_THRESHOLD (cheap junk, herbs, food, plain helms and boots); everything else is tier 1+ by score and arrives through the unlock roll. A template may also set \"tier\" itself in its own JSON entry.",
+  "basePool": [
+    "DAGGER",
+    "CLUB",
+    "QUARTERSTAFF",
+    "SPEAR",
+    "MACE_HORSEMANS",
+    "AXE",
+    "SWORD_SHORT",
+    "SWORD_CUTLASS",
+    "SWORD_FALCHION",
+    "SWORD_SCIMITAR",
+    "WOODEN_CROSS",
+    "BOW_SHORT",
+    "SLING",
+
+    "PADDED_ARMOR",
+    "LEATHER_ARMOR",
+    "HIDE_ARMOR",
+    "STUDDED_LEATHER",
+    "RING_MAIL",
+    "CLOAK",
+    "BUCKLER",
+
+    "SMALL_RING",
+    "RING_BLUE",
+
+    "POTION_OF_HEALING"
+  ]
+}

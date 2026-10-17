@@ -20,6 +20,9 @@ public class Lwjgl3Launcher {
             CrashReporter.write(Thread.currentThread(), error);
             throw error;
         }
+        if (com.bpm.minotaur.playtest.PlaytestRunner.hadFailure) {
+            System.exit(1);
+        }
     }
 
     private static Lwjgl3Application createApplication() {
@@ -29,8 +32,23 @@ public class Lwjgl3Launcher {
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
         configuration.setTitle("Tarmin2");
-        configuration.useVsync(true);
-        configuration.setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate + 1);
+        boolean headless = false;
+        if (Tarmin2.getStartupArgs() != null) {
+            for (String a : Tarmin2.getStartupArgs()) {
+                if ("--headless".equalsIgnoreCase(a)) {
+                    headless = true;
+                    break;
+                }
+            }
+        }
+        if (headless) {
+            configuration.setInitialVisible(false);
+            configuration.useVsync(false);
+            configuration.setForegroundFPS(0);
+        } else {
+            configuration.useVsync(true);
+            configuration.setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate + 1);
+        }
         configuration.setWindowedMode(1920, 1080);
         // Ensure 24-bit depth buffer and 8-bit stencil for 3D horizon rendering
         configuration.setBackBufferConfig(8, 8, 8, 8, 24, 8, 0);

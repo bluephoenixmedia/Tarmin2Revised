@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -90,6 +91,14 @@ public class CorpseLootScreen extends BaseScreen {
     private void buildUI() {
         stage.clear();
 
+        if (corpse != null && corpse.getContents() != null) {
+            for (Item item : corpse.getContents()) {
+                if (item != null) {
+                    com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+                }
+            }
+        }
+
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
@@ -111,7 +120,7 @@ public class CorpseLootScreen extends BaseScreen {
 
         corpseTable = new Table();
         populateCorpseTable();
-        ScrollPane corpseScroll = new ScrollPane(corpseTable);
+        ScrollPane corpseScroll = new ScrollPane(corpseTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         corpseScroll.setFadeScrollBars(false);
         leftPanel.add(corpseScroll).size(650, 500).row();
 
@@ -159,7 +168,7 @@ public class CorpseLootScreen extends BaseScreen {
 
         backpackTable = new Table();
         populateBackpackTable();
-        ScrollPane backpackScroll = new ScrollPane(backpackTable);
+        ScrollPane backpackScroll = new ScrollPane(backpackTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         backpackScroll.setFadeScrollBars(false);
         rightPanel.add(backpackScroll).size(650, 500).row();
 

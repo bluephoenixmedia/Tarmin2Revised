@@ -35,4 +35,17 @@ public class MonsterDecalCompositorTest {
         compositor.releaseMonster(monster, false);
         compositor.clearAll();
     }
+
+    @Test
+    public void testWoundDecalsCappedAtTwelve() {
+        MonsterDecalCompositor compositor = MonsterDecalCompositor.getInstance();
+        Monster monster = new Monster(Monster.MonsterType.SKELETON, 0, 0);
+
+        for (int i = 0; i < 15; i++) {
+            WoundDecal decal = new WoundDecal(WoundDecal.WoundType.SLASH, 0.4f, 0.6f, 0.5f, 0.15f, 0.05f, Color.RED);
+            compositor.addWound(monster, decal);
+        }
+
+        assertEquals(12, monster.getWoundDecals().size());
+    }
 }

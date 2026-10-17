@@ -77,12 +77,10 @@ public class ItemDataManager {
             ItemType type = getSafeItemType(entry.name);
             if (type != null) {
                 ItemTemplate template = json.readValue(ItemTemplate.class, entry);
-                if (template.probability == 0) {
-                    template.probability = 10;
-                }
+                applyDefaultProbability(entry, template);
                 if (type == ItemType.QUIVER) {
                     template.isAmmunition = true;
-                    if (template.probability < 20) {
+                    if (template.probability > 0 && template.probability < 20) {
                         template.probability = 20;
                     }
                 }
@@ -219,14 +217,12 @@ public class ItemDataManager {
             }
             ItemTemplate template = json.readValue(ItemTemplate.class, entry);
 
-            if (template.probability == 0) {
-                template.probability = 10;
-            }
+            applyDefaultProbability(entry, template);
 
             if (typeName.startsWith("ARROW_") || typeName.startsWith("QUARREL_") || typeName.startsWith("SLING_BULLET_")
                     || typeName.startsWith("BLOWGUN_") || typeName.startsWith("DART")) {
                 template.isAmmunition = true;
-                if (template.probability < 15) {
+                if (template.probability > 0 && template.probability < 15) {
                     template.probability = 15;
                 }
             }
@@ -275,10 +271,7 @@ public class ItemDataManager {
             }
             ItemTemplate template = json.readValue(ItemTemplate.class, entry);
 
-            // FIX: Set default probability if missing
-            if (template.probability == 0) {
-                template.probability = 10;
-            }
+            applyDefaultProbability(entry, template);
 
             itemTemplates.put(type, template);
             if (type == ItemType.LEATHER_BOOTS) {
@@ -310,6 +303,20 @@ public class ItemDataManager {
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
     }
 
+    /** Spawn weight for a template whose JSON entry leaves {@code probability} out. */
+    public static final int DEFAULT_PROBABILITY = 10;
+
+    /**
+     * An entry without a {@code probability} gets {@link #DEFAULT_PROBABILITY}; an
+     * explicit {@code "probability": 0} is kept, so 0 in the data means "never from the
+     * world roll". Before #195 the loaders rewrote every 0 to 10, which made 0 a dead knob.
+     */
+    public static void applyDefaultProbability(JsonValue entry, ItemTemplate template) {
+        if (!entry.has("probability")) {
+            template.probability = DEFAULT_PROBABILITY;
+        }
+    }
+
     private void crossAlias(ItemType a, ItemType b) {
         if (itemTemplates.containsKey(a) && !itemTemplates.containsKey(b)) {
             itemTemplates.put(b, itemTemplates.get(a));
@@ -333,12 +340,9 @@ public class ItemDataManager {
             ItemType type = entry.key;
             ItemTemplate t = entry.value;
             if (t == null) continue;
-            if (type == ItemType.AXE) {
-                t.unlockGated = false;
-                continue;
-            }
-            int score = UnlockManager.calculateItemScore(t);
-            t.unlockGated = (score >= UnlockManager.UNLOCK_SCORE_THRESHOLD);
+            // Gated by tier, not by a bare score threshold (#196): the base pool is tier 0.
+            t.lootTier = LootTiers.tierOf(type.name(), t);
+            t.unlockGated = t.lootTier > 0;
         }
     }
 
@@ -470,10 +474,7 @@ public class ItemDataManager {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Warrior's Red Die");
         }
         // 3. Guardian's Steel Die
-        else if (type == ItemType.SMALL_SHIELD || type == ItemType.LARGE_SHIELD
-                || type == ItemType.SHIELD_SMALL || type == ItemType.SHIELD_LARGE
-                || type == ItemType.SHIELD || type == ItemType.SHIELD_MEDIUM
-                || type == ItemType.SHIELD_BODY || type == ItemType.BUCKLER) {
+        else if (Item.isShieldType(type)) {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Guardian's Steel Die");
         }
         // 4. Archer's Precision Die
@@ -922,6 +923,23 @@ public class ItemDataManager {
      * @param level The current dungeon level.
      * @return A valid ItemVariant, or null if none are found.
      */
+    /**
+     * The colour a newly generated item is placed with: a level-fitting variant's colour,
+     * or the EDL colour roll when the template has no variants. Templates without
+     * variants (Tinder Bundle, Meat, the *_ARMS pieces ...) used to be dropped by the
+     * spawner, which left their rolls empty (#195).
+     */
+    public ItemColor getSpawnColor(ItemType type, int level) {
+        ItemTemplate template = getTemplate(type);
+        if (template != null && template.variants != null && !template.variants.isEmpty()) {
+            ItemVariant variant = getRandomVariantForItem(type, level);
+            if (variant != null && variant.color != null) {
+                return variant.color;
+            }
+        }
+        return getColorForEDL(level);
+    }
+
     public ItemVariant getRandomVariantForItem(ItemType type, int level) {
         ItemTemplate template = getTemplate(type);
         if (template.variants == null || template.variants.isEmpty()) {
@@ -1121,7 +1139,7 @@ public class ItemDataManager {
             cross.description = "A simple wooden cross that channels spiritual energy against chaotic fiends.";
             cross.texturePath = "images/weapons/wooden_cross.png";
             cross.isWeapon = true;
-            cross.damageDice = "1d4";
+            cross.damageDice = "1d4+1";
             cross.baseValue = 10;
             cross.scale = createDefaultScale();
             cross.spriteData = new String[] {
@@ -1171,6 +1189,13 @@ public class ItemDataManager {
             itemTemplates.put(ItemType.CORPSE, t);
         }
 
+        // Tiered Keys (Item 48)
+        ItemTemplate baseKey = itemTemplates.get(ItemType.KEY);
+        createKeyTemplate(ItemType.IRON_KEY, "Iron Key", "A sturdy iron key. Unlocks basic security chests and boxes.", 15, baseKey);
+        createKeyTemplate(ItemType.SILVER_KEY, "Silver Key", "An ornate silver key. Unlocks standard treasure chests.", 45, baseKey);
+        createKeyTemplate(ItemType.GOLD_KEY, "Gold Key", "A gleaming gilded key. Unlocks high-tier chests and gilded vaults.", 120, baseKey);
+        createKeyTemplate(ItemType.SKELETON_KEY, "Skeleton Key", "A master key crafted from spectral alloy. Unlocks any standard container.", 350, baseKey);
+
         // Resources
         createResourceTemplate(ItemType.MEAT, "Meat", "Raw meat.", ItemType.FOOD);
         createResourceTemplate(ItemType.COOKED_MEAT, "Cooked Meat", "Savory cooked meat.", ItemType.FOOD);
@@ -1193,6 +1218,12 @@ public class ItemDataManager {
 
         // Debris fallback (just in case)
         createResourceTemplate(ItemType.STICK, "Stick", "A wooden stick.", null);
+        createResourceTemplate(ItemType.FIREWOOD, "Firewood Bundle", "Dry split logs harvested from the frozen wilderness. Essential fuel for kindling campfires.", ItemType.STICK);
+        ItemTemplate woodTmpl = itemTemplates.get(ItemType.FIREWOOD);
+        if (woodTmpl != null) {
+            woodTmpl.isUsable = true;
+            woodTmpl.baseValue = 5;
+        }
         createResourceTemplate(ItemType.SMALL_ROCK, "Rock", "A small rock.", null);
         createResourceTemplate(ItemType.FLINT_SHARD, "Flint", "Sharp stone.", ItemType.SMALL_ROCK);
         createResourceTemplate(ItemType.BROKEN_HILT, "Hilt", "Broken hilt.", ItemType.KNIFE);
@@ -1258,6 +1289,17 @@ public class ItemDataManager {
                 "A heavy iron-clasped grimoire containing high arcanum formulas. Heavy cargo. Unlocks Spell Slot 4.", 30.0f);
         registerTomeTemplate(ItemType.TOME_OF_TARMIN, "Tome of Tarmin",
                 "The legendary grand grimoire of Castle Tarmin itself, radiating forbidden power. Heavy cargo. Unlocks Spell Slot 5.", 35.0f);
+
+        // Fragments of the Maze's history (stand-in art: book and scroll)
+        registerFragmentTemplate(ItemType.CHRONICLE_PAGE, "Chronicle Page",
+                "A page torn from some house's chronicle. Read it to learn what it tells.", ItemType.BOOK);
+        registerFragmentTemplate(ItemType.HERALD_PROCLAMATION, "Herald's Proclamation",
+                "A proclamation of one of the Maze's houses, nailed up for all to read.", ItemType.SCROLL);
+        registerFragmentTemplate(ItemType.TORN_BANNER, "Torn Banner",
+                "A house banner left on a battlefield. Its stains tell a story.", ItemType.SCROLL);
+        registerFragmentTemplate(ItemType.SIGNET_RING, "Signet Ring",
+                "A house's signet, taken from its broken army. Merchants pay well for one.", ItemType.SMALL_RING);
+        itemTemplates.get(ItemType.SIGNET_RING).baseValue = 120;
 
         // --- Open5e Potions ---
         registerPotionTemplate(ItemType.POTION_GREATER_HEALING, "Potion of Greater Healing", "Restores 4d4+4 HP (min 35%).", 150);
@@ -1375,6 +1417,23 @@ public class ItemDataManager {
         }
     }
 
+    private void registerFragmentTemplate(ItemType type, String name, String desc, ItemType artFrom) {
+        if (itemTemplates.containsKey(type)) return;
+        ItemTemplate t = new ItemTemplate();
+        t.friendlyName = name;
+        t.description = desc;
+        t.baseValue = 5;
+        t.weight = 0.1f;
+        t.scale = createDefaultScale();
+        ItemTemplate ref = itemTemplates.get(artFrom);
+        if (ref == null) ref = itemTemplates.get(ItemType.SCROLL);
+        if (ref != null) {
+            t.texturePath = ref.texturePath;
+            t.spriteData = ref.spriteData;
+        }
+        itemTemplates.put(type, t);
+    }
+
     private void registerTomeTemplate(ItemType type, String name, String desc, float weight) {
         if (!itemTemplates.containsKey(type)) {
             ItemTemplate tome = new ItemTemplate();
@@ -1399,6 +1458,26 @@ public class ItemDataManager {
                 };
             }
             itemTemplates.put(type, tome);
+        }
+    }
+
+    private void createKeyTemplate(ItemType type, String name, String desc, int value, ItemTemplate baseKey) {
+        if (!itemTemplates.containsKey(type)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = name;
+            t.description = desc;
+            t.baseValue = value;
+            t.isKey = true;
+            t.isUsable = false;
+            t.scale = createDefaultScale();
+            if (baseKey != null) {
+                t.texturePath = baseKey.texturePath;
+                t.spriteData = baseKey.spriteData;
+                t.scale = baseKey.scale;
+            } else {
+                t.texturePath = "images/items/key.png";
+            }
+            itemTemplates.put(type, t);
         }
     }
 

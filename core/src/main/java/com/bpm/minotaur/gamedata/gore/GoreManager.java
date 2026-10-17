@@ -29,11 +29,12 @@ public class GoreManager {
 
     public static final Color UNIFIED_BLOOD_COLOR = new Color(0.77f, 0.12f, 0.12f, 1.0f);
 
-    // --- High-Performance Pool Budgets ---
-    public static final int MAX_ACTIVE_PARTICLES = 250;
-    public static final int MAX_ACTIVE_GIBS = 40;
-    public static final int MAX_ACTIVE_SURFACE_DECALS = 200;
-    public static final int MAX_ACTIVE_WALL_DECALS = 100;
+    // --- High-Performance Pool Budgets (at GoreLevel.NORMAL; see GoreLevel#budget) ---
+    // Blood stays until recycled, so these decide how painted a room can get.
+    public static final int MAX_ACTIVE_PARTICLES = 400;
+    public static final int MAX_ACTIVE_GIBS = 150;
+    public static final int MAX_ACTIVE_SURFACE_DECALS = 600;
+    public static final int MAX_ACTIVE_WALL_DECALS = 400;
 
     // --- Entity Pools ---
     private final Pool<BloodParticle> particlePool = new Pool<BloodParticle>(64, MAX_ACTIVE_PARTICLES) {
@@ -77,7 +78,130 @@ public class GoreManager {
     private final Array<TextureRegion> gibTextures = new Array<>();
     private TextureRegion spatterTexture;
 
+    // Scratch state reused by every spawn: a burst of 60 drops must not
+    // allocate 120 objects in the frame combat is busiest (guide, "Zero
+    // Allocations"). Pool.obtain() + init() copy out of these.
+    private final Vector3 tmpVel = new Vector3();
+    private final Vector3 tmpDir = new Vector3();
+    private final Vector3 tmpPos = new Vector3();
+    private final Color tmpColor = new Color();
+    private final GridPoint2 tmpChunkId = new GridPoint2();
+    private static final Color BONE_TINT = new Color(0.90f, 0.88f, 0.80f, 1.0f);
+
+    // Where the player stands, in world coordinates (x, maze-y). A full pool
+    // recycles whatever lies farthest from here, so the fight in front of the
+    // player is never the blood that disappears.
+    private float viewerX, viewerZ;
+    private boolean hasViewer;
+
     public GoreManager() {
+    }
+
+    /** Told when gore makes a sound-worthy moment; the gore model itself stays silent. */
+    public interface Listener {
+        void onGibLanded();
+    }
+
+    private Listener listener;
+    /** A gib burst lands as a patter, not forty simultaneous thuds. */
+    private static final float GIB_LAND_SOUND_GAP = 0.07f;
+    private float gibLandCooldown;
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
+    public void setViewer(float worldX, float worldZ) {
+        this.viewerX = worldX;
+        this.viewerZ = worldZ;
+        this.hasViewer = true;
+    }
+
+    private static int particleBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_PARTICLES);
+    }
+
+    private static int gibBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_GIBS);
+    }
+
+    private static int surfaceBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_SURFACE_DECALS);
+    }
+
+    private static int wallBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_WALL_DECALS);
+    }
+
+    private float viewerDist2(float x, float z) {
+        float dx = x - viewerX;
+        float dz = z - viewerZ;
+        return dx * dx + dz * dz;
+    }
+
+    private void makeRoomForGib() {
+        while (activeGibs.size >= gibBudget() && activeGibs.size > 0) {
+            int victim = 0;
+            if (hasViewer) {
+                float best = -1f;
+                for (int i = 0; i < activeGibs.size; i++) {
+                    Gib g = activeGibs.get(i);
+                    float d = viewerDist2(g.position.x, g.position.z);
+                    if (d > best) {
+                        best = d;
+                        victim = i;
+                    }
+                }
+            }
+            gibPool.free(activeGibs.removeIndex(victim));
+        }
+    }
+
+    private void makeRoomForSurfaceDecal() {
+        while (activeSurfaceDecals.size >= surfaceBudget() && activeSurfaceDecals.size > 0) {
+            int victim = 0;
+            if (hasViewer) {
+                float best = -1f;
+                for (int i = 0; i < activeSurfaceDecals.size; i++) {
+                    SurfaceDecal d = activeSurfaceDecals.get(i);
+                    float dist = viewerDist2(d.position.x, d.position.z);
+                    if (dist > best) {
+                        best = dist;
+                        victim = i;
+                    }
+                }
+            }
+            surfaceDecalPool.free(activeSurfaceDecals.removeIndex(victim));
+        }
+    }
+
+    private void makeRoomForWallDecal() {
+        while (activeWallDecals.size >= wallBudget() && activeWallDecals.size > 0) {
+            int victim = 0;
+            if (hasViewer) {
+                float best = -1f;
+                for (int i = 0; i < activeWallDecals.size; i++) {
+                    WallDecal w = activeWallDecals.get(i);
+                    float dist = viewerDist2(w.gridX + 0.5f, w.gridY + 0.5f);
+                    if (dist > best) {
+                        best = dist;
+                        victim = i;
+                    }
+                }
+            }
+            removeWallDecalAt(victim);
+        }
+    }
+
+    private void removeWallDecalAt(int index) {
+        WallDecal old = activeWallDecals.removeIndex(index);
+        int oldKey = (old.gridX * 1000 + old.gridY) * 2 + old.side;
+        Array<WallDecal> list = wallDecalsByKey.get(oldKey);
+        if (list != null) {
+            list.removeValue(old, true);
+            if (list.size == 0) wallDecalsByKey.remove(oldKey);
+        }
+        wallDecalPool.free(old);
     }
 
     public void setTextures(TextureAtlas atlas) {
@@ -129,6 +253,10 @@ public class GoreManager {
 
     // --- Spawn API ---
 
+    private static boolean goreOff() {
+        return !GoreLevel.current().enabled();
+    }
+
     public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
         spawnBloodSpray(origin, direction, intensity, GoreProfile.FLESH);
     }
@@ -138,11 +266,12 @@ public class GoreManager {
 
         // Incorporeal creatures emit no blood or particles
         if (profile == GoreProfile.INCORPOREAL) return;
+        if (goreOff()) return;
 
-        int count = Math.max(3, intensity * 6);
+        int count = GoreLevel.current().count(Math.max(6, intensity * 12));
 
         // Budget check
-        int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
+        int availableSlots = particleBudget() - activeParticles.size;
         count = Math.min(count, availableSlots);
         if (count <= 0) return;
 
@@ -155,9 +284,9 @@ public class GoreManager {
             float spreadZ = MathUtils.random(-0.4f, 0.4f);
             float speed = MathUtils.random(3.0f, 8.5f);
 
-            Vector3 vel = new Vector3(direction).scl(0.65f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
+            Vector3 vel = tmpVel.set(direction).scl(0.65f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
-            Color particleColor = new Color(baseColor);
+            Color particleColor = tmpColor.set(baseColor);
             if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL) {
                 float roll = MathUtils.random();
                 if (roll < 0.25f) {
@@ -199,14 +328,15 @@ public class GoreManager {
         if (profile == null) profile = GoreProfile.FLESH;
         if (!profile.hasBlood) return;
         if (profile == GoreProfile.INCORPOREAL) return;
+        if (goreOff()) return;
 
-        int count = MathUtils.clamp(4 + damage / 3, 4, 12);
-        int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
+        int count = GoreLevel.current().count(MathUtils.clamp(8 + damage * 2 / 3, 8, 24));
+        int availableSlots = particleBudget() - activeParticles.size;
         count = Math.min(count, availableSlots);
         if (count <= 0) return;
 
         Color baseColor = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
-        Vector3 outDir = (surfaceNormal != null && !surfaceNormal.isZero()) ? new Vector3(surfaceNormal).nor() : new Vector3(0, 0.3f, 1).nor();
+        Vector3 outDir = (surfaceNormal != null && !surfaceNormal.isZero()) ? tmpDir.set(surfaceNormal).nor() : tmpDir.set(0, 0.3f, 1).nor();
 
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
@@ -216,9 +346,9 @@ public class GoreManager {
             float spreadZ = MathUtils.random(-0.5f, 0.5f);
             float speed = MathUtils.random(2.5f, 6.5f);
 
-            Vector3 vel = new Vector3(outDir).scl(0.7f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
+            Vector3 vel = tmpVel.set(outDir).scl(0.7f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
-            Color particleColor = new Color(baseColor);
+            Color particleColor = tmpColor.set(baseColor);
             if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL) {
                 float roll = MathUtils.random();
                 if (roll < 0.35f) {
@@ -251,22 +381,20 @@ public class GoreManager {
     public void spawnGibExplosion(Vector3 origin, Vector3 exitVector, int overkillTier, GoreProfile profile) {
         if (profile == null) profile = GoreProfile.FLESH;
         if (!profile.hasGibs) return;
+        if (goreOff()) return;
 
-        int count = (overkillTier >= 2) ? MathUtils.random(7, 12) : MathUtils.random(3, 6);
+        int count = GoreLevel.current().count((overkillTier >= 2) ? MathUtils.random(7, 12) : MathUtils.random(3, 6));
 
         Color tint = (profile == GoreProfile.SKELETAL)
-                ? new Color(0.90f, 0.88f, 0.80f, 1.0f) // Ivory bone tint
+                ? BONE_TINT // Ivory bone tint
                 : Color.WHITE;
 
         Vector3 exitNorm = (exitVector != null && exitVector.len2() > 0.001f)
-                ? new Vector3(exitVector).nor()
+                ? tmpDir.set(exitVector).nor()
                 : Vector3.Y;
 
         for (int i = 0; i < count; i++) {
-            if (activeGibs.size >= MAX_ACTIVE_GIBS) {
-                Gib oldest = activeGibs.removeIndex(0);
-                gibPool.free(oldest);
-            }
+            makeRoomForGib();
 
             Gib g = gibPool.obtain();
             TextureRegion tex = (gibTextures.size > 0) ? gibTextures.random() : null;
@@ -276,7 +404,7 @@ public class GoreManager {
             float radialSpeed = MathUtils.random(2.0f, 6.5f);
             float up = MathUtils.random(2.5f, 7.5f);
 
-            Vector3 vel = new Vector3(
+            Vector3 vel = tmpVel.set(
                     MathUtils.cos(angle) * radialSpeed + exitNorm.x * 2.0f,
                     up,
                     MathUtils.sin(angle) * radialSpeed + exitNorm.z * 2.0f
@@ -292,16 +420,108 @@ public class GoreManager {
             for (int i = 0; i < Math.min(2, overkillTier); i++) {
                 float ox = MathUtils.random(-0.35f, 0.35f);
                 float oz = MathUtils.random(-0.35f, 0.35f);
-                spawnSurfaceDecal(new Vector3(origin.x + ox, origin.y, origin.z + oz), stainCol, MathUtils.random(0.15f, 0.25f));
+                spawnSurfaceDecal(tmpPos.set(origin.x + ox, origin.y, origin.z + oz), stainCol, MathUtils.random(0.15f, 0.25f));
             }
         }
     }
 
-    public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
-        if (activeGibs.size >= MAX_ACTIVE_GIBS) {
-            Gib oldest = activeGibs.removeIndex(0);
-            gibPool.free(oldest);
+    /**
+     * Gibs tinted for how the body died -- char-black, ice-blue, ash-grey --
+     * with no blood on the floor. Elemental deaths do not bleed.
+     */
+    public void spawnTintedGibs(Vector3 origin, int overkillTier, Color tint) {
+        if (goreOff() || origin == null) return;
+        int count = GoreLevel.current().count((overkillTier >= 2) ? MathUtils.random(8, 12) : MathUtils.random(4, 7));
+        for (int i = 0; i < count; i++) {
+            makeRoomForGib();
+            Gib g = gibPool.obtain();
+            TextureRegion tex = (gibTextures.size > 0) ? gibTextures.random() : null;
+            float angle = MathUtils.random(0, 360) * MathUtils.degreesToRadians;
+            float radialSpeed = MathUtils.random(1.5f, 5.5f);
+            Vector3 vel = tmpVel.set(MathUtils.cos(angle) * radialSpeed, MathUtils.random(2.0f, 6.0f),
+                    MathUtils.sin(angle) * radialSpeed);
+            g.init(origin, vel, tex, tint != null ? tint : Color.WHITE);
+            activeGibs.add(g);
         }
+    }
+
+    /**
+     * A heavy shot's exit wound: gibs and blood blown out of the far side in a
+     * tight cone along {@code exitVector}, fast enough to reach and paint the
+     * wall behind.
+     */
+    public void spawnExitBurst(Vector3 origin, Vector3 exitVector, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff() || origin == null || profile == GoreProfile.INCORPOREAL) return;
+        Vector3 exit = (exitVector != null && exitVector.len2() > 0.001f)
+                ? tmpDir.set(exitVector.x, 0f, exitVector.z).nor()
+                : tmpDir.set(0f, 0f, 1f);
+        float ex = exit.x;
+        float ez = exit.z;
+
+        if (profile.hasGibs) {
+            Color tint = (profile == GoreProfile.SKELETAL) ? BONE_TINT : Color.WHITE;
+            int count = GoreLevel.current().count(MathUtils.random(9, 14));
+            for (int i = 0; i < count; i++) {
+                makeRoomForGib();
+                Gib g = gibPool.obtain();
+                TextureRegion tex = (gibTextures.size > 0) ? gibTextures.random() : null;
+                float speed = MathUtils.random(5.0f, 9.5f);
+                float side = MathUtils.random(-1.6f, 1.6f);
+                Vector3 vel = tmpVel.set(ex * speed - ez * side, MathUtils.random(1.5f, 4.0f), ez * speed + ex * side);
+                g.init(origin, vel, tex, tint);
+                activeGibs.add(g);
+            }
+        }
+        if (profile.hasBlood) {
+            spawnBloodSpray(origin, tmpPos.set(ex, 0.1f, ez), 12, profile);
+        }
+    }
+
+    /**
+     * A puff of fine, fast blood that hangs and fades in the air without
+     * leaving a mark: the volume of a meaty hit at no cost to the decal pools.
+     */
+    public void spawnBloodMist(Vector3 origin, Vector3 direction, int intensity, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff() || origin == null || !profile.hasBlood) return;
+        int count = Math.min(GoreLevel.current().count(6 + intensity * 2), particleBudget() - activeParticles.size);
+        if (count <= 0) return;
+        Color base = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
+        Vector3 dir = (direction != null && direction.len2() > 0.001f) ? tmpDir.set(direction).nor() : tmpDir.set(0, 0.3f, 1).nor();
+        for (int i = 0; i < count; i++) {
+            BloodParticle p = particlePool.obtain();
+            Vector3 vel = tmpVel.set(dir).scl(0.6f)
+                    .add(MathUtils.random(-0.6f, 0.6f), MathUtils.random(-0.1f, 0.7f), MathUtils.random(-0.6f, 0.6f))
+                    .nor().scl(MathUtils.random(4.0f, 9.0f));
+            Color c = tmpColor.set(Math.min(1f, base.r * 1.15f), base.g, base.b, 0.7f);
+            TextureRegion tex = (dropTextures.size > 0) ? dropTextures.random() : null;
+            p.init(origin, vel, c, MathUtils.random(0.18f, 0.40f), MathUtils.random(0.02f, 0.04f), tex);
+            p.mist = true;
+            activeParticles.add(p);
+        }
+    }
+
+    /** Below this share of max HP, a bleeding monster marks every tile it leaves. */
+    public static final float TRAIL_HP_SHARE = 0.30f;
+
+    public static boolean leavesBloodTrail(int hp, int maxHp, GoreProfile profile) {
+        if (profile == null || !profile.hasBlood || !profile.createsFloorStains) return false;
+        return hp > 0 && maxHp > 0 && (float) hp / maxHp < TRAIL_HP_SHARE;
+    }
+
+    /** A wounded monster's blood on the tile it just left, in world coordinates. */
+    public void spawnWoundTrail(float worldX, float worldZ, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff()) return;
+        Color c = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
+        spawnSurfaceDecal(tmpPos.set(worldX + MathUtils.random(-0.25f, 0.25f), SurfaceDecal.FLOOR_Y,
+                worldZ + MathUtils.random(-0.25f, 0.25f)), c, MathUtils.random(0.10f, 0.17f));
+    }
+
+    public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
+        if (goreOff()) return null;
+        makeRoomForGib();
 
         Gib g = gibPool.obtain();
         Color tint = (profile != null && profile.primaryColor != null) ? profile.primaryColor : Color.WHITE;
@@ -312,18 +532,19 @@ public class GoreManager {
 
     public void spawnArterialFountain(Vector3 origin, Vector3 dir, float duration, GoreProfile profile) {
         if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff()) return;
         if (!profile.hasBlood) {
             spawnBloodSpray(origin, dir, 8, profile);
             return;
         }
 
-        int count = Math.min(30, MAX_ACTIVE_PARTICLES - activeParticles.size);
+        int count = Math.min(GoreLevel.current().count(60), particleBudget() - activeParticles.size);
         if (count <= 0) return;
 
-        Color fountainColor = new Color(profile.primaryColor);
+        Color fountainColor = tmpColor.set(profile.primaryColor);
         fountainColor.r = Math.min(1.0f, fountainColor.r * 1.3f);
 
-        Vector3 fountainDir = (dir != null && dir.len2() > 0.01f) ? new Vector3(dir).nor() : new Vector3(0, 1, 0);
+        Vector3 fountainDir = (dir != null && dir.len2() > 0.01f) ? tmpDir.set(dir).nor() : tmpDir.set(0, 1, 0);
 
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
@@ -332,7 +553,7 @@ public class GoreManager {
             float spreadZ = MathUtils.random(-0.25f, 0.25f);
             float speed = MathUtils.random(5.0f, 11.0f);
 
-            Vector3 vel = new Vector3(fountainDir.x * 0.4f + spreadX, spreadY, fountainDir.z * 0.4f + spreadZ).nor().scl(speed);
+            Vector3 vel = tmpVel.set(fountainDir.x * 0.4f + spreadX, spreadY, fountainDir.z * 0.4f + spreadZ).nor().scl(speed);
             float size = MathUtils.random(0.04f, 0.08f);
             float life = MathUtils.random(1.0f, 2.5f);
             TextureRegion tex = (dropTextures.size > 0) ? dropTextures.random() : null;
@@ -350,6 +571,7 @@ public class GoreManager {
 
     public void spawnRetroGibs(Vector3 origin, String[] spriteData, Color color) {
         if (spriteData == null || spriteData.length == 0) return;
+        if (goreOff()) return;
 
         int rows = spriteData.length;
         int cols = spriteData[0].length();
@@ -384,13 +606,10 @@ public class GoreManager {
 
         if (isEmpty) return;
 
-        if (activeGibs.size >= MAX_ACTIVE_GIBS) {
-            Gib oldest = activeGibs.removeIndex(0);
-            gibPool.free(oldest);
-        }
+        makeRoomForGib();
 
         Gib g = gibPool.obtain();
-        Vector3 vel = new Vector3(
+        Vector3 vel = tmpVel.set(
                 MathUtils.random(-1f, 1f),
                 MathUtils.random(3f, 6f),
                 MathUtils.random(-1f, 1f)
@@ -451,18 +670,58 @@ public class GoreManager {
     }
 
     public void spawnSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
+        if (goreOff()) return;
+        if (pos != null && growNearbyPuddle(pos, color, targetRadius)) return;
+        placeSurfaceDecal(pos, color, targetRadius, true);
+    }
+
+    /** How near a landing drop must be to an existing puddle to feed it, in tiles. */
+    public static final float PUDDLE_MERGE_RADIUS = 0.25f;
+    /** The largest a puddle grows from merged drops. */
+    public static final float MAX_PUDDLE_RADIUS = 0.6f;
+    /** Share of a drop's area a puddle gains; most of the drop splashes, not pools. */
+    private static final float MERGE_AREA_SHARE = 0.35f;
+
+    /**
+     * Feeds the nearest blood puddle within {@link #PUDDLE_MERGE_RADIUS}
+     * instead of laying a new decal (guide step 4). Without this a spray
+     * reads as scattered dots and fills the pool long before a floor looks
+     * soaked.
+     */
+    private boolean growNearbyPuddle(Vector3 pos, Color color, float radius) {
+        SurfaceDecal nearest = null;
+        float bestD2 = PUDDLE_MERGE_RADIUS * PUDDLE_MERGE_RADIUS;
+        for (int i = 0; i < activeSurfaceDecals.size; i++) {
+            SurfaceDecal d = activeSurfaceDecals.get(i);
+            if (!d.isBlood) continue;
+            float dx = d.position.x - pos.x;
+            float dz = d.position.z - pos.z;
+            float d2 = dx * dx + dz * dz;
+            if (d2 <= bestD2) {
+                bestD2 = d2;
+                nearest = d;
+            }
+        }
+        if (nearest == null) return false;
+
+        float grown = (float) Math.sqrt(nearest.targetSize * nearest.targetSize
+                + MERGE_AREA_SHARE * radius * radius);
+        nearest.feed(Math.min(MAX_PUDDLE_RADIUS, grown));
+        return true;
+    }
+
+    /** A floor mark regardless of the gore level: scorch and frost are not blood. */
+    private void placeSurfaceDecal(Vector3 pos, Color color, float targetRadius, boolean blood) {
         // A doorway has no floor quad and no framing walls, so blood there reads
         // as hanging in the opening rather than lying on the ground.
         if (!canHoldSurfaceDecal(decalMaze, pos)) return;
 
-        if (activeSurfaceDecals.size >= MAX_ACTIVE_SURFACE_DECALS) {
-            SurfaceDecal old = activeSurfaceDecals.removeIndex(0);
-            surfaceDecalPool.free(old);
-        }
+        makeRoomForSurfaceDecal();
 
         SurfaceDecal d = surfaceDecalPool.obtain();
         TextureRegion tex = (smearTextures.size > 0) ? smearTextures.random() : spatterTexture;
         d.init(pos, color, targetRadius, tex);
+        d.isBlood = blood;
         activeSurfaceDecals.add(d);
     }
 
@@ -470,26 +729,18 @@ public class GoreManager {
      * Spawns elemental ground marks (scorch, frost, acid, holy rune) at the specified position.
      */
     public void spawnElementalScorch(Vector3 pos, Color color, float radius) {
-        spawnSurfaceDecal(pos, color, radius);
+        placeSurfaceDecal(pos, color, radius, false);
         for (int i = 0; i < 2; i++) {
             float ox = MathUtils.random(-0.3f, 0.3f);
             float oz = MathUtils.random(-0.3f, 0.3f);
-            Vector3 splatPos = new Vector3(pos.x + ox, pos.y, pos.z + oz);
-            spawnSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f));
+            Vector3 splatPos = tmpPos.set(pos.x + ox, pos.y, pos.z + oz);
+            placeSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f), false);
         }
     }
 
     public void spawnWallDecal(int x, int y, Direction dir, float wallX, float height, float radius, Color color) {
-        if (activeWallDecals.size >= MAX_ACTIVE_WALL_DECALS) {
-            WallDecal old = activeWallDecals.removeIndex(0);
-            int oldKey = (old.gridX * 1000 + old.gridY) * 2 + old.side;
-            Array<WallDecal> list = wallDecalsByKey.get(oldKey);
-            if (list != null) {
-                list.removeValue(old, true);
-                if (list.size == 0) wallDecalsByKey.remove(oldKey);
-            }
-            wallDecalPool.free(old);
-        }
+        if (goreOff()) return;
+        makeRoomForWallDecal();
 
         int side = (dir == Direction.EAST || dir == Direction.WEST) ? 0 : 1;
         int key = (x * 1000 + y) * 2 + side;
@@ -510,6 +761,12 @@ public class GoreManager {
         }
 
         wd.init(x, y, dir, wallX, height, splatRadius, color, tex);
+        if (GoreLevel.current().drips() && wd.radius >= WallDecal.DRIP_MIN_RADIUS && MathUtils.randomBoolean(0.6f)) {
+            boolean toFloor = MathUtils.randomBoolean(0.35f);
+            float gap = wd.floorGap();
+            wd.startDrip(toFloor ? gap : gap * MathUtils.random(0.25f, 0.8f),
+                    MathUtils.random(0.06f, 0.16f), toFloor);
+        }
         wallDecalsByKey.get(key).add(wd);
         activeWallDecals.add(wd);
     }
@@ -583,9 +840,16 @@ public class GoreManager {
                 }
             }
 
+            // Mist disperses where it lands; it is volume in the air, not paint.
+            if (p.mist && (hitDoorThreshold || hitWall || p.onGround || p.lifeTimer <= 0)) {
+                activeParticles.removeIndex(i);
+                particlePool.free(p);
+                continue;
+            }
+
             // Door threshold deflection: closed door/gate drops blood to floor threshold
             if (hitDoorThreshold) {
-                spawnSurfaceDecal(new Vector3(prevX, 0.02f, prevZ), p.color, MathUtils.random(0.14f, 0.22f));
+                spawnSurfaceDecal(tmpPos.set(prevX, 0.02f, prevZ), p.color, MathUtils.random(0.14f, 0.22f));
                 activeParticles.removeIndex(i);
                 particlePool.free(p);
                 continue;
@@ -614,9 +878,10 @@ public class GoreManager {
         }
 
         // 2. Update Floor Surface Decals
+        boolean persistent = GoreLevel.current().persistent();
         for (int i = activeSurfaceDecals.size - 1; i >= 0; i--) {
             SurfaceDecal d = activeSurfaceDecals.get(i);
-            d.update(delta);
+            d.update(delta, persistent);
             if (d.lifeTimer <= 0) {
                 activeSurfaceDecals.removeIndex(i);
                 surfaceDecalPool.free(d);
@@ -626,28 +891,47 @@ public class GoreManager {
         // 3. Update Wall Decals
         for (int i = activeWallDecals.size - 1; i >= 0; i--) {
             WallDecal wd = activeWallDecals.get(i);
-            wd.update(delta);
+            wd.update(delta, persistent);
+            if (wd.takeDripLanding()) {
+                pourDripOntoFloor(wd);
+            }
             if (wd.lifeTimer <= 0) {
-                activeWallDecals.removeIndex(i);
-                int key = (wd.gridX * 1000 + wd.gridY) * 2 + wd.side;
-                Array<WallDecal> list = wallDecalsByKey.get(key);
-                if (list != null) {
-                    list.removeValue(wd, true);
-                    if (list.size == 0) wallDecalsByKey.remove(key);
-                }
-                wallDecalPool.free(wd);
+                removeWallDecalAt(i);
             }
         }
 
         // 4. Update Gibs
+        gibLandCooldown -= delta;
         for (int i = activeGibs.size - 1; i >= 0; i--) {
             Gib g = activeGibs.get(i);
-            g.update(delta);
+            boolean wasAirborne = !g.onGround;
+            g.update(delta, persistent);
+            if (wasAirborne && g.onGround && listener != null && gibLandCooldown <= 0f) {
+                gibLandCooldown = GIB_LAND_SOUND_GAP;
+                listener.onGibLanded();
+            }
             if (g.lifeTimer <= 0) {
                 activeGibs.removeIndex(i);
                 gibPool.free(g);
             }
         }
+    }
+
+    /** A drip that reached the floor pools at the foot of its wall. */
+    private void pourDripOntoFloor(WallDecal wd) {
+        float inset = 0.06f;
+        float x = wd.gridX + 0.5f;
+        float z = wd.gridY + 0.5f;
+        if (wd.dir != null) {
+            switch (wd.dir) {
+                case EAST: x = wd.gridX + 1f - inset; z = wd.gridY + wd.wallX; break;
+                case WEST: x = wd.gridX + inset; z = wd.gridY + wd.wallX; break;
+                case NORTH: x = wd.gridX + wd.wallX; z = wd.gridY + 1f - inset; break;
+                case SOUTH: x = wd.gridX + wd.wallX; z = wd.gridY + inset; break;
+                default: break;
+            }
+        }
+        spawnSurfaceDecal(tmpPos.set(x, SurfaceDecal.FLOOR_Y, z), wd.color, MathUtils.random(0.10f, 0.16f));
     }
 
     private Maze resolveMazeForWorldCell(int worldGridX, int worldGridY, Maze currentMaze, WorldManager worldManager) {
@@ -663,7 +947,7 @@ public class GoreManager {
             return currentMaze;
         }
 
-        return worldManager.getLoadedChunk(new GridPoint2(chunkX, chunkY));
+        return worldManager.getLoadedChunk(tmpChunkId.set(chunkX, chunkY));
     }
 
     private int resolveLocalCoord(int worldCoord, int chunkSize) {
@@ -700,8 +984,10 @@ public class GoreManager {
 
         for (int i = 0; i < activeSurfaceDecals.size; i++) {
             SurfaceDecal d = activeSurfaceDecals.get(i);
+            // z is the maze's second axis; y is height off the floor, and
+            // reading it put every stain in chunk row 0.
             int cx = (int) Math.floor(d.position.x / 36f);
-            int cy = (int) Math.floor(d.position.y / 36f);
+            int cy = (int) Math.floor(d.position.z / 36f);
             if (cx == chunkId.x && cy == chunkId.y) {
                 ChunkData.DecalData data = new ChunkData.DecalData();
                 data.x = d.position.x;
@@ -734,6 +1020,7 @@ public class GoreManager {
                 data.b = d.color.b;
                 data.a = d.color.a;
                 data.lifeTimer = d.lifeTimer;
+                data.dripLength = d.dripLength;
                 chunkData.wallDecals.add(data);
             }
         }
@@ -742,7 +1029,7 @@ public class GoreManager {
             Gib g = activeGibs.get(i);
             if (g.onGround) {
                 int cx = (int) Math.floor(g.position.x / 36f);
-                int cy = (int) Math.floor(g.position.y / 36f);
+                int cy = (int) Math.floor(g.position.z / 36f);
                 if (cx == chunkId.x && cy == chunkId.y) {
                     ChunkData.GibData data = new ChunkData.GibData();
                     data.x = g.position.x;
@@ -763,12 +1050,16 @@ public class GoreManager {
     public void importChunkGore(GridPoint2 chunkId, ChunkData chunkData) {
         if (chunkId == null || chunkData == null) return;
 
+        // The manager outlives chunk loads, so blood from an earlier visit may
+        // still be live; the save is the authority for its chunk.
+        clearChunkGore(chunkId);
+
         if (chunkData.surfaceDecals != null) {
             for (ChunkData.DecalData data : chunkData.surfaceDecals) {
-                if (activeSurfaceDecals.size >= MAX_ACTIVE_SURFACE_DECALS) break;
+                if (activeSurfaceDecals.size >= surfaceBudget()) break;
                 SurfaceDecal decal = surfaceDecalPool.obtain();
                 decal.position.set(data.x, data.y, data.z);
-                decal.color.set(data.r, data.g, data.b, data.a);
+                decal.restoreColor(data.r, data.g, data.b, data.a);
                 decal.size = data.size;
                 decal.initialSize = data.size;
                 decal.targetSize = data.size;
@@ -782,7 +1073,7 @@ public class GoreManager {
 
         if (chunkData.wallDecals != null) {
             for (ChunkData.WallDecalData data : chunkData.wallDecals) {
-                if (activeWallDecals.size >= MAX_ACTIVE_WALL_DECALS) break;
+                if (activeWallDecals.size >= wallBudget()) break;
                 WallDecal decal = wallDecalPool.obtain();
                 Direction dir = Direction.NORTH;
                 try {
@@ -792,6 +1083,9 @@ public class GoreManager {
                 Color c = new Color(data.r, data.g, data.b, data.a);
                 decal.init(data.gridX, data.gridY, dir, data.wallX, data.height, data.radius, c,
                         (smearTextures.size > 0) ? smearTextures.first() : null);
+                decal.restoreColor(data.r, data.g, data.b, data.a);
+                // A saved drip has finished running; it comes back as it was left.
+                decal.dripLength = data.dripLength;
                 decal.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : WallDecal.MAX_WALL_DECAL_LIFE;
                 activeWallDecals.add(decal);
 
@@ -803,7 +1097,7 @@ public class GoreManager {
 
         if (chunkData.gibs != null) {
             for (ChunkData.GibData data : chunkData.gibs) {
-                if (activeGibs.size >= MAX_ACTIVE_GIBS) break;
+                if (activeGibs.size >= gibBudget()) break;
                 Gib gib = gibPool.obtain();
                 gib.position.set(data.x, data.y, data.z);
                 gib.velocity.setZero();
@@ -814,6 +1108,31 @@ public class GoreManager {
                 gib.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : Gib.MAX_GIB_LIFE;
                 gib.textureRegion = (gibTextures.size > 0) ? gibTextures.first() : null;
                 activeGibs.add(gib);
+            }
+        }
+    }
+
+    private static boolean inChunk(float worldX, float worldZ, GridPoint2 chunkId) {
+        return (int) Math.floor(worldX / 36f) == chunkId.x && (int) Math.floor(worldZ / 36f) == chunkId.y;
+    }
+
+    private void clearChunkGore(GridPoint2 chunkId) {
+        for (int i = activeSurfaceDecals.size - 1; i >= 0; i--) {
+            SurfaceDecal d = activeSurfaceDecals.get(i);
+            if (inChunk(d.position.x, d.position.z, chunkId)) {
+                surfaceDecalPool.free(activeSurfaceDecals.removeIndex(i));
+            }
+        }
+        for (int i = activeWallDecals.size - 1; i >= 0; i--) {
+            WallDecal w = activeWallDecals.get(i);
+            if (inChunk(w.gridX, w.gridY, chunkId)) {
+                removeWallDecalAt(i);
+            }
+        }
+        for (int i = activeGibs.size - 1; i >= 0; i--) {
+            Gib g = activeGibs.get(i);
+            if (g.onGround && inChunk(g.position.x, g.position.z, chunkId)) {
+                gibPool.free(activeGibs.removeIndex(i));
             }
         }
     }

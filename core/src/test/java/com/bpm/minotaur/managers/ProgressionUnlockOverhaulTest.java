@@ -234,6 +234,105 @@ public class ProgressionUnlockOverhaulTest {
         assertEquals("Unlocks per run must be capped at 2", 2, unlocks2.size());
     }
 
+    private ItemDataManager loadedItems() {
+        ItemDataManager idm = new ItemDataManager();
+        idm.load();
+        idm.loadWeapons();
+        idm.loadArmor();
+        UnlockManager.getInstance().setItemDataManager(idm);
+        return idm;
+    }
+
+    @Test
+    public void aReturnWithNoMilestoneEarnsNothing() {
+        loadedItems();
+        TelemetryManager telemetry = TelemetryManager.getInstance();
+        telemetry.startNewRun();
+
+        List<ItemType> unlocks = UnlockManager.getInstance()
+                .rollExpeditionUnlockTypes(telemetry, 1, TelemetryManager.Outcome.RETURNED);
+        assertTrue("The guaranteed unlock is the consolation for dying, not for returning",
+                unlocks.isEmpty());
+    }
+
+    @Test
+    public void aReturnPaysOutItsMilestones() {
+        loadedItems();
+        TelemetryManager telemetry = TelemetryManager.getInstance();
+        telemetry.startNewRun();
+        for (int i = 0; i < 120; i++) {
+            telemetry.recordKill("GOBLIN");
+        }
+
+        List<ItemType> unlocks = UnlockManager.getInstance()
+                .rollExpeditionUnlockTypes(telemetry, 1, TelemetryManager.Outcome.RETURNED);
+        assertEquals("One milestone on a return earns one unlock", 1, unlocks.size());
+    }
+
+    @Test
+    public void anAbandonedExpeditionRollsNothing() {
+        loadedItems();
+        TelemetryManager telemetry = TelemetryManager.getInstance();
+        telemetry.startNewRun();
+        for (int i = 0; i < 120; i++) {
+            telemetry.recordKill("GOBLIN");
+        }
+
+        assertTrue(UnlockManager.getInstance()
+                .rollExpeditionUnlockTypes(telemetry, 1, TelemetryManager.Outcome.ABANDONED).isEmpty());
+    }
+
+    @Test
+    public void milestonesAreCountedPerExpedition() {
+        loadedItems();
+        TelemetryManager telemetry = TelemetryManager.getInstance();
+        telemetry.startNewRun();
+        List<List<ItemType>> rolled = new ArrayList<>();
+        TelemetryManager.ExpeditionEndListener previous = telemetry.getExpeditionEndListener();
+        telemetry.setExpeditionEndListener(outcome -> rolled.add(UnlockManager.getInstance()
+                .rollExpeditionUnlockTypes(telemetry, telemetry.getExpeditionMaxDepth(), outcome)));
+        try {
+            // First expedition: 120 kills, then home.
+            telemetry.onTurn(1, 1, true, 20, 5, false, false, false, false);
+            telemetry.onTurn(2, 1, false, 20, 5, false, false, false, false);
+            for (int i = 0; i < 120; i++) {
+                telemetry.recordKill("GOBLIN");
+            }
+            telemetry.onTurn(3, 1, true, 20, 5, false, false, false, false);
+
+            // Second expedition: nothing killed. The first trip's kills must not pay again.
+            telemetry.onTurn(4, 1, false, 20, 5, false, false, false, false);
+            telemetry.onTurn(5, 1, true, 20, 5, false, false, false, false);
+        } finally {
+            telemetry.setExpeditionEndListener(previous);
+        }
+
+        assertEquals("Both returns roll", 2, rolled.size());
+        assertEquals("The kill milestone pays on the return that earned it", 1, rolled.get(0).size());
+        assertTrue("A quiet second trip earns nothing", rolled.get(1).isEmpty());
+    }
+
+    @Test
+    public void aReturnFromBelowTheFirstLevelIsADepthMilestone() {
+        loadedItems();
+        TelemetryManager telemetry = TelemetryManager.getInstance();
+        telemetry.startNewRun();
+        List<List<ItemType>> rolled = new ArrayList<>();
+        TelemetryManager.ExpeditionEndListener previous = telemetry.getExpeditionEndListener();
+        telemetry.setExpeditionEndListener(outcome -> rolled.add(UnlockManager.getInstance()
+                .rollExpeditionUnlockTypes(telemetry, telemetry.getExpeditionMaxDepth(), outcome)));
+        try {
+            telemetry.onTurn(1, 1, false, 20, 5, false, false, false, false);
+            telemetry.onTurn(2, 2, false, 20, 5, false, false, false, false);
+            telemetry.onTurn(3, 1, true, 20, 5, false, false, false, false);
+        } finally {
+            telemetry.setExpeditionEndListener(previous);
+        }
+
+        assertEquals(1, rolled.size());
+        assertEquals(1, rolled.get(0).size());
+    }
+
     @Test
     public void testRunUnlocksDepthBounds() {
         ItemDataManager idm = new ItemDataManager();

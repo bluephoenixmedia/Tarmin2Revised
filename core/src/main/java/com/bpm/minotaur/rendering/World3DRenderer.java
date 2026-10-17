@@ -1,6 +1,7 @@
 package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -39,6 +40,7 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.lighting.LanternShadowBuffer;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.managers.CombatManager;
@@ -46,18 +48,24 @@ import com.bpm.minotaur.managers.DayNightManager;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
-import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.rendering.mesh.BiomeSurfaces;
+import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
+import com.bpm.minotaur.rendering.mesh.SurfaceTextureSet;
+import com.bpm.minotaur.rendering.mesh.WallTextureProvider;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
+import com.bpm.minotaur.rendering.vfx.SlashArcManager;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.weather.WeatherRenderer;
 import com.bpm.minotaur.weather.WeatherType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Full 3D Planar World Rendering Pipeline.
@@ -78,13 +86,66 @@ public class World3DRenderer implements Disposable {
 
     // Textures
     private final Texture wallTexture;
-    private final Texture forestWallTexture;
+    private final WallTextureProvider wallVariantProvider;
+    private final SurfaceTextureSet floorTextureSet;
+    private final SurfaceTextureSet ceilingTextureSet;
+    private Texture bloodPoolTexture;
+    /** Scratch regions, reused every frame rather than allocated per corpse. */
+    private final TextureRegion corpseRegion = new TextureRegion();
+    /** Untextured stand-in for gore quads in retro mode; one instance, not one per drop per frame. */
+    private final TextureRegion goreBlankRegion = new TextureRegion();
+    private final TextureRegion bloodPoolRegion = new TextureRegion();
+
+    /** Darkened and drained of colour, so remains read as dead rather than idle. */
+    private static final Color CORPSE_TINT = new Color(0.42f, 0.36f, 0.34f, 1f);
+    // How a body looks for the way it died (CorpseFinish); multiplied over its tint.
+    private static final Color FINISH_CHARRED = new Color(0.20f, 0.16f, 0.15f, 1f);
+    private static final Color FINISH_FROZEN = new Color(0.70f, 0.88f, 1.00f, 1f);
+    private static final Color FINISH_ASH = new Color(0.34f, 0.34f, 0.36f, 1f);
+    private static final Color FINISH_MELTED = new Color(0.40f, 0.80f, 0.32f, 0.9f);
+    /** Share of a laid-down body's sprite, from the top, that a decapitation removes. */
+    private static final float HEADLESS_CROP = 0.28f;
+    private final Color corpseFinishTint = new Color();
+    private static final Color BLOOD_POOL_TINT = new Color(0.45f, 0.05f, 0.06f, 0.85f);
+    /** Squashed toward the floor; the sprite is an upright pose lying down. */
+    private static final float CORPSE_FLATTEN = 0.45f;
+    /** Widened as it flattens, so the body spreads rather than shrinking. */
+    private static final float CORPSE_SPREAD = 1.2f;
+    /**
+     * How wide the widest frame of a death may sprawl, in tiles. A little over
+     * one: a body may spill past its tile's edge, but not across the next one.
+     */
+    private static final float MAX_DEATH_FRAME_WIDTH = 1.3f;
+    /**
+     * The most one rendered frame may move a death on. Loading the sheet or a
+     * hit-pause makes one long frame, which would otherwise skip half the death.
+     */
+    private static final float MAX_DEATH_STEP = 1f / 30f;
+    /** Each wilderness biome's own wall and floor art (forest, desert). */
+    private final BiomeSurfaces biomeSurfaces;
     private final Texture doorTexture;
     private final Texture gateTexture;
     private final Texture floorTexture;
-    private final Texture forestFloorTexture;
+    /** Leaf ceiling over the surface forest; null if the art is missing, leaving the sky open. */
+    private final Texture canopyTexture;
     private final Texture ceilingTexture;
+    private final Texture fluidTexture;
+    private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
     private final Texture blankTexture;
+    /** Soft round falloff for fog puffs, so a cloud is vapour rather than a grid of squares. */
+    private final Texture fogPuffTexture;
+    /** Light shafts through the forest canopy's trail seam: chunky vertical gradient, tinted per frame. */
+    private final Texture shaftTexture;
+    private final TextureRegion shaftRegion;
+    private Maze shaftMaze;
+    private List<GridPoint2> shaftTiles = java.util.Collections.emptyList();
+    private final Vector3 shaftRight = new Vector3();
+    private final Color shaftColor = new Color();
+    // Reused every puff: renderAreaEffects runs each frame over up to a 25x25 tile window with
+    // three billboards a tile, so allocating a Color and a TextureRegion per puff would be
+    // roughly two thousand short-lived objects a frame.
+    private final TextureRegion fogPuffRegion = new TextureRegion();
+    private final Color fogTint = new Color();
 
     /**
      * Authored sigils for the rune above a themed gate, keyed by theme.
@@ -117,7 +178,20 @@ public class World3DRenderer implements Disposable {
     private Model gateLeftDoorModel;
     private Model gateRightDoorModel;
     private Texture gateDiffuseTexture;
+    private final com.bpm.minotaur.rendering.gate.GateUv gateUv = com.bpm.minotaur.rendering.gate.GateUvTunerPanel.loadSaved();
+    private com.bpm.minotaur.rendering.gate.GateUvMeshes gateUvMeshes;
     private final Matrix4 gateTransform = new Matrix4();
+
+    // 3D Ladder Assets
+    private Model ladderModel;
+    private Texture ladderDiffuseTexture;
+    private Texture holeTexture;
+    private final Matrix4 ladderTransform = new Matrix4();
+
+    // 3D Forest Bush Assets
+    private Model forestBushModel;
+    private Texture forestBushDiffuseTexture;
+    private final Matrix4 bushTransform = new Matrix4();
 
     // Optional 3D skybox integration
     private Skybox3DRenderer skybox3DRenderer;
@@ -138,6 +212,33 @@ public class World3DRenderer implements Disposable {
 
     public static final float DEFAULT_FOV = DebugManager.DEFAULT_FOV_3D;
     private float totalTime = 0f;
+
+    /**
+     * How far you can see inside a cloud, in world units.
+     *
+     * <p>About two tiles: a monster one square away is still a shape lunging at you, which is
+     * the difference between obscured and blindfolded, and anything further is gone.
+     */
+    private static final float OBSCURED_FOG_DISTANCE = 2.2f;
+    private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
+    /** Tiles beyond which forest trees are skipped: just past the widest glade fog. */
+    public static final float FOREST_TREE_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 2f;
+    /** Light shafts: faint, a little over half a tile wide, drawn within the glade fog. */
+    private static final float SHAFT_ALPHA = 0.22f;
+    private static final float SHAFT_WIDTH = 0.55f;
+    private static final float SHAFT_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE;
+    /** Ground scatter is ankle-high: past the trail fog it is a speck, not worth a draw. */
+    private static final float SCATTER_RANGE = ForestAtmosphere.TRAIL_FOG_DISTANCE + 2f;
+    /** Desert basins see twice as far, so their ground cover is drawn further out before it would pop in. */
+    private static final float DESERT_SCATTER_RANGE = 14f;
+    /** Lakelands pools see across their open water, so scatter is drawn within pool fog distance. */
+    private static final float LAKELANDS_SCATTER_RANGE = LakelandsAtmosphere.POOL_FOG_DISTANCE;
+    /** Tundra basins see across their open frozen lake, so scatter is drawn within basin fog distance. */
+    private static final float TUNDRA_SCATTER_RANGE = TundraAtmosphere.BASIN_FOG_DISTANCE;
+    /** This frame's fog switch, so a draw that suspends fog can restore it. */
+    private boolean frameFogEnabled = false;
+    /** Castle Tarmin's billboard, seen through the Blight's crimson haze. */
+    private static final Color CASTLE_LANDMARK_TINT = new Color(0.86f, 0.62f, 0.56f, 1f);
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -162,6 +263,14 @@ public class World3DRenderer implements Disposable {
     private final Color rimScratchColor = new Color();
     private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
 
+    // The wilderness biome's own atmosphere (ForestAtmosphere, DesertAtmosphere). Eased so
+    // stepping from a trail into a glade, or a canyon into a basin, opens the fog rather
+    // than snapping it.
+    private Biome lastWildBiome = null;
+    private float wildOpenness = 0f;
+    private final Color wildFogColor = new Color();
+    private final Color wildFogTarget = new Color();
+
     public World3DRenderer() {
         this.camera = new PerspectiveCamera(DebugManager.getInstance().getFov3d(), 1920f, 1080f);
         this.camera.near = 0.05f;
@@ -179,14 +288,8 @@ public class World3DRenderer implements Disposable {
 
         // Initialize Textures with hardware repeat
         this.wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
+        this.wallVariantProvider = new WallTextureProvider(this.wallTexture);
         this.wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-
-        if (Gdx.files.internal("images/forest_cliff.png").exists()) {
-            this.forestWallTexture = new Texture(Gdx.files.internal("images/forest_cliff.png"));
-            this.forestWallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-        } else {
-            this.forestWallTexture = this.wallTexture;
-        }
 
         this.doorTexture = new Texture(Gdx.files.internal("images/door.png"));
         this.gateTexture = new Texture(Gdx.files.internal("images/gate.png"));
@@ -194,21 +297,69 @@ public class World3DRenderer implements Disposable {
         this.floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.floorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
-        if (Gdx.files.internal("images/floor_forest.png").exists()) {
-            this.forestFloorTexture = new Texture(Gdx.files.internal("images/floor_forest.png"));
-            this.forestFloorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        this.biomeSurfaces = BiomeSurfaces.load();
+
+        // canopy_tile.png is derived from the authored canopy.png by
+        // tools/make_canopy_tile.py: the mesh repeats its texture, and the
+        // authored art is an illustration on a transparent 16:9 canvas.
+        String canopyPath = Gdx.files.internal("images/forest/canopy_tile.png").exists()
+                ? "images/forest/canopy_tile.png" : "images/forest/canopy.png";
+        if (Gdx.files.internal(canopyPath).exists()) {
+            this.canopyTexture = new Texture(Gdx.files.internal(canopyPath));
+            this.canopyTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+            this.canopyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         } else {
-            this.forestFloorTexture = this.floorTexture;
+            this.canopyTexture = null;
         }
 
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+
+        // Index 0 is the default the weighting favours, and the set reports
+        // whether that first file actually loaded. Both defaults exist, so both
+        // surfaces are weighted 75/25.
+        this.floorTextureSet = new SurfaceTextureSet(
+                "images/floor.png",
+                "images/floor_1.png", "images/floor_2.png", "images/floor_3.png",
+                "images/floor_4.png", "images/floor_5.png", "images/floor_6.png",
+                "images/floor_7.png", "images/floor_8.png");
+        // The ceiling default is the standard WALL texture, not a ceiling image:
+        // a dungeon ceiling is the same masonry seen from below. The authored
+        // ceiling_N images are the 25% that breaks it up. There is no
+        // ceiling.png, and promoting ceiling_1.jpg to the default put one
+        // arbitrary image on three quarters of every dungeon ceiling.
+        this.ceilingTextureSet = new SurfaceTextureSet(
+                "images/wall.png",
+                "images/ceiling_1.jpg", "images/ceiling_2.jpg", "images/ceiling_3.jpg",
+                "images/ceiling_4.jpg", "images/ceiling_5.jpg", "images/ceiling_6.jpg",
+                "images/ceiling_7.jpg", "images/ceiling_8.jpg");
+
+        for (String poolPath : new String[]{
+                "images/gore/blood_spatter.png", "images/gore/blood_smear1.png"}) {
+            FileHandle poolFh = Gdx.files.internal(poolPath);
+            if (poolFh.exists()) {
+                this.bloodPoolTexture = new Texture(poolFh);
+                break;
+            }
+        }
+
+        FileHandle fluidFh = Gdx.files.internal("images/fluid_ripple.png");
+        if (fluidFh.exists()) {
+            this.fluidTexture = new Texture(fluidFh);
+            this.fluidTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        } else {
+            this.fluidTexture = null;
+        }
 
         Pixmap pix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pix.setColor(Color.WHITE);
         pix.fill();
         this.blankTexture = new Texture(pix);
         pix.dispose();
+
+        this.fogPuffTexture = buildFogPuffTexture();
+        this.shaftTexture = buildShaftTexture();
+        this.shaftRegion = new TextureRegion(shaftTexture);
 
         this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
@@ -217,6 +368,7 @@ public class World3DRenderer implements Disposable {
         loadPortalTextures();
 
         this.meshCache = new WorldMeshCache();
+        this.meshCache.setCanopyTexture(canopyTexture);
         this.dynamicBatcher = new DynamicQuadBatcher();
 
         // Load 3D Skullgate Assets
@@ -234,6 +386,31 @@ public class World3DRenderer implements Disposable {
             if (Gdx.files.internal("models/gate/gate_diffuse.png").exists()) {
                 this.gateDiffuseTexture = new Texture(Gdx.files.internal("models/gate/gate_diffuse.png"));
             }
+            this.gateUvMeshes = new com.bpm.minotaur.rendering.gate.GateUvMeshes(
+                    gateFrameModel, gateLeftDoorModel, gateRightDoorModel);
+            applyGateUv();
+
+            // Load 3D Ladder & Bush Assets
+            if (Gdx.files.internal("models/ladder.obj").exists()) {
+                this.ladderModel = objLoader.loadModel(Gdx.files.internal("models/ladder.obj"));
+            }
+            if (Gdx.files.internal("models/ladder_diffuse.png").exists()) {
+                this.ladderDiffuseTexture = new Texture(Gdx.files.internal("models/ladder_diffuse.png"));
+            }
+            if (Gdx.files.internal("models/forest_bush.obj").exists()) {
+                this.forestBushModel = objLoader.loadModel(Gdx.files.internal("models/forest_bush.obj"));
+            }
+            if (Gdx.files.internal("models/forest_bush_diffuse.png").exists()) {
+                this.forestBushDiffuseTexture = new Texture(Gdx.files.internal("models/forest_bush_diffuse.png"));
+            }
+
+            Pixmap holePix = new Pixmap(128, 128, Pixmap.Format.RGBA8888);
+            holePix.setColor(0, 0, 0, 0);
+            holePix.fill();
+            holePix.setColor(Color.BLACK);
+            holePix.fillCircle(64, 64, 60);
+            this.holeTexture = new Texture(holePix);
+            holePix.dispose();
 
         } catch (Exception e) {
             Gdx.app.error(TAG, "Failed to load 3D assets", e);
@@ -243,6 +420,18 @@ public class World3DRenderer implements Disposable {
             this.skybox3DRenderer = new Skybox3DRenderer();
         } catch (Exception e) {
             Gdx.app.error(TAG, "Failed to initialize Skybox3DRenderer: " + e.getMessage());
+        }
+    }
+
+    /** The hand-tunable texture mapping of the Sector Passage Gate; see GateUvTunerPanel. */
+    public com.bpm.minotaur.rendering.gate.GateUv getGateUv() {
+        return gateUv;
+    }
+
+    /** Re-maps the gate models from {@link #getGateUv()}; call after changing it. */
+    public void applyGateUv() {
+        if (gateUvMeshes != null) {
+            gateUvMeshes.apply(gateUv);
         }
     }
 
@@ -314,20 +503,35 @@ public class World3DRenderer implements Disposable {
     }
 
     private com.bpm.minotaur.rendering.AnimationManager animationManager;
+    private final SlashArcManager slashArcManager = new SlashArcManager();
+    private FirstPersonWeaponOverlay weaponOverlay;
 
     public void setAnimationManager(com.bpm.minotaur.rendering.AnimationManager manager) {
         this.animationManager = manager;
     }
 
+    public SlashArcManager getSlashArcManager() {
+        return slashArcManager;
+    }
+
+    public void setWeaponOverlay(FirstPersonWeaponOverlay overlay) {
+        this.weaponOverlay = overlay;
+    }
+
     /**
-     * Draws in-flight projectiles as camera-facing billboards.
+     * Draws in-flight projectiles in the 3D world.
+     *
+     * <p>Physical ballistics (arrows, crossbow bolts, darts, and thrown weapons) render as
+     * directional, velocity-aligned tracer streaks with bright leading tips that properly orient
+     * down the line of flight. Spell projectiles retain their swirling energy billboard bursts.
      *
      * <p>Runs inside the entity pass so projectiles are depth-tested against walls and monsters --
-     * a bolt passing behind a pillar should be hidden by it.
+     * a bolt passing behind a pillar is occluded by it.
      */
     private void renderProjectiles() {
         if (animationManager == null || blankTexture == null) return;
 
+        boolean hasTracers = false;
         for (com.bpm.minotaur.rendering.Animation a : animationManager.getAnimations()) {
             com.bpm.minotaur.rendering.Animation.AnimationType t = a.getType();
             if (t != com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_PLAYER
@@ -340,53 +544,134 @@ public class World3DRenderer implements Disposable {
             if (from == null || to == null) continue;
 
             float progress = a.getProgress();
-            float mx = from.x + (to.x - from.x) * progress;
-            float my = from.y + (to.y - from.y) * progress;
 
-            // Maze Y maps to world -Z, matching updateCamera and the entity pass.
-            float wx = mx;
-            float wz = -my;
-            // Chest height, so a shot reads as travelling through the room rather than along
-            // the floor.
-            float wy = 0.45f;
+            // Spell projectiles retain their glowing magical energy burst billboard
+            if (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL) {
+                float mx = from.x + (to.x - from.x) * progress;
+                float my = from.y + (to.y - from.y) * progress;
+                float wx = mx;
+                float wz = -my;
+                float wy = 0.45f;
 
-            // A shot leaves the muzzle ~0.6 units from the eye. At that range even a small quad
-            // subtends most of the view, so the first frames of every shot would flash a
-            // screen-filling slab. Hold the sprite back until it has cleared the weapon.
-            float dx = wx - camera.position.x;
-            float dy = wy - camera.position.y;
-            float dz = wz - camera.position.z;
-            float distSq = dx * dx + dy * dy + dz * dz;
-            if (distSq < PROJECTILE_NEAR_CLIP * PROJECTILE_NEAR_CLIP) {
+                float dx = wx - camera.position.x;
+                float dy = wy - camera.position.y;
+                float dz = wz - camera.position.z;
+                float distSq = dx * dx + dy * dy + dz * dz;
+                if (distSq < PROJECTILE_NEAR_CLIP * PROJECTILE_NEAR_CLIP) continue;
+
+                TextureRegion sprite = projectileRegion(a);
+                float dist = (float) Math.sqrt(distSq);
+                float size = Math.min(1.10f, dist * PROJECTILE_ANGULAR_CAP);
+                Color tint = (a.getColor() != null) ? a.getColor() : Color.WHITE;
+                TextureRegion region = (sprite != null) ? sprite : new TextureRegion(blankTexture);
+                Texture bound = (sprite != null) ? sprite.getTexture() : blankTexture;
+
+                shader.setUniformf("u_unlit", 1f);
+                dynamicBatcher.addBillboard(wx, wy, wz, size, size, region, tint, camRight, camUp, camDir);
+                dynamicBatcher.flush(shader, bound);
+                shader.setUniformf("u_unlit", 0f);
                 continue;
             }
 
-            TextureRegion sprite = projectileRegion(a);
-            boolean spell = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL);
+            // Directional ballistics: arrows, bolts, darts, and thrown weapons render as
+            // high-visibility aerodynamic tracer lines facing the camera with a luminous leading tip
+            float sx = from.x;
+            float sz = -from.y;
+            float ex = to.x;
+            float ez = -to.y;
 
-            // The arrow occupies a thin diagonal of a mostly transparent square, so the quad has
-            // to be generous or the arrow itself is a few pixels at range.
-            float baseSize = (sprite != null) ? (spell ? 1.10f : 0.90f) : (spell ? 0.22f : 0.12f);
-            // Shrink rather than hide when close, so a point-blank shot is still drawn.
-            float dist = (float) Math.sqrt(distSq);
-            float size = Math.min(baseSize, dist * PROJECTILE_ANGULAR_CAP);
-            Color tint = (sprite != null)
-                    ? Color.WHITE
-                    : ((a.getColor() != null) ? a.getColor() : Color.WHITE);
+            float dx = ex - sx;
+            float dz = ez - sz;
+            float flightDist = (float) Math.sqrt(dx * dx + dz * dz);
+            if (flightDist < 0.001f) continue;
 
-            TextureRegion region = (sprite != null) ? sprite : new TextureRegion(blankTexture);
-            Texture bound = (sprite != null) ? sprite.getTexture() : blankTexture;
+            float dirX = dx / flightDist;
+            float dirZ = dz / flightDist;
 
-            // Flush per texture: the batcher draws one texture at a time, and arrows, bolts and
-            // spell bursts are three different ones.
-            dynamicBatcher.addBillboard(wx, wy, wz, size, size,
-                    region, tint, camRight, camUp, camDir);
-            dynamicBatcher.flush(shader, bound);
+            float headDist = flightDist * progress;
+            float headX = sx + dirX * headDist;
+            float headZ = sz + dirZ * headDist;
+            float headY = 0.45f;
+
+            boolean isBolt = "bolt".equals(a.getProjectileSprite());
+            float maxStreak = isBolt ? 0.55f : 0.85f;
+            float actualStreak = Math.min(maxStreak, headDist);
+            float tailX = headX - dirX * actualStreak;
+            float tailZ = headZ - dirZ * actualStreak;
+            float tailY = headY;
+
+            // Clip if the projectile head is directly inside or behind the eye
+            float camDx = headX - camera.position.x;
+            float camDy = headY - camera.position.y;
+            float camDz = headZ - camera.position.z;
+            float camDistSq = camDx * camDx + camDy * camDy + camDz * camDz;
+            if (camDistSq < 0.04f) continue;
+
+            Color headCol;
+            Color tailCol;
+            if (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_MONSTER) {
+                if (a.getColor() != null && !Color.WHITE.equals(a.getColor())) {
+                    Color base = a.getColor();
+                    headCol = new Color(Math.min(1f, base.r * 1.3f), Math.min(1f, base.g * 1.3f), Math.min(1f, base.b * 1.3f), 0.98f);
+                    tailCol = new Color(base.r, base.g, base.b, 0.10f);
+                } else {
+                    headCol = new Color(1.0f, 0.60f, 0.30f, 0.98f);
+                    tailCol = new Color(0.85f, 0.20f, 0.10f, 0.10f);
+                }
+            } else if (isBolt) {
+                headCol = new Color(0.96f, 0.98f, 1.0f, 0.98f);
+                tailCol = new Color(0.60f, 0.72f, 0.88f, 0.10f);
+            } else {
+                if (a.getColor() != null && !Color.WHITE.equals(a.getColor()) && !Color.LIGHT_GRAY.equals(a.getColor())) {
+                    Color base = a.getColor();
+                    headCol = new Color(Math.min(1f, base.r * 1.25f), Math.min(1f, base.g * 1.25f), Math.min(1f, base.b * 1.25f), 0.98f);
+                    tailCol = new Color(base.r, base.g, base.b, 0.12f);
+                } else {
+                    headCol = new Color(1.0f, 0.96f, 0.86f, 0.98f);
+                    tailCol = new Color(0.82f, 0.70f, 0.48f, 0.10f);
+                }
+            }
+
+            float headWidth = isBolt ? 0.022f : 0.026f;
+            float tailWidth = isBolt ? 0.008f : 0.010f;
+
+            dynamicBatcher.addTracerStreak(
+                    headX, headY, headZ,
+                    tailX, tailY, tailZ,
+                    headWidth, tailWidth,
+                    camera.position, camRight,
+                    headCol, tailCol
+            );
+
+            // Leading tip point glint
+            float camDist = (float) Math.sqrt(camDistSq);
+            float headPointSize = Math.max(0.035f, Math.min(0.075f, camDist * 0.012f));
+            dynamicBatcher.addBillboard(
+                    headX, headY - headPointSize * 0.5f, headZ,
+                    headPointSize, headPointSize,
+                    new TextureRegion(blankTexture),
+                    headCol, camRight, camUp, camDir
+            );
+            hasTracers = true;
+        }
+
+        if (hasTracers) {
+            shader.setUniformf("u_unlit", 1f);
+            dynamicBatcher.flush(shader, blankTexture);
+            shader.setUniformf("u_unlit", 0f);
         }
     }
 
     public void setDeathSequence(DeathSequence sequence) {
         this.deathSequence = sequence;
+    }
+
+    /** While set, the camera looks out through a barred window instead of from the player's tile. */
+    private WindowLook windowLook;
+    private final Vector2 windowEye = new Vector2();
+
+    public void setWindowLook(WindowLook windowLook) {
+        this.windowLook = windowLook;
     }
 
     public PerspectiveCamera getCamera() {
@@ -409,6 +694,9 @@ public class World3DRenderer implements Disposable {
 
         float delta = Gdx.graphics.getDeltaTime();
         totalTime += delta;
+
+        boolean isMicro = (weaponOverlay != null && weaponOverlay.isMicroDilationActive());
+        slashArcManager.update(delta, isMicro);
 
         // Synchronize player lighting
         LightingManager lm = (worldManager != null) ? worldManager.getLightingManager() : null;
@@ -450,6 +738,65 @@ public class World3DRenderer implements Disposable {
             fogColor.set(biome.getFogColor());
         }
 
+        // A stratum has its own air: spore-green, drowned blue, bone dust, ember smoke (T4.1).
+        com.bpm.minotaur.generation.Stratum stratumHere = maze != null ? maze.getStratum() : null;
+        if (currentLevel > 1 && stratumHere != null && stratumHere.fogColor != null) {
+            fogEnabled = true;
+            fogDistance = stratumHere.fogDistance * getDepthDarknessFactor(currentLevel);
+            fogColor.set(stratumHere.fogColor);
+        }
+
+        // The wilderness surface biomes light themselves. The forest filters the volcanic
+        // light through its canopy into green-black fog; the desert takes it at full force
+        // as amber dust. Both close in along their corridors and open across their clearings.
+        Biome mazeBiome = maze.getBiome();
+        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT || mazeBiome == Biome.LAKELANDS || mazeBiome == Biome.TUNDRA || mazeBiome == Biome.BLIGHT))
+                ? mazeBiome : null;
+        boolean underCanopy = wild == Biome.FOREST;
+        boolean onSand = wild == Biome.DESERT;
+        boolean inTundra = wild == Biome.TUNDRA;
+        boolean inBlight = wild == Biome.BLIGHT;
+        Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+        if (wild != null) {
+            float open = OpenGround.openness(maze,
+                    (int) player.getPosition().x, (int) player.getPosition().y);
+            WeatherType weather = (wm != null) ? wm.getCurrentWeather() : null;
+            Color weatherFog = (wm != null) ? wm.getFogColor() : Color.WHITE;
+            if (underCanopy) {
+                ForestAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else if (onSand) {
+                DesertAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else if (inTundra) {
+                TundraAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else if (inBlight) {
+                BlightAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            } else {
+                LakelandsAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
+            }
+            if (wild == lastWildBiome) {
+                float ease = Math.min(1f, delta * 1.5f);
+                wildOpenness = MathUtils.lerp(wildOpenness, open, ease);
+                wildFogColor.lerp(wildFogTarget, ease);
+            } else {
+                wildOpenness = open;
+                wildFogColor.set(wildFogTarget);
+            }
+            float weatherFogDistance = (wm != null) ? wm.getFogDistance() : Float.MAX_VALUE;
+            fogEnabled = true;
+            fogDistance = underCanopy
+                    ? ForestAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : onSand
+                    ? DesertAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : inTundra
+                    ? TundraAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : inBlight
+                    ? BlightAtmosphere.fogDistance(wildOpenness,
+                            (wm != null) ? wm.getCurrentWeather() : null, weatherFogDistance)
+                    : LakelandsAtmosphere.fogDistance(wildOpenness, weatherFogDistance);
+            fogColor.set(wildFogColor);
+        }
+        lastWildBiome = wild;
+
         float bridgeIntegrity = DoomManager.getInstance().getBridgeIntegrity();
         float doomFactor = 1.0f - ((bridgeIntegrity / 100f) * 0.6f);
         if (bridgeIntegrity > 50) {
@@ -463,13 +810,14 @@ public class World3DRenderer implements Disposable {
         boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
             skybox3DRenderer.setInsideHome(isInsideHome);
+            skybox3DRenderer.alignTo(camera.position, camera.direction, camera.up);
             skybox3DRenderer.render(null, player, viewport, worldManager, DebugManager.getInstance().getRenderMode());
             // Clear depth buffer so the skybox & horizon landmarks remain purely background
             // and all maze geometry (walls, floors, ceilings, doors) renders OVER the skybox.
             Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
         } else {
             // In dungeons or indoors without skybox, clear color & depth cleanly
-            Color clearCol = isIndoors ? new Color(0.04f, 0.04f, 0.06f, 1f) : fogColor;
+            Color clearCol = isIndoors ? new Color(0.003f, 0.003f, 0.006f, 1f) : fogColor;
             Gdx.gl.glClearColor(clearCol.r, clearCol.g, clearCol.b, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         }
@@ -494,7 +842,11 @@ public class World3DRenderer implements Disposable {
         // Damped like the ambient: the rim tints surfaces, it does not repaint them.
         Color rimTint = (dnm != null) ? dnm.getWorldTint(rimScratchColor) : Color.WHITE;
         shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
-        shader.setUniformf("u_skyRimStrength", skyOverhead ? 0.35f : 0f);
+        float rimStrength = skyOverhead ? 0.35f : 0f;
+        if (underCanopy) {
+            rimStrength = ForestAtmosphere.canopyScale(rimStrength, ForestAtmosphere.CANOPY_RIM_SHARE, wildOpenness);
+        }
+        shader.setUniformf("u_skyRimStrength", rimStrength);
 
         // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
         if (isInsideHome) {
@@ -516,7 +868,20 @@ public class World3DRenderer implements Disposable {
 
             // During overcast storms/rain, ambient light takes on a cool slate-blue tint
             float overcastFactor = (wm != null && wm.isPrecipitation()) ? 0.65f : 0.0f;
-            targetAmbientColor.set(skyTint).lerp(overcastTint, overcastFactor);
+            if (underCanopy) {
+                ForestAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+                // The canopy keeps its own colour in the rain; the slate overcast only greys it.
+                overcastFactor *= ForestAtmosphere.CANOPY_OVERCAST_SHARE;
+            } else if (mazeBiome == Biome.LAKELANDS) {
+                LakelandsAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+            } else if (mazeBiome == Biome.TUNDRA) {
+                TundraAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+            } else if (mazeBiome == Biome.BLIGHT) {
+                BlightAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+            } else {
+                targetAmbientColor.set(skyTint);
+            }
+            targetAmbientColor.lerp(overcastTint, overcastFactor);
 
             // Calibrated outdoor ambient intensity (soft, moody, never bleached):
             // - Night storm: ~0.10
@@ -524,6 +889,14 @@ public class World3DRenderer implements Disposable {
             // - Midday storm: ~0.35 - 0.38
             // - Clear midday: ~0.65 - 0.75
             float outdoorAmbientIntensity = MathUtils.clamp(dayAmbient * weatherDim * 0.72f, 0.08f, 0.75f);
+            if (onSand) {
+                // Bleached: the sand throws back far more light than masonry does.
+                outdoorAmbientIntensity *= DesertAtmosphere.BLEACH;
+            }
+            if (underCanopy) {
+                outdoorAmbientIntensity = ForestAtmosphere.canopyScale(outdoorAmbientIntensity,
+                        ForestAtmosphere.CANOPY_AMBIENT_SHARE, wildOpenness);
+            }
             targetAmbientColor.mul(outdoorAmbientIntensity);
 
             // Directional Celestial Light (Sun in daytime, Moon at night)
@@ -534,10 +907,19 @@ public class World3DRenderer implements Disposable {
                     Color sunColor = dnm.getDirectionalLightColor(scratchColor);
                     // Clouds diffuse sunlight during storm, keeping directional light soft
                     float sunIntensity = MathUtils.clamp(sunElevation, 0.15f, 1.0f) * (wm != null && wm.isStormy() ? 0.18f : 0.50f);
+                    if (onSand) sunIntensity *= DesertAtmosphere.BLEACH;
+                    if (underCanopy) {
+                        sunIntensity = ForestAtmosphere.canopyScale(sunIntensity,
+                                ForestAtmosphere.CANOPY_SUN_SHARE, wildOpenness);
+                    }
                     targetDirLightColor.set(sunColor).mul(sunIntensity);
                 } else {
                     dnm.getMoonDirection(targetDirLightDir);
                     float moonIntensity = (wm != null && wm.isStormy() ? 0.06f : 0.18f);
+                    if (underCanopy) {
+                        moonIntensity = ForestAtmosphere.canopyScale(moonIntensity,
+                                ForestAtmosphere.CANOPY_SUN_SHARE, wildOpenness);
+                    }
                     targetDirLightColor.set(0.35f, 0.45f, 0.65f, 1.0f).mul(moonIntensity);
                 }
             } else {
@@ -569,22 +951,63 @@ public class World3DRenderer implements Disposable {
         shader.setUniformf("u_dirLightDir", currentDirLightDir);
         shader.setUniformf("u_dirLightColor", currentDirLightColor.r, currentDirLightColor.g, currentDirLightColor.b);
 
-        // Fog
+        // Fog. Standing inside an obscuring cloud overrides whatever the biome or the weather
+        // wanted: the world closes to about two tiles and goes grey. This is what "heavily
+        // obscured" looks like from the inside, and it is also the whole of the retro-mode
+        // visualisation, which gets no puffs.
+        if (maze != null && player != null
+                && maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
+            fogEnabled = true;
+            fogDistance = OBSCURED_FOG_DISTANCE;
+            fogColor.set(OBSCURED_FOG_COLOR);
+        }
         shader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
+        frameFogEnabled = fogEnabled;
         shader.setUniformf("u_fogDistance", fogDistance);
         shader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
 
-        // Dynamic surface weather modulation
-        float wetness = (wm != null && currentLevel == 1) ? wm.getWetness() : 0.0f;
-        float snowAccum = (wm != null && currentLevel == 1) ? wm.getSnowAccumulation() : 0.0f;
+        // Dynamic surface and subterranean wetness modulation
+        float wetness = 0.0f;
+        if (currentLevel == 1) {
+            wetness = (wm != null) ? wm.getWetness() : 0.0f;
+        } else {
+            // Subterranean Strata / Dungeon Dampness
+            if (wild == Biome.LAKELANDS) {
+                wetness = 0.85f;
+            } else if (inBlight) {
+                wetness = 0.55f;
+            } else {
+                wetness = (currentLevel <= 4) ? 0.35f : 0.20f;
+            }
+            // Proximity to liquid pools: standing near water or muck increases damp sheen
+            if (maze != null && player != null) {
+                int px = (int) player.getPosition().x;
+                int py = (int) player.getPosition().y;
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dy = -2; dy <= 2; dy++) {
+                        if (maze.getLiquidAt(px + dx, py + dy) != com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) {
+                            wetness = Math.max(wetness, 0.80f);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // Snow falls through the canopy but never settles on the forest floor.
+        float snowAccum = (wm != null && currentLevel == 1 && !underCanopy) ? wm.getSnowAccumulation() : 0.0f;
         shader.setUniformf("u_wetness", wetness);
         shader.setUniformf("u_snowAccumulation", snowAccum);
+        shader.setUniformf("u_time", totalTime);
+        shader.setUniformf("u_bumpStrength", isRetro ? 0.0f : 0.35f);
+        shader.setUniformf("u_cloudShadows", (currentLevel == 1 && !isIndoors) ? 1.0f : 0.0f);
 
         // Setup dynamic point lights (including opening gate cyan emissive pulses)
         setupDynamicLights(lm, player, maze);
 
         // --- PASS 1: OPAQUE CHUNK SUB-MESHES & DYNAMIC SLIDING DOORS ---
         shader.setUniformf("u_alphaCutoff", 0.0f);
+        shader.setUniformf("u_vertexCoverage", 0.0f);
+        shader.setUniformf("u_unlit", 0.0f);
 
         RetroTheme.Theme theme = maze.getTheme();
         if (theme == null) theme = RetroTheme.STANDARD_THEME;
@@ -597,26 +1020,42 @@ public class World3DRenderer implements Disposable {
                 isIndoors,
                 wallTexture,
                 floorTexture,
-                forestWallTexture,
-                forestFloorTexture,
+                biomeSurfaces,
                 ceilingTexture,
-                worldManager
+                worldManager,
+                wallVariantProvider,
+                floorTextureSet,
+                ceilingTextureSet
         );
 
         for (ChunkSubMesh subMesh : subMeshes) {
             if (isRetro) {
                 shader.setUniformf("u_retroBorder", 1.0f);
-                if (subMesh.getTexture() == wallTexture || subMesh.getTexture() == forestWallTexture) {
-                    shader.setUniformf("u_retroColor", theme.wall);
-                } else if (subMesh.getTexture() == floorTexture || subMesh.getTexture() == forestFloorTexture) {
-                    shader.setUniformf("u_retroColor", theme.floor);
-                } else {
-                    shader.setUniformf("u_retroColor", theme.ceiling);
+                switch (subMesh.getSurface()) {
+                    case WALL:
+                        shader.setUniformf("u_retroColor", theme.wall);
+                        break;
+                    case FLOOR:
+                        shader.setUniformf("u_retroColor", theme.floor);
+                        break;
+                    default:
+                        shader.setUniformf("u_retroColor", theme.ceiling);
+                        break;
                 }
             } else {
                 shader.setUniformf("u_retroBorder", 0.0f);
             }
+            boolean canopy = subMesh.getSurface() == ChunkSubMesh.Surface.CANOPY;
+            if (canopy) {
+                // Fronds cut out where coverage thins: see CanopyMeshBuilder.
+                shader.setUniformf("u_alphaCutoff", 0.5f);
+                shader.setUniformf("u_vertexCoverage", 1.0f);
+            }
             subMesh.render(shader);
+            if (canopy) {
+                shader.setUniformf("u_alphaCutoff", 0.0f);
+                shader.setUniformf("u_vertexCoverage", 0.0f);
+            }
         }
 
         // Dynamic Doors & Gates
@@ -632,14 +1071,31 @@ public class World3DRenderer implements Disposable {
             shader.setUniformf("u_retroColor", Color.WHITE);
         }
 
-        // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
-        renderLiquids(maze, player, isRetro);
-        renderBiomePortals(maze, player);
+        // A. Gore System: Coplanar Wall Decals, Floor Decals (Blood Pools)
         renderGore(maze, worldManager, isRetro, theme);
 
-        // B. Entities: Monsters, Items, Ladders, Scenery
+        // B. Liquids: Murky shallow water & toxic muck pooling over floor and submerged blood
+        Gdx.gl.glDepthMask(false);
+        renderLiquids(maze, player, isRetro);
+        Gdx.gl.glDepthMask(true);
+
+        renderAreaEffects(maze, player, isRetro);
+        renderBiomePortals(maze, player);
+
+        // C. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
         renderProjectiles();
+
+        if (!isRetro) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+            slashArcManager.render(dynamicBatcher, shader, camRight, camUp, camDir);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        }
+
+        if (underCanopy && !isRetro) {
+            renderLightShafts(maze, player, fullSkyTint, (wm != null) ? wm.getGlobalLightDimmer() : 1f);
+        }
 
         // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
         // Weather particles and splashes spawn strictly on outdoor tiles (never under indoor roofs/shelters).
@@ -693,6 +1149,13 @@ public class World3DRenderer implements Disposable {
             camDir.rotate(camRight, -pitch).nor();
         }
 
+        if (windowLook != null && !dying) {
+            // Face to the bars: the eye leaves the player's tile for the window's embrasure.
+            Vector2 eye = windowLook.eye(windowEye);
+            camera.position.set(eye.x, windowLook.eyeHeight(), -eye.y);
+            windowLook.direction(camDir);
+        }
+
         camera.direction.set(camDir);
 
         camera.up.set(0f, 1f, 0f);
@@ -710,16 +1173,37 @@ public class World3DRenderer implements Disposable {
 
         // Outdoor Tornado Gale-force Wind Vibration / Trauma
         if (wm != null && wm.getCurrentWeather() == WeatherType.TORNADO && !isIndoors) {
-            float traumaAngle = (float) (Math.sin(totalTime * 18.0f) * 0.70f + Math.cos(totalTime * 27.0f) * 0.40f);
+            float shake = com.bpm.minotaur.weather.WeatherManager.TORNADO_SHAKE;
+            float traumaAngle = shake * (float) (Math.sin(totalTime * 18.0f) * 0.70f + Math.cos(totalTime * 27.0f) * 0.40f);
             camera.up.rotate(camera.direction, traumaAngle);
             camera.position.add(
-                    (float) Math.sin(totalTime * 22.0f) * 0.015f,
-                    (float) Math.cos(totalTime * 19.0f) * 0.010f,
-                    (float) Math.sin(totalTime * 25.0f) * 0.015f
+                    shake * (float) Math.sin(totalTime * 22.0f) * 0.015f,
+                    shake * (float) Math.cos(totalTime * 19.0f) * 0.010f,
+                    shake * (float) Math.sin(totalTime * 25.0f) * 0.015f
             );
         }
 
         camera.fieldOfView = DebugManager.getInstance().getFov3d();
+
+        // Melee swing-aligned camera roll & subtle FOV punch on windup
+        boolean isRetro = (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO);
+        if (!isRetro && weaponOverlay != null && weaponOverlay.isActive()) {
+            float atkProg = weaponOverlay.getAttackProgress();
+            if (atkProg > 0f) {
+                // FOV punch during windup (tighter focus, -1.5 degrees)
+                if (atkProg < 0.35f) {
+                    float windupT = 1.0f - (atkProg / 0.35f);
+                    camera.fieldOfView -= (weaponOverlay.isLethalAnticipationActive() ? 2.5f : 1.5f) * windupT;
+                }
+                // Swing-aligned roll in release phase
+                if (atkProg >= 0.20f && atkProg <= 0.80f) {
+                    float swingT = (float) Math.sin((atkProg - 0.20f) / 0.60f * Math.PI);
+                    float roll = (weaponOverlay.isLethalAnticipationActive() ? 1.5f : 1.1f) * swingT;
+                    camera.up.rotate(camera.direction, roll);
+                }
+            }
+        }
+
         camera.viewportWidth = viewport.getWorldWidth();
         camera.viewportHeight = viewport.getWorldHeight();
         camera.update();
@@ -820,11 +1304,74 @@ public class World3DRenderer implements Disposable {
             }
         }
 
+        // Inject dynamic emissive light for nearby hazard liquids (Molten Fire or Toxic Muck)
+        if (maze != null && player != null && count < MAX_LIGHTS) {
+            int px = (int) player.getPosition().x;
+            int py = (int) player.getPosition().y;
+            boolean hasFire = false;
+            boolean hasMuck = false;
+            for (int dx = -5; dx <= 5 && count < MAX_LIGHTS; dx++) {
+                for (int dy = -5; dy <= 5 && count < MAX_LIGHTS; dy++) {
+                    com.bpm.minotaur.gamedata.liquid.LiquidType liq = maze.getLiquidAt(px + dx, py + dy);
+                    if (liq == com.bpm.minotaur.gamedata.liquid.LiquidType.MOLTEN_FIRE && !hasFire) {
+                        hasFire = true;
+                        int idx = count * 3;
+                        lightPosArray[idx]     = (px + dx) + 0.5f;
+                        lightPosArray[idx + 1] = 0.25f;
+                        lightPosArray[idx + 2] = -((py + dy) + 0.5f);
+
+                        float flicker = (float) Math.sin(totalTime * 4.5f + dx) * 0.15f + 0.85f;
+                        lightColorArray[idx]     = 1.0f * flicker;
+                        lightColorArray[idx + 1] = 0.42f * flicker;
+                        lightColorArray[idx + 2] = 0.08f * flicker;
+
+                        lightRadiusArray[count]     = 5.5f;
+                        lightIntensityArray[count] = 1.4f * flicker;
+                        count++;
+                    } else if (liq == com.bpm.minotaur.gamedata.liquid.LiquidType.BLACK_MUCK && !hasMuck) {
+                        hasMuck = true;
+                        int idx = count * 3;
+                        lightPosArray[idx]     = (px + dx) + 0.5f;
+                        lightPosArray[idx + 1] = 0.20f;
+                        lightPosArray[idx + 2] = -((py + dy) + 0.5f);
+
+                        float flicker = (float) Math.sin(totalTime * 3.0f + dy) * 0.15f + 0.85f;
+                        lightColorArray[idx]     = 0.35f * flicker;
+                        lightColorArray[idx + 1] = 0.15f * flicker;
+                        lightColorArray[idx + 2] = 0.45f * flicker;
+
+                        lightRadiusArray[count]     = 4.0f;
+                        lightIntensityArray[count] = 0.9f * flicker;
+                        count++;
+                    }
+                }
+            }
+        }
+
         shader.setUniform3fv("u_lightPos", lightPosArray, 0, count * 3);
         shader.setUniform3fv("u_lightColor", lightColorArray, 0, count * 3);
         shader.setUniform1fv("u_lightRadius", lightRadiusArray, 0, count);
         shader.setUniform1fv("u_lightIntensity", lightIntensityArray, 0, count);
         shader.setUniformi("u_numLights", count);
+
+        boolean isRetro = (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO);
+        boolean playerLightLit = (!isRetro && lm != null && lm.isPlayerLightLit());
+        LanternShadowBuffer shadowBuf = (lm != null) ? lm.getLanternShadowBuffer() : null;
+
+        if (playerLightLit && shadowBuf != null) {
+            Texture shadowTex = shadowBuf.getTexture();
+            if (shadowTex != null) {
+                shadowTex.bind(1);
+                shader.setUniformi("u_shadowMap1D", 1);
+                shader.setUniformf("u_shadowMapEnabled", 1.0f);
+            } else {
+                shader.setUniformf("u_shadowMapEnabled", 0.0f);
+            }
+        } else {
+            shader.setUniformf("u_shadowMapEnabled", 0.0f);
+        }
+
+        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
     }
 
     private void loadRuneTextures() {
@@ -1130,12 +1677,166 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    /** Tiles either side of the player worth drawing fog for. */
+    private static final int FOG_DRAW_RADIUS = 12;
+    /** Stacked billboards per fogged tile. Three reads as a column of vapour; one reads as a card. */
+    private static final int FOG_PUFFS_PER_TILE = 3;
+
+    /**
+     * Draws the obscuring clouds standing in the world.
+     *
+     * <p>Seen from outside, a cloud has to have a visible extent -- an area-denial spell whose
+     * edges you cannot judge cannot be aimed or trusted. Each fogged tile gets a few drifting
+     * billboards at staggered heights, phase-offset by tile coordinate so neighbouring tiles do
+     * not pulse in lockstep and the bank reads as one body of vapour rather than a grid.
+     *
+     * <p>Seen from inside, the puffs are not the effect: the collapsing fog distance in the
+     * shader is (see the uniform block in render()). Puffs are skipped on the player's own tile
+     * so they do not paint over the whole screen at point-blank range.
+     *
+     * <p>Retro mode gets no puffs at all -- the flat grey wash the fog-distance override
+     * produces is the whole of the visualisation there, which is the deliberate trade for not
+     * building volumetrics twice.
+     */
+    private void renderAreaEffects(Maze maze, Player player, boolean isRetro) {
+        if (isRetro || maze == null || !maze.hasAreaEffects() || fogPuffTexture == null) {
+            return;
+        }
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+
+        // Walk the window around the player rather than the whole chunk, the way renderLiquids
+        // does. Scanning 64x64 to discard all but a 25x25 slice is work for nothing, and this
+        // runs every frame.
+        int minX = Math.max(0, px - FOG_DRAW_RADIUS);
+        int maxX = Math.min(maze.getWidth() - 1, px + FOG_DRAW_RADIUS);
+        int minY = Math.max(0, py - FOG_DRAW_RADIUS);
+        int maxY = Math.min(maze.getHeight() - 1, py + FOG_DRAW_RADIUS);
+
+        fogPuffRegion.setRegion(fogPuffTexture);
+        boolean any = false;
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                if (!maze.isObscured(x, y)) {
+                    continue;
+                }
+                // The player's own tile is skipped: at point-blank a puff paints the screen,
+                // and the fog-distance collapse is what conveys being inside the cloud.
+                if (x == px && y == py) {
+                    continue;
+                }
+
+                // A cloud thins as it disperses, so the last turns of one look like the last.
+                float life = Math.min(1f, maze.getAreaEffects().turnsRemainingAt(x, y) / 4f);
+                fogTint.set(0.80f, 0.82f, 0.85f, 0.30f * life);
+
+                for (int i = 0; i < FOG_PUFFS_PER_TILE; i++) {
+                    float phase = totalTime * 0.35f + x * 1.7f + y * 2.3f + i * 2.1f;
+                    float driftX = (float) Math.sin(phase) * 0.18f;
+                    float driftZ = (float) Math.cos(phase * 0.8f) * 0.18f;
+                    float bob = (float) Math.sin(phase * 0.6f) * 0.06f;
+
+                    float height = 0.22f + i * 0.26f + bob;
+                    float size = 0.85f + (float) Math.sin(phase * 0.5f) * 0.12f;
+
+                    dynamicBatcher.addBillboard(
+                            x + 0.5f + driftX, height, -(y + 0.5f) + driftZ,
+                            size, size, fogPuffRegion, fogTint, camRight, camUp, camDir);
+                    any = true;
+                }
+            }
+        }
+
+        if (any) {
+            Gdx.gl.glDepthMask(false);
+            dynamicBatcher.flush(shader, fogPuffTexture);
+            Gdx.gl.glDepthMask(true);
+        }
+    }
+
+    /**
+     * Sky light falling through the canopy's trail seam: a tall additive beam on a
+     * fixed few seam tiles, tinted by the sky so it burns ember-red at dawn and
+     * all but vanishes at night. It stands upright whatever the camera's pitch.
+     */
+    private void renderLightShafts(Maze maze, Player player, Color skyTint, float weatherDim) {
+        if (maze != shaftMaze) {
+            shaftMaze = maze;
+            shaftTiles = CanopyMeshBuilder.shaftTiles(maze);
+        }
+        if (shaftTiles.isEmpty()) return;
+
+        shaftRight.set(camera.direction.x, 0f, camera.direction.z).nor().crs(Vector3.Y).nor();
+        shaftColor.set(skyTint.r, skyTint.g * 0.85f, skyTint.b * 0.7f, SHAFT_ALPHA * weatherDim);
+
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        Gdx.gl.glDepthMask(false);
+        shader.setUniformf("u_unlit", 1f);
+        float range2 = SHAFT_RANGE * SHAFT_RANGE;
+        for (GridPoint2 t : shaftTiles) {
+            float cx = t.x + 0.5f;
+            float cy = t.y + 0.5f;
+            if (player.getPosition().dst2(cx, cy) > range2) continue;
+            dynamicBatcher.addBillboard(cx, 0f, -cy, SHAFT_WIDTH, CanopyMeshBuilder.CANOPY_Y, shaftRegion,
+                    shaftColor, shaftRight, Vector3.Y, camDir);
+        }
+        dynamicBatcher.flush(shader, shaftTexture);
+        shader.setUniformf("u_unlit", 0f);
+        Gdx.gl.glDepthMask(true);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    /** 8x32, brightest at the canopy and fading to the floor, in four hard steps so it reads as pixel art. */
+    private static Texture buildShaftTexture() {
+        int w = 8;
+        int h = 32;
+        Pixmap p = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                float down = 1f - y / (float) (h - 1);
+                float across = 1f - Math.abs(x - (w - 1) / 2f) / (w / 2f);
+                float a = down * down * across;
+                a = Math.round(a * 4f) / 4f;
+                p.setColor(1f, 1f, 1f, a);
+                p.drawPixel(x, y);
+            }
+        }
+        Texture t = new Texture(p);
+        t.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        p.dispose();
+        return t;
+    }
+
+    /** A soft round alpha falloff. Reused for every puff. */
+    private static Texture buildFogPuffTexture() {
+        int size = 32;
+        Pixmap p = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        float c = (size - 1) / 2f;
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                float dx = (x - c) / c;
+                float dy = (y - c) / c;
+                float d = (float) Math.sqrt(dx * dx + dy * dy);
+                float a = Math.max(0f, Math.min(1f, 1f - d));
+                a = a * a;
+                p.setColor(1f, 1f, 1f, a);
+                p.drawPixel(x, y);
+            }
+        }
+        Texture t = new Texture(p);
+        t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        p.dispose();
+        return t;
+    }
+
     private void renderLiquids(Maze maze, Player player, boolean isRetro) {
         if (maze == null || maze.getLiquidManager() == null || blankTexture == null) return;
 
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
-        int radius = 14;
+        int radius = (maze.getBiome() == Biome.LAKELANDS || maze.getBiome() == Biome.TUNDRA) ? 26 : 14;
 
         int minX = Math.max(0, px - radius);
         int maxX = Math.min(maze.getWidth() - 1, px + radius);
@@ -1143,30 +1844,58 @@ public class World3DRenderer implements Disposable {
         int maxY = Math.min(maze.getHeight() - 1, py + radius);
 
         // A gentle swell so the surface reads as liquid rather than a stain.
-        float swell = (float) Math.sin(totalTime * 1.6f) * 0.004f;
-        TextureRegion region = new TextureRegion(blankTexture);
+        float uFlow = totalTime * 0.045f;
+        float vFlow = totalTime * 0.030f;
+        Texture useTex = (fluidTexture != null) ? fluidTexture : blankTexture;
         boolean any = false;
 
+        for (int pass = 0; pass < 2; pass++) {
+        // Pass 0 is every liquid lit by the scene; pass 1 is molten fire, which glows by its own
+        // light (u_unlit) -- under the Blight's red murk a lit chasm darkened into the floor.
+        boolean molten = pass == 1;
+        any = false;
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 com.bpm.minotaur.gamedata.liquid.LiquidType liquid = maze.getLiquidAt(x, y);
                 if (liquid == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) continue;
+                if (liquid.isImpassable() != molten) continue;
                 if (maze.isWall(x, y)) continue;
 
                 Color base = liquid.getColor();
-                float ripple = (float) Math.sin(totalTime * 2.2f + x * 0.7f + y * 0.5f) * 0.06f + 0.94f;
-                Color tint = new Color(base.r * ripple, base.g * ripple, base.b * ripple, base.a);
+                float ripple = (float) Math.sin(totalTime * 2.2f + x * 0.7f + y * 0.5f) * 0.08f + 0.96f;
+                // Specular glint gives water a glistening reflective wave sheen
+                float glint = (float) Math.pow(Math.max(0f, (float) Math.sin(totalTime * 2.8f + x * 1.6f + y * 1.3f)), 4.0) * 0.38f;
+                float r = Math.min(1f, base.r * ripple + glint * 0.75f);
+                float g = Math.min(1f, base.g * ripple + glint * 1.05f);
+                float b = Math.min(1f, base.b * ripple + glint * 1.00f);
+                Color tint = new Color(r, g, b, Math.min(1.0f, base.a * 1.35f));
+                if (molten) {
+                    // Molten fire: a slow churn between deep red-orange and hot yellow-orange, tile by tile.
+                    float churn = 0.5f + 0.5f * (float) Math.sin(totalTime * 1.3f + x * 0.9f + y * 1.7f);
+                    float flare = (float) Math.pow(Math.max(0f, (float) Math.sin(totalTime * 3.1f + x * 2.3f + y * 0.6f)), 6.0);
+                    tint.set(1.0f, 0.22f + 0.30f * churn + 0.25f * flare, 0.03f + 0.10f * flare, 1f);
+                }
+
+                float swell = (float) Math.sin(totalTime * 1.8f + x * 0.5f + y * 0.4f) * 0.005f;
+                float u1 = x * 0.65f + uFlow;
+                float v1 = y * 0.65f + vFlow;
+                float u2 = u1 + 0.65f;
+                float v2 = v1 + 0.65f;
 
                 dynamicBatcher.addFloorQuad(
-                        x + 0.5f, 0.021f + swell, -(y + 0.5f),
+                        x + 0.5f, 0.022f + swell, -(y + 0.5f),
                         0.5f, 0.5f,
-                        region, tint);
+                        u1, v1, u2, v2, tint);
                 any = true;
             }
         }
 
         if (any) {
-            dynamicBatcher.flush(shader, blankTexture);
+            if (molten) shader.setUniformf("u_unlit", 1f);
+            // Fire on plain white, so its colour is its own; the water texture muddied it to lavender.
+            dynamicBatcher.flush(shader, molten ? blankTexture : useTex);
+            if (molten) shader.setUniformf("u_unlit", 0f);
+        }
         }
     }
 
@@ -1180,6 +1909,7 @@ public class World3DRenderer implements Disposable {
 
         Texture currentTex = null;
         Texture blankTex = blankTexture;
+        if (blankTex != null && goreBlankRegion.getTexture() != blankTex) goreBlankRegion.setRegion(blankTex);
         Color retroTint = (theme != null && theme.wall != null) ? theme.wall : Color.WHITE;
 
         // 1. Coplanar Wall Decals
@@ -1224,7 +1954,7 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.addFloorQuad(
                         localX, 0.002f, -localZ,
                         splatSize, splatSize,
-                        region != null ? region : new TextureRegion(blankTex), col
+                        region != null ? region : goreBlankRegion, col
                 );
             }
         }
@@ -1253,7 +1983,7 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.addBillboard(
                         localX, p.position.y, -localZ,
                         pSize, pSize,
-                        region != null ? region : new TextureRegion(blankTex), col,
+                        region != null ? region : goreBlankRegion, col,
                         camRight, camUp, camDir
                 );
             }
@@ -1301,13 +2031,13 @@ public class World3DRenderer implements Disposable {
                     dynamicBatcher.addFloorQuad(
                             localX, 0.003f, -localZ,
                             gibSize * 0.5f, gibSize * 0.5f,
-                            region != null ? region : new TextureRegion(blankTex), col
+                            region != null ? region : goreBlankRegion, col
                     );
                 } else {
                     dynamicBatcher.addRotatedBillboard(
                             localX, Math.max(0.02f, g.position.y), -localZ,
                             gibSize, gibSize,
-                            region != null ? region : new TextureRegion(blankTex), col,
+                            region != null ? region : goreBlankRegion, col,
                             camRight, camUp, camDir,
                             g.rotation
                     );
@@ -1326,7 +2056,16 @@ public class World3DRenderer implements Disposable {
      */
     private float mimicIdlePhase = 0f;
 
+    private static boolean beyondTreeRange(Scenery tree, Player player) {
+        return tree.getPosition().dst2(player.getPosition()) > FOREST_TREE_RANGE * FOREST_TREE_RANGE;
+    }
+
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
+        shader.setUniformMatrix("u_worldTrans", identityMatrix);
+        shader.setUniformf("u_retroBorder", 0.0f);
+        if (isRetro) {
+            shader.setUniformf("u_retroColor", Color.WHITE);
+        }
         mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
 
         List<Renderable> entities = new ArrayList<>();
@@ -1339,7 +2078,19 @@ public class World3DRenderer implements Disposable {
             }
         }
         entities.addAll(maze.getLadders().values());
-        entities.addAll(maze.getScenery().values());
+        // Forest trees past the canopy fog are invisible, so they are not worth a draw.
+        boolean cullTrees = maze.getBiome() == Biome.FOREST && maze.getLevel() == 1;
+        for (Scenery sc : maze.getScenery().values()) {
+            if (cullTrees && sc.getType() == Scenery.SceneryType.TREE && beyondTreeRange(sc, player)) continue;
+            entities.add(sc);
+        }
+        for (Scenery backdrop : maze.getBackdropScenery()) {
+            float range = (maze.getBiome() == Biome.TUNDRA) ? TUNDRA_SCATTER_RANGE
+                    : (maze.getBiome() == Biome.LAKELANDS) ? LAKELANDS_SCATTER_RANGE
+                    : (backdrop.getType() == Scenery.SceneryType.TREE) ? FOREST_TREE_RANGE
+                    : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE : SCATTER_RANGE;
+            if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);
+        }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
             entities.add(maze.getShopkeeper());
         }
@@ -1379,6 +2130,13 @@ public class World3DRenderer implements Disposable {
                         h *= scale;
                     }
 
+                    if (!isRetro) {
+                        w *= m.getKinematicScaleX();
+                        h *= m.getKinematicScaleY();
+                    }
+
+                    float rollDegrees = (!isRetro) ? m.getKinematicRollDegrees() : 0.0f;
+
                     // Hit recoil: spring backward away from the player, fading over ~0.12s
                     float mex = ex, mwz = wz;
                     float hitFlash = m.getHitFlashProgress();
@@ -1395,6 +2153,19 @@ public class World3DRenderer implements Disposable {
                     Color tint = (hitFlash < 1f)
                             ? new Color(1f, 1f - (1f - hitFlash) * 0.4f, 1f - (1f - hitFlash) * 0.4f, 1f)
                             : Color.WHITE;
+                    if (m.isBlighted()) {
+                        tint = new Color(tint).mul(Monster.BLIGHTED_TINT);
+                    }
+                    if (m.isOutOfDepth()) {
+                        tint = new Color(tint).mul(Monster.OUT_OF_DEPTH_TINT);
+                    }
+
+                    float monsterY = 0.0f;
+                    if (m.getType() == Monster.MonsterType.PLAYER_GHOST) {
+                        float floatOffset = (float) Math.sin(System.currentTimeMillis() / 350.0) * 0.05f + 0.08f;
+                        monsterY += floatOffset;
+                        tint = new Color(0.45f, 0.92f, 0.95f, 0.88f);
+                    }
 
                     // Twitchy monster attack telegraph (Eye Flare + Lunge / Retro Threat Aura)
                     if (combatManager != null && combatManager.getAttackIndicatorMonster() == m) {
@@ -1408,20 +2179,39 @@ public class World3DRenderer implements Disposable {
                                 h *= surge;
                                 Color eyeColor = getMonsterEyeFlareColor(m);
                                 tint = new Color(eyeColor).lerp(tint, 1f - pulse);
+
+                                if (!isRetro) {
+                                    Monster.TelegraphArchetype tele = m.getTelegraphArchetype();
+                                    switch (tele) {
+                                        case BEAST_CROUCH:
+                                            h *= (1f - 0.20f * pulse);
+                                            w *= (1f + 0.15f * pulse);
+                                            break;
+                                        case HUMANOID_COIL:
+                                            rollDegrees += 12f * pulse;
+                                            break;
+                                        case COLOSSUS_SEISMIC:
+                                            h *= (1f + 0.25f * pulse);
+                                            w *= (1f - 0.10f * pulse);
+                                            monsterY += 0.08f * pulse;
+                                            break;
+                                        case CASTER_PULSE:
+                                            monsterY += 0.15f * pulse;
+                                            w *= (1f + 0.10f * pulse);
+                                            break;
+                                    }
+                                }
                             } else if (variant == CombatManager.AttackIndicatorVariant.RETRO_AURA) {
                                 tint = new Color(1f, 0.15f * (1f - pulse), 0.15f * (1f - pulse), 1f);
                             }
                         }
                     }
 
-                    float monsterY = 0.0f;
-                    if (m.getType() == Monster.MonsterType.PLAYER_GHOST) {
-                        float floatOffset = (float) Math.sin(System.currentTimeMillis() / 350.0) * 0.05f + 0.08f;
-                        monsterY += floatOffset;
-                        tint = new Color(0.45f, 0.92f, 0.95f, 0.88f);
+                    if (rollDegrees != 0.0f) {
+                        dynamicBatcher.addRotatedBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir, rollDegrees);
+                    } else {
+                        dynamicBatcher.addBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir);
                     }
-
-                    dynamicBatcher.addBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
 
                     // Overhead Health Bar
@@ -1467,7 +2257,10 @@ public class World3DRenderer implements Disposable {
                 ShopkeeperNpc sk = (ShopkeeperNpc) r;
                 Texture tex = sk.getTexture();
                 if (tex != null) {
-                    TextureRegion region = new TextureRegion(tex);
+                    TextureRegion region = sk.getTextureRegion();
+                    if (region == null) {
+                        region = new TextureRegion(tex);
+                    }
                     float w = sk.scale.x;
                     float h = sk.scale.y;
                     dynamicBatcher.addBillboard(ex, 0.0f, wz, w, h, region, Color.WHITE, camRight, camUp, camDir);
@@ -1538,9 +2331,15 @@ public class World3DRenderer implements Disposable {
                         h *= t.modelScale;
                     }
 
-                    // Bounds safety for dungeon floor items
-                    h = Math.max(0.06f, Math.min(0.6f, h));
-                    w = Math.max(0.06f, Math.min(0.8f, w));
+                    // Bounds safety for dungeon floor items. The caps scale with what the
+                    // item's own data asks for, because they exist to stop a stray sprite
+                    // filling the corridor -- not to overrule a prop that is meant to be
+                    // large. A standing piece like the shelter altar declares its height in
+                    // items.json and was silently clipped back to the floor-item cap.
+                    float maxH = 0.6f * Math.max(1f, sy);
+                    float maxW = 0.8f * Math.max(1f, sx);
+                    h = Math.max(0.06f, Math.min(maxH, h));
+                    w = Math.max(0.06f, Math.min(maxW, w));
 
                     // Check if item is at player's feet (same tile as player)
                     float px = player.getPosition().x;
@@ -1599,12 +2398,49 @@ public class World3DRenderer implements Disposable {
                         h *= 1.0f + progress * 0.22f;
                     }
 
-                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, it.getColor(), camRight, camUp, camDir);
+                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, ItemSpriteTint.forItem(it, isRetro), camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Scenery) {
                 Scenery sc = (Scenery) r;
+                if (sc.getType() == Scenery.SceneryType.BUSH && forestBushModel != null
+                        && maze != null && maze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST) {
+                    bushTransform.idt();
+                    bushTransform.translate(ex, 0f, wz);
+                    float bScale = 0.01f * (sc.getScale() != null && sc.getScale().x > 0 ? sc.getScale().x : 1.0f);
+                    bushTransform.scale(bScale, bScale, bScale);
+                    if (sc.isFlippedX()) {
+                        bushTransform.rotate(0f, 1f, 0f, 180f);
+                    }
+
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", theme.floor);
+                        shader.setUniformf("u_retroBorder", 1.0f);
+                    } else {
+                        shader.setUniformf("u_retroBorder", 0.0f);
+                        if (forestBushDiffuseTexture != null) {
+                            forestBushDiffuseTexture.bind(0);
+                            shader.setUniformi("u_diffuseTexture", 0);
+                        }
+                    }
+                    shader.setUniformMatrix("u_worldTrans", bushTransform);
+                    for (Mesh mesh : forestBushModel.meshes) {
+                        mesh.render(shader, GL20.GL_TRIANGLES);
+                    }
+                    shader.setUniformMatrix("u_worldTrans", identityMatrix);
+                    shader.setUniformf("u_retroBorder", 0.0f);
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", Color.WHITE);
+                    }
+                    continue;
+                }
                 Texture tex = sc.getTexture();
+                if (tex == null && sc.getTexturePath() != null && !sc.getTexturePath().isEmpty()) {
+                    tex = getSceneryTexture(sc.getTexturePath());
+                    if (tex != null) {
+                        sc.setTexture(tex);
+                    }
+                }
                 if (tex != null) {
                     TextureRegion reg = new TextureRegion(tex);
                     if (sc.isFlippedX()) {
@@ -1613,6 +2449,12 @@ public class World3DRenderer implements Disposable {
                     Vector2 sceneryScale = sc.getScale();
                     float sw = (sceneryScale != null && sceneryScale.x > 0) ? sceneryScale.x : 1.0f;
                     float sh = (sceneryScale != null && sceneryScale.y > 0) ? sceneryScale.y : 1.0f;
+                    // Forest art is painted on canvases of every shape, and scenery
+                    // scale is not saved with a chunk, so the width comes from the art.
+                    String scPath = sc.getTexturePath();
+                    if (scPath != null && scPath.startsWith("images/forest/") && tex.getHeight() > 0) {
+                        sw = sh * tex.getWidth() / tex.getHeight();
+                    }
 
                     Color tint = Color.WHITE;
                     if (sc.getType() == Scenery.SceneryType.STATUE && maze != null
@@ -1629,55 +2471,224 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
+                    boolean isFloorCorpse = false;
                     float feetY = 0.0f;
-                    if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                    if (sc.isCorpse()) {
                         feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
                     }
 
-                    dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
+                    com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim = sc.isMonsterRemains()
+                            ? com.bpm.minotaur.gamedata.monster.DeathAnimationCatalog.getInstance()
+                                    .forMonsterTexture(sc.getDeathAnimId())
+                            : null;
+                    if (deathAnim != null) {
+                        // Hand-drawn death art: the frame for how long ago the
+                        // monster died, settling on the last frame for good. The art
+                        // already lies on the floor, so none of the laid-down-sprite
+                        // treatment below (flip, tint, flatten, blood pool) applies.
+                        sc.advanceDeathAnimation(Gdx.graphics.getDeltaTime(), MAX_DEATH_STEP,
+                                Gdx.graphics.getFrameId());
+                        int frame = deathAnim.frameAt(sc.getDeathAnimSeconds());
+                        // Frame 0's visible body is sized exactly like the living
+                        // monster's billboard (stretch included), so the swap from
+                        // monster to death is seamless; every other frame shares
+                        // that scale. Every cell has the body centred and the floor
+                        // on its bottom edge, so it stands where the monster stood.
+                        float liveW = sc.getDeathWidth() > 0f ? sc.getDeathWidth() : 0.8f;
+                        float liveH = sc.getDeathHeight() > 0f ? sc.getDeathHeight() : 0.8f;
+                        float unitX = liveW / deathAnim.getBodyWidth();
+                        float unitY = liveH / deathAnim.getBodyHeight();
+                        // One scale for the whole death, set by its widest frame:
+                        // shrinking frame by frame would read as the body receding.
+                        float widest = deathAnim.getWidestFrame() * unitX;
+                        if (widest > MAX_DEATH_FRAME_WIDTH) {
+                            float k = MAX_DEATH_FRAME_WIDTH / widest;
+                            unitX *= k;
+                            unitY *= k;
+                        }
+                        sw = deathAnim.getFrameWidth() * unitX;
+                        sh = deathAnim.getFrameHeight() * unitY;
+                        corpseRegion.setTexture(tex);
+                        corpseRegion.setRegion(deathAnim.frameX(frame), deathAnim.frameY(frame),
+                                deathAnim.getFrameWidth(), deathAnim.getFrameHeight());
+                        reg = corpseRegion;
+                        feetY = 0.0f;
+
+                        // Once the animation finishes, it settles on the ground
+                        // transformed to match the perspective of the player.
+                        if (frame >= deathAnim.getFinalFrame()) {
+                            isFloorCorpse = true;
+                            sw = Math.min(0.92f, sw);
+                            sh = Math.min(0.92f, sh);
+                        }
+                    } else if (sc.isMonsterRemains()) {
+                        isFloorCorpse = true;
+                        corpseRegion.setRegion(reg);
+                        reg = corpseRegion;
+                        tint = CORPSE_TINT;
+                        sw = Math.min(0.85f, sw * 0.85f);
+                        sh = Math.min(0.85f, sh * 0.85f);
+
+                        // Burnt, frozen, ashed and melted bodies did not bleed out, and
+                        // with gore off nothing does.
+                        com.bpm.minotaur.gamedata.gore.CorpseFinish bodyFinish = sc.getCorpseFinish();
+                        boolean bled = com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()
+                                && (bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE
+                                    || bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.HEADLESS);
+                        if (bloodPoolTexture != null && bled) {
+                            bloodPoolRegion.setRegion(bloodPoolTexture);
+                            dynamicBatcher.addFloorBillboard(ex, 0.0022f, wz, sw * 1.25f, sh * 1.25f,
+                                    bloodPoolRegion, BLOOD_POOL_TINT, camRight, camDir);
+                            dynamicBatcher.flush(shader, bloodPoolTexture);
+                        }
+                    } else if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                        isFloorCorpse = true;
+                        sw = 0.85f;
+                        sh = 0.85f;
+                    }
+
+                    com.bpm.minotaur.gamedata.gore.CorpseFinish finish = sc.getCorpseFinish();
+                    if (finish != com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE) {
+                        switch (finish) {
+                            case CHARRED: tint = corpseFinishTint.set(tint).mul(FINISH_CHARRED); break;
+                            case FROZEN: tint = corpseFinishTint.set(tint).mul(FINISH_FROZEN); break;
+                            case ASH: tint = corpseFinishTint.set(tint).mul(FINISH_ASH); break;
+                            case MELTED:
+                                // Sunk into its own slick: lower and wider.
+                                tint = corpseFinishTint.set(tint).mul(FINISH_MELTED);
+                                sh *= 0.45f;
+                                sw *= 1.15f;
+                                break;
+                            case HEADLESS:
+                                // The laid-down body minus its top: the head flew.
+                                if (deathAnim == null && reg == corpseRegion) {
+                                    float v = corpseRegion.getV();
+                                    float v2 = corpseRegion.getV2();
+                                    corpseRegion.setV(v + (v2 - v) * HEADLESS_CROP);
+                                    sh *= (1f - HEADLESS_CROP);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    // A prop that glows (campfire, runestone, glowcaps) draws at its own tint,
+                    // not darkened by the scene's light.
+                    Color glow = sc.getEmissiveTint();
+                    if (glow != null) {
+                        tint = glow;
+                        shader.setUniformf("u_unlit", 1f);
+                    }
+                    // Castle Tarmin is the landmark the Marches are walked toward: it stands
+                    // further off than the murk reaches, so it is drawn through the fog, as
+                    // a silhouette in the haze rather than a lit surface.
+                    boolean landmark = com.bpm.minotaur.generation.BlightChunkGenerator.CASTLE_BILLBOARD_PROP
+                            .equals(sc.getPropId());
+                    if (landmark) {
+                        tint = CASTLE_LANDMARK_TINT;
+                        shader.setUniformf("u_unlit", 1f);
+                        shader.setUniformf("u_fogEnabled", 0f);
+                    }
+                    if (isFloorCorpse) {
+                        dynamicBatcher.addFloorBillboard(ex, 0.0035f, wz, sw, sh, reg, tint, camRight, camDir);
+                    } else {
+                        dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
+                    }
                     dynamicBatcher.flush(shader, tex);
+                    if (glow != null || landmark) {
+                        shader.setUniformf("u_unlit", 0f);
+                    }
+                    if (landmark) {
+                        shader.setUniformf("u_fogEnabled", frameFogEnabled ? 1.0f : 0.0f);
+                    }
                 }
             } else if (r instanceof Ladder) {
                 Ladder ld = (Ladder) r;
                 boolean isUp = (ld.getType() == Ladder.LadderType.UP);
-                Texture tex = isUp ? ladderUpTexture : ladderDownTexture;
-                TextureRegion region = new TextureRegion(tex);
+                if (ladderModel != null) {
+                    float ceilY = (maze != null) ? ChunkMeshBuilder.ceilingHeightFor(maze, (int) ex, (int) ey) : 1.0f;
+                    float holeHalfSize = 0.38f;
+                    if (holeTexture != null) {
+                        if (isUp) {
+                            float holeY = ceilY - 0.005f;
+                            dynamicBatcher.addCeilingQuad(ex, holeY, wz, holeHalfSize, holeHalfSize, 0f, 0f, 1f, 1f, Color.WHITE);
+                        } else {
+                            float holeY = 0.005f;
+                            dynamicBatcher.addFloorQuad(ex, holeY, wz, holeHalfSize, holeHalfSize, 0f, 0f, 1f, 1f, Color.WHITE);
+                        }
+                        dynamicBatcher.flush(shader, holeTexture);
+                    }
 
-                float w = isUp ? 0.8f : 0.85f;
-                float h = isUp ? 1.0f : 0.45f;
+                    ladderTransform.idt();
+                    if (isUp) {
+                        ladderTransform.translate(ex, 0f, wz);
+                        float yScale = (ceilY / 1.6f) * 0.01f;
+                        ladderTransform.scale(0.01f, yScale, 0.01f);
+                    } else {
+                        ladderTransform.translate(ex, -0.6f, wz);
+                        ladderTransform.scale(0.01f, 0.01f, 0.01f);
+                    }
 
-                // Check if ladder is at player's feet (same tile as player)
-                float px = player.getPosition().x;
-                float py = player.getPosition().y;
-                float distSq = (ex - px) * (ex - px) + (ey - py) * (ey - py);
-                boolean atFeet = distSq < 0.15f;
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", isUp ? theme.wall : theme.doorDark);
+                        shader.setUniformf("u_retroBorder", 1.0f);
+                    } else {
+                        shader.setUniformf("u_retroBorder", 0.0f);
+                        if (ladderDiffuseTexture != null) {
+                            ladderDiffuseTexture.bind(0);
+                            shader.setUniformi("u_diffuseTexture", 0);
+                        }
+                    }
+                    shader.setUniformMatrix("u_worldTrans", ladderTransform);
+                    for (Mesh mesh : ladderModel.meshes) {
+                        mesh.render(shader, GL20.GL_TRIANGLES);
+                    }
+                    shader.setUniformMatrix("u_worldTrans", identityMatrix);
+                    shader.setUniformf("u_retroBorder", 0.0f);
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", Color.WHITE);
+                    }
+                } else {
+                    Texture tex = isUp ? ladderUpTexture : ladderDownTexture;
+                    TextureRegion region = new TextureRegion(tex);
 
-                float renderX = ex;
-                float renderZ = wz;
-                float renderFeetY = 0.01f;
+                    float w = isUp ? 0.8f : 0.85f;
+                    float h = isUp ? 1.0f : 0.45f;
 
-                if (atFeet) {
-                    Vector2 dir = player.getDirectionVector();
-                    int playerTileX = (int) px;
-                    int playerTileY = (int) py;
-                    boolean wallInFront = maze != null && maze.isWallBlocking(playerTileX, playerTileY, player.getFacing());
-                    float zOffset = wallInFront ? 0.35f : 0.42f;
+                    // Check if ladder is at player's feet (same tile as player)
+                    float px = player.getPosition().x;
+                    float py = player.getPosition().y;
+                    float distSq = (ex - px) * (ex - px) + (ey - py) * (ey - py);
+                    boolean atFeet = distSq < 0.15f;
 
-                    float halfFovRad = (float) Math.toRadians(camera.fieldOfView * 0.5f);
-                    float targetAngle = halfFovRad * 0.76f;
-                    float deltaY = zOffset * (float) Math.tan(targetAngle);
-                    float targetCenterY = camera.position.y - deltaY;
+                    float renderX = ex;
+                    float renderZ = wz;
+                    float renderFeetY = 0.01f;
 
-                    renderFeetY = Math.max(0.01f, targetCenterY - h * 0.5f);
-                    renderX = px + dir.x * zOffset;
-                    renderZ = -py - dir.y * zOffset;
+                    if (atFeet) {
+                        Vector2 dir = player.getDirectionVector();
+                        int playerTileX = (int) px;
+                        int playerTileY = (int) py;
+                        boolean wallInFront = maze != null && maze.isWallBlocking(playerTileX, playerTileY, player.getFacing());
+                        float zOffset = wallInFront ? 0.35f : 0.42f;
 
-                    h = isUp ? 0.6f : 0.32f;
-                    w = isUp ? 0.5f : 0.60f;
+                        float halfFovRad = (float) Math.toRadians(camera.fieldOfView * 0.5f);
+                        float targetAngle = halfFovRad * 0.76f;
+                        float deltaY = zOffset * (float) Math.tan(targetAngle);
+                        float targetCenterY = camera.position.y - deltaY;
+
+                        renderFeetY = Math.max(0.01f, targetCenterY - h * 0.5f);
+                        renderX = px + dir.x * zOffset;
+                        renderZ = -py - dir.y * zOffset;
+
+                        h = isUp ? 0.6f : 0.32f;
+                        w = isUp ? 0.5f : 0.60f;
+                    }
+
+                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, Color.WHITE, camRight, camUp, camDir);
+                    dynamicBatcher.flush(shader, tex);
                 }
-
-                dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, Color.WHITE, camRight, camUp, camDir);
-                dynamicBatcher.flush(shader, tex);
             }
         }
 
@@ -1687,6 +2698,10 @@ public class World3DRenderer implements Disposable {
             com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry registry = com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance();
             for (int i = 0; i < anims.size(); i++) {
                 Animation anim = anims.get(i);
+                if (anim.getType() == Animation.AnimationType.FX_CLIP_3D && anim.getFxClipId() != null) {
+                    renderFxClip(anim);
+                    continue;
+                }
                 if (anim.getType() == Animation.AnimationType.SPRITE_EXPLOSION_3D && anim.getExplosionType() != null) {
                     TextureRegion frame = registry.getFrame(anim.getExplosionType(), anim.getProgress());
                     if (frame != null && frame.getTexture() != null) {
@@ -1711,6 +2726,36 @@ public class World3DRenderer implements Disposable {
                 }
             }
         }
+        shader.setUniformMatrix("u_worldTrans", identityMatrix);
+        shader.setUniformf("u_retroBorder", 0.0f);
+        if (isRetro) {
+            shader.setUniformf("u_retroColor", Color.WHITE);
+        }
+    }
+
+    /** One frame of a frame-sequence clip, as a camera-facing billboard at the animation's position. */
+    private void renderFxClip(Animation anim) {
+        com.bpm.minotaur.rendering.vfx.FxClips fx = com.bpm.minotaur.rendering.vfx.FxClips.getInstance();
+        TextureRegion frame = fx.getFrame(anim.getFxClipId(), anim.getProgress());
+        if (frame == null || frame.getTexture() == null) {
+            return;
+        }
+        com.bpm.minotaur.rendering.vfx.FxClips.Clip clip = fx.get(anim.getFxClipId());
+        float aspect = (clip != null && clip.frameHeight > 0) ? clip.frameWidth / (float) clip.frameHeight : 1f;
+        float h = anim.getScale3D();
+        float w = h * aspect;
+        Vector3 p3d = anim.getPosition3D();
+        float feetY = Math.max(0.01f, p3d.y - h * 0.5f);
+
+        if (anim.isAdditiveBlend()) {
+            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE);
+        }
+        dynamicBatcher.addBillboard(p3d.x, feetY, -p3d.z, w, h, frame, Color.WHITE, camRight, camUp, camDir);
+        dynamicBatcher.flush(shader, frame.getTexture());
+        if (anim.isAdditiveBlend()) {
+            Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+        }
     }
 
     /** Signature eye-flare color by monster family, mirroring EntityRenderer's palette. */
@@ -1725,6 +2770,23 @@ public class World3DRenderer implements Disposable {
         return new Color(1.0f, 0.15f, 0.15f, 1.0f); // Ruby Red
     }
 
+    private Texture getSceneryTexture(String path) {
+        if (path == null || path.isEmpty()) return null;
+        Texture tex = sceneryTextureCache.get(path);
+        if (tex == null) {
+            try {
+                FileHandle fh = Gdx.files.internal(path);
+                if (fh.exists()) {
+                    tex = new Texture(fh);
+                    sceneryTextureCache.put(path, tex);
+                }
+            } catch (Exception e) {
+                Gdx.app.error(TAG, "Failed to load scenery texture: " + path, e);
+            }
+        }
+        return tex;
+    }
+
     public void invalidateMeshCache() {
         meshCache.invalidate();
     }
@@ -1734,15 +2796,35 @@ public class World3DRenderer implements Disposable {
         shader.dispose();
         meshCache.dispose();
         dynamicBatcher.dispose();
+        slashArcManager.dispose();
 
+        if (wallVariantProvider != null) wallVariantProvider.dispose();
+        if (bloodPoolTexture != null) bloodPoolTexture.dispose();
+        if (floorTextureSet != null) floorTextureSet.dispose();
+        if (ceilingTextureSet != null) ceilingTextureSet.dispose();
         wallTexture.dispose();
-        if (forestWallTexture != null && forestWallTexture != wallTexture) forestWallTexture.dispose();
+        biomeSurfaces.dispose();
         doorTexture.dispose();
         gateTexture.dispose();
         floorTexture.dispose();
-        if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
+        if (canopyTexture != null) canopyTexture.dispose();
         ceilingTexture.dispose();
+
+        if (fluidTexture != null && fluidTexture != blankTexture) {
+            fluidTexture.dispose();
+        }
+
+        for (Texture st : sceneryTextureCache.values()) {
+            if (st != null) st.dispose();
+        }
+        sceneryTextureCache.clear();
         blankTexture.dispose();
+        if (fogPuffTexture != null) {
+            fogPuffTexture.dispose();
+        }
+        if (shaftTexture != null) {
+            shaftTexture.dispose();
+        }
         ladderDownTexture.dispose();
         ladderUpTexture.dispose();
 
@@ -1763,6 +2845,12 @@ public class World3DRenderer implements Disposable {
         if (gateLeftDoorModel != null) gateLeftDoorModel.dispose();
         if (gateRightDoorModel != null) gateRightDoorModel.dispose();
         if (gateDiffuseTexture != null) gateDiffuseTexture.dispose();
+
+        if (ladderModel != null) ladderModel.dispose();
+        if (ladderDiffuseTexture != null) ladderDiffuseTexture.dispose();
+        if (forestBushModel != null) forestBushModel.dispose();
+        if (forestBushDiffuseTexture != null) forestBushDiffuseTexture.dispose();
+        if (holeTexture != null) holeTexture.dispose();
 
 
         if (skybox3DRenderer != null) {

@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -16,6 +17,10 @@ import com.bpm.minotaur.gamedata.item.ShelterChest;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.managers.DivinityManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.List;
 
@@ -49,7 +54,6 @@ public class ShelterChestScreen extends BaseScreen {
     private TextButton storeAllBtn;
 
     private Label divinityBarLabel;
-    private TextButton upgradeLootRetentionBtn;
 
     private Item selectedItem;
     private Side selectedSide;
@@ -91,27 +95,21 @@ public class ShelterChestScreen extends BaseScreen {
         Table header = new Table();
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(18, 24, 18, 24);
-        Label title = new Label("THE SHELTER STASH CHEST", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        Label title = new Label(chest.isCatalog() ? "DEBUG: ONE OF EVERY ITEM" : "THE SHELTER STASH CHEST", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         header.add(title).center().row();
         Label subtitle = new Label("Items stored here persist across expeditions and survive death",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         header.add(subtitle).center().padTop(6).row();
         root.add(header).fillX().padBottom(20).row();
 
-        // --- DIVINITY SHRINE: spend banked Divinities on permanent upgrades ---
+        // --- DIVINITY BALANCE: the Loot Retention upgrade that sat here is gone (#197). Death
+        // is permanent for the Incarnation, and gear comes back only through the Corpse Run;
+        // Divinities are spent at the altar.
         Table shrine = new Table();
         shrine.setBackground(hudSkin.getPanelBg());
         shrine.pad(14, 22, 14, 22);
         divinityBarLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
         shrine.add(divinityBarLabel).left().expandX();
-        upgradeLootRetentionBtn = createActionButton("UPGRADE LOOT RETENTION");
-        upgradeLootRetentionBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                purchaseLootRetentionUpgrade();
-            }
-        });
-        shrine.add(upgradeLootRetentionBtn).width(320).height(48).right();
         root.add(shrine).fillX().padBottom(20).row();
 
         // --- BODY: Chest | Transfer Rail | Backpack ---
@@ -126,16 +124,16 @@ public class ShelterChestScreen extends BaseScreen {
 
         chestRows = new Table();
         chestRows.top().left();
-        ScrollPane chestScroll = new ScrollPane(chestRows);
+        ScrollPane chestScroll = new ScrollPane(chestRows, UiStyles.scrollPane(hudSkin));
         chestScroll.setFadeScrollBars(false);
         chestPanel.add(chestScroll).expand().fill().row();
 
         Label chestHint = new Label("Store gibs and spare gear before descending -- the forge and hearth draw from this chest as well as your pack.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         chestHint.setWrap(true);
-        chestPanel.add(chestHint).width(680).left().padTop(14).row();
+        chestPanel.add(chestHint).growX().left().padTop(14).row();
 
-        body.add(chestPanel).width(760).expandY().fillY().padRight(20);
+        body.add(chestPanel).grow().padRight(20);
 
         // Center transfer rail
         Table centerCol = new Table();
@@ -160,10 +158,13 @@ public class ShelterChestScreen extends BaseScreen {
                 storeAllGibs();
             }
         });
-        centerCol.add(storeBtn).width(210).height(56).padBottom(18).row();
-        centerCol.add(takeBtn).width(210).height(56).padBottom(34).row();
-        centerCol.add(storeAllBtn).width(210).height(64).row();
-        body.add(centerCol).width(230).center();
+        // STASH-3: "STORE ALL GIBS" is wider than the 210 this column used to force on it.
+        // The three buttons share one width so the rail stays a rail, but that width is now the
+        // widest label rather than a guess.
+        centerCol.add(storeBtn).growX().height(UiTheme.BUTTON_H).padBottom(18).row();
+        centerCol.add(takeBtn).growX().height(UiTheme.BUTTON_H).padBottom(34).row();
+        centerCol.add(storeAllBtn).growX().height(UiTheme.BUTTON_H).row();
+        body.add(centerCol).center().padLeft(UiTheme.PAD_MD).padRight(UiTheme.PAD_MD);
 
         Table packPanel = buildColumnPanel();
         packCountLabel = new Label("", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
@@ -174,16 +175,16 @@ public class ShelterChestScreen extends BaseScreen {
 
         packRows = new Table();
         packRows.top().left();
-        ScrollPane packScroll = new ScrollPane(packRows);
+        ScrollPane packScroll = new ScrollPane(packRows, UiStyles.scrollPane(hudSkin));
         packScroll.setFadeScrollBars(false);
         packPanel.add(packScroll).expand().fill().row();
 
         Label packHint = new Label("Click an item, then STORE/TAKE -- or double-click to transfer instantly.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         packHint.setWrap(true);
-        packPanel.add(packHint).width(680).left().padTop(14).row();
+        packPanel.add(packHint).growX().left().padTop(14).row();
 
-        body.add(packPanel).width(760).expandY().fillY();
+        body.add(packPanel).grow();
 
         root.add(body).expand().fill().padBottom(16).row();
 
@@ -191,12 +192,19 @@ public class ShelterChestScreen extends BaseScreen {
         Table footer = new Table();
         footer.setBackground(hudSkin.getPanelBg());
         footer.pad(14, 22, 14, 22);
-        Label keyHints = new Label("[↑↓] SELECT   [ENTER] TRANSFER   [A] STORE ALL GIBS   [ESC] CLOSE CHEST",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        footer.add(keyHints).left().expandX();
-        statusLabel = new Label("Click an item, then [STORE] or [TAKE].",
+        // STASH-7: this line carried literal up/down arrows, which intellivision.ttf has no
+        // glyphs for, so the hint read "[  ] SELECT" with two boxes where the keys should be.
+        // STASH-8: the same instruction also appeared in the status line and in the backpack
+        // hint. One legend, in the safe area, is the whole of it.
+        statusLabel = new Label("",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-        footer.add(statusLabel).right();
+        footer.add(statusLabel).left().expandX();
+        KeyHintLegend legend = new KeyHintLegend(hudSkin)
+                .hint(KeyHintLegend.ARROWS_UD, "Select")
+                .hint("ENTER", "Transfer")
+                .hint("A", "Store gibs")
+                .escapeHint("Close");
+        footer.add(legend).right();
         root.add(footer).fillX();
 
         stage.addActor(root);
@@ -266,15 +274,18 @@ public class ShelterChestScreen extends BaseScreen {
         infoCol.left();
         String displayName = item.getDisplayName();
         if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = item.getType() != null ? item.getType().name() : "Unknown Item";
+            displayName = UiNames.of(item.getType());
         }
-        Label nameLbl = new Label(displayName,
+        Label nameLbl = UiLabels.ellipsized(displayName,
                 new Label.LabelStyle(hudSkin.getFontMain(), isSelected ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_GOLD_ANTIQUE));
-        String typeInfo = item.getType() != null ? item.getType().name() : "";
-        Label codeLbl = new Label(typeInfo, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        infoCol.add(nameLbl).left().row();
-        infoCol.add(codeLbl).left();
-        row.add(infoCol).expandX().left();
+        // STASH-2: this second line used to print the ItemType constant verbatim, so every row
+        // carried a debug id -- and because the font draws underscore as an arrow it read as
+        // "BAT<-GUANO". What a player wants under the name is what kind of thing it is.
+        Label codeLbl = UiLabels.ellipsized(UiNames.of(item.getCategory()),
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        infoCol.add(nameLbl).left().growX().row();
+        infoCol.add(codeLbl).left().growX();
+        row.add(infoCol).expandX().fillX().left();
 
         row.setTouchable(Touchable.enabled);
         row.addListener(new ClickListener() {
@@ -327,36 +338,9 @@ public class ShelterChestScreen extends BaseScreen {
     }
 
     private void refreshDivinityBar() {
-        DivinityManager dm = DivinityManager.getInstance();
-        int divinities = dm.getCurrentDivinities();
-        int cap = dm.getLootRetentionCap();
-        if (dm.isLootRetentionMaxed()) {
-            divinityBarLabel.setText(String.format(
-                    "%s: %d   |   Loot Retention MAXED -- keep %d unequipped items on death",
-                    DivinityManager.DIVINITY_NAME, divinities, cap));
-            setButtonEnabled(upgradeLootRetentionBtn, false);
-        } else {
-            int nextCost = dm.getNextLootRetentionUpgradeCost();
-            divinityBarLabel.setText(String.format(
-                    "%s: %d   |   Loot Retention Lv %d (keep %d on death)   |   Next: %d %s",
-                    DivinityManager.DIVINITY_NAME, divinities, dm.getLootRetentionUpgradeLevel(), cap,
-                    nextCost, DivinityManager.DIVINITY_NAME));
-            setButtonEnabled(upgradeLootRetentionBtn, divinities >= nextCost);
-        }
-    }
-
-    private void purchaseLootRetentionUpgrade() {
-        DivinityManager dm = DivinityManager.getInstance();
-        if (dm.purchaseLootRetentionUpgrade()) {
-            if (parentScreen != null && parentScreen.getSoundManager() != null) {
-                parentScreen.getSoundManager().playCoins();
-            }
-            statusLabel.setText("Loot Retention upgraded! You'll now keep " + dm.getLootRetentionCap()
-                    + " unequipped items on death.");
-        } else {
-            statusLabel.setText("Not enough Divinities for that upgrade.");
-        }
-        refreshDivinityBar();
+        int divinities = DivinityManager.getInstance().getCurrentDivinities();
+        divinityBarLabel.setText(String.format("%s: %d   |   Spend them at the altar",
+                DivinityManager.DIVINITY_NAME, divinities));
     }
 
     private void updateActionButtons() {

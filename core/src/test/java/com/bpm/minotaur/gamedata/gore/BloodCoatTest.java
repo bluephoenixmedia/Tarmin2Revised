@@ -71,6 +71,23 @@ public class BloodCoatTest {
     }
 
     @Test
+    public void agingGraduallyFadesStainsAndDecaysSoak() {
+        BloodCoat coat = new BloodCoat();
+        coat.add(stain(10f));
+        coat.addSoak(0.5f);
+        float initialSoak = coat.soak;
+
+        coat.age(100);
+        assertTrue("soak should decay over time", coat.soak < initialSoak);
+        assertEquals(1, coat.stains.size());
+        assertEquals(100, coat.stains.get(0).age);
+
+        // Aging past FADE_END_AGE should prune the stain completely
+        coat.age(BloodCoat.FADE_END_AGE);
+        assertTrue("stains older than FADE_END_AGE should be pruned", coat.stains.isEmpty());
+    }
+
+    @Test
     public void clearingWashesItAll() {
         BloodCoat coat = new BloodCoat();
         coat.add(stain(30f));

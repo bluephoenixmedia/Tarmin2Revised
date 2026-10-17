@@ -52,8 +52,12 @@ public class DualLogger implements ApplicationLogger {
 
     @Override
     public void error(String tag, String message, Throwable exception) {
-        error(tag, message + "\n" + getStackTrace(exception));
-        exception.printStackTrace();
+        if (exception != null) {
+            error(tag, message + "\n" + getStackTrace(exception));
+            exception.printStackTrace();
+        } else {
+            error(tag, message);
+        }
     }
 
     @Override
@@ -70,10 +74,15 @@ public class DualLogger implements ApplicationLogger {
 
     @Override
     public void debug(String tag, String message, Throwable exception) {
-        debug(tag, message + "\n" + getStackTrace(exception));
+        if (exception != null) {
+            debug(tag, message + "\n" + getStackTrace(exception));
+        } else {
+            debug(tag, message);
+        }
     }
 
     private String getStackTrace(Throwable t) {
+        if (t == null) return "";
         java.io.StringWriter sw = new java.io.StringWriter();
         java.io.PrintWriter pw = new java.io.PrintWriter(sw);
         t.printStackTrace(pw);

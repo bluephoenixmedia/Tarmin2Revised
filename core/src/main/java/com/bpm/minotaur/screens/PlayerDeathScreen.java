@@ -17,7 +17,7 @@ import com.bpm.minotaur.rendering.HudSkin;
 
 /**
  * Atmospheric transition screen displayed when the player perishes during an expedition.
- * Presents the casualties of the fall, loot loss/retention accounting, the growing
+ * Presents the casualties of the fall, what the Incarnation loses and keeps, the growing
  * Doom Clock ("Tarmin's Hunger"), and guides the player seamlessly into awakening
  * back at the Starting Shelter to plan their next delve.
  */
@@ -115,6 +115,7 @@ public class PlayerDeathScreen extends BaseScreen {
         root.add(buildHeader()).growX().row();
         root.add(buildTrophyRow()).growX().padTop(26f).row();
         root.add(buildStatRow()).growX().padTop(26f).row();
+        root.add(buildLedgerRow()).growX().padTop(18f).row();
         root.add().expandY().row();
         root.add(buildFooter()).growX().padTop(26f).row();
 
@@ -184,9 +185,33 @@ public class PlayerDeathScreen extends BaseScreen {
     private Table buildStatRow() {
         Table row = new Table();
         row.add(buildHungerPanel()).growX().uniformX().padRight(18f);
-        row.add(buildEpitaphPanel()).growX().uniformX().padRight(18f);
-        row.add(buildCasualtiesPanel()).growX().uniformX();
+        row.add(buildEpitaphPanel()).growX().uniformX();
         return row;
+    }
+
+    /**
+     * What the Incarnation loses and what the soul and the world keep (#206). Death is
+     * permanent for the Incarnation, and the screen says so plainly rather than leaving the
+     * player to find out at the Shelter.
+     */
+    private Table buildLedgerRow() {
+        Table row = new Table();
+        row.add(buildLedgerPanel("THE INCARNATION LOSES",
+                com.bpm.minotaur.gamedata.player.IncarnationLedger.lost(lostItems),
+                HudSkin.COL_HP_ON_DARK)).growX().uniformX().padRight(18f);
+        row.add(buildLedgerPanel("THE SOUL AND THE WORLD KEEP",
+                com.bpm.minotaur.gamedata.player.IncarnationLedger.kept(),
+                HudSkin.COL_GOLD_MUTED)).growX().uniformX();
+        return row;
+    }
+
+    private Table buildLedgerPanel(String title, java.util.List<com.bpm.minotaur.gamedata.player.IncarnationLedger.Line> lines,
+                                   Color valueColor) {
+        Table panel = newPanel(title);
+        for (com.bpm.minotaur.gamedata.player.IncarnationLedger.Line line : lines) {
+            addStat(panel, line.label, line.value, valueColor);
+        }
+        return panel;
     }
 
     private Table buildHungerPanel() {
@@ -227,15 +252,6 @@ public class PlayerDeathScreen extends BaseScreen {
         return panel;
     }
 
-    private Table buildCasualtiesPanel() {
-        Table panel = newPanel("EXPEDITION CASUALTIES");
-        addStat(panel, "LOST", String.valueOf(lostItems));
-        addStat(panel, "SECURED", String.valueOf(retainedItems));
-        addStat(panel, "KITS", "PRESERVED");
-        addStat(panel, "GEAR", "PRESERVED");
-        return panel;
-    }
-
     private Table newPanel(String title) {
         Table panel = new Table();
         panel.setBackground(hudSkin.getDoubleBorderPanel());
@@ -256,10 +272,17 @@ public class PlayerDeathScreen extends BaseScreen {
      * other, which docs/UX/ux-standard.md already warned against.
      */
     private void addStat(Table panel, String label, String value) {
-        Label l = new Label(label, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
-        Label v = new Label(value, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_ON_DARK));
+        addStat(panel, label, value, HudSkin.COL_TEXT_ON_DARK);
+    }
+
+    private void addStat(Table panel, String label, String value, Color valueColor) {
+        Label l = new Label(com.bpm.minotaur.ui.UiGlyphs.sanitize(label),
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
+        l.setWrap(true);
+        Label v = new Label(com.bpm.minotaur.ui.UiGlyphs.sanitize(value),
+                new Label.LabelStyle(hudSkin.getFontSmall(), valueColor));
         // Only the label column absorbs slack. Growing both pushed the value past the panel edge,
-        // and a single unbreakable token like PRESERVED cannot wrap its way back inside.
+        // and a single unbreakable token cannot wrap its way back inside.
         panel.add(l).left().expandX().fillX().padBottom(3f);
         panel.add(v).right().padBottom(3f).row();
     }

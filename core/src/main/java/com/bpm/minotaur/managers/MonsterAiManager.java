@@ -55,9 +55,43 @@ public class MonsterAiManager {
         if (maze == null || monster == null || player == null || !allowMonsterMovement) {
             return;
         }
+        engagedByPlayer = combatManager != null ? combatManager.getMonster() : null;
+        // A town's guard at peace stands its post.
+        if (monster.isPeaceful()) return;
+
+        // A seal lord's traits play out first; an honourable lord's retinue may stand back.
+        if (monster.holdsCourt() && SealCourt.onTurn(monster, maze)) {
+            return;
+        }
+
+        // Bleed status effect tick
+        if (monster.getBleedTurns() > 0) {
+            int bleedDmg = monster.applyBleedTick();
+            maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
+            if (monster.getCurrentHP() <= 0) {
+                if (combatManager != null) {
+                    combatManager.handleRemoteKill(monster);
+                } else {
+                    maze.removeMonster(monster);
+                }
+                return;
+            }
+        }
+
+        // Stun status effect (skips action)
+        if (monster.isStunned()) {
+            monster.decrementStun();
+            return;
+        }
 
         playerGridPos.set((int) player.getPosition().x, (int) player.getPosition().y);
         monsterGridPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
+
+        // A charmed or dominated monster fights for the player and never turns on them.
+        if (monster.isAlly()) {
+            handleAlly(monster, maze, player, combatManager);
+            return;
+        }
 
         // --- NEW: State Machine Logic ---
 
@@ -68,6 +102,11 @@ public class MonsterAiManager {
         switch (monster.getState()) {
             case IDLE:
             case WANDERING:
+                // A soldier on the march keeps marching while it has nothing to fight (Living War W2).
+                if (monster.getMarchTarget() != null) {
+                    performSeekingMove(monster, monster.getMarchTarget(), maze, player, combatManager);
+                    break;
+                }
                 // Low chance to move randomly if Wandering
                 if (monster.getState() == Monster.MonsterState.WANDERING) {
                     if (Math.random() < 0.2f) { // 20% chance to wander
@@ -86,7 +125,208 @@ public class MonsterAiManager {
         }
     }
 
+
+    // --- Allies: charmed and dominated monsters fight for the player ---
+
+    /** How far an ally looks for something to fight, in tiles. */
+    static final int ALLY_SIGHT_TILES = 8;
+    /** An ally nearer than this to the player is content to stay put; farther, it closes up. */
+    static final int ALLY_FOLLOW_DISTANCE = 2;
+    private static final int ALLY_WARNING_TURNS = 3;
+
+    private void handleAlly(Monster ally, Maze maze, Player player, CombatManager combatManager) {
+        if (ally.tickAlly()) {
+            ally.endAlly();
+            announce(combatManager, "The " + com.bpm.minotaur.ui.UiNames.of(ally.getType())
+                    + " shakes off your charm and turns on you!");
+            return;
+        }
+        if (ally.getAllyTurns() == ALLY_WARNING_TURNS) {
+            announce(combatManager, "Your hold on the " + com.bpm.minotaur.ui.UiNames.of(ally.getType()) + " is wavering...");
+        }
+
+        Monster target = ally.getTargetMonster();
+        if (target != null) {
+            GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
+            boolean valid = target.isAlive() && target.getCurrentHP() > 0 && !target.isAlly()
+                    && maze.getMonsters().get(at) == target;
+            if (!valid) {
+                target = null;
+            }
+        }
+        if (target == null) {
+            target = nearestEnemyOf(ally, maze);
+        }
+        ally.setTargetMonster(target);
+
+        if (target != null) {
+            GridPoint2 tp = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
+            int dist = Math.abs(monsterGridPos.x - tp.x) + Math.abs(monsterGridPos.y - tp.y);
+            if (dist <= 1) {
+                if (combatManager != null) {
+                    combatManager.monsterVsMonsterStrike(ally, target, maze);
+                }
+            } else {
+                allyStepToward(ally, tp, maze, player);
+            }
+            return;
+        }
+
+        int playerDist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
+        if (playerDist > ALLY_FOLLOW_DISTANCE) {
+            allyStepToward(ally, new GridPoint2(playerGridPos), maze, player);
+        }
+    }
+
+    /** The nearest living, non-allied monster in sight of the ally, or null. */
+    private Monster nearestEnemyOf(Monster ally, Maze maze) {
+        Monster best = null;
+        int bestDist = Integer.MAX_VALUE;
+        for (Monster other : maze.getMonsters().values()) {
+            if (other == null || other == ally || other.isAlly() || !other.isAlive() || other.getCurrentHP() <= 0
+                    || other.isHidden()) {
+                continue;
+            }
+            GridPoint2 op = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
+            int d = Math.abs(monsterGridPos.x - op.x) + Math.abs(monsterGridPos.y - op.y);
+            if (d <= ALLY_SIGHT_TILES && d < bestDist && checkLineOfSight(maze, monsterGridPos, op)) {
+                best = other;
+                bestDist = d;
+            }
+        }
+        return best;
+    }
+
+    /** One step along the path to the goal, never onto the player or another creature. */
+    private void allyStepToward(Monster ally, GridPoint2 goal, Maze maze, Player player) {
+        List<GridPoint2> path = Pathfinder.findPath(maze, player, monsterGridPos, goal, ally.canOperateDoors());
+        GridPoint2 step;
+        if (path != null && !path.isEmpty()) {
+            step = path.get(0);
+        } else {
+            // The goal is usually a creature standing on its own tile, which the pathfinder treats as
+            // blocked; settle for any open neighbouring tile that gets strictly closer.
+            step = closerOpenNeighbour(maze, goal);
+            if (step == null) {
+                return;
+            }
+        }
+        if (step.x == playerGridPos.x && step.y == playerGridPos.y) {
+            return;
+        }
+        tempPos.set(step.x, step.y);
+        if (maze.getMonsters().containsKey(tempPos)) {
+            return;
+        }
+        Object atStep = maze.getGameObjectAt(step.x, step.y);
+        if (ally.canOperateDoors() && atStep instanceof com.bpm.minotaur.gamedata.Door) {
+            com.bpm.minotaur.gamedata.Door d = (com.bpm.minotaur.gamedata.Door) atStep;
+            if (d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSED
+                    || d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSING) {
+                d.startOpening();
+                return;
+            }
+        }
+        moveMonsterTo(ally, maze, step.x, step.y);
+    }
+
+    private GridPoint2 closerOpenNeighbour(Maze maze, GridPoint2 goal) {
+        int here = Math.abs(monsterGridPos.x - goal.x) + Math.abs(monsterGridPos.y - goal.y);
+        GridPoint2 best = null;
+        int bestDist = here;
+        for (Direction dir : Direction.values()) {
+            if (maze.isWallBlocking(monsterGridPos.x, monsterGridPos.y, dir)) {
+                continue;
+            }
+            int nx = monsterGridPos.x + (int) dir.getVector().x;
+            int ny = monsterGridPos.y + (int) dir.getVector().y;
+            if (!maze.isPassable(nx, ny)) {
+                continue;
+            }
+            int d = Math.abs(nx - goal.x) + Math.abs(ny - goal.y);
+            if (d < bestDist) {
+                bestDist = d;
+                best = new GridPoint2(nx, ny);
+            }
+        }
+        return best;
+    }
+
+    private void announce(CombatManager combatManager, String message) {
+        if (combatManager != null && combatManager.getGameScreen() != null) {
+            GameEventManager em = combatManager.getGameScreen().getEventManager();
+            if (em != null) {
+                em.addEvent(new GameEvent(message, 2.5f));
+            }
+        }
+    }
+
+    private Runnable onPlayerNoticed;
+
+    /** Called when a monster that was not hunting first notices the player; the HUD raises the alert. */
+    public void setOnPlayerNoticed(Runnable onPlayerNoticed) {
+        this.onPlayerNoticed = onPlayerNoticed;
+    }
+
     private FactionMatrix factionMatrix = new FactionMatrix();
+    /** The monster the player is fighting this turn, if any. */
+    private Monster engagedByPlayer;
+
+    /**
+     * Whether a soldier in a battle, with an enemy soldier in sight, turns on the player instead:
+     * only when the player is adjacent or has struck it (Living War W14). The melee spill of plan
+     * D31 is gone: a war is a distraction a rogue can use.
+     */
+    static boolean warBandTurnsOnPlayer(int playerDist, boolean struck) {
+        return playerDist <= 1 || struck;
+    }
+
+    /** How far a monster hears the player, in tiles; a battle's din cuts it (Living War W13). */
+    static int hearingRange(int intelligence, float notice, float muffle) {
+        return Math.max(1, Math.round((5 + intelligence) * notice * muffle));
+    }
+
+    /** Hearing is cut to this in a battle's chunk and the chunks beside it (W13). */
+    public static final float BATTLE_DIN = 0.3f;
+    private float hearingMuffle = 1f;
+    private boolean playerInTheFight;
+    private java.util.function.Predicate<Monster> takesPlayerForKin;
+
+    /** The din of a battle near the player muffles every monster's hearing this turn: 1 is quiet. */
+    public void setHearingMuffle(float muffle) {
+        this.hearingMuffle = Math.max(0.05f, Math.min(1f, muffle));
+    }
+
+    /** Whether the player has struck a soldier of the battle or skirmish around them (W15). */
+    public void setPlayerInTheFight(boolean inTheFight) {
+        this.playerInTheFight = inTheFight;
+    }
+
+    private java.util.function.Predicate<Monster> holdsItsPeace;
+
+    /** Which monsters' houses think well enough of the player to leave them be (Living War W18); null for none. */
+    public void setHoldsItsPeace(java.util.function.Predicate<Monster> peace) {
+        this.holdsItsPeace = peace;
+    }
+
+    /** Which monsters take a disguised player for one of their own (W16); null when undisguised. */
+    public void setTakesPlayerForKin(java.util.function.Predicate<Monster> kin) {
+        this.takesPlayerForKin = kin;
+    }
+
+    /**
+     * Whether {@code monster} pays the player no mind this turn: a gate guard of a battle the player
+     * has not joined, or a soldier fooled by the player's borrowed body. Struck, it knows better;
+     * left beside the player too long, it looks closer.
+     */
+    boolean ignoresPlayer(Monster monster, int playerDist) {
+        if (monster.seekerDrewBlood() || monster == engagedByPlayer) return false;
+        if (monster.isGateGuard() && monster.isWarBand() && !playerInTheFight) return true;
+        if (holdsItsPeace != null && holdsItsPeace.test(monster)) return true;
+        if (takesPlayerForKin == null || !takesPlayerForKin.test(monster)) return false;
+        if (playerDist <= 1) monster.setDisguiseScrutiny(monster.getDisguiseScrutiny() + 1);
+        return monster.getDisguiseScrutiny() < com.bpm.minotaur.gamedata.history.war.Disguise.SCRUTINY_TURNS;
+    }
 
     public FactionMatrix getFactionMatrix() {
         return factionMatrix;
@@ -104,7 +344,8 @@ public class MonsterAiManager {
         int playerDist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
 
         // 1. Check Visual Awareness (Line of Sight)
-        int visualRange = 10 + (monster.getIntelligence() / 2);
+        float notice = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("noticeMult");
+        int visualRange = Math.max(1, Math.round((10 + (monster.getIntelligence() / 2)) * notice));
 
         if (player.getEquipment() != null && player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INVISIBILITY)) {
             visualRange = 2; // Drastically reduced range
@@ -117,7 +358,7 @@ public class MonsterAiManager {
 
         // 2. Check Audio Awareness (Hearing) if not seen
         if (!playerSeen) {
-            int hearingRange = 5 + (monster.getIntelligence());
+            int hearingRange = hearingRange(monster.getIntelligence(), notice, hearingMuffle);
             if (playerDist <= hearingRange) {
                 int chance = 50 + (monster.getIntelligence() * 5) - (playerDist * 5);
                 if (chance > Math.random() * 100) {
@@ -125,6 +366,9 @@ public class MonsterAiManager {
                 }
             }
         }
+
+        // A gate guard letting a bystander through, or a soldier taken in by a borrowed body (W15, W16).
+        if (playerSeen && ignoresPlayer(monster, playerDist)) playerSeen = false;
 
         // 3. Check for Rival Monsters within visual range
         Monster closestRival = null;
@@ -145,7 +389,10 @@ public class MonsterAiManager {
         if (closestRival == null && maze != null && maze.getMonsters() != null) {
             for (Monster other : maze.getMonsters().values()) {
                 if (other == null || other == monster || !other.isAlive() || other.getCurrentHP() <= 0) continue;
-                if (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), other.getFaction())) {
+                // The player's allies are everyone's enemies, whatever faction they were born into.
+                boolean isEnemy = other.isAlly()
+                        || (factionMatrix != null && factionMatrix.isHostile(monster, other));
+                if (isEnemy) {
                     GridPoint2 otherPos = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
                     int d = Math.abs(monsterGridPos.x - otherPos.x) + Math.abs(monsterGridPos.y - otherPos.y);
                     if (d <= visualRange && d < closestRivalDist) {
@@ -164,7 +411,11 @@ public class MonsterAiManager {
             monster.setLastKnownTargetPos(new GridPoint2((int) monster.getTargetMonster().getPosition().x, (int) monster.getTargetMonster().getPosition().y));
             monster.setTurnsSinceLastSeen(0);
         } else if (playerSeen && closestRival != null) {
-            if (playerDist <= closestRivalDist) {
+            // In a battle the enemy line comes first; the player is a bystander until they are not.
+            boolean onPlayer = monster.isWarBand()
+                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer || monster.seekerDrewBlood())
+                    : playerDist <= closestRivalDist;
+            if (onPlayer) {
                 monster.setTargetMonster(null);
                 monster.setState(Monster.MonsterState.HUNTING);
                 monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));
@@ -176,6 +427,10 @@ public class MonsterAiManager {
                 monster.setTurnsSinceLastSeen(0);
             }
         } else if (playerSeen) {
+            boolean newlyNoticed = monster.getState() != Monster.MonsterState.HUNTING;
+            if (newlyNoticed && onPlayerNoticed != null) {
+                onPlayerNoticed.run();
+            }
             monster.setTargetMonster(null);
             monster.setState(Monster.MonsterState.HUNTING);
             monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));
@@ -210,15 +465,15 @@ public class MonsterAiManager {
         }
 
         // --- Sanctuary Check: Home Shelter tiles are protected ---
-        if (maze.getHomeTiles() != null && !maze.getHomeTiles().isEmpty()) {
-            if (maze.getHomeTiles().contains(playerGridPos)) {
+        if (!maze.getSanctuaryTiles().isEmpty()) {
+            if (maze.isSanctuaryTile(playerGridPos)) {
                 monster.setState(Monster.MonsterState.WANDERING);
                 monster.setLastKnownTargetPos(null);
                 monster.setSearchTurnsRemaining(0);
                 if (combatManager != null && combatManager.getGameScreen() != null) {
                     GameEventManager em = combatManager.getGameScreen().getEventManager();
                     if (em != null) {
-                        em.addEvent(new GameEvent("The " + monster.getMonsterType() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
+                        em.addEvent(new GameEvent("The " + monster.getName() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
                     }
                 }
                 return;
@@ -260,20 +515,20 @@ public class MonsterAiManager {
                     }
                 }
 
-                // Priority 2: Ranged Offensive Spellcasting (2 <= dist <= 8 with clear LoS)
+                // Priority 2: Ranged Offensive Spellcasting (2 <= dist <= 8). The line to the
+                // player is judged per spell inside MonsterSpellExecutor, because a wall-piercing
+                // spell from a wall-piercing caster does not need one and nothing else may pass.
                 if (dist >= 2 && dist <= 8) {
-                    if (checkLineOfSight(maze, monsterGridPos, playerGridPos)) {
-                        int chance = monster.getSpellChance() > 0 ? monster.getSpellChance() : 60;
-                        if (Math.random() * 100 < chance) {
-                            String offSpell = monster.getSpellbook().selectOffensiveSpell(
-                                    monster.getCurrentMP(),
-                                    dist,
-                                    SpellDataManager.getInstance());
-                            if (offSpell != null) {
-                                GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
-                                if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
-                                    return; // Cast spell, turn consumed
-                                }
+                    int chance = monster.getSpellChance() > 0 ? monster.getSpellChance() : 60;
+                    if (Math.random() * 100 < chance) {
+                        String offSpell = monster.getSpellbook().selectOffensiveSpell(
+                                monster.getCurrentMP(),
+                                dist,
+                                SpellDataManager.getInstance());
+                        if (offSpell != null) {
+                            GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
+                                return; // Cast spell, turn consumed
                             }
                         }
                     }
@@ -331,7 +586,10 @@ public class MonsterAiManager {
                 target = playerGridPos;
             } else {
                 monster.setTurnsSinceLastSeen(monster.getTurnsSinceLastSeen() + 1);
-                if (monster.getTurnsSinceLastSeen() > 5) {
+                // Was a flat 5 for every creature. A cloud should buy you longer against a
+                // rat than against something that can think.
+                if (com.bpm.minotaur.gamedata.monster.PursuitMemory.shouldGiveUp(
+                        monster.getTurnsSinceLastSeen(), monster.getIntelligence())) {
                     monster.setState(Monster.MonsterState.WANDERING);
                     monster.setLastKnownTargetPos(null);
                 }
@@ -413,7 +671,7 @@ public class MonsterAiManager {
             tempPos.set(step.x, step.y);
             Monster occupant = maze.getMonsters().get(tempPos);
             if (occupant != null) {
-                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), occupant.getFaction()))) {
+                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster, occupant))) {
                     if (combatManager != null) {
                         combatManager.monsterVsMonsterStrike(monster, occupant, maze);
                     }
@@ -434,6 +692,14 @@ public class MonsterAiManager {
         int y0 = start.y;
         int x1 = end.x;
         int y1 = end.y;
+
+        // Obscuring fog blocks sight the way stone does, and this is the one place every
+        // sighting goes through: acquiring the player, spotting a rival, and the clear-shot
+        // test a ranged monster makes before firing. Adjacent tiles are exempt inside
+        // blocksSight -- a thing standing next to you in the cloud has not lost you.
+        if (maze != null && maze.fogBlocksSight(x0, y0, x1, y1)) {
+            return false;
+        }
 
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
@@ -490,7 +756,10 @@ public class MonsterAiManager {
     // Removed unused performSeekingMove wrapper
 
     private void moveMonsterTo(Monster monster, Maze maze, int targetX, int targetY) {
+        // A tethered monster holds its ground: the Bringer of Death does not leave his island.
+        if (!monster.mayStandAt(targetX, targetY)) return;
         tempPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
+        maze.bleedTrail(monster, tempPos.x, tempPos.y);
         maze.getMonsters().remove(tempPos);
         monster.getPosition().set(targetX + 0.5f, targetY + 0.5f);
         maze.getMonsters().put(new GridPoint2(targetX, targetY), monster);
@@ -521,7 +790,7 @@ public class MonsterAiManager {
     private boolean isTileAvailableForAI(Maze maze, Player player, int x, int y) {
         tempPos.set(x, y);
 
-        if (maze.isHomeTile(x, y))
+        if (maze.isSanctuaryTile(x, y))
             return false;
 
         if (!maze.isPassable(x, y))

@@ -41,11 +41,20 @@ public class SpellSlotAssignmentTest {
     }
 
     @Test
-    public void refusedWhileAHostileIsInView() {
+    public void hostileInViewAllowsEmptySlotAssignmentOnly() {
         maze.addMonster(new Monster(Monster.MonsterType.GOBLIN, 10, 10, 4, 1));
 
-        assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(1, "FIREBALL", maze));
-        assertNull(player.getPreparedSpell(1));
+        // Empty slot 1 can be assigned
+        assertEquals(Player.SlotChange.OK, player.assignSpellSlot(1, "FIREBALL", maze));
+        assertEquals("FIREBALL", player.getPreparedSpell(1));
+
+        // Occupied slot 0 cannot be swapped/overwritten while hostile in view
+        assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(0, "MAGIC_MISSILE", maze));
+        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+
+        // Clearing an assigned slot while hostile in view is refused
+        assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(1, null, maze));
+        assertEquals("FIREBALL", player.getPreparedSpell(1));
     }
 
     @Test

@@ -12,6 +12,8 @@ public class BloodParticle implements Pool.Poolable {
     public float maxLife;
     public float size;
     public boolean onGround;
+    /** Fine spray that hangs and fades in the air: never lands as a decal. */
+    public boolean mist;
 
     public com.badlogic.gdx.graphics.g2d.TextureRegion textureRegion; // For Modern Mode
 
@@ -28,6 +30,7 @@ public class BloodParticle implements Pool.Poolable {
         this.lifeTimer = life;
         this.size = size;
         this.onGround = false;
+        this.mist = false;
         this.textureRegion = texture;
     }
 
@@ -37,6 +40,7 @@ public class BloodParticle implements Pool.Poolable {
         velocity.setZero();
         lifeTimer = 0;
         onGround = false;
+        mist = false;
         color.set(Color.WHITE);
     }
 
@@ -44,8 +48,15 @@ public class BloodParticle implements Pool.Poolable {
         if (onGround)
             return;
 
-        // Gravity (Heavy for visceral feel)
-        velocity.y -= 18.0f * delta;
+        if (mist) {
+            // Hangs: light gravity, heavy drag, fading as it disperses.
+            velocity.y -= 4.0f * delta;
+            velocity.scl(Math.max(0f, 1f - 3.5f * delta));
+            color.a = 0.7f * Math.max(0f, lifeTimer / Math.max(0.001f, maxLife));
+        } else {
+            // Gravity (Heavy for visceral feel)
+            velocity.y -= 18.0f * delta;
+        }
 
         // Move
         position.mulAdd(velocity, delta);

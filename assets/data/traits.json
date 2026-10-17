@@ -1,0 +1,237 @@
+{
+  "_comment": "Personality traits. A key ending in Mult scales a number (1 = no change); any other key adds to it. enabled=false keeps a designed trait out of the offers until all of it is built.",
+  "traits": [
+    {
+      "id": "SILENT_LUNATIC",
+      "name": "Silent Lunatic",
+      "good": "Monsters notice you from half as far away.",
+      "bad": "Each turn a hostile is in view you may fly into a Berserk rage. Spells cost 50% more MP.",
+      "enabled": true,
+      "modifiers": {
+        "noticeMult": 0.5,
+        "berserkChance": 0.1,
+        "spellCostMult": 1.5
+      }
+    },
+    {
+      "id": "ANGRY_GENIUS",
+      "name": "Angry Genius",
+      "good": "+3 Intelligence. +25% experience. Spells cost 1 less MP (minimum 1).",
+      "bad": "You take 20% more damage. 10% of your attacks fail outright.",
+      "enabled": true,
+      "modifiers": {
+        "stat.INT": 3,
+        "xpMult": 1.25,
+        "spellCostFlat": -1,
+        "damageTakenMult": 1.2,
+        "attackFailChance": 0.1
+      }
+    },
+    {
+      "id": "STOIC_CLOWN",
+      "name": "Stoic Clown",
+      "good": "HP regenerates 30% faster. You cannot be confused, put to sleep or made to hallucinate.",
+      "bad": "Shop prices are 25% worse. Crit chance -5%.",
+      "enabled": true,
+      "modifiers": {
+        "regenMult": 0.7,
+        "buyMult": 1.25,
+        "sellMult": 0.8,
+        "critAdd": -0.05
+      },
+      "blocks": [
+        "CONFUSED",
+        "CONFUSION",
+        "SLEEP",
+        "HALLUCINATING"
+      ]
+    },
+    {
+      "id": "GENTLE_BRUTE",
+      "name": "Gentle Brute",
+      "good": "+3 Strength. Carry capacity +30%.",
+      "bad": "-2 Charisma. Shop prices are 20% worse.",
+      "enabled": true,
+      "modifiers": {
+        "stat.STR": 3,
+        "stat.CHA": -2,
+        "carryMult": 1.3,
+        "buyMult": 1.2,
+        "sellMult": 0.8
+      }
+    },
+    {
+      "id": "LUCKY_FOOL",
+      "name": "Lucky Fool",
+      "good": "+4 Luck, which also nudges your crit chance up.",
+      "bad": "Maximum HP -20%.",
+      "enabled": true,
+      "modifiers": {
+        "luckAdd": 4,
+        "maxHpMult": 0.8
+      }
+    },
+    {
+      "id": "GREEDY_SCHOLAR",
+      "name": "Greedy Scholar",
+      "good": "+50% Divinities from kills and new chunks. You sell items for 25% more.",
+      "bad": "You buy items for 25% more. -1 Constitution.",
+      "enabled": true,
+      "modifiers": {
+        "divinityMult": 1.5,
+        "sellMult": 1.25,
+        "buyMult": 1.25,
+        "stat.CON": -1
+      }
+    },
+    {
+      "id": "FASTING_MONK",
+      "name": "Fasting Monk",
+      "good": "Hunger and thirst fall 50% slower.",
+      "bad": "Maximum HP -25%. Equipment armour class -2.",
+      "enabled": true,
+      "modifiers": {
+        "hungerMult": 0.5,
+        "thirstMult": 0.5,
+        "maxHpMult": 0.75,
+        "acAdd": -2
+      }
+    },
+    {
+      "id": "RECKLESS_DUELIST",
+      "name": "Reckless Duelist",
+      "good": "Crit chance +15%. Crits do +0.5x damage.",
+      "bad": "Armour class -2. Dodge chance is halved.",
+      "enabled": true,
+      "modifiers": {
+        "critAdd": 0.15,
+        "critMultAdd": 0.5,
+        "acAdd": -2,
+        "dodgeMult": 0.5
+      }
+    },
+    {
+      "id": "COWARDLY_ALCHEMIST",
+      "name": "Cowardly Alchemist",
+      "good": "Healing from potions, food and spells is 50% stronger.",
+      "bad": "Your melee damage is 25% lower.",
+      "enabled": true,
+      "modifiers": {
+        "healMult": 1.5,
+        "meleeDamageMult": 0.75
+      }
+    },
+    {
+      "id": "PARANOID_SCOUT",
+      "name": "Paranoid Scout",
+      "good": "Carried light radius +1.5. Mimic detection +25 points.",
+      "bad": "Resting at the bed restores only half your missing HP and MP.",
+      "enabled": true,
+      "modifiers": {
+        "lightAdd": 1.5,
+        "mimicDetectAdd": 25,
+        "bedRestMult": 0.5
+      }
+    },
+    {
+      "id": "NIGHT_OWL",
+      "name": "Night Owl",
+      "good": "+2 light radius underground. +10% dodge below the surface.",
+      "bad": "Light is 1 tile shorter on the surface. -1 Wisdom.",
+      "enabled": true,
+      "modifiers": {
+        "lightUnderground": 2,
+        "lightSurface": -1,
+        "darkDodgeAdd": 0.1,
+        "stat.WIS": -1
+      }
+    },
+    {
+      "id": "IRON_STOMACH",
+      "name": "Iron Stomach",
+      "good": "Immune to poison and sickness. Raw monster flesh cannot hurt you.",
+      "bad": "You choke on food 200 points of fullness sooner than others do.",
+      "enabled": true,
+      "modifiers": {
+        "chokeLimitAdd": -200
+      },
+      "blocks": [
+        "POISONED",
+        "SICK"
+      ]
+    },
+    {
+      "id": "GHOST_WHISPERER",
+      "name": "Ghost Whisperer",
+      "good": "+20% Magic Resistance. Damage spells do +2 damage per die to the undead.",
+      "bad": "Monsters notice you from 25% farther away.",
+      "enabled": true,
+      "modifiers": {
+        "mrAdd": 20,
+        "noticeMult": 1.25,
+        "undeadSpellDicePlus": 2
+      }
+    },
+    {
+      "id": "HARDY_CYNIC",
+      "name": "Hardy Cynic",
+      "good": "Maximum HP +25%. Poison and bleeding hurt half as often.",
+      "bad": "-25% experience. Kills give 1 less Divinity.",
+      "enabled": true,
+      "modifiers": {
+        "maxHpMult": 1.25,
+        "xpMult": 0.75,
+        "overTimeMult": 0.5,
+        "divinityKillAdd": -1
+      }
+    },
+    {
+      "id": "BORN_COWARD",
+      "name": "Born Coward",
+      "good": "Move speed +25%. Dodge +10%.",
+      "bad": "Your weapon does 2 less damage to a monster that is hunting you and right beside you.",
+      "enabled": true,
+      "modifiers": {
+        "speedMult": 1.25,
+        "dodgeAdd": 0.1,
+        "huntedMeleePenalty": 2
+      }
+    },
+    {
+      "id": "LUCKY_PARIAH",
+      "name": "Lucky Pariah",
+      "good": "Crit chance +10%. Gold and gems you find are worth 30% more.",
+      "bad": "Shopkeepers will not trade with you.",
+      "enabled": true,
+      "modifiers": {
+        "critAdd": 0.1,
+        "foundTreasureMult": 1.3,
+        "noTrade": 1
+      }
+    },
+    {
+      "id": "HOLLOW_PROPHET",
+      "name": "Hollow Prophet",
+      "good": "Learns spells from books one level early. Spell cost -25%.",
+      "bad": "Maximum HP -30%. Regeneration 50% slower.",
+      "enabled": true,
+      "modifiers": {
+        "spellLearnEarly": 1,
+        "spellCostMult": 0.75,
+        "maxHpMult": 0.7,
+        "regenMult": 2.0
+      }
+    },
+    {
+      "id": "BLOODSOAKED_SAINT",
+      "name": "Bloodsoaked Saint",
+      "good": "Heals 1 HP for every 4 damage you deal in melee.",
+      "bad": "You are 25% more likely to suffer a lasting wound.",
+      "enabled": true,
+      "modifiers": {
+        "lifestealFraction": 0.25,
+        "injuryChanceMult": 1.25
+      }
+    }
+  ]
+}

@@ -28,6 +28,12 @@ public class ShelterChest {
 
     private final int capacity;
     private final List<Item> items;
+    /**
+     * Set only on the debug catalog chest: how to mint a fresh copy of an item type. Such a chest is
+     * never written to the save slot, and taking an item out puts a new one in its place, so it
+     * stays a complete catalog however many items are withdrawn.
+     */
+    private java.util.function.Function<Item.ItemType, Item> catalogFactory;
     private final Json json;
 
     private ShelterChest() {
@@ -40,6 +46,23 @@ public class ShelterChest {
         this.json = new Json();
         this.json.setOutputType(JsonWriter.OutputType.json);
         this.json.setIgnoreUnknownFields(true);
+    }
+
+    /** A throwaway chest holding one of every given item type; see {@link #catalogFactory}. */
+    public static ShelterChest catalog(List<Item.ItemType> types, java.util.function.Function<Item.ItemType, Item> factory) {
+        ShelterChest chest = new ShelterChest(Math.max(1, types.size()));
+        chest.catalogFactory = factory;
+        for (Item.ItemType type : types) {
+            Item item = factory.apply(type);
+            if (item != null) {
+                chest.items.add(item);
+            }
+        }
+        return chest;
+    }
+
+    public boolean isCatalog() {
+        return catalogFactory != null;
     }
 
     public static synchronized ShelterChest getInstance() {
@@ -65,6 +88,16 @@ public class ShelterChest {
         return items.isEmpty();
     }
 
+    /** Whether an item of the given type is stored here. */
+    public boolean containsType(Item.ItemType type) {
+        for (Item item : items) {
+            if (item != null && item.getType() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean addItem(Item item) {
         if (item == null || isFull()) {
             return false;
@@ -88,7 +121,28 @@ public class ShelterChest {
     }
 
     public boolean removeItem(Item item) {
-        return items.remove(item);
+        int index = items.indexOf(item);
+        if (index < 0) {
+            return false;
+        }
+        if (catalogFactory != null) {
+            Item fresh = catalogFactory.apply(item.getType());
+            if (fresh != null) {
+                items.set(index, fresh);
+                return true;
+            }
+        }
+        items.remove(index);
+        return true;
+    }
+
+    /** One off a stack in the chest, or the whole item when it is the last. */
+    public boolean consumeOne(Item item) {
+        if (item != null && item.getStackCount() > 1 && items.indexOf(item) >= 0) {
+            item.setStackCount(item.getStackCount() - 1);
+            return true;
+        }
+        return removeItem(item);
     }
 
     public List<Item> getItems() {
@@ -103,6 +157,9 @@ public class ShelterChest {
      * Serializes chest items to disk via lightweight ItemSaveData DTOs.
      */
     public void save() {
+        if (catalogFactory != null) {
+            return; // the debug catalog must never overwrite the player's real stash
+        }
         try {
             FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             file.parent().mkdirs();
@@ -126,43 +183,75 @@ public class ShelterChest {
     /**
      * Deserializes chest items from disk and re-hydrates textures and templates.
      */
+    /**
+     * Replaces the chest contents, but only when parsing actually produced a
+     * result. A null {@code parsed} means the file could not be read in any
+     * format, and the right answer then is to keep what is already in memory:
+     * an unreadable file is not evidence that the player owns nothing.
+     *
+     * @return true when the contents were replaced
+     */
+    static boolean adopt(java.util.List<Item> target, java.util.List<Item> parsed) {
+        if (target == null || parsed == null) return false;
+        target.clear();
+        target.addAll(parsed);
+        return true;
+    }
+
     public void load(ItemDataManager dataManager, AssetManager assetManager) {
         try {
             FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             if (file.exists()) {
-                items.clear();
+                // Parse into a scratch list and only adopt it once a parse has
+                // actually succeeded. This used to clear() first, so a single
+                // unreadable entry -- an ItemType name no longer in the enum is
+                // enough -- emptied the stash in memory, and the next save wrote
+                // that empty list over the player's persistent storage.
+                ArrayList<Item> parsed = null;
+
                 try {
                     @SuppressWarnings("unchecked")
                     ArrayList<ItemSaveData> loaded = json.fromJson(ArrayList.class, ItemSaveData.class, file);
                     if (loaded != null) {
+                        parsed = new ArrayList<>();
                         for (ItemSaveData isd : loaded) {
                             if (isd != null) {
                                 Item item = isd.toItem(dataManager, assetManager);
                                 if (item != null) {
-                                    items.add(item);
+                                    parsed.add(item);
                                 }
                             }
                         }
-                        Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
-                        return;
                     }
                 } catch (Exception parseException) {
                     Gdx.app.log("ShelterChest", "Attempting fallback load for legacy chest data: " + parseException.getMessage());
                 }
 
-                // Legacy format fallback
-                @SuppressWarnings("unchecked")
-                ArrayList<Item> legacy = json.fromJson(ArrayList.class, Item.class, file);
-                if (legacy != null) {
-                    for (Item it : legacy) {
-                        if (it != null && it.getType() != null) {
-                            Item rehydrated = dataManager != null
-                                    ? dataManager.createItem(it.getType(), 0, 0, it.getItemColor(), assetManager)
-                                    : it;
-                            items.add(rehydrated);
+                if (parsed == null) {
+                    // Legacy format fallback
+                    try {
+                        @SuppressWarnings("unchecked")
+                        ArrayList<Item> legacy = json.fromJson(ArrayList.class, Item.class, file);
+                        if (legacy != null) {
+                            parsed = new ArrayList<>();
+                            for (Item it : legacy) {
+                                if (it != null && it.getType() != null) {
+                                    Item rehydrated = dataManager != null
+                                            ? dataManager.createItem(it.getType(), 0, 0, it.getItemColor(), assetManager)
+                                            : it;
+                                    parsed.add(rehydrated);
+                                }
+                            }
                         }
+                    } catch (Exception legacyException) {
+                        Gdx.app.error("ShelterChest",
+                                "Chest file is unreadable in both formats; keeping the contents already in memory rather than discarding them",
+                                legacyException);
                     }
-                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " legacy items from " + getSaveFilePath());
+                }
+
+                if (adopt(items, parsed)) {
+                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
                 }
             }
         } catch (Exception e) {

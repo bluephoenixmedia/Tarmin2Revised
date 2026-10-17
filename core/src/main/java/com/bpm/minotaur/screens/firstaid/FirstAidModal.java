@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens.firstaid;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -154,7 +155,7 @@ public class FirstAidModal extends BaseScreen {
         Label illTitle = new Label("SYSTEMIC BLOODSTREAM",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         Color illCol = stage.isIll() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN;
-        Label illDesc = new Label(stage.getDisplayName(),
+        Label illDesc = new Label(im != null ? im.getIllnessDisplayName() : stage.getDisplayName(),
                 new Label.LabelStyle(hudSkin.getFontMain(), illCol));
 
         illnessCard.add(illTitle).left().row();
@@ -340,7 +341,7 @@ public class FirstAidModal extends BaseScreen {
         supplyListTable = new Table();
         supplyListTable.top().left();
 
-        ScrollPane scrollPane = new ScrollPane(supplyListTable);
+        ScrollPane scrollPane = new ScrollPane(supplyListTable, UiStyles.scrollPane(hudSkin));
         scrollPane.setFadeScrollBars(false);
         panel.add(scrollPane).expand().fill();
 

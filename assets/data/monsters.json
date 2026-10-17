@@ -1,15 +1,15 @@
 {
   "GIANT_ANT": {
     "baseLevel": 1,
+    "role": "SOLDIER",
     "frequency": 10,
     "baseAC": 7,
     "magicResistance": 0,
-    "moveSpeed": 18,
+    "moveSpeed": 16,
     "alignment": "NEUTRAL",
-    "maxHP": 12,
+    "maxHP": 18,
     "maxMP": 8,
     "armorClass": 12,
-    "baseExperience": 10,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_ant.png",
     "spriteData": [
@@ -42,7 +42,7 @@
       "x": 0.82,
       "y": 0.55
     },
-    "damageDice": "1d6",
+    "damageDice": "1d5",
     "damageType": "PHYSICAL",
     "intelligence": 0,
     "dexterity": 12,
@@ -84,6 +84,7 @@
   },
   "DWARF": {
     "baseLevel": 4,
+    "role": "SOLDIER",
     "frequency": 4,
     "baseAC": 6,
     "magicResistance": 10,
@@ -91,8 +92,7 @@
     "alignment": "LAWFUL",
     "maxHP": 22,
     "maxMP": 10,
-    "armorClass": 14,
-    "baseExperience": 15,
+    "armorClass": 13,
     "intelligence": 3,
     "family": "HUMANOID",
     "texturePath": "images/monsters/dwarf.png",
@@ -146,19 +146,19 @@
         "weight": 5
       }
     ],
-    "damageDice": "2d8+4"
+    "damageDice": "1d8+2"
   },
   "ORC": {
     "baseLevel": 3,
+    "role": "SOLDIER",
     "frequency": 6,
     "baseAC": 9,
     "magicResistance": 0,
     "moveSpeed": 12,
     "alignment": "CHAOTIC",
-    "maxHP": 22,
+    "maxHP": 20,
     "maxMP": 20,
-    "armorClass": 13,
-    "baseExperience": 20,
+    "armorClass": 12,
     "family": "BEAST",
     "texturePath": "images/monsters/orc.png",
     "intelligence": 5,
@@ -213,7 +213,7 @@
         "weight": 10
       }
     ],
-    "damageDice": "1d10+3",
+    "damageDice": "1d8+1",
     "hasRangedAttack": true,
     "attackRange": 5,
     "rangedProjectile": "ARROW",
@@ -223,11 +223,11 @@
   },
   "GIANT_SCORPION": {
     "baseLevel": 3,
+    "role": "SOLDIER",
     "frequency": 8,
     "maxHP": 18,
     "maxMP": 20,
     "armorClass": 13,
-    "baseExperience": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_scorpion.png",
     "intelligence": 0,
@@ -281,7 +281,7 @@
         "weight": 10
       }
     ],
-    "damageDice": "1d8+1",
+    "damageDice": "1d8",
     "hasRangedAttack": true,
     "attackRange": 4,
     "rangedProjectile": "VENOM",
@@ -291,11 +291,11 @@
   },
   "GIANT_SNAKE": {
     "baseLevel": 1,
+    "role": "SOLDIER",
     "frequency": 8,
     "maxHP": 14,
     "maxMP": 12,
     "armorClass": 12,
-    "baseExperience": 35,
     "family": "BEAST",
     "intelligence": 1,
     "texturePath": "images/monsters/giant_snake.png",
@@ -359,11 +359,11 @@
   },
   "GHOUL": {
     "baseLevel": 2,
+    "role": "SOLDIER",
     "frequency": 6,
-    "maxHP": 35,
+    "maxHP": 20,
     "maxMP": 25,
     "armorClass": 12,
-    "baseExperience": 20,
     "intelligence": 5,
     "family": "UNDEAD",
     "texturePath": "images/monsters/ghoul.png",
@@ -417,15 +417,15 @@
         "weight": 1
       }
     ],
-    "damageDice": "2d6+3"
+    "damageDice": "1d6+2"
   },
   "SKELETON": {
     "baseLevel": 1,
+    "role": "SOLDIER",
     "frequency": 10,
-    "maxHP": 12,
+    "maxHP": 18,
     "maxMP": 10,
     "armorClass": 12,
-    "baseExperience": 18,
     "intelligence": 3,
     "family": "UNDEAD",
     "texturePath": "images/monsters/skeleton.png",
@@ -489,15 +489,20 @@
   },
   "CLOAKED_SKELETON": {
     "baseLevel": 3,
+    "role": "SOLDIER",
     "frequency": 6,
-    "maxHP": 32,
+    "maxHP": 22,
     "maxMP": 15,
-    "armorClass": 14,
-    "baseExperience": 22,
+    "armorClass": 13,
     "intelligence": 5,
     "isSpellcaster": true,
-    "spellSchools": ["NECROMANCY"],
-    "innateSpells": ["CHILL_TOUCH", "RAY_OF_ENFEEBLEMENT"],
+    "spellSchools": [
+      "NECROMANCY"
+    ],
+    "innateSpells": [
+      "CHILL_TOUCH",
+      "RAY_OF_ENFEEBLEMENT"
+    ],
     "spellChance": 50,
     "aiType": "TACTICAL",
     "family": "UNDEAD",
@@ -552,7 +557,7 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d10+3",
+    "damageDice": "1d8",
     "hasRangedAttack": true,
     "attackRange": 6,
     "rangedProjectile": "ARROW",
@@ -562,11 +567,12 @@
   },
   "ALLIGATOR": {
     "baseLevel": 4,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 5,
-    "maxHP": 50,
+    "maxHP": 30,
     "maxMP": 15,
     "armorClass": 13,
-    "baseExperience": 35,
     "intelligence": 3,
     "family": "BEAST",
     "texturePath": "images/monsters/alligator.png",
@@ -620,15 +626,17 @@
         "weight": 1
       }
     ],
-    "damageDice": "2d8+4"
+    "damageDice": "1d8+2"
   },
   "DRAGON": {
     "baseLevel": 10,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 1,
     "maxHP": 80,
     "maxMP": 30,
     "armorClass": 16,
-    "baseExperience": 50,
+    "magicResistance": 30,
     "intelligence": 10,
     "isSpellcaster": false,
     "family": "MYTHICAL",
@@ -693,12 +701,12 @@
   },
   "WRAITH": {
     "baseLevel": 5,
+    "role": "SOLDIER",
     "frequency": 3,
-    "maxHP": 42,
+    "maxHP": 34,
     "maxMP": 35,
     "armorClass": 13,
     "intelligence": 6,
-    "baseExperience": 40,
     "family": "UNDEAD",
     "texturePath": "images/monsters/wraith.png",
     "spriteData": [
@@ -751,15 +759,16 @@
         "weight": 1
       }
     ],
-    "damageDice": "2d8+4"
+    "damageDice": "1d8+2"
   },
   "GIANT": {
     "baseLevel": 6,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 4,
-    "maxHP": 60,
+    "maxHP": 38,
     "maxMP": 20,
-    "armorClass": 13,
-    "baseExperience": 45,
+    "armorClass": 12,
     "intelligence": 6,
     "family": "HUMANOID",
     "texturePath": "images/monsters/giant.png",
@@ -813,20 +822,23 @@
         "weight": 1
       }
     ],
-    "damageDice": "3d10+6",
+    "damageDice": "1d10+2",
     "hasRangedAttack": true,
     "attackRange": 6,
     "rangedProjectile": "BOULDER",
-    "rangedDamageDice": "3d10",
+    "rangedDamageDice": "1d8+2",
     "rangedDamageType": "PHYSICAL"
   },
   "MINOTAUR": {
     "baseLevel": 15,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 1,
+    "generationFlags": 1,
     "maxHP": 100,
     "maxMP": 50,
     "armorClass": 14,
-    "baseExperience": 100,
+    "magicResistance": 20,
     "intelligence": 20,
     "isSpellcaster": false,
     "family": "MYTHICAL",
@@ -885,15 +897,15 @@
   },
   "SPIDER": {
     "baseLevel": 1,
+    "role": "SOLDIER",
     "frequency": 10,
     "baseAC": 7,
     "magicResistance": 0,
     "moveSpeed": 16,
     "alignment": "NEUTRAL",
-    "maxHP": 10,
+    "maxHP": 15,
     "maxMP": 10,
     "armorClass": 14,
-    "baseExperience": 8,
     "family": "BEAST",
     "texturePath": "images/monsters/spider.png",
     "scale": {
@@ -969,10 +981,10 @@
   },
   "GHAST": {
     "baseLevel": 3,
-    "maxHP": 50,
+    "role": "SOLDIER",
+    "maxHP": 22,
     "maxMP": 30,
     "armorClass": 13,
-    "baseExperience": 200,
     "intelligence": 20,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/ghast.png",
@@ -1027,14 +1039,15 @@
         "weight": 1
       }
     ],
-    "damageDice": "2d8+3"
+    "damageDice": "1d8"
   },
   "BEHOLDER": {
     "baseLevel": 12,
+    "role": "SOLDIER",
     "maxHP": 45,
     "maxMP": 45,
     "armorClass": 16,
-    "baseExperience": 250,
+    "magicResistance": 50,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/beholder.png",
     "spriteData": [
@@ -1071,8 +1084,16 @@
     "damageType": "PHYSICAL",
     "intelligence": 18,
     "isSpellcaster": true,
-    "spellSchools": ["TRANSMUTATION", "EVOCATION"],
-    "innateSpells": ["DISINTEGRATE", "SLOW", "CHARM_PERSON", "TELEKINESIS"],
+    "spellSchools": [
+      "TRANSMUTATION",
+      "EVOCATION"
+    ],
+    "innateSpells": [
+      "DISINTEGRATE",
+      "SLOW",
+      "CHARM_PERSON",
+      "TELEKINESIS"
+    ],
     "spellChance": 60,
     "aiType": "TACTICAL",
     "dexterity": 8,
@@ -1114,10 +1135,11 @@
   },
   "GELATINOUS_CUBE": {
     "baseLevel": 3,
-    "maxHP": 60,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 28,
     "maxMP": 0,
     "armorClass": 6,
-    "baseExperience": 120,
     "family": "BEAST",
     "texturePath": "images/monsters/cube.png",
     "spriteData": [
@@ -1150,7 +1172,7 @@
       "x": 1.2,
       "y": 1.2
     },
-    "damageDice": "3d6+4",
+    "damageDice": "1d8+2",
     "damageType": "PHYSICAL",
     "intelligence": 0,
     "dexterity": 2,
@@ -1188,10 +1210,10 @@
   },
   "RUST_MONSTER": {
     "baseLevel": 3,
-    "maxHP": 40,
+    "role": "SOLDIER",
+    "maxHP": 28,
     "maxMP": 10,
     "armorClass": 14,
-    "baseExperience": 90,
     "family": "BEAST",
     "texturePath": "images/monsters/rust.png",
     "spriteData": [
@@ -1224,7 +1246,7 @@
       "x": 1.0,
       "y": 0.8
     },
-    "damageDice": "1d8+2",
+    "damageDice": "1d8",
     "damageType": "PHYSICAL",
     "intelligence": 3,
     "dexterity": 16,
@@ -1254,10 +1276,11 @@
   },
   "LICH": {
     "baseLevel": 15,
+    "role": "SOLDIER",
     "maxHP": 50,
     "maxMP": 60,
     "armorClass": 17,
-    "baseExperience": 300,
+    "magicResistance": 50,
     "family": "UNDEAD",
     "texturePath": "images/monsters/lich.png",
     "spriteData": [
@@ -1294,8 +1317,16 @@
     "damageType": "PHYSICAL",
     "intelligence": 25,
     "isSpellcaster": true,
-    "spellSchools": ["NECROMANCY", "EVOCATION"],
-    "innateSpells": ["FIREBALL", "RAY_OF_ENFEEBLEMENT", "CHILL_TOUCH", "MISTY_STEP"],
+    "spellSchools": [
+      "NECROMANCY",
+      "EVOCATION"
+    ],
+    "innateSpells": [
+      "FIREBALL",
+      "RAY_OF_ENFEEBLEMENT",
+      "CHILL_TOUCH",
+      "MISTY_STEP"
+    ],
     "spellChance": 70,
     "aiType": "TACTICAL",
     "dexterity": 10,
@@ -1337,10 +1368,12 @@
   },
   "MIMIC": {
     "baseLevel": 3,
-    "maxHP": 50,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "generationFlags": 64,
+    "maxHP": 26,
     "maxMP": 0,
     "armorClass": 12,
-    "baseExperience": 150,
     "family": "BEAST",
     "texturePath": "images/monsters/mimic.png",
     "spriteData": [
@@ -1373,7 +1406,7 @@
       "x": 1.0,
       "y": 0.9
     },
-    "damageDice": "2d8+4",
+    "damageDice": "1d8+2",
     "damageType": "PHYSICAL",
     "intelligence": 5,
     "dexterity": 8,
@@ -1411,10 +1444,11 @@
   },
   "MIND_FLAYER": {
     "baseLevel": 10,
+    "role": "SOLDIER",
     "maxHP": 40,
     "maxMP": 50,
     "armorClass": 15,
-    "baseExperience": 200,
+    "magicResistance": 40,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/flayer.png",
     "spriteData": [
@@ -1451,8 +1485,15 @@
     "damageType": "PHYSICAL",
     "intelligence": 22,
     "isSpellcaster": true,
-    "spellSchools": ["ENCHANTMENT", "ILLUSION"],
-    "innateSpells": ["PHANTASMAL_KILLER", "HOLD_PERSON", "TELEPORT"],
+    "spellSchools": [
+      "ENCHANTMENT",
+      "ILLUSION"
+    ],
+    "innateSpells": [
+      "PHANTASMAL_KILLER",
+      "HOLD_PERSON",
+      "TELEPORT"
+    ],
     "spellChance": 65,
     "aiType": "TACTICAL",
     "dexterity": 12,
@@ -1488,10 +1529,11 @@
   },
   "OWLBEAR": {
     "baseLevel": 5,
-    "maxHP": 75,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 32,
     "maxMP": 0,
     "armorClass": 13,
-    "baseExperience": 180,
     "family": "BEAST",
     "texturePath": "images/monsters/owlbear.png",
     "spriteData": [
@@ -1524,7 +1566,7 @@
       "x": 1.1,
       "y": 1.0
     },
-    "damageDice": "3d8+5",
+    "damageDice": "1d8+2",
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 14,
@@ -1556,10 +1598,11 @@
   },
   "DISPLACER_BEAST": {
     "baseLevel": 6,
-    "maxHP": 60,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 32,
     "maxMP": 20,
-    "armorClass": 13,
-    "baseExperience": 220,
+    "armorClass": 12,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/dbeast.png",
     "spriteData": [
@@ -1592,10 +1635,10 @@
       "x": 1.3,
       "y": 0.9
     },
-    "damageDice": "2d10+5",
+    "damageDice": "1d10+2",
     "damageType": "PHYSICAL",
     "intelligence": 6,
-    "dexterity": 22,
+    "dexterity": 14,
     "hasRangedAttack": true,
     "attackRange": 2,
     "onHitEffects": [
@@ -1624,10 +1667,11 @@
   },
   "UMBER_HULK": {
     "baseLevel": 6,
-    "maxHP": 70,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 38,
     "maxMP": 15,
-    "armorClass": 16,
-    "baseExperience": 280,
+    "armorClass": 13,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/u_hulk.png",
     "spriteData": [
@@ -1660,7 +1704,7 @@
       "x": 1.2,
       "y": 1.1
     },
-    "damageDice": "3d10+6",
+    "damageDice": "1d10+2",
     "damageType": "PHYSICAL",
     "intelligence": 8,
     "dexterity": 10,
@@ -1669,10 +1713,10 @@
     "onHitEffects": [
       {
         "type": "CONFUSION",
-        "duration": 10,
-        "potency": 2,
+        "duration": 3,
+        "potency": 1,
         "stackable": false,
-        "chance": 0.5
+        "chance": 0.25
       }
     ],
     "variants": [
@@ -1692,10 +1736,10 @@
   },
   "KOBOLD": {
     "baseLevel": 1,
-    "maxHP": 8,
+    "role": "FODDER",
+    "maxHP": 12,
     "maxMP": 4,
     "armorClass": 12,
-    "baseExperience": 5,
     "family": "HUMANOID",
     "texturePath": "images/monsters/kobold.png",
     "spriteData": [
@@ -1756,10 +1800,10 @@
   },
   "GOBLIN": {
     "baseLevel": 1,
-    "maxHP": 8,
+    "role": "FODDER",
+    "maxHP": 12,
     "maxMP": 5,
     "armorClass": 12,
-    "baseExperience": 8,
     "family": "HUMANOID",
     "texturePath": "images/monsters/goblin.png",
     "spriteData": [
@@ -1820,10 +1864,10 @@
   },
   "TROGLODYTE": {
     "baseLevel": 2,
-    "maxHP": 18,
+    "role": "SOLDIER",
+    "maxHP": 16,
     "maxMP": 6,
     "armorClass": 11,
-    "baseExperience": 15,
     "family": "HUMANOID",
     "texturePath": "images/monsters/troglodyte.png",
     "spriteData": [
@@ -1856,7 +1900,7 @@
       "x": 0.9,
       "y": 0.9
     },
-    "damageDice": "1d6+1",
+    "damageDice": "1d6",
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 8,
@@ -1888,10 +1932,10 @@
   },
   "HOBGOBLIN": {
     "baseLevel": 2,
-    "maxHP": 26,
+    "role": "SOLDIER",
+    "maxHP": 16,
     "maxMP": 8,
-    "armorClass": 13,
-    "baseExperience": 25,
+    "armorClass": 11,
     "family": "HUMANOID",
     "texturePath": "images/monsters/hobgoblin.png",
     "spriteData": [
@@ -1924,14 +1968,14 @@
       "x": 1.0,
       "y": 1.0
     },
-    "damageDice": "1d10+3",
+    "damageDice": "1d6",
     "damageType": "PHYSICAL",
     "intelligence": 5,
     "dexterity": 10,
     "hasRangedAttack": true,
     "attackRange": 6,
     "rangedProjectile": "ARROW",
-    "rangedDamageDice": "1d8",
+    "rangedDamageDice": "1d4",
     "rangedDamageType": "PHYSICAL",
     "rangedPreferredDistance": 4,
     "onHitEffects": [],
@@ -1952,10 +1996,10 @@
   },
   "ZOMBIE": {
     "baseLevel": 2,
-    "maxHP": 30,
+    "role": "SOLDIER",
+    "maxHP": 22,
     "maxMP": 2,
     "armorClass": 8,
-    "baseExperience": 20,
     "family": "UNDEAD",
     "texturePath": "images/monsters/zombie.png",
     "spriteData": [
@@ -1988,7 +2032,7 @@
       "x": 0.9,
       "y": 1.0
     },
-    "damageDice": "1d10+2",
+    "damageDice": "1d6+1",
     "damageType": "PHYSICAL",
     "intelligence": 1,
     "dexterity": 4,
@@ -2012,10 +2056,10 @@
   },
   "MUMMY": {
     "baseLevel": 5,
-    "maxHP": 42,
+    "role": "SOLDIER",
+    "maxHP": 36,
     "maxMP": 15,
     "armorClass": 11,
-    "baseExperience": 60,
     "family": "UNDEAD",
     "texturePath": "images/monsters/mummy.png",
     "spriteData": [
@@ -2048,7 +2092,7 @@
       "x": 1.0,
       "y": 1.0
     },
-    "damageDice": "2d8+4",
+    "damageDice": "2d6",
     "damageType": "PHYSICAL",
     "intelligence": 4,
     "dexterity": 5,
@@ -2080,10 +2124,10 @@
   },
   "HARPY": {
     "baseLevel": 4,
-    "maxHP": 28,
+    "role": "SOLDIER",
+    "maxHP": 24,
     "maxMP": 10,
     "armorClass": 11,
-    "baseExperience": 40,
     "family": "BEAST",
     "texturePath": "images/monsters/harpy.png",
     "spriteData": [
@@ -2116,7 +2160,7 @@
       "x": 1.0,
       "y": 0.9
     },
-    "damageDice": "2d8+4",
+    "damageDice": "1d8+1",
     "damageType": "PHYSICAL",
     "intelligence": 4,
     "dexterity": 18,
@@ -2140,10 +2184,10 @@
   },
   "GARGOYLE": {
     "baseLevel": 4,
-    "maxHP": 38,
+    "role": "SOLDIER",
+    "maxHP": 30,
     "maxMP": 5,
-    "armorClass": 15,
-    "baseExperience": 70,
+    "armorClass": 14,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/gargoyle.png",
     "spriteData": [
@@ -2176,7 +2220,7 @@
       "x": 1.0,
       "y": 1.0
     },
-    "damageDice": "2d8+4",
+    "damageDice": "1d8+2",
     "damageType": "PHYSICAL",
     "intelligence": 3,
     "dexterity": 8,
@@ -2200,10 +2244,10 @@
   },
   "WERERAT": {
     "baseLevel": 3,
-    "maxHP": 28,
+    "role": "SOLDIER",
+    "maxHP": 22,
     "maxMP": 5,
-    "armorClass": 12,
-    "baseExperience": 35,
+    "armorClass": 11,
     "family": "BEAST",
     "texturePath": "images/monsters/wererat.png",
     "spriteData": [
@@ -2236,7 +2280,7 @@
       "x": 0.9,
       "y": 0.9
     },
-    "damageDice": "2d6+2",
+    "damageDice": "1d8",
     "damageType": "PHYSICAL",
     "intelligence": 5,
     "dexterity": 16,
@@ -2268,10 +2312,11 @@
   },
   "WEREWOLF": {
     "baseLevel": 7,
-    "maxHP": 60,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 34,
     "maxMP": 10,
-    "armorClass": 11,
-    "baseExperience": 110,
+    "armorClass": 12,
     "family": "BEAST",
     "texturePath": "images/monsters/werewolf.png",
     "spriteData": [
@@ -2304,10 +2349,10 @@
       "x": 1.1,
       "y": 1.1
     },
-    "damageDice": "2d10+5",
+    "damageDice": "1d10+2",
     "damageType": "PHYSICAL",
     "intelligence": 6,
-    "dexterity": 18,
+    "dexterity": 14,
     "hasRangedAttack": false,
     "attackRange": 1,
     "onHitEffects": [
@@ -2336,10 +2381,11 @@
   },
   "TROLL": {
     "baseLevel": 6,
-    "maxHP": 70,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 38,
     "maxMP": 5,
-    "armorClass": 15,
-    "baseExperience": 130,
+    "armorClass": 12,
     "family": "HUMANOID",
     "texturePath": "images/monsters/troll.png",
     "spriteData": [
@@ -2372,14 +2418,14 @@
       "x": 1.2,
       "y": 1.3
     },
-    "damageDice": "2d10+5",
+    "damageDice": "1d10+2",
     "damageType": "PHYSICAL",
     "intelligence": 3,
     "dexterity": 8,
     "hasRangedAttack": true,
     "attackRange": 5,
     "rangedProjectile": "BOULDER",
-    "rangedDamageDice": "2d8",
+    "rangedDamageDice": "1d8+2",
     "rangedDamageType": "PHYSICAL",
     "onHitEffects": [],
     "variants": [
@@ -2399,10 +2445,11 @@
   },
   "OGRE": {
     "baseLevel": 5,
-    "maxHP": 75,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
+    "maxHP": 34,
     "maxMP": 5,
     "armorClass": 11,
-    "baseExperience": 140,
     "family": "HUMANOID",
     "texturePath": "images/monsters/ogre.png",
     "spriteData": [
@@ -2435,7 +2482,7 @@
       "x": 1.3,
       "y": 1.2
     },
-    "damageDice": "3d8+5",
+    "damageDice": "1d10+1",
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 6,
@@ -2462,10 +2509,10 @@
   },
   "BASILISK": {
     "baseLevel": 8,
-    "maxHP": 60,
+    "role": "SOLDIER",
+    "maxHP": 36,
     "maxMP": 25,
-    "armorClass": 15,
-    "baseExperience": 160,
+    "armorClass": 12,
     "family": "BEAST",
     "texturePath": "images/monsters/basilisk.png",
     "spriteData": [
@@ -2498,14 +2545,14 @@
       "x": 1.2,
       "y": 0.8
     },
-    "damageDice": "2d8+4",
+    "damageDice": "1d10+2",
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 8,
     "hasRangedAttack": true,
     "attackRange": 5,
     "rangedProjectile": "VENOM",
-    "rangedDamageDice": "2d6",
+    "rangedDamageDice": "1d8+2",
     "rangedDamageType": "POISON",
     "rangedEffect": "SLOWED",
     "onHitEffects": [
@@ -2534,10 +2581,10 @@
   },
   "MEDUSA": {
     "baseLevel": 8,
-    "maxHP": 45,
+    "role": "SOLDIER",
+    "maxHP": 34,
     "maxMP": 40,
-    "armorClass": 15,
-    "baseExperience": 200,
+    "armorClass": 14,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/medusa.png",
     "spriteData": [
@@ -2570,12 +2617,18 @@
       "x": 1.0,
       "y": 1.1
     },
-    "damageDice": "2d8+4",
+    "damageDice": "1d8+2",
     "damageType": "MAGICAL",
     "intelligence": 15,
     "isSpellcaster": true,
-    "spellSchools": ["TRANSMUTATION", "CONJURATION"],
-    "innateSpells": ["ACID_SPLASH", "POISON_SPRAY"],
+    "spellSchools": [
+      "TRANSMUTATION",
+      "CONJURATION"
+    ],
+    "innateSpells": [
+      "ACID_SPLASH",
+      "POISON_SPRAY"
+    ],
     "spellChance": 50,
     "aiType": "TACTICAL",
     "dexterity": 12,
@@ -2589,10 +2642,10 @@
     "onHitEffects": [
       {
         "type": "SLOWED",
-        "duration": 8,
-        "potency": 3,
+        "duration": 4,
+        "potency": 1,
         "stackable": false,
-        "chance": 0.5
+        "chance": 0.3
       }
     ],
     "variants": [
@@ -2612,10 +2665,12 @@
   },
   "WYVERN": {
     "baseLevel": 9,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "maxHP": 80,
     "maxMP": 10,
     "armorClass": 13,
-    "baseExperience": 220,
+    "magicResistance": 20,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/wyvern.png",
     "spriteData": [
@@ -2683,10 +2738,12 @@
   },
   "CHIMERA": {
     "baseLevel": 9,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "maxHP": 85,
     "maxMP": 25,
     "armorClass": 14,
-    "baseExperience": 300,
+    "magicResistance": 20,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/chimera.png",
     "spriteData": [
@@ -2746,10 +2803,12 @@
   },
   "HYDRA": {
     "baseLevel": 12,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "maxHP": 110,
     "maxMP": 15,
     "armorClass": 15,
-    "baseExperience": 350,
+    "magicResistance": 20,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/hydra.png",
     "spriteData": [
@@ -2809,10 +2868,11 @@
   },
   "VAMPIRE": {
     "baseLevel": 11,
+    "role": "SOLDIER",
     "maxHP": 75,
     "maxMP": 50,
     "armorClass": 16,
-    "baseExperience": 400,
+    "magicResistance": 30,
     "family": "UNDEAD",
     "texturePath": "images/monsters/vampire.png",
     "spriteData": [
@@ -2849,8 +2909,15 @@
     "damageType": "MAGICAL",
     "intelligence": 20,
     "isSpellcaster": true,
-    "spellSchools": ["NECROMANCY", "ILLUSION"],
-    "innateSpells": ["VAMPIRIC_TOUCH", "DARKNESS", "MISTY_STEP"],
+    "spellSchools": [
+      "NECROMANCY",
+      "ILLUSION"
+    ],
+    "innateSpells": [
+      "VAMPIRIC_TOUCH",
+      "DARKNESS",
+      "MISTY_STEP"
+    ],
     "spellChance": 55,
     "aiType": "TACTICAL",
     "dexterity": 14,
@@ -2885,10 +2952,12 @@
   },
   "IRON_GOLEM": {
     "baseLevel": 15,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "maxHP": 120,
     "maxMP": 0,
     "armorClass": 16,
-    "baseExperience": 500,
+    "magicResistance": 50,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/iron_golem.png",
     "spriteData": [
@@ -2948,10 +3017,12 @@
   },
   "PURPLE_WORM": {
     "baseLevel": 18,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "maxHP": 140,
     "maxMP": 10,
     "armorClass": 17,
-    "baseExperience": 600,
+    "magicResistance": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/purple_worm.png",
     "spriteData": [
@@ -3016,15 +3087,16 @@
   },
   "DEMON_SLIME": {
     "baseLevel": 10,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 2,
     "baseAC": 14,
-    "magicResistance": 15,
+    "magicResistance": 20,
     "moveSpeed": 10,
     "alignment": "CHAOTIC",
     "maxHP": 90,
     "maxMP": 30,
     "armorClass": 15,
-    "baseExperience": 250,
     "family": "DEMON",
     "texturePath": "images/monsters/boss_demon_slime_FREE_v1.0/spritesheets/demon_slime_FREE_v1.0_288x160_spritesheet.png",
     "isSpriteSheet": true,
@@ -3064,15 +3136,16 @@
   },
   "BRINGER_OF_DEATH": {
     "baseLevel": 18,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 1,
     "baseAC": 18,
-    "magicResistance": 30,
+    "magicResistance": 60,
     "moveSpeed": 9,
     "alignment": "CHAOTIC",
     "maxHP": 140,
     "maxMP": 60,
     "armorClass": 16,
-    "baseExperience": 500,
     "family": "UNDEAD",
     "texturePath": "images/monsters/Bringer-of-Death-SpritSheet_no-Effect.png",
     "isSpriteSheet": true,
@@ -3081,8 +3154,13 @@
     "spriteFrameDuration": 0.12,
     "intelligence": 14,
     "isSpellcaster": true,
-    "spellSchools": ["NECROMANCY"],
-    "innateSpells": ["CIRCLE_OF_DEATH", "RAY_OF_ENFEEBLEMENT"],
+    "spellSchools": [
+      "NECROMANCY"
+    ],
+    "innateSpells": [
+      "CIRCLE_OF_DEATH",
+      "RAY_OF_ENFEEBLEMENT"
+    ],
     "spellChance": 35,
     "aiType": "TACTICAL",
     "dexterity": 14,
@@ -3114,15 +3192,16 @@
   },
   "FALL_ANGEL": {
     "baseLevel": 14,
+    "role": "HEAVY",
+    "xpMultiplier": 1.5,
     "frequency": 1,
     "baseAC": 17,
-    "magicResistance": 25,
+    "magicResistance": 40,
     "moveSpeed": 11,
     "alignment": "CHAOTIC",
     "maxHP": 110,
     "maxMP": 80,
     "armorClass": 15,
-    "baseExperience": 380,
     "family": "DEMON",
     "texturePath": "images/monsters/fall_angel.png",
     "isSpriteSheet": true,
@@ -3131,8 +3210,15 @@
     "spriteFrameDuration": 0.14,
     "intelligence": 16,
     "isSpellcaster": true,
-    "spellSchools": ["EVOCATION", "ABJURATION"],
-    "innateSpells": ["FLAME_STRIKE", "GUIDING_BOLT", "SHIELD"],
+    "spellSchools": [
+      "EVOCATION",
+      "ABJURATION"
+    ],
+    "innateSpells": [
+      "FLAME_STRIKE",
+      "GUIDING_BOLT",
+      "SHIELD"
+    ],
     "spellChance": 50,
     "aiType": "TACTICAL",
     "dexterity": 15,
@@ -3164,15 +3250,15 @@
   },
   "AGIS": {
     "baseLevel": 3,
+    "role": "SOLDIER",
     "frequency": 6,
     "baseAC": 9,
     "magicResistance": 0,
     "moveSpeed": 12,
     "alignment": "CHAOTIC",
-    "maxHP": 22,
+    "maxHP": 20,
     "maxMP": 20,
-    "armorClass": 13,
-    "baseExperience": 20,
+    "armorClass": 12,
     "family": "BEAST",
     "texturePath": "images/monsters/Agis/Agis.png",
     "isSpriteSheet": true,
@@ -3192,6 +3278,879 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d10+3"
+    "damageDice": "1d8"
+  },
+  "BAT": {
+    "baseLevel": 1,
+    "role": "FODDER",
+    "frequency": 5,
+    "maxHP": 8,
+    "maxMP": 0,
+    "armorClass": 13,
+    "family": "BEAST",
+    "texturePath": "images/monsters/batch1/bat.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".####...............##..",
+      ".#####............#####.",
+      "..#######.......#######.",
+      "..######........#######.",
+      ".########.##....######..",
+      ".########.###########...",
+      ".####################...",
+      "..##################....",
+      "...#################....",
+      "...#################....",
+      "....###############.....",
+      "......###########.......",
+      ".......########.........",
+      "........######..........",
+      "........######..........",
+      "............#..........."
+    ],
+    "scale": {
+      "x": 0.54,
+      "y": 0.54
+    },
+    "damageDice": "1d3",
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 16,
+    "moveSpeed": 16,
+    "onHitEffects": [
+      {
+        "type": "BLEEDING",
+        "duration": 3,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.25
+      }
+    ],
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "GIANT_BEE": {
+    "baseLevel": 2,
+    "role": "FODDER",
+    "frequency": 4,
+    "maxHP": 6,
+    "maxMP": 0,
+    "armorClass": 14,
+    "family": "BEAST",
+    "texturePath": "images/monsters/batch1/giant_bee.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "..............#.........",
+      "....####.....###........",
+      "....#####....####.......",
+      "....#####...######......",
+      "....######..########....",
+      "....######..########....",
+      "....##############......",
+      ".....#############......",
+      "........##########......",
+      "........#########.......",
+      "........########........",
+      ".......########.........",
+      ".......########.........",
+      ".......########.........",
+      ".......#######..........",
+      ".......######...........",
+      ".......######...........",
+      "........########........",
+      ".........#######........",
+      "............##..........",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.45,
+      "y": 0.45
+    },
+    "damageDice": "1d3",
+    "damageType": "PHYSICAL",
+    "intelligence": 1,
+    "dexterity": 16,
+    "moveSpeed": 16,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 3,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.4
+      }
+    ],
+    "variants": [
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "GIANT_SNAIL": {
+    "baseLevel": 2,
+    "role": "SOLDIER",
+    "frequency": 3,
+    "maxHP": 20,
+    "maxMP": 0,
+    "armorClass": 8,
+    "family": "BEAST",
+    "texturePath": "images/monsters/batch1/giant_snail.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      ".....................###",
+      ".....................###",
+      "...............##.....##",
+      "...............##....###",
+      "...............###...###",
+      "...............###...##.",
+      "................#######.",
+      ".................######.",
+      "..................#####.",
+      ".................######.",
+      "................########",
+      "................########",
+      "..............##########",
+      "............############",
+      "....####################",
+      "..#####################.",
+      ".######################.",
+      "#######################.",
+      "######################..",
+      "######################..",
+      "#####################...",
+      "####################...."
+    ],
+    "scale": {
+      "x": 0.72,
+      "y": 0.54
+    },
+    "damageDice": "1d4",
+    "damageType": "PHYSICAL",
+    "intelligence": 1,
+    "dexterity": 4,
+    "moveSpeed": 5,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "GIANT_CENTIPEDE": {
+    "baseLevel": 3,
+    "role": "FODDER",
+    "frequency": 5,
+    "maxHP": 14,
+    "maxMP": 0,
+    "armorClass": 12,
+    "family": "BEAST",
+    "texturePath": "images/monsters/batch1/giant_centipede_green.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "............#####.......",
+      "..........#########.....",
+      "........############....",
+      ".......#############....",
+      ".......##############...",
+      ".......##############...",
+      "......##############....",
+      "......############.#....",
+      "......###########.......",
+      "........##########......",
+      ".........#########......",
+      "..........########......",
+      "..........#########.....",
+      "....#####.###########...",
+      "...##################...",
+      "...##################...",
+      "....################....",
+      "....################....",
+      "....##.##########.##....",
+      ".....#.##..##..........."
+    ],
+    "scale": {
+      "x": 0.72,
+      "y": 0.72
+    },
+    "damageDice": "1d6",
+    "damageType": "PHYSICAL",
+    "intelligence": 1,
+    "dexterity": 12,
+    "moveSpeed": 14,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 4,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.4
+      }
+    ],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10,
+        "texturePath": "images/monsters/batch1/giant_centipede_green.png"
+      },
+      {
+        "color": "RED",
+        "minLevel": 5,
+        "maxLevel": 99,
+        "weight": 3,
+        "texturePath": "images/monsters/batch1/giant_centipede_red.png"
+      }
+    ]
+  },
+  "LANDSTALKER": {
+    "baseLevel": 4,
+    "role": "SOLDIER",
+    "frequency": 4,
+    "maxHP": 26,
+    "maxMP": 0,
+    "armorClass": 15,
+    "family": "BEAST",
+    "texturePath": "images/monsters/batch1/landstalker.png",
+    "spriteData": [
+      "........................",
+      ".........####...........",
+      ".......########.........",
+      "......###########.......",
+      "....##############......",
+      "....###############.....",
+      "...#################....",
+      "..##################....",
+      "..###################...",
+      ".####################...",
+      ".#####################..",
+      "######################..",
+      "######################..",
+      "#######################.",
+      ".#.####################.",
+      "..#####################.",
+      "..####################..",
+      ".....#################..",
+      "......###############...",
+      "......###############...",
+      "......#...###########...",
+      "............#########...",
+      ".................####...",
+      "..................##...."
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 0.63
+    },
+    "damageDice": "1d8+1",
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 8,
+    "moveSpeed": 10,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "BROWN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "COCKATRICE": {
+    "baseLevel": 5,
+    "role": "SOLDIER",
+    "frequency": 3,
+    "maxHP": 20,
+    "maxMP": 0,
+    "armorClass": 13,
+    "magicResistance": 10,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/batch1/cockatrice.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "................####....",
+      "...............######...",
+      ".......##.#.#########...",
+      "......################..",
+      "......#################.",
+      ".....##################.",
+      "....#################...",
+      "...##################...",
+      "...###############.#....",
+      "..###############.......",
+      "..##############........",
+      "..####.########.........",
+      "..####.######...........",
+      "..###########...........",
+      "...############.........",
+      "...############.........",
+      "........#######........."
+    ],
+    "scale": {
+      "x": 0.81,
+      "y": 0.61
+    },
+    "damageDice": "1d6+1",
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 12,
+    "moveSpeed": 12,
+    "onHitEffects": [
+      {
+        "type": "SLOWED",
+        "duration": 4,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.35
+      }
+    ],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "LIZARD_WARRIOR": {
+    "baseLevel": 5,
+    "role": "SOLDIER",
+    "frequency": 4,
+    "maxHP": 26,
+    "maxMP": 0,
+    "armorClass": 15,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/batch1/lizard_warrior.png",
+    "spriteData": [
+      "..##.####...............",
+      "..##.#####..............",
+      "...########.............",
+      "....#######.............",
+      "...########.............",
+      "...########.............",
+      "...##########...........",
+      "..###########...........",
+      "..###########...........",
+      "...###########..........",
+      "...###########..........",
+      "...############.........",
+      "....############........",
+      "...#######.######.......",
+      "..#########...####......",
+      ".#############.#####....",
+      ".##############.######..",
+      ".#####################..",
+      ".############.#########.",
+      ".#######................",
+      ".....###................",
+      "......##................",
+      "......###...............",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 0.74
+    },
+    "damageDice": "1d8+1",
+    "damageType": "PHYSICAL",
+    "intelligence": 6,
+    "dexterity": 12,
+    "moveSpeed": 12,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "BEETLESCRATCH": {
+    "baseLevel": 6,
+    "role": "SOLDIER",
+    "frequency": 3,
+    "maxHP": 26,
+    "maxMP": 0,
+    "armorClass": 14,
+    "magicResistance": 15,
+    "family": "BEAST",
+    "texturePath": "images/monsters/batch1/beetlescratch_storm.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........#####.##.......",
+      "........###########.....",
+      ".....################...",
+      ".....#################..",
+      ".....#################..",
+      "..####################..",
+      "..#####################.",
+      "#######################.",
+      ".######################.",
+      "..#####################.",
+      "...####################.",
+      "....###################.",
+      "...###################..",
+      "..####################..",
+      "....##################..",
+      "...##################...",
+      "...##################...",
+      "..#############.........",
+      "....#########...........",
+      "....##.##..............."
+    ],
+    "scale": {
+      "x": 0.93,
+      "y": 1.0
+    },
+    "damageDice": "1d8",
+    "damageType": "PHYSICAL",
+    "intelligence": 3,
+    "dexterity": 12,
+    "moveSpeed": 12,
+    "hasRangedAttack": true,
+    "attackRange": 6,
+    "rangedProjectile": "FIREBALL",
+    "rangedDamageDice": "2d6",
+    "rangedDamageType": "MAGICAL",
+    "rangedPreferredDistance": 5,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 7,
+        "maxLevel": 99,
+        "weight": 3,
+        "rangedProjectile": "PSYCHIC_BOLT",
+        "rangedDamageType": "SORCERY",
+        "texturePath": "images/monsters/batch1/beetlescratch_storm.png"
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 5,
+        "rangedProjectile": "RADIANT_SPEAR",
+        "rangedDamageType": "LIGHT",
+        "texturePath": "images/monsters/batch1/beetlescratch_lightning.png"
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 4,
+        "rangedProjectile": "FIREBALL",
+        "rangedDamageType": "FIRE",
+        "texturePath": "images/monsters/batch1/beetlescratch_fire.png"
+      },
+      {
+        "color": "BLACK",
+        "minLevel": 12,
+        "maxLevel": 99,
+        "weight": 2,
+        "rangedProjectile": "DEATH_RAY",
+        "rangedDamageType": "DARK",
+        "texturePath": "images/monsters/batch1/beetlescratch_void.png"
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 5,
+        "rangedProjectile": "DEATH_RAY",
+        "rangedDamageType": "ICE",
+        "texturePath": "images/monsters/batch1/beetlescratch_ice.png"
+      }
+    ]
+  },
+  "JESTER": {
+    "baseLevel": 6,
+    "role": "SOLDIER",
+    "frequency": 2,
+    "maxHP": 24,
+    "maxMP": 0,
+    "armorClass": 14,
+    "magicResistance": 20,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/batch1/jester.png",
+    "spriteData": [
+      "........................",
+      ".......#####............",
+      "......############......",
+      "......##############....",
+      "..####################..",
+      ".######################.",
+      ".###############.#######",
+      ".###############..#####.",
+      ".######.########...####.",
+      ".#################..###.",
+      "...###################..",
+      "...###################..",
+      "....#################...",
+      "......##########........",
+      ".......##########.......",
+      ".....#############......",
+      ".....##############.....",
+      ".....##############.....",
+      ".....#############......",
+      "......###############...",
+      "......################..",
+      "....###################.",
+      "....###################.",
+      ".....#############......"
+    ],
+    "scale": {
+      "x": 0.57,
+      "y": 0.9
+    },
+    "damageDice": "1d6",
+    "damageType": "PHYSICAL",
+    "intelligence": 14,
+    "dexterity": 14,
+    "moveSpeed": 12,
+    "isSpellcaster": true,
+    "spellSchools": [
+      "ENCHANTMENT",
+      "ILLUSION"
+    ],
+    "innateSpells": [
+      "HIDEOUS_LAUGHTER",
+      "VICIOUS_MOCKERY",
+      "CONFUSION"
+    ],
+    "spellChance": 50,
+    "aiType": "TACTICAL",
+    "onHitEffects": [
+      {
+        "type": "CONFUSED",
+        "duration": 3,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.3
+      }
+    ],
+    "variants": [
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
+  },
+  "SPECTER": {
+    "baseLevel": 7,
+    "role": "SOLDIER",
+    "frequency": 2,
+    "maxHP": 28,
+    "maxMP": 0,
+    "armorClass": 15,
+    "magicResistance": 30,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/batch1/specter_fire.png",
+    "spriteData": [
+      "..................####..",
+      "............#########...",
+      "...........##########...",
+      "...........##########...",
+      "..........###########...",
+      "..........##########....",
+      "..........#########.....",
+      ".........###########....",
+      "........############....",
+      "........#############...",
+      "........###############.",
+      "........###############.",
+      ".......#################",
+      "......##################",
+      ".....###################",
+      "....###################.",
+      "....###################.",
+      "..####################..",
+      ".#####################..",
+      "############..#########.",
+      "##########.....#######..",
+      "..########.....#####....",
+      "....#####.......#......#",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 1.0
+    },
+    "damageDice": "1d8",
+    "damageType": "PHYSICAL",
+    "intelligence": 14,
+    "dexterity": 12,
+    "moveSpeed": 12,
+    "isSpellcaster": true,
+    "spellSchools": [
+      "EVOCATION",
+      "NECROMANCY"
+    ],
+    "innateSpells": [
+      "FIRE_BOLT"
+    ],
+    "spellChance": 55,
+    "aiType": "TACTICAL",
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 4,
+        "innateSpells": [
+          "FIRE_BOLT",
+          "BURNING_HANDS"
+        ],
+        "texturePath": "images/monsters/batch1/specter_fire.png"
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 5,
+        "innateSpells": [
+          "RAY_OF_FROST",
+          "CHILL_TOUCH"
+        ],
+        "texturePath": "images/monsters/batch1/specter_frost.png"
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 9,
+        "maxLevel": 99,
+        "weight": 3,
+        "innateSpells": [
+          "MAGIC_MISSILE",
+          "RAY_OF_ENFEEBLEMENT"
+        ],
+        "texturePath": "images/monsters/batch1/specter_arcane.png"
+      },
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 4,
+        "innateSpells": [
+          "POISON_SPRAY",
+          "ACID_ARROW"
+        ],
+        "texturePath": "images/monsters/batch1/specter_venom.png"
+      }
+    ]
+  },
+  "SAGE": {
+    "baseLevel": 8,
+    "role": "SOLDIER",
+    "frequency": 2,
+    "maxHP": 30,
+    "maxMP": 0,
+    "armorClass": 14,
+    "magicResistance": 25,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/batch1/sage_fire.png",
+    "spriteData": [
+      "........................",
+      "................####....",
+      ".........#####.#######..",
+      ".........#####..#######.",
+      ".......#######..#######.",
+      ".....#########..#######.",
+      "...####################.",
+      "...####################.",
+      "..#####################.",
+      "..###################...",
+      "...#################....",
+      "..###################...",
+      ".####################...",
+      "##################......",
+      "#################.......",
+      ".################.......",
+      "....##############......",
+      "..################......",
+      "..#################.....",
+      "..#################.....",
+      "..#################.....",
+      "...################.....",
+      "....##############......",
+      "........######.........."
+    ],
+    "scale": {
+      "x": 0.81,
+      "y": 0.8
+    },
+    "damageDice": "1d6",
+    "damageType": "PHYSICAL",
+    "intelligence": 18,
+    "dexterity": 12,
+    "moveSpeed": 12,
+    "isSpellcaster": true,
+    "spellSchools": [
+      "EVOCATION"
+    ],
+    "innateSpells": [
+      "MAGIC_MISSILE"
+    ],
+    "spellChance": 65,
+    "aiType": "TACTICAL",
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 4,
+        "innateSpells": [
+          "FIRE_BOLT",
+          "FIREBALL"
+        ],
+        "texturePath": "images/monsters/batch1/sage_fire.png"
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 5,
+        "innateSpells": [
+          "RAY_OF_FROST",
+          "ICE_STORM"
+        ],
+        "texturePath": "images/monsters/batch1/sage_frost.png"
+      },
+      {
+        "color": "RED",
+        "minLevel": 10,
+        "maxLevel": 99,
+        "weight": 3,
+        "innateSpells": [
+          "LIGHTNING_BOLT",
+          "SHOCKING_GRASP"
+        ],
+        "texturePath": "images/monsters/batch1/sage_storm.png"
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 5,
+        "innateSpells": [
+          "MAGIC_MISSILE",
+          "THUNDERWAVE"
+        ],
+        "texturePath": "images/monsters/batch1/sage_arcane.png"
+      }
+    ]
+  },
+  "SKELETAL_WIZARD": {
+    "baseLevel": 9,
+    "role": "SOLDIER",
+    "frequency": 2,
+    "maxHP": 34,
+    "maxMP": 0,
+    "armorClass": 15,
+    "magicResistance": 30,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/batch1/skeletal_wizard.png",
+    "spriteData": [
+      "...............#........",
+      "..........#....#........",
+      "..........######........",
+      "..........######........",
+      "......###########.......",
+      "....################....",
+      "...##################...",
+      "..###################...",
+      "..#####.##############..",
+      "..####################..",
+      "..#####################.",
+      "..#####################.",
+      "..####################..",
+      ".######################.",
+      ".#######################",
+      ".#######..########.#####",
+      ".######.###########.####",
+      "......###############...",
+      "..#####################.",
+      ".#######################",
+      "###...#######...####..#.",
+      "......#####......###....",
+      "......#####.............",
+      ".......###.............."
+    ],
+    "scale": {
+      "x": 0.81,
+      "y": 0.68
+    },
+    "damageDice": "1d8",
+    "damageType": "PHYSICAL",
+    "intelligence": 17,
+    "dexterity": 10,
+    "moveSpeed": 11,
+    "isSpellcaster": true,
+    "spellSchools": [
+      "NECROMANCY"
+    ],
+    "innateSpells": [
+      "BLIGHT",
+      "VAMPIRIC_TOUCH",
+      "RAY_OF_ENFEEBLEMENT"
+    ],
+    "spellChance": 60,
+    "aiType": "TACTICAL",
+    "onHitEffects": [
+      {
+        "type": "WEAKENED",
+        "duration": 6,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.3
+      }
+    ],
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 10
+      }
+    ]
   }
 }

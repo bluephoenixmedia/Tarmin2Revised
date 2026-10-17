@@ -23,7 +23,24 @@ public class Scenery implements Renderable {
          * switch arm here. Adding one enum value keeps every existing save
          * loading untouched, which replacing the enum would not.
          */
-        PROP
+        PROP,
+        /**
+         * What a slain monster leaves behind.
+         *
+         * <p>Separate from {@link #DECOMPOSING_CORPSE}, which is a dead hero's
+         * bones. The two shared one type, and "monster corpse" was defined as
+         * "a bones corpse whose bonesData happens to be null" -- so monsters
+         * inherited the hero corpse art, the ethereal ghost tint meant for
+         * sleeping bones, and, once bonesData failed to survive a save, real
+         * hero remains degraded into butcherable meat.
+         */
+        MONSTER_REMAINS,
+        /**
+         * A wet heap left where a monster was dismembered or obliterated.
+         *
+         * <p>A body torn apart must not leave an intact one lying on the floor.
+         */
+        GORE_PILE
     }
 
     private final SceneryType type;
@@ -41,8 +58,31 @@ public class Scenery implements Renderable {
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
     private float pixelOffsetY = 0f;
     private Texture texture; // Optional texture for Modern rendering
+    /** A town's folk standing here: the town's key, or null (Houses of the Maze T4.2). Never saved. */
+    private String townKey;
+    private int folkIndex = -1;
     private String texturePath;
     private com.bpm.minotaur.gamedata.bones.BonesData bonesData;
+    private String corpseMonsterName;
+
+    /**
+     * Texture path of the monster whose death art this corpse shows, or null for
+     * a corpse with none. Persisted: it is what lets a reloaded chunk rebuild the
+     * corpse from the sheet's last frame.
+     */
+    private String deathAnimId;
+    /**
+     * Seconds of the death shown so far, or -1 when it is not playing. Counted
+     * in rendered frames rather than wall time, so a hitch while the sheet loads
+     * cannot skip the animation. Never saved -- a corpse that comes back from
+     * disk is already still.
+     */
+    private float deathElapsed = -1f;
+    /** The render frame that last advanced the death, so a second pass cannot double its speed. */
+    private long deathAdvancedFrame = -1L;
+    /** World size of the living monster's billboard, which sets the scale of every death frame. */
+    private float deathWidth;
+    private float deathHeight;
 
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
@@ -78,6 +118,15 @@ public class Scenery implements Renderable {
                 this.impassable = true;
                 this.scale.set(1.0f, 0.55f); // Low lying skeletal remains billboard
                 this.pixelOffsetY = -50f; // Lowered by ~50 pixels to rest flat on the floor
+                break;
+            case MONSTER_REMAINS:
+            case GORE_PILE:
+                // Passable: a corridor kill must never wall the player in. The
+                // hero-bones case sets impassable and every monster spawn had to
+                // undo it immediately.
+                this.impassable = false;
+                this.scale.set(1.0f, 0.55f);
+                this.pixelOffsetY = -50f;
                 break;
             case BUSH:
                 this.impassable = false;
@@ -152,6 +201,10 @@ public class Scenery implements Renderable {
         return emissiveTint;
     }
 
+    public void setEmissiveTint(Color emissiveTint) {
+        this.emissiveTint = emissiveTint;
+    }
+
     public void setImpassable(boolean impassable) {
         this.impassable = impassable;
     }
@@ -160,8 +213,105 @@ public class Scenery implements Renderable {
         return impassable;
     }
 
+    /** One of a town's folk: placed on every load, never saved, and talked to rather than bumped. */
+    public boolean isTownsfolk() {
+        return townKey != null;
+    }
+
+    public void setTownsfolk(String townKey, int folkIndex) {
+        this.townKey = townKey;
+        this.folkIndex = folkIndex;
+    }
+
+    public String getTownKey() {
+        return townKey;
+    }
+
+    public int getFolkIndex() {
+        return folkIndex;
+    }
+
     public boolean isDecomposingCorpse() {
         return type == SceneryType.DECOMPOSING_CORPSE;
+    }
+
+    /** Remains left by a slain monster, of either kind. */
+    public boolean isMonsterRemains() {
+        return type == SceneryType.MONSTER_REMAINS || type == SceneryType.GORE_PILE;
+    }
+
+    /** Anything the player can stand over and interact with as remains. */
+    public boolean isCorpse() {
+        return isDecomposingCorpse() || isMonsterRemains();
+    }
+
+    public String getCorpseMonsterName() {
+        return corpseMonsterName;
+    }
+
+    public void setCorpseMonsterName(String corpseMonsterName) {
+        this.corpseMonsterName = corpseMonsterName;
+    }
+
+    public String getDeathAnimId() {
+        return deathAnimId;
+    }
+
+    public void setDeathAnimId(String deathAnimId) {
+        this.deathAnimId = deathAnimId;
+    }
+
+    /** How the body looks for the way it died: charred, frozen, headless... */
+    private com.bpm.minotaur.gamedata.gore.CorpseFinish corpseFinish =
+            com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE;
+
+    public com.bpm.minotaur.gamedata.gore.CorpseFinish getCorpseFinish() {
+        return corpseFinish;
+    }
+
+    public void setCorpseFinish(com.bpm.minotaur.gamedata.gore.CorpseFinish finish) {
+        this.corpseFinish = (finish != null) ? finish : com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE;
+    }
+
+    public float getDeathHeight() {
+        return deathHeight;
+    }
+
+    public void setDeathHeight(float deathHeight) {
+        this.deathHeight = deathHeight;
+    }
+
+    public float getDeathWidth() {
+        return deathWidth;
+    }
+
+    public void setDeathWidth(float deathWidth) {
+        this.deathWidth = deathWidth;
+    }
+
+    /** Starts the death animation playing from its first frame. */
+    public void startDeathAnimation() {
+        this.deathElapsed = 0f;
+        this.deathAdvancedFrame = -1L;
+    }
+
+    /**
+     * Moves the death on by one rendered frame. Only the first call for a given
+     * {@code renderFrame} counts, and a long frame counts as at most
+     * {@code maxStep}, so loading the sheet or a hit-pause cannot eat frames.
+     */
+    public void advanceDeathAnimation(float delta, float maxStep, long renderFrame) {
+        if (deathElapsed < 0f || renderFrame == deathAdvancedFrame) return;
+        deathAdvancedFrame = renderFrame;
+        deathElapsed += Math.max(0f, Math.min(delta, maxStep));
+    }
+
+    /**
+     * Seconds of the death shown so far, or {@link Float#MAX_VALUE} when it is
+     * not playing -- which {@code DeathAnimation.frameAt} clamps onto the corpse.
+     */
+    public float getDeathAnimSeconds() {
+        return deathElapsed < 0f ? Float.MAX_VALUE : deathElapsed;
     }
 
     public com.bpm.minotaur.gamedata.bones.BonesData getBonesData() {

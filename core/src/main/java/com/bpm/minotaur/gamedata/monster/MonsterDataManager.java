@@ -33,11 +33,21 @@ public class MonsterDataManager {
 
         // Iterate through all known MonsterTypes
         for (Monster.MonsterType type : Monster.MonsterType.values()) {
+            if (type == Monster.MonsterType.PLAYER_GHOST) {
+                continue; // Built dynamically from saved player data (see MonsterRosterDataTest)
+            }
             JsonValue data = root.get(type.name());
 
             if (data != null) {
                 // Parse the JSON data for this monster into a Template object
                 MonsterTemplate template = json.readValue(MonsterTemplate.class, data);
+                if (MonsterIdleAnimationRegistry.hasIdleAnimation(type)) {
+                    MonsterIdleAnimationRegistry.IdleConfig idle = MonsterIdleAnimationRegistry.getConfig(type);
+                    template.idleAnimationPath = idle.texturePath;
+                    template.spriteCols = idle.cols;
+                    template.spriteRows = idle.rows;
+                    template.spriteFrameDuration = idle.frameDuration;
+                }
                 monsterTemplates.put(type, template);
             } else {
                 Gdx.app.error("MonsterDataManager", "No JSON data found for monster type: " + type.name());
@@ -58,6 +68,15 @@ public class MonsterDataManager {
         return template;
     }
 
+    /** Every monster type that has a template loaded. */
+    public java.util.List<Monster.MonsterType> getLoadedTypes() {
+        java.util.List<Monster.MonsterType> types = new java.util.ArrayList<>();
+        for (ObjectMap.Entry<Monster.MonsterType, MonsterTemplate> e : monsterTemplates.entries()) {
+            types.add(e.key);
+        }
+        return types;
+    }
+
     public ObjectMap.Values<MonsterTemplate> getAllTemplates() {
         return monsterTemplates.values();
     }
@@ -70,6 +89,14 @@ public class MonsterDataManager {
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
                 assetManager.load(template.texturePath, Texture.class);
             }
+            if (template.variants != null) {
+                for (MonsterVariant variant : template.variants) {
+                    if (variant != null && variant.texturePath != null && !variant.texturePath.isEmpty()
+                            && !variant.texturePath.equals(template.texturePath)) {
+                        assetManager.load(variant.texturePath, Texture.class);
+                    }
+                }
+            }
             if (template.directionTextures != null) {
                 MonsterTemplate.DirectionTextures dt = template.directionTextures;
                 queueIfPresent(assetManager, dt.north);
@@ -81,6 +108,11 @@ public class MonsterDataManager {
                     }
                 }
             }
+        }
+
+        // Queue all registered monster idle animation spritesheets
+        for (MonsterIdleAnimationRegistry.IdleConfig idle : MonsterIdleAnimationRegistry.getAllConfigs()) {
+            queueIfPresent(assetManager, idle.texturePath);
         }
     }
 

@@ -10,7 +10,8 @@ public enum WandEffectType {
     FIRE("Fire", "A blast of fire erupts!"),
     COLD("Cold", "A freezing blast erupts!"),
     LIGHT("Light", "The room lights up!"),
-    TELEPORTATION("Teleportation", "The target vanishes!");
+    TELEPORTATION("Teleportation", "The target vanishes!"),
+    POLYMORPH("Polymorph", "The target shimmers and changes!");
 
     private final String baseName;
     private final String zapMessage;

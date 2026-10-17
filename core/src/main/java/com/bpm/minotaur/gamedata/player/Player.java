@@ -4,6 +4,7 @@ import com.bpm.minotaur.gamedata.monster.HostileSight;
 import com.bpm.minotaur.gamedata.progression.ShelterAltar;
 import com.bpm.minotaur.gamedata.spells.SpellDataManager;
 import com.bpm.minotaur.gamedata.spells.SpellTemplate;
+import com.bpm.minotaur.gamedata.spells.SpellbookStudy;
 import com.bpm.minotaur.gamedata.spells.Tome;
 import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.badlogic.gdx.Gdx;
@@ -17,6 +18,7 @@ import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import com.bpm.minotaur.gamedata.monster.Monster; // NEW
@@ -52,103 +54,150 @@ public class Player {
     }
 
     // =========================================================================
-    // FIELD REST (H) -- reintroduced after the "way off again" balance
-    // investigation. The old R-bound rest was deleted wholesale when R was
-    // repurposed to open the First Aid modal, leaving no field-accessible HP
-    // recovery besides slow passive regen, rare potions, and shelter-only rest.
-    // Restored deliberately smaller and cooldown-gated: the original was
-    // abusable (camp a cleared room, spend a sliver of the hunger meter,
-    // repeat indefinitely for a free top-up), so this version cannot be spammed
-    // regardless of how much food is banked.
+    // QUICK HEAL (H) and the Poultice (#190). Field rest is gone: healing in the
+    // field is slow regen, Vengeance on kills, poultices and potions.
     // =========================================================================
 
-    /** War Strength restored per successful field rest. */
-    public static final int FIELD_REST_HEAL_AMOUNT = 5;
+    private Poultice activePoultice;
 
-    private int fieldRestCooldownTurns = 0;
-
-    /** Turns remaining before {@link #attemptFieldRest} can succeed again. */
-    public int getFieldRestCooldownTurns() {
-        return fieldRestCooldownTurns;
+    /** The poultice working this turn, or null. */
+    public Poultice getActivePoultice() {
+        return activePoultice;
     }
 
-    /** Advances the cooldown by one turn. Called once per player turn regardless of what action was taken. */
-    public void tickFieldRestCooldown() {
-        if (fieldRestCooldownTurns > 0) {
-            fieldRestCooldownTurns--;
+    /** Presses a poultice to the wounds: it heals over the next turns until a wound tears it off. */
+    public void applyPoultice(Item poultice, GameEventManager eventManager) {
+        inventory.consumeOne(poultice);
+        activePoultice = Poultice.apply(stats.getMaxHP(), stats.getWoundsTaken());
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You bind a poultice to your wounds.", 2f));
         }
+    }
+
+    /** One turn of the active poultice. Called once per turn. */
+    public void tickPoultice(GameEventManager eventManager) {
+        if (activePoultice == null) return;
+        int heal = activePoultice.afterTurn(stats.getWoundsTaken());
+        if (heal < 0) {
+            activePoultice = null;
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("The blow tears your poultice away.", 2f));
+            }
+            return;
+        }
+        if (heal > 0) heal(heal);
+        if (activePoultice.isDone()) activePoultice = null;
     }
 
     /**
-     * Compensates the cooldown for turns consumed by the SAME rest that just set
-     * it. GameScreen advances several world-ticks per rest (so a monster can
-     * close in mid-rest) through the same per-turn hook that decrements this
-     * cooldown for every other cause of turn advancement -- without this, a
-     * rest's own ticks would immediately erode the cooldown it just started,
-     * undermining the anti-spam cooldown's entire purpose.
+     * Uses the best healing item carried (see {@link QuickHeal}). Every refusal says why.
+     *
+     * @return whether an item was used, so the caller spends the turn
      */
-    public void restoreFieldRestCooldown(int ticks) {
-        if (ticks > 0) {
-            fieldRestCooldownTurns += ticks;
+    public boolean quickHeal(DiscoveryManager discoveryManager, GameEventManager eventManager) {
+        int missing = stats.getMaxHP() - stats.getCurrentHP();
+        String refusal = null;
+        Item choice = null;
+        if (missing <= 0) {
+            refusal = "You are unhurt.";
+        } else if (activePoultice != null) {
+            refusal = "Your poultice is still working.";
+        } else {
+            choice = QuickHeal.choose(inventory.getAllItems(), missing, stats.getMaxHP(),
+                    effect -> discoveryManager != null && discoveryManager.isPotionIdentified(effect));
+            if (choice == null) refusal = "You carry nothing to heal with.";
         }
-    }
-
-    /** Outcome of one {@link #attemptFieldRest} call. */
-    public static final class FieldRestResult {
-        public final boolean success;
-        public final String message;
-
-        FieldRestResult(boolean success, String message) {
-            this.success = success;
-            this.message = message;
+        if (refusal != null) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent(refusal, 2f));
+            return false;
         }
-    }
-
-    /**
-     * Spends one point of satiety to heal {@link #FIELD_REST_HEAL_AMOUNT} War
-     * Strength, refusing (at no cost) when already at full strength, out of
-     * food, or still on cooldown from the last use. On success, the cooldown is
-     * set to {@link PlayerStats#getRegenIntervalTurns()} -- the same
-     * Constitution-scaled interval natural passive regen already uses, so this
-     * reads as one coherent healing model (a food-fueled acceleration of it)
-     * rather than a second, disconnected system. Every outcome, including every
-     * refusal, is queued onto {@code eventManager} -- a refusal is still
-     * something the player pressed a key for and needs a reason for, not a
-     * silent no-op.
-     */
-    public FieldRestResult attemptFieldRest(GameEventManager eventManager) {
-        if (fieldRestCooldownTurns > 0) {
-            return refuseFieldRest(eventManager,
-                    "You are still catching your breath. (" + fieldRestCooldownTurns + " turns)");
+        if (choice.getType() == ItemType.POULTICE) {
+            applyPoultice(choice, eventManager);
+        } else {
+            quaff(choice, discoveryManager, eventManager);
         }
-        if (stats.getCurrentHP() >= stats.getMaxHP()) {
-            return refuseFieldRest(eventManager, "You are already at full strength.");
-        }
-        if (stats.getFood() <= 0) {
-            return refuseFieldRest(eventManager, "You are too famished to rest and recover.");
-        }
-
-        stats.setFood(stats.getFood() - 1);
-        heal(FIELD_REST_HEAL_AMOUNT);
-        fieldRestCooldownTurns = stats.getRegenIntervalTurns();
-        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordFieldRestUsed();
-
-        String msg = "You catch your breath and recover. WS: " + stats.getCurrentHP() + "/" + stats.getMaxHP() + ".";
-        if (eventManager != null) {
-            eventManager.addEvent(new GameEvent(msg, 2f));
-        }
-        return new FieldRestResult(true, msg);
-    }
-
-    private FieldRestResult refuseFieldRest(GameEventManager eventManager, String message) {
-        if (eventManager != null) {
-            eventManager.addEvent(new GameEvent(message, 2f));
-        }
-        return new FieldRestResult(false, message);
+        return true;
     }
 
     public boolean canWieldTwoHanded() {
         return injuryManager == null || injuryManager.canWieldTwoHanded();
+    }
+
+    /**
+     * Magic resistance in percent: the sum of every enchantment on what is worn and what is held,
+     * capped. Cuts the damage of spells, not of weapons; see {@link com.bpm.minotaur.gamedata.MagicResistance}.
+     */
+    public int getMagicResistance() {
+        int total = equipment.getEquippedModifierSum(ModifierType.BONUS_MAGIC_RESISTANCE);
+        for (Item held : new Item[] { inventory.getRightHand(), inventory.getLeftHand() }) {
+            if (held != null && held.getModifiers() != null) {
+                for (com.bpm.minotaur.gamedata.item.ItemModifier mod : held.getModifiers()) {
+                    if (mod.type == ModifierType.BONUS_MAGIC_RESISTANCE) {
+                        total += mod.value;
+                    }
+                }
+            }
+        }
+        return com.bpm.minotaur.gamedata.MagicResistance.clampForPlayer(total + Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("mrAdd")));
+    }
+
+    /** A spell's damage after this player's magic resistance, for callers that also quote the figure. */
+    public int reduceSpellDamage(int amount) {
+        return com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, getMagicResistance());
+    }
+
+    /** Damage from a spell: cut by magic resistance, then taken like any other hit. */
+    public int takeSpellDamage(int amount, DamageType type) {
+        return takeDamage(reduceSpellDamage(amount), type);
+    }
+
+    /** Weight of one arrow or shot, so a full quiver is felt but not crippling. */
+    private static final float AMMO_WEIGHT = 0.05f;
+
+    /**
+     * Everything the player is carrying, in weight units: both hands, the quick slots, the pack,
+     * everything worn, ammunition, and gold.
+     */
+    public float getCarriedWeight() {
+        float total = 0f;
+        total += com.bpm.minotaur.gamedata.item.ItemWeights.of(inventory.getRightHand());
+        total += com.bpm.minotaur.gamedata.item.ItemWeights.of(inventory.getLeftHand());
+        for (Item quick : inventory.getQuickSlots()) {
+            total += com.bpm.minotaur.gamedata.item.ItemWeights.of(quick);
+        }
+        for (Item packed : inventory.getMainInventory()) {
+            total += com.bpm.minotaur.gamedata.item.ItemWeights.of(packed);
+        }
+        for (Item worn : equipment.getAllEquipped()) {
+            total += com.bpm.minotaur.gamedata.item.ItemWeights.of(worn);
+        }
+        total += (stats.getArrows() + stats.getShot()) * AMMO_WEIGHT;
+        total += Encumbrance.goldWeight(stats.getTreasureScore());
+        return total;
+    }
+
+    /** The most the player can carry before it costs them; follows Strength. */
+    public float getCarryCapacity() {
+        // Effective Strength, so a Giant Strength potion, a Ring of Strength or belt bonuses count.
+        return Encumbrance.capacity(getEffectiveStrength()) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("carryMult");
+    }
+
+    public Encumbrance.Tier getEncumbrance() {
+        return Encumbrance.tier(getCarriedWeight(), getCarryCapacity());
+    }
+
+    /**
+     * How much to scale the game time of an action by before food and water run down: the load's
+     * drain factor, with the slowdown it also causes taken back out. See
+     * {@link Encumbrance.Tier#metabolicTimeScale()}.
+     */
+    public float getMetabolicTimeScale() {
+        return getEncumbrance().metabolicTimeScale();
+    }
+
+    /** How much faster food and water run down per action under the current load; 1 when light. */
+    public float getMetabolicDrainFactor() {
+        return getEncumbrance().drainFactor;
     }
 
     public int getEffectiveSpeed() {
@@ -163,20 +212,32 @@ public class Player {
                 || statusManager.hasEffect(StatusEffectType.SUPER_SPEED)) {
             speed *= 2;
         }
-        // Weather Survival Exposure: CHILLED saps 20% of move/attack speed
-        if (statusManager.hasEffect(StatusEffectType.CHILLED)) {
-            speed = (int) (speed * 0.8f);
+        // Exposure (#194): Cold takes 10% of move/attack speed, Freezing and worse 20%
+        float coldSlow = Exposure.bandOf(stats.getBodyTemperature()).speedPenalty;
+        if (coldSlow > 0f) {
+            speed = (int) (speed * (1f - coldSlow));
+        }
+        // Dehydrated and worse slow every action (#193)
+        float thirstSlow = stats.getThirstStage().speedPenalty;
+        if (thirstSlow > 0f) {
+            speed = (int) (speed * (1f - thirstSlow));
         }
         // Anatomical Injury Debuff: Broken legs reduce speed by 50%
         if (injuryManager != null) {
             speed = (int) (speed * injuryManager.getEffectiveSpeedModifier());
         }
+        // Carrying more than Strength allows slows the player in three tiers.
+        speed = getEncumbrance().apply(speed);
+        if (form != null) {
+            speed = form.applySpeed(speed);
+        }
+        speed = Math.round(speed * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("speedMult"));
         return Math.max(1, speed);
     }
 
     /** Effective luck: base stat + equipment BONUS_LUCK, clamped to ±13. */
     public int getLuck() {
-        int effective = stats.getLuck() + equipment.getEquippedModifierSum(ModifierType.BONUS_LUCK);
+        int effective = stats.getLuck() + equipment.getEquippedModifierSum(ModifierType.BONUS_LUCK) + Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("luckAdd"));
         return Math.max(-13, Math.min(13, effective));
     }
 
@@ -203,11 +264,22 @@ public class Player {
     private final Inventory inventory = new Inventory();
 
     // --- Spells ---
+    private final List<String> permanentSpellIds = new ArrayList<>();
+    private final List<String> runSpellIds = new ArrayList<>();
     private final List<String> knownSpellIds = new ArrayList<>();
     private final String[] preparedSpells = new String[5];
     // Slot 1 (cantrips) is available from the start; Tomes of the Initiate/Elements/
     // Arcane/Tarmin progressively unlock slots 2-5 (see Player#useItem).
     private int unlockedSpellSlots = 1;
+    private boolean pendingLevelUpModal = false;
+
+    public boolean hasPendingLevelUpModal() {
+        return pendingLevelUpModal;
+    }
+
+    public void setPendingLevelUpModal(boolean pending) {
+        this.pendingLevelUpModal = pending;
+    }
 
     public int getUnlockedSpellSlots() {
         return unlockedSpellSlots;
@@ -217,29 +289,131 @@ public class Player {
         this.unlockedSpellSlots = Math.max(1, Math.min(5, slots));
     }
 
-    public List<String> getKnownSpellIds() {
-        return knownSpellIds;
+    /**
+     * Slots unlocked by reaching a given character level.
+     * Schedule: 1 at start/level 1, +1 at levels 2, 5, 8, 11 (capped at 5).
+     */
+    public static int slotsForLevel(int level) {
+        if (level < 2) return 1;
+        if (level < 5) return 2;
+        if (level < 8) return 3;
+        if (level < 11) return 4;
+        return 5;
     }
 
-    public void learnSpellId(String spellId) {
-        if (spellId != null && !knownSpellIds.contains(spellId.toUpperCase())) {
-            knownSpellIds.add(spellId.toUpperCase());
+    /**
+     * Level required to unlock the given spell slot number (1-indexed).
+     */
+    public static int levelForSlot(int slotNumber) {
+        switch (slotNumber) {
+            case 2: return 2;
+            case 3: return 5;
+            case 4: return 8;
+            case 5: return 11;
+            default: return 1;
         }
     }
 
     /**
-     * Replaces the whole spellbook with saved state: Known Spells, the prepared
-     * slots, and how many Spell Slots are unlocked. Prepared entries beyond the
-     * unlocked slots are dropped.
+     * Evaluates level-based slot unlocks and updates unlockedSpellSlots if newly earned.
+     * Returns true if a new slot was unlocked.
      */
-    public void restoreSpellbook(List<String> knownIds, List<String> prepared, int unlockedSlots) {
-        knownSpellIds.clear();
-        if (knownIds != null) {
-            for (String id : knownIds) {
-                learnSpellId(id);
+    public boolean checkSpellSlotProgression(GameEventManager eventManager) {
+        int expected = slotsForLevel(getLevel());
+        if (expected > unlockedSpellSlots) {
+            setUnlockedSpellSlots(expected);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Spell Slot " + expected + " unlocked! Press [Q] to prepare spells.", 4f));
+            }
+            if (soundManager != null) {
+                soundManager.playDoorOpenSound();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public List<String> getKnownSpellIds() {
+        return Collections.unmodifiableList(knownSpellIds);
+    }
+
+    public List<String> getPermanentSpellIds() {
+        return Collections.unmodifiableList(permanentSpellIds);
+    }
+
+    public List<String> getRunSpellIds() {
+        return Collections.unmodifiableList(runSpellIds);
+    }
+
+    public void learnPermanentSpellId(String spellId) {
+        if (spellId != null) {
+            String upper = spellId.toUpperCase(java.util.Locale.ROOT);
+            if (!permanentSpellIds.contains(upper)) {
+                permanentSpellIds.add(upper);
+            }
+            if (!knownSpellIds.contains(upper)) {
+                knownSpellIds.add(upper);
             }
         }
-        setUnlockedSpellSlots(unlockedSlots);
+    }
+
+    public void learnRunSpellId(String spellId) {
+        if (spellId != null) {
+            String upper = spellId.toUpperCase(java.util.Locale.ROOT);
+            if (!permanentSpellIds.contains(upper) && !runSpellIds.contains(upper)) {
+                runSpellIds.add(upper);
+            }
+            if (!knownSpellIds.contains(upper)) {
+                knownSpellIds.add(upper);
+            }
+        }
+    }
+
+    public void learnSpellId(String spellId) {
+        learnPermanentSpellId(spellId);
+    }
+
+    /**
+     * Clears temporary run spells learned from field spellbooks/scrolls on death,
+     * removing them from known spells and unpreparing any slots using them.
+     */
+    public void clearRunSpellsOnDeath() {
+        for (String runSpell : runSpellIds) {
+            knownSpellIds.remove(runSpell);
+            for (int i = 0; i < preparedSpells.length; i++) {
+                if (runSpell.equals(preparedSpells[i])) {
+                    preparedSpells[i] = null;
+                }
+            }
+        }
+        runSpellIds.clear();
+    }
+
+    /**
+     * Replaces the whole spellbook with saved state (legacy or single list).
+     */
+    public void restoreSpellbook(List<String> knownIds, List<String> prepared, int unlockedSlots) {
+        restoreSpellbook(knownIds, null, prepared, unlockedSlots);
+    }
+
+    /**
+     * Restores permanent and run spells from persistence.
+     */
+    public void restoreSpellbook(List<String> permanentIds, List<String> runIds, List<String> prepared, int unlockedSlots) {
+        permanentSpellIds.clear();
+        runSpellIds.clear();
+        knownSpellIds.clear();
+        if (permanentIds != null) {
+            for (String id : permanentIds) {
+                learnPermanentSpellId(id);
+            }
+        }
+        if (runIds != null) {
+            for (String id : runIds) {
+                learnRunSpellId(id);
+            }
+        }
+        setUnlockedSpellSlots(Math.max(unlockedSlots, slotsForLevel(getLevel())));
         for (int i = 0; i < preparedSpells.length; i++) {
             String id = (prepared != null && i < prepared.size()) ? prepared.get(i) : null;
             preparedSpells[i] = null;
@@ -275,7 +449,13 @@ public class Player {
             return SlotChange.UNKNOWN_SPELL;
         }
         if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
-            return SlotChange.HOSTILE_IN_VIEW;
+            // While a hostile is in view:
+            // 1. Cannot clear a slot (id == null)
+            // 2. Cannot swap an already occupied slot (preparedSpells[slot] != null)
+            // 3. Cannot move an already-prepared spell from another slot (which is a swap/clear)
+            if (id == null || preparedSpells[slot] != null || isSpellPrepared(id)) {
+                return SlotChange.HOSTILE_IN_VIEW;
+            }
         }
         if (id != null) {
             for (int i = 0; i < preparedSpells.length; i++) {
@@ -288,6 +468,18 @@ public class Player {
         return SlotChange.OK;
     }
 
+    /** Whether the given spell is currently assigned to any prepared slot. */
+    public boolean isSpellPrepared(String spellId) {
+        if (spellId == null) return false;
+        String upper = spellId.toUpperCase(java.util.Locale.ROOT);
+        for (String prep : preparedSpells) {
+            if (prep != null && prep.equalsIgnoreCase(upper)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String getPreparedSpell(int slot) {
         if (slot >= 0 && slot < preparedSpells.length) {
             return preparedSpells[slot];
@@ -296,8 +488,13 @@ public class Player {
     }
 
     public boolean castPreparedSpell(int slot, Maze maze, GameEventManager eventManager, CombatManager combatManager) {
+        if (!handsFree()) {
+            eventManager.addEvent(new GameEvent("You have no hands to cast with in this form.", 2f));
+            return false;
+        }
         if (slot >= unlockedSpellSlots) {
-            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is locked! Study a Tome to unlock it.", 1.5f));
+            com.bpm.minotaur.managers.HintManager.getInstance().checkLockedSpellSlot(eventManager);
+            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " unlocks at level " + levelForSlot(slot + 1) + ".", 1.5f));
             return false;
         }
         String id = getPreparedSpell(slot);
@@ -370,7 +567,7 @@ public class Player {
         }
 
         deductMana(mpCost);
-        int slot = learnAndPrepareIfSlotFree(spellId);
+        int slot = learnAndPrepareIfSlotFree(spellId, false);
         inventory.removeItem(scrollItem);
         if (discoveryManager != null) {
             discoveryManager.identifyDedicatedScroll(scrollItem.getType(), spellId);
@@ -385,11 +582,25 @@ public class Player {
 
     /**
      * Adds a spell to Known Spells and puts it in the first empty unlocked Spell Slot.
+     * Defaults to permanent spell learning.
      *
      * @return the slot index it was prepared in, or -1 if every unlocked slot is full
      */
     public int learnAndPrepareIfSlotFree(String spellId) {
-        learnSpellId(spellId);
+        return learnAndPrepareIfSlotFree(spellId, true);
+    }
+
+    /**
+     * Adds a spell to Known Spells (permanent or run) and puts it in the first empty unlocked Spell Slot.
+     *
+     * @return the slot index it was prepared in, or -1 if every unlocked slot is full
+     */
+    public int learnAndPrepareIfSlotFree(String spellId, boolean permanent) {
+        if (permanent) {
+            learnPermanentSpellId(spellId);
+        } else {
+            learnRunSpellId(spellId);
+        }
         for (int i = 0; i < unlockedSpellSlots && i < preparedSpells.length; i++) {
             if (preparedSpells[i] == null) {
                 prepareSpell(i, spellId);
@@ -408,7 +619,9 @@ public class Player {
         if (spell == null || spell.level <= 1) {
             return 1;
         }
-        return (spell.level - 1) * 2 + 1;
+        int early = Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("spellLearnEarly"));
+        int effective = Math.max(1, spell.level - early);
+        return effective <= 1 ? 1 : (effective - 1) * 2 + 1;
     }
 
     /**
@@ -437,11 +650,22 @@ public class Player {
 
     /**
      * Reads a spellbook to learn the spell contained within.
-     * Level-gated: player must be high enough level, otherwise displays an event and preserves the book.
+     *
+     * <p>A book at or under the player's level is read safely. A book above it is not refused:
+     * the first attempt only warns of the risk and keeps the book, and a second attempt on the
+     * same book takes the gamble, after NetHack -- see {@link SpellbookStudy}.
      *
      * @return true if the spell was learned, false otherwise
      */
     public boolean readSpellbook(Item book, GameEventManager eventManager) {
+        return readSpellbook(book, eventManager, studyRng);
+    }
+
+    private final Random studyRng = new Random();
+    /** The above-level book the player has been warned about and may now attempt. */
+    private Item riskyStudyWarnedFor;
+
+    public boolean readSpellbook(Item book, GameEventManager eventManager, Random rng) {
         if (book == null) {
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("You have no book to read.", 1.5f));
@@ -483,16 +707,30 @@ public class Player {
         com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
         int reqLevel = getRequiredPlayerLevelForSpell(spell);
 
-        // Check if player's level is high enough
-        if (this.getLevel() < reqLevel) {
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent(
-                    "The text in " + book.getDisplayName() + " is too complicated to understand! (Requires Level " + reqLevel + ")",
-                    3.0f
-                ));
+        // A book above the player's level is a gamble, not a refusal.
+        boolean gambled = false;
+        if (SpellbookStudy.isRisky(reqLevel, this.getLevel())
+                && !knownSpellIds.contains(spellId.toUpperCase())) {
+            int bookLevel = spell != null ? spell.level : 1;
+            float risk = SpellbookStudy.failureChance(stats.getIntelligence(), getLevel(), bookLevel);
+            if (riskyStudyWarnedFor != book) {
+                // Warn first, and keep the book: nothing is risked until the player says so.
+                riskyStudyWarnedFor = book;
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent(
+                        "The text in " + book.getDisplayName() + " is too complicated to understand! (Requires Level "
+                        + reqLevel + ") Study it again to try anyway: " + Math.round(risk * 100) + "% risk of a mishap.",
+                        4.0f
+                    ));
+                }
+                return false;
             }
-            // DO NOT consume the book -- player keeps it until leveling up!
-            return false;
+            riskyStudyWarnedFor = null;
+            if (rng.nextFloat() < risk) {
+                failSpellbookStudy(book, bookLevel, rng, eventManager);
+                return false;
+            }
+            gambled = true;
         }
 
         // Check if player already knows this spell
@@ -509,7 +747,7 @@ public class Player {
         }
 
         // Player level meets or exceeds requirement: Learn the spell!
-        int slot = learnAndPrepareIfSlotFree(spellId);
+        int slot = learnAndPrepareIfSlotFree(spellId, false);
         inventory.removeItem(book); // Consume the book upon successful learning
 
         if (soundManager != null) {
@@ -517,14 +755,76 @@ public class Player {
         }
 
         String spellName = spell != null ? spell.getName() : spellId;
+        String against = gambled ? " Against the odds," : "";
         String msg = slot >= 0
-                ? "You study " + book.getDisplayName() + " and master " + spellName + "! Prepared in slot " + (slot + 1) + "."
-                : "You study " + book.getDisplayName() + " and master " + spellName + "! Inscribed into your Spellbook.";
+                ? "You study " + book.getDisplayName() + " and master " + spellName + "!" + against + " Prepared in slot " + (slot + 1) + "."
+                : "You study " + book.getDisplayName() + " and master " + spellName + "!" + against + " Inscribed into your Spellbook.";
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(msg, 3.0f));
         }
 
         return true;
+    }
+
+    /**
+     * A reading above the player's level went wrong: apply the graded mishap, put the player out
+     * of the world for the length of it, and maybe lose the book.
+     */
+    private void failSpellbookStudy(Item book, int bookLevel, Random rng, GameEventManager eventManager) {
+        SpellbookStudy.Failure failure = SpellbookStudy.rollFailure(bookLevel, rng);
+        String name = book.getDisplayName();
+        String message;
+        switch (failure.mishap) {
+            case STING:
+                loseHpToBook(2);
+                message = "The pages of " + name + " sting your fingers! (-2 HP)";
+                break;
+            case CONFUSION:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED, 8, 1, false);
+                message = "The words of " + name + " swim and tangle in your mind. You are confused!";
+                break;
+            case BLINDNESS:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BLIND, 12, 1, false);
+                message = "A flash of light bursts from " + name + ". You are blinded!";
+                break;
+            case HALLUCINATION:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HALLUCINATING, 15, 1, false);
+                message = "The diagrams in " + name + " crawl across the walls. You are hallucinating!";
+                break;
+            case WOUND:
+                injuryManager.inflictInjury(com.bpm.minotaur.gamedata.injury.BodyPart.ARMS,
+                        com.bpm.minotaur.gamedata.injury.InjuryType.LACERATION_BLEEDING, 1 + (bookLevel >= 6 ? 1 : 0));
+                message = "The edge of " + name + " slices your hand open!";
+                break;
+            case POISON:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED, 6, 1, false);
+                message = "The ink of " + name + " is laced with venom. You are poisoned!";
+                break;
+            default: {
+                // The book goes up in the reader's hands. Heavy, but never the whole of what is left.
+                int blast = Math.min(1 + rng.nextInt(2 * Math.max(1, bookLevel)), Math.max(0, stats.getCurrentHP() - 1));
+                loseHpToBook(blast);
+                message = name + " explodes in your hands! (-" + blast + " HP)";
+                break;
+            }
+        }
+        // A failed reading is a long one: the player nods off over the page.
+        statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLEEP, failure.delayTurns, 1, false);
+        if (failure.destroysBook) {
+            inventory.removeItem(book);
+            message += " The spellbook crumbles to dust.";
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(message, 4.0f));
+        }
+    }
+
+    /**
+     * Hurt by a book's own magic: armour does nothing against it, and it never kills. A gamble
+     * the player chose to take should cost them, not end the run on a paper cut.
+     */
+    private void loseHpToBook(int amount) {
+        stats.setCurrentHP(Math.max(1, stats.getCurrentHP() - Math.max(0, amount)));
     }
 
     // --- Tome Study & Tome Choice ---
@@ -561,7 +861,7 @@ public class Player {
             eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return false;
         }
-        if (maze != null && maze.isHomeTile((int) position.x, (int) position.y)) {
+        if (maze != null && maze.isSanctuaryTile((int) position.x, (int) position.y)) {
             finishTomeStudy(tome, eventManager);
             return true;
         }
@@ -633,7 +933,6 @@ public class Player {
         Tome kind = Tome.of(tome.getType());
         pendingTomeChoice = TomeChoice.offer(kind, tome, knownSpellIds, tomeChoicePerks(), tomeRng);
         if (pendingTomeChoice == null) {
-            unlockTomeSlot(kind, eventManager);
             eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return;
         }
@@ -641,8 +940,8 @@ public class Player {
     }
 
     /**
-     * Learns the chosen spell from the pending Tome Choice, unlocks the Tome's
-     * slot if it is new (preparing the spell there), and uses up the Tome.
+     * Learns the chosen spell from the pending Tome Choice (or gains +5 Max MP if fallback boon),
+     * prepares the spell in the first free unlocked slot if available, and uses up the Tome.
      *
      * @return false if the spell was not one of the options
      */
@@ -653,12 +952,16 @@ public class Player {
         }
         TomeChoice choice = pendingTomeChoice;
         pendingTomeChoice = null;
-        if (grantTome(choice.getTomeItem(), choice.getTome(), eventManager)) {
-            learnSpellId(id);
-            prepareSpell(choice.getTome().getSlotNumber() - 1, id);
-        } else {
-            learnAndPrepareIfSlotFree(id);
+        if (choice.getTomeItem() != null && inventory != null) {
+            inventory.removeItem(choice.getTomeItem());
         }
+        if (TomeChoice.FALLBACK_MP_BONUS_ID.equals(id)) {
+            stats.setMaxMP(stats.getMaxMP() + 5);
+            stats.setCurrentMP(stats.getCurrentMP() + 5);
+            eventManager.addEvent(new GameEvent("Studied " + choice.getTome().getDisplayName() + ": Gained +5 Max MP!", 3.0f));
+            return true;
+        }
+        learnAndPrepareIfSlotFree(id, true);
         SpellTemplate spell = SpellDataManager.getSpell(id);
         eventManager.addEvent(new GameEvent("Learned " + (spell != null ? spell.getName() : id) + "!", 3.0f));
         return true;
@@ -691,21 +994,6 @@ public class Player {
         }
     }
 
-    /** Uses up the Tome and unlocks its slot; returns whether the slot was newly unlocked. */
-    private boolean grantTome(Item tome, Tome kind, GameEventManager eventManager) {
-        inventory.removeItem(tome);
-        return unlockTomeSlot(kind, eventManager);
-    }
-
-    private boolean unlockTomeSlot(Tome kind, GameEventManager eventManager) {
-        boolean newSlot = kind.getSlotNumber() > unlockedSpellSlots;
-        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, kind.getSlotNumber()));
-        eventManager.addEvent(new GameEvent(newSlot
-                ? "Studied the " + kind.getDisplayName() + "! Spell Slot " + kind.getSlotNumber() + " unlocked!"
-                : "Studied the " + kind.getDisplayName() + ".", 3.0f));
-        return newSlot;
-    }
-
     private static TomeChoice.Perks tomeChoicePerks() {
         return ShelterAltar.getInstance().getTomeChoicePerks();
     }
@@ -736,16 +1024,57 @@ public class Player {
         this.stats = new PlayerStats(Difficulty.MEDIUM);
         this.statusManager = new StatusManager();
         this.statusManager.initialize(null, this);
+        syncKeepsakeBonuses();
+        stats.setCurrentHP(stats.getMaxHP());
         initStartingSpells();
     }
 
+    /** The spell every seeker knows from the start, ready in the first slot. */
+    public static final String STARTING_SPELL = "MOTE_OF_LIGHT";
+
     private void initStartingSpells() {
+        com.bpm.minotaur.gamedata.trait.TraitEffects.clear(); // a new player starts with no trait
+        permanentSpellIds.clear();
+        runSpellIds.clear();
         knownSpellIds.clear();
-        learnSpellId("MOTE_OF_LIGHT");
+        learnPermanentSpellId(STARTING_SPELL);
         for (int i = 0; i < preparedSpells.length; i++) {
             preparedSpells[i] = null;
         }
-        preparedSpells[0] = "MOTE_OF_LIGHT";
+        preparedSpells[0] = STARTING_SPELL;
+    }
+
+    /**
+     * A new expedition starts as a new game does (fixes 2026-10-10): the starting spell known, and
+     * prepared in the first free slot unless the seeker has it prepared already. A seeker who moved it
+     * keeps their choice; one whose slots were emptied gets it back.
+     */
+    public void prepareStartingSpells() {
+        learnPermanentSpellId(STARTING_SPELL);
+        if (isSpellPrepared(STARTING_SPELL)) return;
+        for (int i = 0; i < Math.max(1, unlockedSpellSlots) && i < preparedSpells.length; i++) {
+            if (preparedSpells[i] == null) {
+                preparedSpells[i] = STARTING_SPELL;
+                return;
+            }
+        }
+    }
+
+    /**
+     * The Eternal Champion is reborn (#187): the dead Incarnation's level, stats and points
+     * go, and the spell slots close back to what level 1 opens. Known Spells are soul memory
+     * and stay; a spell prepared in a slot that is now closed is unprepared, not forgotten.
+     * Gear, vitals and the Father's Sword are the respawn's to handle.
+     */
+    public void beginNewIncarnation(Difficulty difficulty) {
+        stats.beginNewIncarnation(difficulty);
+        pendingLevelUpModal = false;
+        setUnlockedSpellSlots(slotsForLevel(stats.getLevel()));
+        for (int i = unlockedSpellSlots; i < preparedSpells.length; i++) {
+            preparedSpells[i] = null;
+        }
+        syncKeepsakeBonuses();
+        stats.setCurrentHP(stats.getMaxHP());
     }
 
     public Player(float startX, float startY, Difficulty difficulty,
@@ -774,17 +1103,33 @@ public class Player {
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
 
+        giveStarterLantern(itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, assetManager));
+
         // No starting armour. The player sets out in their own clothes, so the
         // first scrap of protection found in the dungeon is a real upgrade
         // rather than a sidegrade on a free +1 AC.
 
-        Item ration = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
-        inventory.pickupToBackpack(ration);
+        // One stack, one slot: rations stack.
+        Item rations = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
+        if (rations != null) {
+            rations.setStackCount(STARTING_RATIONS);
+            inventory.pickupToBackpack(rations);
+        }
 
-        Item waterskin = itemDataManager.createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, assetManager);
-        inventory.pickupToBackpack(waterskin);
+        // A real, refillable waterskin, full of clean water (#193).
+        Item waterskin = itemDataManager.createItem(Item.ItemType.WATERSKIN, 0, 0, ItemColor.TAN, assetManager);
+        if (waterskin != null) inventory.pickupToBackpack(waterskin);
+
+        // Fire for the first two shelters on the road. More is crafted or found.
+        for (int i = 0; i < STARTING_TINDER; i++) {
+            Item tinder = itemDataManager.createItem(Item.ItemType.TINDER_BUNDLE, 0, 0, ItemColor.TAN, assetManager);
+            if (tinder != null) inventory.pickupToBackpack(tinder);
+        }
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
+
+        syncKeepsakeBonuses();
+        stats.setCurrentHP(stats.getMaxHP());
 
         // Initialize Spells
         initStartingSpells();
@@ -814,8 +1159,7 @@ public class Player {
         // explicitly. Relying on branch order here would mean anyone reordering these
         // two lines silently converted shot into arrows.
         boolean isShot = item.getType() == Item.ItemType.SHOT_POUCH;
-        boolean isArrows = !isShot
-                && (item.getType() == Item.ItemType.QUIVER || item.isAmmunition());
+        boolean isArrows = !isShot && Item.gathersUnderfoot(item.getType());
         if (!isShot && !isArrows) {
             return false;
         }
@@ -870,8 +1214,13 @@ public class Player {
     }
 
     public boolean pickupItem(Item item) {
+        // A belt-clip item (the lantern) goes straight onto an empty belt, where it works and stays out of the way.
+        boolean clipped = item != null && item.isBeltClip() && equipment.getWornBelt() == null;
+        if (clipped) {
+            equipment.setWornBelt(item);
+        }
         // Food is now picked up normally
-        boolean pickedUp = inventory.pickup(item);
+        boolean pickedUp = clipped || inventory.pickup(item);
         if (pickedUp) {
             if (item.getGrantedDie() != null) {
                 stats.getDicePool().add(item.getGrantedDie());
@@ -891,6 +1240,10 @@ public class Player {
 
     public boolean useQuickSlot(int slotIndex, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze, CombatManager combatManager) {
         if (slotIndex < 0 || slotIndex >= inventory.getQuickSlots().length) return false;
+        if (!handsFree()) {
+            eventManager.addEvent(new GameEvent("You have no hands to use that in this form.", 2f));
+            return false;
+        }
         Item item = inventory.getQuickSlots()[slotIndex];
         if (item == null) {
             eventManager.addEvent(new GameEvent("Quick slot " + (slotIndex + 1) + " is empty.", 1.5f));
@@ -1031,6 +1384,14 @@ public class Player {
             return true;
         }
 
+        // A spellbook the player cannot learn yet (too high a level, or already known) must not be
+        // read off the floor: that took it off the map and then declined to read it, so the book was
+        // simply lost. Take it instead, to study when ready.
+        if (item.isSpellbook() && !canLearnSpellbook(item)) {
+            interactWithItem(maze, eventManager, soundManager, discoveryManager);
+            return true;
+        }
+
         if (item.isConsumableOrTool()) {
             if (!item.isUsable() && !item.isPotion() && !item.isFood()
                     && (item.getType() == null || (!item.getType().name().contains("SCROLL") && !item.getType().name().startsWith("WAND_")))) {
@@ -1068,16 +1429,16 @@ public class Player {
 
             if (itemAtFeet.getCategory() == ItemCategory.TREASURE) {
                 soundManager.playPickupItemSound();
-                stats.incrementTreasureScore(itemAtFeet.getBaseValue());
+                stats.incrementTreasureScore(itemAtFeet.getTreasureValue());
                 maze.getItems().remove(playerTile2);
                 eventManager.addEvent(new GameEvent("You found " + itemAtFeet.getDisplayName() + "!", 2f));
-                BalanceLogger.getInstance().logEconomy("TREASURE", itemAtFeet.getDisplayName(), itemAtFeet.getBaseValue());
+                BalanceLogger.getInstance().logEconomy("TREASURE", itemAtFeet.getDisplayName(), itemAtFeet.getTreasureValue());
                 return;
             }
 
             if (itemAtFeet.getType() == Item.ItemType.FLOUR_SACK) {
                 soundManager.playPickupItemSound();
-                int foodFound = new Random().nextInt(4) + 6;
+                int foodFound = Hunger.FLOUR_SACK_MIN + new Random().nextInt(Hunger.FLOUR_SACK_MAX - Hunger.FLOUR_SACK_MIN + 1);
                 stats.addFood(foodFound);
                 maze.getItems().remove(playerTile2);
                 eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
@@ -1086,6 +1447,7 @@ public class Player {
             }
 
             if (pickupItem(itemAtFeet)) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordItemPickedUp(itemAtFeet.getCategory() != null ? itemAtFeet.getCategory().name() : null);
                 maze.getItems().remove(playerTile2);
                 soundManager.playPickupItemSound();
                 String pickedName = discoveryManager != null
@@ -1113,13 +1475,13 @@ public class Player {
 
             if (itemInFront.getCategory() == ItemCategory.TREASURE) {
                 soundManager.playPickupItemSound();
-                stats.incrementTreasureScore(itemInFront.getBaseValue());
+                stats.incrementTreasureScore(itemInFront.getTreasureValue());
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "!", 2f));
 
                 // --- LOGGING ---
                 BalanceLogger.getInstance().logEconomy("TREASURE", itemInFront.getDisplayName(),
-                        itemInFront.getBaseValue());
+                        itemInFront.getTreasureValue());
                 // ---------------
                 return;
             }
@@ -1128,7 +1490,7 @@ public class Player {
             }
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
                 soundManager.playPickupItemSound();
-                int foodFound = new Random().nextInt(4) + 6;
+                int foodFound = Hunger.FLOUR_SACK_MIN + new Random().nextInt(Hunger.FLOUR_SACK_MAX - Hunger.FLOUR_SACK_MIN + 1);
                 stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
@@ -1140,7 +1502,7 @@ public class Player {
             }
             if (itemInFront.getType() == Item.ItemType.MEAT) {
                 soundManager.playPickupItemSound();
-                int foodFound = new Random().nextInt(6) + 10; // 10-15 food value
+                int foodFound = Hunger.RAW_MEAT_MIN + new Random().nextInt(Hunger.RAW_MEAT_MAX - Hunger.RAW_MEAT_MIN + 1);
                 stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You ate the meat. (" + foodFound + " food)", 2f));
@@ -1159,6 +1521,7 @@ public class Player {
             // -------------------------------
 
             if (pickupItem(itemInFront)) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordItemPickedUp(itemInFront.getCategory() != null ? itemInFront.getCategory().name() : null);
                 maze.getItems().remove(targetTile);
                 if (itemInFront.getType() == ItemType.BRASS_LANTERN) {
                     maze.removeLightAt(targetTile.x + 0.5f, targetTile.y + 0.5f);
@@ -1195,6 +1558,7 @@ public class Player {
                 }
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Dropped " + itemInHand.getDisplayName(), 2f));
+                if (soundManager != null) soundManager.playEvent("drop");
             } else {
                 eventManager.addEvent(new GameEvent("No space to drop here.", 2f));
             }
@@ -1219,20 +1583,56 @@ public class Player {
             return;
         }
 
+        // --- Firewood: Fuel campfires or kindle emergency field campfire ---
+        if (item.getType() == Item.ItemType.FIREWOOD) {
+            useFirewood(item, maze, eventManager);
+            return;
+        }
+
+        // --- Tinder Bundle: kindles a field fire (#194). A cold hearth is lit by interacting with it. ---
+        if (item.getType() == Item.ItemType.TINDER_BUNDLE) {
+            if (kindleFieldFire(maze, eventManager)) {
+                inventory.consumeOne(item);
+            }
+            return;
+        }
+
+        // --- Poultice: heals over the next turns (#190) ---
+        if (item.getType() == Item.ItemType.POULTICE) {
+            applyPoultice(item, eventManager);
+            return;
+        }
+
+        // --- Waterskin: one drink of whatever it holds (#193) ---
+        if (Waterskin.is(item)) {
+            drinkFromWaterskin(item, eventManager);
+            return;
+        }
+
+        // --- Ashwater: scours Blight Taint in the field ---
+        if (item.getType() == Item.ItemType.ASHWATER) {
+            float before = stats.getTaint();
+            stats.addTaint(-com.bpm.minotaur.gamedata.blight.Taint.ASHWATER_CLEANSE);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(before > 0f
+                        ? "The Ashwater burns going down. The Blight loosens its hold."
+                        : "The Ashwater tastes of soot. You were not tainted.", 2.5f));
+            }
+            inventory.consumeOne(item);
+            return;
+        }
+
         // --- NEW: Handle Food & Meal Eating ---
         if (item.isFood()) {
-            if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
-                if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
-                }
-                takeTrueDamage(3);
+            if (item.getType() == Item.ItemType.MEAL || (item.getMealEffects() != null && !item.getMealEffects().isEmpty())) {
+                feastOnMeal(item, eventManager);
                 inventory.removeItem(item);
                 return;
             }
 
-            if (item.getType() == Item.ItemType.MEAL || (item.getMealEffects() != null && !item.getMealEffects().isEmpty())) {
-                feastOnMeal(item, eventManager);
-                inventory.removeItem(item);
+            int gain = nutritionOf(item);
+            if (chokesOn(gain, eventManager)) {
+                inventory.consumeOne(item);
                 return;
             }
 
@@ -1242,7 +1642,7 @@ public class Player {
             }
 
             // Basic food value
-            stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 8);
+            stats.addFood(gain);
             stats.addHydration(item.getHydrationValue());
 
             // Weather Survival Exposure: hot meals chase away cold; cold drinks cut through heat
@@ -1347,9 +1747,9 @@ public class Player {
                 }
             }
 
-            inventory.removeItem(item); // Consume it
+            inventory.consumeOne(item); // One ration off the stack
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
+                eventManager.addEvent(new GameEvent("You ate the " + item.getSingleDisplayName() + ".", 2f));
             }
             if (soundManager != null) {
                 soundManager.playPickupItemSound();
@@ -1463,22 +1863,281 @@ public class Player {
     }
 
     /**
-     * Consumes a cooked meal, applying Caves of Qud-style metabolic boons.
-     * Clears previous meal metabolic buffs, resets metabolizing timer, restores satiety, heals HP, and warms temperature.
+     * Firewood feeds a field fire within reach, adding {@link com.bpm.minotaur.gamedata.shelter.FieldFire#FIREWOOD_TURNS};
+     * with none near, it kindles one as a Tinder Bundle does.
      */
+    private void useFirewood(Item item, Maze maze, GameEventManager eventManager) {
+        if (maze == null) return;
+        int px = (int) Math.floor(position.x);
+        int py = (int) Math.floor(position.y);
+        com.bpm.minotaur.gamedata.shelter.FieldFire near = maze.fieldFireWarming(px, py);
+        if (near != null) {
+            near.feed(com.bpm.minotaur.gamedata.shelter.FieldFire.FIREWOOD_TURNS);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You feed the fire with fresh firewood. The flames roar back up.", 2.5f));
+            }
+            inventory.consumeOne(item);
+            return;
+        }
+        if (kindleFieldFire(maze, eventManager)) {
+            inventory.consumeOne(item);
+        }
+    }
+
+    /**
+     * Kindles a field fire (#194) on the player's tile, or the clear tile ahead. It burns about
+     * {@link com.bpm.minotaur.gamedata.shelter.FieldFire#BURN_TURNS} turns, warms and dries within
+     * {@link Exposure#FIRE_RADIUS} tiles, lets the player cook (#191), and is seen by monsters.
+     *
+     * @return true when the fire took, so the caller spends the fuel
+     */
+    public boolean kindleFieldFire(Maze maze, GameEventManager eventManager) {
+        if (maze == null) return false;
+        int px = (int) Math.floor(position.x);
+        int py = (int) Math.floor(position.y);
+        GridPoint2 targetTile = new GridPoint2(px, py);
+        if (maze.getScenery().containsKey(targetTile) || maze.isWall(px, py) || isFieldFireAt(maze, px, py)) {
+            Direction f = facing;
+            int fx = px + (int) f.getVector().x;
+            int fy = py + (int) f.getVector().y;
+            GridPoint2 frontTile = new GridPoint2(fx, fy);
+            if (!maze.isWall(fx, fy) && !maze.getScenery().containsKey(frontTile) && !isFieldFireAt(maze, fx, fy)) {
+                targetTile = frontTile;
+            } else {
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("There is no clear ground here to kindle a fire.", 2.0f));
+                }
+                return false;
+            }
+        }
+
+        com.bpm.minotaur.gamedata.shelter.FieldFire fire =
+                new com.bpm.minotaur.gamedata.shelter.FieldFire(targetTile.x, targetTile.y);
+        Scenery fieldCampfire = new Scenery(Scenery.SceneryType.PROP, targetTile.x, targetTile.y, "images/tundra/campfire_01.png");
+        fieldCampfire.scale.set(1.0f, 0.8f);
+        fieldCampfire.setPixelOffsetY(0f);
+        fieldCampfire.setEmissiveTint(new Color(1f, 0.65f, 0.25f, 1.0f));
+        maze.addScenery(fieldCampfire);
+        maze.addLight(new LightSource(fire.lightId(), targetTile.x + 0.5f, targetTile.y + 0.5f,
+                LightingManager.COLOR_CAMPFIRE, 4.0f, 1.2f, LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+        maze.addFieldFire(fire);
+
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You kindle a field fire. It will burn about "
+                    + com.bpm.minotaur.gamedata.shelter.FieldFire.BURN_TURNS
+                    + " turns. Warm up, dry off, cook -- and mind who sees it.", 3.0f));
+        }
+        return true;
+    }
+
+    private static boolean isFieldFireAt(Maze maze, int x, int y) {
+        for (com.bpm.minotaur.gamedata.shelter.FieldFire f : maze.getFieldFires()) {
+            if (!f.isOut() && f.x == x && f.y == y) return true;
+        }
+        return false;
+    }
+
+    private void harvestFrozenTimber(Scenery s, GridPoint2 tile, Maze maze, GameEventManager eventManager) {
+        harvestedScenery = true;
+        maze.removeScenery(tile.x, tile.y);
+
+        // Replace with trampled snow debris
+        Scenery debris = new Scenery(Scenery.SceneryType.PROP, tile.x, tile.y, "images/tundra/snow_mound_01.png");
+        debris.scale.set(1.2f, 0.5f);
+        debris.setPixelOffsetY(0f);
+        maze.addBackdropScenery(debris);
+
+        int count = 1 + (int)(Math.random() * 2); // 1 or 2 bundles
+        Item wood = Item.createFirewood(tile.x, tile.y);
+        if (wood != null) {
+            boolean added = inventory.addItem(wood);
+            if (count > 1) {
+                Item wood2 = Item.createFirewood(tile.x, tile.y);
+                if (wood2 != null) inventory.addItem(wood2);
+            }
+            if (eventManager != null) {
+                if (added) {
+                    eventManager.addEvent(new GameEvent("You split the frozen timber into " + count + " Firewood "
+                            + (count == 1 ? "bundle." : "bundles."), 2.0f));
+                } else {
+                    maze.addItem(wood);
+                    eventManager.addEvent(new GameEvent("Pack full! You split the timber, dropping Firewood onto the snow.", 2.0f));
+                }
+            }
+        }
+    }
+
+    /**
+     * Consumes a cooked meal, applying Caves of Qud-style metabolic boons.
+     * Clears previous meal metabolic buffs, resets metabolizing timer, restores nutrition (never HP) and warms temperature.
+     */
+    // =========================================================================
+    // DRINKING (#193): any liquid, from a waterskin or straight off the map
+    // =========================================================================
+
+    /**
+     * The drinkable liquid the player faces, or else stands in, as a draught; null if there
+     * is none. Water below the surface is strata water and carries its risk.
+     */
+    public static Waterskin.Draught liquidSourceAt(Maze maze, Vector2 position, Direction facing) {
+        if (maze == null || position == null) return null;
+        int px = (int) position.x;
+        int py = (int) position.y;
+        boolean strata = maze.getLevel() > 1;
+        if (facing != null) {
+            com.bpm.minotaur.gamedata.liquid.LiquidType ahead =
+                    maze.getLiquidAt(px + (int) facing.getVector().x, py + (int) facing.getVector().y);
+            if (Thirst.isDrinkable(ahead)) return new Waterskin.Draught(ahead, strata);
+        }
+        com.bpm.minotaur.gamedata.liquid.LiquidType feet = maze.getLiquidAt(px, py);
+        return Thirst.isDrinkable(feet) ? new Waterskin.Draught(feet, strata) : null;
+    }
+
+    /** [O] Drink at a liquid tile. Returns false if there was nothing to drink. */
+    public boolean drinkFromMap(Maze maze, GameEventManager eventManager) {
+        Waterskin.Draught source = liquidSourceAt(maze, position, facing);
+        if (source == null) return false;
+        return drinkLiquid(source.liquid, source.strata, (float) Math.random(), eventManager);
+    }
+
+    /** [P] Fill waterskin at a liquid tile. Returns true if a skin was filled (a turn spent). */
+    public boolean fillWaterskinFromMap(Maze maze, GameEventManager eventManager) {
+        Waterskin.Draught source = liquidSourceAt(maze, position, facing);
+        if (source == null) return false;
+        Item skin = Waterskin.findToFill(inventory.getAllItems(), source.liquid);
+        if (skin == null) {
+            if (eventManager != null) {
+                boolean carries = false;
+                for (Item i : inventory.getAllItems()) carries |= Waterskin.is(i);
+                eventManager.addEvent(new GameEvent(carries ? "Your waterskin is already full of that."
+                        : "You have no waterskin to fill.", 2.0f));
+            }
+            return false;
+        }
+        boolean poured = !Waterskin.isEmpty(skin) && skin.getLiquidContent() != source.liquid;
+        Waterskin.fill(skin, source.liquid, source.strata);
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent((poured ? "You pour out the old contents and fill your waterskin. "
+                    : "You fill your waterskin. ") + "(" + skin.getLiquidDisplayName() + ")", 2.0f));
+        }
+        return true;
+    }
+
+    /** One drink from a waterskin, of whatever it was filled with. */
+    public boolean drinkFromWaterskin(Item skin, GameEventManager eventManager) {
+        Waterskin.Draught d = Waterskin.drinkOne(skin);
+        if (d == null) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent("Your waterskin is empty.", 1.5f));
+            return false;
+        }
+        return drinkLiquid(d.liquid, d.strata, (float) Math.random(), eventManager);
+    }
+
+    /**
+     * Drinks one draught of {@code liquid}: its hydration, then, on {@code roll} below its
+     * risk, a waterborne illness, and Freezing Slush's chill. Healing is never touched.
+     */
+    public boolean drinkLiquid(com.bpm.minotaur.gamedata.liquid.LiquidType liquid, boolean strata, float roll,
+                               GameEventManager eventManager) {
+        if (!Thirst.isDrinkable(liquid)) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent("You can't drink that.", 1.5f));
+            return false;
+        }
+        stats.addHydration(Thirst.hydrationGain(liquid));
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
+
+        String taste;
+        switch (liquid) {
+            case BLOOD: taste = "You gulp down the thick, coppery blood."; break;
+            case BLACK_MUCK: taste = "You choke down the black muck. It tastes of rot."; break;
+            case FREEZING_SLUSH: taste = "You swallow the freezing slush. It aches all the way down."; break;
+            default: taste = strata ? "You drink the still, cold water." : "You drink the clean water."; break;
+        }
+        if (eventManager != null) eventManager.addEvent(new GameEvent(taste, 2.0f));
+
+        com.bpm.minotaur.gamedata.injury.IllnessStage illness = Thirst.illnessFrom(liquid, strata, roll);
+        if (illness.isIll() && injuryManager != null) {
+            injuryManager.contractWaterborneIllness(illness);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Your stomach turns. You are "
+                        + (illness == com.bpm.minotaur.gamedata.injury.IllnessStage.STAGE_1_INFECTED_WOUND
+                                ? "sick" : "burning with fever") + ". A Potion of Vitality would cure it.", 3.0f));
+            }
+        }
+
+        if (Thirst.isChilling(liquid)) {
+            chillFromDrink(liquid, eventManager);
+        }
+        return true;
+    }
+
+    /**
+     * Exposure (#181, #194): a draught of Freezing Slush is a strong chill, and it leaves you
+     * WET down the front.
+     */
+    protected void chillFromDrink(com.bpm.minotaur.gamedata.liquid.LiquidType liquid, GameEventManager eventManager) {
+        if (liquid != com.bpm.minotaur.gamedata.liquid.LiquidType.FREEZING_SLUSH) return;
+        stats.setBodyTemperature(Math.max(Exposure.BODY_FLOOR, stats.getBodyTemperature() - Exposure.SLUSH_DRINK_CHILL));
+        stats.setWetness(Exposure.afterWading(stats.getWetness()));
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("The cold of it spreads through your chest.", 2.0f));
+        }
+    }
+
     public void feastOnMeal(Item meal) {
         feastOnMeal(meal, null);
+    }
+
+    /**
+     * What a food item is worth on the {@link Hunger} scale. Items carry their own value; a
+     * cooked cut that lost its value (items are rebuilt from templates on load) is valued again
+     * from its part and source.
+     */
+    public static int nutritionOf(Item item) {
+        if (item == null) return 0;
+        if (item.getNutrition() > 0) return item.getNutrition();
+        if (item.getType() == Item.ItemType.FOOD) return Hunger.RATION;
+        if (item.getType() == Item.ItemType.COOKED_MEAT) {
+            return Hunger.cookedPart(Item.ItemType.MEAT, item.getCorpseSource());
+        }
+        return Hunger.DEFAULT_FOOD;
+    }
+
+    /**
+     * Rolls choking for a meal worth {@code gain} (see {@link Hunger#eat}). Returns true when
+     * the meal is lost: the eater vomited, or choked to death.
+     */
+    private boolean chokesOn(float gain, GameEventManager eventManager) {
+        Hunger.EatOutcome outcome = Hunger.eat(stats.getSatietyFloat(), gain, Hunger.chokeAt(), (float) Math.random());
+        switch (outcome) {
+            case VOMIT:
+                stats.modifySatiety(-Hunger.VOMIT_LOSS);
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You stuff yourself and then vomit voluminously.", 2.5f));
+                }
+                return true;
+            case CHOKE_DEATH:
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You choke over your food. You die...", 2.5f));
+                }
+                takeTrueDamage(stats.getCurrentHP());
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                }
+                return true;
+            default:
+                if (stats.getHungerStage() == Hunger.Stage.SATIATED && eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You're having a hard time getting all of it down.", 2f));
+                }
+                return false;
+        }
     }
 
     public void feastOnMeal(Item meal, GameEventManager eventManager) {
         if (meal == null) return;
 
-        // Choking check if already over-satiated
-        if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
-            }
-            takeTrueDamage(3);
+        int gain = meal.getNutrition() > 0 ? meal.getNutrition() : Hunger.DEFAULT_MEAL;
+        if (chokesOn(gain, eventManager)) {
             return;
         }
 
@@ -1486,9 +2145,8 @@ public class Player {
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
 
         // 1. Satiety, Food, Hydration & Temperature (NetHack model: 0 direct HP heal)
-        stats.modifySatiety(45f);
-        stats.addFood(meal.getNutrition() > 0 ? meal.getNutrition() : 25);
-        stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : 15);
+        stats.addFood(gain);
+        stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : Thirst.DEFAULT_MEAL);
 
         // 2. Warm body temperature toward cozy normal (37°C)
         float temp = stats.getBodyTemperature();
@@ -1538,6 +2196,14 @@ public class Player {
 
     public List<StatusEffectType> getActiveMealEffects() {
         return java.util.Collections.unmodifiableList(activeMealEffects);
+    }
+
+    /** Puts back which effects came from the last meal, so the next one can replace them. */
+    public void restoreActiveMealEffects(List<StatusEffectType> saved) {
+        activeMealEffects.clear();
+        if (saved != null) {
+            activeMealEffects.addAll(saved);
+        }
     }
 
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,
@@ -1612,7 +2278,7 @@ public class Player {
         }
 
         // Potions usually hydrate
-        stats.addHydration(potion.getHydrationValue() > 0 ? potion.getHydrationValue() : 5);
+        stats.addHydration(potion.getHydrationValue() > 0 ? potion.getHydrationValue() : Thirst.DEFAULT_POTION);
 
         // Message
         String msg = effect.getConsumeMessage();
@@ -1714,6 +2380,20 @@ public class Player {
                 }
                 eventManager.addEvent(new GameEvent("Your possessions glow with understanding!", 2.0f));
                 break;
+            case POLYMORPH: {
+                // An item lying in front of (or under) you changes; with nothing there, you do.
+                GridPoint2 here = new GridPoint2((int) this.position.x, (int) this.position.y);
+                GridPoint2 ahead = new GridPoint2((int) (this.position.x + facing.getVector().x),
+                        (int) (this.position.y + facing.getVector().y));
+                if (maze.getItems().containsKey(ahead)) {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, ahead, this, eventManager);
+                } else if (maze.getItems().containsKey(here)) {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, here, this, eventManager);
+                } else {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphSelf(this, eventManager, false);
+                }
+                break;
+            }
             case TELEPORT: {
                 if (gs != null) {
                     if (gs.getSpellCastOverlay() != null) {
@@ -2032,7 +2712,7 @@ public class Player {
     }
 
     public void heal(int amount) {
-        stats.heal(amount);
+        stats.healWithTrait(amount);
         if (com.badlogic.gdx.Gdx.app != null) {
             com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + stats.getCurrentHP());
         }
@@ -2073,8 +2753,23 @@ public class Player {
         stats.setCurrentHP(hp);
     }
 
+    /**
+     * Whether the Father's Sword (the starting weapon, a Keepsake) is carried in hands,
+     * quickslots, or backpack (#177). Its perk applies while carried, wielded or not.
+     */
+    public boolean carriesFathersSword() {
+        return inventory != null && inventory.hasItemOfType(com.bpm.minotaur.gamedata.item.FathersSword.TYPE);
+    }
+
+    public void syncKeepsakeBonuses() {
+        if (stats == null) return;
+        int bonusHp = carriesFathersSword() ? com.bpm.minotaur.gamedata.item.FathersSword.currentPerk().maxHpBonus : 0;
+        stats.setBonusMaxHP(bonusHp);
+    }
+
     public int getMaxHP() {
-        return stats.getMaxHP();
+        syncKeepsakeBonuses();
+        return stats.getMaxHP() + equipment.getEquippedModifierSum(ModifierType.BONUS_MAX_HP);
     }
 
     public int getCurrentMP() {
@@ -2114,6 +2809,9 @@ public class Player {
     }
 
     public int getArmorClass() { // 5e Base 10 + Dex (capped by Armor tier) + Equipment AC
+        if (form != null) {
+            return form.armorClass();
+        }
         int base = 10;
         int dexMod = getEffectiveDexterityModifier();
         int maxDex = (equipment != null) ? equipment.getMaxDexBonus() : 99;
@@ -2124,6 +2822,7 @@ public class Player {
         if (equipment != null) {
             ac += equipment.getACBonus();
         }
+        ac += Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("acAdd"));
         if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HARDENED)) {
             ac += 4;
         }
@@ -2281,7 +2980,16 @@ public class Player {
         // Chip damage: always take at least 1 on a connected, non-dodged hit.
         if (amount < 1) amount = 1;
 
-        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier()));
+        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("damageTakenMult")));
+
+        // In another body the form takes the blows; when it gives out you are yourself again, unhurt by it.
+        if (form != null) {
+            form.absorb(finalDamage);
+            if (form.isSpent()) {
+                leaveForm(eventManager, "the form gives out");
+            }
+            return finalDamage;
+        }
 
         // Cheat-Death check: Ring of Evasion (Charged)
         if (finalDamage >= (stats.getCurrentHP() + stats.getTemporaryHP()) && equipment.getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION_CHARGED) > 0) {
@@ -2379,11 +3087,18 @@ public class Player {
      * so callers must not mistake it for a blocked move.
      */
     private boolean queuedChunkTransition = false;
+    private boolean harvestedScenery = false;
 
     public boolean consumeQueuedChunkTransition() {
         boolean queued = queuedChunkTransition;
         queuedChunkTransition = false;
         return queued;
+    }
+
+    public boolean consumeHarvestedScenery() {
+        boolean h = harvestedScenery;
+        harvestedScenery = false;
+        return h;
     }
 
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
@@ -2443,10 +3158,48 @@ public class Player {
             }
         }
 
+        // --- WALKING INTO AN ALLY ---
+        // An ally on the next tile does not block the move; once every other check has passed it
+        // takes the tile the player is leaving (see below).
+        com.bpm.minotaur.gamedata.monster.Monster allyAhead = maze.getMonsters().get(nextTile);
+        if (allyAhead != null && !allyAhead.isAlly()) {
+            allyAhead = null;
+        }
+
         // --- GHOST WALL & MOVEMENT HANDLING ---
         boolean isGhostWall = com.bpm.minotaur.managers.DimensionalManager.getInstance().isGhostWall(0, 0, currentX, currentY, direction);
         if (!isGhostWall) {
-            if (!maze.isPassable(nextX, nextY)) {
+            boolean passable;
+            if (allyAhead != null) {
+                // Judge the tile as if the ally were not on it.
+                maze.getMonsters().remove(nextTile);
+                passable = maze.isPassable(nextX, nextY);
+                maze.getMonsters().put(nextTile, allyAhead);
+            } else {
+                passable = maze.isPassable(nextX, nextY);
+            }
+            if (!passable) {
+                Scenery s = maze.getScenery().get(nextTile);
+                // Walking into one of a town's folk is speaking to them.
+                if (com.bpm.minotaur.gamedata.shelter.SealedGates.talk(s)) return;
+                // Castle Tarmin's breach in a siege, or its gate once three seals open it (Living War W35, W36).
+                if (com.bpm.minotaur.gamedata.shelter.SealedGates.enterCastle(s)) return;
+                // Knocking at a sealed gate: Castle Tarmin's, or a seal site's at the end of a road.
+                String knock = com.bpm.minotaur.gamedata.shelter.SealedGates.knock(s);
+                if (knock != null) {
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent(knock, 3.5f));
+                    }
+                    return;
+                }
+                if (s != null && s.isImpassable()) {
+                    String path = s.getTexturePath();
+                    if (path != null && (path.contains("log_snow_01") || path.contains("pine_stump_01"))) {
+                        harvestFrozenTimber(s, nextTile, maze, eventManager);
+                        return;
+                    }
+                }
+
                 // Check specific reasons for blockage
                 if (Gdx.app != null && maze.getWallDataAt(nextX, nextY) == 1) {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
@@ -2489,6 +3242,12 @@ public class Player {
                 // Depleted statue: its encounter has already been resolved
                 bumpedDormantStatue = true;
             }
+        }
+
+        if (allyAhead != null && maze.getMonsters().get(nextTile) == allyAhead) {
+            maze.getMonsters().remove(nextTile);
+            allyAhead.getPosition().set(currentX + 0.5f, currentY + 0.5f);
+            maze.getMonsters().put(new GridPoint2(currentX, currentY), allyAhead);
         }
 
         position.set(nextX + 0.5f, nextY + 0.5f);
@@ -2536,6 +3295,7 @@ public class Player {
             String voidLore = com.bpm.minotaur.managers.DimensionalManager.getInstance().getVoidLoreAt(0, 0, nextX, nextY);
             if (voidLore != null) {
                 eventManager.addEvent(new GameEvent(voidLore, 4.0f));
+                com.bpm.minotaur.managers.DimensionalManager.getInstance().loreRead();
             }
         }
 
@@ -2546,6 +3306,14 @@ public class Player {
         } else if (bumpedDormantStatue) {
             eventManager.addEvent(new GameEvent(
                     "An ancient carved monument. The residual magic has gone dormant.", 2.5f));
+        }
+
+        // Hidden choice event: fires only in the clear, otherwise stays armed for the next step.
+        String choiceEventId = maze.getChoiceEventAt(nextX, nextY);
+        if (choiceEventId != null
+                && com.bpm.minotaur.gamedata.events.EventTriggerRule.isClear(maze, nextX, nextY)) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.CHOICE_EVENT_TRIGGERED, choiceEventId));
+            maze.removeChoiceEvent(nextX, nextY);
         }
     }
 
@@ -2634,7 +3402,7 @@ public class Player {
             }
             float bridgeIntegrity = DoomManager.getInstance() != null ? DoomManager.getInstance().getBridgeIntegrity() : 0f;
 
-            String msg = String.format("You peer through the iron bars into the %s wild: %s%s skies overhead. Doom Bridge integrity: %.0f%%.",
+            String msg = String.format("You peer through the iron bars into the %s wild: %s%s skies overhead. Bridge integrity: %.0f%%.",
                     phaseStr, intensityStr, weatherStr, bridgeIntegrity);
             eventManager.addEvent(new GameEvent(msg, 4f));
             if (soundManager != null) {
@@ -2693,13 +3461,13 @@ public class Player {
             }
 
             if (itemInFront.isLocked()) {
-                Item key = findKey();
+                Item key = findKeyFor(itemInFront);
                 if (key != null && itemInFront.unlocks(key)) {
                     itemInFront.unlock();
                     consumeKey(key);
-                    eventManager.addEvent(new GameEvent("You unlocked the " + containerName + "!", 2f));
+                    eventManager.addEvent(new GameEvent("You unlocked the " + containerName + " with the " + key.getDisplayName() + "!", 2f));
                 } else {
-                    eventManager.addEvent(new GameEvent("The " + containerName + " is locked.", 2f));
+                    eventManager.addEvent(new GameEvent("The " + containerName + " is locked. (Requires: " + itemInFront.getRequiredKeyDisplayName() + ")", 2.5f));
                     return;
                 }
             }
@@ -2712,6 +3480,9 @@ public class Player {
             } else {
                 eventManager.addEvent(new GameEvent("You open the " + containerName + ".", 2f));
                 for (Item contentItem : contents) {
+                    if (contentItem != null) {
+                        com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(contentItem);
+                    }
                     GridPoint2 dropTile = targetTile;
                     if (maze.getItems().containsKey(dropTile)) {
                         dropTile = new GridPoint2((int) position.x, (int) position.y);
@@ -2794,7 +3565,7 @@ public class Player {
                     eventManager.addEvent(new GameEvent("You butcher the corpse, but harvest nothing of value.", 2f));
                 }
             } else {
-                eventManager.addEvent(new GameEvent("You need a sharp tool (Axe/Knife) to butcher this.", 2f));
+                eventManager.addEvent(new GameEvent("You need a bladed tool (Axe, Knife, Sword, Spear) to butcher this.", 2f));
             }
             return;
         }
@@ -2819,22 +3590,21 @@ public class Player {
         eventManager.addEvent(new GameEvent("Nothing to interact with here.", 2f));
     }
 
-    private Item findKey() {
+    private Item findKeyFor(Item container) {
+        if (container == null) return null;
         Inventory inv = getInventory();
-        if (inv.getRightHand() != null && inv.getRightHand().getType() == Item.ItemType.KEY) {
-            return inv.getRightHand();
-        }
-        if (inv.getLeftHand() != null && inv.getLeftHand().getType() == Item.ItemType.KEY) {
-            return inv.getLeftHand();
-        }
+        List<Item> candidates = new ArrayList<>();
+        if (inv.getRightHand() != null && inv.getRightHand().isKey()) candidates.add(inv.getRightHand());
+        if (inv.getLeftHand() != null && inv.getLeftHand().isKey()) candidates.add(inv.getLeftHand());
         for (Item item : inv.getBackpack()) {
-            if (item != null && item.getType() == Item.ItemType.KEY) {
-                return item;
-            }
+            if (item != null && item.isKey()) candidates.add(item);
         }
         for (Item item : inv.getMainInventory()) {
-            if (item.getType() == Item.ItemType.KEY) {
-                return item;
+            if (item != null && item.isKey()) candidates.add(item);
+        }
+        for (Item k : candidates) {
+            if (container.unlocks(k)) {
+                return k;
             }
         }
         return null;
@@ -2942,18 +3712,25 @@ public class Player {
         if (amount <= 0)
             return;
 
-        boolean leveled = stats.addExperience(amount);
+        int gained = Math.max(1, Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("xpMult")));
+        boolean leveled = stats.addExperience(gained);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordExperienceGained(gained);
+        if (leveled) {
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordLevelUp();
+        }
 
-        if (eventManager != null) {
-            eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
-
-            if (leveled) {
-                if (soundManager != null) {
-                    soundManager.playPlayerLevelUpSound();
-                }
+        if (leveled) {
+            pendingLevelUpModal = true;
+            checkSpellSlotProgression(eventManager);
+            if (soundManager != null) {
+                soundManager.playPlayerLevelUpSound();
+            }
+            if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("LEVEL UP! Reached Level " + stats.getLevel() + "!", 3.5f));
                 eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
             }
+        } else if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
         }
     }
 
@@ -2970,7 +3747,12 @@ public class Player {
     }
 
     public boolean learnSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
-        return stats != null && stats.learnSkill(skill);
+        if (stats == null) return false;
+        boolean learned = stats.learnSkill(skill);
+        if (learned && skill == com.bpm.minotaur.gamedata.progression.SkillId.ASTRAL_RECALL) {
+            learnPermanentSpellId("WORD_OF_RECALL");
+        }
+        return learned;
     }
 
     private void performLevelUp(GameEventManager eventManager) {
@@ -2982,6 +3764,7 @@ public class Player {
             eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
             eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
         }
+        checkSpellSlotProgression(eventManager);
     }
 
     public void takeStatusEffectDamage(int amount, DamageType type) {
@@ -3005,7 +3788,11 @@ public class Player {
         if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.DIMINUTIVE)) {
             chance += 0.15f;
         }
-        return chance;
+        // Night Owl: at home in the dark below the surface.
+        if (traitMazeLevel > 1) {
+            chance += com.bpm.minotaur.gamedata.trait.TraitEffects.add("darkDodgeAdd");
+        }
+        return Math.max(0f, chance * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("dodgeMult") + com.bpm.minotaur.gamedata.trait.TraitEffects.add("dodgeAdd"));
     }
 
     /** Flat physical damage absorbed on a connected hit (BONUS_ABSORB from equipment). */
@@ -3052,41 +3839,42 @@ public class Player {
             int giantStr = (eff != null && eff.getPotency() > 0) ? eff.getPotency() : 21;
             return Math.max(baseStr, giantStr);
         }
-        return baseStr;
+        return baseStr + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("STR");
     }
 
     /** Dexterity including equipment BONUS_DEXTERITY and stacked Rings of Dexterity. */
     public int getEffectiveDexterity() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.DEXTERITY) * 5;
-        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus;
+        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("DEX")
+                - stats.getThirstStage().dexterityPenalty; // Dehydrated and worse (#193)
     }
 
     /** Constitution including equipment BONUS_CONSTITUTION and stacked Rings of Constitution. */
     public int getEffectiveConstitution() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CONSTITUTION) * 5;
-        return stats.getConstitution() + equipment.getEquippedModifierSum(ModifierType.BONUS_CONSTITUTION) + bonus;
+        return stats.getConstitution() + equipment.getEquippedModifierSum(ModifierType.BONUS_CONSTITUTION) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("CON");
     }
 
     /** Intelligence including equipment BONUS_INTELLIGENCE and stacked Rings of Intelligence. */
     public int getEffectiveIntelligence() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INTELLIGENCE) * 5;
-        return stats.getIntelligence() + equipment.getEquippedModifierSum(ModifierType.BONUS_INTELLIGENCE) + bonus;
+        return stats.getIntelligence() + equipment.getEquippedModifierSum(ModifierType.BONUS_INTELLIGENCE) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("INT");
     }
 
     /** Wisdom including equipment BONUS_WISDOM and stacked Rings of Wisdom. */
     public int getEffectiveWisdom() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WISDOM) * 5;
-        return stats.getWisdom() + equipment.getEquippedModifierSum(ModifierType.BONUS_WISDOM) + bonus;
+        return stats.getWisdom() + equipment.getEquippedModifierSum(ModifierType.BONUS_WISDOM) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("WIS");
     }
 
     /** Agility including equipment BONUS_AGILITY and stacked Rings of Agility. */
     public int getEffectiveAgility() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.AGILITY) * 5;
-        return stats.getAgility() + equipment.getEquippedModifierSum(ModifierType.BONUS_AGILITY) + bonus;
+        return stats.getAgility() + equipment.getEquippedModifierSum(ModifierType.BONUS_AGILITY) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("AGI");
     }
 
     public int getEffectiveCharisma() {
-        return stats.getCharisma() + equipment.getEquippedModifierSum(ModifierType.BONUS_CHARISMA);
+        return stats.getCharisma() + equipment.getEquippedModifierSum(ModifierType.BONUS_CHARISMA) + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("CHA");
     }
 
     /**
@@ -3181,9 +3969,231 @@ public class Player {
         chance += Math.max(0, (getEffectiveDexterity() - 10) / 2) * 0.02f; // effective DEX
         chance += getLuck() * 0.005f;                                        // effective luck (incl. equipment)
         chance += equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_CHANCE) / 100f;
+        if (carriesFathersSword()) {
+            chance += com.bpm.minotaur.gamedata.item.FathersSword.currentPerk().critBonus;
+        }
         if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
-        if (inventory.getLeftHand() != null && inventory.getLeftHand().getType() == ItemType.BRASS_LANTERN) chance += 0.10f;
-        return Math.min(0.95f, chance);
+        if (hasLantern()) {
+            chance += 0.10f;
+            // The Shelter Lantern station keeps your flame: a steadier light to strike by.
+            if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
+                    .hasStation(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
+                chance += LANTERN_STATION_CRIT_BONUS;
+            }
+        }
+        return Math.max(0f, Math.min(0.95f, chance + com.bpm.minotaur.gamedata.trait.TraitEffects.add("critAdd")));
+    }
+
+    /**
+     * The lantern the player carries in their left hand from the first step and again after every
+     * death -- the art shows it there, so the game must put it there. Never displaces something the
+     * player already holds; returns whether the lantern was taken up.
+     */
+    public static final float LANTERN_STATION_CRIT_BONUS = 0.05f;
+    /** A new game's food (#191): two rations, then the player cooks what they kill. */
+    public static final int STARTING_RATIONS = Hunger.STARTING_RATIONS;
+    /** Tinder Bundles a new character carries: enough to claim the first two shelters. */
+    public static final int STARTING_TINDER = 2;
+
+    public boolean giveStarterLantern(Item lantern) {
+        return giveStarterLantern(lantern, java.util.Collections.<Item>emptyList());
+    }
+
+    /**
+     * As {@link #giveStarterLantern(Item)}, but a player who already owns a lantern -- in a hand, the
+     * pack, a quickslot or the shelter chest ({@code stashed}) -- is not handed a second one, so a
+     * lantern stashed before dying cannot be duplicated by dying.
+     */
+    public boolean giveStarterLantern(Item lantern, java.util.List<Item> stashed) {
+        if (lantern == null || equipment.getWornBelt() != null || ownsLantern(stashed)) {
+            return false;
+        }
+        equipment.setWornBelt(lantern);
+        return true;
+    }
+
+    /** The lantern the player carries, wherever it is: clipped to the belt first, then either hand. Null if none. */
+    public Item getCarriedLantern() {
+        Item[] places = { equipment.getWornBelt(), inventory.getLeftHand(), inventory.getRightHand() };
+        for (Item item : places) {
+            if (item != null && item.getType() == ItemType.BRASS_LANTERN) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasLantern() {
+        return getCarriedLantern() != null;
+    }
+
+    /**
+     * Saves from before the belt clip had the lantern in the left hand. Clips it, freeing the hand,
+     * when the belt is empty; otherwise leaves things alone.
+     */
+    public void migrateLanternToBelt() {
+        Item inLeft = inventory.getLeftHand();
+        if (equipment.getWornBelt() == null && inLeft != null && inLeft.getType() == ItemType.BRASS_LANTERN) {
+            equipment.setWornBelt(inLeft);
+            inventory.setLeftHand(null);
+        }
+    }
+
+    private boolean ownsLantern(java.util.List<Item> stashed) {
+        java.util.List<Item> held = new java.util.ArrayList<>(inventory.getMainInventory());
+        held.addAll(java.util.Arrays.asList(inventory.getQuickSlots()));
+        held.add(inventory.getRightHand());
+        held.add(inventory.getLeftHand());
+        held.add(equipment.getWornBelt());
+        held.addAll(stashed);
+        for (Item item : held) {
+            if (item != null && item.getType() == ItemType.BRASS_LANTERN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    // --- Polymorph: the body the player is currently in, if any ---
+    private com.bpm.minotaur.gamedata.polymorph.PlayerForm form;
+
+    public com.bpm.minotaur.gamedata.polymorph.PlayerForm getForm() {
+        return form;
+    }
+
+    public boolean isPolymorphed() {
+        return form != null;
+    }
+
+    public MonsterDataManager getMonsterDataManager() {
+        return monsterDataManager;
+    }
+
+    public ItemDataManager getItemDataManager() {
+        return itemDataManager;
+    }
+
+    public AssetManager getAssetManager() {
+        return assetManager;
+    }
+
+    /** Real hit points when the form was taken; damage that bypasses the form shows as a drop below this. */
+    private int hpAtFormEntry;
+
+    public void enterForm(com.bpm.minotaur.gamedata.polymorph.PlayerForm newForm) {
+        this.form = newForm;
+        this.hpAtFormEntry = stats.getCurrentHP();
+    }
+
+    /** Back to the player's own body, at the hit points they left it with. */
+    public void leaveForm(GameEventManager events, String why) {
+        if (form == null) {
+            return;
+        }
+        form = null;
+        if (events != null) {
+            events.addEvent(new GameEvent("You return to your own shape" + (why == null ? "." : " (" + why + ")."), 3f));
+        }
+    }
+
+    /** One turn in a form; the form ends when its time runs out. */
+    public void tickForm(GameEventManager events) {
+        // Starvation, poison and the like hurt the real body, not the form: when that happens the
+        // change cannot hold, so the player is themselves again rather than dying in a borrowed body.
+        if (form != null && stats.getCurrentHP() < hpAtFormEntry) {
+            leaveForm(events, "the strain is too much");
+            return;
+        }
+        if (form != null && form.tick()) {
+            leaveForm(events, "the change wears off");
+        }
+    }
+
+    /** A form without hands cannot cast spells or use items. */
+    public boolean handsFree() {
+        return form == null || form.hasHands();
+    }
+
+
+    // --- Personality trait: chosen on a new game and every fifth respawn ---
+    private String traitId;
+    private java.util.List<String> pendingTraitOffer = new java.util.ArrayList<>();
+    private int respawnsSinceChoice;
+    private final java.util.Random traitRng = new java.util.Random();
+
+    public String getTraitId() {
+        return traitId;
+    }
+
+    public com.bpm.minotaur.gamedata.trait.TraitDefinition getTrait() {
+        return com.bpm.minotaur.gamedata.trait.TraitCatalog.getInstance().get(traitId);
+    }
+
+    public java.util.List<String> getPendingTraitOffer() {
+        return pendingTraitOffer;
+    }
+
+    public int getRespawnsSinceChoice() {
+        return respawnsSinceChoice;
+    }
+
+    /** Puts a saved trait state back; the active trait takes effect at once. */
+    public void restoreTrait(String id, java.util.List<String> pending, int respawns) {
+        this.pendingTraitOffer = pending == null ? new java.util.ArrayList<String>() : new java.util.ArrayList<>(pending);
+        this.respawnsSinceChoice = respawns;
+        applyTrait(id);
+    }
+
+    private void applyTrait(String id) {
+        this.traitId = id;
+        com.bpm.minotaur.gamedata.trait.TraitEffects.set(com.bpm.minotaur.gamedata.trait.TraitCatalog.getInstance().get(id));
+        // A lower maximum must not leave the player above it.
+        if (stats.getCurrentHP() > stats.getMaxHP()) {
+            stats.setCurrentHP(stats.getMaxHP());
+        }
+    }
+
+    /** True when the player holds no trait and has not been offered any: a new game, or an older save. */
+    public boolean needsTraitOffer() {
+        return traitId == null && pendingTraitOffer.isEmpty();
+    }
+
+    /** Draws three traits to choose from; they wait here (and in the save) until one is picked. */
+    public void offerTraits() {
+        this.pendingTraitOffer = com.bpm.minotaur.gamedata.trait.TraitCatalog.getInstance().pickOffer(traitId, traitRng);
+    }
+
+    /** Takes the chosen trait, or keeps the current one when {@code id} is null, and closes the offer. */
+    public void chooseTrait(String id) {
+        if (id != null) {
+            applyTrait(id);
+        }
+        pendingTraitOffer = new java.util.ArrayList<>();
+        respawnsSinceChoice = 0;
+    }
+
+    /** Counts a respawn; true when it is time to offer a new choice. */
+    public boolean noteRespawn() {
+        respawnsSinceChoice++;
+        return com.bpm.minotaur.gamedata.trait.TraitCatalog.choiceDue(respawnsSinceChoice);
+    }
+
+    /** Per-turn trait effects. Silent Lunatic: a hostile in view may send the player Berserk. */
+    /** Depth of the maze the player is in, as of the last turn; the surface is 1. */
+    private int traitMazeLevel = 1;
+
+    public void tickTrait(Maze maze, GameEventManager events) {
+        traitMazeLevel = maze == null ? 1 : maze.getLevel();
+        float chance = com.bpm.minotaur.gamedata.trait.TraitEffects.add("berserkChance");
+        if (chance > 0f && maze != null && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BERZERK)
+                && com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)
+                && traitRng.nextFloat() < chance) {
+            statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BERZERK, 4, 1, false);
+            if (events != null) {
+                events.addEvent(new GameEvent("Something snaps. You fly into a rage!", 2.5f));
+            }
+        }
     }
 
     public Item getEquippedLeft() {
@@ -3194,7 +4204,7 @@ public class Player {
      * Crit damage multiplier. Base 2.0×, each BONUS_CRIT_MULTIPLIER point adds 0.1×.
      */
     public float getCritMultiplier() {
-        return 2.0f + equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_MULTIPLIER) * 0.1f;
+        return 2.0f + equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_MULTIPLIER) * 0.1f + com.bpm.minotaur.gamedata.trait.TraitEffects.add("critMultAdd");
     }
 
     /**
@@ -3387,7 +4397,7 @@ public class Player {
         return false;
     }
 
-    private boolean hasButcheringTool() {
+    public boolean hasButcheringTool() {
         if (checkTool(inventory.getRightHand()))
             return true;
         if (checkTool(inventory.getLeftHand()))
@@ -3406,9 +4416,7 @@ public class Player {
     private boolean checkTool(Item item) {
         if (item == null)
             return false;
-        String name = item.getDisplayName().toLowerCase();
-        return name.contains("axe") || name.contains("knife") || name.contains("shiv")
-                || name.contains("sword") || name.contains("dagger");
+        return item.isBladed();
     }
 
     // --- Helper for Scrolls ---

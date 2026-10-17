@@ -21,7 +21,9 @@ drawn in two different fonts on the same row. Both are what an unwritten standar
 
 This boots straight into `UXScreenCaptureScreen`, captures all 27 screens to
 `docs/ux/screenshots/polished/`, and exits on its own. Takes about 40 seconds.
-`--capture-baseline` writes to `baseline/` instead.
+`--capture-baseline` writes to `baseline/` instead. Add `--capture-only=<prefix>[,<prefix>...]`
+to capture just the screens whose id starts with one of them, e.g. `--capture-only=24` for the
+expedition map and window views, or `--capture-only=09,24d`.
 
 **Look at the PNG before claiming a screen is fixed.** Every defect listed in §6 was found by
 looking at a capture, not by reading code. Several were invisible in source — a button whose label

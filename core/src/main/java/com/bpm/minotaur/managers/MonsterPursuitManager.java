@@ -184,7 +184,7 @@ public class MonsterPursuitManager {
                     player.getPosition().set(shovePos.x + 0.5f, shovePos.y + 0.5f);
                     spawnPos = new GridPoint2(arrivalTile);
                     if (eventManager != null) {
-                        eventManager.addEvent(new GameEvent("The " + monster.getMonsterType()
+                        eventManager.addEvent(new GameEvent("The " + monster.getName()
                                 + " shoves forcefully through the passage!", 2.5f));
                     }
                     if (combatManager != null) {
@@ -248,7 +248,7 @@ public class MonsterPursuitManager {
         Scenery s = maze.getScenery().get(pt);
         if (s != null && s.isImpassable()) return false;
 
-        if (maze.getHomeTiles() != null && maze.getHomeTiles().contains(pt)) return false;
+        if (maze.isSanctuaryTile(pt)) return false;
 
         return true;
     }
@@ -277,6 +277,15 @@ public class MonsterPursuitManager {
             d.searchTurnsRemaining = p.searchTurnsRemaining;
             d.isDescending = p.isDescending;
             d.warned = p.warned;
+            if (p.monster != null) {
+                d.bridgeBoss = p.monster.isBridgeBoss();
+                d.maxHP = p.monster.getMaxHP();
+                d.moveSpeed = p.monster.getMoveSpeed();
+                if (p.monster.getScale() != null) {
+                    d.scaleX = p.monster.getScale().x;
+                    d.scaleY = p.monster.getScale().y;
+                }
+            }
             list.add(d);
         }
         return list;
@@ -289,6 +298,10 @@ public class MonsterPursuitManager {
         for (com.bpm.minotaur.gamedata.save.WorldSaveData.PendingPursuerSaveData d : list) {
             if (d.monsterType == null) continue;
             Monster m = new Monster(d.monsterType, d.arrivalTileX, d.arrivalTileY, d.color, dataManager, assetManager);
+            if (d.maxHP > 0) m.setMaxHP(d.maxHP);
+            if (d.moveSpeed > 0) m.setMoveSpeed(d.moveSpeed);
+            if (d.scaleX > 0f && d.scaleY > 0f && m.getScale() != null) m.getScale().set(d.scaleX, d.scaleY);
+            m.setBridgeBoss(d.bridgeBoss);
             m.setCurrentHP(d.currentHP);
             m.setCurrentMP(d.currentMP);
             PendingPursuer p = new PendingPursuer();

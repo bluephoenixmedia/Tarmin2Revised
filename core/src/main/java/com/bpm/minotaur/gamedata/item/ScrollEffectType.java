@@ -15,7 +15,8 @@ public enum ScrollEffectType {
     MAGIC_MAPPING("Magic Mapping", "A map appears in your mind!", true),
     ENCHANT_WEAPON("Enchant Weapon", "Your weapon glows blue.", true),
     ENCHANT_ARMOR("Enchant Armor", "Your armor glows silver.", true),
-    CREATE_MONSTER("Create Monster", "A monster appears!", true);
+    CREATE_MONSTER("Create Monster", "A monster appears!", true),
+    POLYMORPH("Polymorph", "Your form shimmers!", true);
 
     private final String baseName;
     private final String consumeMessage;

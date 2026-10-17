@@ -54,7 +54,12 @@ public class MonsterFactory {
         monster.scaleStats(level);
         monster.setCurrentHP(monster.getMaxHP());
 
-        // 4. Generate Inventory
+        // 4. Flag out-of-depth (#185): template level exceeds chunk EDL
+        if (ctx != null && template != null && template.baseLevel > ctx.edl()) {
+            monster.setOutOfDepth(true);
+        }
+
+        // 5. Generate Inventory
         generateInventory(monster, level, ctx);
 
         return monster;
@@ -89,28 +94,28 @@ public class MonsterFactory {
             }
         }
 
-        // 4.3 Gold
-        if (monster.getIntelligence() > 5) {
-            int goldAmount = rng.d(difficulty, 10) + difficulty;
-            // We need to create gold item, but ItemDataManager usually handles "Gold" as an
-            // item type or currency.
-            // Assuming ItemCategory.GOLD exists and spawns a gold pile.
-            if (rng.rn2(3) == 0) {
-                generateMiscItem(monster, ItemCategory.GOLD, tier);
-                // Note: Ideally set quantity here, but ItemSpawner just gives template.
-            }
-        }
+        // 4.3 Gold (#197): intelligent monsters carry d(level,10)+level one time in three.
+        // Held as a number on the monster, not an item, so it survives a chunk unload.
+        monster.setCarriedGold(com.bpm.minotaur.gamedata.economy.Gold.rollCarriedGold(
+                com.bpm.minotaur.gamedata.economy.Gold.likesGold(monster.getIntelligence()),
+                difficulty, rng));
     }
 
     private boolean isUserOfWeapons(Monster monster) {
-        String name = monster.getType().name(); // Use getType() which returns Enum
+        return isUserOfWeapons(monster.getType());
+    }
+
+    static boolean isUserOfWeapons(MonsterType type) {
+        String name = type.name();
         // Check for specific humanoid types
         // This list should be more comprehensive or data-driven in future
+        // GIANT is matched exactly: as a substring it also armed GIANT_ANT, GIANT_BEE,
+        // GIANT_SNAKE and the other giant insects and beasts (#195).
         return name.contains("ORC") || name.contains("GOBLIN") || name.contains("KOBOLD")
                 || name.contains("DWARF") || name.contains("GNOME") || name.contains("ELF")
                 || name.contains("HUMAN") || name.contains("SKELETON") || name.contains("ZOMBIE")
                 || name.contains("VAMPIRE") || name.contains("LICH") || name.contains("MINOTAUR")
-                || name.contains("GIANT") || name.contains("HOBGOBLIN") || name.contains("TROGLODYTE");
+                || name.equals("GIANT") || name.contains("HOBGOBLIN") || name.contains("TROGLODYTE");
     }
 
     private void generateWeapon(Monster monster, int tier) {

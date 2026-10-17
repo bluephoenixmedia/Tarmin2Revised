@@ -28,7 +28,11 @@ public class SpellVfxTest {
     @Test
     public void testVisualArchetypeEnumCompleteness() {
         VisualArchetype[] archetypes = VisualArchetype.values();
-        assertEquals("There should be exactly 12 Visual Archetypes", 12, archetypes.length);
+        // 13 since OBSCURING_MIST was added for Fog Cloud. The exact count is asserted on
+        // purpose: an archetype is not just a particle colour, it drives the cast overlay, the
+        // post-process flash and a retro sound case, so growing this enum should be a decision
+        // someone makes rather than something that happens.
+        assertEquals("There should be exactly 13 Visual Archetypes", 13, archetypes.length);
 
         for (VisualArchetype arch : archetypes) {
             assertNotNull("Primary color must not be null for " + arch, arch.getPrimaryColor());

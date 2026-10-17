@@ -305,7 +305,7 @@ public class InventoryDebugOverlay extends WidgetGroup implements Disposable {
 
             String text = e.name
                     + "  (" + (int) e.actor.getX() + ", " + (int) e.actor.getY() + ")"
-                    + "  " + (int) e.actor.getWidth() + "×" + (int) e.actor.getHeight();
+                    + "  " + (int) e.actor.getWidth() + "x" + (int) e.actor.getHeight();
 
             float lx = e.actor.getX() + 4f;
             float ly = e.actor.getY() + e.actor.getHeight() + 14f;

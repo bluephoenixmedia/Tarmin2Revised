@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 
 /**
@@ -33,6 +34,13 @@ public class WeatherRenderer {
 
     private final WeatherManager weatherManager;
     private final Array<WeatherParticle> particles = new Array<>(false, 2500);
+
+    // Tiles of the current surface forest chunk under a closed canopy, rebuilt
+    // when the chunk changes. Rain and snow thin out under it and fall at full
+    // density through the trail seam and into the glades.
+    private static final int CANOPY_KEEP_IN_TEN = 3;
+    private Maze canopyMaze;
+    private boolean[][] closedCanopy;
     private final Array<SplashDroplet> splashDroplets = new Array<>(false, 250);
 
     private final Vector3 windVector = new Vector3();
@@ -50,6 +58,10 @@ public class WeatherRenderer {
     private final Color modernStormStreak = new Color(0.85f, 0.93f, 1.0f, 0.72f);
     private final Color modernSnowCrystalline = new Color(0.98f, 0.99f, 1.0f, 0.92f);
     private final Color modernSnowFluffy = new Color(0.92f, 0.95f, 1.0f, 0.78f);
+    /** Ashfall: grey flakes, and the odd ember still glowing (the "fluffy" share). */
+    private final Color modernAshFlake = new Color(0.55f, 0.50f, 0.48f, 0.85f);
+    private final Color modernEmber = new Color(1.0f, 0.42f, 0.12f, 0.90f);
+    private final Color ashColor2D = new Color(0.58f, 0.52f, 0.50f, 1f);
     private final Color modernBlizzardStreak = new Color(0.96f, 0.98f, 1.0f, 0.88f);
     private final Color tornadoDebrisColor = new Color(0.28f, 0.24f, 0.18f, 0.85f);
     private final Color modernSplash = new Color(0.80f, 0.90f, 1.0f, 0.70f);
@@ -67,6 +79,8 @@ public class WeatherRenderer {
     private final Color retroTornadoLight = new Color(0.32f, 0.32f, 0.38f, 1.0f);
     private final Color retroDust1 = new Color(0.35f, 0.28f, 0.18f, 1.0f);
     private final Color retroDust2 = new Color(0.25f, 0.20f, 0.12f, 1.0f);
+
+    private WeatherType lastWeatherType = null;
 
     public WeatherRenderer(WeatherManager weatherManager) {
         this.weatherManager = weatherManager;
@@ -86,6 +100,12 @@ public class WeatherRenderer {
 
         WeatherType type = weatherManager.getCurrentWeather();
         WeatherIntensity intensity = weatherManager.getCurrentIntensity();
+
+        if (lastWeatherType != type) {
+            particles.clear();
+            splashDroplets.clear();
+            lastWeatherType = type;
+        }
 
         // 0. Tornado vortex state tracking
         if (type == WeatherType.TORNADO) {
@@ -108,7 +128,7 @@ public class WeatherRenderer {
             tornadoInitialized = false;
         }
 
-        if (!weatherManager.isPrecipitation(type)) {
+        if (!hasParticles(type)) {
             if (particles.size > 0) particles.clear();
             if (splashDroplets.size > 0) splashDroplets.clear();
             return;
@@ -192,8 +212,15 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (!weatherManager.isPrecipitation(type)) return 0;
+        if (!hasParticles(type)) return 0;
         switch (type) {
+            case ASHFALL:
+                switch (intensity) {
+                    case LIGHT: return 80;
+                    case MEDIUM: return 140;
+                    case HEAVY: return 210;
+                    case EXTREME: default: return 290;
+                }
             case BLIZZARD:
                 switch (intensity) {
                     case LIGHT: return 200;
@@ -300,9 +327,15 @@ public class WeatherRenderer {
             float vz;
             float length;
             boolean isFluffy = (type == WeatherType.SNOW) && (MathUtils.random() < 0.32f);
+            // For ash the "fluffy" share are embers: few, and they fall a little faster.
+            if (type == WeatherType.ASHFALL) isFluffy = MathUtils.random() < 0.08f;
             boolean isDebris = (type == WeatherType.TORNADO) && (MathUtils.random() < 0.45f);
 
-            if (type == WeatherType.SNOW) {
+            if (type == WeatherType.ASHFALL) {
+                // Ash hangs in the air and settles slowly.
+                vz = isFluffy ? -MathUtils.random(1.4f, 2.0f) : -MathUtils.random(0.8f, 1.4f);
+                length = 0.014f;
+            } else if (type == WeatherType.SNOW) {
                 // Gentle fluttering descent
                 vz = isFluffy ? -MathUtils.random(1.2f, 1.8f) : -MathUtils.random(1.8f, 2.6f);
                 length = isFluffy ? 0.024f : 0.012f;
@@ -327,6 +360,11 @@ public class WeatherRenderer {
             return;
         }
         p.isDead = true;
+    }
+
+    /** Weather that draws falling particles: precipitation, and ash, which is not wet. */
+    private boolean hasParticles(WeatherType type) {
+        return weatherManager.isPrecipitation(type) || type == WeatherType.ASHFALL;
     }
 
     private void spawnSplash(float x, float y, float playerX, float playerY, Maze maze) {
@@ -392,7 +430,11 @@ public class WeatherRenderer {
             splashCol = streakColor;
             streakHalfWidth = 0.0018f; // Crisp retro pixel streak (~3.6mm wide)
         } else {
-            if (type == WeatherType.SNOW) {
+            if (type == WeatherType.ASHFALL) {
+                streakColor = modernAshFlake;
+                splashCol = modernAshFlake;
+                streakHalfWidth = 0.010f;
+            } else if (type == WeatherType.SNOW) {
                 streakColor = modernSnowCrystalline;
                 splashCol = modernSnowCrystalline;
                 streakHalfWidth = 0.010f;
@@ -467,6 +509,7 @@ public class WeatherRenderer {
             WeatherParticle p = particles.get(i);
             if (p.isDead) continue;
             if (maze != null && maze.isIndoors(MathUtils.floor(p.x), MathUtils.floor(p.y))) continue;
+            if (i % 10 >= CANOPY_KEEP_IN_TEN && isUnderClosedCanopy(maze, MathUtils.floor(p.x), MathUtils.floor(p.y))) continue;
 
             // World coords: X = p.x, Y = p.z, Z = -p.y
             float worldX = p.x;
@@ -485,11 +528,14 @@ public class WeatherRenderer {
                 scale = Math.max(0.40f, dist / 1.5f);
             }
 
-            if (p.type == WeatherType.SNOW) {
+            if (p.type == WeatherType.SNOW || p.type == WeatherType.ASHFALL) {
                 // Square snowflake billboard quad with dual-layer variety
-                float baseSize = p.isFluffy ? 0.016f : 0.008f;
+                boolean ash = p.type == WeatherType.ASHFALL;
+                float baseSize = ash ? (p.isFluffy ? 0.007f : 0.010f) : (p.isFluffy ? 0.016f : 0.008f);
                 float halfS = baseSize * scale;
-                Color flakeColor = isRetro ? Color.WHITE : (p.isFluffy ? modernSnowFluffy : modernSnowCrystalline);
+                Color flakeColor = ash
+                        ? (isRetro ? Color.GRAY : (p.isFluffy ? modernEmber : modernAshFlake))
+                        : (isRetro ? Color.WHITE : (p.isFluffy ? modernSnowFluffy : modernSnowCrystalline));
                 batcher.addParticleQuad(
                         worldX - scratchCamRight.x * halfS - camUp.x * halfS,
                         worldY - scratchCamRight.y * halfS - camUp.y * halfS,
@@ -838,11 +884,12 @@ public class WeatherRenderer {
             // Proximity alpha fade & atmospheric depth falloff
             float alpha = MathUtils.clamp(0.85f - (transformY / CYLINDER_RADIUS) * 0.55f, 0.20f, 0.75f);
 
-            if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD) {
+            if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD || p.type == WeatherType.ASHFALL) {
                 // SNOWFLAKE: Fluttering square quad
                 float flakeSize = Math.max(1.2f, (0.07f / transformY) * worldH);
-                snowColor.a = alpha * 0.85f;
-                spriteBatch.setColor(snowColor);
+                Color flake = (p.type == WeatherType.ASHFALL) ? ashColor2D : snowColor;
+                flake.a = alpha * 0.85f;
+                spriteBatch.setColor(flake);
                 spriteBatch.draw(blankTexture, screenX - flakeSize * 0.5f, screenY - flakeSize * 0.5f, flakeSize, flakeSize);
             } else {
                 // RAIN STREAK: Directional slender angled quad
@@ -877,6 +924,15 @@ public class WeatherRenderer {
     // -------------------------------------------------------------------------
     // INTERNAL PARTICLE CLASSES
     // -------------------------------------------------------------------------
+
+    private boolean isUnderClosedCanopy(Maze maze, int x, int y) {
+        if (maze != canopyMaze) {
+            canopyMaze = maze;
+            closedCanopy = CanopyMeshBuilder.closedTiles(maze);
+        }
+        return closedCanopy != null && y >= 0 && y < closedCanopy.length
+                && x >= 0 && x < closedCanopy[0].length && closedCanopy[y][x];
+    }
 
     public static class WeatherParticle {
         public float x, y, z;
@@ -922,7 +978,7 @@ public class WeatherRenderer {
         }
 
         public void update(float delta) {
-            if (type == WeatherType.SNOW) {
+            if (type == WeatherType.SNOW || type == WeatherType.ASHFALL) {
                 wobble += wobbleSpeed * delta;
                 float drift = MathUtils.sin(wobble) * (isFluffy ? 0.60f : 0.28f);
                 x += (vx + drift) * delta;

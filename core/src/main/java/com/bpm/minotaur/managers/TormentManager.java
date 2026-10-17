@@ -8,7 +8,7 @@ import java.util.Set;
  * Manages post-victory difficulty modifiers (Hades-style Heat system).
  * Allows players to choose pact modifiers to scale challenge and rewards.
  */
-public class TormentManager {
+public class TormentManager implements SlotScopedState {
 
     private static TormentManager instance;
 
@@ -18,7 +18,7 @@ public class TormentManager {
         BARREN_DEPTHS("Barren Depths", "Dungeon loot spawn rates reduced by 30%", 2),
         DILUTED_ELIXIRS("Diluted Elixirs", "Potions and food restore 35% less HP/MP", 1),
         CHAMPION_FOES("Champion Foes", "Monsters have higher base attributes", 2),
-        CRITICAL_BRIDGE("Fragile Bridge", "Apocalypse Doom cap reduced from 50 to 30 deaths", 3);
+        CRITICAL_BRIDGE("Fragile Bridge", "Tarmin's Hunger: the Bridge falls at 30 deaths, not 50", 3);
 
         private final String title;
         private final String description;
@@ -46,6 +46,8 @@ public class TormentManager {
     private final Set<TormentModifier> activeModifiers = new HashSet<>();
 
     private TormentManager() {
+        // Follow the active slot; see SlotScopedState.
+        SaveManager.register(this);
     }
 
     public static synchronized TormentManager getInstance() {
@@ -111,5 +113,17 @@ public class TormentManager {
 
     public int getMaxAllowedDeaths() {
         return hasModifier(TormentModifier.CRITICAL_BRIDGE) ? 30 : 50;
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        // Torment pacts are never persisted, so there is nothing to re-read --
+        // but they must not follow the player from the slot they were chosen in.
+        clearModifiers();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        clearModifiers();
     }
 }

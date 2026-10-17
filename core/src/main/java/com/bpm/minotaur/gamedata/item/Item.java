@@ -28,7 +28,7 @@ public class Item implements Renderable {
         BOOTS, LEGS, ARMS, EYES, CLOAK, AMULET, RING,
         SMALL_RING, LARGE_RING, RING_BLUE, RING_PINK, RING_GREEN, RING_PURPLE,
         POTION_BLUE, POTION_PINK, POTION_GREEN, POTION_GOLD, POTION_SWIRLY, POTION_BUBBLY,
-        KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
+        KEY, IRON_KEY, SILVER_KEY, GOLD_KEY, SKELETON_KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
         MONEY_BELT, SMALL_BAG, BOX, MEDIUM_PACK, LARGE_PACK, LARGE_BAG,
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
         RUBY, SAPPHIRE, EMERALD,
@@ -133,11 +133,17 @@ public class Item implements Renderable {
         TROMBASH_HELD, TROMBASH_THROWN, TUFENK, WARHAMMER, WHIP, WHIP_CHAIN, WHIP_MASTERS, WRIST_RAZOR, ZAGHNAL,
 
         // NEW ARMOR (Generated)
-        BANDED_MAIL, BRIGANDINE, BACK_AND_BREAST, BASINET, BRONZE_PLATE, CHAIN_HAUBERK, CHAIN_LAMELLAR, CHAIN_MAIL,
+        BANDED_MAIL, BRIGANDINE, TABARD, BACK_AND_BREAST, BASINET, BRONZE_PLATE, CHAIN_HAUBERK, CHAIN_LAMELLAR, CHAIN_MAIL,
         CORD_MAIL, FIELD_PLATE, FULL_PLATE, GALLIC_ARMOR, HALF_PLATE, CAP, CLOSED_FACE, MAIL_COIF, GREAT_HELM,
         LEATHER_HELM, OPEN_FACED, HIDE_ARMOR, HOPLITE_ARMOR, IMPROVED_MAIL, LAMELLAR_SHIRT, LEATHER_ARMOR,
         LIGHT_SCALE, LORICA_HAMATA, LORICA_SEGMENTA, MAIL_AND_PLATE, METAL_LAMELLAR, PADDED_ARMOR, PLATE_MAIL,
         RING_MAIL, SCALE_ARMOR, SHIELD_BODY, BUCKLER, SHIELD_SMALL, SHIELD_MEDIUM, SHIELD_LARGE, SPLINT_MAIL,
+        // SHIELD_SMALL/SHIELD_MEDIUM/SHIELD_LARGE are retained as save-compatible
+        // aliases only. Their duplicate data was removed; ItemDataManager maps
+        // them onto SMALL_SHIELD / SHIELD_BODY / LARGE_SHIELD. Do not delete
+        // them: saves store ItemType by name, and an unknown name loses the whole
+        // player file, regenerates a chunk, or empties the shelter chest.
+        SHIELD_ROUND_WOODEN,
         STUDDED_LEATHER, THREE_QUARTER_PLATE, WOOD_BONE_ARMOR,
         // Missing Boot/Armor Types
         LEATHER_BOOTS, WOOD_BONE_BOOTS, STUDDED_LEATHER_BOOTS, CHAINMAIL_BOOTS, FULL_PLATE_BOOTS,
@@ -175,15 +181,26 @@ public class Item implements Renderable {
         WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
 
         // Home Props
-        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN,
+        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN, HOME_WAR_TABLE, HOME_CARTOGRAPHER_DESK,
         // Shelter biome portals, and the return portal they leave behind.
-        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_RETURN_PORTAL,
+        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_PORTAL_TUNDRA, BIOME_PORTAL_BLIGHT, BIOME_RETURN_PORTAL,
+        // An outpost shelter's hearth, cold until lit with a Tinder Bundle, which claims the shelter.
+        SHELTER_HEARTH_COLD, SHELTER_HEARTH_LIT, TINDER_BUNDLE,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
 
+        // Blighted Marches: the ward slows Taint while carried; Ashwater scours it.
+        WARD_CHARM, ASHWATER,
+
+        // Healing over a few turns, bound from moss and root or lichen (#190).
+        POULTICE,
+
         // Powder and ball for firearms. Its own resource, never mixed with arrows.
         SHOT_POUCH,
+
+        // Refillable waterskin holding 5 drinks of any liquid (#193).
+        WATERSKIN,
 
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
@@ -193,7 +210,7 @@ public class Item implements Renderable {
         LOST_DIVINITIES,
 
         // Debris
-        STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
+        STICK, FIREWOOD, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
         PUDDLE_WATER, STRANGE_METAL, BONES, ANCIENT_FOSSIL, RUSTY_WEAPON, RUSTY_ARMOR,
         DIRTY_CLOTH, METAL_SCRAP, BROKEN_GLASS, DEAD_PLANT_MATTER, MUD,
         CHARRED_WOOD, CERAMIC_SHARD, ROTTEN_ROPE, FUNGAL_SPORE, BAT_GUANO, LOOSE_BRICK,
@@ -211,7 +228,13 @@ public class Item implements Renderable {
         TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN,
 
         // Void salvage: the traveling merchant's chain laser and what restores it
-        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT
+        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT,
+
+        // Fragments of the Maze's history, read on pickup (Houses of the Maze plan T1.10)
+        CHRONICLE_PAGE, HERALD_PROCLAMATION, TORN_BANNER,
+
+        // A trophy of a broken house: worth coin, and it tells a story (Houses of the Maze T2.7)
+        SIGNET_RING
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -223,6 +246,11 @@ public class Item implements Renderable {
     // layer, "left"/"right" for paired limbs. Lives on the item so it goes where the
     // item goes -- into the backpack, and back on. Null until first bloodied.
     private java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> bloodCoats;
+
+    /** The house a trophy was taken from (plan T2.7, T4.5), or -1. */
+    private int trophyHouseId = -1;
+    /** A tabard's doctrine id, whose colours it wears on the paper doll (Living War W24); null otherwise. */
+    private String heraldry;
 
     // --- Base Properties ---
     private String friendlyName;
@@ -249,6 +277,7 @@ public class Item implements Renderable {
     private boolean isKey; // Removed final
     private boolean isUsable; // Removed final
     private boolean isContainer; // Removed final
+    private boolean isBeltClip;
     private boolean isRing; // Removed final
     private boolean isShield; // New Field, Removed final
     private boolean isHelmet; // New Field, Removed final
@@ -266,12 +295,24 @@ public class Item implements Renderable {
     private int erosion = 0; // 0 = none, 1 = rusty/burnt, 2 = very rusty/burnt, 3 = corroded/rotted
     private int enchantment = 0; // +/- to hit/damage/AC
     private int charges = 0; // For wands and tools
+    /**
+     * How many identical items this one stands for. Only plain rations stack
+     * (see {@link #isStackable()}); everything else is always 1.
+     */
+    private int stackCount = 1;
+    /**
+     * Gold in a rolled gold pile (#197), or 0 for anything else. A pile is a COINS item
+     * whose worth is rolled where it lies rather than read from the template; see
+     * {@link com.bpm.minotaur.gamedata.economy.Gold}.
+     */
+    private int goldAmount = 0;
     private boolean trapped = false; // chests/doors
 
     // --- Corpse Property ---
     private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
 
     private boolean isLocked;
+    private ItemType requiredKeyType;
 
     // --- Mimic Disguise ---
     // A mimic in the strata is a chest until the player reaches for it. The disguise
@@ -289,7 +330,8 @@ public class Item implements Renderable {
     private int range; // Removed final
     private int hydrationValue; // New
     private int nutrition; // New
-    private float warmthBonus; // New
+    private float warmthBonus; // Exposure insulation, in degrees C (#194)
+    private float coverage; // Fraction of rain kept off, cloaks and hoods (#194)
     private Vector2 scale; // Removed final
 
     private float offsetX = 0f;
@@ -332,6 +374,53 @@ public class Item implements Renderable {
     private int maxCharges = 0;
     private int currentCharges = 0;
     private String storedSpellId = null;
+
+    // --- Waterskin Liquid Contents (#193) ---
+    private com.bpm.minotaur.gamedata.liquid.LiquidType liquidContent = com.bpm.minotaur.gamedata.liquid.LiquidType.NONE;
+    private boolean strataSource = false;
+
+    public com.bpm.minotaur.gamedata.liquid.LiquidType getLiquidContent() {
+        return liquidContent;
+    }
+
+    public void setLiquidContent(com.bpm.minotaur.gamedata.liquid.LiquidType liquidContent) {
+        this.liquidContent = liquidContent;
+    }
+
+    public boolean isStrataSource() {
+        return strataSource;
+    }
+
+    public void setStrataSource(boolean strataSource) {
+        this.strataSource = strataSource;
+    }
+
+    /** A new waterskin sets out full of clean surface water (#193). */
+    private void fillNewWaterskin() {
+        this.maxCharges = com.bpm.minotaur.gamedata.player.Thirst.WATERSKIN_CAPACITY;
+        this.currentCharges = this.maxCharges;
+        this.liquidContent = com.bpm.minotaur.gamedata.liquid.LiquidType.WATER;
+        this.strataSource = false;
+        this.isUsable = true;
+    }
+
+    public String getLiquidDisplayName() {
+        if (liquidContent == null || liquidContent == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE || currentCharges <= 0) {
+            return "Empty";
+        }
+        switch (liquidContent) {
+            case WATER:
+                return strataSource ? "Strata Water" : "Water";
+            case BLOOD:
+                return "Blood";
+            case BLACK_MUCK:
+                return "Black Muck";
+            case FREEZING_SLUSH:
+                return "Freezing Slush";
+            default:
+                return liquidContent.getDisplayName();
+        }
+    }
 
     public int getMaxCharges() {
         return maxCharges;
@@ -423,6 +512,16 @@ public class Item implements Renderable {
         return nutrition;
     }
 
+    /** Set when a dish is cooked: its worth comes from what went into the pot. */
+    public void setNutrition(int nutrition) {
+        this.nutrition = Math.max(0, nutrition);
+    }
+
+    /** How much rain this keeps off, 0..1: cloaks and hoods (#194). */
+    public float getCoverage() {
+        return coverage;
+    }
+
     public float getWarmthBonus() {
         return warmthBonus;
     }
@@ -448,6 +547,7 @@ public class Item implements Renderable {
         item.isKey = template.isKey;
         item.isUsable = template.isUsable;
         item.isContainer = template.isContainer;
+        item.isBeltClip = template.isBeltClip;
         item.isRing = template.isRing;
         item.isGauntlets = template.isGauntlets;
         item.isLegs = template.isLegs;
@@ -467,6 +567,7 @@ public class Item implements Renderable {
         item.hydrationValue = template.hydrationValue;
         item.nutrition = template.nutrition;
         item.warmthBonus = template.warmthBonus;
+        item.coverage = template.coverage;
         item.maxCharges = template.maxCharges;
         item.currentCharges = template.maxCharges;
 
@@ -475,9 +576,26 @@ public class Item implements Renderable {
         item.offsetY = template.offsetY;
         item.rotation = template.rotation;
 
+        if (type == ItemType.WATERSKIN) {
+            item.fillNewWaterskin();
+        }
+
         // Variants logic...
         item.template = template;
         return item;
+    }
+
+    public static Item createFirewood(int x, int y) {
+        Item wood = new Item();
+        wood.type = ItemType.FIREWOOD;
+        wood.position.set(x + 0.5f, y + 0.5f);
+        wood.itemColor = ItemColor.TAN;
+        wood.friendlyName = "Firewood Bundle";
+        wood.description = "Dry split logs harvested from the frozen wilderness. Essential fuel for kindling campfires.";
+        wood.isUsable = true;
+        wood.baseValue = 5;
+        wood.scale = new Vector2(1.0f, 1.0f);
+        return wood;
     }
 
     public Item(ItemType type, int x, int y, ItemColor color,
@@ -504,6 +622,7 @@ public class Item implements Renderable {
             this.isKey = template.isKey;
             this.isUsable = template.isUsable;
             this.isContainer = template.isContainer;
+            this.isBeltClip = template.isBeltClip;
             this.isRing = template.isRing;
             this.isShield = template.isShield;
             this.isHelmet = template.isHelmet;
@@ -565,9 +684,17 @@ public class Item implements Renderable {
                     tempRegion = atlas.findRegion("lamp");
                 }
                 if (tempRegion == null) {
-                    Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas for " + type);
                     if (assetManager.isLoaded(template.texturePath)) {
                         tempTexture = assetManager.get(template.texturePath, Texture.class);
+                    } else if (Gdx.files != null && Gdx.files.internal(template.texturePath).exists() && Gdx.gl != null) {
+                        try {
+                            tempTexture = new Texture(Gdx.files.internal(template.texturePath));
+                        } catch (Exception e) {
+                            Gdx.app.debug("Item", "Could not load standalone texture: " + template.texturePath);
+                        }
+                    }
+                    if (tempTexture == null) {
+                        Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas or standalone file for " + type);
                     }
                 }
             } else { // Standard Texture Loading
@@ -626,6 +753,10 @@ public class Item implements Renderable {
             }
         }
 
+        if (this.type == ItemType.WATERSKIN) {
+            fillNewWaterskin();
+        }
+
         if (this.dataManager != null) {
             this.template = this.dataManager.getTemplate(this.type);
         } else if (Gdx.app != null) {
@@ -646,11 +777,60 @@ public class Item implements Renderable {
         return friendlyName;
     }
 
+    public String getHeraldry() {
+        return heraldry;
+    }
+
+    public void setHeraldry(String heraldry) {
+        this.heraldry = heraldry;
+    }
+
+    public int getTrophyHouseId() {
+        return trophyHouseId;
+    }
+
+    public void setTrophyHouseId(int houseId) {
+        this.trophyHouseId = houseId;
+    }
+
     public int getBaseValue() {
         return baseValue;
     }
 
+    /** Gold in a rolled pile; 0 for every item that is not one. */
+    public int getGoldAmount() {
+        return goldAmount;
+    }
+
+    public void setGoldAmount(int goldAmount) {
+        this.goldAmount = Math.max(0, goldAmount);
+    }
+
+    /** What picking this treasure up adds to the purse: a pile's rolled gold, else the base value. */
+    public int getTreasureValue() {
+        return goldAmount > 0 ? goldAmount : baseValue;
+    }
+
+    /**
+     * The item's name, with the count when it stands for a stack: "Food x30".
+     */
     public String getDisplayName() {
+        String name = getSingleDisplayName();
+        return stackCount > 1 ? name + " x" + stackCount : name;
+    }
+
+    /** The name of one of these, without a stack count: what you eat, sell or cook. */
+    public String getSingleDisplayName() {
+        if (goldAmount > 0)
+            return com.bpm.minotaur.gamedata.economy.Gold.pileName(goldAmount);
+
+        if (this.type == ItemType.WATERSKIN) {
+            if (currentCharges <= 0 || liquidContent == null || liquidContent == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) {
+                return "Waterskin (Empty)";
+            }
+            return "Waterskin (" + getLiquidDisplayName() + ")";
+        }
+
         if (isPotion)
             return this.friendlyName != null ? this.friendlyName : "Potion";
 
@@ -757,6 +937,82 @@ public class Item implements Renderable {
         return this.isWeapon;
     }
 
+    /**
+     * Whether this item is a bladed, edged, or pointed weapon/tool capable of cutting,
+     * slicing, or butchering a monster carcass (e.g. swords, knives, daggers, axes, spears,
+     * halberds, polearms, scythes).
+     */
+    public boolean isBladed() {
+        if (!isWeapon && !isUsable) {
+            String name = getDisplayName() != null ? getDisplayName().toLowerCase() : "";
+            return name.contains("knife") || name.contains("cleaver") || name.contains("razor")
+                    || name.contains("scalpel") || name.contains("dagger");
+        }
+        if (isShield || isArmor) {
+            return false;
+        }
+
+        String typeName = type != null ? type.name().toUpperCase() : "";
+        String friendly = getDisplayName() != null ? getDisplayName().toUpperCase() : "";
+        String combined = typeName + " " + friendly;
+
+        // Projectile launchers and ammunition are not butchering tools
+        if (combined.contains("BOW") || combined.contains("CROSSBOW")
+                || combined.contains("MUSKET") || combined.contains("PISTOL")
+                || combined.contains("ARQUEBUS") || combined.contains("BLUNDERBUS")
+                || combined.contains("TUFENK") || combined.contains("SLING")
+                || combined.contains("BLOWGUN") || combined.contains("ARROW")
+                || combined.contains("QUARREL") || combined.contains("BULLET")
+                || combined.contains("CALTROP") || combined.contains("DART")) {
+            return false;
+        }
+
+        // Blunt impact weapons without an edge
+        if (combined.contains("MACE") && !combined.contains("BLADEBACK")) return false;
+        if (combined.contains("FLAIL") && !combined.contains("BLADEBACK")) return false;
+        if (combined.contains("STAFF") && !combined.contains("SPEAR") && !combined.contains("HALBERD")) return false;
+        if (combined.contains("CLUB") || combined.contains("HAMMER") || combined.contains("WARHAMMER")
+                || combined.contains("QUARTERSTAFF") || combined.contains("BO_STICK") || combined.contains("BO STICK")
+                || combined.contains("MORNING_STAR") || combined.contains("MORNING STAR")
+                || combined.contains("WHIP") || combined.contains("SCOURGE") || combined.contains("LASSO")
+                || combined.contains("NUNCHAKU") || combined.contains("SAP") || combined.contains("KNOBKERRIE")
+                || combined.contains("BELAYING_PIN") || combined.contains("BELAYING PIN")
+                || combined.contains("FLINDBAR") || combined.contains("ANKUS") || combined.contains("TETSUBO")
+                || combined.contains("WOODEN_CROSS") || combined.contains("WOODEN CROSS")
+                || combined.contains("GADA") || combined.contains("MACA") || combined.contains("QUABONE")
+                || combined.contains("CESTUS")) {
+            return false;
+        }
+
+        // Check damage type from template if available
+        String dt = getDamageType();
+        if ("SLASHING".equalsIgnoreCase(dt) || "PIERCING".equalsIgnoreCase(dt)) {
+            return true;
+        }
+
+        // Keyword heuristics for bladed, pointed, and cutting weapons
+        return combined.contains("SPEAR") || combined.contains("SWORD") || combined.contains("KNIFE")
+                || combined.contains("DAGGER") || combined.contains("AXE") || combined.contains("HATCHET")
+                || combined.contains("SHIV") || combined.contains("BLADE") || combined.contains("HALBERD")
+                || combined.contains("GLAIVE") || combined.contains("PIKE") || combined.contains("LANCE")
+                || combined.contains("TRIDENT") || combined.contains("HARPOON") || combined.contains("JAVELIN")
+                || combined.contains("POLEARM") || combined.contains("SCYTHE") || combined.contains("SICKLE")
+                || combined.contains("MACHETE") || combined.contains("CLEAVER") || combined.contains("KUKRI")
+                || combined.contains("DIRK") || combined.contains("STILETTO") || combined.contains("KATAR")
+                || combined.contains("RAZOR") || combined.contains("RAPIER") || combined.contains("SABRE")
+                || combined.contains("SABER") || combined.contains("SCIMITAR") || combined.contains("CUTLASS")
+                || combined.contains("CLAYMORE") || combined.contains("FALCHION") || combined.contains("KATANA")
+                || combined.contains("WAKIZASHI") || combined.contains("BARDICHE") || combined.contains("VOULGE")
+                || combined.contains("FAUCHARD") || combined.contains("GUISARME") || combined.contains("PARTISAN")
+                || combined.contains("SPETUM") || combined.contains("RANSEUR") || combined.contains("NAGINATA")
+                || combined.contains("ASSEGAI") || combined.contains("PESHKABZ") || combined.contains("SHOTEL")
+                || combined.contains("SHOKA") || combined.contains("PATA") || combined.contains("KORA")
+                || combined.contains("LOTULIS") || combined.contains("BILL") || combined.contains("TOMAHAWK")
+                || combined.contains("IMPALER") || combined.contains("RITIIK") || combined.contains("JAMBIYA")
+                || combined.contains("BASILARD") || combined.contains("CAVILER") || combined.contains("SLASHER")
+                || combined.contains("CUTTER") || combined.contains("CHOPPER") || combined.contains("BLADEBACK");
+    }
+
     public boolean isRanged() {
         return this.isRanged;
     }
@@ -773,6 +1029,34 @@ public class Item implements Renderable {
         return this.isFood;
     }
 
+    /**
+     * Plain rations stack: thirty of them are one slot, not thirty. Meals,
+     * butchered flesh and anything else with its own effects or source stay
+     * single, because each one is different.
+     */
+    public boolean isStackable() {
+        return type == ItemType.FOOD && isFood
+                && corpseSource == null
+                && (mealEffects == null || mealEffects.isEmpty());
+    }
+
+    /** Whether {@code other} can join this item's stack. */
+    public boolean canStackWith(Item other) {
+        return other != null && other != this && isStackable() && other.isStackable() && other.type == type;
+    }
+
+    public int getStackCount() {
+        return stackCount;
+    }
+
+    public void setStackCount(int count) {
+        this.stackCount = Math.max(1, count);
+    }
+
+    public void addToStack(int count) {
+        setStackCount(stackCount + Math.max(0, count));
+    }
+
     public boolean isTreasure() {
         return this.isTreasure;
     }
@@ -782,7 +1066,12 @@ public class Item implements Renderable {
     }
 
     public boolean isKey() {
-        return this.isKey;
+        if (this.isKey) return true;
+        if (type == ItemType.KEY || type == ItemType.IRON_KEY || type == ItemType.SILVER_KEY
+                || type == ItemType.GOLD_KEY || type == ItemType.SKELETON_KEY) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isUsable() {
@@ -808,6 +1097,13 @@ public class Item implements Renderable {
         return getCategory() == ItemCategory.BOOK;
     }
 
+    public boolean isTome() {
+        if (type == null) return false;
+        return com.bpm.minotaur.gamedata.spells.Tome.of(type) != null
+                || type.name().startsWith("TOME_")
+                || isCargo();
+    }
+
     public void setFriendlyName(String friendlyName) {
         this.friendlyName = friendlyName;
     }
@@ -821,6 +1117,10 @@ public class Item implements Renderable {
             if (name.endsWith("_BOOK") || name.startsWith("TOME_") || name.equals("SPECIAL_BOOK")) return false;
         }
         return isUsable && !isWeapon && !isArmor && !isRing && !isContainer && !isTreasure;
+    }
+
+    public boolean isBeltClip() {
+        return this.isBeltClip;
     }
 
     public boolean isContainer() {
@@ -867,14 +1167,34 @@ public class Item implements Renderable {
         return this.isAmulet;
     }
 
+    /**
+     * True for anything worn in the off hand as a shield.
+     *
+     * <p>Data-driven items already carry {@code isShield} from their template;
+     * the name check is the fallback for items built without one, such as in
+     * tests and synthesized templates. It replaces an explicit list of eleven
+     * enum constants that had to be extended by hand every time a shield was
+     * added -- and silently excluded any that was not. The same name test is
+     * already used for damage reduction, animation archetype and paperdoll
+     * socket selection, so this now agrees with them.
+     */
     public boolean isShield() {
-        return this.isShield || (this.type != null && (this.type == ItemType.SMALL_SHIELD
-                || this.type == ItemType.LARGE_SHIELD || this.type == ItemType.SHIELD
-                || this.type == ItemType.SHIELD_SMALL || this.type == ItemType.SHIELD_LARGE
-                || this.type == ItemType.SHIELD_MEDIUM || this.type == ItemType.SHIELD_BODY
-                || this.type == ItemType.SHIELD_BODY_2
-                || this.type == ItemType.GALLIC_SHIELD || this.type == ItemType.HOPLITE_SHIELD
-                || this.type == ItemType.BUCKLER));
+        return this.isShield || isShieldType(this.type);
+    }
+
+    /**
+     * Whether a type is worn as a shield, by name.
+     *
+     * <p>The single definition. Damage reduction, animation archetype, paperdoll
+     * socket selection and themed-die assignment each had their own copy of this
+     * rule, and they had already drifted: the die cascade omitted SHIELD_BODY_2,
+     * GALLIC_SHIELD and HOPLITE_SHIELD, so those shields silently got no
+     * Guardian's Steel Die.
+     */
+    public static boolean isShieldType(ItemType type) {
+        if (type == null) return false;
+        String name = type.name();
+        return name.contains("SHIELD") || name.contains("BUCKLER");
     }
 
     public String resolveDefaultIconPath() {
@@ -1158,6 +1478,19 @@ public class Item implements Renderable {
                 || name.startsWith("BLOWGUN_") || name.equals("DART") || name.startsWith("DART_");
     }
 
+    /**
+     * Whether stepping onto this is enough to gather it: quivers, arrows and crossbow quarrels into
+     * the arrow pool, a shot pouch into the shot pool. Other ammunition -- blowgun darts and needles,
+     * throwing darts, sling stones -- is picked up like anything else: gathered underfoot it became
+     * arrows, and walking over a blowgun needle read as picking up a blowgun (fixes 2026-10-10).
+     */
+    public static boolean gathersUnderfoot(ItemType type) {
+        if (type == null) return false;
+        if (type == ItemType.QUIVER || type == ItemType.SHOT_POUCH) return true;
+        String name = type.name();
+        return name.startsWith("ARROW_") || name.startsWith("QUARREL_");
+    }
+
     public ItemCategory getCategory() {
         if (type == null)
             return ItemCategory.MISC;
@@ -1231,6 +1564,37 @@ public class Item implements Renderable {
         this.studyProgress = Math.max(0, studyProgress);
     }
 
+    /** A found piece of the Maze's history; it is read on pickup, not carried. */
+    public boolean isChronicleFragment() {
+        return type == ItemType.CHRONICLE_PAGE || type == ItemType.HERALD_PROCLAMATION || type == ItemType.TORN_BANNER;
+    }
+
+    /** A trophy taken from a broken house: it tells its story once, then it is kept and sold. */
+    public boolean isTrophy() {
+        return type == ItemType.SIGNET_RING;
+    }
+
+    /** Whether a trophy has told its story already. Kept on the study counter, which it never otherwise uses. */
+    public boolean isTrophyRead() {
+        return isTrophy() && studyProgress > 0;
+    }
+
+    public void markTrophyRead() {
+        if (isTrophy()) studyProgress = 1;
+    }
+
+    /** What kind of history this item tells, or null if it is no fragment. */
+    public com.bpm.minotaur.gamedata.history.FragmentKind fragmentKind() {
+        if (type == null) return null;
+        switch (type) {
+            case CHRONICLE_PAGE: return com.bpm.minotaur.gamedata.history.FragmentKind.PAGE;
+            case HERALD_PROCLAMATION: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
+            case TORN_BANNER: return com.bpm.minotaur.gamedata.history.FragmentKind.BANNER;
+            case SIGNET_RING: return com.bpm.minotaur.gamedata.history.FragmentKind.PROCLAMATION;
+            default: return null;
+        }
+    }
+
     public boolean isCargo() {
         return type == ItemType.TOME_OF_THE_INITIATE || type == ItemType.TOME_OF_ELEMENTS
                 || type == ItemType.TOME_OF_THE_ARCANE || type == ItemType.TOME_OF_TARMIN;
@@ -1271,8 +1635,44 @@ public class Item implements Renderable {
         this.isLocked = false;
     }
 
+    public ItemType getRequiredKeyType() {
+        if (requiredKeyType != null) return requiredKeyType;
+        if (this.type == ItemType.BOX) {
+            return ItemType.IRON_KEY;
+        } else if (this.type == ItemType.REGULAR_CHEST) {
+            if (this.itemColor == ItemColor.GOLD || this.itemColor == ItemColor.YELLOW) {
+                return ItemType.GOLD_KEY;
+            } else if (this.itemColor == ItemColor.BLUE || this.itemColor == ItemColor.WHITE) {
+                return ItemType.SILVER_KEY;
+            }
+            return ItemType.IRON_KEY;
+        }
+        return ItemType.IRON_KEY;
+    }
+
+    public void setRequiredKeyType(ItemType type) {
+        this.requiredKeyType = type;
+    }
+
+    public String getRequiredKeyDisplayName() {
+        ItemType req = getRequiredKeyType();
+        if (req == ItemType.SILVER_KEY) return "Silver Key";
+        if (req == ItemType.GOLD_KEY) return "Gold Key";
+        if (req == ItemType.SKELETON_KEY) return "Skeleton Key";
+        return "Iron Key";
+    }
+
     public boolean unlocks(Item key) {
-        return key != null && key.isKey();
+        if (key == null || !key.isKey()) return false;
+        if (key.getType() == ItemType.SKELETON_KEY) return true;
+
+        ItemType required = getRequiredKeyType();
+        if (key.getType() == required) return true;
+        if ((key.getType() == ItemType.KEY && required == ItemType.IRON_KEY)
+                || (key.getType() == ItemType.IRON_KEY && required == ItemType.KEY)) {
+            return true;
+        }
+        return false;
     }
 
     public List<Item> getContents() {

@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -93,6 +94,14 @@ public class GraveLootScreen extends BaseScreen {
     private void buildUI() {
         stage.clear();
 
+        if (recoveredItems != null) {
+            for (Item item : recoveredItems) {
+                if (item != null) {
+                    com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+                }
+            }
+        }
+
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
@@ -105,7 +114,7 @@ public class GraveLootScreen extends BaseScreen {
         String epitaph = (bonesData != null && bonesData.epitaph != null) ? bonesData.epitaph : "Fell in the depths";
         int floor = (bonesData != null) ? bonesData.floorLevel : 1;
         int strata = (bonesData != null) ? bonesData.strataDepth : 1;
-        statusLabel = new Label("Floor " + floor + " (Strata " + strata + ") — " + epitaph,
+        statusLabel = new Label("Floor " + floor + " (Strata " + strata + ") - " + epitaph,
                 new Label.LabelStyle(font, Color.LIGHT_GRAY));
         root.add(statusLabel).padBottom(20).colspan(3).row();
 
@@ -119,7 +128,7 @@ public class GraveLootScreen extends BaseScreen {
 
         graveTable = new Table();
         populateGraveTable();
-        ScrollPane graveScroll = new ScrollPane(graveTable);
+        ScrollPane graveScroll = new ScrollPane(graveTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         graveScroll.setFadeScrollBars(false);
         leftPanel.add(graveScroll).size(650, 500).row();
 
@@ -168,7 +177,7 @@ public class GraveLootScreen extends BaseScreen {
 
         backpackTable = new Table();
         populateBackpackTable();
-        ScrollPane backpackScroll = new ScrollPane(backpackTable);
+        ScrollPane backpackScroll = new ScrollPane(backpackTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         backpackScroll.setFadeScrollBars(false);
         rightPanel.add(backpackScroll).size(650, 500).row();
 

@@ -13,6 +13,12 @@ public class LightSource {
     public enum FlickerProfile {
         /** Calm, steady vintage golden radiance with gentle rhythmic breathing (+/- 2%) */
         LANTERN_BREATH,
+        /**
+         * The lantern in your hand: a wick flame that wavers as you walk -- an
+         * uneven sway of about +/- 8% brightness, the odd gutter that dips and
+         * reddens it, and a steadier glass-shielded radius (+/- 3%).
+         */
+        LANTERN_FLAME,
         /** Dual-octave organic dancing firelight (+/- 12% radius, +/- 10% intensity, chromatic shift) */
         CAMPFIRE_FLICKER,
         /** Rapid subtle wind-flutter pine torch jitter (+/- 6% radius) */
@@ -91,6 +97,22 @@ public class LightSource {
                 currentRadius = baseRadius * (1.0f + flutter);
                 currentIntensity = baseIntensity * (1.0f + flutter * 1.2f);
                 currentColor.set(baseColor);
+                break;
+            }
+            case LANTERN_FLAME: {
+                float t = timeAccumulator + flickerOffset;
+                // Three incommensurate waves, so the sway never visibly repeats.
+                float sway = MathUtils.sin(t * 5.3f) * 0.45f
+                        + MathUtils.sin(t * 8.9f + 1.3f) * 0.35f
+                        + MathUtils.sin(t * 13.7f + 2.1f) * 0.20f;
+                // A slow gate opens now and then: the flame gutters, dips and reddens.
+                float gate = MathUtils.sin(t * 0.83f) * MathUtils.sin(t * 1.37f + 0.6f);
+                float gutter = gate > 0.55f ? (gate - 0.55f) / 0.45f : 0f;
+                float flicker = sway * 0.08f - gutter * 0.14f;
+                currentIntensity = baseIntensity * (1.0f + flicker);
+                currentRadius = baseRadius * (1.0f + sway * 0.03f - gutter * 0.05f);
+                float warm = 1.0f - Math.max(0f, -flicker) * 0.6f;
+                currentColor.set(baseColor.r, baseColor.g * warm, baseColor.b * warm * 0.95f, 1f);
                 break;
             }
             case LANTERN_BREATH: {

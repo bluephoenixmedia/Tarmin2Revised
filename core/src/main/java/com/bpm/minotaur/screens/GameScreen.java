@@ -20,6 +20,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.rendering.SpellPostProcessor;
 import com.bpm.minotaur.rendering.SpellCastOverlay;
@@ -66,6 +68,13 @@ public class GameScreen extends BaseScreen {
 
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
+    /** Gameplay keys are read through their Settings binding, never as literals (#171). */
+    private final ActionKeys actionKeys = ActionKeys.live();
+    /** Keys the open combat menu eats so they cannot walk or turn the player. */
+    private static final java.util.List<String> MENU_SWALLOWED_ACTIONS = java.util.List.of(
+            "MOVE_FORWARD", "MOVE_BACK", "TURN_LEFT", "TURN_RIGHT", "ATTACK");
+    private static final java.util.List<String> MOVEMENT_ACTIONS = java.util.List.of(
+            "MOVE_FORWARD", "MOVE_BACK", "TURN_LEFT", "TURN_RIGHT");
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final World3DRenderer world3DRenderer = new World3DRenderer();
     private final com.bpm.minotaur.rendering.EmberOverlay emberOverlay =
@@ -108,9 +117,15 @@ public class GameScreen extends BaseScreen {
 
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
-    private boolean useCrtFilter = true;
+    private boolean useCrtFilter = false;
+    private FilmicCasPostProcessor filmicCasPostProcessor;
     private SpellPostProcessor spellPostProcessor;
     private SpellCastOverlay spellCastOverlay;
+    private final com.bpm.minotaur.managers.AlertMonitor alertMonitor = new com.bpm.minotaur.managers.AlertMonitor();
+    private final com.bpm.minotaur.rendering.AlertOverlay alertOverlay = new com.bpm.minotaur.rendering.AlertOverlay();
+    private final com.bpm.minotaur.rendering.ScreenFxOverlay screenFx = new com.bpm.minotaur.rendering.ScreenFxOverlay();
+    private final com.bpm.minotaur.rendering.vfx.DamageFlash damageFlash = new com.bpm.minotaur.rendering.vfx.DamageFlash();
+    private int lastPlayerHp = -1;
     private final SpriteBatch postProcessBatch = new SpriteBatch();
     private float time = 0f;
 
@@ -127,6 +142,11 @@ public class GameScreen extends BaseScreen {
 
     private boolean hasLoadedLevel = false;
     private int turnCount = 0;
+
+    /** World turns taken since this screen opened. */
+    public int getTurnCount() {
+        return turnCount;
+    }
 
     // --- Death Idempotency & Run Tracking (NetHack Progression Reboot) ---
     private String activeExpeditionRunId = java.util.UUID.randomUUID().toString();
@@ -155,6 +175,8 @@ public class GameScreen extends BaseScreen {
     // --- NEW: Visceral Feedback Components ---
     private FirstPersonWeaponOverlay weaponOverlay;
     private com.bpm.minotaur.rendering.weaponview.WeaponViewTunerPanel weaponTunerPanel;
+    private final com.bpm.minotaur.rendering.gate.GateUvTunerPanel gateUvTunerPanel =
+            new com.bpm.minotaur.rendering.gate.GateUvTunerPanel(world3DRenderer.getGateUv(), world3DRenderer::applyGateUv);
     private CraftingManager craftingManager;
 
     public static class VisorDroplet {
@@ -174,6 +196,7 @@ public class GameScreen extends BaseScreen {
     // --- Periodic Auto-Save (Every 60 seconds) ---
     public static final float AUTOSAVE_INTERVAL_SECONDS = 60f;
     private float autoSaveTimer = 0f;
+    private float ambientMonsterTimer = 18f;
 
     // --- Debug UI ---
     private DebugSpawnOverlay debugSpawnOverlay;
@@ -215,6 +238,23 @@ public class GameScreen extends BaseScreen {
 
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
+        // The Maze's history is built now, so it hears the Doom Clock from the first turn.
+        worldManager.getHistory();
+        // Walking into one of a town's folk opens a conversation (Houses of the Maze T4.3).
+        com.bpm.minotaur.gamedata.shelter.SealedGates.setTalker(this::talkTo);
+        // Castle Tarmin's breach in a siege, or its opened gate, leads down into its halls (Living War W35, W36).
+        com.bpm.minotaur.gamedata.shelter.SealedGates.setCastleWay(this::intoTheCastle);
+        // A seal site's gate names the lord who holds the gash beneath it.
+        com.bpm.minotaur.gamedata.shelter.SealedGates.setSealSiteVoice(() -> {
+            int road = worldManager.getBiomeManager().getSealRoad(worldManager.getCurrentPlayerChunkId());
+            return SealCourt.knockLine(worldManager.getHistory().world(), road,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                    com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(road));
+        });
+        // The Void's glyphs tell how Tarmin-Zul came through; reading one enters it in the chronicle.
+        DimensionalManager.getInstance().setOnLoreRead(() -> worldManager.getHistory()
+                .readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.VOID_GLYPH));
+        this.monsterAiManager.setOnPlayerNoticed(alertMonitor::noteMonsterNoticed);
 
         // Initialize Input Multiplexer
         inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
@@ -274,9 +314,11 @@ public class GameScreen extends BaseScreen {
         // raycaster branch, so without this every shot is invisible in the default renderer.
         world3DRenderer.setAnimationManager(animationManager);
         world3DRenderer.setProjectileAssets(game.getAssetManager());
+        world3DRenderer.setWeaponOverlay(weaponOverlay);
         if (eventManager == null) {
             eventManager = new GameEventManager();
         }
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setExpeditionEndListener(returnUnlockRoller);
 
         if (fbo == null) {
             fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, GAME_HEIGHT, true); // Use GAME_HEIGHT
@@ -292,6 +334,9 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        if (filmicCasPostProcessor == null) {
+            filmicCasPostProcessor = new FilmicCasPostProcessor();
+        }
         if (spellPostProcessor == null) {
             spellPostProcessor = new SpellPostProcessor();
         }
@@ -339,7 +384,7 @@ public class GameScreen extends BaseScreen {
         if (hud != null) {
             hud.setGameScreen(this);
             hud.setDiscoveryManager(this.discoveryManager);
-            player.setItemPickupListener(item -> hud.showPickupToast(item));
+            player.setItemPickupListener(this::onItemPickedUp);
             inputMultiplexer.clear();
             // First in line so a key or click anywhere, HUD included, only breaks a study's
             // concentration instead of also moving, attacking or pressing a button.
@@ -347,6 +392,7 @@ public class GameScreen extends BaseScreen {
             // The F11 weapon tuner passes everything through while closed, and while open
             // has to see the arrows before the game turns them into movement.
             inputMultiplexer.addProcessor(weaponTunerPanel);
+            inputMultiplexer.addProcessor(gateUvTunerPanel);
             inputMultiplexer.addProcessor(hud.stage); // UI First
             inputMultiplexer.addProcessor(this); // Game Second
             Gdx.input.setInputProcessor(inputMultiplexer);
@@ -355,6 +401,7 @@ public class GameScreen extends BaseScreen {
             weaponOverlay.setEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
         }
         updateMusicTrackForCurrentZone();
+        checkArrivalHint();
     }
 
     public void updateMusicTrackForCurrentZone() {
@@ -372,7 +419,7 @@ public class GameScreen extends BaseScreen {
 
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
-        boolean isShelter = maze.isHomeTile(px, py);
+        boolean isShelter = maze.isSanctuaryTile(px, py);
 
         if (isShelter) {
             MusicManager.getInstance().playShelterMusic("sounds/music/tarmin_ambient.ogg");
@@ -400,6 +447,8 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void hide() {
+        endWindowLook();
+        warAudio.stop();
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
@@ -486,7 +535,7 @@ public class GameScreen extends BaseScreen {
                 gameMode);
         hud.setGameScreen(this);
         hud.setDiscoveryManager(this.discoveryManager);
-        player.setItemPickupListener(item -> hud.showPickupToast(item));
+        player.setItemPickupListener(this::onItemPickedUp);
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
@@ -512,11 +561,17 @@ public class GameScreen extends BaseScreen {
         int gained = dm.tryAwardChunkDivinities(key, level);
         if (gained > 0) {
             hud.addMessage("+" + gained + " " + DivinityManager.DIVINITY_NAME + " (new area)");
+            HintManager.getInstance().checkDivinity(eventManager);
         }
 
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
+            if (worldManager.getWeatherManager() != null && worldManager.getBiomeManager() != null) {
+                Biome currentBiome = worldManager.getBiomeManager().getBiome(cid);
+                worldManager.getWeatherManager().onBiomeChanged(currentBiome);
+            }
         }
+        checkArrivalHint();
     }
 
     // ---- End Divinity helpers ----
@@ -562,10 +617,24 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        listenForKnell();
+        tendKnellSky(delta);
+        warAudio.update(delta, hud != null && hud.getKnellOverlay() != null && hud.getKnellOverlay().isSpeaking());
         MusicManager.getInstance().update(delta);
 
         updateDeathSequence(delta);
+        updateWindowLook(delta);
         updateAutoSave(delta);
+        updateAlert(delta);
+        placePendingAllies();
+
+        // Trigger Level-Up Attribute Allocation modal when safe (outside active combat)
+        if (player != null && player.hasPendingLevelUpModal() && (combatManager == null || !combatManager.isInCombat())) {
+            player.setPendingLevelUpModal(false);
+            if (hud != null && hud.getLevelUpModal() != null && !hud.getLevelUpModal().isVisible()) {
+                hud.showLevelUpModal();
+            }
+        }
 
         // --- VISCERAL HIT PAUSE ---
         if (hitPauseTimer > 0) {
@@ -575,6 +644,14 @@ public class GameScreen extends BaseScreen {
             // We do NOT update time, combatManager, etc.
             if (hitPauseTimer <= 0)
                 hitPauseTimer = 0;
+        } else if (isDying()) {
+            // Death is active: freeze world updates, combat updates, and turn processing while the death sequence runs
+            time += delta;
+            animationManager.update(delta);
+            if (hud != null)
+                hud.update(delta);
+            eventManager.update(delta);
+            handleSystemEvents();
         } else if (player != null && player.getStatusManager().hasEffect(StatusEffectType.SLEEP) &&
                 (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
                         || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
@@ -623,6 +700,17 @@ public class GameScreen extends BaseScreen {
             updateSeamlessChunkLoading(delta);
 
             animationManager.update(delta);
+            if (maze != null && maze.getMonsters() != null) {
+                for (Monster m : maze.getMonsters().values()) {
+                    if (m != null) m.updateAnimation(delta);
+                }
+            }
+            if (combatManager != null && combatManager.getMonster() != null) {
+                combatManager.getMonster().updateAnimation(delta);
+            }
+            if (maze != null && maze.getShopkeeper() != null) {
+                maze.getShopkeeper().updateAnimation(delta);
+            }
             if (maze != null)
                 maze.update(delta);
             if (hud != null)
@@ -630,8 +718,17 @@ public class GameScreen extends BaseScreen {
             eventManager.update(delta);
             handleSystemEvents();
             updateTomeStudy(delta);
+            updateHearthLighting(delta);
             if (player != null && player.getPendingTomeChoice() != null) {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
+                return;
+            }
+            if (player != null && player.needsTraitOffer()) {
+                player.offerTraits(); // a new game, or a save from before traits
+            }
+            if (player != null && !player.getPendingTraitOffer().isEmpty()
+                    && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                game.setScreen(new TraitChoiceScreen(game, this, player));
                 return;
             }
 
@@ -649,6 +746,18 @@ public class GameScreen extends BaseScreen {
 
             if (gameMode == GameMode.ADVANCED) {
                 checkForProactiveChunkLoading();
+            }
+
+            if (soundManager != null) {
+                soundManager.update(delta);
+            }
+
+            if (combatManager == null || combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                ambientMonsterTimer -= delta;
+                if (ambientMonsterTimer <= 0f) {
+                    ambientMonsterTimer = com.badlogic.gdx.math.MathUtils.random(15.0f, 30.0f);
+                    triggerAmbientMonsterSound();
+                }
             }
 
             // Update Overlay Animation and Equipment
@@ -673,7 +782,7 @@ public class GameScreen extends BaseScreen {
             statusVignetteRenderer.update(delta);
         }
 
-        boolean renderToFbo = useCrtFilter || (spellPostProcessor != null && spellPostProcessor.isActive());
+        boolean renderToFbo = true; // Always render to FBO for Filmic CAS or CRT post-processing
         if (renderToFbo) {
             fbo.begin();
             fboViewport.apply();
@@ -769,16 +878,28 @@ public class GameScreen extends BaseScreen {
 
             if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
-                weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
+                if (windowLook == null) weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
             } else {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
                 weaponOverlay.renderTrails(shapeRenderer);
 
                 game.getBatch().begin();
-                weaponOverlay.render(game.getBatch(), game.getViewport());
+                // A handless form has no hand to hold the weapon in; a face at the bars has
+                // them down at its sides.
+                if (player.handsFree() && windowLook == null) {
+                    weaponOverlay.render(game.getBatch(), game.getViewport());
+                }
                 weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
+                gateUvTunerPanel.render(game.getBatch(), font, game.getViewport());
                 game.getBatch().end();
             }
+
+            damageFlash.render(shapeRenderer, game.getViewport());
+            game.getBatch().begin();
+            alertOverlay.render(game.getBatch(), game.getViewport());
+            screenFx.render(game.getBatch(), game.getViewport());
+            game.getBatch().end();
+            renderDebugLegend(); // runs its own shape and batch passes, so only between batches
 
             if (combatManager.getAttackIndicatorMonster() != null
                     && combatManager.getAttackIndicatorVariant() == CombatManager.AttackIndicatorVariant.SCREEN_SLASH) {
@@ -789,6 +910,8 @@ public class GameScreen extends BaseScreen {
             shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
             firstPersonRenderer.renderTemperatureVignette(shapeRenderer, game.getViewport(),
                     player.getStats().getBodyTemperature(), time);
+
+            renderObscuringFogWash();
 
             if (spellCastOverlay != null && spellCastOverlay.isActive()) {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
@@ -848,11 +971,15 @@ public class GameScreen extends BaseScreen {
             if (useCrtFilter) {
                 postProcessBatch.setShader(crtShader);
                 crtShader.setUniformf("u_time", time);
+                crtShader.setUniformf("u_heatShimmer", heatShimmer());
+                crtShader.setUniformf("u_waterMist", waterMist());
                 if (spellPostProcessor != null) {
                     spellPostProcessor.applyUniforms(crtShader, time);
                 }
                 // Draw FBO offset by HUD_HEIGHT (180)
                 postProcessBatch.draw(fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, 0, 0, 1, 1);
+            } else if (filmicCasPostProcessor != null && filmicCasPostProcessor.isCompiled()) {
+                filmicCasPostProcessor.render(postProcessBatch, fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, time, spellPostProcessor);
             } else if (spellPostProcessor != null && spellPostProcessor.isActive()) {
                 spellPostProcessor.renderModern(postProcessBatch, fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
             } else {
@@ -896,6 +1023,7 @@ public class GameScreen extends BaseScreen {
         game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
         game.getBatch().begin();
         animationManager.renderDamageText(game.getBatch(), currentViewport, player, firstPersonRenderer.getDepthBuffer());
+        animationManager.renderMonsterSpeech(game.getBatch(), currentViewport, player, maze, firstPersonRenderer.getDepthBuffer());
         game.getBatch().end();
 
         renderCombatOverlay();
@@ -950,6 +1078,7 @@ public class GameScreen extends BaseScreen {
     }
 
     public void triggerVisorSplatter() {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
         if (visorDropletTextures.isEmpty() || game.getViewport() == null) return;
         int count = com.badlogic.gdx.math.MathUtils.random(1, 3);
         float vw = game.getViewport().getWorldWidth();
@@ -968,6 +1097,34 @@ public class GameScreen extends BaseScreen {
             d.region = visorDropletTextures.get(com.badlogic.gdx.math.MathUtils.random(visorDropletTextures.size() - 1));
             visorDroplets.add(d);
         }
+    }
+
+    /** Midday heat over the surface desert, for the CRT pass; 0 anywhere else. */
+    private float heatShimmer() {
+        if (worldManager == null || maze == null || player == null
+                || maze.getBiome() != com.bpm.minotaur.generation.Biome.DESERT
+                || maze.getLevel() != 1 || worldManager.getDayNightManager() == null
+                || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) {
+            return 0f;
+        }
+        com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
+        return com.bpm.minotaur.rendering.DesertAtmosphere.heatShimmer(
+                worldManager.getDayNightManager().getTimeOfDay(),
+                (wm != null) ? wm.getCurrentWeather() : null);
+    }
+
+    /** Low rolling ground mist over the surface Lakelands, for the CRT pass; 0 anywhere else. */
+    private float waterMist() {
+        if (worldManager == null || maze == null || player == null
+                || maze.getBiome() != com.bpm.minotaur.generation.Biome.LAKELANDS
+                || maze.getLevel() != 1 || worldManager.getDayNightManager() == null
+                || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) {
+            return 0f;
+        }
+        com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
+        return com.bpm.minotaur.rendering.LakelandsAtmosphere.waterMist(
+                worldManager.getDayNightManager().getTimeOfDay(),
+                (wm != null) ? wm.getCurrentWeather() : null);
     }
 
     /**
@@ -1135,6 +1292,7 @@ public class GameScreen extends BaseScreen {
                 WorldManager.PortalWarp warp = (WorldManager.PortalWarp) event.payload;
                 Gdx.app.log("GameScreen", "Biome portal warp to chunk " + warp.chunkId);
 
+                collectEscortAllies();
                 if (maze != null) {
                     worldManager.saveCurrentChunk(maze);
                 }
@@ -1171,6 +1329,10 @@ public class GameScreen extends BaseScreen {
                     hud.getEncounterWindow().show(encounter);
                 }
             }
+        }
+
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.CHOICE_EVENT_TRIGGERED)) != null) {
+            openChoiceEvent((String) event.payload);
         }
 
         while ((event = eventManager.findAndConsume(GameEvent.EventType.SHOPKEEPER_INTERACTION)) != null) {
@@ -1257,11 +1419,16 @@ public class GameScreen extends BaseScreen {
                     epitaph = buildEpitaph(telemetry);
                 } catch (Exception ignored) {
                 }
-                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode);
+                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode,
+                        com.bpm.minotaur.gamedata.history.text.Epithets.player(worldManager.getHistory().world()));
             }
 
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
-            DoomManager.getInstance().recordDeath(activeExpeditionRunId);
+            if (DoomManager.getInstance().recordDeath(activeExpeditionRunId)) {
+                // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
+                worldManager.getHistory().recordSeekerFell(
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse());
+            }
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
             Gdx.app.log("GameScreen", "Doom updated on death. Count: " + deaths + " (" + (int) bridge + "%)");
@@ -1281,39 +1448,37 @@ public class GameScreen extends BaseScreen {
                 combatManager.endCombat();
             }
 
-            // 3. Lose unequipped items (capped by the Loot Retention upgrade); equipped
-            //    weapon/offhand and worn equipment are protected and simply carry over.
-            //    Travel crafting kits (CRAFTING_TOOLKIT and COOKING_KIT) are permanently retained on death.
-            int retentionCap = DivinityManager.getInstance().getLootRetentionCap();
-            List<Item> allUnequipped = new ArrayList<>(player.getInventory().getMainInventory());
-            Item[] quickSlots = player.getInventory().getQuickSlots();
-            for (int i = 0; i < quickSlots.length; i++) {
-                if (quickSlots[i] != null) {
-                    allUnequipped.add(quickSlots[i]);
-                    quickSlots[i] = null;
-                }
+            // 3. Full Expedition Reset: lose equipped gear, weapons, offhand, backpack items,
+            //    and quickslots upon death. Only items previously secured in the Shelter Chest survive.
+            int lostCount = 0;
+            if (player.getInventory().getRightHand() != null) {
+                lostCount++;
+                player.getInventory().setRightHand(null);
             }
+            if (player.getInventory().getLeftHand() != null) {
+                lostCount++;
+                player.getInventory().setLeftHand(null);
+            }
+            if (player.getEquipment() != null) {
+                lostCount += player.getEquipment().getAllEquipped().size();
+                player.getEquipment().stripAllEquipped();
+            }
+
+            lostCount += player.getInventory().getMainInventory().size();
             player.getInventory().getMainInventory().clear();
 
-            List<Item> permanentKits = new ArrayList<>();
-            List<Item> atRiskItems = new ArrayList<>();
-            for (Item itm : allUnequipped) {
-                if (itm != null && (itm.getType() == Item.ItemType.CRAFTING_TOOLKIT || itm.getType() == Item.ItemType.COOKING_KIT)) {
-                    permanentKits.add(itm);
-                } else {
-                    atRiskItems.add(itm);
-                }
+            for (Item qs : player.getInventory().getQuickSlots()) {
+                if (qs != null) lostCount++;
             }
+            player.getInventory().clearQuickSlots();
 
-            for (Item kit : permanentKits) {
-                player.getInventory().pickupToBackpack(kit);
-            }
+            int retainedCount = 0;
 
-            int retainedCount = Math.min(retentionCap, atRiskItems.size());
-            for (int i = 0; i < retainedCount; i++) {
-                player.getInventory().pickupToBackpack(atRiskItems.get(i));
-            }
-            int lostCount = atRiskItems.size() - retainedCount;
+            // Put the stripped character on disk now. The death screen can be left by quitting
+            // or crashing, and the last pre-death autosave would otherwise return the whole kit
+            // at the next load. The flag makes that load finish the respawn.
+            SaveManager.getInstance().setRespawnPending(true);
+            SaveManager.getInstance().saveActiveSlot(player, worldManager);
 
             // 4. Finalize run telemetry & build the run epitaph
             com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
@@ -1324,14 +1489,15 @@ public class GameScreen extends BaseScreen {
             int depthReached = Math.max(1, telemetry.getStrataReached());
             int monstersSlain = telemetry.getTotalMonstersKilled();
             int divinitiesEarnedThisRun = telemetry.getDivinitiesEarned();
-            telemetry.exportRun(epitaphCause);
 
             // Roll discoveries unlocked for future expeditions
             // Types, not just names: the death screen shows each discovery as a card with its
             // icon, and icons are keyed on the item type.
             java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes =
                     com.bpm.minotaur.managers.UnlockManager.getInstance()
-                            .rollRunUnlockTypes(telemetry, depthReached);
+                            .rollRunUnlockTypes(telemetry, telemetry.getExpeditionMaxDepth());
+            telemetry.recordUnlocksEarned(newUnlockTypes != null ? newUnlockTypes.size() : 0);
+            telemetry.exportRun(epitaphCause);
             // 5. Play visceral death audio and transition to PlayerDeathScreen
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
@@ -1340,6 +1506,29 @@ public class GameScreen extends BaseScreen {
             return;
         }
     }
+
+    /**
+     * Rolls the unlocks a safe return earned (#184) while telemetry still holds the
+     * expedition's counters. A death rolls its own, for the death screen, so only a return
+     * is handled here; the log carries the news because no screen follows a return.
+     */
+    private final com.bpm.minotaur.telemetry.TelemetryManager.ExpeditionEndListener returnUnlockRoller = outcome -> {
+        if (outcome != com.bpm.minotaur.telemetry.TelemetryManager.Outcome.RETURNED) {
+            return;
+        }
+        com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        com.bpm.minotaur.managers.UnlockManager unlocks = com.bpm.minotaur.managers.UnlockManager.getInstance();
+        java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> earned =
+                unlocks.rollExpeditionUnlockTypes(telemetry, telemetry.getExpeditionMaxDepth(), outcome);
+        telemetry.recordUnlocksEarned(earned.size());
+        if (eventManager == null) {
+            return;
+        }
+        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : earned) {
+            eventManager.addEvent(new GameEvent(
+                    "Your return is remembered: " + unlocks.displayNameFor(type) + " now appears in the maze.", 4f));
+        }
+    };
 
     /**
      * Starts the death cinematic and defers the screen swap until the blood is opaque.
@@ -1403,10 +1592,97 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** Feeds the alert monitor what the player's state is, and flashes the symbol when it says to. */
+    private void updateAlert(float delta) {
+        alertOverlay.update(delta);
+        screenFx.update(delta);
+        damageFlash.update(delta);
+        if (player == null || player.getStats() == null) {
+            return;
+        }
+        if (isDying()) {
+            // What was pending belongs to the life that is ending; the respawn takes a new baseline.
+            alertMonitor.reset();
+            damageFlash.reset();
+            lastPlayerHp = -1;
+            return;
+        }
+        PlayerStats stats = player.getStats();
+
+        // A short red flash at the screen edges whenever the player loses health.
+        int hp = stats.getCurrentHP();
+        if (lastPlayerHp >= 0 && hp < lastPlayerHp) {
+            damageFlash.trigger((lastPlayerHp - hp) / (float) Math.max(1, stats.getMaxHP()));
+        }
+        lastPlayerHp = hp;
+
+        com.bpm.minotaur.managers.AlertMonitor.Snapshot snapshot = com.bpm.minotaur.managers.AlertMonitor.Snapshot.of(stats);
+        com.bpm.minotaur.managers.AlertMonitor.Reason alert = alertMonitor.update(delta, snapshot);
+        if (alert != null) {
+            alertOverlay.trigger();
+            soundManager.playEvent("alert");
+            // #173: the flash says something is wrong; the chronicle says what.
+            if (hud != null) {
+                hud.addMessage(com.bpm.minotaur.managers.AlertMonitor.message(alert, snapshot));
+            }
+            if (alert == com.bpm.minotaur.managers.AlertMonitor.Reason.HUNGER) {
+                HintManager.getInstance().checkHunger(eventManager);
+            } else if (alert == com.bpm.minotaur.managers.AlertMonitor.Reason.THIRST) {
+                HintManager.getInstance().checkThirst(eventManager);
+            }
+        }
+        checkMonsterHints();
+    }
+
+    private void checkArrivalHint() {
+        if (player != null && maze != null && eventManager != null) {
+            int px = (int) player.getPosition().x;
+            int py = (int) player.getPosition().y;
+            if (maze.isSanctuaryTile(px, py)) {
+                HintManager.getInstance().checkArrival(eventManager);
+            }
+        }
+    }
+
+    private void checkMonsterHints() {
+        HintManager hm = HintManager.getInstance();
+        boolean needBad = !hm.hasSeen(HintManager.HintId.BAD_MONSTER);
+        boolean needNasty = !hm.hasSeen(HintManager.HintId.NASTY_MONSTER);
+        if (!needBad && !needNasty) return;
+        if (!SettingsManager.getInstance().isShowHints()) return;
+        if (maze == null || player == null || eventManager == null) return;
+
+        Vector2 from = player.getPosition();
+        for (Monster monster : maze.getMonsters().values()) {
+            if (monster == null || !monster.isAlive() || monster.getTameness() > 0
+                    || monster.isHidden() || monster.isInvisible()) {
+                continue;
+            }
+            Vector2 at = monster.getPosition();
+            if (from.dst(at) <= com.bpm.minotaur.gamedata.monster.HostileSight.SIGHT_RANGE_TILES
+                    && com.bpm.minotaur.gamedata.laser.LaserBurst.hasLineOfSight(maze, from, at)) {
+                Monster.MonsterType mt = monster.getType();
+                if (mt != null) {
+                    if (needBad && mt.getCategory() == Monster.Category.BAD) {
+                        hm.checkBadMonster(monster, eventManager);
+                        needBad = false;
+                    } else if (needNasty && mt.getCategory() == Monster.Category.NASTY) {
+                        hm.checkNastyMonster(monster, eventManager);
+                        needNasty = false;
+                    }
+                    if (!needBad && !needNasty) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Periodic auto-save every 60 seconds during active gameplay.
      * Guarantees players never lose progress on unexpected crashes or hangs.
      */
+
     public void updateAutoSave(float delta) {
         if (player == null || worldManager == null) return;
         if (deathSequence != null && deathSequence.isActive()) return;
@@ -1437,6 +1713,33 @@ public class GameScreen extends BaseScreen {
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
             autoSaveTimer = 0f;
         }
+    }
+
+    /**
+     * The raycaster's version of standing in fog: a flat grey wash over the play area.
+     *
+     * <p>The 3D engine collapses its own distance fog for this, which is both cheaper and
+     * better-looking, so this only runs for the raycaster. Volumetric fog was not built twice
+     * -- the deliberate trade is that the retro engine gets the mechanics exactly and a plainer
+     * picture of them. What it must not be is invisible: a cloud that blinds you without
+     * showing itself is a bug report.
+     */
+    private void renderObscuringFogWash() {
+        if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
+            return;
+        }
+        if (player == null || maze == null
+                || !maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
+            return;
+        }
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.62f, 0.64f, 0.67f, 0.66f);
+        shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     /**
@@ -1491,7 +1794,9 @@ public class GameScreen extends BaseScreen {
 
     /** True while the death cinematic owns the screen and gameplay input must be refused. */
     public boolean isDying() {
-        return deathSequence.isActive();
+        return (deathSequence != null && deathSequence.isActive())
+                || isDeathTransitionTriggered
+                || (player != null && player.getCurrentHP() <= 0);
     }
 
     /**
@@ -1503,18 +1808,10 @@ public class GameScreen extends BaseScreen {
         if (player == null || player.getStatusManager() == null) {
             return null;
         }
-        com.bpm.minotaur.managers.StatusManager sm = player.getStatusManager();
-        if (sm.hasEffect(StatusEffectType.HEROISM)) {
-            return new Color(1f, 0.85f, 0.3f, 1f); // Holy gold
-        }
-        if (sm.hasEffect(StatusEffectType.TEMP_STRENGTH) || sm.hasEffect(StatusEffectType.GIANT_STRENGTH)) {
-            return new Color(1f, 0.35f, 0.15f, 1f); // Fiery strength orange
-        }
-        if (sm.hasEffect(StatusEffectType.HASTED) || sm.hasEffect(StatusEffectType.SUPER_SPEED)
-                || sm.hasEffect(StatusEffectType.TEMP_SPEED)) {
-            return new Color(0.4f, 0.9f, 1f, 1f); // Cyan speed
-        }
-        return null;
+        // #199: any timed buff (potion, spell) or an enhanced weapon glows; see BuffGlow.
+        Item rightHand = player.getInventory() != null ? player.getInventory().getRightHand() : null;
+        return com.bpm.minotaur.rendering.BuffGlow.colorFor(player.getStatusManager().getActiveEffects(),
+                rightHand != null ? rightHand.getEnhancementLevel() : 0);
     }
 
     /** Chance per potion-sleep "Zzz" tick of slipping into the Ancient Void while dreaming. */
@@ -1576,9 +1873,9 @@ public class GameScreen extends BaseScreen {
 
         if (player != null && player.getStats() != null) {
             PlayerStats stats = player.getStats();
-            if (stats.getSatiationState() == PlayerStats.SatiationState.STARVING) {
+            if (stats.getHungerStage().isWeakened()) {
                 sb.append(" while starving");
-            } else if (stats.getHydrationFloat() <= 0) {
+            } else if (stats.getThirstStage().isDehydrated()) {
                 sb.append(" while parched");
             }
         }
@@ -1612,12 +1909,19 @@ public class GameScreen extends BaseScreen {
         this.deathWatch.reset();
         this.deathSequence.reset();
         this.pendingDeathScreen = null;
+        this.alertMonitor.reset();
+        this.damageFlash.reset();
+        this.screenFx.clear();
+        player.leaveForm(null, null); // a new expedition starts in the player's own body
+        this.lastPlayerHp = -1;
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
         DivinityManager.getInstance().onWorldReset();
+        // A new expedition starts the escalation clock over; only the sleep and altar paths did.
+        DoomManager.getInstance().resetExpeditionTurns();
         if (worldManager.getDayNightManager() != null) {
             worldManager.getDayNightManager().setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
         }
@@ -1629,14 +1933,24 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
         debugManager.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D);
         debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
+        // Death is permanent for the Incarnation (#187): level, XP, stats, points and the HP/MP
+        // maxima die with it. Known Spells, unlocks, the altar, the chest and Tarmin's Hunger stay.
+        player.beginNewIncarnation(difficulty);
         player.getStats().setCurrentHP(player.getStats().getMaxHP());
         player.getStats().setCurrentMP(player.getStats().getMaxMP());
         player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
-        player.getStats().setSatiety(80.0f);
-        player.getStats().setHydration(80.0f);
+        player.getStats().setWetness(0f); // a new expedition starts dry (#194)
+        player.getStats().setSatiety(PlayerStats.STARTING_SATIETY);
+        player.getStats().setHydration(PlayerStats.STARTING_HYDRATION);
         player.getStats().setToxicity(0);
+        player.getStats().setTaint(0f); // a new expedition starts clean of the Blight
         player.getStatusManager().clearEffects();
         player.abandonTomeStudy();
+        player.clearRunSpellsOnDeath();
+        player.prepareStartingSpells(); // a new expedition starts with Mote of Light ready, as a new game does
+        if (player.noteRespawn()) {
+            player.offerTraits(); // every fifth respawn: a new personality to choose
+        }
         // The Player instance survives death, so anatomical trauma must be wiped
         // explicitly -- otherwise open wounds, bleeding, and fever follow the
         // character into the next expedition and can bleed them out before their
@@ -1645,25 +1959,67 @@ public class GameScreen extends BaseScreen {
             player.getInjuryManager().cureAll();
         }
 
-        // Only re-arm a starter weapon if the player somehow has nothing in hand. The
-        // off-hand is deliberately left empty: a new game starts with an empty left hand,
-        // so re-arming it here handed out a free WOODEN_CROSS on essentially every death.
-        // That is not cosmetic -- the cross is a Spiritual weapon, and Bad monsters are
-        // immune to War damage, so it quietly gifted the counter to a whole category.
-        if (player.getInventory().getRightHand() == null) {
-            Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().setRightHand(starterWeapon);
+        // Strip any equipped weapons and armor upon death. The Father's Sword returns with every
+        // Incarnation (#187); its Keepsake perk is in FathersSword.
+        if (player.getEquipment() != null) {
+            player.getEquipment().stripAllEquipped();
+        }
+        player.getInventory().setLeftHand(null);
+        Item starterWeapon = game.getItemDataManager().createItem(
+                com.bpm.minotaur.gamedata.item.FathersSword.TYPE, 0, 0, ItemColor.GRAY, game.getAssetManager());
+        player.getInventory().setRightHand(starterWeapon);
+        player.giveStarterLantern(game.getItemDataManager().createItem(
+                Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, game.getAssetManager()),
+                com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().getItems());
+
+        // Reset the combat dice pool so it cleanly contains the starter Rusty Iron Die
+        if (player.getStats() != null && player.getStats().getDicePool() != null) {
+            player.getStats().getDicePool().clear();
+            com.bpm.minotaur.gamedata.dice.Die starterDie = starterWeapon.getGrantedDie() != null
+                    ? starterWeapon.getGrantedDie()
+                    : com.bpm.minotaur.gamedata.dice.DiceFactory.create("Rusty Iron Die");
+            player.getStats().getDicePool().add(starterDie);
         }
 
         // He wakes in the Shelter washed: the blood of the last expedition does not carry into the next.
         player.washBlood();
 
         // Clean weapon state upon shelter awakening: reset attack timer/combos, clear blood decals,
-        // and force re-synchronization of equipped items and motion profiles.
+        // clear old equipment references, and force re-synchronization of equipped items and motion profiles.
         if (weaponOverlay != null) {
             weaponOverlay.reset();
             weaponOverlay.clearBloodDecals();
+            weaponOverlay.clearEquipment();
             weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+        }
+
+        // Ensure player carries at least 1 starter ration and 1 starter waterskin
+        boolean hasFood = false;
+        boolean hasWaterskin = false;
+        for (Item itm : player.getInventory().getMainInventory()) {
+            if (itm != null) {
+                if (itm.getType() == Item.ItemType.FOOD) hasFood = true;
+                if (itm.getType() == Item.ItemType.POTION_BLUE) hasWaterskin = true;
+            }
+        }
+        for (Item itm : player.getInventory().getQuickSlots()) {
+            if (itm != null) {
+                if (itm.getType() == Item.ItemType.FOOD) hasFood = true;
+                if (itm.getType() == Item.ItemType.POTION_BLUE) hasWaterskin = true;
+            }
+        }
+        if (!hasFood) {
+            Item starterFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
+            player.getInventory().pickupToBackpack(starterFood);
+        }
+        if (!hasWaterskin) {
+            Item starterWater = game.getItemDataManager().createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, game.getAssetManager());
+            player.getInventory().pickupToBackpack(starterWater);
+        }
+        // Never a hard lock on the roads: a new expedition always carries fire for one shelter.
+        if (!player.getInventory().hasItemOfType(Item.ItemType.TINDER_BUNDLE)) {
+            Item tinder = game.getItemDataManager().createItem(Item.ItemType.TINDER_BUNDLE, 0, 0, ItemColor.TAN, game.getAssetManager());
+            if (tinder != null) player.getInventory().pickupToBackpack(tinder);
         }
 
         // Travel kits: replace any the player has paid for at the Altar but no longer
@@ -1672,42 +2028,21 @@ public class GameScreen extends BaseScreen {
         // in the field.
         grantOwedFieldKits();
 
-        // Shelter Altar Provisions tier: extra rations at the start of each expedition
-        int bonusProvisions = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getBonusProvisionCount();
-        for (int i = 0; i < bonusProvisions; i++) {
-            Item bonusFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
-            player.getInventory().pickupToBackpack(bonusFood);
-        }
+        // Shelter Altar Provisions tier: a respawn is a new expedition, so its rations are
+        // handed over on the first step outside (TurnManager), like every expedition's.
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().packProvisionsForNewExpedition();
 
         // A new expedition gets a fresh merchant on each level; without this the
         // claims from the dead run would keep merchants out of the new one.
         com.bpm.minotaur.generation.ShopkeeperTracker.reset();
 
-        // 3. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
+        // 3. Wake in the remembered shelter on Level 1: the road shelter last rested in, or home.
         worldManager.setCurrentLevel(1);
-        worldManager.setCurrentChunk(new GridPoint2(0, 0));
-        Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
+        Maze shelterMaze = loadShelterChunk(worldManager.getRespawnChunk());
         swapToChunk(shelterMaze);
 
         // Position player at bed / safe start point in shelter
-        GridPoint2 bedPos = null;
-        for (Item item : shelterMaze.getItems().values()) {
-            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-                int bx = (int) item.getPosition().x;
-                int by = (int) item.getPosition().y;
-                if (shelterMaze.isPassable(bx - 1, by)) {
-                    bedPos = new GridPoint2(bx - 1, by);
-                } else if (shelterMaze.isPassable(bx, by + 1)) {
-                    bedPos = new GridPoint2(bx, by + 1);
-                } else {
-                    bedPos = new GridPoint2(bx, by);
-                }
-                break;
-            }
-        }
-        if (bedPos == null) {
-            bedPos = worldManager.getInitialPlayerStartPos();
-        }
+        GridPoint2 bedPos = shelterWakeTile(shelterMaze);
         player.setPosition(bedPos);
         worldManager.saveCurrentChunk(shelterMaze);
 
@@ -1718,18 +2053,817 @@ public class GameScreen extends BaseScreen {
         if (hud != null) {
             hud.addMessage("You awaken back in the Shelter Bed.");
             if (lostCount > 0) {
-                hud.addMessage("Lost " + lostCount + " unequipped item" + (lostCount == 1 ? "" : "s") + " to the fall."
-                        + (retainedCount > 0 ? " Kept " + retainedCount + " (Loot Retention)." : ""));
+                hud.addMessage("Lost " + lostCount + " item" + (lostCount == 1 ? "" : "s") + " upon falling.");
             }
             hud.addMessage("The world beyond the Shelter has changed -- a new expedition awaits.");
-            hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
+            hud.addMessage(String.format("Tarmin's Hunger grows: death %d of 50, the Bridge at %d%%.", deaths, (int) bridge));
         }
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
+            HintManager.getInstance().checkDoom(eventManager);
         }
         soundManager.playDoorOpenSound();
 
+        // The death is now fully resolved: clear the pending marker and persist the new run.
+        SaveManager.getInstance().setRespawnPending(false);
+        SaveManager.getInstance().saveActiveSlot(player, worldManager);
+
         game.setScreen(this);
+    }
+
+    /**
+     * Makes a shelter chunk current, falling back to the home shelter if it cannot load
+     * (a remembered shelter in a world that no longer holds it).
+     */
+    private Maze loadShelterChunk(GridPoint2 chunk) {
+        Maze m = chunk != null ? worldManager.loadChunk(chunk) : null;
+        if (m == null) {
+            chunk = new GridPoint2(0, 0);
+            m = worldManager.loadChunk(chunk);
+        }
+        worldManager.setCurrentChunk(chunk);
+        return m;
+    }
+
+    /** Where to stand on waking in a shelter: beside the bed, else beside the hearth, else the door. */
+    private GridPoint2 shelterWakeTile(Maze shelterMaze) {
+        for (Item item : shelterMaze.getItems().values()) {
+            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                int bx = (int) item.getPosition().x;
+                int by = (int) item.getPosition().y;
+                if (shelterMaze.isPassable(bx - 1, by)) return new GridPoint2(bx - 1, by);
+                if (shelterMaze.isPassable(bx, by + 1)) return new GridPoint2(bx, by + 1);
+                return new GridPoint2(bx, by);
+            }
+        }
+        GridPoint2 hearth = shelterMaze.getHearthTile();
+        if (hearth != null) {
+            GridPoint2 near = WorldManager.findSafeArrivalTile(shelterMaze, hearth.x, hearth.y - 1);
+            if (near != null) return near;
+        }
+        if (shelterMaze.getShelterEntry() != null) return shelterMaze.getShelterEntry();
+        return worldManager.getInitialPlayerStartPos();
+    }
+
+    /** Opens a conversation with the town folk standing at {@code s}. */
+    private void talkTo(com.bpm.minotaur.gamedata.Scenery s) {
+        com.bpm.minotaur.gamedata.history.town.Town town = worldManager.getHistory().town(s.getTownKey());
+        if (s.getFolkIndex() < 0 || s.getFolkIndex() >= town.folk.size()) return;
+        com.bpm.minotaur.gamedata.history.town.Town.Folk folk = town.folk.get(s.getFolkIndex());
+        TownTalk.Pack pack = new TownTalk.Pack() {
+            @Override
+            public boolean hasSignet(int houseId) {
+                return signet(houseId) != null;
+            }
+
+            @Override
+            public boolean giveSignet(int houseId) {
+                Item ring = signet(houseId);
+                return ring != null && player.getInventory().removeItem(ring);
+            }
+
+            @Override
+            public void reward(String townName) {
+                Item gift = game.getItemDataManager().createItem(Item.ItemType.POTION_OF_HEALING,
+                        (int) player.getPosition().x, (int) player.getPosition().y, ItemColor.YELLOW, game.getAssetManager());
+                if (gift != null && !player.pickupItem(gift)) maze.addItem(gift);
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(townName + " pays you in kind."), 3f));
+            }
+
+            private Item signet(int houseId) {
+                for (Item i : player.getInventory().getAllItems()) {
+                    if (i != null && i.getType() == Item.ItemType.SIGNET_RING && i.getTrophyHouseId() == houseId) return i;
+                }
+                return null;
+            }
+        };
+        TownTalk talk = new TownTalk(worldManager.getHistory(), town, folk, worldManager.nearbyTowns(town.key),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(), pack);
+        com.bpm.minotaur.gamedata.ShopkeeperNpc merchant = maze.getShopkeeper();
+        Runnable trade = merchant == null ? null
+                : () -> eventManager.addEvent(new GameEvent(GameEvent.EventType.SHOPKEEPER_INTERACTION, merchant));
+        game.setScreen(new TalkScreen(game, this, talk, trade));
+    }
+
+    private final WarManager warManager = new WarManager(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+
+    /** A front over the player's chunk sounds the horns; staying fights the battle (plan T2.3-T2.7). */
+    private com.bpm.minotaur.managers.KnellCrier knellCrier;
+
+    /**
+     * Tarmin's Knell (plan K4, K5): whatever great thing has happened since he last spoke tolls the
+     * gong over the whole Maze and speaks in red in the seeker's head, the music ducking under it.
+     */
+    private void tollKnell() {
+        listenForKnell();
+        if (knellCrier == null || hud == null || hud.getKnellOverlay() == null) return;
+        java.util.List<String> lines = knellCrier.listen();
+        if (lines.isEmpty()) return;
+        if (soundManager != null) soundManager.playKnell();
+        if (currentLevel() == 1) {
+            // Above ground the sky answers the gong: lightning out of the castle, over the maze.
+            firstPersonRenderer.getSkybox3DRenderer().tollKnell();
+            knellOverheadIn = KNELL_OVERHEAD;
+        }
+        MusicManager.getInstance().duckMusic(KNELL_DUCK);
+        for (String line : lines) hud.addMessage(line);
+        hud.getKnellOverlay().toll(lines, SettingsManager.getInstance().isKnellVignette(),
+                () -> MusicManager.getInstance().restoreMusicVolume());
+    }
+
+    /**
+     * Makes sure a crier is listening to the history now in play -- from the first frame, so a
+     * great event in the first turn is not mistaken for old news; and anew for a new world.
+     */
+    private void listenForKnell() {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager != null ? worldManager.getHistory() : null;
+        if (history != null && (knellCrier == null || !knellCrier.listensTo(history))) {
+            knellCrier = new com.bpm.minotaur.managers.KnellCrier(history,
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        }
+    }
+
+    /** Seconds until the knell's lightning passes overhead and lights the maze; negative when not coming. */
+    private float knellOverheadIn = -1f;
+    /** When the sweep's front crosses the zenith, from its start at the castle's horizon. */
+    private static final float KNELL_OVERHEAD = 0.65f;
+    private static final float KNELL_GROUND_FLASH = 0.6f;
+
+    /** Lights the maze as the knell's lightning crosses the sky above it. */
+    private void tendKnellSky(float delta) {
+        if (knellOverheadIn < 0f) return;
+        knellOverheadIn -= delta;
+        if (knellOverheadIn < 0f && worldManager != null && worldManager.getWeatherManager() != null) {
+            worldManager.getWeatherManager().knellFlash(KNELL_GROUND_FLASH);
+        }
+    }
+
+    /** How far the music sinks while the knell rings. */
+    private static final float KNELL_DUCK = 0.2f;
+
+    private void tickWar() {
+        WarManager.Ground g = new WarManager.Ground();
+        g.chunk = worldManager.getCurrentPlayerChunkId();
+        g.level = currentLevel();
+        // A shelter's warded ground. Maze.isSanctuary() alone is true for every chunk -- it says
+        // whether home tiles, if a chunk has any, are warded -- and reading it as "a shelter" kept
+        // every battle and encounter off the overland.
+        g.sanctuary = maze != null && !maze.getSanctuaryTiles().isEmpty();
+        g.front = worldManager.frontHere();
+        String carried = worldManager.getHistory().onFront(g.front);
+        if (carried != null) eventManager.addEvent(new GameEvent(carried, 4f));
+        g.seats = g.front != null ? worldManager.houseSeats() : null;
+        g.maze = maze;
+        g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
+        WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
+                new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
+                        worldManager.getHistory().warClock() ^ worldManager.getWorldSeed(),
+                        id -> {
+                            com.bpm.minotaur.gamedata.history.House h = worldManager.getHistory().world().house(id);
+                            return h != null ? h.name : null;
+                        }));
+        for (String line : t.messages) {
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
+        }
+        if (soundManager != null) {
+            for (WarManager.Cue cue : t.cues) soundManager.playWarCue(cue);
+            if (t.cues.contains(WarManager.Cue.HORNS)) {
+                soundManager.playWarZoneAlarm();
+            }
+        }
+        if (t.volleyDamage > 0 && player != null) {
+            player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
+        }
+        if (t.winner >= 0 && t.foughtFor == t.winner) foughtFor(t.winner);
+        tickEncounters(g);
+    }
+
+    private final com.bpm.minotaur.managers.EncounterDirector encounterDirector =
+            new com.bpm.minotaur.managers.EncounterDirector(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+
+    /** The surface war's skirmishes, columns, raids and camps, in the chunk the player stands in (Living War W2). */
+    private void tickEncounters(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.town.Town town = g.level >= 2 ? worldManager.townHere() : null;
+        com.bpm.minotaur.managers.EncounterDirector.Turn t = encounterDirector.onTurn(history, g.chunk, g.level,
+                g.sanctuary, g.maze, g.playerTile, g.level == 1 ? worldManager.currentEncounters() : belowEncounters(g, town),
+                g.level == 1 ? worldManager.currentCamps() : java.util.Collections.emptyList(),
+                worldManager::recruit, com.bpm.minotaur.gamedata.Scenery::fromProp,
+                new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
+                        history.warClock() ^ worldManager.getWorldSeed(),
+                        id -> {
+                            com.bpm.minotaur.gamedata.history.House h = history.world().house(id);
+                            return h != null ? h.name : null;
+                        }), town != null ? town.key : null);
+        for (String line : t.messages) {
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 5f));
+        }
+        if (t.cried != null) {
+            // A herald cries the news: told as its own house tells it (W29).
+            com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+            com.bpm.minotaur.gamedata.history.text.Chronicler voice = com.bpm.minotaur.gamedata.history.text.Chronicler.of(
+                    world, t.cried, com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.NEUTRAL,
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            String said = com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance().render(world, t.cried, voice);
+            com.bpm.minotaur.gamedata.history.House by = world.house(t.criedBy);
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    "The herald of " + (by != null ? by.name : "a house") + " cries: " + said), 8f));
+            if (soundManager != null) soundManager.playSound("horn_battle", 0.5f);
+        }
+        if (soundManager != null) {
+            for (com.bpm.minotaur.managers.EncounterDirector.Cue cue : t.cues) soundManager.playEncounterCue(cue);
+        }
+        hearTheWar(g);
+        monsterAiManager.setPlayerInTheFight(encounterDirector.playerInTheFight()
+                || (warManager.active() != null && warManager.active().playerJoined()));
+        monsterAiManager.setTakesPlayerForKin(disguise());
+        monsterAiManager.setHoldsItsPeace(m -> {
+            int house = worldManager.houseOf(m);
+            return house >= 0 && history.stanceOf(house).ordinal()
+                    >= com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED.ordinal();
+        });
+        tendTheSworn(g, t);
+        tendTheSiege(g);
+        if (hud != null) {
+            com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally(maze) : null;
+            hud.setWarTally(tally != null ? tally : encounterDirector.tally(maze));
+        }
+    }
+
+    /** Below ground, the war comes as raiders: into a gash whose house is at war, or at a town's gate (W32). */
+    private java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> belowEncounters(WarManager.Ground g,
+            com.bpm.minotaur.gamedata.history.town.Town town) {
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> out = new java.util.ArrayList<>();
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        if (g.chunk == null) return out;
+        if (town != null) {
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+                    .townRaid(history.world(), history.warClock(), town.key, g.chunk);
+            if (e != null) out.add(e);
+        }
+        com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
+        if (holder != null) {
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+                    .gashRaid(history.world(), history.warClock(), g.chunk, g.level, holder.id);
+            if (e != null) out.add(e);
+        }
+        // In the castle's halls during a siege, the assault and the Legion fight it out (W36).
+        com.bpm.minotaur.gamedata.history.War siege = history.world().activeSiege();
+        if (siege != null && inTheHalls(g) && history.world().tarminHouse() != null) {
+            int tarmin = history.world().tarminHouse().id;
+            out.add(new com.bpm.minotaur.gamedata.history.war.Encounter(com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SKIRMISH,
+                    -1000 - siege.id, siege.id, siege.enemyOf(tarmin), tarmin, 0, Long.MAX_VALUE, g.chunk, g.chunk));
+        }
+        return out;
+    }
+
+    /** The house holding the gash the player is inside, or null outside one. */
+    private com.bpm.minotaur.gamedata.history.House gashHolderHere(WarManager.Ground g) {
+        if (g.level < 2 || g.level > SealCourt.COURT_LEVEL || worldManager.getBiomeManager() == null || g.chunk == null) return null;
+        int gash = com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(worldManager.getBiomeManager().getSealRoad(g.chunk));
+        return gash >= 0 ? worldManager.getHistory().world().gashHolder(gash) : null;
+    }
+
+    /** The camp whose props stand on {@code tile} in this chunk, or -1. */
+    private int campAt(GridPoint2 tile) {
+        GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
+        if (chunk == null) return -1;
+        for (com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing d : worldManager.getHistory().encounterLedger().dressings) {
+            if (!"CAMP".equals(d.kind) || d.chunkX != chunk.x || d.chunkY != chunk.y) continue;
+            for (int i = 0; i + 1 < d.tiles.size(); i += 2) {
+                if (d.tiles.get(i) == tile.x && d.tiles.get(i + 1) == tile.y) return d.houseId;
+            }
+        }
+        return -1;
+    }
+
+    private String houseName(int houseId) {
+        com.bpm.minotaur.gamedata.history.House h = worldManager.getHistory().world().house(houseId);
+        return h != null ? h.name : "a house of the Maze";
+    }
+
+    private void say(String line, float seconds) {
+        eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), seconds));
+    }
+
+    /** The player fought for {@code houseId} and it held the ground: it remembers (W19). */
+    private void foughtFor(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        history.favour().change(history.world(), houseId, com.bpm.minotaur.gamedata.history.favour.Favour.WON_FOR);
+        say(houseName(houseId) + " will remember that you stood with it.", 4f);
+    }
+
+    /** The camp the player was last greeted in, so its sentries speak once a visit. */
+    private String campGreeted;
+
+    /**
+     * Each turn, what the houses make of the player (Living War W18-W26): favour for the fights they
+     * joined and the heralds they cut down, signets returned and greetings at a camp, an oath broken
+     * by striking its house, contracts kept, and hunters sent by a house that counts them an enemy.
+     */
+    private void tendTheSworn(WarManager.Ground g, com.bpm.minotaur.managers.EncounterDirector.Turn t) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+        com.bpm.minotaur.gamedata.history.favour.Favour favour = history.favour();
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        if (t.foughtFor >= 0) foughtFor(t.foughtFor);
+        if (t.heraldSlain >= 0) favour.change(world, t.heraldSlain, com.bpm.minotaur.gamedata.history.favour.Favour.HERALD_SLAIN);
+
+        // Struck a soldier of the sworn house: the oath is broken (W21).
+        if (oath.sworn() && maze != null) {
+            for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                if (m != null && m.seekerDrewBlood() && worldManager.houseOf(m) == oath.houseId) {
+                    String betrayed = houseName(oath.houseId);
+                    history.breakOath();
+                    say("You have struck a soldier of " + betrayed + ". Your oath is broken, and every house hears of it.", 6f);
+                    break;
+                }
+            }
+        }
+
+        if (t.campHouse >= 0) atCamp(t.campHouse, g);
+        else campGreeted = null;
+
+        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        if (c != null && !c.done) {
+            boolean kept = c.held(g.chunk)
+                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.ESCORT_COLUMN && t.escorted == oath.houseId)
+                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.BURN_CAMP && t.campBroken == c.targetId);
+            if (kept) {
+                c.done = true;
+                say("A contract kept. Return to a war camp of " + houseName(oath.houseId) + " to be paid.", 5f);
+            }
+        }
+
+        // Hunters: once a slot, a house that counts the player its enemy may send them (W18).
+        long clock = history.warClock();
+        if (g.level == 1 && !g.sanctuary && clock % com.bpm.minotaur.gamedata.history.war.EncounterScheduler.SLOT == 0) {
+            for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
+                if (history.stanceOf(h.id) != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY) continue;
+                java.util.Random r = new java.util.Random(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (h.id * 31L));
+                if (r.nextFloat() >= HUNT_CHANCE) continue;
+                com.bpm.minotaur.managers.EncounterDirector.Turn hunted = new com.bpm.minotaur.managers.EncounterDirector.Turn();
+                encounterDirector.hunt(history, maze, h.id, g.playerTile, worldManager::recruit, hunted);
+                for (String line : hunted.messages) say(line, 5f);
+                break;
+            }
+        }
+    }
+
+    /** Chance a slot brings hunters from a house that counts the player its enemy (W18). */
+    private static final float HUNT_CHANCE = 0.3f;
+
+    /** Standing in a house's war camp: its signets returned, its sentries' greeting, its quartermaster (W18-W20). */
+    private void atCamp(int houseId, WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.favour.Favour favour = history.favour();
+        // Its signets, taken from its dead, are given back to it (W19).
+        for (Item i : new java.util.ArrayList<>(player.getInventory().getAllItems())) {
+            if (i != null && i.getType() == Item.ItemType.SIGNET_RING && i.getTrophyHouseId() == houseId) {
+                player.getInventory().removeItem(i);
+                favour.change(history.world(), houseId, com.bpm.minotaur.gamedata.history.favour.Favour.SIGNET_RETURNED);
+                say("The captain of " + houseName(houseId) + " takes back its signet, and bows.", 4f);
+            }
+        }
+        com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(houseId);
+        String key = g.chunk + ":" + houseId + ":" + tier;
+        if (key.equals(campGreeted)) return;
+        campGreeted = key;
+        boolean sworn = history.oath().houseId == houseId;
+        if (sworn) {
+            say("The sentries of " + houseName(houseId) + " raise their spears to you. Your banner is here.", 5f);
+        } else if (tier == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) {
+            say("The captain of " + houseName(houseId) + " greets you as a friend, and offers you its oath. "
+                    + "Stand at its war banner and press O to swear.", 7f);
+        } else if (tier == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED) {
+            say("The sentries of " + houseName(houseId) + " watch you pass, and let you be.", 4f);
+        }
+        // A friend may trade at the camp: its quartermaster sets out his wares (W18).
+        if ((sworn || tier == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND)
+                && maze != null && maze.getShopkeeper() == null && g.playerTile != null) {
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, g.playerTile.x + 2, g.playerTile.y);
+            if (at != null) {
+                com.bpm.minotaur.gamedata.ShopkeeperNpc quartermaster = new com.bpm.minotaur.gamedata.ShopkeeperNpc(
+                        at.x, at.y, game.getAssetManager());
+                quartermaster.setCustomDisplayName("Quartermaster of " + houseName(houseId));
+                com.bpm.minotaur.gamedata.history.House h = history.world().house(houseId);
+                String docId = h != null ? h.doctrineId : null;
+                new com.bpm.minotaur.gamedata.ShopInventory().stockQuartermaster(quartermaster, game.getItemDataManager(),
+                        game.getAssetManager(), maze.getLevel(), docId, houseId, houseName(houseId));
+                if (sworn) {
+                    quartermaster.setMilitaryDiscount(0.20f); // 20% sworn military discount
+                }
+                maze.setShopkeeper(quartermaster);
+                say("The quartermaster of " + houseName(houseId) + " will trade with you.", 4f);
+            }
+        }
+    }
+
+    /**
+     * At a camp's war banner (W20-W26): a friend swears the house's oath here; the sworn are paid for
+     * contracts kept, set the next, and granted the seal when the chain is done.
+     */
+    private void atCampBanner(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = history.world();
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(houseId);
+        String name = houseName(houseId);
+        if (oath.houseId != houseId) {
+            if (tier != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) {
+                say("The banner of " + name + ". Its sentries watch your hands. ("
+                        + com.bpm.minotaur.gamedata.history.favour.Favour.word(tier) + ": "
+                        + history.favour().of(houseId) + ")", 4f);
+                return;
+            }
+            String former = oath.sworn() ? houseName(oath.houseId) : null;
+            history.swear(houseId);
+            if (former != null) say("You forsake " + former + ". It will not forget.", 5f);
+            say("You kneel at the banner of " + name + " and swear to it. Its colours are yours now.", 6f);
+            giveTabard(houseId);
+            if (soundManager != null) soundManager.playSound("horn_battle", 0.6f);
+        }
+        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        if (c != null && c.done) pay(houseId, c);
+        if (oath.sealDue()) grantSeal(houseId);
+        if (oath.contract == null) {
+            com.bpm.minotaur.gamedata.history.favour.Contract next = history.offerContract(worldManager.currentFronts(),
+                    worldManager.getCurrentPlayerChunkId());
+            if (next != null) say("The captain sets you a task. " + next.describe(world), 7f);
+            else say("The captain has no task for you while " + name + " is at peace.", 4f);
+        } else {
+            say("Your task: " + oath.contract.describe(world), 6f);
+        }
+    }
+
+    /** Resting by a war camp's campfire (W18-W20): heals HP/MP, passes a season, and saves. */
+    private void atCampFire(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.favour.Favour.Tier tier = history.stanceOf(houseId);
+        boolean sworn = history.oath().houseId == houseId;
+        String name = houseName(houseId);
+        if (!sworn && tier != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) {
+            say("The sentries of " + name + " watch you coldly. Only friends of the house may rest by its fire.", 4f);
+            return;
+        }
+
+        float rest = Math.min(1f, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("bedRestMult"));
+        if (player.getStats().getTaint() > 0f) {
+            player.getStats().setTaint(0f);
+            say("The sacred fire burns the Blight out of your bones.", 2.5f);
+        }
+        int hp = player.getStats().getCurrentHP();
+        int mp = player.getStats().getCurrentMP();
+        player.getStats().setCurrentHP(hp + Math.round((player.getStats().getMaxHP() - hp) * rest));
+        player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
+        player.getStatusManager().clearEffects();
+        DoomManager.getInstance().resetExpeditionTurns();
+
+        java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
+        if (worldManager != null && worldManager.getDayNightManager() != null) {
+            com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
+            if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
+                    || dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.DUSK) {
+                dnm.setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
+            } else {
+                dnm.advanceMinutes(180f);
+            }
+        }
+        SaveManager.getInstance().saveActiveSlot(player, worldManager);
+        SaveManager.getInstance().backupActiveSlot();
+        autoSaveTimer = 0f;
+        say("You rest by the fire of " + name + ". Health and mana restored. A season passes in the Maze. Game saved.", 5f);
+        if (hud != null) {
+            hud.addMessage("Rested at war camp. HP/MP restored. Game saved.");
+        }
+        tollKnell();
+        news = new java.util.ArrayList<>(news);
+        news.removeIf(e -> com.bpm.minotaur.gamedata.history.text.Knell.tolls(history.world(), e));
+        for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
+            history.unlock(heard.id);
+        }
+        for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(history.world(), news, 3,
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+            say(rumour, 6f);
+        }
+        playerTurnTakesAction();
+        needsAsciiRender = true;
+    }
+
+    /** The house pays for a contract kept: favour and coin, and every third one a relic (W25). */
+    private void pay(int houseId, com.bpm.minotaur.gamedata.history.favour.Contract c) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        history.favour().change(history.world(), houseId, c.favour());
+        player.getStats().setTreasureScore(player.getStats().getTreasureScore() + c.coin());
+        boolean relic = history.oath().complete();
+        say(houseName(houseId) + " pays you " + c.coin() + " in coin, and thinks the better of you.", 5f);
+        if (!relic) return;
+        com.bpm.minotaur.gamedata.history.House h = history.world().house(houseId);
+        Item forged = com.bpm.minotaur.managers.Relics.forge(game.getItemDataManager(), game.getAssetManager(),
+                h != null ? h.doctrineId : null, houseName(houseId), player.getStats().getLevel(),
+                new java.util.Random(history.world().seed ^ history.oath().done * 0x9E3779B97F4A7C15L), 0, 0);
+        if (forged != null && player.getInventory().pickup(forged)) {
+            say("For your service, " + houseName(houseId) + " gives you a relic: " + forged.getDisplayName() + ".", 6f);
+        }
+    }
+
+    /** The lord of a great house grants its sworn seeker the seal of its gash (W26). */
+    private void grantSeal(int houseId) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.House h = history.world().house(houseId);
+        if (h == null || !h.isGreat()) return;
+        for (int road = 0; road < com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT; road++) {
+            if (com.bpm.minotaur.gamedata.boss.SealLord.gashIndexForRoad(road) != h.gashIndex) continue;
+            com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().awardSeal(road);
+            history.recordSealGranted(houseId);
+            say("The lord of " + h.name + " puts the seal of " + history.world().gashName(h.gashIndex)
+                    + " in your hand. Go, and bring the Antlered Lord down.", 8f);
+            if (soundManager != null) soundManager.playSound("bell_cathedral", 0.7f);
+            return;
+        }
+    }
+
+    /** A sworn seeker wears its house's colours (W24). */
+    private void giveTabard(int houseId) {
+        com.bpm.minotaur.gamedata.history.House h = worldManager.getHistory().world().house(houseId);
+        if (h == null) return;
+        Item tabard = game.getItemDataManager().createItem(Item.ItemType.TABARD, 0, 0,
+                com.bpm.minotaur.gamedata.item.ItemColor.TAN, game.getAssetManager());
+        if (tabard == null) return;
+        tabard.setHeraldry(h.doctrineId);
+        tabard.setTrophyHouseId(houseId);
+        tabard.setFriendlyName(com.bpm.minotaur.ui.UiGlyphs.sanitize("Tabard of " + h.name));
+        if (player.getInventory().pickup(tabard)) say("You are given the tabard of " + h.name + ".", 4f);
+    }
+
+    /** Whether the player stands in Castle Tarmin's halls, beneath the castle (W36). */
+    private boolean inTheHalls(WarManager.Ground g) {
+        return g.level == com.bpm.minotaur.gamedata.history.war.Siege.HALLS_LEVEL && g.chunk != null
+                && g.chunk.equals(worldManager.castleSite());
+    }
+
+    /**
+     * Bumping the breach in a siege, or the castle gate once three seals open it: down into the
+     * castle's halls (W35, W36). The breach asks one seal of a friend of the besieger, two of anyone
+     * else. True when the bump was answered, entered or not.
+     */
+    private boolean intoTheCastle(Scenery s) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        int held = com.bpm.minotaur.gamedata.blight.CastleGate.sealsHeld();
+        if (com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP.equals(s.getPropId())) {
+            int besieger = com.bpm.minotaur.gamedata.history.war.Siege.besieger(history.world());
+            if (besieger < 0) return false;
+            int need = com.bpm.minotaur.gamedata.history.war.Siege.sealsForBreach(history.stanceOf(besieger),
+                    history.oath().houseId == besieger);
+            if (held < need) {
+                say("The breach is choked with the Legion's living and dead. Forcing it takes " + need
+                        + (need == 1 ? " seal" : " seals") + "; you hold " + held + ".", 5f);
+                return true;
+            }
+            say("You go in through the breach, under the siege fire, into the halls of Castle Tarmin.", 5f);
+        } else {
+            say("The gate of Castle Tarmin grinds open for the seals you carry. You go down into its halls.", 5f);
+        }
+        if (combatManager != null) combatManager.endCombat();
+        GridPoint2 at = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        worldManager.descendLevel(at);
+        worldManager.clearLoadedChunks();
+        generateLevel(currentLevel());
+        GridPoint2 safe = WorldManager.findSafeArrivalTile(maze, at.x, at.y);
+        if (safe != null) player.getPosition().set(safe.x + 0.5f, safe.y + 0.5f);
+        dressTheHalls();
+        // Joining the assault is the besieger's contract (W37).
+        com.bpm.minotaur.gamedata.history.favour.Contract c = history.oath().contract;
+        if (c != null && !c.done && c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.SIEGE_ASSAULT) {
+            c.done = true;
+            say("You have joined the assault. Return to a war camp of your house to be paid.", 5f);
+        }
+        return true;
+    }
+
+    /**
+     * The halls (W36): the throne room's inner door, sealed; and while a siege holds, the Legion
+     * thinned by the fighting on the walls -- once a siege.
+     */
+    private void dressTheHalls() {
+        if (maze == null) return;
+        boolean door = false;
+        for (Scenery sc : maze.getScenery().values()) {
+            if (com.bpm.minotaur.gamedata.shelter.SealedGates.THRONE_DOOR_PROP.equals(sc.getPropId())) door = true;
+        }
+        if (!door) {
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2, maze.getHeight() / 2);
+            Scenery inner = at == null ? null : Scenery.fromProp(com.bpm.minotaur.gamedata.shelter.SealedGates.THRONE_DOOR_PROP, at.x, at.y);
+            if (inner != null) maze.addScenery(inner);
+        }
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.War siege = history.world().activeSiege();
+        if (siege == null) return;
+        String key = "HALLS:" + siege.id + ":" + siege.siegeSince;
+        com.bpm.minotaur.gamedata.history.war.EncounterLedger ledger = history.encounterLedger();
+        if (ledger.spent.contains(key)) return;
+        ledger.spent.add(key);
+        int i = 0;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
+            if (m == null || m.isThemeChampion() || m.isWarBand()) continue;
+            if (i++ % 2 == 0) maze.removeMonster(m);
+        }
+        say("Half the Legion is on the walls. The halls are thinly held.", 4f);
+    }
+
+    /** Chunks from the castle the red lightning is seen when the Antlered Lord answers a siege (W34). */
+    private static final int RED_LIGHTNING_REACH = 8;
+    private static final int RED_LIGHTNING_EVERY = 40;
+
+    /** A siege's presence on the castle's ground: the breach in its wall, and Tarmin answering in red lightning. */
+    private void tendTheSiege(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.War siege = history.world().activeSiege();
+        GridPoint2 castle = worldManager.castleSite();
+        if (castle == null || g.chunk == null || g.level != 1) return;
+        if (g.chunk.equals(castle) && maze != null) keepTheBreach(siege != null);
+        if (siege == null) return;
+        long clock = history.warClock();
+        if (com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(g.chunk, castle) <= RED_LIGHTNING_REACH
+                && clock % RED_LIGHTNING_EVERY == 0) {
+            if (worldManager.getWeatherManager() != null) worldManager.getWeatherManager().knellFlash(0.5f);
+            if (soundManager != null) soundManager.playSound("lightning_crash_2", 0.7f);
+            say("Red lightning breaks over Castle Tarmin. The Antlered Lord answers the siege.", 3f);
+        }
+    }
+
+    /** The nearest clear tile reachable from {@code from} without crossing a wall edge, two or more steps from {@code gate}. */
+    private GridPoint2 nearestClear(GridPoint2 from, GridPoint2 gate) {
+        java.util.ArrayDeque<GridPoint2> queue = new java.util.ArrayDeque<>();
+        java.util.Set<GridPoint2> seen = new java.util.HashSet<>();
+        queue.add(from);
+        seen.add(from);
+        while (!queue.isEmpty() && seen.size() < 200) {
+            GridPoint2 c = queue.poll();
+            boolean clear = !maze.getScenery().containsKey(c) && !maze.getMonsters().containsKey(c) && !maze.getItems().containsKey(c);
+            if (clear && Math.abs(c.x - gate.x) + Math.abs(c.y - gate.y) >= 2) return c;
+            for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+                GridPoint2 n = new GridPoint2(c.x + (int) d.getVector().x, c.y + (int) d.getVector().y);
+                if (seen.contains(n) || maze.isWallBlocking(c.x, c.y, d) || !maze.isPassable(n.x, n.y)) continue;
+                seen.add(n);
+                queue.add(n);
+            }
+        }
+        return null;
+    }
+
+    /** The breach stands beside the castle gate while a siege holds, and is gone when it ends (W35). */
+    private void keepTheBreach(boolean siege) {
+        GridPoint2 breach = null, gate = null;
+        for (java.util.Map.Entry<GridPoint2, Scenery> e : maze.getScenery().entrySet()) {
+            if (com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP.equals(e.getValue().getPropId())) breach = e.getKey();
+            if (com.bpm.minotaur.gamedata.blight.CastleGate.isCastleGate(e.getValue())) gate = e.getKey();
+        }
+        if (!siege) {
+            if (breach != null) maze.removeScenery(breach.x, breach.y);
+            return;
+        }
+        if (breach != null || gate == null) return;
+        // Outside the wall, near the gate: the nearest clear tile at least two steps from it that can be
+        // walked to from its doorstep. Walls here are edges, so the search never crosses one.
+        GridPoint2 at = null;
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int sx = gate.x + (int) d.getVector().x, sy = gate.y + (int) d.getVector().y;
+            if (maze.isWallBlocking(gate.x, gate.y, d) || !maze.isPassable(sx, sy)) continue;
+            at = nearestClear(new GridPoint2(sx, sy), gate);
+            if (at != null) break;
+        }
+        Scenery rubble = at == null ? null : Scenery.fromProp(com.bpm.minotaur.gamedata.shelter.SealedGates.BREACH_PROP, at.x, at.y);
+        if (rubble != null) {
+            maze.addScenery(rubble);
+            say("The siege has breached the castle wall. Rubble and fire mark the gap.", 4f);
+        }
+    }
+
+    /** Which soldiers take the player for kin, if the player wears a body their house fields (W16). */
+    private java.util.function.Predicate<com.bpm.minotaur.gamedata.monster.Monster> disguise() {
+        com.bpm.minotaur.gamedata.polymorph.PlayerForm form = player != null ? player.getForm() : null;
+        String type = form != null ? form.monsterType() : null;
+        if (type == null) return null;
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        return m -> {
+            int house = worldManager.houseOf(m);
+            return house >= 0 && com.bpm.minotaur.gamedata.history.war.Disguise.passesAmong(world, catalog, house, type);
+        };
+    }
+
+    private final com.bpm.minotaur.managers.WarAudio warAudio = new com.bpm.minotaur.managers.WarAudio();
+
+    /** The war heard from where the player stands, this turn (Living War W9). */
+    private void hearTheWar(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
+        boolean gashAtWar = holder != null && history.world().activeWarCount(holder.id) > 0;
+        com.bpm.minotaur.gamedata.history.war.WarSoundscape.Mix mix = com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(
+                worldManager.currentEncounters(), worldManager.currentFronts(), history.warClock(), g.chunk, g.level,
+                player != null ? player.getFacing() : null, gashAtWar);
+        // The din of a fight here or next door covers the player's footsteps (W13).
+        monsterAiManager.setHearingMuffle(g.level == 1 && mix.volume(com.bpm.minotaur.gamedata.history.war.WarSoundscape.Bed.NEAR) > 0f
+                ? com.bpm.minotaur.managers.MonsterAiManager.BATTLE_DIN : 1f);
+        boolean shook = warAudio.onTurn(mix, soundManager);
+        if (shook && g.level >= 2) {
+            if (worldManager.getLightingManager() != null) worldManager.getLightingManager().tremble(0.9f);
+            if (com.badlogic.gdx.math.MathUtils.random() < 0.35f) {
+                eventManager.addEvent(new GameEvent("The stone shudders. Dust sifts down from the ceiling.", 3f));
+            }
+        }
+    }
+
+    private void triggerAmbientMonsterSound() {
+        if (soundManager == null || maze == null || player == null) return;
+        GridPoint2 pp = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        List<com.bpm.minotaur.gamedata.monster.Monster> candidates = new ArrayList<>();
+        for (Map.Entry<GridPoint2, com.bpm.minotaur.gamedata.monster.Monster> entry : maze.getMonsters().entrySet()) {
+            com.bpm.minotaur.gamedata.monster.Monster m = entry.getValue();
+            if (m != null && m.getCurrentHP() > 0 && !m.isAlly()) {
+                int dist = Math.abs(entry.getKey().x - pp.x) + Math.abs(entry.getKey().y - pp.y);
+                if (dist >= 2 && dist <= 14) {
+                    candidates.add(m);
+                }
+            }
+        }
+        if (!candidates.isEmpty()) {
+            com.bpm.minotaur.gamedata.monster.Monster chosen = candidates.get(com.badlogic.gdx.math.MathUtils.random(candidates.size() - 1));
+            soundManager.playAmbientMonsterSound(
+                    chosen.getPosition().x, chosen.getPosition().y,
+                    soundManager.isBossOrMegabeast(chosen),
+                    player.getPosition().x, player.getPosition().y,
+                    player.getFacing());
+        }
+    }
+
+    /** Every pickup is toasted; a fragment of the Maze's history is read on the spot (plan T1.10). */
+    private void onItemPickedUp(Item item) {
+        hud.showPickupToast(item);
+        if (item == null || item.fragmentKind() == null || item.isTrophyRead()) return;
+        if (item.isChronicleFragment()) player.getInventory().removeItem(item);
+        item.markTrophyRead();
+        com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(item.fragmentKind());
+        if (told == null) {
+            eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));
+            return;
+        }
+        if (told.type == com.bpm.minotaur.gamedata.history.EventType.SEAT_SEIZED || told.type == com.bpm.minotaur.gamedata.history.EventType.HOUSE_EXTINGUISHED) {
+            if (soundManager != null) soundManager.playHouseBreachWarning();
+        } else if (told.type == com.bpm.minotaur.gamedata.history.EventType.WAR_DECLARED) {
+            if (soundManager != null) soundManager.playGashesWarWail(false);
+        } else if (told.type == com.bpm.minotaur.gamedata.history.EventType.MEGABEAST_STIRS || told.type == com.bpm.minotaur.gamedata.history.EventType.MEGABEAST_RAID) {
+            if (soundManager != null) soundManager.playBossWarningAlarm();
+        }
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        // Whoever wrote it took a side; which side depends on the event, so a reload reads the same.
+        com.bpm.minotaur.gamedata.history.text.Chronicler teller = com.bpm.minotaur.gamedata.history.text.Chronicler.of(
+                world, told, told.id % 2 == 0 ? com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.FOR
+                        : com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.Bias.AGAINST,
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+        String text = com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance().render(world, told, teller);
+        eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(teller.byline + ": " + text), 8f));
+    }
+
+    /**
+     * Instantly returns the player to the bed of the shelter they last rested in (home if none),
+     * ending active combat and saving world state. Used by Word of Recall and safe return mechanisms.
+     */
+    public void returnToShelter() {
+        if (combatManager != null) {
+            combatManager.endCombat();
+        }
+        if (worldManager != null && maze != null) {
+            worldManager.saveCurrentChunk(maze);
+        }
+        worldManager.setCurrentLevel(1);
+        GridPoint2 restChunk = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().getRestChunk();
+        Maze shelterMaze = loadShelterChunk(restChunk != null ? restChunk : new GridPoint2(0, 0));
+        swapToChunk(shelterMaze);
+
+        GridPoint2 bedPos = shelterWakeTile(shelterMaze);
+        player.setPosition(bedPos);
+        worldManager.saveCurrentChunk(shelterMaze);
+        triggerAutoSave();
+
+        if (hud != null) {
+            hud.addMessage("You recite the Word of Recall and return safely to the Shelter.");
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("Returned safely to the Shelter.", 3f));
+        }
+    }
+
+    /** Play-tests: moves the player into a surface chunk at once, as a walk through its gate would. */
+    public void travelToChunk(GridPoint2 chunk, GridPoint2 tile) {
+        worldManager.transitionPlayerToChunk(player, chunk, tile);
+        if (worldManager.getCurrentMaze() != null && worldManager.getCurrentMaze() != maze) {
+            swapToChunk(worldManager.getCurrentMaze());
+        }
     }
 
     private void swapToChunk(Maze newMaze) {
@@ -1743,10 +2877,122 @@ public class GameScreen extends BaseScreen {
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.setDiscoveryManager(this.discoveryManager);
-        player.setItemPickupListener(item -> hud.showPickupToast(item));
+        hud.setGameScreen(this); // the quick-slot menu and the silhouette widget need it after a chunk swap too
+        player.setItemPickupListener(this::onItemPickedUp);
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);
         DebugRenderer.printMazeToConsole(maze);
+    }
+
+    /**
+     * Ages the lingering clouds in this chunk by one world turn.
+     *
+     * <p>Wind only reaches a cloud that is out under the sky: on the surface, and not beneath a
+     * roof. Underground there is no weather, so fog holds for its full duration -- which is the
+     * difference the player is meant to feel between casting it in a storm and casting it in a
+     * corridor.
+     */
+    private void tickAreaEffects() {
+        if (maze == null || !maze.hasAreaEffects()) {
+            return;
+        }
+        // The wind is the weather's, not the player's. Asking whether the *player* is under
+        // the sky would have stopped an outdoor cloud dispersing the moment they stepped
+        // indoors; the manager tests each tile itself.
+        float windSpeed = 0f;
+        if (worldManager != null && worldManager.getWeatherManager() != null) {
+            worldManager.getWeatherManager().getWindVector(scratchWind);
+            windSpeed = scratchWind.len();
+        }
+        maze.getAreaEffects().tick(maze, windSpeed);
+        syncObscuredStatus();
+    }
+
+    /**
+     * Keeps the player's OBSCURED status matching the tile they are standing on.
+     *
+     * <p>Fog is a place, not something cast on you, so the status is derived rather than
+     * inflicted -- walk in and it appears, walk out and it clears. Without it the player has
+     * no on-screen answer to "why did my shot miss".
+     *
+     * <p>The entering and leaving lines fire on the transition only, and the transition is
+     * tracked here rather than read back off the status. The status cannot be the source of
+     * truth: {@code StatusManager.updateTurn()} runs earlier in {@code playerTurnTakesAction}
+     * than this does, so whatever this applies has already been aged once before the next turn
+     * reads it. Reading it back made every turn in a cloud look like a fresh entry, which
+     * re-announced the fog every turn and meant leaving it was never announced at all.
+     */
+    private void syncObscuredStatus() {
+        if (player == null || player.getStatusManager() == null) {
+            return;
+        }
+        boolean inFog = maze != null
+                && maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y);
+
+        if (inFog == playerWasObscured) {
+            if (inFog) {
+                // Hold the pill lit. StatusManager.updateTurn() runs earlier in the same turn
+                // than this does, so a status applied here with a duration of 1 would already
+                // have been decremented to nothing by the time the next turn asked about it.
+                player.getStatusManager().addEffect(StatusEffectType.OBSCURED, OBSCURED_STATUS_TURNS, 1, false);
+            }
+            return;
+        }
+
+        playerWasObscured = inFog;
+        if (inFog) {
+            player.getStatusManager().addEffect(StatusEffectType.OBSCURED, OBSCURED_STATUS_TURNS, 1, false);
+            eventManager.addEvent(new GameEvent("Fog closes over you. You can see nothing beyond arm's reach.", 2f));
+        } else {
+            player.getStatusManager().removeEffect(StatusEffectType.OBSCURED);
+            eventManager.addEvent(new GameEvent("You step clear of the fog.", 1.5f));
+        }
+    }
+
+    /**
+     * Whether the player was standing in fog at the end of the last world turn.
+     *
+     * <p>The transition, not the status, is what the chronicle lines key off -- see
+     * {@link #syncObscuredStatus}.
+     */
+    private boolean playerWasObscured;
+
+    /** Turns the OBSCURED pill is applied for, so it survives one StatusManager.updateTurn(). */
+    private static final int OBSCURED_STATUS_TURNS = 2;
+
+    /** Reused: the wind vector is read once a turn. */
+    private final Vector3 scratchWind = new Vector3();
+
+    /**
+     * Quick-slot menu: throws the item straight ahead. Exploration only, like the A key; in a fight
+     * the combat menu owns the turn.
+     */
+    public void throwQuickSlotItem(int slotIdx) {
+        Item item = player.getInventory().getQuickSlots()[slotIdx];
+        if (item == null) {
+            return;
+        }
+        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
+            eventManager.addEvent(new GameEvent("You cannot throw that in the middle of a fight.", 1.5f));
+            return;
+        }
+        if (combatManager.throwItem(item)) {
+            playerTurnTakesAction();
+        }
+    }
+
+    /** Quick-slot menu: drops the item at your feet (or the nearest free tile). */
+    public void dropQuickSlotItem(int slotIdx) {
+        Item item = player.getInventory().getQuickSlots()[slotIdx];
+        if (item == null) {
+            return;
+        }
+        if (player.dropItem(maze, item)) {
+            player.getInventory().getQuickSlots()[slotIdx] = null;
+            eventManager.addEvent(new GameEvent("Dropped " + item.getDisplayName(), 2f));
+        } else {
+            eventManager.addEvent(new GameEvent("No space to drop here.", 2f));
+        }
     }
 
     private void playerTurnTakesAction() {
@@ -1756,10 +3002,10 @@ public class GameScreen extends BaseScreen {
         updateMusicTrackForCurrentZone();
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
-        player.tickFieldRestCooldown();
         checkForMimicInFront();
         combatManager.tickReload();
         tickPowderDampness();
+        tickAreaEffects();
         if (player.getInjuryManager() != null) {
             player.getInjuryManager().updateStep(player, maze, eventManager);
         }
@@ -1780,6 +3026,17 @@ public class GameScreen extends BaseScreen {
         // --- Periodic Spawning Hook ---
         turnCount++;
         worldManager.processTurn(player, turnCount);
+        // The wars go on, on the surface and in the strata alike, and may reach the player.
+        worldManager.getHistory().tickWarClock();
+        tickWar();
+        tollKnell();
+        com.bpm.minotaur.gamedata.history.town.Town town = worldManager.townHere();
+        if (town != null && worldManager.getHistory().findTown(town.key)) {
+            eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    "You come to " + town.name + ", a town of " + town.allegiance.displayName + "."), 5f));
+        }
+        String beast = worldManager.tendMegabeasts(maze, player != null ? player.getPosition() : null);
+        if (beast != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(beast), 4f));
         // Blood on him and his gear dries from crimson toward black as the delve goes on.
         if (player != null) {
             player.ageBlood(1);
@@ -1863,12 +3120,84 @@ public class GameScreen extends BaseScreen {
      *
      * @return the monster to strike, or null if this is not a fight.
      */
+
+    /** Allies this close to the player come with them through a ladder or gate. */
+    private static final int ALLY_ESCORT_RADIUS = 3;
+    private final List<Monster> pendingAllies = new ArrayList<>();
+
+    /**
+     * Takes the allies near the player out of the current maze, to arrive with them in the next. Must
+     * run before the chunk is saved, or the saved chunk would keep a second copy.
+     */
+    private void collectEscortAllies() {
+        if (maze == null || player == null) {
+            return;
+        }
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        List<GridPoint2> taken = new ArrayList<>();
+        for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+            Monster m = entry.getValue();
+            if (m != null && m.isAlly() && m.getCurrentHP() > 0
+                    && Math.abs(entry.getKey().x - px) + Math.abs(entry.getKey().y - py) <= ALLY_ESCORT_RADIUS) {
+                pendingAllies.add(m);
+                taken.add(entry.getKey());
+            }
+        }
+        for (GridPoint2 pt : taken) {
+            maze.getMonsters().remove(pt);
+        }
+    }
+
+    /** Sets the escorted allies down on free tiles beside the player, once the new maze is in place. */
+    private void placePendingAllies() {
+        if (pendingAllies.isEmpty() || maze == null || player == null) {
+            return;
+        }
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        for (Monster ally : pendingAllies) {
+            GridPoint2 spot = null;
+            for (int r = 1; r <= ALLY_ESCORT_RADIUS && spot == null; r++) {
+                for (int dx = -r; dx <= r && spot == null; dx++) {
+                    for (int dy = -r; dy <= r && spot == null; dy++) {
+                        int x = px + dx;
+                        int y = py + dy;
+                        if ((dx == 0 && dy == 0) || x < 0 || y < 0 || x >= maze.getWidth() || y >= maze.getHeight()) {
+                            continue;
+                        }
+                        GridPoint2 tile = new GridPoint2(x, y);
+                        if (maze.isPassable(x, y) && !maze.getMonsters().containsKey(tile)) {
+                            spot = tile;
+                        }
+                    }
+                }
+            }
+            if (spot != null) {
+                ally.getPosition().set(spot.x + 0.5f, spot.y + 0.5f);
+                maze.getMonsters().put(spot, ally);
+            }
+        }
+        pendingAllies.clear();
+    }
+
     private Monster resolveBumpTarget(int tx, int ty) {
+        if (maze == null || player == null) return null;
+
+        int px = (int) Math.floor(player.getPosition().x);
+        int py = (int) Math.floor(player.getPosition().y);
+
+        // A player cannot melee-strike through a solid wall, closed door, or closed gate
+        if (!maze.canMeleeInto(px, py, tx, ty)) {
+            return null;
+        }
+
         GridPoint2 tile = new GridPoint2(tx, ty);
 
         Monster existing = maze.getMonsters().get(tile);
         if (existing != null) {
-            return existing;
+            // Walking into an ally swaps places (Player.move); it is never a target.
+            return existing.isAlly() ? null : existing;
         }
 
         Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, tile);
@@ -1881,17 +3210,37 @@ public class GameScreen extends BaseScreen {
     private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
         @Override
         public boolean keyDown(int keycode) {
-            return breakTomeStudy();
+            // Face at a barred window: the view owns the keys until the player steps back.
+            if (windowLook != null) {
+                return handleWindowLookKey(keycode);
+            }
+            if (hearthLighting != null) {
+                if (keycode == Input.Keys.ESCAPE) breakHearthLighting();
+                return true;
+            }
+            if (player == null || player.getActiveTomeStudy() == null) {
+                return false;
+            }
+            if (keycode == Input.Keys.ESCAPE) {
+                return breakTomeStudy();
+            }
+            // General keys are ignored and consumed during channeled study
+            return true;
         }
 
         @Override
         public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        // The death cinematic owns the screen: a click must not drive gameplay mid-collapse.
-        if (isDying()) {
-            deathSequence.skip();
-            return true;
-        }
-            return breakTomeStudy();
+            // The death cinematic owns the screen: a click must not drive gameplay mid-collapse.
+            if (isDying()) {
+                deathSequence.skip();
+                return true;
+            }
+            if ((player != null && player.getActiveTomeStudy() != null) || hearthLighting != null
+                    || windowLook != null) {
+                // Mouse clicks are ignored during channeled study, and while looking out a window
+                return true;
+            }
+            return false;
         }
     };
 
@@ -1929,52 +3278,96 @@ public class GameScreen extends BaseScreen {
         }
     }
 
-    /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
-    private static final int FIELD_REST_TICKS_PER_PRESS = 5;
-
     /**
-     * Field rest & recover (H): a bounded, cooldown-gated HP top-up. Reintroduced
-     * after the "way off again" balance investigation found that the original
-     * R-bound rest was deleted wholesale (not deliberately redesigned) when R was
-     * repurposed to open First Aid, leaving no field-accessible War Strength recovery
-     * besides slow passive regen, rare potions, and shelter-only rest. The actual
-     * heal/cooldown/cost logic lives on Player (attemptFieldRest) so it is
-     * testable without a screen; this method only owns the same
-     * multi-tick-with-interruption risk the original had, so a monster can still
-     * close in mid-rest even though spamming it is no longer possible.
+     * Fires whatever ranged attack the right hand holds: zaps a wand, shoots a bow, crossbow or
+     * gun, or throws a thrown weapon. Bound to the fire key (F by default) and to A.
+     *
+     * @return true if something was fired
      */
-    private void performFieldRestAction() {
-        MusicManager.getInstance().setResting(true);
-        Player.FieldRestResult result = player.attemptFieldRest(eventManager);
-        if (!result.success) {
-            MusicManager.getInstance().setResting(false);
-            return; // The refusal message was already queued by attemptFieldRest.
-        }
-
-        int hpBeforeTick = player.getCurrentHP();
-        int ticksElapsed = 0;
-        for (int i = 0; i < FIELD_REST_TICKS_PER_PRESS; i++) {
+    private boolean fireHeldRangedWeapon() {
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null) return false;
+        if (weapon.isWand()) {
+            player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
             playerTurnTakesAction();
-            ticksElapsed++;
-
-            if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
-                eventManager.addEvent(new GameEvent("Your rest is interrupted!", 2f));
-                break;
-            }
-            if (player.getCurrentHP() < hpBeforeTick) {
-                eventManager.addEvent(new GameEvent("Something attacks you as you rest!", 2f));
-                break;
-            }
-            if (player.getCurrentHP() <= 0) {
-                break;
-            }
-            hpBeforeTick = player.getCurrentHP();
+            return true;
         }
-        // Each of the ticks just advanced also decremented the cooldown attemptFieldRest just
-        // set, via the same per-turn hook every other action uses -- restore what this rest's
-        // own ticks consumed so the intended full cooldown still holds afterward, whether the
-        // loop ran to completion or was cut short by an interruption above.
-        player.restoreFieldRestCooldown(ticksElapsed);
+        if (weapon.isRanged()) {
+            boolean wasExploring = combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
+            combatManager.playerAttackInstant();
+            // Firing costs a turn. Opening fire out of exploration used to be
+            // free: ammunition spent, the level woken, and no turn passed --
+            // so the reload never advanced either. In-combat shots pass their
+            // turn through the combat state machine instead.
+            if (wasExploring) {
+                playerTurnTakesAction();
+            }
+            return true;
+        }
+        if (weapon.isThrown() && combatManager.throwWeapon(weapon)) {
+            playerTurnTakesAction();
+            return true;
+        }
+        return false;
+    }
+
+    /** The hearth being lit, or null. Channelled like a Tome study: each world turn passes on its own. */
+    private com.bpm.minotaur.gamedata.shelter.HearthLighting hearthLighting;
+    private float hearthTimer;
+
+    /** Starts lighting the cold hearth in front of the player, if they carry tinder. */
+    private void beginHearthLighting() {
+        if (hearthLighting != null) return;
+        if (findTinder() == null) {
+            eventManager.addEvent(new GameEvent("The hearth is cold. You need a Tinder Bundle to light it.", 2.5f));
+            return;
+        }
+        hearthLighting = new com.bpm.minotaur.gamedata.shelter.HearthLighting(player.getStats().getWoundsTaken());
+        hearthTimer = 0f;
+        eventManager.addEvent(new GameEvent("You kneel at the cold hearth and work the tinder... ("
+                + com.bpm.minotaur.gamedata.shelter.HearthLighting.TURNS + " turns). ESCAPE stops.", 2.5f));
+    }
+
+    private void updateHearthLighting(float delta) {
+        if (hearthLighting == null || player == null) return;
+        hearthTimer += delta;
+        if (hearthTimer < TOME_STUDY_SECONDS_PER_TURN) return;
+        hearthTimer = 0f;
+        playerTurnTakesAction();
+        com.bpm.minotaur.gamedata.shelter.HearthLighting.Step step =
+                hearthLighting.afterTurn(player.getStats().getWoundsTaken());
+        if (step == com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.INTERRUPTED) {
+            hearthLighting = null;
+            eventManager.addEvent(new GameEvent("You are struck and the tinder scatters. The hearth stays cold.", 2.5f));
+            return;
+        }
+        if (step != com.bpm.minotaur.gamedata.shelter.HearthLighting.Step.COMPLETE) return;
+        hearthLighting = null;
+        Item tinder = findTinder();
+        if (tinder == null || !worldManager.claimShelter(maze)) {
+            eventManager.addEvent(new GameEvent("The tinder will not catch.", 2f));
+            return;
+        }
+        player.getInventory().consumeOne(tinder);
+        worldManager.syncLightsForChunk(maze);
+        if (soundManager != null) soundManager.playDoorOpenSound();
+        eventManager.addEvent(new GameEvent("The hearth catches. This shelter is yours.", 3f));
+        if (hud != null) hud.addMessage("Shelter claimed. Every station you have unlocked stands here now.");
+        needsAsciiRender = true;
+    }
+
+    private Item findTinder() {
+        for (Item it : player.getInventory().getAllItems()) {
+            if (it != null && it.getType() == Item.ItemType.TINDER_BUNDLE) return it;
+        }
+        return null;
+    }
+
+    private boolean breakHearthLighting() {
+        if (hearthLighting == null) return false;
+        hearthLighting = null;
+        eventManager.addEvent(new GameEvent("You stop. The hearth stays cold.", 2f));
+        return true;
     }
 
     /**
@@ -2040,9 +3433,24 @@ public class GameScreen extends BaseScreen {
             }
             if (gatePos != null) {
                 List<GridPoint2> toRemove = new ArrayList<>();
+
+                // The bridge guardian follows from anywhere in the chunk, and is
+                // never crowded out. Ordinary pursuit takes at most two monsters
+                // in HashMap order from within 8 tiles of the gate, so without
+                // this a boss chasing from across the chunk would simply be left
+                // behind, and two goblins could win its slot by luck.
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
+                    if (m != null && m.isBridgeBoss()) {
+                        pursuers.add(m);
+                        toRemove.add(entry.getKey());
+                    }
+                }
+
+                for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+                    Monster m = entry.getValue();
+                    if (m != null && !m.isBridgeBoss() && !m.holdsCourt() && m.getMegabeastId() < 0
+                            && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
                         int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
                         if (dist <= 8) {
                             pursuers.add(m);
@@ -2057,6 +3465,8 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        collectEscortAllies();
+        worldManager.megabeastsFollow(maze, player.getPosition(), transitionGate.getTargetChunkId(), currentLevel());
         if (maze != null)
             worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
@@ -2203,6 +3613,12 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        // --- Forward keyboard input to an open choice event ---
+        if (hud != null && hud.getEventWindow() != null && hud.getEventWindow().isVisible()) {
+            hud.getEventWindow().handleInput(keycode);
+            return true;
+        }
+
         // --- Forward keyboard input to active ShopkeeperWindow modal ---
         if (hud != null && hud.getShopkeeperWindow() != null && hud.getShopkeeperWindow().isVisible()) {
             hud.getShopkeeperWindow().handleInput(keycode);
@@ -2213,6 +3629,44 @@ public class GameScreen extends BaseScreen {
         if (hud != null && hud.getBonesAwakenModal() != null && hud.getBonesAwakenModal().isVisible()) {
             hud.getBonesAwakenModal().handleInput(keycode);
             return true;
+        }
+
+        // --- Forward keyboard input to active LevelUpModal ---
+        if (hud != null && hud.getLevelUpModal() != null && hud.getLevelUpModal().isVisible()) {
+            hud.getLevelUpModal().handleInput(keycode);
+            return true;
+        }
+
+        if (keycode == Input.Keys.PAGE_UP) {
+            if (hud != null) {
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 5 : 1;
+                hud.scrollChronicle(step);
+                return true;
+            }
+        }
+
+        if (keycode == Input.Keys.PAGE_DOWN) {
+            if (hud != null) {
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 5 : 1;
+                hud.scrollChronicle(-step);
+                return true;
+            }
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+            if (keycode == Input.Keys.UP) { // fixed: Ctrl chord scrolls the chronicle
+                if (hud != null) {
+                    hud.scrollChronicle(1);
+                    return true;
+                }
+            } else if (keycode == Input.Keys.DOWN) { // fixed: Ctrl chord scrolls the chronicle
+                if (hud != null) {
+                    hud.scrollChronicle(-1);
+                    return true;
+                }
+            }
         }
 
         if (keycode == Input.Keys.ESCAPE) {
@@ -2242,24 +3696,40 @@ public class GameScreen extends BaseScreen {
         // --- NEW: Combat Menu Input Interception ---
         if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
             if (hud != null && hud.combatMenu != null) {
-                switch (keycode) {
+                // The fire key shoots a held bow, crossbow or gun straight from the menu.
+                if (keycode == SettingsManager.getInstance().getKey("FIRE_RANGED")) {
+                    Item held = player.getInventory().getRightHand();
+                    if (held != null && held.isRanged()) {
+                        combatManager.playerAttackInstant();
+                    } else {
+                        hud.addMessage("You have no ranged weapon in hand.");
+                    }
+                    return true;
+                }
+                if (actionKeys.is(keycode, "SPELLBOOK")) {
+                    openSpellbook();
+                    return true;
+                }
+                if (actionKeys.is(keycode, "MOVE_FORWARD")) {
+                    hud.combatMenu.navigateUp();
+                    return true;
+                }
+                if (actionKeys.is(keycode, "MOVE_BACK")) {
+                    hud.combatMenu.navigateDown();
+                    return true;
+                }
+                // The attack key confirms ATTACK whatever the menu has selected.
+                boolean attackKey = actionKeys.is(keycode, "ATTACK");
+                switch (attackKey ? Input.Keys.ENTER : keycode) {
                     case Input.Keys.I:
                         InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
                                 InventoryScreen.InventoryMode.NORMAL);
                         game.setScreen(invScreen);
                         return true;
-                    case Input.Keys.UP:
-                        hud.combatMenu.navigateUp();
-                        return true;
-                    case Input.Keys.DOWN:
-                        hud.combatMenu.navigateDown();
-                        return true;
                     case Input.Keys.ENTER:
                     case Input.Keys.SPACE:
-                    case Input.Keys.A: // Binding 'A' to Attack for convenience
                         int selection = hud.combatMenu.getSelectedIndex();
-                        // If 'A' pressed, assume Attack regardless of menu unless we want strict nav
-                        if (keycode == Input.Keys.A)
+                        if (attackKey)
                             selection = 0;
 
                         switch (selection) {
@@ -2356,18 +3826,18 @@ public class GameScreen extends BaseScreen {
             // For now, let's just return true for everything except F-keys?
             // Hard to filter easily. Let's just block the main ones if we didn't handle
             // navigation.
-            if (keycode == Input.Keys.W || keycode == Input.Keys.A || keycode == Input.Keys.S || keycode == Input.Keys.D
-                    ||
-                    keycode == Input.Keys.UP || keycode == Input.Keys.LEFT || keycode == Input.Keys.DOWN
-                    || keycode == Input.Keys.RIGHT ||
-                    keycode == Input.Keys.SPACE || keycode == Input.Keys.ENTER) {
+            // Movement must not walk the player out of the menu. The hand and pack keys
+            // fall through: they work in the menu without spending the turn.
+            if (keycode == Input.Keys.W
+                    || actionKeys.resolve(keycode, MENU_SWALLOWED_ACTIONS) != null
+                    || keycode == Input.Keys.SPACE || keycode == Input.Keys.ENTER) {
                 return true;
             }
         }
 
         // --- Debug Shortcuts ---
         if (debugManager.isDebugOverlayVisible()) {
-            if (keycode == Input.Keys.A && (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
+            if (keycode == Input.Keys.A && (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) // fixed: debug chord
                     || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))) {
                 giveAllArmor();
                 return true;
@@ -2377,14 +3847,15 @@ public class GameScreen extends BaseScreen {
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
                 || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
                 || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
-            switch (keycode) {
-                case Input.Keys.S:
+            String handAction = actionKeys.resolve(keycode, ActionKeys.HAND_ACTIONS);
+            switch (handAction == null ? "" : handAction) {
+                case "SWAP_HANDS":
                     player.getInventory().swapHands();
                     // If in Menu, we don't pass turn, just update UI
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
                     return true;
-                case Input.Keys.E:
+                case "SWAP_PACK":
                     if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         Vector2 dir = player.getFacing().getVector();
                         int fx = (int) (player.getPosition().x + dir.x);
@@ -2395,7 +3866,7 @@ public class GameScreen extends BaseScreen {
                         // Check Decomposing Corpse (Hero Remains / NetHack bones)
                         Scenery scFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(targetTile) : null;
                         Scenery scFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
-                        if ((scFront != null && scFront.isDecomposingCorpse()) || (scFeet != null && scFeet.isDecomposingCorpse())) {
+                        if ((scFront != null && scFront.isCorpse()) || (scFeet != null && scFeet.isCorpse())) {
                             interactWithWorldObject();
                             return true;
                         }
@@ -2413,7 +3884,7 @@ public class GameScreen extends BaseScreen {
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
                     return true;
-                case Input.Keys.T:
+                case "ROTATE_PACK":
                     player.getInventory().rotatePack();
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
@@ -2422,8 +3893,15 @@ public class GameScreen extends BaseScreen {
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-            // --- NEW: A/SPACE = Instant Attack ---
-            if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
+            // Quick heal (#190) spends the combat turn when it uses something.
+            if (actionKeys.is(keycode, "QUICK_HEAL")) {
+                if (player.quickHeal(discoveryManager, eventManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
+            // --- Attack key / SPACE = Instant Attack ---
+            if (actionKeys.is(keycode, "ATTACK") || keycode == Input.Keys.SPACE) {
                 combatManager.playerAttackInstant();
                 return true;
             }
@@ -2524,14 +4002,13 @@ public class GameScreen extends BaseScreen {
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
 
             // --- CONFUSION LOGIC ---
-            if (player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED)) {
-                if (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
-                        keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT) {
+            String worldAction = actionKeys.resolve(keycode, ActionKeys.WORLD_ACTIONS);
+            boolean steering = worldAction != null && MOVEMENT_ACTIONS.contains(worldAction);
 
-                    // Simple random walk
-                    int[] dirs = { Input.Keys.UP, Input.Keys.DOWN, Input.Keys.LEFT, Input.Keys.RIGHT };
-                    keycode = dirs[com.badlogic.gdx.math.MathUtils.random(dirs.length - 1)];
-                }
+            // --- CONFUSION LOGIC ---
+            if (steering && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED)) {
+                // Simple random walk
+                worldAction = MOVEMENT_ACTIONS.get(com.badlogic.gdx.math.MathUtils.random(MOVEMENT_ACTIONS.size() - 1));
             }
             // -----------------------
 
@@ -2541,21 +4018,7 @@ public class GameScreen extends BaseScreen {
                 return true;
             }
 
-            if (keycode == Input.Keys.A) {
-                // Keep 'A' for quick attack or just duplicate space?
-                // Let's map 'A' to open menu too? Or Instant Attack?
-                // Prompt says "access combat menu ANYTIME... pressing space bar".
-                // "The player can then attack anytime... and they can cast any spell".
-                // This implies Space -> Menu -> Attack/Cast.
-                // So "A" might be redundant or legacy.
-                // Let's leave A as "Use Quick Slot" or "Ranged".
-                // Actually existing logic handles A/SPACE as attack.
-                // I should overriding SPACE to open menu.
-                // And A can remain as Quick Slot / Ranged?
-            }
-
-            boolean isMovementKey = (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
-                    keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT ||
+            boolean isMovementKey = (steering ||
                     keycode == Input.Keys.NUMPAD_8 || keycode == Input.Keys.NUMPAD_2 ||
                     keycode == Input.Keys.NUMPAD_4 || keycode == Input.Keys.NUMPAD_6);
             if (isMovementKey && weaponOverlay != null && weaponOverlay.isMovementLocked()) {
@@ -2583,41 +4046,26 @@ public class GameScreen extends BaseScreen {
                 }
             }
 
-            if (keycode == Input.Keys.A) {
-                // Ranged Attack, Wand Zap, or Thrown Weapon
-                Item weapon = player.getInventory().getRightHand();
-                if (weapon != null) {
-                    if (weapon.isWand()) {
-                        player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
-                        playerTurnTakesAction();
-                        return true;
-                    } else if (weapon.isRanged()) {
-                        boolean wasExploring =
-                                combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
-                        combatManager.playerAttackInstant();
-                        // Firing costs a turn. Opening fire out of exploration used to be
-                        // free: ammunition spent, the level woken, and no turn passed --
-                        // so the reload never advanced either. In-combat shots pass their
-                        // turn through the combat state machine instead.
-                        if (wasExploring) {
-                            playerTurnTakesAction();
-                        }
-                        return true;
-                    } else if (weapon.isThrown()) {
-                        if (combatManager.throwWeapon(weapon)) {
-                            playerTurnTakesAction();
-                            return true;
-                        }
-                    }
+            boolean fireKey = actionKeys.is(keycode, "FIRE_RANGED");
+            if (actionKeys.is(keycode, "ATTACK") || fireKey) {
+                if (fireHeldRangedWeapon()) {
+                    return true;
+                }
+                if (fireKey) {
+                    hud.addMessage("You have nothing in hand to fire or throw.");
+                    return true;
                 }
             }
 
-            switch (keycode) {
-                case Input.Keys.PERIOD:
-                    hud.addMessage("You wait...");
-                    playerTurnTakesAction();
-                    return true;
-                case Input.Keys.UP: {
+            if (keycode == Input.Keys.PERIOD) {
+                hud.addMessage("You wait...");
+                playerTurnTakesAction();
+                return true;
+            }
+
+            // Rebindable actions, read through their Settings binding (#171).
+            switch (worldAction == null ? "" : worldAction) {
+                case "MOVE_FORWARD": {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x + dir.x);
                     int ty = (int) Math.floor(player.getPosition().y + dir.y);
@@ -2649,7 +4097,9 @@ public class GameScreen extends BaseScreen {
                             // game clanks and reports a solid wall every single
                             // time the player walks through a gate.
                             boolean gateTransition = player.consumeQueuedChunkTransition();
+                            boolean harvestedScenery = player.consumeHarvestedScenery();
                             if (gateTransition
+                                    || harvestedScenery
                                     || player.getPosition().x != prevX
                                     || player.getPosition().y != prevY) {
                                 weaponOverlay.setWalking(true);
@@ -2665,7 +4115,7 @@ public class GameScreen extends BaseScreen {
                     needsAsciiRender = false;
                     return true;
                 }
-                case Input.Keys.DOWN: {
+                case "MOVE_BACK": {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x - dir.x);
                     int ty = (int) Math.floor(player.getPosition().y - dir.y);
@@ -2683,7 +4133,9 @@ public class GameScreen extends BaseScreen {
                         float prevY = player.getPosition().y;
                         player.moveBackward(maze, eventManager, gameMode, soundManager);
                         boolean gateTransition = player.consumeQueuedChunkTransition();
+                        boolean harvestedScenery = player.consumeHarvestedScenery();
                         if (gateTransition
+                                || harvestedScenery
                                 || player.getPosition().x != prevX
                                 || player.getPosition().y != prevY) {
                             weaponOverlay.setWalking(true);
@@ -2697,31 +4149,63 @@ public class GameScreen extends BaseScreen {
                     needsAsciiRender = false;
                     return true;
                 }
-                case Input.Keys.LEFT:
+                case "TURN_LEFT":
                     weaponOverlay.addTurnSway(-1.0f);
                     player.turnLeft();
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-                case Input.Keys.RIGHT:
+                case "TURN_RIGHT":
                     weaponOverlay.addTurnSway(1.0f);
                     player.turnRight();
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-                case Input.Keys.O:
+                case "INTERACT":
                     interactWithWorldObject();
                     return true;
-                case Input.Keys.P:
+                case "PICKUP_DROP":
                     pickupWorldItem();
                     return true;
-                case Input.Keys.U:
+                case "USE_ITEM":
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze, combatManager);
                     // A Tome study spends its own turns as it is channelled.
                     if (player.getActiveTomeStudy() == null) {
                         playerTurnTakesAction();
                     }
                     return true;
+                case "DESCEND":
+                    ascendOrDescendLadder();
+                    return true;
+                case "FIRST_AID":
+                    // Pressing the First Aid key with nothing to tend is the exact muscle-memory
+                    // moment that caused the "way off again" balance confusion -- R used to be the
+                    // general rest-heal before it was repurposed to open First Aid, and that removal
+                    // shipped with no in-fiction sign anything had changed. Turning this specific
+                    // keypress into the teaching moment costs nothing extra: this branch already
+                    // needed to check for an active injury to decide what to do.
+                    if (player.getInjuryManager() != null && player.getInjuryManager().hasAnyInjuries()) {
+                        openFirstAidModal();
+                    } else {
+                        eventManager.addEvent(new GameEvent(
+                                "Nothing here needs tending. Press " + actionKeys.keyName("QUICK_HEAL")
+                                        + " to heal with a poultice or potion.", 2.5f));
+                    }
+                    return true;
+                case "QUICK_HEAL":
+                    if (player.quickHeal(discoveryManager, eventManager)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case "FIELD_CRAFTING":
+                    openFieldCrafting();
+                    return true;
+                case "FIELD_COOKING":
+                    openFieldCooking();
+                    return true;
+            }
+
+            switch (keycode) {
                 case Input.Keys.Z:
                     if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
                         playerTurnTakesAction();
@@ -2808,50 +4292,20 @@ public class GameScreen extends BaseScreen {
                             InventoryScreen.InventoryMode.NORMAL);
                     game.setScreen(invScreen);
                     return true;
-                case Input.Keys.D:
-                    ascendOrDescendLadder();
-                    return true;
-                case Input.Keys.R:
-                    // Pressing R with nothing to tend is the exact muscle-memory moment that
-                    // caused the "way off again" balance confusion -- R used to be the general
-                    // rest-heal before it was repurposed to open First Aid, and that removal
-                    // shipped with no in-fiction sign anything had changed. Turning this specific
-                    // keypress into the teaching moment costs nothing extra: this branch already
-                    // needed to check for an active injury to decide what to do.
-                    if (player.getInjuryManager() != null && player.getInjuryManager().hasAnyInjuries()) {
-                        openFirstAidModal();
-                    } else {
-                        eventManager.addEvent(new GameEvent(
-                                "Nothing here needs tending. Press H to rest and recover strength.", 2.5f));
-                    }
-                    return true;
-                case Input.Keys.H:
-                    performFieldRestAction();
-                    return true;
-                case Input.Keys.C:
-                    openFieldCrafting();
-                    return true;
-                case Input.Keys.K:
-                    openSkillTree();
-                    return true;
-                case Input.Keys.J:
-                    openFieldCooking();
-                    return true;
             }
         }
 
         if (keycode == SettingsManager.getInstance().getKey("MAP")) {
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                game.setScreen(new CastleMapScreen(game, player, maze, this));
+                game.setScreen(gameMode == GameMode.CLASSIC
+                        ? new ClassicMapScreen(game, player, maze, this)
+                        : new com.bpm.minotaur.screens.map.ExpeditionMapScreen(game, player, maze, this));
             }
             return true;
         }
 
         if (keycode == SettingsManager.getInstance().getKey("SPELLBOOK")) {
-            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
-                    combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-                game.setScreen(new SpellbookScreen(game, this, player, maze));
-            }
+            openSpellbook();
             return true;
         }
 
@@ -2861,10 +4315,7 @@ public class GameScreen extends BaseScreen {
         }
 
         if (keycode == SettingsManager.getInstance().getKey("TOGGLE_LANTERN")) {
-            boolean hasLantern = player.getInventory() != null &&
-                    ((player.getInventory().getLeftHand() != null && player.getInventory().getLeftHand().getType() == Item.ItemType.BRASS_LANTERN)
-                            || (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().getType() == Item.ItemType.BRASS_LANTERN));
-            if (hasLantern) {
+            if (player.hasLantern()) {
                 boolean lit = worldManager.getLightingManager().toggleLantern();
                 soundManager.playDoorOpenSound();
                 String msg = "Lantern flame " + (lit ? "kindled." : "snuffed out.");
@@ -2878,17 +4329,28 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        if (handleDebugKey(keycode)) {
+            return true;
+        }
+
         switch (keycode)
 
         {
             case Input.Keys.TAB:
-                hud.toggleControlsLegend();
+                // With several items in the pickup toast, Tab swaps between them; otherwise it opens the legend.
+                if (!hud.cycleToast()) {
+                    hud.toggleControlsLegend();
+                }
                 return true;
             case Input.Keys.F1:
                 debugManager.toggleOverlay();
                 return true;
             case Input.Keys.F2:
                 debugManager.toggleRenderMode();
+                // Shifting into Retro is a dimensional shift; the toggle is a no-op inside the Void.
+                if (debugManager.isTransitioning() && debugManager.isModernToRetroTransition()) {
+                    soundManager.playDimensionalShiftSound();
+                }
                 return true;
             case Input.Keys.F3:
                 SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;
@@ -2916,23 +4378,29 @@ public class GameScreen extends BaseScreen {
                 return true;
             }
             case Input.Keys.F5: {
-                // Session-only: unlocks every biome portal and waives the Crest
-                // cost so biomes can be reached without farming. Never written
-                // to the save -- see BiomePortal.DEBUG_UNLOCK_ALL.
-                com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL =
-                        !com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL;
-                boolean portalsOn = com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL;
+                // Session-only: toggles the comprehensive shelter debug sandbox.
+                // Materialises all 10 stations, maxes Altar blessing trees and ascension stats,
+                // unlocks skill tree, opens all biome portals, and grants divinities/crests.
+                com.bpm.minotaur.gamedata.progression.ShelterAltar altar =
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+                boolean debugOn = !altar.isDebugAllUnlocked();
+                altar.setDebugAllUnlocked(debugOn);
 
-                // The shelter chunk is served from cache or from its save file
-                // and is never regenerated, so the portals have to be stood up
-                // in the maze the player is currently standing in. Telling them
-                // to "re-enter the shelter" would simply not work.
-                if (portalsOn) {
-                    com.bpm.minotaur.gamedata.progression.BiomePortal.materialiseDebugPortals(
-                            maze, game.getItemDataManager(), game.getAssetManager());
+                if (debugOn) {
+                    altar.materialiseAllStations(maze, game.getItemDataManager(), game.getAssetManager());
+                    com.bpm.minotaur.managers.DivinityManager.getInstance().addDivinities(100);
+                    altar.addCrestsOfValor(20);
+                    java.util.List<String> allSpellIds = new java.util.ArrayList<>();
+                    for (com.bpm.minotaur.gamedata.spells.SpellTemplate spell :
+                            com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getAllSpells()) {
+                        if (spell != null && spell.id != null) {
+                            allSpellIds.add(spell.id);
+                        }
+                    }
+                    com.bpm.minotaur.debug.DebugCheats.maxOutPlayer(player, allSpellIds);
                 }
                 eventManager.addEvent(new GameEvent(
-                        "Debug portals: " + (portalsOn ? "ALL UNLOCKED" : "OFF (existing portals remain this session)"),
+                        "DEBUG MODE: " + (debugOn ? "ON - all shelter features unlocked; level 99 & all spells; debug keys listed top right" : "OFF (existing stations remain this session)"),
                         3f));
                 return true;
             }
@@ -2954,6 +4422,11 @@ public class GameScreen extends BaseScreen {
             case Input.Keys.F11:
                 // Plain F11 tunes the weapon view; shift+F11 keeps the weather debug. Not
                 // shift+F10: Tarmin2 opens the paperdoll editor on F10 whatever the modifiers.
+                if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+                    // Ctrl+F11 lines up the Sector Passage Gate texture; the panel closes itself.
+                    gateUvTunerPanel.open();
+                    return true;
+                }
                 if (!Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
                         && !Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
                     // Closing is handled by the panel itself, which sees F11 first while open.
@@ -3015,12 +4488,12 @@ public class GameScreen extends BaseScreen {
                 return true;
             case Input.Keys.LEFT_BRACKET: {
                 float fov = debugManager.adjustFov3d(-1.0f);
-                eventManager.addEvent(new GameEvent(String.format("3D FOV: %.0f°", fov), 1.5f));
+                eventManager.addEvent(new GameEvent(String.format("3D FOV: %.0f deg", fov), 1.5f));
                 return true;
             }
             case Input.Keys.RIGHT_BRACKET: {
                 float fov = debugManager.adjustFov3d(1.0f);
-                eventManager.addEvent(new GameEvent(String.format("3D FOV: %.0f°", fov), 1.5f));
+                eventManager.addEvent(new GameEvent(String.format("3D FOV: %.0f deg", fov), 1.5f));
                 return true;
             }
         }
@@ -3077,6 +4550,17 @@ public class GameScreen extends BaseScreen {
     public boolean scrolled(float amountX, float amountY) {
         if (isDying()) {
             return true;
+        }
+        if (hud != null && hud.stage != null) {
+            Vector2 stageCoord = hud.stage.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+            // The HUD dashboard is the bottom 200px (y in [0, 210] in 1920x1080 stage)
+            if (stageCoord.y >= 0 && stageCoord.y <= 210) {
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 3 : 1;
+                int delta = (amountY < 0) ? step : -step;
+                hud.scrollChronicle(delta);
+                return true;
+            }
         }
         return false;
     }
@@ -3142,8 +4626,20 @@ public class GameScreen extends BaseScreen {
         return maze;
     }
 
+    private boolean isDisposed = false;
+
     @Override
     public void dispose() {
+        if (isDisposed) return;
+        isDisposed = true;
+        com.bpm.minotaur.telemetry.TelemetryManager telemetryOnDispose = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        if (telemetryOnDispose.getExpeditionEndListener() == returnUnlockRoller) {
+            telemetryOnDispose.setExpeditionEndListener(null);
+        }
+        warAudio.dispose();
+        if (debugLegendFont != null) {
+            debugLegendFont.dispose();
+        }
         emberOverlay.dispose();
         if (player != null && worldManager != null) {
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
@@ -3184,6 +4680,10 @@ public class GameScreen extends BaseScreen {
 
     public FirstPersonWeaponOverlay getWeaponOverlay() {
         return weaponOverlay;
+    }
+
+    public World3DRenderer getWorld3DRenderer() {
+        return world3DRenderer;
     }
 
     private void updateSeamlessChunkLoading(float delta) {
@@ -3290,6 +4790,7 @@ public class GameScreen extends BaseScreen {
                     newPlayerX = player.getPosition().x;
                 }
 
+                collectEscortAllies();
                 worldManager.setCurrentChunk(newChunkId);
                 swapToChunk(neighbor);
                 player.getPosition().set(newPlayerX, newPlayerY);
@@ -3343,9 +4844,27 @@ public class GameScreen extends BaseScreen {
 
         // Check Decomposing Corpse (NetHack-style Bones remains)
         Scenery sceneryInFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(target) : null;
+        // A war camp's banner: where a house's oath is sworn and its contracts paid (Living War W20, W25).
+        if (sceneryInFront != null && "war_banner".equals(sceneryInFront.getPropId())) {
+            int house = campAt(target);
+            if (house >= 0) {
+                atCampBanner(house);
+                return;
+            }
+        }
         Scenery sceneryAtFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
-        Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isDecomposingCorpse()) ? sceneryInFront
-                : (sceneryAtFeet != null && sceneryAtFeet.isDecomposingCorpse()) ? sceneryAtFeet : null;
+        // A war camp's campfire: where friends and the sworn rest by the fire (Living War W18-W20).
+        GridPoint2 fireTile = (sceneryInFront != null && "campfire".equals(sceneryInFront.getPropId())) ? target
+                : (sceneryAtFeet != null && "campfire".equals(sceneryAtFeet.getPropId())) ? currentTile : null;
+        if (fireTile != null) {
+            int house = campAt(fireTile);
+            if (house >= 0) {
+                atCampFire(house);
+                return;
+            }
+        }
+        Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isCorpse()) ? sceneryInFront
+                : (sceneryAtFeet != null && sceneryAtFeet.isCorpse()) ? sceneryAtFeet : null;
 
         if (corpseScenery != null) {
             handleCorpseInteraction(corpseScenery);
@@ -3367,6 +4886,16 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.SHELTER_HEARTH_COLD) {
+            beginHearthLighting();
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.SHELTER_HEARTH_LIT) {
+            eventManager.addEvent(new GameEvent("Your fire burns. This shelter is yours.", 2f));
+            return;
+        }
+
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_ALTAR) {
             ShelterAltarScreen altarScreen = new ShelterAltarScreen(game, this, player);
             game.setScreen(altarScreen);
@@ -3382,10 +4911,36 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_WAR_TABLE) {
+            if (soundManager != null) soundManager.playMapOpen();
+            game.setScreen(new WarTableScreen(game, this, worldManager));
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CARTOGRAPHER_DESK) {
+            if (soundManager != null) soundManager.playMapOpen();
+            game.setScreen(new CartographerDeskScreen(game, this, player, maze, worldManager));
+            return;
+        }
+
+        if ((itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_TRAINING_DUMMY)
+                || (itemOnTile != null && itemOnTile.getType() == Item.ItemType.HOME_TRAINING_DUMMY)) {
+            openSkillTree();
+            return;
+        }
+
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
-            ShelterChest chest = ShelterChest.getInstance();
-            if (chest.isEmpty()) {
-                chest.load(game.getItemDataManager(), game.getAssetManager());
+            ShelterChest chest;
+            if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked()) {
+                chest = com.bpm.minotaur.debug.DebugCheats.allItemsChest(
+                        game.getItemDataManager().getLoadedTypes(),
+                        type -> game.getItemDataManager().createItem(type, 0, 0, ItemColor.GRAY, game.getAssetManager())
+                );
+            } else {
+                chest = ShelterChest.getInstance();
+                if (chest.isEmpty()) {
+                    chest.load(game.getItemDataManager(), game.getAssetManager());
+                }
             }
             ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, chest);
             game.setScreen(chestScreen);
@@ -3393,10 +4948,26 @@ public class GameScreen extends BaseScreen {
         }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-            player.getStats().setCurrentHP(player.getStats().getMaxHP());
-            player.getStats().setCurrentMP(player.getStats().getMaxMP());
+            // A trait can make the bed less restful (Paranoid Scout: half).
+            float rest = Math.min(1f, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("bedRestMult"));
+            // Taint first: it shrinks max HP, so clearing it after would leave the bed's heal short.
+            if (player.getStats().getTaint() > 0f) {
+                player.getStats().setTaint(0f);
+                eventManager.addEvent(new GameEvent("You sleep the Blight out of your bones.", 2.5f));
+            }
+            int hp = player.getStats().getCurrentHP();
+            int mp = player.getStats().getCurrentMP();
+            player.getStats().setCurrentHP(hp + Math.round((player.getStats().getMaxHP() - hp) * rest));
+            player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
             player.getStatusManager().clearEffects();
             DoomManager.getInstance().resetExpeditionTurns();
+            // A season passes in the Maze while the player sleeps; they wake to its news.
+            java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = worldManager.getHistory().onSleep();
+            // This shelter is now the one the player wakes in.
+            if (currentLevel() == 1) {
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
+                        .recordRest(worldManager.getCurrentPlayerChunkId());
+            }
             if (worldManager != null && worldManager.getDayNightManager() != null) {
                 com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
                 if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
@@ -3412,6 +4983,19 @@ public class GameScreen extends BaseScreen {
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
+            // The season's great events toll Tarmin's Knell (plan K4); the rest is shelter rumour.
+            tollKnell();
+            news = new java.util.ArrayList<>(news);
+            news.removeIf(e -> com.bpm.minotaur.gamedata.history.text.Knell.tolls(worldManager.getHistory().world(), e));
+            // The news is a shelter rumour: it becomes known history, readable at the Lectern.
+            for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
+                worldManager.getHistory().unlock(heard.id);
+            }
+            for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(worldManager.getHistory().world(), news, 3,
+                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+                eventManager.addEvent(new GameEvent(rumour, 6f));
+            }
             playerTurnTakesAction();
             needsAsciiRender = true;
             tryDreamDimensionShift(DREAM_SHIFT_CHANCE_PER_BED_REST);
@@ -3460,9 +5044,90 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        // [O] Drink at a liquid tile (#193), when nothing else ahead takes the key.
+        if (itemInFront == null && maze.getGameObjectAt(target.x, target.y) == null
+                && Player.liquidSourceAt(maze, player.getPosition(), player.getFacing()) != null) {
+            if (player.drinkFromMap(maze, eventManager)) {
+                playerTurnTakesAction();
+            }
+            needsAsciiRender = true;
+            return;
+        }
+
+        // Looking outside: in the 3D engine the view moves to the bars. The retro raycaster
+        // has no free camera, so there the window only describes what lies beyond.
+        if (maze.getGameObjectAt(target.x, target.y) instanceof Window
+                && debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
+            startWindowLook(target);
+        }
+
         player.interact(maze, eventManager, soundManager, gameMode, worldManager);
         playerTurnTakesAction();
         needsAsciiRender = true;
+    }
+
+    // ------------------------------------------------------------------
+    // Looking out through a barred window
+    // ------------------------------------------------------------------
+
+    /** The player's face at a barred window, or null. The 3D view looks out through it. */
+    private com.bpm.minotaur.rendering.WindowLook windowLook;
+    /** Head turn from the arrow keys, in degrees per second. */
+    private static final float WINDOW_LOOK_KEY_SPEED = 70f;
+    /** Head turn from the mouse, in degrees per pixel. */
+    private static final float WINDOW_LOOK_MOUSE_SPEED = 0.15f;
+
+    public boolean isLookingOutWindow() {
+        return windowLook != null;
+    }
+
+    /** Turns the head at the window, as the mouse would; for captures. No-op when not looking. */
+    public void turnWindowLook(float yawDegrees, float pitchDegrees) {
+        if (windowLook != null) windowLook.turn(yawDegrees, pitchDegrees);
+    }
+
+    private void startWindowLook(GridPoint2 windowTile) {
+        windowLook = new com.bpm.minotaur.rendering.WindowLook(windowTile, player.getFacing());
+        world3DRenderer.setWindowLook(windowLook);
+        Gdx.input.setCursorCatched(true);
+        eventManager.addEvent(new GameEvent("Mouse or arrows to look about. Esc to step back.", 4f));
+    }
+
+    private void endWindowLook() {
+        if (windowLook == null) return;
+        windowLook = null;
+        world3DRenderer.setWindowLook(null);
+        Gdx.input.setCursorCatched(false);
+    }
+
+    /** Turns the head at the window; anything that needs the player steps them back. */
+    private void updateWindowLook(float delta) {
+        if (windowLook == null) return;
+        if (deathSequence.isActive()
+                || debugManager.getRenderEngine() != DebugManager.RenderEngine.PLANAR_3D
+                || (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
+            endWindowLook();
+            return;
+        }
+        float yaw = 0f;
+        float pitch = 0f;
+        SettingsManager keys = SettingsManager.getInstance();
+        if (Gdx.input.isKeyPressed(keys.getKey("TURN_LEFT"))) yaw += WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(keys.getKey("TURN_RIGHT"))) yaw -= WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(keys.getKey("MOVE_FORWARD"))) pitch += WINDOW_LOOK_KEY_SPEED * delta;
+        if (Gdx.input.isKeyPressed(keys.getKey("MOVE_BACK"))) pitch -= WINDOW_LOOK_KEY_SPEED * delta;
+        yaw -= Gdx.input.getDeltaX() * WINDOW_LOOK_MOUSE_SPEED;
+        pitch -= Gdx.input.getDeltaY() * WINDOW_LOOK_MOUSE_SPEED;
+        windowLook.turn(yaw, pitch);
+    }
+
+    /** At the window the arrows turn the head; the leave keys step back; nothing else acts. */
+    private boolean handleWindowLookKey(int keycode) {
+        if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.SPACE
+                || actionKeys.is(keycode, "SWAP_PACK") || actionKeys.is(keycode, "INTERACT")) {
+            endWindowLook();
+        }
+        return true;
     }
 
     /**
@@ -3481,6 +5146,7 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
                         com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getUnlockedStations(),
                         player.getInventory(),
+                        ShelterChest.getInstance(), // a stashed kit is owned, not lost (#102)
                         game.getItemDataManager(),
                         game.getAssetManager());
 
@@ -3515,11 +5181,12 @@ public class GameScreen extends BaseScreen {
 
     /**
      * Opens the cooking hearth in portable field-kit mode: requires a Cooking Kit in the
-     * pack, and works with carried ingredients only (no Shelter Chest access).
+     * pack, or a field fire beside the player, and works with carried ingredients only (no
+     * Shelter Chest access).
      */
     public void openFieldCooking() {
-        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
-            hud.addMessage("You need a Cooking Kit in your pack to prepare meals in the field.");
+        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT) && !isBesideFieldFire()) {
+            hud.addMessage("You need a Cooking Kit, or a field fire beside you, to cook in the field.");
             return;
         }
         try {
@@ -3527,6 +5194,23 @@ public class GameScreen extends BaseScreen {
             game.setScreen(cookingScreen);
         } catch (Exception e) {
             Gdx.app.error("GameScreen", "Failed to open field cooking", e);
+        }
+    }
+
+    /**
+     * Cooking over a Tinder Bundle field fire (#191, #194): true while a burning field fire's
+     * warmth reaches the player. One fire warms and cooks.
+     */
+    boolean isBesideFieldFire() {
+        return maze != null && player != null
+                && maze.fieldFireWarming((int) player.getPosition().x, (int) player.getPosition().y) != null;
+    }
+
+    public void openSpellbook() {
+        if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
+                combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN ||
+                combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU)) {
+            game.setScreen(new SpellbookScreen(game, this, player, maze));
         }
     }
 
@@ -3538,8 +5222,23 @@ public class GameScreen extends BaseScreen {
     }
 
     public void pickupWorldItem() {
+        // [P] Fill waterskin at a liquid tile (#193); a ground item there still comes first.
+        if (!hasGroundItemAheadOrAtFeet()
+                && Player.liquidSourceAt(maze, player.getPosition(), player.getFacing()) != null) {
+            if (player.fillWaterskinFromMap(maze, eventManager)) {
+                playerTurnTakesAction();
+            }
+            return;
+        }
         player.interactWithItem(maze, eventManager, soundManager, discoveryManager);
         playerTurnTakesAction();
+    }
+
+    private boolean hasGroundItemAheadOrAtFeet() {
+        Vector2 v = player.getFacing().getVector();
+        GridPoint2 ahead = new GridPoint2((int) (player.getPosition().x + v.x), (int) (player.getPosition().y + v.y));
+        GridPoint2 feet = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        return maze.getItems().get(ahead) != null || maze.getItems().get(feet) != null;
     }
 
     public void quickEquipOrConsumeWorldItem() {
@@ -3561,13 +5260,14 @@ public class GameScreen extends BaseScreen {
 
         if (ladder != null) {
             soundManager.playLadderTransition();
+            collectEscortAllies();
             GridPoint2 originLadderPos = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
             List<Monster> pursuers = new ArrayList<>();
             if (this.maze != null) {
                 List<GridPoint2> toRemove = new ArrayList<>();
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
+                    if (m != null && !m.isAlly() && !m.holdsCourt() && m.getMegabeastId() < 0 && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
                         int dist = Math.abs(entry.getKey().x - originLadderPos.x) + Math.abs(entry.getKey().y - originLadderPos.y);
                         if (dist <= 6) {
                             pursuers.add(m);
@@ -3582,6 +5282,8 @@ public class GameScreen extends BaseScreen {
             }
 
             int originLevel = currentLevel();
+            worldManager.megabeastsFollow(maze, player.getPosition(), worldManager.getCurrentPlayerChunkId(),
+                    ladder.getType() == Ladder.LadderType.DOWN ? originLevel + 1 : originLevel - 1);
 
             if (ladder.getType() == Ladder.LadderType.DOWN) {
                 GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,
@@ -3644,6 +5346,298 @@ public class GameScreen extends BaseScreen {
 
     public SpellPostProcessor getSpellPostProcessor() {
         return spellPostProcessor;
+    }
+
+    private com.badlogic.gdx.graphics.g2d.BitmapFont debugLegendFont;
+
+    /**
+     * The debug-mode keys and what they do, in a plain readable font (not the game's pixel font) at
+     * a small size, top right beside the minimap's reserved box (it used to take the same corner, so
+     * the map was drawn over it). Only drawn while debug mode (F5) is on. The text comes from
+     * DebugKeys, the same table that handles the keys.
+     */
+    private void renderDebugLegend() {
+        if (!com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked()) {
+            return;
+        }
+        if (debugLegendFont == null) {
+            debugLegendFont = new com.badlogic.gdx.graphics.g2d.BitmapFont(); // libGDX default Arial: crisp at 15px
+            debugLegendFont.getRegion().getTexture().setFilter(
+                    com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+        }
+        java.util.List<String> lines = com.bpm.minotaur.debug.DebugKeys.legend(true);
+        float lineH = debugLegendFont.getLineHeight() + 2f;
+        float width = 330f;
+        float height = lines.size() * lineH + 16f;
+        float x = com.bpm.minotaur.rendering.Hud.STAGE_WIDTH - com.bpm.minotaur.rendering.Hud.MINIMAP_MARGIN_RIGHT
+                - com.bpm.minotaur.rendering.Hud.MINIMAP_MAX_SIZE - 10f - width;
+        float top = com.bpm.minotaur.rendering.Hud.STAGE_HEIGHT - com.bpm.minotaur.rendering.Hud.MINIMAP_MARGIN_TOP;
+
+        com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+        shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.65f);
+        shapeRenderer.rect(x, top - height, width, height);
+        shapeRenderer.end();
+
+        game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+        game.getBatch().begin();
+        float y = top - 8f;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            boolean heading = i == 0 || line.endsWith(":");
+            debugLegendFont.setColor(heading ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.WHITE);
+            debugLegendFont.draw(game.getBatch(), line, x + 8f, y);
+            y -= lineH;
+        }
+        game.getBatch().end();
+    }
+
+    /** Opens a choice event (data/events.json) in the event window. */
+    private void openChoiceEvent(String eventId) {
+        com.bpm.minotaur.gamedata.events.EventDefinition def =
+                com.bpm.minotaur.gamedata.events.EventCatalog.getInstance().get(eventId);
+        if (def == null || hud == null || hud.getEventWindow() == null) {
+            return;
+        }
+        if (weaponOverlay != null) {
+            weaponOverlay.reset();
+        }
+        hud.getEventWindow().configure(player, maze, eventManager, game.getItemDataManager(),
+                game.getMonsterDataManager(), game.getAssetManager());
+        hud.getEventWindow().show(def, maze.getBiome().name());
+    }
+
+    /** Runs a debug-only key when debug mode is on; returns whether the key was one. */
+    private boolean handleDebugKey(int keycode) {
+        boolean debugMode = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked();
+        com.bpm.minotaur.debug.DebugKeys.Action action = com.bpm.minotaur.debug.DebugKeys.actionFor(keycode, debugMode);
+        if (action == null) {
+            return false;
+        }
+        switch (action) {
+            case LEARN_ALL_SPELLS: {
+                java.util.List<String> ids = new java.util.ArrayList<>();
+                for (com.bpm.minotaur.gamedata.spells.SpellTemplate t
+                        : com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getAllSpells()) {
+                    ids.add(t.getId());
+                }
+                int learned = com.bpm.minotaur.debug.DebugCheats.learnAllSpells(player, ids);
+                eventManager.addEvent(new GameEvent("Debug: learned " + learned + " spells (" + ids.size() + " total)", 2.5f));
+                return true;
+            }
+            case LEVEL_UP:
+                com.bpm.minotaur.debug.DebugCheats.levelUp(player, eventManager);
+                return true;
+            case OPEN_ALL_ITEMS_CHEST: {
+                game.setScreen(new ShelterChestScreen(game, this, player, com.bpm.minotaur.debug.DebugCheats.allItemsChest(
+                        game.getItemDataManager().getLoadedTypes(),
+                        type -> game.getItemDataManager().createItem(type, 0, 0, ItemColor.GRAY, game.getAssetManager()))));
+                return true;
+            }
+            case REFILL:
+                com.bpm.minotaur.debug.DebugCheats.refill(player);
+                eventManager.addEvent(new GameEvent("Debug: HP, MP, food and water refilled", 2f));
+                return true;
+            case FIRE_CHOICE_EVENT: {
+                com.bpm.minotaur.gamedata.events.EventDefinition def = com.bpm.minotaur.debug.DebugCheats.choiceEventFor(
+                        com.bpm.minotaur.gamedata.events.EventCatalog.getInstance(), maze.getBiome().name(),
+                        maze.getLevel(), new java.util.Random());
+                if (def == null) {
+                    eventManager.addEvent(new GameEvent("Debug: no choice event fits this place", 2f));
+                } else {
+                    openChoiceEvent(def.id);
+                }
+                return true;
+            }
+            case WARP_CASTLE_ROAD_SHELTER: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                debugWarpRoad = com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD;
+                debugWarp(com.bpm.minotaur.debug.DebugCheats.roadShelter(roads, debugWarpRoad, debugWarpStop++),
+                        "castle-road shelter " + debugWarpStop);
+                return true;
+            }
+            case DESCEND_HERE:
+                debugDescend();
+                return true;
+            case WARP_SEAL_COURT: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                int road = -1;
+                for (int k = 0; k < com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT; k++) {
+                    int r = com.bpm.minotaur.debug.DebugCheats.sealRoad(k);
+                    if (!com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(r)) {
+                        road = r;
+                        break;
+                    }
+                }
+                if (roads == null || road < 0) {
+                    eventManager.addEvent(new GameEvent("Debug: no seal lord left to face", 2f));
+                    return true;
+                }
+                debugTeleport(roads.getRoad(road).getEnd(), SealCourt.COURT_LEVEL, m -> {
+                    for (Monster mon : m.getMonsters().values()) {
+                        if (mon != null && mon.getSealRole() == Monster.SEAL_LORD) {
+                            return WorldManager.findSafeArrivalTile(m, (int) mon.getPosition().x + 4, (int) mon.getPosition().y);
+                        }
+                    }
+                    return WorldManager.findSafeArrivalTile(m, m.getWidth() / 2, m.getHeight() / 2);
+                });
+                return true;
+            }
+            case WARP_TOWN: {
+                GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+                for (int radius = 0; radius < 30; radius++) {
+                    for (int level = com.bpm.minotaur.gamedata.history.town.TownSites.MIN_LEVEL;
+                         level <= com.bpm.minotaur.gamedata.history.town.TownSites.MAX_LEVEL; level++) {
+                        for (int dx = -radius; dx <= radius; dx++) {
+                            for (int dy = -radius; dy <= radius; dy++) {
+                                if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
+                                GridPoint2 c = new GridPoint2(here.x + dx, here.y + dy);
+                                if (!com.bpm.minotaur.gamedata.history.town.TownSites.isTown(worldManager.getWorldSeed(), c, level)) continue;
+                                debugTeleport(c, level, m -> WorldManager.findSafeArrivalTile(m, m.getWidth() / 2, m.getHeight() / 2));
+                                return true;
+                            }
+                        }
+                    }
+                }
+                eventManager.addEvent(new GameEvent("Debug: no town within 30 chunks", 2f));
+                return true;
+            }
+            case BATTLE_HERE: {
+                if (currentLevel() != 1) {
+                    eventManager.addEvent(new GameEvent("Debug: battles are fought on the surface", 2f));
+                    return true;
+                }
+                com.bpm.minotaur.gamedata.history.HistoryWorld hw = worldManager.getHistory().world();
+                GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+                com.bpm.minotaur.gamedata.history.war.Front front;
+                if (!hw.activeWars().isEmpty()) {
+                    com.bpm.minotaur.gamedata.history.War war = hw.activeWars().get(0);
+                    front = new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
+                } else {
+                    // No war under way: the first two houses fight anyway, and the history will not hear of it.
+                    java.util.List<com.bpm.minotaur.gamedata.history.House> living = hw.livingHouses();
+                    front = new com.bpm.minotaur.gamedata.history.war.Front(-1, living.get(0).id, living.get(1).id, here);
+                }
+                String horns = warManager.soundHorns(worldManager.getHistory(), front, here, worldManager.houseSeats());
+                if (soundManager != null) soundManager.playWarCue(WarManager.Cue.HORNS);
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(horns), 5f));
+                return true;
+            }
+            case MEGABEAST_HERE: {
+                for (com.bpm.minotaur.gamedata.history.Megabeast b : worldManager.getHistory().world().megabeasts()) {
+                    if (!b.isAlive() || !b.isAwake(worldManager.getHistory().world().season())) continue;
+                    worldManager.getHistory().startHunt(b.id, worldManager.getCurrentPlayerChunkId(), currentLevel());
+                    worldManager.getHistory().hunt().readyAt = worldManager.getHistory().warClock();
+                    eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize("Debug: " + b.name + " is coming"), 2f));
+                    return true;
+                }
+                eventManager.addEvent(new GameEvent("Debug: no megabeast is awake", 2f));
+                return true;
+            }
+            case WARP_SEAL_SITE: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                debugWarpRoad = com.bpm.minotaur.debug.DebugCheats.sealRoad(debugWarpSeal++);
+                debugWarp(roads == null ? null : roads.getRoad(debugWarpRoad).getEnd(), "seal site of road " + debugWarpRoad);
+                return true;
+            }
+            case GRANT_SEAL: {
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork net = com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance();
+                int road = debugWarpRoad;
+                for (int k = 0; road == com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD || net.hasSeal(road); k++) {
+                    if (k >= com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT) {
+                        eventManager.addEvent(new GameEvent("Debug: every seal is already held", 2f));
+                        return true;
+                    }
+                    road = com.bpm.minotaur.debug.DebugCheats.sealRoad(k);
+                }
+                net.awardSeal(road);
+                eventManager.addEvent(new GameEvent("Debug: granted the seal of road " + road + " ("
+                        + net.getSealCount() + "/" + com.bpm.minotaur.gamedata.blight.CastleGate.SEALS_REQUIRED + ")", 2.5f));
+                return true;
+            }
+            case CLAIM_ROAD: {
+                com.bpm.minotaur.generation.ShelterRoads roads = worldManager.getBiomeManager().getRoads();
+                if (roads == null) {
+                    eventManager.addEvent(new GameEvent("Debug: this world has no shelter roads", 2f));
+                    return true;
+                }
+                com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().claimRoad(roads.getRoad(debugWarpRoad));
+                eventManager.addEvent(new GameEvent("Debug: claimed every shelter on road " + debugWarpRoad
+                        + " (they light as they load)", 2.5f));
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    /** Debug warp cursors: which road, which stop on it, which seal site comes next. */
+    private int debugWarpRoad = com.bpm.minotaur.generation.ShelterRoads.CASTLE_ROAD;
+    private int debugWarpStop;
+    private int debugWarpSeal;
+
+    /** Sends the player to a surface chunk through the portal-warp path. */
+    /** Debug: down one stratum, standing where the player stands. */
+    private void debugDescend() {
+        GridPoint2 at = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        if (combatManager != null) combatManager.endCombat();
+        worldManager.descendLevel(at);
+        worldManager.clearLoadedChunks();
+        generateLevel(currentLevel());
+        GridPoint2 safe = WorldManager.findSafeArrivalTile(maze, at.x, at.y);
+        if (safe != null) player.getPosition().set(safe.x + 0.5f, safe.y + 0.5f);
+        hud.addMessage("Debug: descended to level " + currentLevel());
+    }
+
+    /** Debug: straight to a chunk of any level, standing where {@code arrival} says. */
+    private void debugTeleport(GridPoint2 chunk, int level, java.util.function.Function<Maze, GridPoint2> arrival) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().markCheatsUsed();
+        if (combatManager != null) combatManager.endCombat();
+        if (maze != null) worldManager.saveCurrentChunk(maze);
+        worldManager.setCurrentLevel(level);
+        worldManager.clearLoadedChunks();
+        Maze destination = worldManager.loadChunk(chunk);
+        if (destination == null) {
+            eventManager.addEvent(new GameEvent("Debug: " + chunk + " cannot be entered", 2f));
+            return;
+        }
+        worldManager.setCurrentChunk(chunk);
+        swapToChunk(destination);
+        GridPoint2 at = arrival.apply(destination);
+        if (at != null) player.setPosition(at);
+        needsAsciiRender = true;
+        eventManager.addEvent(new GameEvent("Debug: teleported to " + chunk + " on level " + level, 2f));
+    }
+
+    /** The war manager, for the play-test driver. */
+    public WarManager getWarManager() {
+        return warManager;
+    }
+
+    private void debugWarp(GridPoint2 chunk, String label) {
+        if (chunk == null) {
+            eventManager.addEvent(new GameEvent("Debug: this world has no shelter roads", 2f));
+            return;
+        }
+        if (currentLevel() != 1) {
+            eventManager.addEvent(new GameEvent("Debug: warp only works on the surface", 2f));
+            return;
+        }
+        Maze destination = worldManager.loadChunk(chunk);
+        if (destination == null) {
+            eventManager.addEvent(new GameEvent("Debug: " + chunk + " cannot be entered", 2f));
+            return;
+        }
+        GridPoint2 arrival = WorldManager.arrivalBesideShelter(destination);
+        if (arrival == null) return;
+        eventManager.addEvent(new GameEvent("Debug: warping to " + label + " at " + chunk, 2f));
+        eventManager.addEvent(new GameEvent(GameEvent.EventType.BIOME_PORTAL_WARP, new WorldManager.PortalWarp(chunk, arrival)));
+    }
+
+    /** Screen-space clips: self-cast glows, the casting charge, warp flashes. */
+    public com.bpm.minotaur.rendering.ScreenFxOverlay getScreenFx() {
+        return screenFx;
     }
 
     public SpellCastOverlay getSpellCastOverlay() {
@@ -3716,10 +5710,107 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** Turns spent hacking at a carcass; monsters act while you work. */
+    private static final int BUTCHER_TURNS = 3;
+
+    private final java.util.Random butcherRandom = new java.util.Random();
+
+    /** 0-99. */
+    private int butcherRoll() {
+        return butcherRandom.nextInt(100);
+    }
+
+    /**
+     * Harvests a carcass, slowly and unreliably.
+     *
+     * <p>Butchering used to be instant and guaranteed: one meat and one bone
+     * from every kill. With a cooking and crafting chain downstream, a
+     * free-and-certain yield on every corpse makes food and reagents
+     * effectively unlimited. It now costs turns, during which the level keeps
+     * acting, and usually yields little.
+     */
+    private void butcherRemains(Scenery corpse) {
+        String mName = corpse.getCorpseMonsterName() != null ? corpse.getCorpseMonsterName() : "Creature";
+        boolean mangled = corpse.getType() == Scenery.SceneryType.GORE_PILE;
+
+        if (!player.hasButcheringTool()) {
+            if (hud != null) {
+                hud.addMessage("You examine the remains of " + mName
+                        + ". Without a bladed tool, you cannot harvest them.");
+            }
+            return;
+        }
+
+        int cx = (int) corpse.getPosition().x;
+        int cy = (int) corpse.getPosition().y;
+
+        if (hud != null) {
+            hud.addMessage(mangled
+                    ? "You pick through what is left of " + mName + "..."
+                    : "You butcher the corpse of " + mName + "...");
+        }
+
+        // A torn-apart body has less worth carving, which gives the
+        // dismemberment system a consequence beyond the visual.
+        int meatChance = mangled ? 15 : 35;
+        int boneChance = mangled ? 30 : 50;
+        boolean gotAnything = false;
+
+        try {
+            if (butcherRoll() < meatChance) {
+                Item meat = game.getItemDataManager().createItem(Item.ItemType.MEAT, cx, cy,
+                        ItemColor.RED, game.getAssetManager());
+                if (meat != null) {
+                    meat.setFriendlyName("Raw " + mName + " Meat");
+                    if (!player.getInventory().pickupToBackpack(meat)) maze.addItem(meat);
+                    gotAnything = true;
+                }
+            }
+            if (butcherRoll() < boneChance) {
+                Item bone = game.getItemDataManager().createItem(Item.ItemType.BONE, cx, cy,
+                        ItemColor.WHITE, game.getAssetManager());
+                if (bone != null) {
+                    if (!player.getInventory().pickupToBackpack(bone)) maze.addItem(bone);
+                    gotAnything = true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (soundManager != null) {
+            soundManager.playSound("meat_slice");
+        }
+        maze.removeScenery(cx, cy);
+
+        if (hud != null && !gotAnything) {
+            hud.addMessage("...nothing worth keeping.");
+        }
+
+        // Charged last, so the message order reads as cause then consequence.
+        // The level keeps acting while the player works, which is the real cost.
+        for (int i = 0; i < BUTCHER_TURNS; i++) {
+            turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager,
+                    eventManager, game.getItemDataManager(), game.getAssetManager());
+        }
+    }
+
     private void handleCorpseInteraction(Scenery corpse) {
+        // Dispatch on what the remains ARE, not on whether a field happens to be
+        // null. The old test treated any corpse without bones data as a monster,
+        // so a hero's bones that failed to round-trip through a save became
+        // butcherable meat.
+        if (corpse.isMonsterRemains()) {
+            butcherRemains(corpse);
+            return;
+        }
+
         BonesData bData = corpse.getBonesData();
         if (bData == null) {
-            if (hud != null) hud.addMessage("The weathered remains crumble silently to dust.");
+            // Hero bones with no data: damaged or from an older save. Say so
+            // rather than silently reclassifying them as a carcass.
+            if (hud != null) {
+                hud.addMessage("The remains are too disturbed to read.");
+            }
             return;
         }
 

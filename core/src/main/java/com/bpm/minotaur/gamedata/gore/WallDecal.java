@@ -40,6 +40,8 @@ public class WallDecal implements Pool.Poolable {
 
         this.maxLife = MAX_WALL_DECAL_LIFE;
         this.lifeTimer = MAX_WALL_DECAL_LIFE;
+        this.age = 0f;
+        clearDrip();
         this.textureRegion = texture;
     }
 
@@ -49,31 +51,98 @@ public class WallDecal implements Pool.Poolable {
         init(x, y, fallbackDir, wx, h, r, c, texture);
     }
 
+    /** Seconds since the splat landed; drives drying whether or not it ever fades. */
+    public float age;
+
+    // --- Drip (guide step 5) ---
+    /** Splats smaller than this never drip; a fleck has no blood to run. */
+    public static final float DRIP_MIN_RADIUS = 0.10f;
+    /** How far the streak has run below the splat's lower edge, in wall units. */
+    public float dripLength;
+    public float dripTarget;
+    public float dripSpeed;
+    public boolean dripReachesFloor;
+    private boolean dripLanded;
+
+    /**
+     * Starts blood running down from this splat. A drip that reaches the floor
+     * reports it once through {@link #takeDripLanding()}.
+     */
+    public void startDrip(float target, float speed, boolean reachesFloor) {
+        this.dripTarget = Math.max(0f, target);
+        this.dripSpeed = Math.max(0.01f, speed);
+        this.dripReachesFloor = reachesFloor;
+        this.dripLanded = false;
+    }
+
+    /** Wall units from the splat's lower edge to the floor. */
+    public float floorGap() {
+        return Math.max(0f, height - radius);
+    }
+
+    /** True exactly once, when a floor-bound drip arrives. */
+    public boolean takeDripLanding() {
+        if (dripLanded || !dripReachesFloor || dripTarget <= 0f || dripLength < dripTarget) return false;
+        dripLanded = true;
+        return true;
+    }
+
     public void update(float delta) {
-        lifeTimer -= delta;
+        update(delta, false);
+    }
+
+    /** @param persistent true when blood stays until recycled (see {@link GoreLevel#persistent()}) */
+    public void update(float delta, boolean persistent) {
+        age += delta;
+        if (!persistent) lifeTimer -= delta;
+
+        if (dripLength < dripTarget) {
+            // Runs quickest while fresh, then thickens and slows.
+            float slow = 1f - 0.6f * MathUtils.clamp(dripLength / Math.max(0.01f, dripTarget), 0f, 1f);
+            dripLength = Math.min(dripTarget, dripLength + dripSpeed * slow * delta);
+        }
 
         // Oxidation color shift
-        float age = maxLife - lifeTimer;
         float dryT = MathUtils.clamp(age / 30.0f, 0f, 1f);
         color.r = MathUtils.lerp(freshColor.r, driedColor.r, dryT);
         color.g = MathUtils.lerp(freshColor.g, driedColor.g, dryT);
         color.b = MathUtils.lerp(freshColor.b, driedColor.b, dryT);
 
         // Alpha fadeout
-        if (lifeTimer <= FADE_DURATION) {
+        if (!persistent && lifeTimer <= FADE_DURATION) {
             color.a = MathUtils.clamp(lifeTimer / FADE_DURATION, 0f, 1f) * freshColor.a;
         } else {
             color.a = freshColor.a;
         }
     }
 
+    private void clearDrip() {
+        dripLength = 0f;
+        dripTarget = 0f;
+        dripSpeed = 0f;
+        dripReachesFloor = false;
+        dripLanded = false;
+    }
+
     @Override
     public void reset() {
+        clearDrip();
         this.dir = null;
         this.textureRegion = null;
         this.lifeTimer = 0f;
         this.color.set(Color.WHITE);
         this.freshColor.set(Color.WHITE);
         this.driedColor.set(Color.WHITE);
+    }
+
+    /**
+     * Sets a saved stain's colour as both fresh and dried: it already dried
+     * before it was saved, and drying it again from there would blacken it
+     * (or, with the reset colours, bleach it white).
+     */
+    public void restoreColor(float r, float g, float b, float a) {
+        freshColor.set(r, g, b, a);
+        driedColor.set(r, g, b, a);
+        color.set(r, g, b, a);
     }
 }

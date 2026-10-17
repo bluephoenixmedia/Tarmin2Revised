@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -153,7 +154,7 @@ public class AlchemyScreen extends BaseScreen {
         recipeListTable = new Table();
         recipeListTable.top().left();
 
-        ScrollPane scroll = new ScrollPane(recipeListTable);
+        ScrollPane scroll = new ScrollPane(recipeListTable, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         panel.add(scroll).expand().fill();
 

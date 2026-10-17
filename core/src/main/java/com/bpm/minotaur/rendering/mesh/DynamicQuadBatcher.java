@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
@@ -24,6 +25,7 @@ public class DynamicQuadBatcher implements Disposable {
     private static final int MAX_QUADS = 4000;
     private static final int MAX_VERTICES = MAX_QUADS * 4;
     private static final int MAX_INDICES = MAX_QUADS * 6;
+    private static final Matrix4 IDENTITY = new Matrix4();
 
     private final Mesh mesh;
     private final FloatArray vertices = new FloatArray(MAX_VERTICES * 9);
@@ -179,12 +181,17 @@ public class DynamicQuadBatcher implements Disposable {
             Color color
     ) {
         if (region == null) return;
-        if (!ensureCapacity(1)) return;
+        addFloorQuad(centerX, y, centerZ, halfW, halfH,
+                region.getU(), region.getV2(), region.getU2(), region.getV(), color);
+    }
 
-        float u1 = region.getU();
-        float v1 = region.getV2();
-        float u2 = region.getU2();
-        float v2 = region.getV();
+    public void addFloorQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            float u1, float v1, float u2, float v2,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
 
         float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
 
@@ -195,6 +202,37 @@ public class DynamicQuadBatcher implements Disposable {
                 centerX + halfW, y, centerZ - halfH, u2, v2,
                 centerX - halfW, y, centerZ - halfH, u1, v2,
                 0f, 1f, 0f, packedColor
+        );
+    }
+
+    public void addCeilingQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            TextureRegion region,
+            Color color
+    ) {
+        if (region == null) return;
+        addCeilingQuad(centerX, y, centerZ, halfW, halfH,
+                region.getU(), region.getV2(), region.getU2(), region.getV(), color);
+    }
+
+    public void addCeilingQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            float u1, float v1, float u2, float v2,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                centerX - halfW, y, centerZ - halfH, u1, v2,
+                centerX + halfW, y, centerZ - halfH, u2, v2,
+                centerX + halfW, y, centerZ + halfH, u2, v1,
+                centerX - halfW, y, centerZ + halfH, u1, v1,
+                0f, -1f, 0f, packedColor
         );
     }
 
@@ -247,6 +285,81 @@ public class DynamicQuadBatcher implements Disposable {
     }
 
     /**
+     * Emits a flat horizontal quad resting on the floor, transformed to match the
+     * player's view perspective (e.g. monster corpses, floor blood).
+     *
+     * <p>The quad lies in the floor plane (Y = constant) with normal (0, 1, 0).
+     * Its width spans along {@code camRight} in the XZ plane, and its height extends
+     * away from the camera along the horizontal component of {@code camDir}, so the
+     * bottom of the sprite faces the player and the top recedes into depth.
+     */
+    public void addFloorBillboard(
+            float centerX, float y, float centerZ,
+            float width, float height,
+            TextureRegion region,
+            Color color,
+            Vector3 camRight,
+            Vector3 camDir
+    ) {
+        if (region == null) return;
+        if (!ensureCapacity(1)) return;
+
+        float u1 = region.getU();
+        float v1 = region.getV2(); // LibGDX V2 is image bottom
+        float u2 = region.getU2();
+        float v2 = region.getV();  // LibGDX V is image top
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        float rx = camRight != null ? camRight.x : 1f;
+        float rz = camRight != null ? camRight.z : 0f;
+        float rLen = (float) Math.sqrt(rx * rx + rz * rz);
+        if (rLen > 0.0001f) {
+            rx /= rLen;
+            rz /= rLen;
+        } else {
+            rx = 1f;
+            rz = 0f;
+        }
+
+        float fx = camDir != null ? camDir.x : 0f;
+        float fz = camDir != null ? camDir.z : -1f;
+        float fLen = (float) Math.sqrt(fx * fx + fz * fz);
+        if (fLen > 0.0001f) {
+            fx /= fLen;
+            fz /= fLen;
+        } else {
+            fx = 0f;
+            fz = -1f;
+        }
+
+        float halfW = width * 0.5f;
+        float halfH = height * 0.5f;
+
+        // Corners: Bottom-Left (V1), Bottom-Right (V2), Top-Right (V3), Top-Left (V4)
+        float x1 = centerX - rx * halfW - fx * halfH;
+        float z1 = centerZ - rz * halfW - fz * halfH;
+
+        float x2 = centerX + rx * halfW - fx * halfH;
+        float z2 = centerZ + rz * halfW - fz * halfH;
+
+        float x3 = centerX + rx * halfW + fx * halfH;
+        float z3 = centerZ + rz * halfW + fz * halfH;
+
+        float x4 = centerX - rx * halfW + fx * halfH;
+        float z4 = centerZ - rz * halfW + fz * halfH;
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                x1, y, z1, u1, v1,
+                x2, y, z2, u2, v1,
+                x3, y, z3, u2, v2,
+                x4, y, z4, u1, v2,
+                0f, 1f, 0f, packedColor
+        );
+    }
+
+    /**
      * Emits a coplanar wall decal quad offset by eps along the wall normal to eliminate Z-fighting.
      */
     public void addWallDecal(WallDecal decal, Color color) {
@@ -278,6 +391,31 @@ public class DynamicQuadBatcher implements Disposable {
             dir = (decal.side == 0) ? Direction.WEST : Direction.NORTH;
         }
 
+        emitWallQuad(dir, localGridX, localGridY, wX, r, h - r, h + r, u1, v1, u2, v2, packedColor, eps);
+
+        // A drip runs down from the splat's lower edge: a narrow column of the
+        // same texture stretched down the wall, so it reads as the splat's own
+        // blood sliding rather than a second mark.
+        if (decal.dripLength > 0.01f) {
+            float top = h - r * 0.4f;
+            float bottom = Math.max(0.0f, h - r - decal.dripLength);
+            float halfW = Math.max(0.012f, r * 0.12f);
+            float uMid = (u1 + u2) * 0.5f;
+            float uHalf = (u2 - u1) * 0.06f;
+            if (!ensureCapacity(1)) return;
+            emitWallQuad(dir, localGridX, localGridY, wX, halfW, bottom, top,
+                    uMid - uHalf, v1, uMid + uHalf, v2, packedColor, eps * 1.5f);
+        }
+    }
+
+    /**
+     * One quad flat on a wall face, {@code eps} off it along the normal.
+     * {@code wX} is the centre along the face, {@code halfW} half its width.
+     */
+    private void emitWallQuad(Direction dir, float localGridX, float localGridY, float wX, float halfW,
+                              float yBottom, float yTop, float u1, float v1, float u2, float v2,
+                              float packedColor, float eps) {
+        float r = halfW;
         switch (dir) {
             case EAST: {
                 // Moving EAST: hit EAST boundary of cell (X = localGridX + 1.0)
@@ -286,10 +424,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xPos, h - r, zCenter + r, u1, v1,
-                        xPos, h - r, zCenter - r, u2, v1,
-                        xPos, h + r, zCenter - r, u2, v2,
-                        xPos, h + r, zCenter + r, u1, v2,
+                        xPos, yBottom, zCenter + r, u1, v1,
+                        xPos, yBottom, zCenter - r, u2, v1,
+                        xPos, yTop, zCenter - r, u2, v2,
+                        xPos, yTop, zCenter + r, u1, v2,
                         -1f, 0f, 0f, packedColor
                 );
                 break;
@@ -301,10 +439,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xPos, h - r, zCenter - r, u1, v1,
-                        xPos, h - r, zCenter + r, u2, v1,
-                        xPos, h + r, zCenter + r, u2, v2,
-                        xPos, h + r, zCenter - r, u1, v2,
+                        xPos, yBottom, zCenter - r, u1, v1,
+                        xPos, yBottom, zCenter + r, u2, v1,
+                        xPos, yTop, zCenter + r, u2, v2,
+                        xPos, yTop, zCenter - r, u1, v2,
                         1f, 0f, 0f, packedColor
                 );
                 break;
@@ -316,10 +454,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xCenter - r, h - r, zPos, u1, v1,
-                        xCenter + r, h - r, zPos, u2, v1,
-                        xCenter + r, h + r, zPos, u2, v2,
-                        xCenter - r, h + r, zPos, u1, v2,
+                        xCenter - r, yBottom, zPos, u1, v1,
+                        xCenter + r, yBottom, zPos, u2, v1,
+                        xCenter + r, yTop, zPos, u2, v2,
+                        xCenter - r, yTop, zPos, u1, v2,
                         0f, 0f, 1f, packedColor
                 );
                 break;
@@ -331,10 +469,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xCenter + r, h - r, zPos, u1, v1,
-                        xCenter - r, h - r, zPos, u2, v1,
-                        xCenter - r, h + r, zPos, u2, v2,
-                        xCenter + r, h + r, zPos, u1, v2,
+                        xCenter + r, yBottom, zPos, u1, v1,
+                        xCenter - r, yBottom, zPos, u2, v1,
+                        xCenter - r, yTop, zPos, u2, v2,
+                        xCenter + r, yTop, zPos, u1, v2,
                         0f, 0f, -1f, packedColor
                 );
                 break;
@@ -426,6 +564,8 @@ public class DynamicQuadBatcher implements Disposable {
     public void flush(ShaderProgram shader, Texture texture) {
         if (indices.size <= 0) return;
 
+        shader.setUniformMatrix("u_worldTrans", IDENTITY);
+
         if (texture != null) {
             texture.bind(0);
             shader.setUniformi("u_diffuseTexture", 0);
@@ -515,6 +655,77 @@ public class DynamicQuadBatcher implements Disposable {
                 scratchV3.x, scratchV3.y, scratchV3.z, 1f, 0f,
                 scratchV4.x, scratchV4.y, scratchV4.z, 0f, 0f,
                 scratchCamVec.x, scratchCamVec.y, scratchCamVec.z, packedColor
+        );
+    }
+
+    /**
+     * Emits a directional, velocity-oriented camera-facing tracer ribbon quad for projectile flights
+     * (arrows, crossbow bolts, darts, thrown weapons).
+     *
+     * <p>Supports independent head and tail widths (allowing natural aerodynamic taper), distinct head and tail
+     * colors for smooth gradient falloff along the flight vector, and automatic fallback orientation
+     * when viewed directly downrange along the line of flight.
+     *
+     * @param headX         World X of projectile tip/head
+     * @param headY         World Y of projectile tip/head
+     * @param headZ         World Z of projectile tip/head
+     * @param tailX         World X of projectile tail/feather
+     * @param tailY         World Y of projectile tail/feather
+     * @param tailZ         World Z of projectile tail/feather
+     * @param headHalfWidth Half-width of the ribbon at the head
+     * @param tailHalfWidth Half-width of the ribbon at the tail
+     * @param camPos        Camera position for camera-facing cross product
+     * @param fallbackRight Camera right vector used when viewed end-on
+     * @param headColor     Color/tint at the head (bright core/arrowhead)
+     * @param tailColor     Color/tint at the tail (fading wake/feathers)
+     */
+    public void addTracerStreak(
+            float headX, float headY, float headZ,
+            float tailX, float tailY, float tailZ,
+            float headHalfWidth, float tailHalfWidth,
+            Vector3 camPos,
+            Vector3 fallbackRight,
+            Color headColor,
+            Color tailColor
+    ) {
+        if (!ensureCapacity(1)) return;
+
+        // Direction of streak from tail to head
+        scratchStreakDir.set(headX - tailX, headY - tailY, headZ - tailZ);
+        float lenSq = scratchStreakDir.len2();
+        if (lenSq < 1e-6f) return;
+        scratchStreakDir.nor();
+
+        // Vector from head to camera
+        scratchCamVec.set(camPos.x - headX, camPos.y - headY, camPos.z - headZ);
+        float camDistSq = scratchCamVec.len2();
+        if (camDistSq < 1e-6f) return;
+        scratchCamVec.nor();
+
+        // Cross product: side vector across streak perpendicular to view
+        scratchStreakSide.set(scratchStreakDir).crs(scratchCamVec);
+        if (scratchStreakSide.len2() < 1e-6f) {
+            scratchStreakSide.set(fallbackRight);
+        } else {
+            scratchStreakSide.nor();
+        }
+
+        // 4 corners: Head-Left, Head-Right, Tail-Right, Tail-Left
+        scratchV1.set(headX, headY, headZ).sub(scratchStreakSide.x * headHalfWidth, scratchStreakSide.y * headHalfWidth, scratchStreakSide.z * headHalfWidth);
+        scratchV2.set(headX, headY, headZ).add(scratchStreakSide.x * headHalfWidth, scratchStreakSide.y * headHalfWidth, scratchStreakSide.z * headHalfWidth);
+        scratchV3.set(tailX, tailY, tailZ).add(scratchStreakSide.x * tailHalfWidth, scratchStreakSide.y * tailHalfWidth, scratchStreakSide.z * tailHalfWidth);
+        scratchV4.set(tailX, tailY, tailZ).sub(scratchStreakSide.x * tailHalfWidth, scratchStreakSide.y * tailHalfWidth, scratchStreakSide.z * tailHalfWidth);
+
+        float headPacked = (headColor != null) ? headColor.toFloatBits() : Color.WHITE.toFloatBits();
+        float tailPacked = (tailColor != null) ? tailColor.toFloatBits() : Color.WHITE.toFloatBits();
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                scratchV1.x, scratchV1.y, scratchV1.z, 0f, 1f, headPacked,
+                scratchV2.x, scratchV2.y, scratchV2.z, 1f, 1f, headPacked,
+                scratchV3.x, scratchV3.y, scratchV3.z, 1f, 0f, tailPacked,
+                scratchV4.x, scratchV4.y, scratchV4.z, 0f, 0f, tailPacked,
+                scratchCamVec.x, scratchCamVec.y, scratchCamVec.z
         );
     }
 
@@ -689,6 +900,19 @@ public class DynamicQuadBatcher implements Disposable {
         };
         float[] dummyUvs = new float[] { 0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f };
         addPolygonBillboard(centerX, centerY, centerZ, quadVerts, dummyUvs, color, camRight, camUp, camDir, angleDeg);
+    }
+
+    public FloatArray getVertices() {
+        return vertices;
+    }
+
+    public ShortArray getIndices() {
+        return indices;
+    }
+
+    public void clear() {
+        vertices.clear();
+        indices.clear();
     }
 
     private boolean ensureCapacity(int numQuads) {

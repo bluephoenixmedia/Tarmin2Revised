@@ -24,6 +24,7 @@ import com.bpm.minotaur.gamedata.spawntables.LevelBudget;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
+import com.bpm.minotaur.gamedata.monster.MonsterRole;
 import com.bpm.minotaur.generation.ItemSpawner;
 import com.bpm.minotaur.generation.MonsterSpawner;
 import com.bpm.minotaur.generation.MonsterFactory; // Added Import
@@ -62,6 +63,8 @@ public class SpawnManager {
 
     public static boolean DEBUG_FORCE_MODIFIERS = false;
 
+    private static final long GOLD_SEED_SALT = 0x601D_601DL;
+
     private static final float BASE_MODIFIER_CHANCE = 0.15f;
     private static final float COLOR_MULTIPLIER_BONUS = 0.1f;
     private static final float SECOND_MODIFIER_CHANCE = 0.25f;
@@ -79,6 +82,14 @@ public class SpawnManager {
     private final ItemSpawner itemSpawner;
     private final MonsterFactory monsterFactory; // New
     private final NetHackRNG rng;
+    /**
+     * Gold piles roll from their own stream (#197) so that adding them does not shift the
+     * rolls of anything spawned before them, nor {@link #predictPortalSpawn}.
+     */
+    private final NetHackRNG goldRng;
+    /** Its own stream too, so the herb roll shifts nothing else (#196). */
+    private final Random herbRandom;
+    private static final long HERB_SEED_SALT = 0x11C4_E11CL;
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             Maze maze, Difficulty difficulty, int level, int playerLevel, int playerLuck, String[] layout,
@@ -101,6 +112,8 @@ public class SpawnManager {
         // Initialize NetHack Services
         // 1. RNG
         this.rng = new NetHackRNG(new Random(seed));
+        this.goldRng = new NetHackRNG(new Random(seed ^ GOLD_SEED_SALT));
+        this.herbRandom = new Random(seed ^ HERB_SEED_SALT);
 
         // 2. Build Registries
         Map<String, MonsterTemplate> monsterRegistry = new HashMap<>();
@@ -144,38 +157,8 @@ public class SpawnManager {
             }
         }
 
-        this.debrisPool = new WeightedRandomList<>();
-        if (spawnTableData.debrisSpawnTable != null) {
-            for (SpawnTableEntry entry : spawnTableData.debrisSpawnTable) {
-                if (entry.type.equals("MYSTERIOUS_PORTAL")) {
-                    if (level < entry.minLevel || level > entry.maxLevel) {
-                        continue;
-                    }
-                }
-                debrisPool.add(entry);
-            }
-        }
-
-        this.containerLootPool = new WeightedRandomList<>();
-        Array<SpawnTableEntry> loot = spawnTableData.containerLoot.get("default");
-        if (loot != null) {
-            for (int i = 0; i < loot.size; i++) {
-                Object obj = loot.get(i);
-                SpawnTableEntry entry;
-                if (obj instanceof com.badlogic.gdx.utils.JsonValue) {
-                    com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
-                    entry = json.readValue(SpawnTableEntry.class, (com.badlogic.gdx.utils.JsonValue) obj);
-                } else if (obj instanceof SpawnTableEntry) {
-                    entry = (SpawnTableEntry) obj;
-                } else {
-                    continue;
-                }
-
-                if (level >= entry.minLevel && level <= entry.maxLevel) {
-                    containerLootPool.add(entry);
-                }
-            }
-        }
+        this.debrisPool = buildLevelDebrisPool(spawnTableData, level);
+        this.containerLootPool = buildContainerLootPool(spawnTableData, level);
         // Ensure logger is initialized
         SpawnLogger.getInstance();
     }
@@ -186,7 +169,7 @@ public class SpawnManager {
         for (int y = 0; y < maze.getHeight(); y++) {
             for (int x = 0; x < maze.getWidth(); x++) {
                 boolean isFloor = layout[maze.getHeight() - 1 - y].charAt(x) == '.';
-                boolean isSafeHomeTile = maze.isHomeTile(x, y);
+                boolean isSafeHomeTile = maze.isSanctuaryTile(x, y);
                 GridPoint2 pos = new GridPoint2(x, y);
                 boolean isReachable = (reachableTiles == null || reachableTiles.contains(pos));
 
@@ -199,17 +182,26 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        // Dynamic Depth Scaling monster density: Level 1 has 14 monsters, scaling up with strata depth.
+        // Group-based encounter budget (#185, #161):
+        // Depth scales monster density through more and larger groups (Fodder packs 3-6, Soldiers 1-3, Heavies solo).
         // Starter chunk (0, 0) on Strata 1 is gently capped to 8 monsters so unarmored players aren't overwhelmed.
         int currentDepth = Math.max(1, this.level);
-        int scaledBudget;
-        if (maze != null && maze.getChunkId() != null && maze.getChunkId().x == 0 && maze.getChunkId().y == 0 && currentDepth <= 1) {
-            scaledBudget = 8;
+        boolean isStarterChunk = (maze != null && maze.getChunkId() != null
+                && maze.getChunkId().x == 0 && maze.getChunkId().y == 0 && currentDepth <= 1);
+
+        int groupBudget;
+        int maxMonsters;
+        if (isStarterChunk) {
+            groupBudget = 2 + random.nextInt(2); // 2-3 small groups
+            maxMonsters = 8;
         } else {
-            scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+            // Group count scales with depth: 3-4 at depth 1, 4-5 at depth 2, up to 7-9 deep
+            int baseGroups = 3 + (currentDepth - 1) * 2 / 3;
+            groupBudget = baseGroups + random.nextInt(2);
+            // Cap total monsters to valid floor points and depth ceiling
+            maxMonsters = Math.min(validSpawnPoints.size(), 14 + currentDepth * 4);
         }
-        int monsterBudget = Math.min(validSpawnPoints.size(), scaledBudget);
-        spawnMonsters(monsterBudget);
+        spawnMonsters(groupBudget, maxMonsters);
 
         // 1.2x keeps item density roughly 1:1 with monsters (Nethack-style scarcity).
         spawnItems((int) (budget.itemBudget * 1.2f));
@@ -223,6 +215,85 @@ public class SpawnManager {
 
         // Milestone Tarmin Tomes placed in designated subterranean strata chunks (x=0, y=0)
         spawnMilestoneTomes();
+        spawnChronicleFragment();
+        spawnVitalityHerb();
+        spawnGoldPiles();
+    }
+
+    /**
+     * Items, containers, mimics and debris, but no monsters: for a biome whose
+     * generator brings its own roster. The Blight's denizens are its point, and a
+     * generic kobold between the Legion and the Specters would undo that.
+     */
+    public void spawnSuppliesOnly() {
+        spawnItems((int) (budget.itemBudget * 1.2f));
+        spawnContainers((int) (budget.containerBudget * 0.5f));
+        spawnMimics();
+        spawnDebris((int) (budget.debrisBudget * 0.5f));
+        spawnVitalityHerb();
+        spawnGoldPiles();
+    }
+
+    /** Glowing Lichen by real depth (#196); see {@link com.bpm.minotaur.generation.VitalityHerbRule}. */
+    private void spawnVitalityHerb() {
+        if (!com.bpm.minotaur.generation.VitalityHerbRule.rollLichen(depth(), herbRandom)) {
+            return;
+        }
+        GridPoint2 spawnPoint = getEmptySpawnPoint();
+        if (spawnPoint == null) {
+            return;
+        }
+        Item lichen = itemDataManager.createItem(ItemType.GLOWING_LICHEN, spawnPoint.x, spawnPoint.y,
+                ItemColor.GREEN, assetManager);
+        if (lichen != null) {
+            maze.addItem(lichen);
+            SpawnLogger.getInstance().logItemSpawn(lichen, "Vitality Herb");
+        }
+    }
+
+    /**
+     * Floor gold at NetHack's rarity (#197): see {@link com.bpm.minotaur.gamedata.economy.Gold}.
+     * Placed last, so it takes only spawn points nothing else wanted.
+     */
+    private void spawnGoldPiles() {
+        int piles = com.bpm.minotaur.gamedata.economy.Gold.rollFloorPiles(goldRng);
+        for (int i = 0; i < piles; i++) {
+            GridPoint2 spawnPoint = getEmptySpawnPoint();
+            if (spawnPoint == null) return;
+            int amount = com.bpm.minotaur.gamedata.economy.Gold.floorPileAmount(level, goldRng);
+            Item pile = com.bpm.minotaur.gamedata.economy.Gold.createPile(itemDataManager, assetManager,
+                    amount, spawnPoint.x, spawnPoint.y);
+            if (pile != null) {
+                maze.addItem(pile);
+                SpawnLogger.getInstance().logItemSpawn(pile, "Level Generation (Gold)");
+            }
+        }
+    }
+
+    /** Sometimes a piece of the Maze's history lies here (Houses of the Maze plan T1.10). */
+    private void spawnChronicleFragment() {
+        if (maze == null || itemDataManager == null) return;
+        ItemType type = rollChronicleFragment(random, maze.getLevel());
+        if (type == null) return;
+        GridPoint2 pt = getEmptySpawnPoint();
+        if (pt == null) return;
+        Item fragment = itemDataManager.createItem(type, pt.x, pt.y, ItemColor.TAN, assetManager);
+        if (fragment != null) {
+            maze.addItem(fragment);
+            SpawnLogger.getInstance().logItemSpawn(fragment, "Chronicle fragment");
+        }
+    }
+
+    /**
+     * Which fragment a chunk holds, if any: about three chunks in ten. Banners and proclamations
+     * lie on the surface where the wars are fought; the strata keep the chronicle pages.
+     */
+    public static ItemType rollChronicleFragment(Random rng, int depth) {
+        if (rng.nextFloat() >= 0.3f) return null;
+        if (depth <= 1) {
+            return rng.nextBoolean() ? ItemType.TORN_BANNER : ItemType.HERALD_PROCLAMATION;
+        }
+        return rng.nextInt(4) == 0 ? ItemType.HERALD_PROCLAMATION : ItemType.CHRONICLE_PAGE;
     }
 
     private void spawnMilestoneTomes() {
@@ -250,6 +321,50 @@ public class SpawnManager {
 
     // --- Helpers ---
 
+    /**
+     * The debris pool a level actually rolls from: every entry, with only the portal held to
+     * its level band. Public so the loot sampling tests roll what the game rolls (#196).
+     */
+    public static WeightedRandomList<SpawnTableEntry> buildLevelDebrisPool(SpawnTableData data, int level) {
+        WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();
+        if (data.debrisSpawnTable != null) {
+            for (SpawnTableEntry entry : data.debrisSpawnTable) {
+                if (entry.type.equals("MYSTERIOUS_PORTAL")) {
+                    if (level < entry.minLevel || level > entry.maxLevel) {
+                        continue;
+                    }
+                }
+                pool.add(entry);
+            }
+        }
+        return pool;
+    }
+
+    /** What a container can hold at this level, from spawntables.json containerLoot "default". */
+    public static WeightedRandomList<SpawnTableEntry> buildContainerLootPool(SpawnTableData data, int level) {
+        WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();
+        Array<SpawnTableEntry> loot = (data.containerLoot != null) ? data.containerLoot.get("default") : null;
+        if (loot != null) {
+            for (int i = 0; i < loot.size; i++) {
+                Object obj = loot.get(i);
+                SpawnTableEntry entry;
+                if (obj instanceof com.badlogic.gdx.utils.JsonValue) {
+                    com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
+                    entry = json.readValue(SpawnTableEntry.class, (com.badlogic.gdx.utils.JsonValue) obj);
+                } else if (obj instanceof SpawnTableEntry) {
+                    entry = (SpawnTableEntry) obj;
+                } else {
+                    continue;
+                }
+
+                if (level >= entry.minLevel && level <= entry.maxLevel) {
+                    pool.add(entry);
+                }
+            }
+        }
+        return pool;
+    }
+
     public static WeightedRandomList<SpawnTableEntry> buildDebrisPool(SpawnTableData data, int level) {
         WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();
         if (data.debrisSpawnTable != null) {
@@ -273,12 +388,17 @@ public class SpawnManager {
         return budget.debrisBudget;
     }
 
+    /** Real dungeon depth, as opposed to {@link #level}, which is the EDL. */
+    private int depth() {
+        return (maze != null) ? maze.getLevel() : level;
+    }
+
     private SpawnContext createSpawnContext() {
         com.bpm.minotaur.gamedata.Alignment alignment = com.bpm.minotaur.gamedata.Alignment.NEUTRAL;
         boolean isGehennom = (level >= 25);
         boolean isContainer = false;
-        int depth = (maze != null) ? maze.getLevel() : level;
-        GridPoint2 cid = (maze != null && maze.getChunkId() != null) ? maze.getChunkId() : new GridPoint2(0, 0);
+        int depth = depth();
+        GridPoint2 cid = (maze != null && maze.getChunkId() != null) ? maze.getChunkId() : null;
         int doomStage = DoomManager.getInstance().getDoomStage();
 
         return new SpawnContext(
@@ -342,15 +462,16 @@ public class SpawnManager {
         return false;
     }
 
-    private void spawnMonsters(int budget) {
+    private void spawnMonsters(int groupBudget, int maxMonsters) {
         if (dataManager == null)
             return;
 
         SpawnContext ctx = createSpawnContext();
+        int currentDepth = Math.max(1, this.level);
+        int totalSpawned = 0;
 
-        for (int i = 0; i < budget; i++) {
-            GridPoint2 spawnPoint = getEmptySpawnPointForMonster();
-            if (spawnPoint == null)
+        for (int g = 0; g < groupBudget && totalSpawned < maxMonsters; g++) {
+            if (validSpawnPoints.isEmpty())
                 break;
 
             Optional<Map.Entry<String, MonsterTemplate>> result = monsterSpawner.spawnRandomMonster(ctx);
@@ -367,23 +488,73 @@ public class SpawnManager {
                 continue;
             }
 
-            // Use Factory
-            Monster monster = monsterFactory.createMonster(type, level, ctx);
+            int groupSize = determineGroupSize(template, currentDepth);
+            groupSize = Math.min(groupSize, maxMonsters - totalSpawned);
 
-            // Set Position (Factory created it at 0,0)
-            monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+            GridPoint2 origin = getEmptySpawnPointForMonster();
+            if (origin == null)
+                break;
 
-            // Manual Scaling Removed - Factory handles it in createMonster via scaleStats
-            // monster.scaleStats(level);
+            spawnMonsterAt(type, origin, ctx);
+            totalSpawned++;
 
-            maze.addMonster(monster);
-
-            SpawnLogger.getInstance().logMonsterSpawn(monster, "Level Generation (Budget)");
+            for (int m = 1; m < groupSize && totalSpawned < maxMonsters; m++) {
+                GridPoint2 nearby = getNearbySpawnPointForMonster(origin, 3.5f);
+                if (nearby == null) {
+                    nearby = getNearbySpawnPointForMonster(origin, 5.5f);
+                }
+                if (nearby == null) {
+                    break;
+                }
+                spawnMonsterAt(type, nearby, ctx);
+                totalSpawned++;
+            }
 
             if ((template.generationFlags & MonsterTemplate.G_UNIQ) != 0) {
                 uniqueMonstersSpawned.add(monsterId);
             }
         }
+    }
+
+    private int determineGroupSize(MonsterTemplate template, int currentDepth) {
+        if ((template.generationFlags & MonsterTemplate.G_UNIQ) != 0) {
+            return 1;
+        }
+        MonsterRole role = template.getRole();
+        if (role == null) {
+            role = MonsterRole.SOLDIER;
+        }
+
+        switch (role) {
+            case HEAVY:
+                return 1;
+            case FODDER:
+                // Fodder packs: 3-6 monsters. At depth 1, keep it 3-4 so early characters aren't swarmed.
+                if (currentDepth <= 1) {
+                    return 3 + random.nextInt(2); // 3-4
+                } else if (currentDepth <= 3) {
+                    return 3 + random.nextInt(3); // 3-5
+                } else {
+                    return 3 + random.nextInt(4); // 3-6
+                }
+            case SOLDIER:
+            default:
+                // Soldiers: 1-3 monsters. At depth 1, mostly solo with occasional pair.
+                if (currentDepth <= 1) {
+                    return (random.nextFloat() < 0.25f) ? 2 : 1;
+                } else if (currentDepth <= 3) {
+                    return 1 + random.nextInt(2); // 1-2
+                } else {
+                    return 1 + random.nextInt(3); // 1-3
+                }
+        }
+    }
+
+    private void spawnMonsterAt(MonsterType type, GridPoint2 spawnPoint, SpawnContext ctx) {
+        Monster monster = monsterFactory.createMonster(type, level, ctx);
+        monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+        maze.addMonster(monster);
+        SpawnLogger.getInstance().logMonsterSpawn(monster, "Level Generation (Group)");
     }
 
     public void spawnPeriodicMonster(Player player) {
@@ -479,7 +650,7 @@ public class SpawnManager {
             // variants.get(0) when nothing matches the level, so a minLevel is silently
             // ignored. Fixing that properly would change spawning for every item in the
             // game, so this stays narrow -- see FirearmSpawnRule.
-            if (!com.bpm.minotaur.generation.FirearmSpawnRule.canSpawnAtDepth(itemId, level)) {
+            if (!com.bpm.minotaur.generation.FirearmSpawnRule.canSpawnAtDepth(itemId, depth())) {
                 continue;
             }
 
@@ -490,11 +661,9 @@ public class SpawnManager {
                 continue;
             }
 
-            ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-            if (variant == null)
-                continue;
+            ItemColor color = itemDataManager.getSpawnColor(type, level);
 
-            Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
+            Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, color, assetManager);
             if (item != null) {
                 ItemTemplate t = result.getValue();
                 if (t != null && t.friendlyName != null && t.friendlyName.startsWith("Scroll of ")) {
@@ -518,7 +687,7 @@ public class SpawnManager {
                     item.setName(cleanName);
                     item.setFriendlyName(cleanName);
                 }
-                attemptToModifyItem(item, variant.color);
+                attemptToModifyItem(item, color);
                 maze.addItem(item);
 
                 SpawnLogger.getInstance().logItemSpawn(item, "Level Generation (Budget)");
@@ -573,7 +742,7 @@ public class SpawnManager {
      * on the open attempt whether or not the player can actually work the lock.
      */
     private void spawnMimics() {
-        int count = com.bpm.minotaur.generation.MimicSpawnRule.rollCount(level, budget.mimicBudget, random);
+        int count = com.bpm.minotaur.generation.MimicSpawnRule.rollCount(depth(), budget.mimicBudget, random);
 
         for (int i = 0; i < count; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
@@ -622,11 +791,9 @@ public class SpawnManager {
         } catch (IllegalArgumentException e) {
             return;
         }
-        ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-        if (variant == null)
-            return;
-        Item loot = itemDataManager.createItem(type, 0, 0, variant.color, assetManager);
-        attemptToModifyItem(loot, variant.color);
+        ItemColor color = itemDataManager.getSpawnColor(type, level);
+        Item loot = itemDataManager.createItem(type, 0, 0, color, assetManager);
+        attemptToModifyItem(loot, color);
         container.getContents().add(loot);
 
         SpawnLogger.getInstance().logItemSpawn(loot, "Container Loot (Inside " + container.getDisplayName() + ")");
@@ -636,11 +803,36 @@ public class SpawnManager {
         GridPoint2 spawnPoint = getEmptySpawnPoint();
         if (spawnPoint == null)
             return;
-        Item key = itemDataManager.createItem(ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
+
+        ItemType keyType = ItemType.IRON_KEY;
+        int dungeonLevel = (maze != null) ? maze.getLevel() : 1;
+        if (dungeonLevel >= 6) {
+            float r = random.nextFloat();
+            if (r < 0.10f) {
+                keyType = ItemType.SKELETON_KEY;
+            } else if (r < 0.65f) {
+                keyType = ItemType.GOLD_KEY;
+            } else {
+                keyType = ItemType.SILVER_KEY;
+            }
+        } else if (dungeonLevel >= 3) {
+            float r = random.nextFloat();
+            if (r < 0.03f) {
+                keyType = ItemType.SKELETON_KEY;
+            } else if (r < 0.60f) {
+                keyType = ItemType.SILVER_KEY;
+            } else {
+                keyType = ItemType.IRON_KEY;
+            }
+        } else {
+            keyType = (random.nextFloat() < 0.25f) ? ItemType.SILVER_KEY : ItemType.IRON_KEY;
+        }
+
+        Item key = itemDataManager.createItem(keyType, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
         attemptToModifyItem(key, containerColor);
         maze.addItem(key);
 
-        SpawnLogger.getInstance().logItemSpawn(key, "Container Key");
+        SpawnLogger.getInstance().logItemSpawn(key, "Container Key (" + key.getDisplayName() + ")");
     }
 
     private void attemptToModifyItem(Item item, ItemColor color) {
@@ -690,6 +882,14 @@ public class SpawnManager {
         } else if (color == ItemColor.PURPLE) {
             affixCount = 3 + random.nextInt(2);
             item.setMaterial("Adamantine");
+        } else {
+            // Standard / common equipment (GRAY, TAN, etc.): 20% chance of 1 affix, 5% chance of 2 affixes
+            float roll = random.nextFloat();
+            if (roll < 0.05f) {
+                affixCount = 2;
+            } else if (roll < 0.20f) {
+                affixCount = 1;
+            }
         }
 
         for (int i = 0; i < affixCount; i++) {
@@ -702,6 +902,7 @@ public class SpawnManager {
         List<LootTable.ModInfo> validMods = LootTable.MODIFIER_POOL.stream()
                 .filter(mod -> mod.category == category)
                 .filter(mod -> DEBUG_FORCE_MODIFIERS || (level >= mod.minLevel && level <= mod.maxLevel))
+                .filter(mod -> item.getModifiers().stream().noneMatch(existing -> existing.type == mod.type))
                 .collect(Collectors.toList());
 
         if (validMods.isEmpty())
@@ -720,13 +921,43 @@ public class SpawnManager {
         item.addModifier(new ItemModifier(modInfo.type, value, displayName));
     }
 
+    private GridPoint2 getNearbySpawnPointForMonster(GridPoint2 origin, float maxDistance) {
+        if (validSpawnPoints.isEmpty() || origin == null)
+            return null;
+
+        boolean hasSanctuary = !maze.getSanctuaryTiles().isEmpty();
+
+        for (int i = 0; i < validSpawnPoints.size(); i++) {
+            GridPoint2 pt = validSpawnPoints.get(i);
+            if (pt.dst(origin) <= maxDistance) {
+                if (hasSanctuary) {
+                    if (pt.dst(17, 20) < 6.0f) {
+                        continue;
+                    }
+                    boolean tooCloseToHome = false;
+                    for (GridPoint2 ht : maze.getSanctuaryTiles()) {
+                        if (pt.dst(ht) < 6.0f) {
+                            tooCloseToHome = true;
+                            break;
+                        }
+                    }
+                    if (tooCloseToHome) {
+                        continue;
+                    }
+                }
+                return validSpawnPoints.remove(i);
+            }
+        }
+        return null;
+    }
+
     private GridPoint2 getEmptySpawnPointForMonster() {
         if (validSpawnPoints.isEmpty())
             return null;
 
         // If this maze chunk contains home tiles (e.g. Level 1 Starting Shelter Chunk),
         // enforce a 6-tile safety exclusion radius from the shelter door (17, 20) and any home tile.
-        if (maze.getHomeTiles() != null && !maze.getHomeTiles().isEmpty()) {
+        if (!maze.getSanctuaryTiles().isEmpty()) {
             for (int i = 0; i < validSpawnPoints.size(); i++) {
                 GridPoint2 pt = validSpawnPoints.get(i);
                 float distToDoor = pt.dst(17, 20);
@@ -734,7 +965,7 @@ public class SpawnManager {
                     continue;
                 }
                 boolean tooCloseToHome = false;
-                for (GridPoint2 ht : maze.getHomeTiles()) {
+                for (GridPoint2 ht : maze.getSanctuaryTiles()) {
                     if (pt.dst(ht) < 6.0f) {
                         tooCloseToHome = true;
                         break;

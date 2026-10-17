@@ -35,6 +35,10 @@ public class StatusManager {
      * @param stackable If true, adds duration. If false, resets duration.
      */
     public void addEffect(StatusEffectType type, int duration, int potency, boolean stackable) {
+        if (owner instanceof com.bpm.minotaur.gamedata.player.Player
+                && com.bpm.minotaur.gamedata.trait.TraitEffects.blocks(type)) {
+            return; // the player's trait makes them immune
+        }
         if (owner instanceof com.bpm.minotaur.gamedata.player.Player) {
             com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
             if (p.getEquipment() != null) {
@@ -165,6 +169,10 @@ public class StatusManager {
 
         if (owner instanceof com.bpm.minotaur.gamedata.player.Player) {
             com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
+            damage = com.bpm.minotaur.gamedata.trait.TraitEffects.scaleOverTime(damage, new java.util.Random());
+            if (damage <= 0) {
+                return; // a hardy body shrugs this tick off
+            }
             p.takeTrueDamage(damage);
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(
@@ -188,5 +196,23 @@ public class StatusManager {
      */
     public ObjectMap.Values<ActiveStatusEffect> getActiveEffects() {
         return activeEffects.values();
+    }
+
+    /**
+     * Replaces the live effects with saved ones.
+     *
+     * <p>Deliberately bypasses {@link #addEffect}: that applies ring immunities and posts an
+     * "effect applied" event, and restoring a save is neither a new application nor news.
+     */
+    public void restoreEffects(java.util.List<ActiveStatusEffect> saved) {
+        activeEffects.clear();
+        if (saved == null) {
+            return;
+        }
+        for (ActiveStatusEffect effect : saved) {
+            if (effect != null && effect.getType() != null) {
+                activeEffects.put(effect.getType(), effect);
+            }
+        }
     }
 }

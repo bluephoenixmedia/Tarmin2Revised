@@ -10,12 +10,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class UnlockManager {
+public class UnlockManager implements SlotScopedState {
     private static final UnlockManager INSTANCE = new UnlockManager();
-    public static final String DEFAULT_SAVE_FILE = "saves/unlocks.json";
-    public static final String LEGACY_PROFILE_FILE = "saves/profile.json";
     /**
-     * Items scoring at or above this are locked behind meta-progression.
+     * Only a fallback for when no slot is resolvable, e.g. in tests.
+     *
+     * <p>This used to be the real path: one global file shared by all three
+     * slots, holding unlocked content, deepest level reached and lifetime kill
+     * counts, with no production code path that ever reset it. Slot 1's depth
+     * also gates Altar station visibility, so it revealed stations in a
+     * brand-new slot 3.
+     */
+    public static final String DEFAULT_SAVE_FILE = "saves/unlocks.json";
+
+    /** Per-slot file name; resolved against the active slot at load time. */
+    public static final String SLOT_SAVE_FILE = "unlocks.json";
+    /**
+     * The score at which an item leaves tier 0 unless the base pool names it (#196); see
+     * {@link com.bpm.minotaur.gamedata.item.LootTiers}.
+     *
+     * <p>History: items scoring at or above this used to be locked outright.
      *
      * <p>At 310 -- above the median item score of 210 -- a brand-new save could
      * already see 379 of 544 templates, so the unlock system gated almost
@@ -36,7 +50,37 @@ public class UnlockManager {
         json = new Json();
         json.setUsePrototypes(false);
         json.setIgnoreUnknownFields(true);
+        this.saveFile = resolveSlotPath();
         load();
+        // Follow the active slot; see SlotScopedState.
+        SaveManager.register(this);
+    }
+
+    /**
+     * The active slot's unlocks file, or the legacy global path when no slot can
+     * be resolved (tests, or very early startup).
+     */
+    private String resolveSlotPath() {
+        try {
+            return SaveManager.getInstance().getActiveSlotFilePath(SLOT_SAVE_FILE);
+        } catch (Exception e) {
+            return DEFAULT_SAVE_FILE;
+        }
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        this.saveFile = resolveSlotPath();
+        sessionUnlocks.clear();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        this.saveFile = resolveSlotPath();
+        data = new UnlockData();
+        sessionUnlocks.clear();
+        save();
     }
 
     public static UnlockManager getInstance() {
@@ -66,33 +110,14 @@ public class UnlockManager {
                 data = new UnlockData();
             }
         } else {
+            // Deliberately does NOT migrate the old global saves/unlocks.json.
+            // Unlocks are per-character now, so inheriting a shared pool would
+            // reintroduce exactly the leak this change removes.
             data = new UnlockData();
-            checkAndMigrateLegacyProfile();
             save();
         }
     }
 
-    private void checkAndMigrateLegacyProfile() {
-        try {
-            FileHandle legacyFile = getFileHandle(LEGACY_PROFILE_FILE);
-            if (legacyFile.exists()) {
-                String content = legacyFile.readString("UTF-8");
-                if (content.contains("unlockedContent")) {
-                    UnlockData legacyData = json.fromJson(UnlockData.class, legacyFile);
-                    if (legacyData != null && legacyData.unlockedContent != null && !legacyData.unlockedContent.isEmpty()) {
-                        data.unlockedContent.addAll(legacyData.unlockedContent);
-                        if (Gdx.app != null) {
-                            Gdx.app.log("UnlockManager", "Migrated " + legacyData.unlockedContent.size() + " unlocks from legacy profile.json");
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            if (Gdx.app != null) {
-                Gdx.app.error("UnlockManager", "Legacy migration check failed", e);
-            }
-        }
-    }
 
     public void save() {
         if (data == null) {
@@ -129,17 +154,35 @@ public class UnlockManager {
         if (t.isArmor)
             score += t.armorClassBonus * 100;
         if (t.isWeapon) {
-            if (t.damageDice != null && t.damageDice.contains("d")) {
-                String[] parts = t.damageDice.split("d");
-                try {
-                    int d = Integer.parseInt(parts[1]);
-                    int n = Integer.parseInt(parts[0]);
-                    score += n * d * 50;
-                } catch (Exception ignored) {
-                }
-            }
+            score += diceScore(t.damageDice);
         }
         return score;
+    }
+
+    private static final java.util.regex.Pattern DICE =
+            java.util.regex.Pattern.compile("\\s*(\\d+)\\s*d\\s*(\\d+)\\s*([+-]\\s*\\d+)?\\s*");
+
+    /**
+     * {@code 50 x n x sides} for an {@code NdS} or {@code NdS+K} weapon die.
+     *
+     * <p>A flat modifier does not count: the weapon floor turned every {@code 1d4} into
+     * {@code 1d4+1} (#195), and that must not push those weapons up an unlock tier.
+     * Before #195 a die with a modifier failed to parse and scored 0, which left
+     * {@code 1d6+1} weapons ungated.
+     */
+    public static int diceScore(String dice) {
+        if (dice == null) {
+            return 0;
+        }
+        java.util.regex.Matcher m = DICE.matcher(dice);
+        if (!m.matches()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(m.group(1)) * Integer.parseInt(m.group(2)) * 50;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public void incrementStat(String statName, int amount) {
@@ -217,6 +260,29 @@ public class UnlockManager {
     }
 
     /**
+     * Records that an item was encountered by the player (seen on the ground, picked up,
+     * looted, or held), permanently unlocking it in meta-progression and the Chronicle of Tarmin.
+     */
+    public void recordItemEncountered(com.bpm.minotaur.gamedata.item.Item item) {
+        if (item == null || item.getType() == null) return;
+        recordItemEncountered(item.getType());
+    }
+
+    /**
+     * Records that an item type was encountered by the player, permanently unlocking it
+     * in meta-progression and the Chronicle of Tarmin.
+     */
+    public void recordItemEncountered(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        if (type == null) return;
+        if (itemDataManager != null) {
+            com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
+            // Skip scenery/markers without valid templates
+            if (t == null) return;
+        }
+        unlockContent(type.name());
+    }
+
+    /**
      * Display names of this run's unlocks.
      *
      * <p>Kept for callers that only render text. Anything that needs an icon should use
@@ -246,18 +312,39 @@ public class UnlockManager {
     }
 
     /**
-     * Rolls this run's unlocks and returns the item types granted.
+     * Rolls the unlocks for an expedition that ended in death and returns the item types granted.
      *
      * <p>Returns types rather than names because the death screen shows each discovery as a card
      * with its icon, and icons are looked up from the packed atlases by item type.
      */
     public List<com.bpm.minotaur.gamedata.item.Item.ItemType> rollRunUnlockTypes(
             com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached) {
+        return rollExpeditionUnlockTypes(telemetry, maxFloorReached,
+                com.bpm.minotaur.telemetry.TelemetryManager.Outcome.DIED);
+    }
+
+    /**
+     * Rolls the unlocks earned by the expedition that is ending (#184).
+     *
+     * <p>Every expedition end rolls, not only a death. The guaranteed unlock is the
+     * consolation for dying, so only a death grants it; milestones (going below the
+     * first level, kills, Divinity, turns) pay out on a return too. Milestones read the
+     * telemetry's expedition counters, so they are counted per expedition, and the
+     * telemetry must not have closed the expedition yet. An abandoned expedition rolls
+     * nothing.
+     */
+    public List<com.bpm.minotaur.gamedata.item.Item.ItemType> rollExpeditionUnlockTypes(
+            com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached,
+            com.bpm.minotaur.telemetry.TelemetryManager.Outcome outcome) {
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> newlyUnlocked = new ArrayList<>();
-        if (itemDataManager == null || data == null) {
+        if (itemDataManager == null || data == null
+                || outcome == null || outcome == com.bpm.minotaur.telemetry.TelemetryManager.Outcome.ABANDONED) {
             return newlyUnlocked;
         }
 
+        if (telemetry != null) {
+            maxFloorReached = Math.max(maxFloorReached, telemetry.getExpeditionMaxDepth());
+        }
         int strataReached = Math.max(1, (maxFloorReached - 1) / 3 + 1);
         if (telemetry != null && telemetry.getStrataReached() > strataReached) {
             strataReached = telemetry.getStrataReached();
@@ -268,13 +355,13 @@ public class UnlockManager {
             if (maxFloorReached > 1 && (strataReached > 1 || maxFloorReached > data.deepestLevelReached)) {
                 milestoneCount++;
             }
-            if (telemetry.getTotalMonstersKilled() >= 100) {
+            if (telemetry.getExpeditionKills() >= 100) {
                 milestoneCount++;
             }
-            if (telemetry.getDivinitiesEarned() >= 150) {
+            if (telemetry.getExpeditionDivinitiesEarned() >= 150) {
                 milestoneCount++;
             }
-            if (telemetry.getTurnsLived() >= 1000) {
+            if (telemetry.getExpeditionTurns() >= 1000) {
                 milestoneCount++;
             }
         }
@@ -282,9 +369,14 @@ public class UnlockManager {
         // 25 / 50 / 300. Those bars were reachable in an ordinary run, so almost
         // every run hit the cap; lowering the cap alone would have left a strong
         // run indistinguishable from an average one.
-        int unlocksToGrant = Math.min(2, 1 + milestoneCount);
+        boolean died = outcome == com.bpm.minotaur.telemetry.TelemetryManager.Outcome.DIED;
+        int unlocksToGrant = Math.min(2, (died ? 1 : 0) + milestoneCount);
+        if (unlocksToGrant <= 0) {
+            return newlyUnlocked;
+        }
 
-        int maxEligibleScore = UNLOCK_SCORE_THRESHOLD + (strataReached * 250);
+        // Unlocks add tiers (#196): tier n becomes eligible once Strata n is reached.
+        int maxEligibleTier = com.bpm.minotaur.gamedata.item.LootTiers.maxTierForStrata(strataReached);
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> boundedPool = new ArrayList<>();
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> fallbackPool = new ArrayList<>();
 
@@ -292,9 +384,8 @@ public class UnlockManager {
             try {
                 com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
                 if (t != null && t.unlockGated && !data.unlockedContent.contains(type.name())) {
-                    int score = calculateItemScore(t);
                     fallbackPool.add(type);
-                    if (score <= maxEligibleScore) {
+                    if (t.lootTier <= maxEligibleTier) {
                         boundedPool.add(type);
                     }
                 }
@@ -309,15 +400,51 @@ public class UnlockManager {
             return newlyUnlocked;
         }
 
-        Collections.shuffle(eligible);
-        int grantCount = Math.min(unlocksToGrant, eligible.size());
-        for (int i = 0; i < grantCount; i++) {
-            com.bpm.minotaur.gamedata.item.Item.ItemType unlockedType = eligible.get(i);
-            unlockContent(unlockedType.name());
-            newlyUnlocked.add(unlockedType);
+        // Choose a category first, leaning away from the ones just received, then an item within
+        // it. A flat shuffle let the largest category take almost every roll.
+        List<UnlockRotation.Candidate> candidates = new ArrayList<>();
+        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : eligible) {
+            candidates.add(new UnlockRotation.Candidate(type, categoryOf(type)));
+        }
+        List<UnlockRotation.Category> recent = new ArrayList<>();
+        if (data.recentUnlockCategories != null) {
+            for (String name : data.recentUnlockCategories) {
+                try {
+                    recent.add(UnlockRotation.Category.valueOf(name));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
         }
 
+        List<UnlockRotation.Candidate> picked =
+                UnlockRotation.pick(candidates, recent, unlocksToGrant, new java.util.Random());
+        for (UnlockRotation.Candidate candidate : picked) {
+            unlockContent(candidate.type.name());
+            newlyUnlocked.add(candidate.type);
+            if (data.recentUnlockCategories == null) {
+                data.recentUnlockCategories = new ArrayList<>();
+            }
+            data.recentUnlockCategories.add(0, candidate.category.name());
+        }
+        while (data.recentUnlockCategories != null
+                && data.recentUnlockCategories.size() > UnlockRotation.HISTORY_LENGTH) {
+            data.recentUnlockCategories.remove(data.recentUnlockCategories.size() - 1);
+        }
+        save();
+
         return newlyUnlocked;
+    }
+
+    /** Which unlock category an item belongs to: weapons, armour, and everything else. */
+    private UnlockRotation.Category categoryOf(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
+        if (t != null && t.isWeapon) {
+            return UnlockRotation.Category.WEAPON;
+        }
+        if (t != null && t.isArmor) {
+            return UnlockRotation.Category.ARMOR;
+        }
+        return UnlockRotation.Category.ITEM;
     }
 
     public UnlockData getData() {

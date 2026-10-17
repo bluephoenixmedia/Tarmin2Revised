@@ -1,6 +1,7 @@
 package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -19,11 +20,13 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -83,6 +86,8 @@ public class Hud implements Disposable {
     private final WorldInteractionCard worldInteractionCard;
     private final Table dungeonTagTable;
     private final ControlsLegendOverlay controlsLegend;
+    /** #170: the permanent pointer to the TAB legend, under the dungeon tag. */
+    private final com.bpm.minotaur.ui.KeyHintLegend controlsHint;
     private GameScreen gameScreen;
 
     public void toggleControlsLegend() {
@@ -105,12 +110,18 @@ public class Hud implements Disposable {
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
+    /** "Resists War / Weak to Spiritual" for the monster on the combat card (#172). */
+    private final Label monsterAffinityLabel;
     private final Label logLabel; // Replaces messageLabel for backward compatibility
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
     private final Label levelBadgeLabel;
     private final Label divinitiesLabel;
     private final Label doomLabel;
+    /** LEVELUP-10: "+n" over the portrait while attribute points are unspent. */
+    private Label unspentPointsBadge;
+    private Table unspentPointsChip;
+    private float unspentPulse;
     private final Label dayNightLabel;
     private final Label equippedWeaponLabel;
     private Label heldItemLabel;
@@ -126,25 +137,123 @@ public class Hud implements Disposable {
     private final Label[] spellBadgeLabels = new Label[5];
     private final Label[] spellNameLabels = new Label[5];
     private final Label[] spellCostLabels = new Label[5];
+    private int lastSeenUnlockedSlots = 1;
+    private final float[] slotPulseTimers = new float[5];
 
     // --- Action Chronicle Labels (5 lines) ---
-    private final Label[] chronicleLabels = new Label[5];
+    private Label chronicleHeaderLabel;
+    private Label chronicleLiveLabel;
+    private Label chronicleUpLabel;
+    private Label chronicleDownLabel;
+    private int chronicleScrollOffset = 0;
+    private int lastHistoryRevision = -1;
+    private int lastRenderedScrollOffset = -1;
+    private final List<DisplayRow> cachedDisplayRows = new ArrayList<>();
+    /** One label per chronicle row; how many is budgeted from the log font (HudLayout). */
+    private Label[] chronicleLabels = new Label[0];
+    /** Text width of the chronicle zone, inside its own padding. */
+    private static final float CHRONICLE_W = 636f;
 
     // Combat Menu
     public CombatMenu combatMenu;
 
     private DiscoveryManager discoveryManager;
-    private Item toastItem = null;
-    private float toastTimer = 0f;
+    private final PickupToastQueue pickupToasts = new PickupToastQueue();
 
     public void setDiscoveryManager(DiscoveryManager discoveryManager) {
         this.discoveryManager = discoveryManager;
     }
 
     public void showPickupToast(Item item) {
-        if (item == null) return;
-        this.toastItem = item;
-        this.toastTimer = 2.5f;
+        pickupToasts.add(item);
+    }
+
+    /** Tab: swap between the items named in the pickup toast. False when there is nothing to swap. */
+    private Table quickSlotMenu;
+
+    /** Right-click on a quick slot: Use, Throw or Drop the item in it. */
+    private void showQuickSlotMenu(final int slotIdx) {
+        hideQuickSlotMenu();
+        Item item = player.getInventory().getQuickSlots()[slotIdx];
+        if (item == null || gameScreen == null) {
+            return;
+        }
+        hudTooltip.hide();
+        Table menu = new Table();
+        menu.setBackground(hudSkin.getPanelBg());
+        menu.pad(6);
+        menu.add(quickSlotMenuButton("USE", new Runnable() {
+            @Override
+            public void run() {
+                if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
+                        || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
+                    combatManager.playerUseItem(slotIdx, discoveryManager);
+                } else {
+                    player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze, combatManager);
+                }
+            }
+        })).fillX().row();
+        menu.add(quickSlotMenuButton("THROW", new Runnable() {
+            @Override
+            public void run() {
+                gameScreen.throwQuickSlotItem(slotIdx);
+            }
+        })).fillX().padTop(4).row();
+        menu.add(quickSlotMenuButton("DROP", new Runnable() {
+            @Override
+            public void run() {
+                gameScreen.dropQuickSlotItem(slotIdx);
+            }
+        })).fillX().padTop(4).row();
+        menu.pack();
+        Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
+        menu.setPosition(pos.x + 25f, pos.y + 50f);
+        // Leaving the menu with the pointer closes it, so there is no stray state to clear.
+        menu.addListener(new InputListener() {
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (toActor == null || !toActor.isDescendantOf(quickSlotMenu)) {
+                    hideQuickSlotMenu();
+                }
+            }
+        });
+        quickSlotMenu = menu;
+        // Closes by itself if the pointer never enters it, so it cannot be left hanging over the view.
+        menu.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence(
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.delay(4f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (quickSlotMenu == menu) {
+                            hideQuickSlotMenu();
+                        }
+                    }
+                })));
+        stage.addActor(menu);
+    }
+
+    private com.badlogic.gdx.scenes.scene2d.ui.TextButton quickSlotMenuButton(String text, final Runnable action) {
+        com.badlogic.gdx.scenes.scene2d.ui.TextButton button = new com.badlogic.gdx.scenes.scene2d.ui.TextButton(
+                text, com.bpm.minotaur.ui.UiStyles.secondary(hudSkin));
+        button.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                hideQuickSlotMenu();
+                action.run();
+            }
+        });
+        return button;
+    }
+
+    private void hideQuickSlotMenu() {
+        if (quickSlotMenu != null) {
+            quickSlotMenu.remove();
+            quickSlotMenu = null;
+        }
+    }
+
+    public boolean cycleToast() {
+        return pickupToasts.cycle();
     }
 
     // Portrait
@@ -170,8 +279,10 @@ public class Hud implements Disposable {
 
     private final WorldManager worldManager;
     private final EncounterWindow encounterWindow;
+    private final EventWindow eventWindow;
     private final ShopkeeperWindow shopkeeperWindow;
     private final BonesAwakenModal bonesAwakenModal;
+    private final LevelUpModal levelUpModal;
     private final StatusPillBar statusPillBar;
     private String statusToastMessage = null;
     private Color statusToastColor = Color.WHITE;
@@ -230,6 +341,7 @@ public class Hud implements Disposable {
         this.spriteBatch = sb;
         this.worldManager = worldManager;
         this.shapeRenderer = new ShapeRenderer();
+        this.lastSeenUnlockedSlots = (player != null) ? player.getUnlockedSpellSlots() : 1;
 
         // --- Viewport and Stage Setup ---
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
@@ -254,8 +366,11 @@ public class Hud implements Disposable {
 
         // Floating Tooltip Card
         hudTooltip = new HudTooltip(hudSkin);
+        hudTooltip.setPlayer(player);
         worldInteractionCard = new WorldInteractionCard(hudSkin);
         controlsLegend = new ControlsLegendOverlay(hudSkin);
+        controlsHint = new com.bpm.minotaur.ui.KeyHintLegend(hudSkin).hint("TAB", "Controls");
+        controlsHint.pack();
         statusPillBar = new StatusPillBar(hudSkin, hudTooltip);
 
         // --- Label Styles ---
@@ -292,7 +407,10 @@ public class Hud implements Disposable {
         delveZone.pad(8f);
 
         chronicleZone.setBackground(hudSkin.getPanelBg());
-        chronicleZone.pad(8f);
+        chronicleZone.setTouchable(Touchable.enabled);
+        // 6 rather than 8: the newest line is allowed to wrap to two, and the dashboard's
+        // 200-unit band has to hold the header, four history lines and that second line.
+        chronicleZone.pad(6f);
 
         // ══════════════════════════════════════════════════════════════════
         // ZONE 1: Character & Vitals (~450px)
@@ -302,7 +420,7 @@ public class Hud implements Disposable {
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
-        doomLabel = new Label("DOOM: 0 [0%]", smallStyle);
+        doomLabel = new Label("HUNGER 0/50", smallStyle);
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
@@ -346,26 +464,64 @@ public class Hud implements Disposable {
         levelBadgeTable.add(levelBadgeLabel).pad(2, 8, 2, 8);
         portraitCol.add(levelBadgeTable).padTop(4).row();
 
+        // LEVELUP-3: the badge used to read "LVL 2 [K: +3]", which is far wider than the 96-unit
+        // portrait column it sits under, so the unspent-point count was clipped off the left
+        // edge of the screen. LEVELUP-10: the count is the thing the player has to act on, so
+        // it gets its own chip that pulses until they spend it, and disappears when they have.
+        unspentPointsBadge = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_ON_GOLD));
+        unspentPointsChip = new Table();
+        unspentPointsChip.setBackground(hudSkin.getPrimaryButtonUp());
+        unspentPointsChip.add(unspentPointsBadge).pad(1, 6, 1, 6);
+        unspentPointsChip.setVisible(false);
+        portraitCol.add(unspentPointsChip).padTop(3).row();
+
         // One width for the whole column. The bars were pinned to 235 while the stat row beneath
         // them (compass + silhouette + four labels) was wider, so the block visibly overhung its
         // own bars -- the same fixed-width-versus-content failure the UX standard warns about.
         final float VITALS_WIDTH = 300f;
 
+        // #108: the stat block under the bars is four small-font lines, and with 22-unit bars the
+        // column was a few units taller than the band, so its last line sat on the HUD's lower
+        // border. The bar height is now whatever leaves the block room, from the font's metrics.
+        final float statLineGap = 2f;
+        float statBlock = Math.max(52f, 4f * hudSkin.getFontSmall().getLineHeight() + 3f * statLineGap);
+        final float barGap = 3f;
+        final float barsToStats = 4f;
+        float barH = HudLayout.vitalsBarHeight(16f, 2f * barGap + barsToStats, statBlock);
+
         Table barsCol = new Table();
-        barsCol.add(hpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
-        barsCol.add(mpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
+        barsCol.add(hpBar).width(VITALS_WIDTH).height(barH).padBottom(barGap).row();
+        barsCol.add(mpBar).width(VITALS_WIDTH).height(barH).padBottom(barGap).row();
         // Matches HP/MP height: at 14px an empty EXP gauge read as a text line, not a bar.
-        barsCol.add(expBar).width(VITALS_WIDTH).height(22).padBottom(6).row();
+        barsCol.add(expBar).width(VITALS_WIDTH).height(barH).padBottom(barsToStats).row();
 
         Table vitalsSubRow = new Table();
         vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
         vitalsSubRow.add(anatomicalSilhouetteWidget).size(36, 52).padRight(10);
+        // HUD-2 / LEVELUP-3: these four lines each ran wider than the ~200 units left after the
+        // compass and the silhouette, and a Label does not clip -- so "DOOM: 12 (45%) [BOSS
+        // ACTIVE]" and "9:38 AM [MORNING]" spilled sideways across their neighbours and into
+        // the weapon panel, which reads as the lines overprinting each other. Ellipsis plus a
+        // real cell width keeps each one on its own line inside the block.
+        dayNightLabel.setEllipsis(true);
+        divinitiesLabel.setEllipsis(true);
+        doomLabel.setEllipsis(true);
+        ammoLabel.setEllipsis(true);
+        // #173: what these two numbers mean, on hover. The Hunger cell keeps a short label;
+        // the full text, the next stage and the boss warning live in the tooltip.
+        addReadoutTooltip(divinitiesLabel, () -> com.bpm.minotaur.ui.HudReadouts.divinityTip(
+                DivinityManager.getInstance().getCurrentDivinities()));
+        addReadoutTooltip(doomLabel, () -> {
+            DoomManager d = DoomManager.getInstance();
+            return com.bpm.minotaur.ui.HudReadouts.hungerTip(d.getDeathCount(), DoomManager.maxDeaths(),
+                    d.isBridgeBossActive());
+        });
         Table divDoomCol = new Table();
-        divDoomCol.add(dayNightLabel).left().row();
-        divDoomCol.add(divinitiesLabel).left().padTop(2).row();
-        divDoomCol.add(doomLabel).left().padTop(2).row();
-        divDoomCol.add(ammoLabel).left().padTop(2).row();
-        vitalsSubRow.add(divDoomCol).left().expandX().fillX().minWidth(0f);
+        divDoomCol.add(dayNightLabel).left().growX().row();
+        divDoomCol.add(divinitiesLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(doomLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(ammoLabel).left().growX().padTop(statLineGap).row();
+        vitalsSubRow.add(divDoomCol).left().growX().minWidth(0f);
 
         barsCol.add(vitalsSubRow).width(VITALS_WIDTH).left().row();
 
@@ -376,7 +532,9 @@ public class Hud implements Disposable {
         // ZONE 2: Equipment Hands & 2x3 Belt (~420px)
         // ══════════════════════════════════════════════════════════════════
         equippedWeaponLabel = new Label("Hands Empty", weaponHeaderStyle);
-        beltZone.add(equippedWeaponLabel).colspan(3).center().padBottom(4).row();
+        equippedWeaponLabel.setEllipsis(true);
+        equippedWeaponLabel.setAlignment(Align.center);
+        beltZone.add(equippedWeaponLabel).colspan(3).center().width(390f).minWidth(0f).padBottom(4).row();
 
         float slotSize = 50f;
         Table backpackTable = new Table();
@@ -390,10 +548,15 @@ public class Hud implements Disposable {
             Label badge = new Label(String.valueOf(i + 1), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             backpackSlots[i].add(badge).padLeft(3).padTop(1).row();
 
-            backpackSlots[i].addListener(new ClickListener() {
+            ClickListener slotClick = new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     if (encounterWindow != null && encounterWindow.isVisible()) return;
+                    if (event.getButton() == com.badlogic.gdx.Input.Buttons.RIGHT) {
+                        showQuickSlotMenu(slotIdx);
+                        return;
+                    }
+                    hideQuickSlotMenu();
                     if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
                             || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
                         combatManager.playerUseItem(slotIdx, discoveryManager);
@@ -401,7 +564,9 @@ public class Hud implements Disposable {
                         player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze, combatManager);
                     }
                 }
-            });
+            };
+            slotClick.setButton(-1); // left clicks use the item as before; right clicks open the menu
+            backpackSlots[i].addListener(slotClick);
 
             backpackSlots[i].addListener(new InputListener() {
                 @Override
@@ -409,9 +574,9 @@ public class Hud implements Disposable {
                     if (encounterWindow != null && encounterWindow.isVisible()) return;
                     Item item = player.getInventory().getQuickSlots()[slotIdx];
                     Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
-                    String hotkeyHint = "Hotkey " + (slotIdx + 1);
+                    String hotkeyHint = "Hotkey " + (slotIdx + 1) + "  |  Right-click: Use / Throw / Drop";
                     if (item != null && item.isWeapon()) {
-                        hotkeyHint = "Throw / [" + (slotIdx + 1) + "]";
+                        hotkeyHint = "Throw / [" + (slotIdx + 1) + "]  |  Right-click: Use / Throw / Drop";
                     }
                     hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, hotkeyHint);
                 }
@@ -497,12 +662,18 @@ public class Hud implements Disposable {
         dungeonLevelLabel = new Label("DUNGEON LVL 1", headerStyle);
         foodBar = new ModernStatBar("FOOD", HudSkin.COL_FOOD_GREEN, hudSkin);
         waterBar = new ModernStatBar("H2O", HudSkin.COL_WATER_CYAN, hudSkin);
-        tempBar = new ModernStatBar("TEMP", HudSkin.COL_TEMP_ORANGE, hudSkin);
-        tempBar.setTemperatureMode(true);
+        // The Exposure meter (#194): the band by name, filled with warmth. It keeps the old TEMP
+        // gauge's cell in the condition column, clear of the vitals budget (HudLayout).
+        tempBar = new ModernStatBar("EXPOSURE", HudSkin.COL_EXPOSURE_COMFORT, hudSkin);
+        addReadoutTooltip(tempBar, () -> com.bpm.minotaur.ui.HudReadouts.exposureTip(
+                player.getStats().getExposureBand(), player.getStats().getWetnessLevel()));
         toxBar = new ModernStatBar("TOX", HudSkin.COL_TOX, hudSkin);
 
         monsterStrengthLabel = new Label("", headerStyle);
         combatStatusLabel = new Label("", labelStyle);
+        monsterAffinityLabel = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_EXP_AMBER));
+        monsterAffinityLabel.setEllipsis(true);
+        monsterStrengthLabel.setEllipsis(true);
         monsterHpBar = new ModernStatBar("HP", HudSkin.COL_HP_RED, hudSkin);
 
         // Sub-table 1: Delve exploration info (survival "BODY" bars)
@@ -520,7 +691,8 @@ public class Hud implements Disposable {
 
         // Sub-table 2: Combat monster card
         combatMonsterTable.top().left();
-        combatMonsterTable.add(monsterStrengthLabel).left().padBottom(2).row();
+        combatMonsterTable.add(monsterStrengthLabel).left().width(300f).minWidth(0f).padBottom(2).row();
+        combatMonsterTable.add(monsterAffinityLabel).left().width(300f).minWidth(0f).padBottom(4).row();
         combatMonsterTable.add(monsterHpBar).width(210).height(20).padBottom(4).row();
         combatMonsterTable.add(combatStatusLabel).left().padBottom(6).row();
         combatMonsterTable.setVisible(false);
@@ -534,15 +706,86 @@ public class Hud implements Disposable {
         // ZONE 4: Chronicle Action Log (~650px)
         // ══════════════════════════════════════════════════════════════════
         chronicleZone.top().left();
-        Label chronicleHeader = new Label("[ CHRONICLE ]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        chronicleZone.add(chronicleHeader).left().padBottom(2).row();
 
-        for (int i = 0; i < 5; i++) {
+        Table chronicleHeaderTable = new Table();
+        chronicleHeaderTable.left();
+
+        chronicleHeaderLabel = new Label("CHRONICLE", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        chronicleHeaderLabel.setTouchable(Touchable.enabled);
+        chronicleHeaderLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (chronicleScrollOffset > 0) {
+                    setChronicleScrollOffset(0);
+                }
+            }
+        });
+        chronicleHeaderTable.add(chronicleHeaderLabel).left();
+
+        chronicleLiveLabel = new Label("[LIVE]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+        chronicleLiveLabel.setTouchable(Touchable.enabled);
+        chronicleLiveLabel.setVisible(false);
+        chronicleLiveLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                setChronicleScrollOffset(0);
+            }
+        });
+        chronicleHeaderTable.add(chronicleLiveLabel).padLeft(8);
+
+        chronicleHeaderTable.add().expandX(); // spacer
+
+        Label.LabelStyle navBtnStyle = new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED);
+
+        chronicleUpLabel = new Label("[^]", navBtnStyle);
+        chronicleUpLabel.setTouchable(Touchable.enabled);
+        chronicleUpLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                scrollChronicle(1);
+            }
+        });
+        chronicleHeaderTable.add(chronicleUpLabel).padRight(6);
+
+        chronicleDownLabel = new Label("[v]", navBtnStyle);
+        chronicleDownLabel.setTouchable(Touchable.enabled);
+        chronicleDownLabel.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                scrollChronicle(-1);
+            }
+        });
+        chronicleHeaderTable.add(chronicleDownLabel);
+
+        chronicleZone.add(chronicleHeaderTable).growX().padBottom(2).row();
+
+        chronicleZone.addListener(new InputListener() {
+            @Override
+            public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+                int step = (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) ? 3 : 1;
+                if (amountY < 0) {
+                    scrollChronicle(step);
+                } else if (amountY > 0) {
+                    scrollChronicle(-step);
+                }
+                return true;
+            }
+        });
+
+        // LEVELUP-4 / HUD-6 / #108: messages are pre-wrapped into rows (wrapMessage), so every
+        // row is one line. How many rows is no longer a literal: it is what fits under the header
+        // in the band, from the real line heights, so the panel is neither crammed nor overflowing.
+        int chronicleRows = HudLayout.chronicleRows(12f,
+                hudSkin.getFontSmall().getLineHeight() + 2f,
+                hudSkin.getFontLog().getLineHeight() + 1f);
+        chronicleLabels = new Label[chronicleRows];
+        for (int i = 0; i < chronicleRows; i++) {
             chronicleLabels[i] = new Label("", logLabelStyle);
             chronicleLabels[i].setEllipsis(true);
-            chronicleZone.add(chronicleLabels[i]).left().width(632).padBottom(1).row();
+            chronicleZone.add(chronicleLabels[i]).left().growX().minWidth(0f).padBottom(1).row();
         }
-        logLabel = chronicleLabels[4]; // Alias for backward compatibility
+        logLabel = chronicleLabels[chronicleRows - 1]; // Alias for backward compatibility
 
         // --- Assemble Bottom Bar Table ---
         bottomBarTable.setBackground(hudSkin.getDashboardBg());
@@ -560,6 +803,20 @@ public class Hud implements Disposable {
         spellHotbarTable = new Table();
         spellHotbarTable.setBackground(hudSkin.getPanelBg());
         spellHotbarTable.pad(4f);
+
+        Table spellHeader = new Table();
+        Label spellsLabel = new Label("SPELLS [Q]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
+        spellHeader.add(spellsLabel).left().padLeft(4f).padBottom(2f);
+        spellHeader.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
+                if (gameScreen != null) {
+                    gameScreen.openSpellbook();
+                }
+            }
+        });
+        spellHotbarTable.add(spellHeader).colspan(5).left().growX().padBottom(2f).row();
 
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
@@ -634,9 +891,16 @@ public class Hud implements Disposable {
 
         stage.addActor(mainContainer);
         stage.addActor(spellHotbarTable);
+
+        // HUD-1: the prompt used to sit at a hard-coded 208, which is inside the spell hotbar's
+        // own band, so a centred prompt covered the right-hand spell slots. It now rests one
+        // spacing step above whatever the hotbar's top edge turns out to be.
+        worldInteractionCard.setAnchorY(spellHotbarTable.getY() + spellHotbarTable.getHeight()
+                + com.bpm.minotaur.ui.UiTheme.PAD_MD);
         stage.addActor(dungeonTagTable);
         stage.addActor(statusPillBar);
         stage.addActor(hudTooltip);
+        stage.addActor(controlsHint);
         stage.addActor(controlsLegend);
         stage.addActor(worldInteractionCard);
 
@@ -667,12 +931,37 @@ public class Hud implements Disposable {
         bonesAwakenModal = new BonesAwakenModal(hudSkin);
         stage.addActor(bonesAwakenModal);
 
-        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal ---
+        // Hidden choice events (data/events.json); the statues keep the EncounterWindow above.
+        eventWindow = new EventWindow(hudSkin);
+        stage.addActor(eventWindow);
+
+        // Level-up attribute allocation modal
+        levelUpModal = new LevelUpModal(hudSkin);
+        levelUpModal.setOnOpenSkillTree(() -> {
+            if (gameScreen != null) {
+                gameScreen.openSkillTree();
+            }
+        });
+        levelUpModal.setOnOpenSpellbook(() -> {
+            if (gameScreen != null) {
+                gameScreen.openSpellbook();
+            }
+        });
+        stage.addActor(levelUpModal);
+
+        // Tarmin's Knell over everything else (plan K5).
+        knellOverlay = new KnellOverlay(hudSkin);
+        stage.addActor(knellOverlay);
+
+        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal / LevelUpModal ---
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
                 if (encounterWindow.isVisible()) {
                     return encounterWindow.handleInput(keycode);
+                }
+                if (eventWindow.isVisible()) {
+                    return eventWindow.handleInput(keycode);
                 }
                 if (shopkeeperWindow.isVisible()) {
                     return shopkeeperWindow.handleInput(keycode);
@@ -680,9 +969,30 @@ public class Hud implements Disposable {
                 if (bonesAwakenModal.isVisible()) {
                     return bonesAwakenModal.handleInput(keycode);
                 }
+                if (levelUpModal.isVisible()) {
+                    return levelUpModal.handleInput(keycode);
+                }
                 return false;
             }
         });
+    }
+
+    private KnellOverlay knellOverlay;
+
+    /** Tarmin's Knell on screen. */
+    public KnellOverlay getKnellOverlay() {
+        return knellOverlay;
+    }
+
+    public LevelUpModal getLevelUpModal() {
+        return levelUpModal;
+    }
+
+    public void showLevelUpModal() {
+        if (levelUpModal != null && player != null) {
+            com.bpm.minotaur.managers.SoundManager sm = (combatManager != null) ? combatManager.getSoundManager() : null;
+            levelUpModal.show(player, eventManager, sm);
+        }
     }
 
     public BonesAwakenModal getBonesAwakenModal() {
@@ -735,10 +1045,31 @@ public class Hud implements Disposable {
     public void update(float dt) {
         stage.act(dt);
 
+        for (int i = 0; i < 5; i++) {
+            if (slotPulseTimers[i] > 0f) {
+                slotPulseTimers[i] = Math.max(0f, slotPulseTimers[i] - dt);
+            }
+        }
+        if (player != null) {
+            int currentUnlocked = player.getUnlockedSpellSlots();
+            if (currentUnlocked > lastSeenUnlockedSlots) {
+                for (int s = lastSeenUnlockedSlots; s < currentUnlocked && s < 5; s++) {
+                    slotPulseTimers[s] = 4.0f;
+                }
+                if (combatManager != null && combatManager.getSoundManager() != null) {
+                    combatManager.getSoundManager().playPlayerLevelUpSound();
+                }
+                lastSeenUnlockedSlots = currentUnlocked;
+            } else if (currentUnlocked < lastSeenUnlockedSlots) {
+                lastSeenUnlockedSlots = currentUnlocked;
+            }
+        }
+
         updatePortrait();
 
         // --- 1. Update Vitals Gauges ---
         hpBar.setValue(player.getCurrentHP(), player.getMaxHP());
+        hpBar.setSecondaryValue(player.getStats() != null ? player.getStats().getTemporaryHP() : 0);
         if (player.getCurrentHP() <= player.getMaxHP() * 0.25f) {
             hpBar.setBarColor(HudSkin.COL_HP_CRITICAL);
         } else {
@@ -748,12 +1079,23 @@ public class Hud implements Disposable {
         mpBar.setValue(player.getCurrentMP(), player.getMaxMP());
         expBar.setValue(player.getExperience(), player.getStats().getExperienceToNextLevel());
         int unallocated = player.getStats().getUnallocatedAttributePoints() + player.getStats().getUnallocatedSkillPoints();
-        if (unallocated > 0) {
-            levelBadgeLabel.setText("LVL " + player.getLevel() + " [K: +" + unallocated + "]");
-            levelBadgeLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
-        } else {
-            levelBadgeLabel.setText("LVL " + player.getLevel());
-            levelBadgeLabel.setColor(HudSkin.COL_GOLD_MUTED);
+        levelBadgeLabel.setText("LVL " + player.getLevel());
+        levelBadgeLabel.setColor(unallocated > 0 ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_GOLD_MUTED);
+
+        // LEVELUP-10: unspent points used to live in a clipped corner of the level badge. The
+        // chip sits under the portrait and pulses until they are spent, then goes away -- the
+        // player should not have to remember they owe themselves a decision.
+        if (unspentPointsChip != null) {
+            unspentPointsChip.setVisible(unallocated > 0);
+            if (unallocated > 0) {
+                unspentPointsBadge.setText("+" + unallocated);
+                unspentPulse += dt;
+                float pulse = 0.72f + 0.28f * (float) Math.sin(unspentPulse * 4f);
+                unspentPointsChip.setColor(1f, 1f, 1f, pulse);
+            } else {
+                unspentPulse = 0f;
+                unspentPointsChip.setColor(1f, 1f, 1f, 1f);
+            }
         }
 
         warStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
@@ -774,19 +1116,22 @@ public class Hud implements Disposable {
         }
 
         DivinityManager dm = DivinityManager.getInstance();
-        divinitiesLabel.setText("DIV: " + dm.getCurrentDivinities());
+        divinitiesLabel.setText(com.bpm.minotaur.ui.HudReadouts.divinityLabel(dm.getCurrentDivinities()));
         divinitiesLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
 
         DoomManager doom = DoomManager.getInstance();
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
-        doomLabel.setText(String.format("DOOM: %d (%.0f%%)", deaths, bridge));
-        if (bridge >= 75f) {
+        // #173 / #188: "TARMIN'S HUNGER n - nn% - BOSS SOON" ran far past this cell and lost its
+        // boss suffix to the ellipsis. Short label here; the whole story is in the tooltip.
+        doomLabel.setText(com.bpm.minotaur.ui.HudReadouts.hungerLabel(deaths, DoomManager.maxDeaths(),
+                doom.isBridgeBossActive()));
+        if (doom.isBridgeBossActive() || bridge >= 75f) {
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else if (bridge >= 40f) {
             doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
         } else {
-            doomLabel.setColor(Color.LIGHT_GRAY);
+            doomLabel.setColor(HudSkin.COL_TEXT_ON_DARK);
         }
 
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -900,24 +1245,28 @@ public class Hud implements Disposable {
                 spellNameLabels[i].setColor(HudSkin.COL_SPELL_EMPTY);
                 spellCostLabels[i].setText("");
             }
+            if (slotPulseTimers[i] > 0f) {
+                float pulse = (com.badlogic.gdx.math.MathUtils.sin(slotPulseTimers[i] * 12f) + 1f) * 0.5f;
+                if (pulse > 0.5f) {
+                    spellSlots[i].setBackground(hudSkin.getSlotActive());
+                    spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
+                    spellNameLabels[i].setColor(Color.WHITE);
+                }
+            }
         }
 
         // --- 3. Update Condition & Delve / Combat Card ---
-        foodBar.setValue(player.getFood(), PlayerStats.MAX_SATIETY);
-        foodBar.setBarColor(player.getFood() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
+        foodBar.setValue(Math.max(0, player.getFood()), com.bpm.minotaur.gamedata.player.Hunger.SATIATED_ABOVE);
+        foodBar.setBarColor(player.getStats().getHungerStage().isHungry() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
 
         waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
-        waterBar.setBarColor(player.getStats().getHydrationFloat() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
+        waterBar.setBarColor(player.getStats().getThirstStage().isThirsty() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
 
         float temp = player.getStats().getBodyTemperature();
-        tempBar.setValue(temp, 50f);
-        if (temp < 35f) {
-            tempBar.setBarColor(HudSkin.COL_WATER_CYAN);
-        } else if (temp > 38.5f) {
-            tempBar.setBarColor(HudSkin.COL_HP_CRITICAL);
-        } else {
-            tempBar.setBarColor(HudSkin.COL_TEMP_ORANGE);
-        }
+        com.bpm.minotaur.gamedata.player.Exposure.Band band = player.getStats().getExposureBand();
+        tempBar.setValue(com.bpm.minotaur.ui.HudReadouts.exposureMeterFill(temp), 1f);
+        tempBar.setCustomText(com.bpm.minotaur.ui.HudReadouts.exposureMeterText(band));
+        tempBar.setBarColor(HudSkin.exposureColor(band));
 
         toxBar.setValue(player.getStats().getToxicity(), player.getStats().getMaxToxicity());
 
@@ -925,41 +1274,41 @@ public class Hud implements Disposable {
         if (worldManager != null && worldManager.getBiomeManager() != null) {
             GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
             Biome b = worldManager.getBiomeManager().getBiome(chunkId);
-            if (b != null) biomeName = b.name();
+            if (b != null) biomeName = com.bpm.minotaur.ui.UiNames.caps(b);
+        }
+        if (maze.getLevel() > 1 && maze.getStratum() != null) {
+            // Underground the surface biome overhead says nothing about where the player stands.
+            biomeName = maze.getStratum().displayName.toUpperCase();
         }
         dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
         dungeonTagTable.pack();
         dungeonTagTable.setPosition(28f, viewport.getWorldHeight() - 24f - dungeonTagTable.getHeight());
+        controlsHint.setPosition(28f - com.bpm.minotaur.ui.UiTheme.PAD_MD,
+                dungeonTagTable.getY() - com.bpm.minotaur.ui.UiTheme.PAD_SM - controlsHint.getHeight());
 
         if (statusPillBar != null && player != null) {
             statusPillBar.update(player);
         }
         checkStatusTransitions(player);
 
-        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
-                && combatManager.getMonster() != null) {
+        boolean inCombat = combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
+                && combatManager.getMonster() != null;
+        // #172: in bump combat the state stays INACTIVE, so the card used to appear only with the
+        // Space menu open. The monster you are facing now gets the same card, badge and all.
+        Monster facedMonster = inCombat ? null : facedLiveMonster();
+        if (inCombat || facedMonster != null) {
             delveInfoTable.setVisible(false);
             combatMonsterTable.setVisible(true);
 
-            Monster monster = combatManager.getMonster();
-            String catBadge = "";
-            if (monster.getType() != null && monster.getType().getCategory() != null) {
-                switch (monster.getType().getCategory()) {
-                    case BAD:
-                        catBadge = " [BAD: Holy/Spiritual]";
-                        break;
-                    case NASTY:
-                        catBadge = " [NASTY: Weak to War]";
-                        break;
-                    case HORRIBLE:
-                        catBadge = " [HORRIBLE: Balanced]";
-                        break;
-                }
-            }
-            monsterStrengthLabel.setText(checkScramble(monster.getMonsterType() + catBadge));
+            Monster monster = inCombat ? combatManager.getMonster() : facedMonster;
+            monsterStrengthLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.nameOf(monster)));
+            monsterAffinityLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.badge(monster)));
             monsterHpBar.setValue(monster.getCurrentHP(), monster.getMaxHP());
 
             switch (combatManager.getCurrentState()) {
+                case INACTIVE:
+                    combatStatusLabel.setText("");
+                    break;
                 case PLAYER_TURN:
                     combatStatusLabel.setText(checkScramble(">>> YOUR TURN <<<"));
                     combatStatusLabel.setColor(HudSkin.COL_FOOD_GREEN);
@@ -969,7 +1318,7 @@ public class Hud implements Disposable {
                     combatStatusLabel.setColor(HudSkin.COL_HP_CRITICAL);
                     break;
                 default:
-                    combatStatusLabel.setText(checkScramble(combatManager.getCurrentState().toString()));
+                    combatStatusLabel.setText(checkScramble(com.bpm.minotaur.ui.UiNames.caps(combatManager.getCurrentState())));
                     combatStatusLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
             }
@@ -983,6 +1332,39 @@ public class Hud implements Disposable {
 
         // --- 5. Update World Interaction Modal Card ---
         updateWorldInteractionCard();
+    }
+
+    /** Shows a status-style tooltip over a HUD readout while the pointer is on it. */
+    private void addReadoutTooltip(final Actor label, final java.util.function.Supplier<com.bpm.minotaur.ui.HudReadouts.Tip> tip) {
+        label.setTouchable(Touchable.enabled);
+        label.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
+                com.bpm.minotaur.ui.HudReadouts.Tip t = tip.get();
+                Vector2 pos = label.localToStageCoordinates(new Vector2(0, 0));
+                hudTooltip.showStatus(t.title, t.category, t.details, t.remedy,
+                        pos.x + label.getWidth() / 2f, pos.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                hudTooltip.hide();
+            }
+        });
+    }
+
+    /**
+     * The living, hostile, visible monster on the tile the player faces, or null. Allies, peaceful
+     * folk and anything the player cannot see get no card, so the card never gives them away.
+     */
+    private Monster facedLiveMonster() {
+        if (maze == null || player == null || maze.getMonsters() == null) return null;
+        Vector2 dir = player.getFacing().getVector();
+        GridPoint2 front = new GridPoint2((int) (player.getPosition().x + dir.x), (int) (player.getPosition().y + dir.y));
+        Monster m = maze.getMonsters().get(front);
+        if (m == null || !m.isAlive() || m.isAlly() || m.isPeaceful() || m.isInvisible() || m.isHidden()) return null;
+        return m;
     }
 
     private static class ParsedLogLine {
@@ -1106,72 +1488,140 @@ public class Hud implements Disposable {
         return lines;
     }
 
+    public void scrollChronicle(int delta) {
+        setChronicleScrollOffset(chronicleScrollOffset + delta);
+    }
+
+    public void setChronicleScrollOffset(int offset) {
+        this.chronicleScrollOffset = Math.max(0, offset);
+        lastRenderedScrollOffset = -1; // Force immediate re-render
+        updateChronicleLog();
+    }
+
+    public int getChronicleScrollOffset() {
+        return chronicleScrollOffset;
+    }
+
     private void updateChronicleLog() {
-        List<String> rawHistory = eventManager.getMessageHistory();
-        if (rawHistory == null || rawHistory.isEmpty()) {
+        if (eventManager == null) return;
+
+        int currentRevision = eventManager.getMessageHistoryRevision();
+        boolean revisionChanged = (currentRevision != lastHistoryRevision) || cachedDisplayRows.isEmpty();
+
+        if (revisionChanged) {
+            lastHistoryRevision = currentRevision;
+            List<String> rawHistory = eventManager.getMessageHistory();
+            int previousRowCount = cachedDisplayRows.size();
+            cachedDisplayRows.clear();
+
+            if (rawHistory != null && !rawHistory.isEmpty()) {
+                // Deduplicate consecutive identical messages from all history
+                java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
+                for (int i = 0; i < rawHistory.size(); i++) {
+                    String raw = rawHistory.get(i);
+                    if (raw == null || raw.trim().isEmpty()) continue;
+                    raw = raw.trim();
+
+                    if (!deduplicated.isEmpty() && deduplicated.get(deduplicated.size() - 1).text.equals(raw)) {
+                        deduplicated.get(deduplicated.size() - 1).count++;
+                    } else {
+                        ParsedLogLine line = new ParsedLogLine();
+                        line.text = raw;
+                        line.color = getSemanticColor(raw);
+                        deduplicated.add(line);
+                    }
+                }
+
+                // Wrap messages into display rows (ordered newest line first at index 0)
+                for (ParsedLogLine item : deduplicated) {
+                    String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
+                    List<String> wrapped = wrapMessage(display, 620f);
+
+                    for (int w = wrapped.size() - 1; w >= 0; w--) {
+                        DisplayRow row = new DisplayRow();
+                        row.text = wrapped.get(w);
+                        row.color = item.color;
+                        cachedDisplayRows.add(row);
+                    }
+                }
+            }
+
+            // Pin reading position if new messages were added while scrolled
+            if (chronicleScrollOffset > 0 && previousRowCount > 0 && cachedDisplayRows.size() > previousRowCount) {
+                int added = cachedDisplayRows.size() - previousRowCount;
+                chronicleScrollOffset += added;
+            }
+        }
+
+        int rowsShown = chronicleLabels.length;
+        int maxOffset = Math.max(0, cachedDisplayRows.size() - rowsShown);
+        if (chronicleScrollOffset > maxOffset) {
+            chronicleScrollOffset = maxOffset;
+        }
+
+        // Skip label re-renders if nothing changed
+        if (!revisionChanged && chronicleScrollOffset == lastRenderedScrollOffset) {
+            return;
+        }
+        lastRenderedScrollOffset = chronicleScrollOffset;
+
+        if (cachedDisplayRows.isEmpty()) {
+            if (chronicleHeaderLabel != null) {
+                chronicleHeaderLabel.setText("CHRONICLE");
+                chronicleHeaderLabel.setColor(HudSkin.COL_GOLD_MUTED);
+            }
+            if (chronicleLiveLabel != null) {
+                chronicleLiveLabel.setVisible(false);
+            }
+            if (chronicleUpLabel != null) {
+                chronicleUpLabel.setColor(HudSkin.COL_TEXT_MUTED);
+            }
+            if (chronicleDownLabel != null) {
+                chronicleDownLabel.setColor(HudSkin.COL_TEXT_MUTED);
+            }
             for (Label l : chronicleLabels) {
                 l.setText("");
             }
             return;
         }
 
-        // Deduplicate consecutive identical messages from the newest entries
-        java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
-        for (int i = 0; i < rawHistory.size() && deduplicated.size() < 10; i++) {
-            String raw = rawHistory.get(i);
-            if (raw == null || raw.trim().isEmpty()) continue;
-            raw = raw.trim();
-
-            if (!deduplicated.isEmpty() && deduplicated.get(deduplicated.size() - 1).text.equals(raw)) {
-                deduplicated.get(deduplicated.size() - 1).count++;
+        if (chronicleHeaderLabel != null) {
+            if (chronicleScrollOffset > 0) {
+                chronicleHeaderLabel.setText("CHRONICLE (+" + chronicleScrollOffset + ")");
+                chronicleHeaderLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
             } else {
-                ParsedLogLine line = new ParsedLogLine();
-                line.text = raw;
-                line.color = getSemanticColor(raw);
-                deduplicated.add(line);
+                chronicleHeaderLabel.setText("CHRONICLE");
+                chronicleHeaderLabel.setColor(HudSkin.COL_GOLD_MUTED);
             }
         }
 
-        // Wrap messages into visual display rows fitting Chronicle width (620px)
-        // Newer messages are placed lower. We collect up to 5 visual rows total.
-        List<DisplayRow> displayRows = new ArrayList<>();
-        for (ParsedLogLine item : deduplicated) {
-            if (displayRows.size() >= 5) break;
-
-            String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
-            List<String> wrapped = wrapMessage(display, 620f);
-
-            List<DisplayRow> messageRows = new ArrayList<>();
-            for (String subLine : wrapped) {
-                DisplayRow row = new DisplayRow();
-                row.text = subLine;
-                row.color = item.color;
-                messageRows.add(row);
-            }
-
-            // Insert at front so older messages precede newer messages in reading order
-            displayRows.addAll(0, messageRows);
+        if (chronicleLiveLabel != null) {
+            chronicleLiveLabel.setVisible(chronicleScrollOffset > 0);
         }
 
-        // Keep at most the most recent 5 rows (the tail)
-        if (displayRows.size() > 5) {
-            displayRows = displayRows.subList(displayRows.size() - 5, displayRows.size());
+        if (chronicleUpLabel != null) {
+            chronicleUpLabel.setColor(chronicleScrollOffset < maxOffset ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_TEXT_MUTED);
         }
 
-        // Alphas: index 4 (newest, bottom) = 1.0f, then 0.85f, 0.70f, 0.55f, 0.40f
-        float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
+        if (chronicleDownLabel != null) {
+            chronicleDownLabel.setColor(chronicleScrollOffset > 0 ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_TEXT_MUTED);
+        }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < rowsShown; i++) {
             chronicleLabels[i].setText("");
         }
 
-        int numRows = displayRows.size();
-        for (int i = 0; i < numRows; i++) {
-            int labelIndex = (5 - numRows) + i;
-            DisplayRow row = displayRows.get(i);
+        int available = Math.min(rowsShown, cachedDisplayRows.size() - chronicleScrollOffset);
+        if (available <= 0) return;
+
+        for (int i = 0; i < available; i++) {
+            int rowIdx = chronicleScrollOffset + (available - 1 - i);
+            DisplayRow row = cachedDisplayRows.get(rowIdx);
+            int labelIndex = (rowsShown - available) + i;
+
             chronicleLabels[labelIndex].setText(checkScramble(row.text));
-            Color c = row.color;
-            float alpha = alphas[labelIndex];
+            Color c = row.color != null ? row.color : HudSkin.COL_TEXT_ON_DARK;
+            float alpha = (chronicleScrollOffset > 0) ? 0.95f : HudLayout.chronicleRowAlpha(labelIndex, rowsShown);
             chronicleLabels[labelIndex].setColor(c.r, c.g, c.b, alpha);
         }
     }
@@ -1219,6 +1669,9 @@ public class Hud implements Disposable {
     private float globalAlpha = 1f;
 
     public void render() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
         viewport.apply(); // Apply the viewport settings
 
         // Removed background drawing
@@ -1242,7 +1695,8 @@ public class Hud implements Disposable {
         stage.draw();
 
         // Draw the 2D inventory items AFTER stage to appear on top (unless modal encounter is open)
-        if (encounterWindow == null || !encounterWindow.isVisible()) {
+        if ((encounterWindow == null || !encounterWindow.isVisible())
+                && (eventWindow == null || !eventWindow.isVisible())) {
             drawInventory();
             drawPickupToast();
             drawStatusAlertToast();
@@ -1318,7 +1772,8 @@ public class Hud implements Disposable {
                     "P : Pickup Item",
                     "U : Use Item",
                     "D : Climb Ladder",
-                    "R : Rest",
+                    "R : First Aid",
+                    "H : Quick Heal",
                     "S : Swap Hands",
                     "E : Swap with Pack",
                     "T : Rotate Pack",
@@ -1620,6 +2075,10 @@ public class Hud implements Disposable {
                 return "L";
             case OCEAN:
                 return "O";
+            case TUNDRA:
+                return "T";
+            case BLIGHT:
+                return "B";
             default:
                 return "?";
         }
@@ -1640,6 +2099,9 @@ public class Hud implements Disposable {
     }
 
     private void renderRetroInventory() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
@@ -1684,6 +2146,10 @@ public class Hud implements Disposable {
     }
 
     private void renderModernInventory() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
+        spriteBatch.setColor(1f, 1f, 1f, globalAlpha);
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
 
@@ -1718,6 +2184,9 @@ public class Hud implements Disposable {
     }
 
     private void renderModernItemOverlays() {
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        Gdx.gl.glDepthMask(false);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
@@ -1777,11 +2246,21 @@ public class Hud implements Disposable {
 
     private void updateWorldInteractionCard() {
         if (worldInteractionCard == null) return;
+        // #170: every badge names the bound key, so a rebind shows up on the cards too.
+        com.bpm.minotaur.managers.ActionKeys keys = com.bpm.minotaur.managers.ActionKeys.live();
 
-        if (debugManager.isDebugOverlayVisible() ||
+        // LEVELUP-1 / HUD-1: this list named four things and the level-up overlay was not one
+        // of them, so a corpse's "[ E ] Loot Remains" card was drawn straight across the
+        // attribute list. Asking the input-context stack instead of naming overlays one by one
+        // means the next overlay added is covered without anyone remembering to come back here.
+        if (com.bpm.minotaur.ui.UiContexts.isAnyOpen() ||
+                debugManager.isDebugOverlayVisible() ||
                 (encounterWindow != null && encounterWindow.isVisible()) ||
+                (shopkeeperWindow != null && shopkeeperWindow.isVisible()) ||
+                (levelUpModal != null && levelUpModal.isVisible()) ||
                 (bonesAwakenModal != null && bonesAwakenModal.isVisible()) ||
-                (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
+                (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) ||
+                (gameScreen != null && gameScreen.isLookingOutWindow())) {
             worldInteractionCard.hide();
             return;
         }
@@ -1794,39 +2273,57 @@ public class Hud implements Disposable {
 
         Item frontItem = maze.getItems().get(frontTile);
 
-        // 0. Check Decomposing Corpse (NetHack-style Bones)
+        // 0. Check Decomposing Corpse (NetHack-style Bones & Monster Remains)
         com.bpm.minotaur.gamedata.Scenery frontScenery = (maze.getScenery() != null) ? maze.getScenery().get(frontTile) : null;
-        if (frontScenery != null && frontScenery.isDecomposingCorpse()) {
+        if (frontScenery == null && maze.getScenery() != null) {
+            frontScenery = maze.getScenery().get(feetTile);
+        }
+        if (frontScenery != null && frontScenery.isCorpse()) {
             com.bpm.minotaur.gamedata.bones.BonesData bd = frontScenery.getBonesData();
-            String heroName = (bd != null && bd.playerName != null) ? bd.playerName : "Fallen Hero";
-            if (bd != null && bd.defeated) {
-                worldInteractionCard.show(
-                        "[MORTAL REMAINS]",
-                        "[DEFEATED SPIRIT]",
-                        "Remains of " + heroName,
-                        "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
-                        "[ E ]",
-                        "Loot Remains",
-                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
-                );
-            } else if (bd != null && bd.awakened) {
-                worldInteractionCard.show(
-                        "[MORTAL REMAINS]",
-                        "[ACTIVE GHOST]",
-                        "Remains of " + heroName,
-                        "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
-                        "[ E ]",
-                        "Examine Remains",
-                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
-                );
+            if (frontScenery.isDecomposingCorpse() && bd != null) {
+                String heroName = (bd.playerName != null) ? bd.playerName : "Fallen Hero";
+                if (bd.defeated) {
+                    worldInteractionCard.show(
+                            "[MORTAL REMAINS]",
+                            "[DEFEATED SPIRIT]",
+                            "Remains of " + heroName,
+                            "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
+                            keys.badge("SWAP_PACK"),
+                            "Loot Remains",
+                            () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                    );
+                } else if (bd.awakened) {
+                    worldInteractionCard.show(
+                            "[MORTAL REMAINS]",
+                            "[ACTIVE GHOST]",
+                            "Remains of " + heroName,
+                            "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
+                            keys.badge("SWAP_PACK"),
+                            "Examine Remains",
+                            () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                    );
+                } else {
+                    worldInteractionCard.show(
+                            "[MORTAL REMAINS]",
+                            "[DORMANT BONES]",
+                            "Remains of " + heroName,
+                            "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
+                            keys.badge("SWAP_PACK"),
+                            "Disturb Remains",
+                            () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                    );
+                }
             } else {
+                String creatureName = frontScenery.getCorpseMonsterName() != null ? frontScenery.getCorpseMonsterName() : "Creature";
+                boolean hasKnife = (player != null && player.hasButcheringTool());
                 worldInteractionCard.show(
-                        "[MORTAL REMAINS]",
-                        "[DORMANT BONES]",
-                        "Remains of " + heroName,
-                        "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
-                        "[ E ]",
-                        "Disturb Remains",
+                        "[SLAIN CREATURE]",
+                        "[CORPSE]",
+                        "Corpse of " + creatureName,
+                        hasKnife ? "The lifeless remains of a slain " + creatureName + ". Ready to be harvested for meat and bones."
+                                : "The lifeless remains of a slain " + creatureName + ". Requires a bladed tool to butcher.",
+                        keys.badge("SWAP_PACK"),
+                        (hasKnife ? "Butcher / Harvest [" : "Examine Remains [") + keys.keyName("SWAP_PACK") + "]",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
             }
@@ -1841,8 +2338,20 @@ public class Hud implements Disposable {
                         "[STORAGE STASH]",
                         "Shelter Storage Chest",
                         "Secure repository for equipment, relics, and treasures. Stored items persist between delve runs.",
-                        "[ O ]",
+                        keys.badge("INTERACT"),
                         "Open Storage Chest",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.SHELTER_HEARTH_COLD) {
+                worldInteractionCard.show(
+                        "[SHELTER]",
+                        "[COLD HEARTH]",
+                        "Cold Hearth",
+                        "A shelter gone dark. Light its hearth with a Tinder Bundle to claim it: every station you have unlocked will stand here, and you can rest and wake here.",
+                        keys.badge("INTERACT"),
+                        "Light the Hearth",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
                 return;
@@ -1853,7 +2362,7 @@ public class Hud implements Disposable {
                         "[REST & RECOVERY]",
                         "Shelter Bedroll",
                         "Rest to fully replenish Health & Mana, cure status ailments, and save your delve progress.",
-                        "[ O ]",
+                        keys.badge("INTERACT"),
                         "Rest & Save Game",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -1864,8 +2373,8 @@ public class Hud implements Disposable {
                         "[SHELTER HUB]",
                         "[ARTISAN WORKBENCH]",
                         "Artisan's Crafting Bench & Forge",
-                        "Hone weapons and armor, salvage dungeon scrap, infuse monster trophies, and carve bone relics. Draws from pack and chest.",
-                        "[ O ]",
+                        "Hone weapons and armor, salvage dungeon scrap and infuse monster trophies. At the Ossuary, carve three monster bones into a new combat die. Draws from pack and chest.",
+                        keys.badge("INTERACT"),
                         "Open Crafting Bench",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -1877,7 +2386,7 @@ public class Hud implements Disposable {
                         "[CAMPFIRE & COOKING]",
                         "Cooking Fire Pot",
                         "Combine harvested meats and forage into hearty meals granting lasting survival buffs.",
-                        "[ O ]",
+                        keys.badge("INTERACT"),
                         "Cook Meals",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -1889,7 +2398,7 @@ public class Hud implements Disposable {
                         "[DIVINITY ALTAR]",
                         "Shelter Altar",
                         "An ancient stone altar humming with banked Divinities. Spend them on permanent Provisions, Repertoire, and Monument upgrades.",
-                        "[ O ]",
+                        keys.badge("INTERACT"),
                         "Open Shelter Altar",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -1901,8 +2410,32 @@ public class Hud implements Disposable {
                         "[CHRONICLE & CODEX]",
                         "Archive Lectern",
                         "An ancient stone lectern holding the Chronicle of Tarmin. Review unlocked armory relics, unsealed arcana, and shelter renovations.",
-                        "[ O ]",
+                        keys.badge("INTERACT"),
                         "Examine Archive Lectern",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.HOME_WAR_TABLE) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[THE WAR]",
+                        "War Table",
+                        "A campaign map of the overland pinned with each house's colours. See where the houses are fighting, and who is winning.",
+                        keys.badge("INTERACT"),
+                        "Study the War Table",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.HOME_CARTOGRAPHER_DESK) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[CARTOGRAPHY]",
+                        "Cartographer's Desk",
+                        "Drafting tables and survey instruments. Survey surrounding world sectors, chart biomes, roads, war fronts, and megabeast dens.",
+                        keys.badge("INTERACT"),
+                        "Examine Cartographer's Desk",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
                 return;
@@ -1912,10 +2445,24 @@ public class Hud implements Disposable {
                         "[SHELTER HAVEN]",
                         "[BRASS LANTERN]",
                         "Mounted Brass Lantern",
-                        "Casts a steady, warm 5.5m golden light. Equip in off-hand to pierce dungeon darkness and spot enemy weak points (+10% Crit).",
-                        "[ P ] Take Lantern",
-                        "[ O ] Toggle Flame",
+                        "Casts a steady, warm 5.5m golden light. It clips to your belt, leaving both hands free; press "
+                                + com.badlogic.gdx.Input.Keys.toString(com.bpm.minotaur.managers.SettingsManager.getInstance().getKey("TOGGLE_LANTERN"))
+                                + " to toggle it. Its light reveals enemy weak points (+10% Crit).",
+                        keys.badge("PICKUP_DROP") + " Take Lantern",
+                        keys.badge("INTERACT") + " Toggle Flame",
                         () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.HOME_TRAINING_DUMMY) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[TRAINING GROUNDS]",
+                        "Training Dummy & Weapon Rack",
+                        "Hone martial skills and spend banked skill points to unlock perks and abilities across combat disciplines.",
+                        keys.badge("INTERACT"),
+                        "Open Skill Tree",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
                 return;
             }
@@ -1929,7 +2476,7 @@ public class Hud implements Disposable {
                     "[BARRED WINDOW]",
                     "Iron-Barred Window",
                     "Three heavy iron bars set into a recessed stone embrasure. You can peer out at the wilderness and weather beyond.",
-                    "[ O / E ]",
+                    keys.badge("INTERACT", "SWAP_PACK"),
                     "Look Outside",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -1943,7 +2490,7 @@ public class Hud implements Disposable {
                     isOpen ? "[OPEN]" : "[CLOSED]",
                     "Heavy Timber Door",
                     isOpen ? "The doorway is open." : "Sturdy reinforced door keeping dungeon horrors out.",
-                    "[ O ]",
+                    keys.badge("INTERACT"),
                     isOpen ? "Close Door" : "Open Door",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -1968,7 +2515,7 @@ public class Hud implements Disposable {
                     gate.isLocked() ? "[SEALED]" : "[GATE]",
                     title,
                     desc,
-                    "[ O ]",
+                    keys.badge("INTERACT"),
                     gate.isLocked() ? "Channel Rune of Surrender" : "Pass Through Gate",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -1987,7 +2534,7 @@ public class Hud implements Disposable {
                         "[MIMIC]",
                         "Mimic",
                         "The lid breathes. Whatever this is, it is not a chest -- strike it before it strikes you.",
-                        "[ O ]",
+                        keys.badge("INTERACT"),
                         "Strike It First",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2000,7 +2547,7 @@ public class Hud implements Disposable {
                     "[CONTAINER]",
                     frontItem.getDisplayName(),
                     locked ? "Secured ancient chest. Requires a matching key to unlock." : "Open to search for relics and treasures inside.",
-                    "[ O ]",
+                    keys.badge("INTERACT"),
                     locked ? "Unlock Container" : "Open Container",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2015,7 +2562,7 @@ public class Hud implements Disposable {
                     "[CORPSE]",
                     hasStored ? "Lost Adventurer Remains" : frontItem.getDisplayName(),
                     hasStored ? "Recover lost equipment and backpack from your previous demise." : "Fallen creature. Can be harvested for meat, bones, and alchemical viscera.",
-                    "[ O ]",
+                    keys.badge("INTERACT"),
                     hasStored ? "Recover Equipment" : "Harvest / Butcher",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2035,43 +2582,44 @@ public class Hud implements Disposable {
             String title;
             String desc;
             String action;
+            String descendBadge = " [" + keys.keyName("DESCEND") + "]";
 
             if (style == Ladder.EntranceStyle.SINKHOLE) {
                 tag = "[STRATA DESCENT]";
                 header = "[SINKHOLE]";
                 title = "Natural Sinkhole Chasm";
                 desc = "A yawning fissure plunging deep into the subterranean grottoes.";
-                action = "Descend into Grotto [D]";
+                action = "Descend into Grotto" + descendBadge;
             } else if (style == Ladder.EntranceStyle.CAVE_MOUTH) {
                 tag = "[STRATA DESCENT]";
                 header = "[CAVE MOUTH]";
                 title = "Cavern Entrance";
                 desc = "A dark stone cavern opening leading down into uncharted subterranean depths.";
-                action = "Enter Cavern [D]";
+                action = "Enter Cavern" + descendBadge;
             } else if (style == Ladder.EntranceStyle.STONE_STAIRS) {
                 tag = isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]";
                 header = "[STONE STAIRS]";
                 title = isDown ? "Ancient Stairwell Down" : "Ancient Stairwell Up";
                 desc = isDown ? "Heftily carved stone steps leading down into ancient crypts." : "Worn stone steps ascending to the overland surface.";
-                action = isDown ? "Descend Stairs [D]" : "Ascend Stairs [D]";
+                action = isDown ? "Descend Stairs" + descendBadge : "Ascend Stairs" + descendBadge;
             } else if (style == Ladder.EntranceStyle.TRAPDOOR) {
                 tag = "[STRATA DESCENT]";
                 header = "[TRAPDOOR]";
                 title = "Reinforced Iron Trapdoor";
                 desc = "A heavy iron hatchway sealed flush against the stone floor.";
-                action = "Open and Descend [D]";
+                action = "Open and Descend" + descendBadge;
             } else if (style == Ladder.EntranceStyle.ROPE) {
                 tag = isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]";
                 header = "[EXPEDITION ROPE]";
                 title = isDown ? "Climbing Rope Down" : "Climbing Rope Up";
                 desc = isDown ? "A knotted hemp rope dropping into the cavern below." : "A knotted climbing rope anchored securely to the surface above.";
-                action = isDown ? "Climb Down Rope [D]" : "Climb Up Rope [D]";
+                action = isDown ? "Climb Down Rope" + descendBadge : "Climb Up Rope" + descendBadge;
             } else {
                 tag = isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]";
                 header = "[LADDER]";
                 title = isDown ? "Ladder Down" : "Ladder Up";
                 desc = isDown ? "Descends deeper into Castle Tarmin." : "Ascends toward upper sanctums and camp.";
-                action = isDown ? "Descend Ladder [D]" : "Ascend Ladder [D]";
+                action = isDown ? "Descend Ladder" + descendBadge : "Ascend Ladder" + descendBadge;
             }
 
             worldInteractionCard.show(
@@ -2079,7 +2627,7 @@ public class Hud implements Disposable {
                     header,
                     title,
                     desc,
-                    "[ D ]",
+                    keys.badge("DESCEND"),
                     action,
                     () -> { if (gameScreen != null) gameScreen.ascendOrDescendLadder(); }
             );
@@ -2097,24 +2645,47 @@ public class Hud implements Disposable {
             }
         }
         if (groundItem != null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(groundItem);
             String loc = atFeet ? "[GROUND (FEET)]" : "[GROUND (AHEAD)]";
             String cat = groundItem.getCategory() != null ? "[" + groundItem.getCategory().name().replace('_', ' ') + "]" : "[ITEM]";
             String title = groundItemDisplayName(groundItem);
             String statDesc = formatItemStatDescription(groundItem);
-            String actionText = "Pick Up [P]";
+            String actionText = "Pick Up [" + keys.keyName("PICKUP_DROP") + "]";
             if (groundItem.isWeapon() || groundItem.isArmor() || groundItem.isShield()) {
-                actionText += "  |  Quick Equip [E]";
+                actionText += "  |  Quick Equip [" + keys.keyName("SWAP_PACK") + "]";
             } else if (groundItem.isConsumableOrTool()) {
-                actionText += "  |  Consume [E/U]";
+                actionText += "  |  Consume [" + keys.keyName("SWAP_PACK") + "/" + keys.keyName("USE_ITEM") + "]";
             }
+            com.bpm.minotaur.gamedata.item.GearComparison.ComparisonResult comp =
+                    com.bpm.minotaur.gamedata.item.GearComparison.compare(groundItem, player);
+            String compBadge = (comp != null) ? comp.badge : null;
+            Color compColor = (comp != null) ? comp.color : null;
             worldInteractionCard.show(
                     loc,
                     cat,
                     title,
                     statDesc,
-                    "[ P / E ]",
+                    keys.badge("PICKUP_DROP", "SWAP_PACK"),
                     actionText,
-                    () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); }
+                    () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); },
+                    compBadge,
+                    compColor
+            );
+            return;
+        }
+
+        // 7b. A drinkable liquid ahead or underfoot: [O] Drink / [P] Fill waterskin (#193)
+        com.bpm.minotaur.gamedata.item.Waterskin.Draught liquid =
+                Player.liquidSourceAt(maze, player.getPosition(), player.getFacing());
+        if (liquid != null) {
+            worldInteractionCard.show(
+                    LiquidPromptCard.tag(liquid.strata),
+                    LiquidPromptCard.subTag(liquid.liquid, liquid.strata),
+                    LiquidPromptCard.title(liquid.liquid),
+                    LiquidPromptCard.description(liquid.liquid, liquid.strata),
+                    LiquidPromptCard.keyBadge(keys),
+                    LiquidPromptCard.actionText(keys),
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
             return;
         }
@@ -2174,10 +2745,13 @@ public class Hud implements Disposable {
     }
 
     private void drawPickupToast() {
-        if (toastTimer <= 0f || toastItem == null) return;
-        toastTimer -= Gdx.graphics.getDeltaTime();
+        Item toastItem = pickupToasts.current();
+        if (toastItem == null) return;
+        int toastCount = pickupToasts.size();
+        int toastPosition = pickupToasts.position();
+        pickupToasts.update(Gdx.graphics.getDeltaTime());
 
-        float alpha = Math.min(1.0f, toastTimer * 2f);
+        float alpha = Math.min(1.0f, pickupToasts.remaining() * 2f);
         String name = groundItemDisplayName(toastItem);
         String cat = toastItem.getCategory() != null ? "[" + toastItem.getCategory().name().replace('_', ' ') + "]" : "";
         String detail = "";
@@ -2198,6 +2772,9 @@ public class Hud implements Disposable {
         }
 
         String text = "Acquired: " + name + " " + cat + detail;
+        if (toastCount > 1) {
+            text += "   [Tab] " + toastPosition + "/" + toastCount;
+        }
         GlyphLayout layout = new GlyphLayout(font, text);
         float boxW = layout.width + 50;
         float boxH = 48;
@@ -2242,28 +2819,28 @@ public class Hud implements Disposable {
 
         // 2. Temperature
         if (p.getStats() != null) {
-            float temp = p.getStats().getBodyTemperature();
-            boolean hypothermic = temp < 32.0f;
-            boolean chilled = temp < 35.0f && !hypothermic;
+            com.bpm.minotaur.gamedata.player.Exposure.Band band = p.getStats().getExposureBand();
+            boolean hypothermic = band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC;
+            boolean chilled = band.isCold() && !hypothermic;
 
             if (hypothermic && !wasHypothermic) {
-                showStatusAlertToast("HYPOTHERMIA SETS IN! Violent shivering and frostbite!", Color.valueOf("8CD6FF"));
+                showStatusAlertToast("HYPOTHERMIA SETS IN! Find a fire or a hearth now!", HudSkin.COL_FROST);
             } else if (chilled && !wasChilled) {
-                showStatusAlertToast("BITING CHILL - Movement and attack speed slowed!", HudSkin.COL_WATER_CYAN);
+                showStatusAlertToast("BITING COLD - Movement and attack speed slowed!", HudSkin.COL_WATER_CYAN);
             }
             wasHypothermic = hypothermic;
             wasChilled = chilled;
 
             // 3. Satiation & Dehydration
-            boolean starving = p.getStats().getSatietyFloat() <= 0f;
+            boolean starving = p.getStats().getSatietyFloat() < com.bpm.minotaur.gamedata.player.Hunger.FAINTING_BELOW;
             if (starving && !wasStarving) {
-                showStatusAlertToast("STARVATION! Eat rations before your body collapses!", HudSkin.COL_HP_CRITICAL);
+                showStatusAlertToast("FAINTING! Eat before you pass out or starve!", HudSkin.COL_HP_CRITICAL);
             }
             wasStarving = starving;
 
-            boolean parched = p.getStats().getHydrationFloat() <= 0f;
+            boolean parched = p.getStats().getHydrationFloat() < com.bpm.minotaur.gamedata.player.Thirst.COLLAPSE_BELOW;
             if (parched && !wasParchedStatus) {
-                showStatusAlertToast("PARCHED DEHYDRATION! Drink water flask or find fountain!", HudSkin.COL_HP_CRITICAL);
+                showStatusAlertToast("COLLAPSING! Drink before you pass out or die of thirst!", HudSkin.COL_HP_CRITICAL);
             }
             wasParchedStatus = parched;
         }
@@ -2295,7 +2872,7 @@ public class Hud implements Disposable {
         float boxX = (viewport.getWorldWidth() - boxW) / 2f;
         boolean hasBridge = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() > 0;
         float baseY = hasBridge ? 950f : 1000f;
-        float boxY = (toastTimer > 0f) ? (baseY - 60f) : baseY;
+        float boxY = pickupToasts.isActive() ? (baseY - 60f) : baseY;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
@@ -2482,16 +3059,21 @@ public class Hud implements Disposable {
         if (mazeW == 0 || mazeH == 0)
             return;
 
-        // Calculate cell size to fit within the maxMapSize box
-        float cellSize = maxMapSize / Math.max(mazeW, mazeH);
+        // A strip of each loaded neighbouring chunk rings the current one, so a doorway on the
+        // edge leads somewhere on the map rather than off it. Classic keeps its old minimap.
+        boolean advanced = worldManager.getGameMode() == GameMode.ADVANCED;
+        int strip = advanced ? MINIMAP_NEIGHBOUR_STRIP : 0;
+        float cellSize = maxMapSize / (Math.max(mazeW, mazeH) + 2 * strip);
 
         // Calculate the ACTUAL size of the map on screen
-        float actualMapWidth = mazeW * cellSize;
-        float actualMapHeight = mazeH * cellSize;
+        float actualMapWidth = (mazeW + 2 * strip) * cellSize;
+        float actualMapHeight = (mazeH + 2 * strip) * cellSize;
 
-        // Position: Top Right (Anchored)
-        float startX = STAGE_WIDTH - actualMapWidth - mapRightMargin;
-        float startY = STAGE_HEIGHT - actualMapHeight - mapTopMargin;
+        // Position: Top Right (Anchored). startX/startY is the current chunk's corner.
+        float boxX = STAGE_WIDTH - actualMapWidth - mapRightMargin;
+        float boxY = STAGE_HEIGHT - actualMapHeight - mapTopMargin;
+        float startX = boxX + strip * cellSize;
+        float startY = boxY + strip * cellSize;
 
         // --- 1. Draw Background (Fitted) ---
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -2501,18 +3083,19 @@ public class Hud implements Disposable {
         // it happened to be dark, which stopped being true once the sky started burning.
         shapeRenderer.setColor(HudSkin.COL_PANEL_BG.r, HudSkin.COL_PANEL_BG.g,
                 HudSkin.COL_PANEL_BG.b, 0.88f);
-        shapeRenderer.rect(startX - 6, startY - 6, actualMapWidth + 12, actualMapHeight + 12);
+        shapeRenderer.rect(boxX - 6, boxY - 6, actualMapWidth + 12, actualMapHeight + 12);
         shapeRenderer.end();
 
         // Border, so the map reads as a panel rather than as lines floating on the world.
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(HudSkin.COL_GOLD_MUTED);
-        shapeRenderer.rect(startX - 6, startY - 6, actualMapWidth + 12, actualMapHeight + 12);
+        shapeRenderer.rect(boxX - 6, boxY - 6, actualMapWidth + 12, actualMapHeight + 12);
         shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         // --- 2. Draw Visited Tiles (Walls/Floor) ---
         shapeRenderer.end();
+        if (advanced) drawNeighbourStrips(startX, startY, cellSize, mazeW, mazeH, strip);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         // Wall bitmasks
@@ -2713,6 +3296,150 @@ public class Hud implements Disposable {
 
         // --- 5. Game Log (New Feature) ---
         // drawGameLog(startX, startY); // Merged into bottom bar
+
+        if (advanced) drawMinimapRim(boxX, boxY, actualMapWidth, actualMapHeight);
+    }
+
+    /** Rows of each loaded neighbouring chunk the minimap shows past the current chunk's edge. */
+    public static final int MINIMAP_NEIGHBOUR_STRIP = 3;
+    /** Length of the rim arrow pointing toward the waypoint. */
+    private static final float MINIMAP_ARROW_SIZE = 14f;
+    /** How long a suggested next step is trusted before it is worked out again. */
+    private static final float MINIMAP_SUGGESTION_TTL = 2f;
+
+    private GridPoint2 suggestionChunk;
+    private int suggestionLevel = -1;
+    private float suggestionAge = Float.MAX_VALUE;
+    private GridPoint2 suggestion;
+
+    /**
+     * The expedition map's suggested next step, worked out again only when the player changes
+     * chunk or a couple of seconds pass: it reads chunk saves, which no frame should pay for.
+     */
+    private GridPoint2 suggestedStep(GridPoint2 here, int level) {
+        suggestionAge += Gdx.graphics.getDeltaTime();
+        if (!here.equals(suggestionChunk) || level != suggestionLevel || suggestionAge > MINIMAP_SUGGESTION_TTL) {
+            suggestionChunk = new GridPoint2(here);
+            suggestionLevel = level;
+            suggestionAge = 0f;
+            suggestion = worldManager.buildMapModel().suggestion();
+        }
+        return suggestion;
+    }
+
+    /** The explored walls of each loaded neighbour, within {@link #MINIMAP_NEIGHBOUR_STRIP} tiles of the edge. */
+    private void drawNeighbourStrips(float startX, float startY, float cell, int w, int h, int strip) {
+        GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+        if (here == null) return;
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(HudSkin.COL_TEXT_MUTED.r, HudSkin.COL_TEXT_MUTED.g, HudSkin.COL_TEXT_MUTED.b, 0.55f);
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int sx = (int) d.getVector().x;
+            int sy = (int) d.getVector().y;
+            Maze n = worldManager.getLoadedChunk(new GridPoint2(here.x + sx, here.y + sy));
+            if (n == null || n.getWidth() != w || n.getHeight() != h) continue;
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int gx = x + sx * w;
+                    int gy = y + sy * h;
+                    if (gx < -strip || gx >= w + strip || gy < -strip || gy >= h + strip) continue;
+                    if (!n.isVisited(x, y)) continue;
+                    int mask = n.getWallDataAt(x, y);
+                    float cx = startX + gx * cell;
+                    float cy = startY + gy * cell;
+                    if ((mask & 0b01000000) != 0) shapeRenderer.line(cx, cy + cell, cx + cell, cy + cell);
+                    if ((mask & 0b00000100) != 0) shapeRenderer.line(cx + cell, cy, cx + cell, cy + cell);
+                    if ((mask & 0b00010000) != 0) shapeRenderer.line(cx, cy, cx + cell, cy);
+                    if ((mask & 0b00000001) != 0) shapeRenderer.line(cx, cy, cx, cy + cell);
+                }
+            }
+        }
+        shapeRenderer.end();
+    }
+
+    /**
+     * Compass letters on the minimap's rim, and an arrow on the rim toward the waypoint (or,
+     * without one, the expedition map's suggested next step). North is always up.
+     */
+    private void drawMinimapRim(float boxX, float boxY, float boxW, float boxH) {
+        GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+        int level = worldManager.getCurrentLevel();
+        if (here != null) {
+            com.bpm.minotaur.gamedata.map.MapKnowledge knowledge = com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance();
+            com.bpm.minotaur.gamedata.map.MapKnowledge.Spot wp = knowledge.getWaypoint();
+            GridPoint2 target = null;
+            boolean isWaypoint = false;
+            if (wp != null && wp.getFloor() == level) {
+                target = wp.getChunk();
+                isWaypoint = true;
+            } else if (wp == null && level == 1) {
+                target = suggestedStep(here, level);
+            }
+            if (target != null && !target.equals(here)) {
+                // From the player's place in chunk space to the target chunk's centre.
+                float px = here.x + player.getPosition().x / maze.getWidth();
+                float py = here.y + player.getPosition().y / maze.getHeight();
+                float dx = target.x + 0.5f - px;
+                float dy = target.y + 0.5f - py;
+                float len = (float) Math.sqrt(dx * dx + dy * dy);
+                if (len > 1e-3f) {
+                    dx /= len;
+                    dy /= len;
+                    float cx = boxX + boxW / 2f;
+                    float cy = boxY + boxH / 2f;
+                    // Where the ray from the centre leaves the box, pulled in a little.
+                    float reach = Math.min((boxW / 2f - 4f) / Math.max(1e-3f, Math.abs(dx)),
+                            (boxH / 2f - 4f) / Math.max(1e-3f, Math.abs(dy)));
+                    float tipX = cx + dx * reach;
+                    float tipY = cy + dy * reach;
+                    float size = MINIMAP_ARROW_SIZE;
+                    Color c = isWaypoint ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_TEXT_MUTED;
+                    shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                    shapeRenderer.setColor(c);
+                    shapeRenderer.triangle(tipX, tipY,
+                            tipX - dx * size - dy * size * 0.6f, tipY - dy * size + dx * size * 0.6f,
+                            tipX - dx * size + dy * size * 0.6f, tipY - dy * size - dx * size * 0.6f);
+                    shapeRenderer.end();
+                }
+            }
+        }
+
+        // A war is being fought here: the rim takes both houses' colours, attacker outside.
+        com.bpm.minotaur.gamedata.history.war.Front front = worldManager.frontHere();
+        if (front != null) {
+            com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+            com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+            float t = com.bpm.minotaur.ui.UiTheme.FRONT_RIM;
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, front.attackerId, catalog));
+            rimRect(boxX, boxY, boxW, boxH, t);
+            shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, front.defenderId, catalog));
+            rimRect(boxX + t, boxY + t, boxW - 2 * t, boxH - 2 * t, t);
+            shapeRenderer.end();
+        }
+
+        // Under the status pills, which stand directly beneath the map and grow with what ails the player.
+        float tallyTop = statusPillBar != null && statusPillBar.hasChildren() ? Math.min(boxY, statusPillBar.getY()) : boxY;
+        drawWarTally(boxX, tallyTop - com.bpm.minotaur.ui.UiTheme.WAR_TALLY_GAP, boxW);
+
+        BitmapFont compass = hudSkin.getFontSmall();
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        float lh = compass.getCapHeight();
+        compass.setColor(HudSkin.COL_GOLD_BRIGHT);
+        compass.draw(spriteBatch, "N", boxX, boxY + boxH - 2f, boxW, com.badlogic.gdx.utils.Align.center, false);
+        compass.setColor(HudSkin.COL_TEXT_MUTED);
+        compass.draw(spriteBatch, "S", boxX, boxY + lh + 2f, boxW, com.badlogic.gdx.utils.Align.center, false);
+        compass.draw(spriteBatch, "W", boxX + 3f, boxY + boxH / 2f + lh / 2f);
+        compass.draw(spriteBatch, "E", boxX, boxY + boxH / 2f + lh / 2f, boxW - 3f, com.badlogic.gdx.utils.Align.right, false);
+        spriteBatch.end();
+    }
+
+    private void rimRect(float x, float y, float w, float h, float t) {
+        shapeRenderer.rect(x, y, w, t);
+        shapeRenderer.rect(x, y + h - t, w, t);
+        shapeRenderer.rect(x, y, t, h);
+        shapeRenderer.rect(x + w - t, y, t, h);
     }
 
     /**
@@ -2886,6 +3613,49 @@ public class Hud implements Disposable {
     }
 
     // --- NEW: Helper method to support GameScreen calls ---
+    private com.bpm.minotaur.gamedata.history.war.WarTally warTally;
+
+    /** How the fight in the player's chunk stands, or null when there is none (Living War W30). */
+    public void setWarTally(com.bpm.minotaur.gamedata.history.war.WarTally tally) {
+        this.warTally = tally;
+    }
+
+    /**
+     * Under the minimap while a battle or skirmish is fought in the chunk: each house's colour at its
+     * end of a bar, the bar split by the ground each still holds.
+     */
+    private void drawWarTally(float x, float top, float width) {
+        if (warTally == null || worldManager == null) return;
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
+        float h = com.bpm.minotaur.ui.UiTheme.WAR_TALLY_H;
+        float y = top - h;
+        float split = width * warTally.shareA();
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
+        shapeRenderer.rect(x - 2f, y - 2f, width + 4f, h + 4f);
+        shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, warTally.houseA, catalog));
+        shapeRenderer.rect(x, y, split, h);
+        shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, warTally.houseB, catalog));
+        shapeRenderer.rect(x + split, y, width - split, h);
+        shapeRenderer.end();
+        BitmapFont font = hudSkin.getFontSmall();
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        font.setColor(HudSkin.COL_GOLD_BRIGHT);
+        com.bpm.minotaur.gamedata.history.House a = world.house(warTally.houseA);
+        com.bpm.minotaur.gamedata.history.House b = world.house(warTally.houseB);
+        float ty = y - com.bpm.minotaur.ui.UiTheme.PAD_SM;
+        // Each name in its own half, cut short with dots rather than running into the other.
+        String nameA = com.bpm.minotaur.ui.UiGlyphs.sanitize(a != null ? a.name : "");
+        String nameB = com.bpm.minotaur.ui.UiGlyphs.sanitize(b != null ? b.name : "");
+        font.draw(spriteBatch, nameA, x, ty, 0, nameA.length(), width / 2f - 4f, com.badlogic.gdx.utils.Align.left, false, "..");
+        font.draw(spriteBatch, nameB, x + width / 2f + 4f, ty, 0, nameB.length(), width / 2f - 4f,
+                com.badlogic.gdx.utils.Align.right, false, "..");
+        spriteBatch.end();
+    }
+
     public void addMessage(String message) {
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(message, 2f));
@@ -2896,6 +3666,8 @@ public class Hud implements Disposable {
     public void dispose() {
         if (statusPillBar != null)
             statusPillBar.dispose();
+        if (knellOverlay != null)
+            knellOverlay.dispose();
         stage.dispose();
         font.dispose();
         directionFont.dispose();
@@ -2963,12 +3735,29 @@ public class Hud implements Disposable {
             return;
 
         float integrity = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity();
-        float maxW = 400;
-        float h = 20;
-        float x = (viewport.getWorldWidth() - maxW) / 2;
-        float y = viewport.getWorldHeight() - 40;
+        boolean bossActive = com.bpm.minotaur.managers.DoomManager.getInstance().isBridgeBossActive();
 
-        // 1. Draw Bar (carved iron track, gold-gradient fill)
+        // Determine text and colors first to size bar cleanly
+        String text;
+        Color textColor;
+        if (integrity >= 100f && bossActive) {
+            text = "BRIDGE APOCALYPSE: SLAY THE BRINGER OF DEATH (100%)";
+            textColor = Color.RED;
+        } else if (integrity >= 90f) {
+            text = String.format("WARNING: BRIDGE AT %.0f%% - APOCALYPSE IMMINENT", integrity);
+            textColor = Color.valueOf("FFA500");
+        } else {
+            text = String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
+            textColor = HudSkin.COL_GOLD_BRIGHT;
+        }
+        glyphLayout.setText(font, text);
+
+        float maxW = Math.max(440f, glyphLayout.width + 40f);
+        float h = 20f;
+        float x = (viewport.getWorldWidth() - maxW) / 2f;
+        float y = viewport.getWorldHeight() - 40f;
+
+        // 1. Draw Bar
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
@@ -2976,13 +3765,28 @@ public class Hud implements Disposable {
         shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
         shapeRenderer.rect(x, y, maxW, h);
 
-        // Foreground (gold gradient, approximated as top/bottom halves)
+        // Foreground fill
         float fillW = maxW * (integrity / 100f);
         if (fillW > 0) {
-            shapeRenderer.setColor(Color.valueOf("D9A23A"));
-            shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
-            shapeRenderer.setColor(Color.valueOf("A06A1E"));
-            shapeRenderer.rect(x, y, fillW, h / 2f);
+            if (integrity >= 100f && bossActive) {
+                float pulse = 0.65f + 0.35f * MathUtils.sin((System.currentTimeMillis() % 10000L) / 1000f * 6f);
+                Color topCrimson = new Color(0.95f * pulse, 0.15f * pulse, 0.15f * pulse, 1.0f);
+                Color botCrimson = new Color(0.60f * pulse, 0.05f * pulse, 0.05f * pulse, 1.0f);
+                shapeRenderer.setColor(topCrimson);
+                shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+                shapeRenderer.setColor(botCrimson);
+                shapeRenderer.rect(x, y, fillW, h / 2f);
+            } else if (integrity >= 90f) {
+                shapeRenderer.setColor(Color.valueOf("E05020"));
+                shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+                shapeRenderer.setColor(Color.valueOf("A02810"));
+                shapeRenderer.rect(x, y, fillW, h / 2f);
+            } else {
+                shapeRenderer.setColor(Color.valueOf("D9A23A"));
+                shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+                shapeRenderer.setColor(Color.valueOf("A06A1E"));
+                shapeRenderer.rect(x, y, fillW, h / 2f);
+            }
         }
 
         shapeRenderer.end();
@@ -2990,7 +3794,13 @@ public class Hud implements Disposable {
         // Border
         Gdx.gl.glLineWidth(2);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(HudSkin.COL_STONE_MID);
+        if (integrity >= 100f && bossActive) {
+            shapeRenderer.setColor(Color.RED);
+        } else if (integrity >= 90f) {
+            shapeRenderer.setColor(Color.ORANGE);
+        } else {
+            shapeRenderer.setColor(HudSkin.COL_STONE_MID);
+        }
         shapeRenderer.rect(x, y, maxW, h);
         shapeRenderer.end();
         Gdx.gl.glLineWidth(1);
@@ -2998,14 +3808,12 @@ public class Hud implements Disposable {
         // 2. Draw Text
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
-        String text = String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
-        glyphLayout.setText(font, text);
 
         // Center text on bar
         float textX = x + (maxW - glyphLayout.width) / 2;
         float textY = y + (h + glyphLayout.height) / 2 - 2; // -2 for visual alignment
 
-        font.setColor(HudSkin.COL_GOLD_BRIGHT);
+        font.setColor(textColor);
         font.draw(spriteBatch, text, textX, textY);
         spriteBatch.end();
         // --- Draw Attack Indicators ---
@@ -3126,6 +3934,10 @@ public class Hud implements Disposable {
 
     public EncounterWindow getEncounterWindow() {
         return encounterWindow;
+    }
+
+    public EventWindow getEventWindow() {
+        return eventWindow;
     }
 
     // --- NEW: Confusion Scrambling Helper ---

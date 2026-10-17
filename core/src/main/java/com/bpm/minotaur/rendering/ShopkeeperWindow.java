@@ -225,6 +225,9 @@ public class ShopkeeperWindow extends Table {
         this.eventManager = eventManager;
         this.itemDataManager = itemDataManager;
         this.onClose = onClose;
+        if (titleLabel != null && shopkeeper != null) {
+            titleLabel.setText(com.bpm.minotaur.ui.UiGlyphs.sanitize(shopkeeper.getDisplayName().toUpperCase()));
+        }
     }
 
     public void show() {
@@ -309,12 +312,17 @@ public class ShopkeeperWindow extends Table {
             return;
         }
         player.getStats().setTreasureScore(gold - price);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(-price);
         shopkeeper.getInventory().removeItem(item);
         if (applyingRestitution) {
             shopkeeper.consumeRestitutionDiscount();
             eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price
                     + "g. (Merchant's apology discount applied)", 2.5f));
             status("Purchased " + item.getDisplayName() + " (-" + price + "g, apology discount applied).");
+        } else if (shopkeeper != null && shopkeeper.getMilitaryDiscount() > 0f) {
+            eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price
+                    + "g. (Sworn military discount applied)", 2.5f));
+            status("Purchased " + item.getDisplayName() + " (-" + price + "g, sworn discount applied).");
         } else {
             eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price + "g.", 2.5f));
             status("Purchased " + item.getDisplayName() + " (-" + price + "g).");
@@ -330,11 +338,14 @@ public class ShopkeeperWindow extends Table {
         int idx = Math.min(playerSelection, playerItems.size() - 1);
         Item item = playerItems.get(idx);
         int price = ShopInventory.getSellPrice(item, itemDataManager);
+        String sold = item.getSingleDisplayName();
 
-        player.getInventory().removeItem(item);
+        // A stack sells one at a time, at one's price -- never thirty for one.
+        player.getInventory().consumeOne(item);
         player.getStats().setTreasureScore(player.getStats().getTreasureScore() + price);
-        eventManager.addEvent(new GameEvent("Sold " + item.getDisplayName() + " for " + price + "g.", 2.5f));
-        status("Sold " + item.getDisplayName() + " (+" + price + "g).");
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(price);
+        eventManager.addEvent(new GameEvent("Sold " + sold + " for " + price + "g.", 2.5f));
+        status("Sold " + sold + " (+" + price + "g).");
         refresh();
     }
 
@@ -362,6 +373,7 @@ public class ShopkeeperWindow extends Table {
         }
 
         player.getStats().setTreasureScore(player.getStats().getTreasureScore() + totalGold);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordGold(totalGold);
         eventManager.addEvent(new GameEvent(
                 "Exchanged " + gems.size() + " gem(s) for " + totalGold + "g.", 2.5f));
         status("Exchanged " + gems.size() + " gem(s) for " + totalGold + "g.");
@@ -386,15 +398,17 @@ public class ShopkeeperWindow extends Table {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
-     * What this item will actually cost, restitution discount included.
+     * What this item will actually cost, restitution and military discount included.
      *
      * <p>Shared by the list and by {@code doBuy} on purpose: a shop that advertises one
      * number and charges another is worse than one that shows no prices at all, and the
      * discount is exactly the sort of thing that drifts when two places compute it.
      */
     private int effectiveBuyPrice(Item item) {
-        float discount = (shopkeeper != null) ? shopkeeper.getRestitutionDiscount() : 0f;
-        return ShopInventory.getEffectiveBuyPrice(item, itemDataManager, discount);
+        float restitution = (shopkeeper != null) ? shopkeeper.getRestitutionDiscount() : 0f;
+        float military = (shopkeeper != null) ? shopkeeper.getMilitaryDiscount() : 0f;
+        float totalDiscount = Math.min(0.9f, restitution + military);
+        return ShopInventory.getEffectiveBuyPrice(item, itemDataManager, totalDiscount);
     }
 
     /**
@@ -515,7 +529,9 @@ public class ShopkeeperWindow extends Table {
     }
 
     private ScrollPane.ScrollPaneStyle makePaneStyle() {
-        ScrollPane.ScrollPaneStyle style = new ScrollPane.ScrollPaneStyle();
+        ScrollPane.ScrollPaneStyle style = (hudSkin != null)
+                ? com.bpm.minotaur.ui.UiStyles.scrollPane(hudSkin)
+                : new ScrollPane.ScrollPaneStyle();
         if (hudSkin != null) {
             style.background = hudSkin.getSlotRecessed();
         }

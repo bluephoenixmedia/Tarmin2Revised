@@ -73,6 +73,9 @@ public class CraftingManager {
         legacyRecipes.add(new Recipe(List.of(ItemType.BONE, ItemType.BONE), ItemType.DART, 5, "Bone Darts"));
         legacyRecipes.add(new Recipe(List.of(ItemType.MEAT), ItemType.COOKED_MEAT, 1, "Cooked Meat"));
         legacyRecipes.add(new Recipe(List.of(ItemType.CHITIN, ItemType.LEATHER_SCRAP), ItemType.HELMET, 1, "Chitin Helm"));
+        // Fire for the shelter roads: never a hard lock, so it comes from the commonest wood there is.
+        legacyRecipes.add(new Recipe(List.of(ItemType.STICK, ItemType.STICK), ItemType.TINDER_BUNDLE, 1, "Tinder Bundle"));
+        legacyRecipes.add(new Recipe(List.of(ItemType.FIREWOOD), ItemType.TINDER_BUNDLE, 2, "Tinder Bundles (from Firewood)"));
 
         // The careful-planning gate on the merchant's Void chain laser: common debris alone is not
         // enough to wake a dead cell. A Rift Filament -- obtainable only from a trip into the Void --
@@ -132,6 +135,13 @@ public class CraftingManager {
         list.add(new AlchemyRecipe("Potion of Vitality", AlchemyCategory.RESTORATIVE,
                 reagentMap(ItemType.GIB_ORGAN, 1, ItemType.PUDDLE_WATER, 2),
                 ItemType.POTION_VITALITY, "A cleansing tonic that scours away exhaustion and weakness."));
+        // The field's slow heal (#190): common forage, so it is the everyday answer to a hard fight.
+        list.add(new AlchemyRecipe("Poultice", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.MOSS_CLUMP, 1, ItemType.TWISTED_ROOT, 1),
+                ItemType.POULTICE, "Moss packed around crushed root. Restores 30% of your health over 5 turns; a wound tears it away."));
+        list.add(new AlchemyRecipe("Lichen Poultice", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.GLOWING_LICHEN, 1),
+                ItemType.POULTICE, "Glowing lichen bound in a wrap. Restores 30% of your health over 5 turns; a wound tears it away."));
 
         list.add(new AlchemyRecipe("Potion of Giant Strength", AlchemyCategory.ENHANCEMENT,
                 reagentMap(ItemType.GIB_BONE, 2, ItemType.GIB_FLESH, 2),
@@ -691,10 +701,15 @@ public class CraftingManager {
                         ? new ItemModifier(ModifierType.ADD_POISON_DAMAGE, 2, "Venomous")
                         : new ItemModifier(ModifierType.RESIST_DISEASE, 15, "Inoculated");
             case STRANGE_METAL:
-            case GLOWING_LICHEN:
                 return isWeapon
                         ? new ItemModifier(ModifierType.ADD_FIRE_DAMAGE, 2, "Flaming")
                         : new ItemModifier(ModifierType.RESIST_FIRE, 15, "Insulated");
+            case GLOWING_LICHEN:
+                // The enchanting trophy: its glow wards a piece against spells. Armour takes the
+                // stronger ward; a blade carries a lighter one.
+                return isWeapon
+                        ? new ItemModifier(ModifierType.BONUS_MAGIC_RESISTANCE, 5, "Warding")
+                        : new ItemModifier(ModifierType.BONUS_MAGIC_RESISTANCE, 10, "Warded");
             case BAT_WING:
             case GIB_ORGAN:
                 return isWeapon

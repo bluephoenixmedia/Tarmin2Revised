@@ -98,7 +98,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     private InventorySlot slotChest, slotArms, slotHands;
     private InventorySlot slotLegs, slotFeetL, slotFeetR;
     private InventorySlot slotWeaponMain, slotWeaponOff;
-    private InventorySlot slotRingL, slotRingR;
+    private InventorySlot slotRingL, slotRingR, slotBelt;
 
     private final List<InventorySlot> allEquip = new ArrayList<>();
 
@@ -157,14 +157,18 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         slotArms = equip("Arms", ItemType.ARMS, 167f, 616f); // far-left, lower-mid row (left of pair)
         slotHands = equip("Hands", ItemType.GAUNTLETS, 280f, 616f); // lower-mid row (right of pair)
         slotLegs = equip("Legs", ItemType.LEGS, 221f, 502f); // far-left, lower row
-        slotFeetL = equip("Feet", ItemType.BOOTS, 165f, 382f); // bottom row (left boot)
-        slotFeetR = equip("Feet", ItemType.BOOTS, 280f, 382f); // bottom row (right boot)
+        // INV-5: both boot slots read "Feet", so the pair was indistinguishable and the
+        // label told the player nothing the outline had not already said.
+        slotFeetL = equip("Feet L", ItemType.BOOTS, 165f, 382f); // bottom row (left boot)
+        slotFeetR = equip("Feet R", ItemType.BOOTS, 280f, 382f); // bottom row (right boot)
 
         // ── Right column (weapons / rings, run top to bottom on the right side) ─
         slotWeaponMain = equip("R.Hand", ItemType.SWORD, 810f, 844f); // right side, upper row
         slotWeaponOff = equip("L.Hand", ItemType.SHIELD, 758f, 733f); // right side, mid row
         slotRingL = equip("Ring", ItemType.RING, 759f, 616f); // right side, lower-mid (left ring)
         slotRingR = equip("Ring 2", ItemType.RING, 870f, 615f); // right side, lower-mid (right ring)
+        // Belt clip: the lantern lives here. Sits under the rings, in the right column free lower row.
+        slotBelt = equip("Belt", ItemType.BRASS_LANTERN, 815f, 502f);
 
         // Ornate frame overlay (on top of paper doll widget, behind slots)
         // float frameW = PORTRAIT_W + 18f;
@@ -208,6 +212,15 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         // width
         slot.setPosition(x - SLOT_SZ / 2f, y);
         dnd.register(slot);
+        // INV-5: an empty slot shows a short label, and a filled one hides it behind the item
+        // icon -- so once a slot is in use there is nothing saying what it is. The tooltip
+        // answers that whether the slot is empty or not.
+        slot.addListener(new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip(
+                name, com.bpm.minotaur.ui.UiTooltips.manager(),
+                new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip.TextTooltipStyle(
+                        new com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle(
+                                skin.getFontSmall(), InventorySkin.COL_TEXT_VALUE),
+                        skin.getPanelBoxDrawable())));
         allEquip.add(slot);
         addActor(slot);
         return slot;
@@ -279,6 +292,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         slotWeaponOff.setItem(player.getInventory().getLeftHand());
         slotRingL.setItem(eq.getWornRing());
         slotRingR.setItem(eq.getWornRing2());
+        slotBelt.setItem(eq.getWornBelt());
 
         syncPaperDoll(eq);
     }

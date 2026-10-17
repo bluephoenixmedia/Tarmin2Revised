@@ -123,4 +123,55 @@ public class InventoryOverhaulTest {
         assertEquals("1d3+1", template.damageDice);
         assertEquals(0.10f, template.critChanceBonus, 0.001f);
     }
+
+    private Item createTome(ItemType type, String name) {
+        ItemTemplate t = new ItemTemplate();
+        t.friendlyName = name;
+        t.isUsable = true;
+        return Item.fromTemplate(type, t);
+    }
+
+    @Test
+    public void testTomeAutoSlottingToQuickSlots() {
+        Item tomeInitiate = createTome(ItemType.TOME_OF_THE_INITIATE, "Tome of the Initiate");
+        Item tomeElements = createTome(ItemType.TOME_OF_ELEMENTS, "Tome of Elements");
+        Item tomeArcane = createTome(ItemType.TOME_OF_THE_ARCANE, "Tome of the Arcane");
+        Item tomeTarmin = createTome(ItemType.TOME_OF_TARMIN, "Tome of Tarmin");
+
+        assertTrue("Tome of Initiate must be classified as a tome", tomeInitiate.isTome());
+        assertTrue("Tome of Elements must be classified as a tome", tomeElements.isTome());
+        assertTrue("Tome of Arcane must be classified as a tome", tomeArcane.isTome());
+        assertTrue("Tome of Tarmin must be classified as a tome", tomeTarmin.isTome());
+
+        // Picking up tomes routes into empty Quick Slots (0..5) first
+        assertTrue(inventory.pickup(tomeInitiate));
+        assertSame(tomeInitiate, inventory.getQuickSlots()[0]);
+        assertTrue(inventory.getMainInventory().isEmpty());
+
+        assertTrue(inventory.pickup(tomeElements));
+        assertSame(tomeElements, inventory.getQuickSlots()[1]);
+        assertTrue(inventory.getMainInventory().isEmpty());
+
+        assertTrue(inventory.pickup(tomeArcane));
+        assertSame(tomeArcane, inventory.getQuickSlots()[2]);
+        assertTrue(inventory.getMainInventory().isEmpty());
+
+        assertTrue(inventory.pickup(tomeTarmin));
+        assertSame(tomeTarmin, inventory.getQuickSlots()[3]);
+        assertTrue(inventory.getMainInventory().isEmpty());
+
+        // Fill remaining quick slots 4 and 5
+        Item pot1 = createConsumable(ItemType.POTION_BLUE, "Potion 1");
+        Item pot2 = createConsumable(ItemType.POTION_BLUE, "Potion 2");
+        assertTrue(inventory.pickup(pot1));
+        assertTrue(inventory.pickup(pot2));
+        assertSame(pot1, inventory.getQuickSlots()[4]);
+        assertSame(pot2, inventory.getQuickSlots()[5]);
+
+        // When quick slots are full, additional tome spills over to main backpack
+        Item extraTome = createTome(ItemType.TOME_OF_THE_INITIATE, "Extra Tome");
+        assertTrue(inventory.pickup(extraTome));
+        assertEquals(1, inventory.getMainInventory().size());
+        assertSame(extraTome, inventory.getMainInventory().get(0));
+    }
 }

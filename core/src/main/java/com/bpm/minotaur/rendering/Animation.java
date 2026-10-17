@@ -12,7 +12,9 @@ public class Animation {
         PROJECTILE_SPELL,
         DAMAGE_TEXT,
         DRAIN_SPELL,
-        SPRITE_EXPLOSION_3D
+        SPRITE_EXPLOSION_3D,
+        /** A frame-sequence clip from fx.json drawn as a billboard in the 3D world. */
+        FX_CLIP_3D
     }
 
     private float elapsedTime; // Changed from final so it can be updated
@@ -50,6 +52,29 @@ public class Animation {
     private com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType explosionType;
     private float scale3D = 1.6f;
     private boolean additiveBlend = true;
+
+    private String fxClipId;
+
+    public String getFxClipId() {
+        return fxClipId;
+    }
+
+    /** A frame-sequence clip (see FxClips) played as a billboard at a world position. */
+    public Animation(String fxClipId, com.badlogic.gdx.math.Vector3 position3D, float scale, float duration,
+                     boolean additive) {
+        this.type = AnimationType.FX_CLIP_3D;
+        this.fxClipId = fxClipId;
+        this.position3D = (position3D != null) ? position3D.cpy() : new com.badlogic.gdx.math.Vector3();
+        this.scale3D = (scale > 0) ? scale : 1.0f;
+        this.duration = (duration > 0) ? duration : 0.5f;
+        this.color = Color.WHITE;
+        this.startPosition = new Vector2(this.position3D.x, this.position3D.z);
+        this.endPosition = new Vector2(this.position3D.x, this.position3D.z);
+        this.progress = 0f;
+        this.elapsedTime = 0f;
+        this.spriteData = null;
+        this.additiveBlend = additive;
+    }
 
     // Constructor for 3D In-World Sprite Explosions (BearFX)
     public Animation(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType explosionType,

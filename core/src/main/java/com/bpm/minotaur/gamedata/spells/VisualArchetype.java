@@ -87,6 +87,23 @@ public enum VisualArchetype {
             new Color(0.25f, 0.75f, 0.15f, 0.7f),  // Corrosive acid pool
             "%"
     ),
+    /**
+     * Grey-white obscuring vapour. Fog Cloud, and whatever else conceals rather than harms.
+     *
+     * <p>Fog used to borrow TOXIC_CLOUD, which is not merely the wrong colour for the puffs --
+     * the archetype drives the cast overlay and the post-process flash too, so casting fog lit
+     * the screen poison-green.
+     */
+    OBSCURING_MIST(
+            new Color(0.82f, 0.84f, 0.86f, 1.0f),   // Pale vapour
+            new Color(0.55f, 0.58f, 0.62f, 1.0f),   // Shadowed grey
+            "spell_toxic",
+            false,
+            true,   // Closing-in vignette: the world shrinks around you
+            false,
+            new Color(0.70f, 0.72f, 0.75f, 0.35f),  // Damp residue
+            "~"
+    ),
     SPATIAL_WARP(
             new Color(0.7f, 0.2f, 0.95f, 1.0f),    // Violet void
             new Color(0.2f, 1.0f, 0.9f, 1.0f),     // Dimensional turquoise

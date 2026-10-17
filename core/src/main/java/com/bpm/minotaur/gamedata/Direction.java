@@ -53,4 +53,12 @@ public enum Direction {
             default: throw new IllegalStateException("Unexpected direction: " + this);
         }
     }
+
+    public static Direction fromDelta(int dx, int dy) {
+        if (dx == 0 && dy > 0) return NORTH;
+        if (dx == 0 && dy < 0) return SOUTH;
+        if (dx > 0 && dy == 0) return EAST;
+        if (dx < 0 && dy == 0) return WEST;
+        return null;
+    }
 }

@@ -50,20 +50,10 @@ public class CodexDataAndFilteringTest {
     public void testArcaneAttunementSpellSealing() {
         ShelterAltar altar = ShelterAltar.getInstance();
 
-        // At Tier 0, all attunement spells are sealed
-        assertTrue("Magic Missile should be sealed at Tier 0", altar.isSpellSealed("MAGIC_MISSILE"));
-        assertTrue("Misty Step should be sealed at Tier 0", altar.isSpellSealed("MISTY_STEP"));
-        assertTrue("Fireball should be sealed at Tier 0", altar.isSpellSealed("FIREBALL"));
-
-        // Purchase Tier 1: Magic Missile unsealed, Misty Step & Fireball still sealed
-        com.bpm.minotaur.managers.DivinityManager.getInstance().addDivinities(100);
-        boolean purchased = altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
-        assertTrue("Purchase should succeed with banked divinities", purchased);
-        assertEquals(1, altar.getTier(ShelterAltar.Tree.ARCANE_ATTUNEMENT));
-        assertFalse("Magic Missile should be unsealed at Tier 1", altar.isSpellSealed("MAGIC_MISSILE"));
-        assertFalse("Shield should be unsealed at Tier 1", altar.isSpellSealed("SHIELD"));
-        assertTrue("Misty Step should remain sealed at Tier 1", altar.isSpellSealed("MISTY_STEP"));
-        assertTrue("Fireball should remain sealed at Tier 1", altar.isSpellSealed("FIREBALL"));
+        // The 9-spell hard gate was retired in the spell system overhaul: isSpellSealed always returns false
+        assertFalse("Magic Missile is unsealed", altar.isSpellSealed("MAGIC_MISSILE"));
+        assertFalse("Misty Step is unsealed", altar.isSpellSealed("MISTY_STEP"));
+        assertFalse("Fireball is unsealed", altar.isSpellSealed("FIREBALL"));
     }
 
     @Test
@@ -81,5 +71,38 @@ public class CodexDataAndFilteringTest {
         armor.baseValue = 100;
         // score = baseValue (100) + armorClassBonus * 100 (4 * 100 = 400) = 500
         assertEquals(500, UnlockManager.calculateItemScore(armor));
+    }
+
+    @Test
+    public void testEncounteredWeaponUnlocksInUnlockManager() {
+        UnlockManager um = UnlockManager.getInstance();
+        um.resetForTesting();
+
+        assertFalse("Item should start locked", um.getData().unlockedContent.contains("SWORD_BROAD"));
+
+        // Record item encounter (e.g. seen on ground or looted)
+        um.recordItemEncountered(Item.ItemType.SWORD_BROAD);
+
+        assertTrue("Item must be permanently registered in unlockedContent once encountered",
+                um.getData().unlockedContent.contains("SWORD_BROAD"));
+        assertTrue("Item must report as unlocked", um.isUnlocked("SWORD_BROAD"));
+    }
+
+    @Test
+    public void testInventoryPickupRecordsItemAsUnlocked() {
+        UnlockManager um = UnlockManager.getInstance();
+        um.resetForTesting();
+
+        com.bpm.minotaur.gamedata.Inventory inv = new com.bpm.minotaur.gamedata.Inventory();
+        Item dagger = new Item(Item.ItemType.DAGGER_BONE, 0, 0, null, null, null);
+
+        assertFalse("Bone Dagger should not be in unlockedContent initially",
+                um.getData().unlockedContent.contains("DAGGER_BONE"));
+
+        inv.pickup(dagger);
+
+        assertTrue("Picking up an item must automatically record it as unlocked",
+                um.getData().unlockedContent.contains("DAGGER_BONE"));
+        assertTrue("Item must report as unlocked", um.isUnlocked("DAGGER_BONE"));
     }
 }

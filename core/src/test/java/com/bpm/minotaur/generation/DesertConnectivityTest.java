@@ -14,9 +14,8 @@ import static org.junit.Assert.*;
  * Validates connectivity guarantees and expansive open sightlines for the Desert Biome.
  *
  * <p>Like the forest, every gate must reach every other gate across any seed,
- * and no single tile should be able to sever the chunk. Unlike the forest, the
- * desert terrain must feel expansive and exposed, with broad dune corridors
- * rather than dense claustrophobic thickets.
+ * and no single tile should be able to sever the chunk. The desert is mesa
+ * country: open dune basins linked by narrow canyons through tall rock.
  */
 public class DesertConnectivityTest {
 
@@ -136,24 +135,70 @@ public class DesertConnectivityTest {
     }
 
     @Test
-    public void sightlinesAreBroadAndOpen() throws Exception {
-        // Assert open desert layout: at least 50% of the chunk should be open sand floor
-        for (long seed = 0; seed < 10; seed++) {
+    public void noPropSealsOffAnyPatchOfSand() throws Exception {
+        int mid = SIZE / 2;
+        for (long seed = 0; seed < 30; seed++) {
             String[] layout = generateLayout(seed);
-            int openCount = 0;
-            int total = SIZE * SIZE;
+            Set<Integer> reached = reachableFrom(layout, mid, mid);
             for (int y = 0; y < SIZE; y++) {
                 for (int x = 0; x < SIZE; x++) {
                     if (isTraversable(at(layout, x, y))) {
-                        openCount++;
+                        assertTrue("seed " + seed + ": sand at (" + x + "," + y + ") is cut off from the bowl",
+                                reached.contains(y * SIZE + x));
                     }
                 }
             }
-            float openFraction = (float) openCount / total;
-            assertTrue("seed " + seed + ": desert should be open and expansive, but was only "
-                            + (openFraction * 100) + "% open",
-                    openFraction >= 0.50f);
         }
+    }
+
+    @Test
+    public void mesasFillTheChunkAndCanyonsWindThroughThem() throws Exception {
+        for (long seed = 0; seed < 20; seed++) {
+            String[] layout = generateLayout(seed);
+            int open = 0;
+            for (int y = 0; y < SIZE; y++) {
+                for (int x = 0; x < SIZE; x++) {
+                    if (isTraversable(at(layout, x, y))) open++;
+                }
+            }
+            float share = open / (float) (SIZE * SIZE);
+            assertTrue("seed " + seed + ": " + (int) (share * 100) + "% open; basins and canyons, not open sand",
+                    share >= 0.22f && share <= 0.55f);
+        }
+    }
+
+    @Test
+    public void sideBasinsOpenAwayFromTheCentralBowl() throws Exception {
+        int mid = SIZE / 2;
+        for (long seed = 0; seed < 20; seed++) {
+            String[] layout = generateLayout(seed);
+            int basins = 0;
+            boolean[][] counted = new boolean[SIZE][SIZE];
+            for (int y = 3; y < SIZE - 3; y++) {
+                for (int x = 3; x < SIZE - 3; x++) {
+                    if (Math.abs(x - mid) + Math.abs(y - mid) < 10 || counted[y][x]) continue;
+                    if (!fullyOpen(layout, x, y)) continue;
+                    basins++;
+                    for (int dy = -5; dy <= 5; dy++) {
+                        for (int dx = -5; dx <= 5; dx++) {
+                            int cx = x + dx, cy = y + dy;
+                            if (cx >= 0 && cy >= 0 && cx < SIZE && cy < SIZE) counted[cy][cx] = true;
+                        }
+                    }
+                }
+            }
+            assertTrue("seed " + seed + ": expected 2-3 side basins, found " + basins, basins >= 2);
+        }
+    }
+
+    /** A 5x5 window with no rock in it: a clearing, not a canyon. Props stand on the sand. */
+    private boolean fullyOpen(String[] layout, int x, int y) {
+        for (int dy = -2; dy <= 2; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                if (at(layout, x + dx, y + dy) == '#') return false;
+            }
+        }
+        return true;
     }
 
     private boolean isGateApproach(int[][] approaches, int x, int y) {

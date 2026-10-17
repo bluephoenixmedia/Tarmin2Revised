@@ -36,6 +36,20 @@ public class MonsterSpellExecutor {
             return false;
         }
 
+        // Self-targeted spells need no line to the player. Everything else does: a spell that
+        // cannot reach its target is not cast, and costs nothing.
+        String earlyTargetType = spell.getTargetType() != null ? spell.getTargetType().toUpperCase() : "PROJECTILE";
+        boolean selfSpell = "SELF".equals(earlyTargetType) || spellId.contains("HEAL") || spellId.contains("SHIELD")
+                || spellId.contains("MISTY") || spellId.contains("TELEPORT");
+        boolean piercedWalls = false;
+        if (!selfSpell) {
+            MonsterSpellSight.Reach reach = MonsterSpellSight.assess(maze, caster, player.getPosition(), spell);
+            if (!reach.canCast()) {
+                return false;
+            }
+            piercedWalls = (reach == MonsterSpellSight.Reach.THROUGH_WALLS);
+        }
+
         // Deduct MP if spell has an MP cost
         if (spell.getMpCost() > 0) {
             if (!caster.hasEnoughMana(spell.getMpCost())) {
@@ -64,6 +78,10 @@ public class MonsterSpellExecutor {
         String monsterName = caster.getMonsterType() != null ? caster.getMonsterType() : "Monster";
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(monsterName + " casts " + spell.getName() + "!", 2.0f));
+            if (piercedWalls) {
+                // The one cast that ignores stone says so, so it is never mistaken for a bug.
+                eventManager.addEvent(new GameEvent("You feel something probing your mind through the stone!", 3.0f));
+            }
         }
 
         GameScreen gs = (combatManager != null) ? combatManager.getGameScreen() : null;
@@ -129,7 +147,7 @@ public class MonsterSpellExecutor {
             }
         } catch (Exception ignored) {}
 
-        int taken = player.takeDamage(finalDmg, dt);
+        int taken = player.takeSpellDamage(finalDmg, dt);
 
         if (combatManager != null) {
             combatManager.showPlayerDamageText(taken, false, dt);
@@ -161,17 +179,24 @@ public class MonsterSpellExecutor {
         float dist = startPos.dst(targetPos);
         float duration = Math.max(0.2f, Math.min(0.5f, dist / 14f));
 
-        Color color = archetype != null ? archetype.getPrimaryColor() : Color.ORANGE;
+        VisualArchetype arch = archetype != null ? archetype : VisualArchetype.FORCE_MISSILE;
+        Color color = arch.getPrimaryColor();
 
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().addAnimation(new Animation(
                     Animation.AnimationType.PROJECTILE_SPELL,
                     startPos, targetPos,
                     color, duration,
-                    new String[] { "*" }));
+                    new String[] { arch.getParticleAscii() }));
 
             Vector3 impact3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
-            combatManager.getAnimationManager().spawnExplosion(ExplosionType.FIRE, impact3d, 1.5f, 0.5f);
+            ExplosionType exp = SpellExecutionEngine.getExplosionForArchetype(arch);
+            combatManager.getAnimationManager().spawnExplosion(exp, impact3d, 1.5f, 0.5f);
+            SpellExecutionEngine.playImpactFx(combatManager, arch, impact3d);
+        }
+
+        if (combatManager != null && combatManager.getSoundManager() != null) {
+            combatManager.getSoundManager().playSpellSound(arch);
         }
 
         int spellDC = 8 + Math.max(0, (caster.getIntelligence() - 10) / 2);
@@ -188,7 +213,7 @@ public class MonsterSpellExecutor {
             }
         } catch (Exception ignored) {}
 
-        int taken = player.takeDamage(finalDmg, dt);
+        int taken = player.takeSpellDamage(finalDmg, dt);
 
         if (combatManager != null) {
             combatManager.showPlayerDamageText(taken, false, dt);
@@ -237,7 +262,7 @@ public class MonsterSpellExecutor {
                 caster.getPosition().set(dest.x + 0.5f, dest.y + 0.5f);
                 maze.getMonsters().put(dest, caster);
                 if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent(caster.getMonsterType() + " vanishes into thin air!", 1.8f));
+                    eventManager.addEvent(new GameEvent(caster.getName() + " vanishes into thin air!", 1.8f));
                 }
             }
         } else {
@@ -248,7 +273,7 @@ public class MonsterSpellExecutor {
                 combatManager.showDamageText(healed, new GridPoint2((int) caster.getPosition().x, (int) caster.getPosition().y), "+", Color.GREEN, false, DamageType.SPIRITUAL);
             }
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent(caster.getMonsterType() + " heals " + healed + " HP!", 1.5f));
+                eventManager.addEvent(new GameEvent(caster.getName() + " heals " + healed + " HP!", 1.5f));
             }
         }
     }
@@ -256,6 +281,14 @@ public class MonsterSpellExecutor {
     private static void applySpellStatusEffectsToPlayer(SpellTemplate spell, Player player,
             GameEventManager eventManager, Monster caster) {
         if (spell == null || player == null) return;
+
+        // The status riding on a spell is resisted at the same rate the spell's damage is cut.
+        if (com.bpm.minotaur.gamedata.MagicResistance.resists(player.getMagicResistance())) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You shrug off the spell's lingering effect!", 2.0f));
+            }
+            return;
+        }
 
         String id = spell.getId() != null ? spell.getId().toUpperCase() : "";
         String dt = spell.getDamageType() != null ? spell.getDamageType().toUpperCase() : "";

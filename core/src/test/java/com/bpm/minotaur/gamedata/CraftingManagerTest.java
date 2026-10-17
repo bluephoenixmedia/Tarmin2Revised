@@ -4,6 +4,7 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.item.ShelterChest;
 import com.bpm.minotaur.managers.CraftingManager;
@@ -160,6 +161,41 @@ public class CraftingManagerTest {
     }
 
     @Test
+    public void glowingLichenWardsArmourAndWeaponsAgainstMagic() {
+        Item breastplate = createArmor(ItemType.BREASTPLATE, "Breastplate", 4);
+        Item sword = createWeapon(ItemType.SWORD, "Shortsword");
+        Item lichen = createDebris(ItemType.GLOWING_LICHEN, "Glowing Lichen");
+
+        ItemModifier onArmour = craftingManager.getInfusionModifier(breastplate, lichen);
+        ItemModifier onWeapon = craftingManager.getInfusionModifier(sword, lichen);
+
+        assertEquals(ModifierType.BONUS_MAGIC_RESISTANCE, onArmour.type);
+        assertEquals(ModifierType.BONUS_MAGIC_RESISTANCE, onWeapon.type);
+        assertTrue("armour takes the stronger ward", onArmour.value > onWeapon.value);
+        assertTrue(onArmour.value >= 5 && onArmour.value <= 15);
+        assertTrue(onWeapon.value >= 5 && onWeapon.value <= 15);
+    }
+
+    @Test
+    public void strangeMetalKeepsItsElementalInfusion() {
+        Item breastplate = createArmor(ItemType.BREASTPLATE, "Breastplate", 4);
+        Item metal = createDebris(ItemType.STRANGE_METAL, "Strange Metal");
+        assertEquals(ModifierType.RESIST_FIRE, craftingManager.getInfusionModifier(breastplate, metal).type);
+    }
+
+    @Test
+    public void infusingWardingStacksOnlyUpToTheTwoSockets() {
+        Item breastplate = createArmor(ItemType.BREASTPLATE, "Breastplate", 4);
+        for (int i = 0; i < 3; i++) {
+            inventory.pickupToBackpack(createDebris(ItemType.GLOWING_LICHEN, "Glowing Lichen"));
+        }
+        assertTrue(craftingManager.infuseTrophy(inventory, breastplate, inventory.getMainInventory().get(0)));
+        assertTrue(craftingManager.infuseTrophy(inventory, breastplate, inventory.getMainInventory().get(0)));
+        assertFalse("a third ward is refused by the socket cap",
+                craftingManager.infuseTrophy(inventory, breastplate, inventory.getMainInventory().get(0)));
+    }
+
+    @Test
     public void testUnifiedShelterStorageAccess() {
         Item sword = createWeapon(ItemType.SWORD, "Shortsword");
 
@@ -250,5 +286,37 @@ public class CraftingManagerTest {
             }
         }
         return null;
+    }
+
+    /** The Poultice (#190) binds from moss and root, or from lichen alone, with the field kit's carried stock. */
+    @Test
+    public void testPoulticeBrewsFromMossAndRootOrLichenInTheField() {
+        craftingManager.setFieldMode(true);
+        com.bpm.minotaur.gamedata.player.Player player = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        List<CraftingManager.AlchemyRecipe> poultices = new java.util.ArrayList<>();
+        for (CraftingManager.AlchemyRecipe r : craftingManager.getAlchemyRecipes()) {
+            if (r.output == ItemType.POULTICE) poultices.add(r);
+        }
+        assertEquals(2, poultices.size());
+
+        player.getInventory().addItem(material(ItemType.MOSS_CLUMP));
+        player.getInventory().addItem(material(ItemType.TWISTED_ROOT));
+        player.getInventory().addItem(material(ItemType.GLOWING_LICHEN));
+        for (CraftingManager.AlchemyRecipe r : poultices) {
+            assertTrue(r.name, craftingManager.canBrew(player, r));
+            assertNotNull(craftingManager.brewPotion(player, r));
+            assertFalse("reagents are spent", craftingManager.canBrew(player, r));
+        }
+        int made = 0;
+        for (Item it : player.getInventory().getAllItems()) {
+            if (it.getType() == ItemType.POULTICE) made++;
+        }
+        assertEquals(2, made);
+    }
+
+    private static Item material(ItemType type) {
+        ItemTemplate t = new ItemTemplate();
+        t.friendlyName = type.name();
+        return Item.fromTemplate(type, t);
     }
 }

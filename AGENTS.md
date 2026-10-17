@@ -14,6 +14,29 @@ Five canonical triage roles (`needs-triage`, `needs-info`, `ready-for-agent`, `r
 
 Single-context layout with root `CONTEXT.md` and `docs/`. See `docs/agents/domain.md`.
 
+### Skills
+
+Workflows are plain markdown at `.claude/skills/<name>/SKILL.md`. Agents that do not load skills automatically read them by hand:
+
+- **Building an issue:** `implement` (it drives `tdd`, then `code-review`).
+- **A hard bug or flake:** `diagnosing-bugs`.
+- **Planning a large, foggy effort:** `wayfinder`, which runs `grilling` and `domain-modeling`.
+
+---
+
+## Current effort: the 0.0.2 cut
+
+- **Work queue:** the GitHub milestone `0.0.2`. Take an open, unblocked, unassigned issue labelled `ready-for-agent`, `P1` first. Assigning it to yourself is the claim, so do that before any work. `ready-for-human` issues belong to the user.
+- **Why each issue exists:** the decision map is issue #149; each issue links its decision ticket.
+- **Numbers to tune against:** `docs/balance/0.0.2-targets.md`. Measure with `./gradlew :lwjgl3:runDuelSimulation` (single fights) and `python tools/telemetry/aggregate.py` (whole expeditions).
+- **Vocabulary:** `CONTEXT.md` (Incarnation, Tarmin's Hunger, Vengeance, Exposure, Fodder / Soldier / Heavy).
+
+## Working safely
+
+- **Snapshot `saves/` in the same command as every game run**, e.g. `cp -r saves "<tmp>/saves_<timestamp>" && ./gradlew :lwjgl3:run`. Restore only from that same-command copy, and rename a replaced `saves/` aside rather than deleting it. The user plays between agent runs, so any earlier backup is stale.
+- **Shared docs are edit-only.** Backlogs, bug lists and design notes change under you while the user edits them: change just the lines you mean, and re-read a file right before any whole-file write.
+- **The art packs in `docs/game_assets/` are licensed** (Humble Bundle purchases); use them freely, keeping the attribution lines for packs that require credit. `monsters/Battra` is the exception: it is unusable.
+
 ---
 
 ## Branching and releases
@@ -44,7 +67,34 @@ the other side had started reading. Compile and test every merge.
 ## Repository Guidelines
 
 - **Architecture**: Always consult `docs/Implementation Plan_ The Expedition Loop & Progression Reboot.md` before making architectural modifications.
+- **Houses of the Maze** (hell factions, procedural history, surface wars, megabeasts, underground towns): plan, decisions and tasks in `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`; coordinated by the `facilitator` agent.
 - **Git Commits**: Commit when completing logical units of work; follow conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`).
 - **Core Loop**: Maintain the integrity of the Delve & Return Expedition loop: Shelter Hub -> Overland/Strata Delve -> Return to Camp -> Prepare for Castle Tarmin.
 - **Combat**: Keep grid combat fast and responsive (bump-to-attack in melee, directional projectile ballistics for bows, crossbows and thrown weapons, spellcast overlays). Calculations run under the hood with instant floating damage and combat log feedback.
 - **Firearms are the exception to ballistics**: muskets and pistols resolve hitscan, carried by a muzzle flash and powder smoke rather than a travelling sprite. Suddenness is the only thing a gun has over a bow, and a ball you can watch cross the room takes it away. Their cost is paid elsewhere -- a multi-turn reload, a noise pulse that wakes the level, and ammunition that never litters the floor. See `core/src/main/java/com/bpm/minotaur/gamedata/firearm/`.
+
+---
+
+## UI overhaul (pre-launch) — standing rules
+
+- Spec: `docs/ui-overhaul/SPEC.md` (findings, tokens, components, libGDX notes).
+  Mockups: `docs/ui-overhaul/mockups/` (`Tarmin UI 2b.dc.html` is the design
+  canvas, direction 2B "Carved Frame"). Prompts: `docs/ui-overhaul/PROMPTS.md`.
+- **Virtual canvas.** SPEC §5.1 proposes a 640x360 `PixelUiViewport`. This repo
+  already has one consistent virtual canvas -- every UI stage is
+  `FitViewport(1920, 1080)` -- and the design canvas is authored at 1920x1080
+  with `intellivision.ttf`. So the spec's intent (one integer-scaled canvas, no
+  fractional font scaling) is met by keeping 1920x1080 and treating **1 vu = 3
+  canvas units**. `UiTheme` exposes every §3 size in canvas units. Do not
+  introduce a second virtual resolution.
+- Approach: minimal diffs that extend existing classes. No architectural
+  rewrites. Inspect existing code before changing it and state the plan first.
+- PROTECTED: inventory paper doll + armor overlay coordinates. Never move,
+  resize, re-scale the doll or edit overlay offsets. Wrap, don't edit.
+- Layout: Scene2D Tables only; no hand-placed text; wrap or ellipsize every
+  Label; font line heights from metrics; integer font scales only.
+- UI text never comes from enum `name()`/`toString()` -- use `UiNames`.
+- Colors/sizes come from `UiTheme` / `HudSkin`, never literals in screen code.
+- Every UI string must survive `UiGlyphs.sanitize` -- `intellivision.ttf` has no
+  `_`, no degree sign and no box-drawing glyphs (see `UiGlyphsTest`).
+- When a finding is done, tick its checkbox in `docs/ui-overhaul/SPEC.md`.

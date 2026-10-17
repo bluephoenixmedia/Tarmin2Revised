@@ -46,6 +46,25 @@ public class SaveManagerTest {
     }
 
     @Test
+    public void testRespawnPendingSurvivesSaveAndClearsOnSlotChange() {
+        saveManager.startNewGame(1, "ADVANCED", "Ariadne", "Rogue");
+        com.bpm.minotaur.gamedata.player.Player player = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+
+        saveManager.setRespawnPending(true);
+        saveManager.saveActiveSlot(player, null);
+        assertTrue("a save written after death must say the respawn is unfinished",
+                saveManager.loadActiveWorldData().respawnPending);
+
+        saveManager.setRespawnPending(false);
+        saveManager.saveActiveSlot(player, null);
+        assertFalse(saveManager.loadActiveWorldData().respawnPending);
+
+        saveManager.setRespawnPending(true);
+        saveManager.setActiveSlotIndex(2);
+        assertFalse("another slot's character is not the dead one", saveManager.isRespawnPending());
+    }
+
+    @Test
     public void testStartNewGameAndMetadata() {
         saveManager.startNewGame(2, "MODERN", "Ariadne", "Rogue");
         assertEquals(2, saveManager.getActiveSlotIndex());
@@ -78,9 +97,14 @@ public class SaveManagerTest {
         ProfileData profile = saveManager.getProfile();
         assertNotNull(profile);
 
+        // classicModeUnlocked is slot-scoped, so we need an active slot first.
+        saveManager.startNewGame(1, "MODERN", "Theseus", "Warrior");
         saveManager.unlockClassicMode();
         assertTrue(saveManager.isClassicModeUnlocked());
-        assertTrue(saveManager.getProfile().classicModeUnlocked);
+        // Verify the flag lives on the slot metadata (not global profile) --
+        // this is intentional: a new character must not inherit another slot's victory.
+        assertTrue(saveManager.getSlotMetadata(1).classicModeUnlocked);
+        saveManager.deleteSlot(1);
     }
 
     @Test

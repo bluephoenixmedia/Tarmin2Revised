@@ -13,3 +13,11 @@ dependencies {
   testImplementation "junit:junit:4.13.2"
   testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
 }
+
+test {
+  // Prose review: ./gradlew :core:test --tests '*ChronicleGrammarTest' -PchronicleSeed=42
+  // writes core/build/chronicle/seed-42.txt (Houses of the Maze plan T1.8).
+  if (project.hasProperty('chronicleSeed')) {
+    systemProperty 'chronicle.seed', project.property('chronicleSeed')
+  }
+}

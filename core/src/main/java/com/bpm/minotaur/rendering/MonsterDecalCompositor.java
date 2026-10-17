@@ -38,6 +38,7 @@ public class MonsterDecalCompositor implements Disposable {
         boolean inUse = false;
         Monster assignedMonster = null;
         boolean dirty = true;
+        int lastFrame = -1;
     }
 
     private final List<FboSlot> fboPool = new ArrayList<>(MAX_ACTIVE_FBOS);
@@ -106,9 +107,15 @@ public class MonsterDecalCompositor implements Disposable {
             slot = acquireSlot(monster);
         }
 
-        if (slot != null && slot.dirty) {
-            renderWoundsToFbo(monster, slot);
-            slot.dirty = false;
+        if (slot != null) {
+            if (monster.isSpriteSheet() && monster.getCurrentFrame() != slot.lastFrame) {
+                slot.dirty = true;
+                slot.lastFrame = monster.getCurrentFrame();
+            }
+            if (slot.dirty) {
+                renderWoundsToFbo(monster, slot);
+                slot.dirty = false;
+            }
         }
 
         return (slot != null) ? slot.fboRegion : monster.getTextureRegion();
@@ -188,7 +195,8 @@ public class MonsterDecalCompositor implements Disposable {
                 dh = dw / Math.max(0.2f, aspect);
             }
 
-            batch.setColor(w.color != null ? w.color : Color.WHITE);
+            Color wc = (w.color != null ? w.color : Color.WHITE);
+            batch.setColor(wc.r, wc.g, wc.b, wc.a * 0.88f);
             batch.draw(
                     brush,
                     cx - dw * 0.5f, cy - dh * 0.5f,
