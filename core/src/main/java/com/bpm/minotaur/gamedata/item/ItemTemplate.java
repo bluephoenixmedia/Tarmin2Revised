@@ -89,7 +89,9 @@ public class ItemTemplate {
     public float weight = 1.0f;
     public int nutrition = 0;
     public int hydrationValue = 0; // New
-    public float warmthBonus = 0.0f; // New
+    public float warmthBonus = 0.0f; // Exposure insulation in degrees C (#194)
+    /** Fraction of rain kept off (cloaks and hoods), 0..1 (#194). */
+    public float coverage = 0.0f;
     public int probability = 0; // Relative spawn weight
     public float critChanceBonus = 0.0f;
     public int fireDamage = 0;

@@ -396,25 +396,28 @@ public class TundraConnectivityTest {
         }
         assertNotNull("Player inventory must contain harvested Firewood", firewood);
 
-        // Test field campfire creation by using firewood
+        // Firewood with no fire near kindles a field fire (#194): flames, light and a burn timer.
         player.useItem(firewood, eventManager, null, maze);
         boolean foundFieldCampfireLight = false;
         for (LightSource ls : maze.getLights()) {
-            if (ls.getId() != null && ls.getId().contains("tundra_campfire_field")) {
+            if (ls.getId() != null && ls.getId().contains("campfire_field")) {
                 foundFieldCampfireLight = true;
                 break;
             }
         }
         assertTrue("Using firewood in open field creates campfire light source", foundFieldCampfireLight);
-        assertTrue("Field campfire increases body temperature", player.getStats().getBodyTemperature() > 30.0f);
+        assertEquals(1, maze.getFieldFires().size());
+        com.bpm.minotaur.gamedata.shelter.FieldFire fire = maze.getFieldFires().get(0);
+        assertEquals(com.bpm.minotaur.gamedata.shelter.FieldFire.BURN_TURNS, fire.getTurnsLeft());
+        assertNotNull("The fire warms the player who lit it", maze.fieldFireWarming(5, 5));
 
-        // Test kindling campfire when near existing campfire
+        // Firewood beside a burning fire feeds it instead of lighting a second.
         com.bpm.minotaur.gamedata.item.Item firewood2 = com.bpm.minotaur.gamedata.item.Item.createFirewood(5, 5);
         player.getInventory().addItem(firewood2);
-        player.getStats().setBodyTemperature(32.0f);
-
         player.useItem(firewood2, eventManager, null, maze);
-        assertEquals("Kindling campfire near warmth restores body temperature to 37.0°C", 37.0f, player.getStats().getBodyTemperature(), 0.01f);
+        assertEquals(1, maze.getFieldFires().size());
+        assertEquals(com.bpm.minotaur.gamedata.shelter.FieldFire.BURN_TURNS
+                + com.bpm.minotaur.gamedata.shelter.FieldFire.FIREWOOD_TURNS, fire.getTurnsLeft());
     }
 
     @Test

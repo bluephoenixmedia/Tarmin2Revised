@@ -23,7 +23,7 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Keepsake**: An item whose perk applies while it is carried anywhere on the player, not only when equipped.
 - **Glancing Blow**: An attack that just misses and lands for reduced damage. It does not count as a hit.
 - **Vengeance**: The HP the protagonist takes back with each kill. With the slow natural regen, salves and the shelter bed, it is how he heals; there is no resting in the field.
-- **Exposure**: How cold the protagonist is, driven by environment, wetness, clothing warmth and nearby fire. High exposure brings Chilled, then Hypothermia.
+- **Exposure**: How cold the protagonist is, driven by environment, wetness, clothing warmth and nearby fire. Shown as a band: Warm, Comfortable, Chilly, Cold, Freezing, Hypothermic. Cold slows; Freezing also stops natural regen; Hypothermic does damage. WET and SOAKED make heat go two and three times as fast.
 - **Divinity**: Spiritual essence / experience points earned through exploration and slaying monsters; drops on death and can be reclaimed.
 - **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.
 - **Incarnation**: One life of the Eternal Champion, from rebirth (or a new game) to death. Level, stats, skill points and carried gear belong to the Incarnation and die with it. _Avoid_: "run", which is used loosely. Also called a **Life**.

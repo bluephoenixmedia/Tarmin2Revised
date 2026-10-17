@@ -61,6 +61,8 @@ public class PlayerSaveData {
     public static final int THIRST_SCALE_NETHACK = 1;
     public float hydration = com.bpm.minotaur.gamedata.player.Thirst.START;
     public float bodyTemperature = 37f;
+    /** Exposure wetness, 0..100 (#194); 0 (dry) on older saves. */
+    public float wetness = 0f;
     /** Blight Taint; 0 on saves written before it existed. */
     public float taint = 0f;
     public boolean waterborneIllness = false;
@@ -188,6 +190,7 @@ public class PlayerSaveData {
             this.hydration = stats.getHydrationFloat();
             this.thirstScale = THIRST_SCALE_NETHACK;
             this.bodyTemperature = stats.getBodyTemperature();
+            this.wetness = stats.getWetness();
             this.taint = stats.getTaint();
             this.toxicity = stats.getToxicity();
             this.arrows = stats.getArrows();
@@ -341,6 +344,7 @@ public class PlayerSaveData {
                     ? hydration
                     : com.bpm.minotaur.gamedata.player.Thirst.fromLegacyHydration(hydration));
             stats.setBodyTemperature(bodyTemperature);
+            stats.setWetness(wetness);
             stats.setTaint(taint);
             stats.setToxicity(toxicity);
             stats.setArrows(arrows);

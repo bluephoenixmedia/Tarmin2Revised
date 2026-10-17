@@ -212,9 +212,10 @@ public class Player {
                 || statusManager.hasEffect(StatusEffectType.SUPER_SPEED)) {
             speed *= 2;
         }
-        // Weather Survival Exposure: CHILLED saps 20% of move/attack speed
-        if (statusManager.hasEffect(StatusEffectType.CHILLED)) {
-            speed = (int) (speed * 0.8f);
+        // Exposure (#194): Cold takes 10% of move/attack speed, Freezing and worse 20%
+        float coldSlow = Exposure.bandOf(stats.getBodyTemperature()).speedPenalty;
+        if (coldSlow > 0f) {
+            speed = (int) (speed * (1f - coldSlow));
         }
         // Dehydrated and worse slow every action (#193)
         float thirstSlow = stats.getThirstStage().speedPenalty;
@@ -1587,6 +1588,14 @@ public class Player {
             return;
         }
 
+        // --- Tinder Bundle: kindles a field fire (#194). A cold hearth is lit by interacting with it. ---
+        if (item.getType() == Item.ItemType.TINDER_BUNDLE) {
+            if (kindleFieldFire(maze, eventManager)) {
+                inventory.consumeOne(item);
+            }
+            return;
+        }
+
         // --- Poultice: heals over the next turns (#190) ---
         if (item.getType() == Item.ItemType.POULTICE) {
             applyPoultice(item, eventManager);
@@ -1852,65 +1861,79 @@ public class Player {
         BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. toVoid=" + toVoid);
     }
 
+    /**
+     * Firewood feeds a field fire within reach, adding {@link com.bpm.minotaur.gamedata.shelter.FieldFire#FIREWOOD_TURNS};
+     * with none near, it kindles one as a Tinder Bundle does.
+     */
     private void useFirewood(Item item, Maze maze, GameEventManager eventManager) {
         if (maze == null) return;
         int px = (int) Math.floor(position.x);
         int py = (int) Math.floor(position.y);
-
-        // Check if there is already a campfire within warming radius (3.5 tiles)
-        LightSource nearCampfire = null;
-        for (LightSource ls : maze.getLights()) {
-            if (ls.getId() != null && ls.getId().contains("campfire")) {
-                float dx = ls.getPosition().x - (px + 0.5f);
-                float dy = ls.getPosition().y - (py + 0.5f);
-                if (dx * dx + dy * dy <= 12.25f) { // radius 3.5
-                    nearCampfire = ls;
-                    break;
-                }
-            }
-        }
-
-        if (nearCampfire != null) {
+        com.bpm.minotaur.gamedata.shelter.FieldFire near = maze.fieldFireWarming(px, py);
+        if (near != null) {
+            near.feed(com.bpm.minotaur.gamedata.shelter.FieldFire.FIREWOOD_TURNS);
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You feed the campfire with fresh firewood. The flames roar with revitalizing heat!", 2.5f));
+                eventManager.addEvent(new GameEvent("You feed the fire with fresh firewood. The flames roar back up.", 2.5f));
             }
-            stats.setBodyTemperature(37.0f);
             inventory.consumeOne(item);
             return;
         }
+        if (kindleFieldFire(maze, eventManager)) {
+            inventory.consumeOne(item);
+        }
+    }
 
-        // Place an emergency field campfire on the player's current tile or clear tile ahead
+    /**
+     * Kindles a field fire (#194) on the player's tile, or the clear tile ahead. It burns about
+     * {@link com.bpm.minotaur.gamedata.shelter.FieldFire#BURN_TURNS} turns, warms and dries within
+     * {@link Exposure#FIRE_RADIUS} tiles, lets the player cook (#191), and is seen by monsters.
+     *
+     * @return true when the fire took, so the caller spends the fuel
+     */
+    public boolean kindleFieldFire(Maze maze, GameEventManager eventManager) {
+        if (maze == null) return false;
+        int px = (int) Math.floor(position.x);
+        int py = (int) Math.floor(position.y);
         GridPoint2 targetTile = new GridPoint2(px, py);
-        if (maze.getScenery().containsKey(targetTile) || maze.isWall(px, py)) {
+        if (maze.getScenery().containsKey(targetTile) || maze.isWall(px, py) || isFieldFireAt(maze, px, py)) {
             Direction f = facing;
             int fx = px + (int) f.getVector().x;
             int fy = py + (int) f.getVector().y;
             GridPoint2 frontTile = new GridPoint2(fx, fy);
-            if (!maze.isWall(fx, fy) && !maze.getScenery().containsKey(frontTile)) {
+            if (!maze.isWall(fx, fy) && !maze.getScenery().containsKey(frontTile) && !isFieldFireAt(maze, fx, fy)) {
                 targetTile = frontTile;
             } else {
                 if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent("There is no clear ground here to kindle a campfire.", 2.0f));
+                    eventManager.addEvent(new GameEvent("There is no clear ground here to kindle a fire.", 2.0f));
                 }
-                return;
+                return false;
             }
         }
 
+        com.bpm.minotaur.gamedata.shelter.FieldFire fire =
+                new com.bpm.minotaur.gamedata.shelter.FieldFire(targetTile.x, targetTile.y);
         Scenery fieldCampfire = new Scenery(Scenery.SceneryType.PROP, targetTile.x, targetTile.y, "images/tundra/campfire_01.png");
         fieldCampfire.scale.set(1.0f, 0.8f);
         fieldCampfire.setPixelOffsetY(0f);
         fieldCampfire.setEmissiveTint(new Color(1f, 0.65f, 0.25f, 1.0f));
         maze.addScenery(fieldCampfire);
-
-        String lightId = "tundra_campfire_field_" + targetTile.x + "_" + targetTile.y;
-        maze.addLight(new LightSource(lightId, targetTile.x + 0.5f, targetTile.y + 0.5f,
+        maze.addLight(new LightSource(fire.lightId(), targetTile.x + 0.5f, targetTile.y + 0.5f,
                 LightingManager.COLOR_CAMPFIRE, 4.0f, 1.2f, LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+        maze.addFieldFire(fire);
 
         if (eventManager != null) {
-            eventManager.addEvent(new GameEvent("You kindle a crackling field campfire! Warmth spreads through the frozen air.", 2.5f));
+            eventManager.addEvent(new GameEvent("You kindle a field fire. It will burn about "
+                    + com.bpm.minotaur.gamedata.shelter.FieldFire.BURN_TURNS
+                    + " turns. Warm up, dry off, cook -- and mind who sees it.", 3.0f));
         }
-        stats.setBodyTemperature(Math.min(37.0f, stats.getBodyTemperature() + 3.0f));
-        inventory.consumeOne(item);
+        return true;
+    }
+
+    private static boolean isFieldFireAt(Maze maze, int x, int y) {
+        for (com.bpm.minotaur.gamedata.shelter.FieldFire f : maze.getFieldFires()) {
+            if (!f.isOut() && f.x == x && f.y == y) return true;
+        }
+        return false;
     }
 
     private void harvestFrozenTimber(Scenery s, GridPoint2 tile, Maze maze, GameEventManager eventManager) {
@@ -2048,11 +2071,16 @@ public class Player {
     }
 
     /**
-     * Hook for Exposure (#181, #194): a draught of Freezing Slush should deliver a strong
-     * chill. Cold is not modelled here yet; #194 replaces this body with the Exposure call.
+     * Exposure (#181, #194): a draught of Freezing Slush is a strong chill, and it leaves you
+     * WET down the front.
      */
     protected void chillFromDrink(com.bpm.minotaur.gamedata.liquid.LiquidType liquid, GameEventManager eventManager) {
-        // Intentionally empty until #194 lands its cold model.
+        if (liquid != com.bpm.minotaur.gamedata.liquid.LiquidType.FREEZING_SLUSH) return;
+        stats.setBodyTemperature(Math.max(Exposure.BODY_FLOOR, stats.getBodyTemperature() - Exposure.SLUSH_DRINK_CHILL));
+        stats.setWetness(Exposure.afterWading(stats.getWetness()));
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("The cold of it spreads through your chest.", 2.0f));
+        }
     }
 
     public void feastOnMeal(Item meal) {

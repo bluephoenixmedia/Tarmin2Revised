@@ -59,4 +59,29 @@ public class HudReadoutsTest {
         HudReadouts.Tip div = HudReadouts.divinityTip(5);
         assertEquals(-1, UiGlyphs.firstUnsupportedIndex(div.details + div.remedy + div.title + div.category));
     }
+
+    // --- Exposure (#194) ---------------------------------------------------------------
+
+    @Test
+    public void theExposureMeterNamesTheBandAndFillsWithWarmth() {
+        assertEquals("COMFORTABLE", HudReadouts.exposureMeterText(com.bpm.minotaur.gamedata.player.Exposure.Band.COMFORTABLE));
+        assertEquals("HYPOTHERMIC", HudReadouts.exposureMeterText(com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC));
+        assertTrue(HudReadouts.exposureMeterFill(37f) > HudReadouts.exposureMeterFill(34f));
+        assertEquals(0f, HudReadouts.exposureMeterFill(20f), 0f);
+        assertEquals(1f, HudReadouts.exposureMeterFill(45f), 0f);
+    }
+
+    @Test
+    public void everyExposureStringSurvivesTheFont() {
+        for (com.bpm.minotaur.gamedata.player.Exposure.Band b : com.bpm.minotaur.gamedata.player.Exposure.Band.values()) {
+            for (com.bpm.minotaur.gamedata.player.Exposure.Wetness w : com.bpm.minotaur.gamedata.player.Exposure.Wetness.values()) {
+                HudReadouts.Tip tip = HudReadouts.exposureTip(b, w);
+                assertEquals(-1, UiGlyphs.firstUnsupportedIndex(tip.title + tip.category + tip.details + tip.remedy
+                        + HudReadouts.exposureMeterText(b)));
+                assertTrue(HudReadouts.exposureMeterText(b).length() <= 12);
+            }
+            HudReadouts.Tip wet = HudReadouts.wetnessTip(com.bpm.minotaur.gamedata.player.Exposure.Wetness.SOAKED);
+            assertEquals(-1, UiGlyphs.firstUnsupportedIndex(wet.title + wet.category + wet.details + wet.remedy));
+        }
+    }
 }

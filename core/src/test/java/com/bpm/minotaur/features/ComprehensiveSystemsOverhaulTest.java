@@ -254,10 +254,13 @@ public class ComprehensiveSystemsOverhaulTest {
         Player player = new Player(2, 2);
         int baseSpeed = player.getEffectiveSpeed();
 
-        player.getStatusManager().addEffect(StatusEffectType.CHILLED, 999, 1, false);
-        int chilledSpeed = player.getEffectiveSpeed();
+        // Exposure bands (#194): Cold takes 10%, Freezing 20%.
+        player.getStats().setBodyTemperature(34.5f);
+        assertEquals((int) (baseSpeed * 0.9f), player.getEffectiveSpeed());
 
-        assertTrue("CHILLED should reduce effective speed", chilledSpeed < baseSpeed);
+        player.getStats().setBodyTemperature(33.0f);
+        int chilledSpeed = player.getEffectiveSpeed();
+        assertTrue("Freezing should reduce effective speed", chilledSpeed < baseSpeed);
         assertEquals((int) (baseSpeed * 0.8f), chilledSpeed);
     }
 
