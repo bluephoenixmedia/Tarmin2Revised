@@ -1739,18 +1739,10 @@ public class GameScreen extends BaseScreen {
         if (player == null || player.getStatusManager() == null) {
             return null;
         }
-        com.bpm.minotaur.managers.StatusManager sm = player.getStatusManager();
-        if (sm.hasEffect(StatusEffectType.HEROISM)) {
-            return new Color(1f, 0.85f, 0.3f, 1f); // Holy gold
-        }
-        if (sm.hasEffect(StatusEffectType.TEMP_STRENGTH) || sm.hasEffect(StatusEffectType.GIANT_STRENGTH)) {
-            return new Color(1f, 0.35f, 0.15f, 1f); // Fiery strength orange
-        }
-        if (sm.hasEffect(StatusEffectType.HASTED) || sm.hasEffect(StatusEffectType.SUPER_SPEED)
-                || sm.hasEffect(StatusEffectType.TEMP_SPEED)) {
-            return new Color(0.4f, 0.9f, 1f, 1f); // Cyan speed
-        }
-        return null;
+        // #199: any timed buff (potion, spell) or an enhanced weapon glows; see BuffGlow.
+        Item rightHand = player.getInventory() != null ? player.getInventory().getRightHand() : null;
+        return com.bpm.minotaur.rendering.BuffGlow.colorFor(player.getStatusManager().getActiveEffects(),
+                rightHand != null ? rightHand.getEnhancementLevel() : 0);
     }
 
     /** Chance per potion-sleep "Zzz" tick of slipping into the Ancient Void while dreaming. */
