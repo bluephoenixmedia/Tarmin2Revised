@@ -1812,7 +1812,7 @@ public class GameScreen extends BaseScreen {
             PlayerStats stats = player.getStats();
             if (stats.getHungerStage().isWeakened()) {
                 sb.append(" while starving");
-            } else if (stats.getHydrationFloat() <= 0) {
+            } else if (stats.getThirstStage().isDehydrated()) {
                 sb.append(" while parched");
             }
         }
@@ -1877,7 +1877,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setCurrentMP(player.getStats().getMaxMP());
         player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
         player.getStats().setSatiety(PlayerStats.STARTING_SATIETY);
-        player.getStats().setHydration(80.0f);
+        player.getStats().setHydration(PlayerStats.STARTING_HYDRATION);
         player.getStats().setToxicity(0);
         player.getStats().setTaint(0f); // a new expedition starts clean of the Blight
         player.getStatusManager().clearEffects();
@@ -4979,6 +4979,16 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        // [O] Drink at a liquid tile (#193), when nothing else ahead takes the key.
+        if (itemInFront == null && maze.getGameObjectAt(target.x, target.y) == null
+                && Player.liquidSourceAt(maze, player.getPosition(), player.getFacing()) != null) {
+            if (player.drinkFromMap(maze, eventManager)) {
+                playerTurnTakesAction();
+            }
+            needsAsciiRender = true;
+            return;
+        }
+
         // Looking outside: in the 3D engine the view moves to the bars. The retro raycaster
         // has no free camera, so there the window only describes what lies beyond.
         if (maze.getGameObjectAt(target.x, target.y) instanceof Window
@@ -5146,8 +5156,23 @@ public class GameScreen extends BaseScreen {
     }
 
     public void pickupWorldItem() {
+        // [P] Fill waterskin at a liquid tile (#193); a ground item there still comes first.
+        if (!hasGroundItemAheadOrAtFeet()
+                && Player.liquidSourceAt(maze, player.getPosition(), player.getFacing()) != null) {
+            if (player.fillWaterskinFromMap(maze, eventManager)) {
+                playerTurnTakesAction();
+            }
+            return;
+        }
         player.interactWithItem(maze, eventManager, soundManager, discoveryManager);
         playerTurnTakesAction();
+    }
+
+    private boolean hasGroundItemAheadOrAtFeet() {
+        Vector2 v = player.getFacing().getVector();
+        GridPoint2 ahead = new GridPoint2((int) (player.getPosition().x + v.x), (int) (player.getPosition().y + v.y));
+        GridPoint2 feet = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        return maze.getItems().get(ahead) != null || maze.getItems().get(feet) != null;
     }
 
     public void quickEquipOrConsumeWorldItem() {

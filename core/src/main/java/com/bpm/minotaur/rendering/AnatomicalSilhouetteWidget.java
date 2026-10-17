@@ -187,7 +187,7 @@ public class AnatomicalSilhouetteWidget extends Actor {
         }
 
         if (im.getIllnessStage().isIll()) {
-            sb.append("\nIllness: ").append(im.getIllnessStage().getDisplayName());
+            sb.append("\nIllness: ").append(im.getIllnessDisplayName());
         }
 
         return sb.toString().trim();

@@ -216,6 +216,11 @@ public class Player {
         if (statusManager.hasEffect(StatusEffectType.CHILLED)) {
             speed = (int) (speed * 0.8f);
         }
+        // Dehydrated and worse slow every action (#193)
+        float thirstSlow = stats.getThirstStage().speedPenalty;
+        if (thirstSlow > 0f) {
+            speed = (int) (speed * (1f - thirstSlow));
+        }
         // Anatomical Injury Debuff: Broken legs reduce speed by 50%
         if (injuryManager != null) {
             speed = (int) (speed * injuryManager.getEffectiveSpeedModifier());
@@ -1109,8 +1114,9 @@ public class Player {
             inventory.pickupToBackpack(rations);
         }
 
-        Item waterskin = itemDataManager.createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, assetManager);
-        inventory.pickupToBackpack(waterskin);
+        // A real, refillable waterskin, full of clean water (#193).
+        Item waterskin = itemDataManager.createItem(Item.ItemType.WATERSKIN, 0, 0, ItemColor.TAN, assetManager);
+        if (waterskin != null) inventory.pickupToBackpack(waterskin);
 
         // Fire for the first two shelters on the road. More is crafted or found.
         for (int i = 0; i < STARTING_TINDER; i++) {
@@ -1587,6 +1593,12 @@ public class Player {
             return;
         }
 
+        // --- Waterskin: one drink of whatever it holds (#193) ---
+        if (Waterskin.is(item)) {
+            drinkFromWaterskin(item, eventManager);
+            return;
+        }
+
         // --- Ashwater: scours Blight Taint in the field ---
         if (item.getType() == Item.ItemType.ASHWATER) {
             float before = stats.getTaint();
@@ -1935,6 +1947,114 @@ public class Player {
      * Consumes a cooked meal, applying Caves of Qud-style metabolic boons.
      * Clears previous meal metabolic buffs, resets metabolizing timer, restores nutrition (never HP) and warms temperature.
      */
+    // =========================================================================
+    // DRINKING (#193): any liquid, from a waterskin or straight off the map
+    // =========================================================================
+
+    /**
+     * The drinkable liquid the player faces, or else stands in, as a draught; null if there
+     * is none. Water below the surface is strata water and carries its risk.
+     */
+    public static Waterskin.Draught liquidSourceAt(Maze maze, Vector2 position, Direction facing) {
+        if (maze == null || position == null) return null;
+        int px = (int) position.x;
+        int py = (int) position.y;
+        boolean strata = maze.getLevel() > 1;
+        if (facing != null) {
+            com.bpm.minotaur.gamedata.liquid.LiquidType ahead =
+                    maze.getLiquidAt(px + (int) facing.getVector().x, py + (int) facing.getVector().y);
+            if (Thirst.isDrinkable(ahead)) return new Waterskin.Draught(ahead, strata);
+        }
+        com.bpm.minotaur.gamedata.liquid.LiquidType feet = maze.getLiquidAt(px, py);
+        return Thirst.isDrinkable(feet) ? new Waterskin.Draught(feet, strata) : null;
+    }
+
+    /** [O] Drink at a liquid tile. Returns false if there was nothing to drink. */
+    public boolean drinkFromMap(Maze maze, GameEventManager eventManager) {
+        Waterskin.Draught source = liquidSourceAt(maze, position, facing);
+        if (source == null) return false;
+        return drinkLiquid(source.liquid, source.strata, (float) Math.random(), eventManager);
+    }
+
+    /** [P] Fill waterskin at a liquid tile. Returns true if a skin was filled (a turn spent). */
+    public boolean fillWaterskinFromMap(Maze maze, GameEventManager eventManager) {
+        Waterskin.Draught source = liquidSourceAt(maze, position, facing);
+        if (source == null) return false;
+        Item skin = Waterskin.findToFill(inventory.getAllItems(), source.liquid);
+        if (skin == null) {
+            if (eventManager != null) {
+                boolean carries = false;
+                for (Item i : inventory.getAllItems()) carries |= Waterskin.is(i);
+                eventManager.addEvent(new GameEvent(carries ? "Your waterskin is already full of that."
+                        : "You have no waterskin to fill.", 2.0f));
+            }
+            return false;
+        }
+        boolean poured = !Waterskin.isEmpty(skin) && skin.getLiquidContent() != source.liquid;
+        Waterskin.fill(skin, source.liquid, source.strata);
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent((poured ? "You pour out the old contents and fill your waterskin. "
+                    : "You fill your waterskin. ") + "(" + skin.getLiquidDisplayName() + ")", 2.0f));
+        }
+        return true;
+    }
+
+    /** One drink from a waterskin, of whatever it was filled with. */
+    public boolean drinkFromWaterskin(Item skin, GameEventManager eventManager) {
+        Waterskin.Draught d = Waterskin.drinkOne(skin);
+        if (d == null) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent("Your waterskin is empty.", 1.5f));
+            return false;
+        }
+        return drinkLiquid(d.liquid, d.strata, (float) Math.random(), eventManager);
+    }
+
+    /**
+     * Drinks one draught of {@code liquid}: its hydration, then, on {@code roll} below its
+     * risk, a waterborne illness, and Freezing Slush's chill. Healing is never touched.
+     */
+    public boolean drinkLiquid(com.bpm.minotaur.gamedata.liquid.LiquidType liquid, boolean strata, float roll,
+                               GameEventManager eventManager) {
+        if (!Thirst.isDrinkable(liquid)) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent("You can't drink that.", 1.5f));
+            return false;
+        }
+        stats.addHydration(Thirst.hydrationGain(liquid));
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
+
+        String taste;
+        switch (liquid) {
+            case BLOOD: taste = "You gulp down the thick, coppery blood."; break;
+            case BLACK_MUCK: taste = "You choke down the black muck. It tastes of rot."; break;
+            case FREEZING_SLUSH: taste = "You swallow the freezing slush. It aches all the way down."; break;
+            default: taste = strata ? "You drink the still, cold water." : "You drink the clean water."; break;
+        }
+        if (eventManager != null) eventManager.addEvent(new GameEvent(taste, 2.0f));
+
+        com.bpm.minotaur.gamedata.injury.IllnessStage illness = Thirst.illnessFrom(liquid, strata, roll);
+        if (illness.isIll() && injuryManager != null) {
+            injuryManager.contractWaterborneIllness(illness);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Your stomach turns. You are "
+                        + (illness == com.bpm.minotaur.gamedata.injury.IllnessStage.STAGE_1_INFECTED_WOUND
+                                ? "sick" : "burning with fever") + ". A Potion of Vitality would cure it.", 3.0f));
+            }
+        }
+
+        if (Thirst.isChilling(liquid)) {
+            chillFromDrink(liquid, eventManager);
+        }
+        return true;
+    }
+
+    /**
+     * Hook for Exposure (#181, #194): a draught of Freezing Slush should deliver a strong
+     * chill. Cold is not modelled here yet; #194 replaces this body with the Exposure call.
+     */
+    protected void chillFromDrink(com.bpm.minotaur.gamedata.liquid.LiquidType liquid, GameEventManager eventManager) {
+        // Intentionally empty until #194 lands its cold model.
+    }
+
     public void feastOnMeal(Item meal) {
         feastOnMeal(meal, null);
     }
@@ -1997,7 +2117,7 @@ public class Player {
 
         // 1. Satiety, Food, Hydration & Temperature (NetHack model: 0 direct HP heal)
         stats.addFood(gain);
-        stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : 15);
+        stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : Thirst.DEFAULT_MEAL);
 
         // 2. Warm body temperature toward cozy normal (37°C)
         float temp = stats.getBodyTemperature();
@@ -2129,7 +2249,7 @@ public class Player {
         }
 
         // Potions usually hydrate
-        stats.addHydration(potion.getHydrationValue() > 0 ? potion.getHydrationValue() : 5);
+        stats.addHydration(potion.getHydrationValue() > 0 ? potion.getHydrationValue() : Thirst.DEFAULT_POTION);
 
         // Message
         String msg = effect.getConsumeMessage();
@@ -3696,7 +3816,8 @@ public class Player {
     /** Dexterity including equipment BONUS_DEXTERITY and stacked Rings of Dexterity. */
     public int getEffectiveDexterity() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.DEXTERITY) * 5;
-        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("DEX");
+        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("DEX")
+                - stats.getThirstStage().dexterityPenalty; // Dehydrated and worse (#193)
     }
 
     /** Constitution including equipment BONUS_CONSTITUTION and stacked Rings of Constitution. */

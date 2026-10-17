@@ -257,7 +257,7 @@ public class StatusVignetteRenderer {
         if (player.getStats() == null) return 0f;
         PlayerStats stats = player.getStats();
         boolean starving = stats.getSatietyFloat() < com.bpm.minotaur.gamedata.player.Hunger.FAINTING_BELOW;
-        boolean parched = stats.getHydrationFloat() <= 0f;
+        boolean parched = stats.getHydrationFloat() < com.bpm.minotaur.gamedata.player.Thirst.COLLAPSE_BELOW;
 
         if (starving && parched) return 0.32f;
         if (starving || parched) return 0.22f;

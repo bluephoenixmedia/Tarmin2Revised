@@ -128,7 +128,7 @@ public class UXScreenCaptureScreen extends BaseScreen {
         player.getStats().setMaxMP(60);
         player.getStats().setStamina(3);
         player.getStats().setSatiety(com.bpm.minotaur.gamedata.player.PlayerStats.STARTING_SATIETY);
-        player.getStats().setHydration(90f);
+        player.getStats().setHydration(com.bpm.minotaur.gamedata.player.PlayerStats.STARTING_HYDRATION);
         player.getStats().setBodyTemperature(37f);
         player.getStats().setTreasureScore(1450);
         DivinityManager.getInstance().addDivinities(350);

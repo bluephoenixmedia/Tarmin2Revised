@@ -6518,6 +6518,20 @@
         "baseValue": 60,
         "isUsable": true
     },
+    "WATERSKIN": {
+        "friendlyName": "Waterskin",
+        "category": "TOOL",
+        "description": "A stitched leather skin that holds five drinks of whatever you fill it with, and remembers what that was. Use it to drink. Face any liquid to fill it; rain fills it while you walk outdoors.",
+        "texturePath": "images/items/small_bag.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 25,
+        "probability": 0,
+        "maxCharges": 5,
+        "isUsable": true
+    },
     "POULTICE": {
         "friendlyName": "Poultice",
         "description": "Moss and root, or glowing lichen, bound in a wrap. Restores 30% of your health over 5 turns; taking a wound tears it away.",

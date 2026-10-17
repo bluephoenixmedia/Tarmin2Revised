@@ -199,6 +199,9 @@ public class Item implements Renderable {
         // Powder and ball for firearms. Its own resource, never mixed with arrows.
         SHOT_POUCH,
 
+        // Refillable waterskin holding 5 drinks of any liquid (#193).
+        WATERSKIN,
+
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
         MONSTER_EYE, MEAL,
@@ -371,6 +374,53 @@ public class Item implements Renderable {
     private int currentCharges = 0;
     private String storedSpellId = null;
 
+    // --- Waterskin Liquid Contents (#193) ---
+    private com.bpm.minotaur.gamedata.liquid.LiquidType liquidContent = com.bpm.minotaur.gamedata.liquid.LiquidType.NONE;
+    private boolean strataSource = false;
+
+    public com.bpm.minotaur.gamedata.liquid.LiquidType getLiquidContent() {
+        return liquidContent;
+    }
+
+    public void setLiquidContent(com.bpm.minotaur.gamedata.liquid.LiquidType liquidContent) {
+        this.liquidContent = liquidContent;
+    }
+
+    public boolean isStrataSource() {
+        return strataSource;
+    }
+
+    public void setStrataSource(boolean strataSource) {
+        this.strataSource = strataSource;
+    }
+
+    /** A new waterskin sets out full of clean surface water (#193). */
+    private void fillNewWaterskin() {
+        this.maxCharges = com.bpm.minotaur.gamedata.player.Thirst.WATERSKIN_CAPACITY;
+        this.currentCharges = this.maxCharges;
+        this.liquidContent = com.bpm.minotaur.gamedata.liquid.LiquidType.WATER;
+        this.strataSource = false;
+        this.isUsable = true;
+    }
+
+    public String getLiquidDisplayName() {
+        if (liquidContent == null || liquidContent == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE || currentCharges <= 0) {
+            return "Empty";
+        }
+        switch (liquidContent) {
+            case WATER:
+                return strataSource ? "Strata Water" : "Water";
+            case BLOOD:
+                return "Blood";
+            case BLACK_MUCK:
+                return "Black Muck";
+            case FREEZING_SLUSH:
+                return "Freezing Slush";
+            default:
+                return liquidContent.getDisplayName();
+        }
+    }
+
     public int getMaxCharges() {
         return maxCharges;
     }
@@ -518,6 +568,10 @@ public class Item implements Renderable {
         item.offsetX = template.offsetX;
         item.offsetY = template.offsetY;
         item.rotation = template.rotation;
+
+        if (type == ItemType.WATERSKIN) {
+            item.fillNewWaterskin();
+        }
 
         // Variants logic...
         item.template = template;
@@ -692,6 +746,10 @@ public class Item implements Renderable {
             }
         }
 
+        if (this.type == ItemType.WATERSKIN) {
+            fillNewWaterskin();
+        }
+
         if (this.dataManager != null) {
             this.template = this.dataManager.getTemplate(this.type);
         } else if (Gdx.app != null) {
@@ -758,6 +816,13 @@ public class Item implements Renderable {
     public String getSingleDisplayName() {
         if (goldAmount > 0)
             return com.bpm.minotaur.gamedata.economy.Gold.pileName(goldAmount);
+
+        if (this.type == ItemType.WATERSKIN) {
+            if (currentCharges <= 0 || liquidContent == null || liquidContent == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) {
+                return "Waterskin (Empty)";
+            }
+            return "Waterskin (" + getLiquidDisplayName() + ")";
+        }
 
         if (isPotion)
             return this.friendlyName != null ? this.friendlyName : "Potion";

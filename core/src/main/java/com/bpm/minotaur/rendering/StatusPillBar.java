@@ -185,12 +185,25 @@ public class StatusPillBar extends Table {
                         "Eat before you grow weak.");
             }
 
-            if (stats.getHydrationFloat() <= 0f) {
-                addPill("PARCHED", HudSkin.COL_HP_CRITICAL,
-                        "Extreme Dehydration",
+            com.bpm.minotaur.gamedata.player.Thirst.Stage thirst = stats.getThirstStage();
+            if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.COLLAPSE || thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEAD) {
+                addPill("COLLAPSE", HudSkin.COL_HP_CRITICAL,
+                        "Collapsing",
                         "[SURVIVAL]",
-                        "You are parched with thirst! Taking 1 true damage every 20 turns.",
-                        "Drink fresh water or water flask immediately.");
+                        "DEX -2 and slowed. Each turn you may pass out for a few turns. Go on and you die of thirst.",
+                        "Drink from your waterskin or any liquid now.");
+            } else if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEHYDRATED) {
+                addPill("DRY", HudSkin.COL_HP_CRITICAL,
+                        "Dehydrated",
+                        "[SURVIVAL]",
+                        "Dehydrated: DEX -2, every action slower.",
+                        "Drink soon, before you collapse.");
+            } else if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.THIRSTY) {
+                addPill("THIRSTY", HudSkin.COL_TEMP_ORANGE,
+                        "Thirsty",
+                        "[SURVIVAL]",
+                        "Your throat is dry. No penalty yet.",
+                        "Drink before you dehydrate.");
             }
         }
 

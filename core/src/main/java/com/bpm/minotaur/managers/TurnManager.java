@@ -22,13 +22,13 @@ public class TurnManager {
 
     private final float BASE_TURN_COST = 12.0f;
 
-    // Metabolic Constants (Per 1.0 Time Unit). Hunger burns on its own scale; see Hunger.
-    public static final float HYDRATION_DECAY = 0.04f; // ~2500 turns to dehydrate from full (100)
+    // Metabolic Constants (Per 1.0 Time Unit). Hunger and thirst burn on their own scales;
+    // see Hunger and Thirst.
     private static final float TEMP_ADJUST_RATE = 0.05f; // Speed of body temp adjustment
     private int ringRechargeCounter = 0;
     private int turnCounter = 0;
     private com.bpm.minotaur.gamedata.player.Hunger.Stage lastHungerStage = com.bpm.minotaur.gamedata.player.Hunger.Stage.NOT_HUNGRY;
-    private boolean wasParched = false;
+    private com.bpm.minotaur.gamedata.player.Thirst.Stage lastThirstStage = com.bpm.minotaur.gamedata.player.Thirst.Stage.HYDRATED;
     /** Last Taint tier seen, so crossing into a tier is announced once. Null until the first tick. */
     private com.bpm.minotaur.gamedata.blight.Taint.Tier lastTaintTier = null;
     private int legionMusterTimer = 0;
@@ -97,7 +97,7 @@ public class TurnManager {
                     maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y),
                     player.getCurrentHP(), player.getCurrentMP(),
                     sat.isHungry(),
-                    ts.getHydrationFloat() <= 0,
+                    ts.getThirstStage().isThirsty(),
                     ts.getBodyTemperature() < 35.0f,
                     player.getStatusManager() != null
                             && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED));
@@ -442,6 +442,69 @@ public class TurnManager {
         }
     }
 
+    /**
+     * Thirst's stage effects (#193), mirroring {@link #updateHunger}: a notice on every change
+     * of stage, a reminder every 50 turns while Dehydrated or worse, a chance to pass out each
+     * turn while Collapsed, and death past the line. Dehydrated's DEX and speed penalties are
+     * applied by PlayerStats and Player.
+     */
+    private void updateThirst(Player player, com.bpm.minotaur.gamedata.player.Thirst.Stage stage, GameEventManager eventManager) {
+        com.bpm.minotaur.gamedata.player.Thirst.Stage previous = lastThirstStage;
+        lastThirstStage = stage;
+        if (stage != previous) {
+            String notice = null;
+            switch (stage) {
+                case THIRSTY: notice = "You are thirsty."; break;
+                case DEHYDRATED: notice = "You are dehydrated. Your hands are slow."; break;
+                case COLLAPSE: notice = "Your vision swims from thirst."; break;
+                default: break;
+            }
+            if (notice != null && eventManager != null) {
+                eventManager.addEvent(new GameEvent(notice, 2.5f));
+            }
+        } else if (stage.isDehydrated() && stage != com.bpm.minotaur.gamedata.player.Thirst.Stage.DEAD
+                && turnCounter % 50 == 0 && eventManager != null) {
+            eventManager.addEvent(new GameEvent(stage == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEHYDRATED
+                    ? "You are dehydrated." : "You are collapsing from thirst.", 2.0f));
+        }
+
+        if (stage == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEAD) {
+            if (player.getCurrentHP() > 0) {
+                player.takeTrueDamage(player.getCurrentHP());
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You die of thirst.", 2.0f));
+                    eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                }
+            }
+            return;
+        }
+
+        if (stage == com.bpm.minotaur.gamedata.player.Thirst.Stage.COLLAPSE && player.getStatusManager() != null
+                && !player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLEEP)
+                && Math.random() < com.bpm.minotaur.gamedata.player.Thirst.collapseChance(player.getStats().getHydrationFloat())) {
+            int turns = com.bpm.minotaur.gamedata.player.Thirst.collapseTurns((float) Math.random());
+            player.getStatusManager().addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLEEP, turns, 1, false);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You collapse from thirst.", 2.5f));
+            }
+        }
+    }
+
+    /** Outdoors on the surface in rain or storm, a carried waterskin slowly fills (#193). */
+    private void refillWaterskinInRain(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager) {
+        if (worldManager == null || worldManager.getWeatherManager() == null || maze == null) return;
+        if (maze.getLevel() > 1 || turnCounter % com.bpm.minotaur.gamedata.player.Thirst.RAIN_REFILL_TURNS != 0) return;
+        com.bpm.minotaur.weather.WeatherType weather = worldManager.getWeatherManager().getCurrentWeather();
+        if (weather != com.bpm.minotaur.weather.WeatherType.RAIN && weather != com.bpm.minotaur.weather.WeatherType.STORM) return;
+        if (maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) return;
+        com.bpm.minotaur.gamedata.item.Item skin = player.getInventory() != null
+                ? com.bpm.minotaur.gamedata.item.Waterskin.findRainCatcher(player.getInventory().getAllItems()) : null;
+        if (skin != null && com.bpm.minotaur.gamedata.item.Waterskin.catchRain(skin)
+                && skin.getCurrentCharges() >= skin.getMaxCharges() && eventManager != null) {
+            eventManager.addEvent(new GameEvent("The rain has filled your waterskin.", 2.0f));
+        }
+    }
+
     private void updateMetabolism(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager, float time) {
         PlayerStats stats = player.getStats();
 
@@ -452,7 +515,9 @@ public class TurnManager {
         // only the tier's own drain factor remains.
         float load = player.getMetabolicTimeScale();
         stats.modifySatiety(-com.bpm.minotaur.gamedata.player.Hunger.burn(load, time, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("hungerMult")));
-        stats.modifyHydration(-HYDRATION_DECAY * load * (isHeatstroke ? 2.0f : 1.0f) * time * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult"));
+        stats.modifyHydration(-com.bpm.minotaur.gamedata.player.Thirst.burn(load, time,
+                (isHeatstroke ? 2.0f : 1.0f) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult")));
+        refillWaterskinInRain(player, maze, worldManager, eventManager);
 
         // 2. Temperature Logic
         if (worldManager != null && worldManager.getWeatherManager() != null) {
@@ -542,7 +607,10 @@ public class TurnManager {
         com.bpm.minotaur.gamedata.player.Hunger.Stage satState = stats.getHungerStage();
         int regenInterval = Math.max(1, Math.round(stats.getRegenIntervalTurns() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("regenMult")))
                 * com.bpm.minotaur.gamedata.blight.Taint.regenIntervalMult(stats.getTaint());
-        if (turnCounter % regenInterval == 0) {
+        // A waterborne illness blocks it until cured (#193); thirst never does.
+        boolean illnessBlocksRegen = player.getInjuryManager() != null
+                && player.getInjuryManager().blocksNaturalRegen();
+        if (!illnessBlocksRegen && turnCounter % regenInterval == 0) {
             if (player.getCurrentHP() < stats.getMaxHP()) {
                 stats.heal(1);
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordRegen(1, 0);
@@ -560,26 +628,8 @@ public class TurnManager {
         // 4. Throttled hunger notices, then what the stage does (#191)
         updateHunger(player, satState, eventManager);
 
-        boolean isParched = stats.getHydrationFloat() <= 0;
-        if (isParched != wasParched) {
-            wasParched = isParched;
-            if (isParched && eventManager != null) {
-                eventManager.addEvent(new GameEvent("You are parched! Drink water or find a fountain.", 2.5f));
-            }
-        } else if (isParched && (turnCounter % 50 == 0)) {
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You are parched!", 2.0f));
-            }
-        }
-
-        // 5. Dehydration Damage (every 20 turns)
-        if (isParched && (turnCounter % 20 == 0)) {
-            player.takeTrueDamage(1);
-            if (player.getCurrentHP() <= 0 && eventManager != null) {
-                eventManager.addEvent(new GameEvent("You died of thirst!", 2.0f));
-                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-            }
-        }
+        // 5. Throttled thirst notices, then what the stage does (#193)
+        updateThirst(player, stats.getThirstStage(), eventManager);
 
         // Hypothermia: Non-lethal sensory feedback (no damage, no death)
         if (stats.getBodyTemperature() <= 35.0f) {

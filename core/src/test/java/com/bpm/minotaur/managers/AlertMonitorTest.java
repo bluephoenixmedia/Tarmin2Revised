@@ -134,21 +134,21 @@ public class AlertMonitorTest {
         stats.setMaxHP(20);
         stats.setCurrentHP(5);
         stats.setSatiety(600f);
-        stats.setHydration(60f);
+        stats.setHydration(600f);
         AlertMonitor.Snapshot fine = AlertMonitor.Snapshot.of(stats);
         assertEquals(0.25f, fine.healthShare(), 0.001f);
         assertEquals(0, fine.hungerRank());
         assertEquals(0, fine.thirstRank());
 
         stats.setSatiety(100f);
-        stats.setHydration(10f);
+        stats.setHydration(100f);
         assertEquals("hungry", 1, AlertMonitor.Snapshot.of(stats).hungerRank());
         assertEquals("thirsty", 1, AlertMonitor.Snapshot.of(stats).thirstRank());
 
         stats.setSatiety(40f);
-        stats.setHydration(0f);
+        stats.setHydration(40f);
         assertEquals("weak from hunger", 2, AlertMonitor.Snapshot.of(stats).hungerRank());
-        assertEquals("parched", 2, AlertMonitor.Snapshot.of(stats).thirstRank());
+        assertEquals("dehydrated", 2, AlertMonitor.Snapshot.of(stats).thirstRank());
     }
 
     @Test

@@ -656,6 +656,9 @@ public class WorldManager {
                     newMaze, theme, chunkSeed, this.dataManager, this.itemDataManager, this.assetManager);
         }
 
+        // Water: common on the surface, scarce in the strata (#193).
+        com.bpm.minotaur.generation.WaterSupply.apply(newMaze, biome, currentLevel, chunkSeed);
+
         // Hidden choice events (data/events.json). Statues are placed by the generators and are
         // a separate feature; see docs/DEsign/events.md.
         boolean isShelterChunk = (currentLevel == 1 && chunkId.x == 0 && chunkId.y == 0);
