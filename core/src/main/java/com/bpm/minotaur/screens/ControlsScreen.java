@@ -9,15 +9,21 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Cell;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.managers.FixedKeys;
 import com.bpm.minotaur.managers.SettingsManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiTheme;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -36,6 +42,9 @@ public class ControlsScreen extends BaseScreen {
     private boolean isListeningForKey = false;
     private String actionToBind = null;
     private TextButton listeningButton = null;
+
+    /** Per action, the line warning that its key is also a fixed key (#170). */
+    private final Map<String, Cell<Label>> clashCells = new LinkedHashMap<>();
 
     public ControlsScreen(Tarmin2 game, Screen backScreen) {
         super(game);
@@ -118,8 +127,8 @@ public class ControlsScreen extends BaseScreen {
     }
 
     private void addKeyBindingRow(Table table, final String action, String description) {
-        Label descLabel = new Label(description, new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-        table.add(descLabel).left().expandX().padRight(25).padBottom(8);
+        Label descLabel = UiLabels.wrapping(description, new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
+        table.add(descLabel).width(340).left().expandX().padRight(25).padBottom(8);
 
         String keyName = Input.Keys.toString(settingsManager.getKey(action));
         TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
@@ -143,6 +152,28 @@ public class ControlsScreen extends BaseScreen {
 
         table.add(keyButton).minWidth(160).height(40).padBottom(8);
         table.row();
+
+        // Binding onto a fixed key (Z/X/V/B/N, 1-6, G, ...) takes that key over, so say so.
+        Label clash = UiLabels.wrapping("", UiStyles.caption(hudSkin, UiTheme.DANGER));
+        clashCells.put(action, table.add(clash).colspan(2).width(520).left());
+        table.row();
+        refreshClash(action);
+    }
+
+    private void refreshClash(String action) {
+        Cell<Label> cell = clashCells.get(action);
+        if (cell == null) return;
+        String role = FixedKeys.clashFor(action, settingsManager.getKey(action));
+        Label clash = cell.getActor();
+        clash.setText(role == null ? "" : "Also a fixed key: replaces " + role + " on this key");
+        clash.setVisible(role != null);
+        // An empty row collapses, so only a clashing action takes the extra line.
+        if (role == null) {
+            cell.height(0f).padBottom(0f);
+        } else {
+            cell.height(Value.prefHeight).padBottom(8f);
+        }
+        if (cell.getTable() != null) cell.getTable().invalidateHierarchy();
     }
 
     private void startListening(String action, TextButton button) {
@@ -192,6 +223,7 @@ public class ControlsScreen extends BaseScreen {
         }
 
         settingsManager.setKey(actionToBind, keycode);
+        refreshClash(actionToBind);
 
         TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
         keyStyle.font = hudSkin.getFontSmall();

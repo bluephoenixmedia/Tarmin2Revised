@@ -49,4 +49,14 @@ public final class ActionKeys {
     public String keyName(String action) {
         return Input.Keys.toString(keyOf.applyAsInt(action));
     }
+
+    /** A card badge naming the bound keys, e.g. {@code [ O ]} or {@code [ O / E ]} (#170). */
+    public String badge(String... actions) {
+        StringBuilder sb = new StringBuilder("[ ");
+        for (int i = 0; i < actions.length; i++) {
+            if (i > 0) sb.append(" / ");
+            sb.append(keyName(actions[i]));
+        }
+        return sb.append(" ]").toString();
+    }
 }

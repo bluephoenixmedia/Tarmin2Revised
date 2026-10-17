@@ -123,6 +123,11 @@ public class FirstPersonWeaponOverlay {
     private float buffGlowPulseTimer = 0f;
     private static final float BUFF_GLOW_PULSE_SPEED = 4f;
     private static final float BUFF_GLOW_MAX_STRENGTH = 0.4f;
+    /** #199: the halo's size over the sprite, and its additive alpha at the pulse's peak. */
+    private static final float BUFF_HALO_SCALE = 1.07f;
+    private static final float BUFF_HALO_MAX_ALPHA = 0.55f;
+    /** 1 while the weapon rests, eased to 0 for a swing so the glow belongs to the idle pose. */
+    private float buffGlowIdleStrength = 1f;
 
     // Tome Weapon Attack: page-flutter particles spawned when swinging a book.
     private static class PageParticle {
@@ -653,6 +658,29 @@ public class FirstPersonWeaponOverlay {
     }
 
     /** Sets the active Buff Aura Glow tint, or null to clear it (no active buff). */
+    /**
+     * #199: an additive, slightly enlarged copy of the sprite drawn behind it, so the buff shows
+     * as a coloured rim around the resting weapon rather than only as a tint on it. Drawn
+     * before the sprite (blood or not), and faded out while a swing plays.
+     */
+    private void renderBuffHalo(SpriteBatch batch, float drawX, float drawY, float originX, float originY,
+                                float width, float height, float scaleX, float rotation) {
+        if (buffGlowColor == null || buffGlowIdleStrength <= 0.01f) return;
+        float pulse = 0.6f + 0.4f * MathUtils.sin(buffGlowPulseTimer);
+        float alpha = BUFF_HALO_MAX_ALPHA * pulse * buffGlowIdleStrength;
+        int srcRgb = batch.getBlendSrcFunc();
+        int dstRgb = batch.getBlendDstFunc();
+        int srcA = batch.getBlendSrcFuncAlpha();
+        int dstA = batch.getBlendDstFuncAlpha();
+        Color previous = batch.getColor().cpy();
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        batch.setColor(buffGlowColor.r, buffGlowColor.g, buffGlowColor.b, alpha);
+        batch.draw(mainHandTexture, drawX, drawY, originX, originY, width, height,
+                scaleX * BUFF_HALO_SCALE, BUFF_HALO_SCALE, rotation);
+        batch.setBlendFunctionSeparate(srcRgb, dstRgb, srcA, dstA);
+        batch.setColor(previous);
+    }
+
     public void setBuffGlow(Color color) {
         this.buffGlowColor = color;
     }
@@ -764,6 +792,7 @@ public class FirstPersonWeaponOverlay {
         if (buffGlowColor != null) {
             buffGlowPulseTimer += delta * BUFF_GLOW_PULSE_SPEED;
         }
+        buffGlowIdleStrength = BuffGlow.approach(buffGlowIdleStrength, !active, delta);
 
         if (!pageParticles.isEmpty()) {
             updatePageFlutter(delta);
@@ -1013,13 +1042,16 @@ public class FirstPersonWeaponOverlay {
             weaponColor = new Color(1.0f, 1.0f - (bloodLevel * 0.45f), 1.0f - (bloodLevel * 0.55f), 1.0f);
         } else if (buffGlowColor != null) {
             // Buff Aura Glow: pulsating edge tint matching the active buff's element
-            float pulse = (0.5f + 0.5f * MathUtils.sin(buffGlowPulseTimer)) * BUFF_GLOW_MAX_STRENGTH;
+            float pulse = (0.5f + 0.5f * MathUtils.sin(buffGlowPulseTimer)) * BUFF_GLOW_MAX_STRENGTH
+                    * buffGlowIdleStrength;
             weaponColor = new Color(
                     1f + (buffGlowColor.r - 1f) * pulse,
                     1f + (buffGlowColor.g - 1f) * pulse,
                     1f + (buffGlowColor.b - 1f) * pulse,
                     1.0f);
         }
+
+        renderBuffHalo(batch, drawX, drawY, originX, originY, targetWidth, targetHeight, scaleX, rotation);
 
         if (!weaponBloodDecals.isEmpty() && Gdx.gl != null) {
             renderMaskedWeaponWithDecals(batch, viewport, drawX, drawY, originX, originY,
