@@ -77,6 +77,8 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private int chainRuns = 500;
     private long seed = 42L;
     private String csvPath = "logs/duel-sim.csv";
+    /** Whether to fail if level-1 band metrics drift outside target bounds (#202). */
+    private boolean guard = false;
 
     private AssetManager assetManager;
     private ItemDataManager itemDataManager;
@@ -167,8 +169,10 @@ public class DuelSimulationLauncher implements ApplicationListener {
 
         try {
             run(band);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            System.err.println(e.getMessage());
             e.printStackTrace();
+            System.exit(1);
         }
         Gdx.app.exit();
     }
@@ -198,6 +202,23 @@ public class DuelSimulationLauncher implements ApplicationListener {
         }
         System.out.println();
         print(all, null);
+
+        if (guard) {
+            float winPct = pct(all.wins, all.n);
+            String medianStr = median(all.swingsToKill);
+            int swings = "-".equals(medianStr) ? 0 : Integer.parseInt(medianStr);
+            System.out.printf(Locale.ROOT, "%n[BALANCE GUARD #202] Level-%d band balance: win rate = %.1f%% (target: 90.0-98.0%%), median swings = %d (target: 2-4)%n",
+                    minLevel, winPct, swings);
+            if (winPct < 90.0f || winPct > 98.0f) {
+                throw new AssertionError(String.format(Locale.ROOT,
+                        "Balance regression (#202): band win rate %.1f%% is outside the 90.0-98.0%% target window", winPct));
+            }
+            if (swings < 2 || swings > 4) {
+                throw new AssertionError(String.format(Locale.ROOT,
+                        "Balance regression (#202): median swings to kill %d is outside the 2-4 target window", swings));
+            }
+            System.out.println("[BALANCE GUARD #202] PASSED: Combat balance within target bounds.");
+        }
 
         // Back to back: random band monsters, no healing between fights.
         List<Integer> survived = new ArrayList<>();
@@ -388,6 +409,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;
                 case "csv": csvPath = v; break;
+                case "guard": guard = v.isEmpty() || Boolean.parseBoolean(v); break;
                 default: System.out.println("Unknown option: " + a);
             }
         }

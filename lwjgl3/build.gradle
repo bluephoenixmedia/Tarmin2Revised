@@ -313,6 +313,20 @@ task runDuelSimulation(type: JavaExec) {
     args = (project.findProperty('duelArgs') ?: '').toString().tokenize(' ')
 }
 
+// Balance regression guard (#202): fails if level-1 band leaves 90-98% win rate or 2-4 swings to kill.
+task checkCombatBalance(type: JavaExec) {
+    group = "verification"
+    description = "Guards against balance regressions in the level-1 combat band (#202)"
+    mainClass = 'com.bpm.minotaur.lwjgl3.DuelSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    errorOutput = System.err
+    workingDir = rootProject.file('assets')
+    args = ['--trials=200', '--minLevel=1', '--maxLevel=1', '--seed=42', '--chain=0', '--guard']
+}
+
+check.dependsOn checkCombatBalance
+
 task runHeadlessSimulation(type: JavaExec) {
     group = "verification"
     description = "Runs the Headless Game Simulation"
