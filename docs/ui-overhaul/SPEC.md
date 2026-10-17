@@ -82,11 +82,11 @@ Severity: **P0** blocks launch · **P1** fix before launch · **P2** launch-wind
 - [x] INV-1 **P0** Attributes panel clipped by page edge; columns overprint. Stats move to their own tab (two-column Table).
 - [x] INV-2 **P0** Spellbook & alchemy boxes overprint (stacked `LOCKED`, grid over `Crafting` title, footer below frame).
 - [ ] INV-3 P1 Five type families. Dynamic text uses the two UI faces in INK colors; calligraphy only if baked into art.
-- [ ] INV-4 P1 Capacity contradicts itself (`[0/42]` vs `[42/42]`; 48 cells, 6 greyed). One counter `used / cap`; draw only usable cells (or locked cells with lock icon). **Also reconcile with stash screen, which says 48.** _(capacity still 48 in Inventory and 42 on the painted page -- see section 6. The counter now reports the difference instead of hiding it)_
+- [x] INV-4 P1 Capacity contradicts itself (`[0/42]` vs `[42/42]`; 48 cells, 6 greyed). One counter `used / cap`; draw only usable cells (or locked cells with lock icon). **Also reconcile with stash screen, which says 48.** _(capacity reconciled to 42 matching the 7x6 painted page art and countLabel)_
 - [x] INV-5 P1 Equipment slots look like debug output (tiny blue labels, two `Feet`, unlabelled slots, `Back` overlaps doll frame, `L.Hand` clipped). Silhouette icons + tooltip names. **Slots move; doll does not.**
 - [x] INV-6 P1 Quick slot 6 clipped. Must match HUD's six slots.
 - [ ] INV-7 P2 Instructions in headings (`(Right-Click to Drop)`) → page-foot legend. _("(Right-Click to Drop)" is painted into new_inventory.png; needs an art change)_
-- [ ] INV-8 P2 Five systems on one spread. Left page = doll; right page = bookmark tabs (Backpack / Alchemy / Stats). Spells stay on their own screen (Q).
+- [x] INV-8 P2 Five systems on one spread. Left page = doll; right page = bookmark tabs (Backpack / Alchemy / Stats). Spells stay on their own screen (Q).
 
 ### SPELL — Spellbook (mockup: `51-spellbook.png`)
 - [x] SPELL-1 **P0** Slot cards print two lines at the same Y. One Label per row in a Table.
