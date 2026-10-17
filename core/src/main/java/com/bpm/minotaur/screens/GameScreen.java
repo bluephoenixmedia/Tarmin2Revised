@@ -1605,9 +1605,15 @@ public class GameScreen extends BaseScreen {
         }
         lastPlayerHp = hp;
 
-        if (alertMonitor.update(delta, com.bpm.minotaur.managers.AlertMonitor.Snapshot.of(stats)) != null) {
+        com.bpm.minotaur.managers.AlertMonitor.Snapshot snapshot = com.bpm.minotaur.managers.AlertMonitor.Snapshot.of(stats);
+        com.bpm.minotaur.managers.AlertMonitor.Reason alert = alertMonitor.update(delta, snapshot);
+        if (alert != null) {
             alertOverlay.trigger();
             soundManager.playEvent("alert");
+            // #173: the flash says something is wrong; the chronicle says what.
+            if (hud != null) {
+                hud.addMessage(com.bpm.minotaur.managers.AlertMonitor.message(alert, snapshot));
+            }
         }
     }
 

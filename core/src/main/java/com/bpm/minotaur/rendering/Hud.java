@@ -110,6 +110,8 @@ public class Hud implements Disposable {
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
+    /** "Resists War / Weak to Spiritual" for the monster on the combat card (#172). */
+    private final Label monsterAffinityLabel;
     private final Label logLabel; // Replaces messageLabel for backward compatibility
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
@@ -147,7 +149,8 @@ public class Hud implements Disposable {
     private int lastHistoryRevision = -1;
     private int lastRenderedScrollOffset = -1;
     private final List<DisplayRow> cachedDisplayRows = new ArrayList<>();
-    private final Label[] chronicleLabels = new Label[5];
+    /** One label per chronicle row; how many is budgeted from the log font (HudLayout). */
+    private Label[] chronicleLabels = new Label[0];
     /** Text width of the chronicle zone, inside its own padding. */
     private static final float CHRONICLE_W = 636f;
 
@@ -417,7 +420,7 @@ public class Hud implements Disposable {
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
-        doomLabel = new Label("TARMIN'S HUNGER 0 - 0%", smallStyle);
+        doomLabel = new Label("HUNGER 0/50", smallStyle);
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
@@ -477,11 +480,20 @@ public class Hud implements Disposable {
         // own bars -- the same fixed-width-versus-content failure the UX standard warns about.
         final float VITALS_WIDTH = 300f;
 
+        // #108: the stat block under the bars is four small-font lines, and with 22-unit bars the
+        // column was a few units taller than the band, so its last line sat on the HUD's lower
+        // border. The bar height is now whatever leaves the block room, from the font's metrics.
+        final float statLineGap = 2f;
+        float statBlock = Math.max(52f, 4f * hudSkin.getFontSmall().getLineHeight() + 3f * statLineGap);
+        final float barGap = 3f;
+        final float barsToStats = 4f;
+        float barH = HudLayout.vitalsBarHeight(16f, 2f * barGap + barsToStats, statBlock);
+
         Table barsCol = new Table();
-        barsCol.add(hpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
-        barsCol.add(mpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
+        barsCol.add(hpBar).width(VITALS_WIDTH).height(barH).padBottom(barGap).row();
+        barsCol.add(mpBar).width(VITALS_WIDTH).height(barH).padBottom(barGap).row();
         // Matches HP/MP height: at 14px an empty EXP gauge read as a text line, not a bar.
-        barsCol.add(expBar).width(VITALS_WIDTH).height(22).padBottom(6).row();
+        barsCol.add(expBar).width(VITALS_WIDTH).height(barH).padBottom(barsToStats).row();
 
         Table vitalsSubRow = new Table();
         vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
@@ -495,11 +507,20 @@ public class Hud implements Disposable {
         divinitiesLabel.setEllipsis(true);
         doomLabel.setEllipsis(true);
         ammoLabel.setEllipsis(true);
+        // #173: what these two numbers mean, on hover. The Hunger cell keeps a short label;
+        // the full text, the next stage and the boss warning live in the tooltip.
+        addReadoutTooltip(divinitiesLabel, () -> com.bpm.minotaur.ui.HudReadouts.divinityTip(
+                DivinityManager.getInstance().getCurrentDivinities()));
+        addReadoutTooltip(doomLabel, () -> {
+            DoomManager d = DoomManager.getInstance();
+            return com.bpm.minotaur.ui.HudReadouts.hungerTip(d.getDeathCount(), DoomManager.maxDeaths(),
+                    d.isBridgeBossActive());
+        });
         Table divDoomCol = new Table();
         divDoomCol.add(dayNightLabel).left().growX().row();
-        divDoomCol.add(divinitiesLabel).left().growX().padTop(2).row();
-        divDoomCol.add(doomLabel).left().growX().padTop(2).row();
-        divDoomCol.add(ammoLabel).left().growX().padTop(2).row();
+        divDoomCol.add(divinitiesLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(doomLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(ammoLabel).left().growX().padTop(statLineGap).row();
         vitalsSubRow.add(divDoomCol).left().growX().minWidth(0f);
 
         barsCol.add(vitalsSubRow).width(VITALS_WIDTH).left().row();
@@ -647,6 +668,9 @@ public class Hud implements Disposable {
 
         monsterStrengthLabel = new Label("", headerStyle);
         combatStatusLabel = new Label("", labelStyle);
+        monsterAffinityLabel = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_EXP_AMBER));
+        monsterAffinityLabel.setEllipsis(true);
+        monsterStrengthLabel.setEllipsis(true);
         monsterHpBar = new ModernStatBar("HP", HudSkin.COL_HP_RED, hudSkin);
 
         // Sub-table 1: Delve exploration info (survival "BODY" bars)
@@ -664,7 +688,8 @@ public class Hud implements Disposable {
 
         // Sub-table 2: Combat monster card
         combatMonsterTable.top().left();
-        combatMonsterTable.add(monsterStrengthLabel).left().padBottom(2).row();
+        combatMonsterTable.add(monsterStrengthLabel).left().width(300f).minWidth(0f).padBottom(2).row();
+        combatMonsterTable.add(monsterAffinityLabel).left().width(300f).minWidth(0f).padBottom(4).row();
         combatMonsterTable.add(monsterHpBar).width(210).height(20).padBottom(4).row();
         combatMonsterTable.add(combatStatusLabel).left().padBottom(6).row();
         combatMonsterTable.setVisible(false);
@@ -745,21 +770,19 @@ public class Hud implements Disposable {
             }
         });
 
-        // LEVELUP-4 / HUD-6: all five lines were single-line and ellipsized, so the message
-        // that just arrived -- the only one a player is actually reading -- was the one most
-        // likely to be cut off mid-sentence. The four older lines stay ellipsized, because
-        // they are context and a wall of wrapped history is worse than a short one. The newest
-        // line wraps instead, and the zone has room for it to take a second line.
-        for (int i = 0; i < 4; i++) {
+        // LEVELUP-4 / HUD-6 / #108: messages are pre-wrapped into rows (wrapMessage), so every
+        // row is one line. How many rows is no longer a literal: it is what fits under the header
+        // in the band, from the real line heights, so the panel is neither crammed nor overflowing.
+        int chronicleRows = HudLayout.chronicleRows(12f,
+                hudSkin.getFontSmall().getLineHeight() + 2f,
+                hudSkin.getFontLog().getLineHeight() + 1f);
+        chronicleLabels = new Label[chronicleRows];
+        for (int i = 0; i < chronicleRows; i++) {
             chronicleLabels[i] = new Label("", logLabelStyle);
             chronicleLabels[i].setEllipsis(true);
-            chronicleZone.add(chronicleLabels[i]).left().growX().padBottom(1).row();
+            chronicleZone.add(chronicleLabels[i]).left().growX().minWidth(0f).padBottom(1).row();
         }
-        chronicleLabels[4] = new Label("", logLabelStyle);
-        chronicleLabels[4].setWrap(true);
-        chronicleZone.add(chronicleLabels[4]).left().top().growX()
-                .maxHeight(hudSkin.getFontLog().getLineHeight() * 2f).padBottom(1).row();
-        logLabel = chronicleLabels[4]; // Alias for backward compatibility
+        logLabel = chronicleLabels[chronicleRows - 1]; // Alias for backward compatibility
 
         // --- Assemble Bottom Bar Table ---
         bottomBarTable.setBackground(hudSkin.getDashboardBg());
@@ -1090,27 +1113,22 @@ public class Hud implements Disposable {
         }
 
         DivinityManager dm = DivinityManager.getInstance();
-        divinitiesLabel.setText("DIV: " + dm.getCurrentDivinities());
+        divinitiesLabel.setText(com.bpm.minotaur.ui.HudReadouts.divinityLabel(dm.getCurrentDivinities()));
         divinitiesLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
 
         DoomManager doom = DoomManager.getInstance();
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
-        if (doom.isBridgeBossActive()) {
-            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%% - BOSS", deaths, bridge));
+        // #173 / #188: "TARMIN'S HUNGER n - nn% - BOSS SOON" ran far past this cell and lost its
+        // boss suffix to the ellipsis. Short label here; the whole story is in the tooltip.
+        doomLabel.setText(com.bpm.minotaur.ui.HudReadouts.hungerLabel(deaths, DoomManager.maxDeaths(),
+                doom.isBridgeBossActive()));
+        if (doom.isBridgeBossActive() || bridge >= 75f) {
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
-        } else if (bridge >= 90f) {
-            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%% - BOSS SOON", deaths, bridge));
-            doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
+        } else if (bridge >= 40f) {
+            doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
         } else {
-            doomLabel.setText(String.format("TARMIN'S HUNGER %d - %.0f%%", deaths, bridge));
-            if (bridge >= 75f) {
-                doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
-            } else if (bridge >= 40f) {
-                doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
-            } else {
-                doomLabel.setColor(Color.LIGHT_GRAY);
-            }
+            doomLabel.setColor(HudSkin.COL_TEXT_ON_DARK);
         }
 
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -1274,30 +1292,24 @@ public class Hud implements Disposable {
         }
         checkStatusTransitions(player);
 
-        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
-                && combatManager.getMonster() != null) {
+        boolean inCombat = combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
+                && combatManager.getMonster() != null;
+        // #172: in bump combat the state stays INACTIVE, so the card used to appear only with the
+        // Space menu open. The monster you are facing now gets the same card, badge and all.
+        Monster facedMonster = inCombat ? null : facedLiveMonster();
+        if (inCombat || facedMonster != null) {
             delveInfoTable.setVisible(false);
             combatMonsterTable.setVisible(true);
 
-            Monster monster = combatManager.getMonster();
-            String catBadge = "";
-            if (monster.getType() != null && monster.getType().getCategory() != null) {
-                switch (monster.getType().getCategory()) {
-                    case BAD:
-                        catBadge = " [BAD: Holy/Spiritual]";
-                        break;
-                    case NASTY:
-                        catBadge = " [NASTY: Weak to War]";
-                        break;
-                    case HORRIBLE:
-                        catBadge = " [HORRIBLE: Balanced]";
-                        break;
-                }
-            }
-            monsterStrengthLabel.setText(checkScramble(monster.getMonsterType() + catBadge));
+            Monster monster = inCombat ? combatManager.getMonster() : facedMonster;
+            monsterStrengthLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.nameOf(monster)));
+            monsterAffinityLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.badge(monster)));
             monsterHpBar.setValue(monster.getCurrentHP(), monster.getMaxHP());
 
             switch (combatManager.getCurrentState()) {
+                case INACTIVE:
+                    combatStatusLabel.setText("");
+                    break;
                 case PLAYER_TURN:
                     combatStatusLabel.setText(checkScramble(">>> YOUR TURN <<<"));
                     combatStatusLabel.setColor(HudSkin.COL_FOOD_GREEN);
@@ -1307,7 +1319,7 @@ public class Hud implements Disposable {
                     combatStatusLabel.setColor(HudSkin.COL_HP_CRITICAL);
                     break;
                 default:
-                    combatStatusLabel.setText(checkScramble(combatManager.getCurrentState().toString()));
+                    combatStatusLabel.setText(checkScramble(com.bpm.minotaur.ui.UiNames.caps(combatManager.getCurrentState())));
                     combatStatusLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
             }
@@ -1321,6 +1333,39 @@ public class Hud implements Disposable {
 
         // --- 5. Update World Interaction Modal Card ---
         updateWorldInteractionCard();
+    }
+
+    /** Shows a status-style tooltip over a HUD readout while the pointer is on it. */
+    private void addReadoutTooltip(final Label label, final java.util.function.Supplier<com.bpm.minotaur.ui.HudReadouts.Tip> tip) {
+        label.setTouchable(Touchable.enabled);
+        label.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
+                com.bpm.minotaur.ui.HudReadouts.Tip t = tip.get();
+                Vector2 pos = label.localToStageCoordinates(new Vector2(0, 0));
+                hudTooltip.showStatus(t.title, t.category, t.details, t.remedy,
+                        pos.x + label.getWidth() / 2f, pos.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                hudTooltip.hide();
+            }
+        });
+    }
+
+    /**
+     * The living, hostile, visible monster on the tile the player faces, or null. Allies, peaceful
+     * folk and anything the player cannot see get no card, so the card never gives them away.
+     */
+    private Monster facedLiveMonster() {
+        if (maze == null || player == null || maze.getMonsters() == null) return null;
+        Vector2 dir = player.getFacing().getVector();
+        GridPoint2 front = new GridPoint2((int) (player.getPosition().x + dir.x), (int) (player.getPosition().y + dir.y));
+        Monster m = maze.getMonsters().get(front);
+        if (m == null || !m.isAlive() || m.isAlly() || m.isPeaceful() || m.isInvisible() || m.isHidden()) return null;
+        return m;
     }
 
     private static class ParsedLogLine {
@@ -1509,7 +1554,8 @@ public class Hud implements Disposable {
             }
         }
 
-        int maxOffset = Math.max(0, cachedDisplayRows.size() - 5);
+        int rowsShown = chronicleLabels.length;
+        int maxOffset = Math.max(0, cachedDisplayRows.size() - rowsShown);
         if (chronicleScrollOffset > maxOffset) {
             chronicleScrollOffset = maxOffset;
         }
@@ -1562,23 +1608,21 @@ public class Hud implements Disposable {
             chronicleDownLabel.setColor(chronicleScrollOffset > 0 ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_TEXT_MUTED);
         }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < rowsShown; i++) {
             chronicleLabels[i].setText("");
         }
 
-        int available = Math.min(5, cachedDisplayRows.size() - chronicleScrollOffset);
+        int available = Math.min(rowsShown, cachedDisplayRows.size() - chronicleScrollOffset);
         if (available <= 0) return;
-
-        float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
 
         for (int i = 0; i < available; i++) {
             int rowIdx = chronicleScrollOffset + (available - 1 - i);
             DisplayRow row = cachedDisplayRows.get(rowIdx);
-            int labelIndex = (5 - available) + i;
+            int labelIndex = (rowsShown - available) + i;
 
             chronicleLabels[labelIndex].setText(checkScramble(row.text));
             Color c = row.color != null ? row.color : HudSkin.COL_TEXT_ON_DARK;
-            float alpha = (chronicleScrollOffset > 0) ? 0.95f : alphas[labelIndex];
+            float alpha = (chronicleScrollOffset > 0) ? 0.95f : HudLayout.chronicleRowAlpha(labelIndex, rowsShown);
             chronicleLabels[labelIndex].setColor(c.r, c.g, c.b, alpha);
         }
     }
