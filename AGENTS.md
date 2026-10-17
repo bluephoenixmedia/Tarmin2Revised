@@ -45,8 +45,8 @@ Workflows are plain markdown at `.claude/skills/<name>/SKILL.md`. Agents that do
 work goes.
 
 - **Branch from `develop`, never from `master`.** Merge back into `develop`.
-- `master` is currently **v0.0.1** (tag `v0.0.1`). `develop` is working toward
-  **0.0.2**, and carries `projectVersion=0.0.2-SNAPSHOT` in `gradle.properties`.
+- `master` is currently **v0.0.2** (tag `v0.0.2`). `develop` is working toward
+  **0.0.3**, and carries `projectVersion=0.0.3-SNAPSHOT` in `gradle.properties`.
 - When 0.0.2 is MVP-complete: everything lands on `develop`, `develop` is tested
   as a whole, and only then does `develop` merge to `master`, which is tagged as
   the new release.
