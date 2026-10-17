@@ -4113,8 +4113,8 @@
         "texturePath": "images/weapons/rusty_weapon.png"
     },
     "RUSTY_SWORD": {
-        "friendlyName": "Rusty Sword",
-        "description": "A corroded blade. Better than nothing.",
+        "friendlyName": "Father's Sword",
+        "description": "Your father's rusty heirloom. Grants +3 Max HP and +5% Crit Chance while carried.",
         "spriteData": [
             "........................",
             "........................",

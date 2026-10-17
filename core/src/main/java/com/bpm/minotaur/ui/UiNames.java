@@ -63,6 +63,7 @@ public final class UiNames {
         OVERRIDES.put("WHIP_MASTERS", "Master's Whip");
         OVERRIDES.put("GLADIATORS_FRIEND_FOOTMANS", "Gladiator's Friend (Footman's)");
         OVERRIDES.put("GLADIATORS_FRIEND_HORSEMANS", "Gladiator's Friend (Horseman's)");
+        OVERRIDES.put("RUSTY_SWORD", "Father's Sword");
 
         // Gibs. "GIB_FLESH" is a lump of flesh, not a gib called Flesh.
         OVERRIDES.put("GIB_FLESH", "Flesh");

@@ -270,10 +270,10 @@ public class PlayerStats {
     }
 
     /**
-     * To-hit bonus: Standard RPG bounded accuracy: Base bonus 2 + (level / 2) + DEX modifier.
+     * To-hit bonus: Standard RPG bounded accuracy: Base bonus 4 + (level / 2) + DEX modifier (#177).
      */
      public int getToHitBonus() {
-         int baseBonus = 2 + (this.level / 2);
+         int baseBonus = 4 + (this.level / 2);
          // Weak and worse from hunger (#191) cost a point to-hit, below the floor of 1.
          return Math.max(1, baseBonus + getDexModifier()) - getHungerStage().toHitPenalty;
      }
@@ -512,10 +512,24 @@ public class PlayerStats {
         this.treasureScore = treasureScore;
     }
 
-    /** Maximum HP, after any personality trait (Fasting Monk, Lucky Fool...). */
+    private int bonusMaxHP = 0;
+
+    public int getBonusMaxHP() {
+        return bonusMaxHP;
+    }
+
+    public void setBonusMaxHP(int bonusMaxHP) {
+        this.bonusMaxHP = bonusMaxHP;
+        if (this.currentHP > getMaxHP()) {
+            this.currentHP = getMaxHP();
+        }
+    }
+
+    /** Maximum HP, after any personality trait (Fasting Monk, Lucky Fool...) and keepsake bonus (#177). */
     public int getMaxHP() {
-        return Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")
+        int base = Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")
                 * com.bpm.minotaur.gamedata.blight.Taint.maxHpMult(taint)));
+        return base + bonusMaxHP;
     }
 
     public float getTaint() {

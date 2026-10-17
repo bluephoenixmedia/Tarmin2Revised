@@ -67,8 +67,8 @@
         "isTwoHanded": false
     },
     "RUSTY_SWORD": {
-        "friendlyName": "Rusty Sword",
-        "description": null,
+        "friendlyName": "Father's Sword",
+        "description": "Your father's rusty heirloom. Grants +3 Max HP and +5% Crit Chance while carried.",
         "texturePath": "images/weapons/rusty_sword.png",
         "modelPath": null,
         "modelScale": 1,

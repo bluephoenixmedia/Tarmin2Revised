@@ -57,4 +57,34 @@ public class FathersSwordTest {
         assertEquals(0, FathersSword.strataBelowSurface(1));
         assertEquals(1, FathersSword.strataBelowSurface(2));
     }
+
+    @Test
+    public void carriedPerkAppliesWhileWieldedOrInBackpack() {
+        com.bpm.minotaur.gamedata.player.Player player = new com.bpm.minotaur.gamedata.player.Player(0, 0);
+        assertFalse("empty inventory has no sword", player.carriesFathersSword());
+        assertEquals(com.bpm.minotaur.gamedata.Difficulty.MEDIUM.startWarStrength, player.getMaxHP());
+        float unboostedCrit = player.getCritChance();
+
+        // Put Father's Sword in the backpack
+        Item sword = new Item(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, null, null);
+        player.getInventory().pickupToBackpack(sword);
+        assertTrue("sword carried in backpack counts", player.carriesFathersSword());
+        assertEquals(com.bpm.minotaur.gamedata.Difficulty.MEDIUM.startWarStrength + FathersSword.BASE_MAX_HP_BONUS,
+                player.getMaxHP());
+        assertEquals(unboostedCrit + FathersSword.BASE_CRIT_BONUS, player.getCritChance(), 1e-4f);
+
+        // Move to right hand (wielded)
+        player.getInventory().setRightHand(sword);
+        assertTrue("sword wielded in hand counts", player.carriesFathersSword());
+        assertEquals(com.bpm.minotaur.gamedata.Difficulty.MEDIUM.startWarStrength + FathersSword.BASE_MAX_HP_BONUS,
+                player.getMaxHP());
+        assertEquals(unboostedCrit + FathersSword.BASE_CRIT_BONUS, player.getCritChance(), 1e-4f);
+
+        // Remove from inventory
+        player.getInventory().setRightHand(null);
+        player.getInventory().consumeOne(sword);
+        assertFalse("not carried once removed", player.carriesFathersSword());
+        assertEquals(com.bpm.minotaur.gamedata.Difficulty.MEDIUM.startWarStrength, player.getMaxHP());
+        assertEquals(unboostedCrit, player.getCritChance(), 1e-4f);
+    }
 }
