@@ -21,6 +21,7 @@ public class SettingsManager {
     private Difficulty currentDifficulty;
     private boolean isAdvancedMode;
     private boolean skipIntroVideo;
+    private boolean showHints = true;
     private float musicVolume = 0.70f;
     private float sfxVolume = 0.80f;
     /** Tarmin's Knell has its own volume, and its red bleed can be turned off (plan K5). */
@@ -83,6 +84,9 @@ public class SettingsManager {
 
         // Load Skip Intro Video
         skipIntroVideo = prefs.getBoolean("skipIntroVideo", false);
+
+        // Load Show Hints (#169: default on)
+        showHints = prefs.getBoolean("showHints", true);
 
         // Load Audio Volumes (Defaults: Music 70%, SFX 80%)
         musicVolume = prefs.getFloat("musicVolume", 0.70f);
@@ -174,6 +178,19 @@ public class SettingsManager {
         Preferences prefs = getPrefs();
         if (prefs != null) {
             prefs.putBoolean("skipIntroVideo", skip).flush();
+        }
+    }
+
+    // --- Show Hints (#169) ---
+    public boolean isShowHints() {
+        return showHints;
+    }
+
+    public void setShowHints(boolean showHints) {
+        this.showHints = showHints;
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putBoolean("showHints", showHints).flush();
         }
     }
 

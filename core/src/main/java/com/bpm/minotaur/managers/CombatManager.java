@@ -1166,7 +1166,10 @@ public class CombatManager {
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
-            DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
+            int remoteDiv = DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
+            if (remoteDiv > 0 && eventManager != null) {
+                HintManager.getInstance().checkDivinity(eventManager);
+            }
         }
         DivinityOrbManager.getInstance().spawnOrb();
         spawnCorpseEffects(m, spawnDeathGore(m, cause));
@@ -3692,6 +3695,9 @@ public class CombatManager {
         if (killTemplate != null) {
             int divAmount = DivinityManager.getInstance().awardKillDivinities(killTemplate.baseLevel, maze.getLevel());
             eventManager.addEvent(new GameEvent("+" + divAmount + " " + DivinityManager.DIVINITY_NAME, 2f));
+            if (divAmount > 0) {
+                HintManager.getInstance().checkDivinity(eventManager);
+            }
         }
 
         maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);

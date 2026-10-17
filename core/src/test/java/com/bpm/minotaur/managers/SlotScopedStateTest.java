@@ -65,6 +65,7 @@ public class SlotScopedStateTest {
                 DivinityManager.class,
                 TormentManager.class,
                 com.bpm.minotaur.gamedata.progression.ShelterAltar.class,
+                HintManager.class,
         };
 
         List<String> missing = new ArrayList<>();

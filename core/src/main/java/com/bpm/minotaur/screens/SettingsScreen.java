@@ -35,6 +35,7 @@ public class SettingsScreen extends BaseScreen {
     private Label sfxVolLabel;
     private Label knellVolLabel;
     private TextButton knellVignetteButton;
+    private TextButton hintsButton;
 
     public SettingsScreen(Tarmin2 game) {
         super(game);
@@ -204,6 +205,18 @@ public class SettingsScreen extends BaseScreen {
             }
         });
         card.add(goreButton).minWidth(240).height(48).padBottom(28).row();
+
+        // 5b. Show Hints (#169)
+        card.add(new Label("Show Hints", labelStyle)).left().padRight(40).padBottom(28);
+        hintsButton = new TextButton(settingsManager.isShowHints() ? "On" : "Off", btnStyle);
+        hintsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                settingsManager.setShowHints(!settingsManager.isShowHints());
+                hintsButton.setText(settingsManager.isShowHints() ? "On" : "Off");
+            }
+        });
+        card.add(hintsButton).minWidth(240).height(48).padBottom(28).row();
 
         // 6. Controls CTA Button
         TextButton.TextButtonStyle ctaStyle = new TextButton.TextButtonStyle();
