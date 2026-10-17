@@ -2679,7 +2679,6 @@ public class Hud implements Disposable {
         com.bpm.minotaur.gamedata.item.Waterskin.Draught liquid =
                 Player.liquidSourceAt(maze, player.getPosition(), player.getFacing());
         if (liquid != null) {
-            com.bpm.minotaur.managers.ActionKeys keys = com.bpm.minotaur.managers.ActionKeys.live();
             worldInteractionCard.show(
                     LiquidPromptCard.tag(liquid.strata),
                     LiquidPromptCard.subTag(liquid.liquid, liquid.strata),
