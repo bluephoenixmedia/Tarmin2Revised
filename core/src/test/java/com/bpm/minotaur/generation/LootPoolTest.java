@@ -320,7 +320,7 @@ public class LootPoolTest {
         double rations = mean(exps, "FOOD");
         double healing = mean(exps, "POTION_OF_HEALING");
         double tinder = mean(exps, "TINDER_BUNDLE");
-        double waterskins = mean(exps, "POTION_BLUE");
+        double waterskins = mean(exps, "WATERSKIN");
         double lichen = mean(exps, "GLOWING_LICHEN");
         double poultices = exps.stream().mapToInt(m -> Math.min(m.getOrDefault("MOSS_CLUMP", 0),
                 m.getOrDefault("TWISTED_ROOT", 0)) + m.getOrDefault("GLOWING_LICHEN", 0)).average().orElse(0);
@@ -337,7 +337,8 @@ public class LootPoolTest {
         assertTrue("about 1 healing potion per 2 expeditions: " + healing, healing >= 0.3 && healing <= 0.7);
         assertTrue("1-2 Tinder Bundles: " + tinder, tinder >= 1.0 && tinder <= 2.0);
         assertTrue("a cloak is likely: " + cloakChance, cloakChance >= 0.6);
-        assertTrue("the Waterskin is replaceable: " + waterskins, waterskins >= 0.2);
+        assertTrue("the Waterskin is replaceable, at a low rate (#208): " + waterskins,
+                waterskins >= 0.2 && waterskins <= 0.5);
         assertTrue("Vitality herbs are rare on the surface: " + lichen, lichen > 0 && lichen <= 0.3);
     }
 
