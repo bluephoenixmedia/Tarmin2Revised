@@ -1234,7 +1234,7 @@ public class Hud implements Disposable {
         foodBar.setBarColor(player.getStats().getHungerStage().isHungry() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
 
         waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
-        waterBar.setBarColor(player.getStats().getHydrationFloat() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
+        waterBar.setBarColor(player.getStats().getThirstStage().isThirsty() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
 
         float temp = player.getStats().getBodyTemperature();
         tempBar.setValue(temp, 50f);
@@ -2621,6 +2621,23 @@ public class Hud implements Disposable {
             return;
         }
 
+        // 7b. A drinkable liquid ahead or underfoot: [O] Drink / [P] Fill waterskin (#193)
+        com.bpm.minotaur.gamedata.item.Waterskin.Draught liquid =
+                Player.liquidSourceAt(maze, player.getPosition(), player.getFacing());
+        if (liquid != null) {
+            com.bpm.minotaur.managers.ActionKeys keys = com.bpm.minotaur.managers.ActionKeys.live();
+            worldInteractionCard.show(
+                    LiquidPromptCard.tag(liquid.strata),
+                    LiquidPromptCard.subTag(liquid.liquid, liquid.strata),
+                    LiquidPromptCard.title(liquid.liquid),
+                    LiquidPromptCard.description(liquid.liquid, liquid.strata),
+                    LiquidPromptCard.keyBadge(keys),
+                    LiquidPromptCard.actionText(keys),
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+            );
+            return;
+        }
+
         // 8. Nothing interactive found
         worldInteractionCard.hide();
     }
@@ -2769,9 +2786,9 @@ public class Hud implements Disposable {
             }
             wasStarving = starving;
 
-            boolean parched = p.getStats().getHydrationFloat() <= 0f;
+            boolean parched = p.getStats().getHydrationFloat() < com.bpm.minotaur.gamedata.player.Thirst.COLLAPSE_BELOW;
             if (parched && !wasParchedStatus) {
-                showStatusAlertToast("PARCHED DEHYDRATION! Drink water flask or find fountain!", HudSkin.COL_HP_CRITICAL);
+                showStatusAlertToast("COLLAPSING! Drink before you pass out or die of thirst!", HudSkin.COL_HP_CRITICAL);
             }
             wasParchedStatus = parched;
         }

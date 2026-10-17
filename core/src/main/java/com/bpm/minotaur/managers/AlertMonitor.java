@@ -44,15 +44,12 @@ public final class AlertMonitor {
             return thirstRank;
         }
 
-        /** Water at or below this is "thirsty"; at zero it is "parched". */
-        private static final float THIRSTY_BELOW = 25f;
-
         public static Snapshot of(com.bpm.minotaur.gamedata.player.PlayerStats stats) {
             int maxHp = Math.max(1, stats.getMaxHP());
             com.bpm.minotaur.gamedata.player.Hunger.Stage food = stats.getHungerStage();
             int hunger = food.isWeakened() ? 2 : food.isHungry() ? 1 : 0;
-            float water = stats.getHydrationFloat();
-            int thirst = water <= 0f ? 2 : water <= THIRSTY_BELOW ? 1 : 0;
+            com.bpm.minotaur.gamedata.player.Thirst.Stage water = stats.getThirstStage();
+            int thirst = water.isDehydrated() ? 2 : water.isThirsty() ? 1 : 0;
             int points = stats.getUnallocatedAttributePoints() + stats.getUnallocatedSkillPoints();
             return new Snapshot(stats.getCurrentHP() / (float) maxHp, points, hunger, thirst);
         }

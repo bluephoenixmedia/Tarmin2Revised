@@ -213,6 +213,9 @@ public enum PotionEffectType {
                 statusManager.removeEffect(StatusEffectType.SICK);
                 statusManager.removeEffect(StatusEffectType.EXHAUSTED);
                 statusManager.removeEffect(StatusEffectType.WEAKENED);
+                if (player.getInjuryManager() != null) {
+                    player.getInjuryManager().cureIllness();
+                }
                 stats.healWithTrait((int) (stats.getMaxHP() * 0.5f));
                 break;
             case CLARITY:

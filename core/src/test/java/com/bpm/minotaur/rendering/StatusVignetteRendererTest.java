@@ -80,9 +80,9 @@ public class StatusVignetteRendererTest {
         player.getStats().setSatiety(-1f);
         assertTrue("Starvation should trigger weight", renderer.getStarveWeight(player) > 0.20f);
 
-        // Dehydrated to 0
+        // Collapsing: below 0 on the thirst scale (#193)
         player.getStats().setSatiety(80f);
-        player.getStats().setHydration(0f);
+        player.getStats().setHydration(-1f);
         assertTrue("Dehydration should trigger weight", renderer.getStarveWeight(player) > 0.20f);
     }
 
