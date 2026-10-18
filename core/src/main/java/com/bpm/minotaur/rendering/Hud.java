@@ -1872,21 +1872,22 @@ public class Hud implements Disposable {
             yPos -= lineGap;
             defaultFont.setColor(Color.WHITE);
 
+            com.bpm.minotaur.managers.ActionKeys bound = com.bpm.minotaur.managers.ActionKeys.live();
             String[] keyMappings = {
-                    "UP/DOWN : Move",
-                    "LEFT/RIGHT: Turn",
-                    "O : Interact / Craft / Butcher",
-                    "P : Pickup Item",
-                    "U : Use Item",
-                    "D : Climb Ladder",
-                    "R : First Aid",
-                    "H : Quick Heal",
-                    "S : Swap Hands",
-                    "E : Swap with Pack",
-                    "T : Rotate Pack",
-                    "A/SPACE : Instant Attack",
+                    bound.keyName("MOVE_FORWARD") + "/" + bound.keyName("MOVE_BACK") + " : Move",
+                    bound.keyName("TURN_LEFT") + "/" + bound.keyName("TURN_RIGHT") + " : Turn",
+                    bound.keyName("INTERACT") + " : Interact / Craft / Butcher",
+                    bound.keyName("PICKUP_DROP") + " : Pickup Item",
+                    bound.keyName("USE_ITEM") + " : Use Item",
+                    bound.keyName("DESCEND") + " : Climb Ladder",
+                    bound.keyName("FIRST_AID") + " : First Aid",
+                    bound.keyName("QUICK_HEAL") + " : Quick Heal",
+                    bound.keyName("SWAP_HANDS") + " : Swap Hands",
+                    bound.keyName("SWAP_PACK") + " : Use / Loot / Equip, else Swap with Pack",
+                    bound.keyName("ROTATE_PACK") + " : Rotate Pack",
+                    bound.keyName("ATTACK") + "/SPACE : Instant Attack",
                     "NUM 7 : Dice Attack",
-                    "M : Castle Map"
+                    bound.keyName("MAP") + " : Castle Map"
             };
 
             for (String mapping : keyMappings) {

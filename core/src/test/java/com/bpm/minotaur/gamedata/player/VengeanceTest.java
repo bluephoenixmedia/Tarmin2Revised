@@ -33,6 +33,20 @@ public class VengeanceTest {
     }
 
     @Test
+    public void anEliteSoldierOnTheLivePathCountsAsHeavy() {
+        com.bpm.minotaur.gamedata.monster.MonsterTemplate template = new com.bpm.minotaur.gamedata.monster.MonsterTemplate();
+        template.baseLevel = 3;
+        template.role = com.bpm.minotaur.gamedata.monster.MonsterRole.SOLDIER;
+        com.bpm.minotaur.gamedata.monster.Monster monster = new com.bpm.minotaur.gamedata.monster.Monster(
+                com.bpm.minotaur.gamedata.monster.Monster.MonsterType.KOBOLD, 10, 10);
+        monster.setTemplate(template);
+        assertEquals(Role.SOLDIER, Vengeance.roleOf(monster, 3));
+
+        template.xpMultiplier = 2f; // an elite
+        assertEquals("Heavy or elite restores 20% (#190)", Role.HEAVY, Vengeance.roleOf(monster, 3));
+    }
+
+    @Test
     public void amountIsAShareOfMaxHp() {
         assertEquals(0, Vengeance.amount(Role.TRIVIAL, false, 100));
         assertEquals(2, Vengeance.amount(Role.FODDER, false, 100));
