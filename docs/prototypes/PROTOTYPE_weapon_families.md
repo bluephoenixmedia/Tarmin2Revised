@@ -1,7 +1,7 @@
 | id | name | family | note |
 |---|---|---|---|
-| WOODEN_CROSS | Wooden Cross | Blunt | ? holy symbol (Spiritual): Blunt or no Family |
-| RUSTY_SWORD | Father's Sword | Blade | ? Father's Sword: an ordinary Blade, or its own track |
+| WOODEN_CROSS | Wooden Cross | - | holy symbol: no Family (Q10) |
+| RUSTY_SWORD | Father's Sword | Blade | Father's Sword: ordinary Blade (Q9) |
 | ALHULAK | Alhulak | Blunt | flail |
 | ANKUS_ELEPHANT_GOAD | Ankus (Elephant Goad) | Polearm |  |
 | ARQUEBUS | Arquebus | Firearm |  |
@@ -12,16 +12,16 @@
 | BARDS_FRIEND | Bard's Friend | Dagger |  |
 | BASILARD | Basilard | Dagger |  |
 | BLUNDERBUS | Blunderbus | Firearm |  |
-| BO_STICK | Bo Stick | Blunt | ? staff: Blunt or Polearm |
+| BO_STICK | Bo Stick | Blunt | staff: Blunt or Polearm (settled) |
 | BOLA | Bola | Thrown |  |
 | BOW_COMPOSITE_LONG | Bow, Composite Long | Bow |  |
 | BOW_ELVEN | Bow, Elven | Bow |  |
-| BUCKLER_SPIKED | Buckler, Spiked | Blunt | ? shield as weapon: Blunt or a Shield Family |
+| BUCKLER_SPIKED | Buckler, Spiked | Blunt | shield as weapon: Blunt or a Shield Family (settled) |
 | CAHULAKS | Cahulaks | Thrown |  |
 | CARRIKAL | Carrikal | Axe |  |
 | CAVILER | Caviler | Unarmed | claw |
 | CESTUS | Cestus | Unarmed |  |
-| CHAIN | Chain | Blunt | ? chain |
+| CHAIN | Chain | Blunt | chain (settled) |
 | CHAKRAM | Chakram | Thrown |  |
 | CHATKCHA | Chatkcha | Thrown |  |
 | CLUB | Club | Blunt |  |
@@ -45,7 +45,7 @@
 | IMPALER | Impaler | Polearm |  |
 | IUAK_SNOW_BLADE | Iuak (Snow Blade) | Dagger |  |
 | JAMBIYA | Jambiya | Dagger |  |
-| JAVELIN_ONE_HANDED | Javelin, One-Handed | Thrown | ? javelin: Thrown or Polearm |
+| JAVELIN_ONE_HANDED | Javelin, One-Handed | Polearm | trains Thrown when thrown (Q1) |
 | KATAR_PUNCH_DAGGER | Katar (Punch Dagger) | Dagger |  |
 | KICK_SLASHER | Kick-slasher | Unarmed |  |
 | KNIFE | Knife | Dagger |  |
@@ -63,7 +63,7 @@
 | NUNCHAKU | Nunchaku | Blunt | data says Slashing |
 | NYEK_PLE_NEN_TOH | Nyek-ple-nen-toh | Dagger |  |
 | PESHKABZ | Peshkabz | Dagger |  |
-| PICK_FOOTMANS | Pick, Footman's | Axe | ? picks: Axe or Blunt |
+| PICK_FOOTMANS | Pick, Footman's | Axe | picks: Axe or Blunt (settled) |
 | PIKE_WEIGHTED | Pike, Weighted | Polearm |  |
 | PISTOL_STARWHEEL | Pistol, Starwheel | Firearm |  |
 | POLEARM_AWL_PIKE3 | Polearm, Awl Pike3 | Polearm |  |
@@ -84,18 +84,18 @@
 | PUNCH_CUTTER | Punch-cutter | Unarmed |  |
 | QUABONE | Quabone | Blunt |  |
 | QUARREL_HAND | Quarrel, Hand | - | ammunition |
-| QUARTERSTAFF | Quarterstaff | Blunt | ? staff |
+| QUARTERSTAFF | Quarterstaff | Blunt | staff (settled) |
 | RITIIK | Ritiik | Blunt |  |
 | SAI | Sai | Dagger |  |
 | SAP | Sap | Blunt | data says Slashing |
-| SCOURGE | Scourge | Blade | ? whip |
-| SCYTHE | Scythe | Polearm | ? scythe: Polearm or Blade |
-| SHIELD_SPIKE | Shield, Spike | Blunt | ? shield as weapon |
+| SCOURGE | Scourge | Blade | whip (settled) |
+| SCYTHE | Scythe | Polearm | scythe: Polearm or Blade (settled) |
+| SHIELD_SPIKE | Shield, Spike | Blunt | shield as weapon (settled) |
 | SHOKA | Shoka | Blunt |  |
 | SHOTEL | Shotel | Blade |  |
 | SHURIKEN | Shuriken | Thrown |  |
 | SICKLE | Sickle | Blade |  |
-| SLING | Sling | Thrown | ? sling: Thrown or Bow |
+| SLING | Sling | Thrown | sling: Thrown or Bow (settled) |
 | SLING_BULLET | Sling, Bullet | - | ammunition |
 | SLING_STONE | Sling, Stone | - | ammunition |
 | SPEAR_CASTER | Spear Caster | Thrown | atlatl |
@@ -109,16 +109,16 @@
 | SPEAR_PADDLE | Spear, Paddle | Polearm |  |
 | SPEAR_STONE_ONE_HANDED | Spear, Stone, One-Handed | Polearm |  |
 | SPEAR_STONE_TWO_HANDED | Spear, Stone, Two-Handed | Polearm |  |
-| SPEAR_THROWING | Spear, Throwing | Thrown | ? javelin: Thrown or Polearm |
+| SPEAR_THROWING | Spear, Throwing | Polearm | trains Thrown when thrown (Q1) |
 | SPEAR_TWO_HANDED3 | Spear, Two-Handed3 | Polearm |  |
-| SPIKE_ELBOW | Spike, Elbow | Unarmed | ? armour spikes |
-| SPIKE_HEAD | Spike, Head | Unarmed | ? armour spikes |
-| SPIKE_KNEE | Spike, Knee | Unarmed | ? armour spikes |
-| SPIKES_BODY | Spikes, Body | Unarmed | ? armour spikes |
-| STAFF_SLING | Staff Sling | Thrown | ? sling |
-| STAFF_SLING_STINKPOT | Staff Sling, Stinkpot | Thrown | ? sling |
-| STAFF_HAMANUS | Staff, Hamanu's | Blunt | ? staff |
-| STAFF_HORNHEAD | Staff, Hornhead | Blunt | ? staff |
+| SPIKE_ELBOW | Spike, Elbow | Unarmed | armour spikes (settled) |
+| SPIKE_HEAD | Spike, Head | Unarmed | armour spikes (settled) |
+| SPIKE_KNEE | Spike, Knee | Unarmed | armour spikes (settled) |
+| SPIKES_BODY | Spikes, Body | Unarmed | armour spikes (settled) |
+| STAFF_SLING | Staff Sling | Thrown | sling (settled) |
+| STAFF_SLING_STINKPOT | Staff Sling, Stinkpot | Thrown | sling (settled) |
+| STAFF_HAMANUS | Staff, Hamanu's | Blunt | staff (settled) |
+| STAFF_HORNHEAD | Staff, Hornhead | Blunt | staff (settled) |
 | STICK_GOBLIN | Stick, Goblin | Blunt |  |
 | STICKS_SINGING | Sticks, Singing | Blunt |  |
 | STILETTO | Stiletto | Dagger |  |
@@ -160,16 +160,16 @@
 | TROMBASH_THROWN | Trombash, Thrown | Thrown |  |
 | TUFENK | Tufenk | Firearm | already a firearm in gamedata/firearm |
 | WARHAMMER | Warhammer | Blunt |  |
-| WHIP | Whip | Blade | ? whip: Blade, Unarmed or none |
-| WHIP_CHAIN | Whip, Chain | Blade | ? whip |
-| WHIP_MASTERS | Whip, Master's | Blade | ? whip |
+| WHIP | Whip | Blade | whip: Blade, Unarmed or none (settled) |
+| WHIP_CHAIN | Whip, Chain | Blade | whip (settled) |
+| WHIP_MASTERS | Whip, Master's | Blade | whip (settled) |
 | WRIST_RAZOR | Wrist Razor | Unarmed |  |
-| ZAGHNAL | Zaghnal | Axe | ? war pick |
+| ZAGHNAL | Zaghnal | Axe | war pick (settled) |
 | BOW | Bow | Bow |  |
 | CROSSBOW | Crossbow | Crossbow |  |
 | AXE | Axe | Axe |  |
-| SPEAR | Spear | Polearm | ? the basic Spear is flagged Ranged |
-| BOOK | Book | - | ? a thrown or swung book: no Family, or Thrown or Blunt |
+| SPEAR | Spear | Polearm | trains Thrown when thrown (Q1) |
+| BOOK | Book | - | no Family (Q10) |
 | SMALL_FIREBALL | Small Fireball | - | spell projectile |
 | LARGE_FIREBALL | Large Fireball | - | spell projectile |
 | SMALL_LIGHTNING | Small Lightning | - | spell projectile |
@@ -187,10 +187,10 @@
 | ARROW_STONE_FLIGHT | Arrow, Stone Flight | - | ammunition |
 | ARROW_WAR | Arrow, War | - | ammunition |
 | AXE_FOREARM | Axe, Forearm | Axe |  |
-| AXE_HAND_THROWING | Axe, Hand/Throwing | Axe | ? throwing axe: Axe, or Thrown when thrown |
+| AXE_HAND_THROWING | Axe, Hand/Throwing | Axe | trains Thrown when thrown (Q1) |
 | AXE_TWO_HANDED_BATTLE | Axe, Two-Handed Battle | Axe |  |
 | BELAYING_PIN | Belaying Pin | Blunt |  |
-| BLOWGUN | Blowgun | Thrown | ? blowgun: Thrown, Bow or none |
+| BLOWGUN | Blowgun | Bow | aimed launcher (Q5) |
 | BLOWGUN_BARBED_DART | Blowgun, Barbed Dart | - | ammunition |
 | BLOWGUN_NEEDLE | Blowgun, Needle | - | ammunition |
 | BOW_COMPOSITE_SHORT | Bow, Composite Short | Bow |  |
@@ -225,20 +225,20 @@
 | HARPOON_TWO_HANDED | Harpoon, Two-Handed | Polearm |  |
 | HATCHET | Hatchet | Axe |  |
 | HATCHET_HAWK | Hatchet, Hawk | Axe |  |
-| JAVELIN_STONE_ONE_HANDED | Javelin, Stone, One-Handed | Thrown | ? javelin: Thrown or Polearm |
-| JAVELIN_STONE_TWO_HANDED | Javelin, Stone, Two-Handed | Thrown | ? javelin: Thrown or Polearm |
-| JAVELIN_TWO_HANDED | Javelin, Two-Handed | Thrown | ? javelin: Thrown or Polearm |
+| JAVELIN_STONE_ONE_HANDED | Javelin, Stone, One-Handed | Polearm | trains Thrown when thrown (Q1) |
+| JAVELIN_STONE_TWO_HANDED | Javelin, Stone, Two-Handed | Polearm | trains Thrown when thrown (Q1) |
+| JAVELIN_TWO_HANDED | Javelin, Two-Handed | Polearm | trains Thrown when thrown (Q1) |
 | KNIFE_BONE | Knife, Bone | Dagger |  |
 | KNIFE_HARNESS | Knife, Harness | Dagger |  |
 | KNIFE_STONE | Knife, Stone | Dagger |  |
-| KNIFE_THROWING | Knife, Throwing | Dagger | ? throwing knife: Dagger, or Thrown when thrown |
+| KNIFE_THROWING | Knife, Throwing | Dagger | trains Thrown when thrown (Q1) |
 | KNIFE_WIDOWS | Knife, Widow's | Dagger |  |
 | LANCE_FLIGHT | Lance, Flight | Polearm |  |
 | LANCE_HEAVY_HORSE1 | Lance, Heavy Horse1 | Polearm |  |
 | LANCE_JOUSTING1 | Lance, Jousting1 | Polearm |  |
 | LANCE_LIGHT_HORSE1 | Lance, Light Horse1 | Polearm |  |
 | LANCE_MEDIUM_HORSE1 | Lance, Medium Horse1 | Polearm |  |
-| LASSO | Lasso | Thrown | ? lasso |
+| LASSO | Lasso | Thrown | lasso (settled) |
 | MACE_BLADEBACK | Mace, Bladeback | Blunt |  |
 | MACE_FOOTMANS | Mace, Footman's | Blunt |  |
 | MACE_FOOTMANS_WHISTLING | Mace, Footman's Whistling | Blunt |  |
@@ -247,10 +247,10 @@
 | MACE_HORSEMANS_WHISTLING | Mace, Horseman's Whistling | Blunt |  |
 | MANCATCHER2 | Mancatcher2 | Polearm |  |
 | MORNING_STAR_DOUBLE_BALL | Morning Star, Double-Ball | Blunt |  |
-| NET | Net | Thrown | ? net: Thrown or no Family (utility) |
+| NET | Net | Thrown | net: Thrown or no Family (utility) (settled) |
 | PATA1 | Pata1 | Blade | gauntlet-sword |
-| PICK_HORSEMANS | Pick, Horseman's | Axe | ? pick |
-| PICK_ICE | Pick, Ice | Axe | ? pick |
+| PICK_HORSEMANS | Pick, Horseman's | Axe | pick (settled) |
+| PICK_ICE | Pick, Ice | Axe | pick (settled) |
 | POLEARM_GLAIVE4 | Polearm, Glaive4 | Polearm |  |
 | POLEARM_GUISARME | Polearm, Guisarme | Polearm |  |
 | POLEARM_MILITARY_FORK4 | Polearm, Military Fork4 | Polearm |  |
