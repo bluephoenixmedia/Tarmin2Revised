@@ -1993,28 +1993,32 @@ public class GameScreen extends BaseScreen {
             weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
         }
 
-        // Ensure player carries at least 1 starter ration and 1 starter waterskin
+        // A new Incarnation carries what a new game starts with: STARTING_RATIONS rations
+        // and a Waterskin (#191, #193).
         boolean hasFood = false;
         boolean hasWaterskin = false;
         for (Item itm : player.getInventory().getMainInventory()) {
             if (itm != null) {
                 if (itm.getType() == Item.ItemType.FOOD) hasFood = true;
-                if (itm.getType() == Item.ItemType.POTION_BLUE) hasWaterskin = true;
+                if (itm.getType() == Item.ItemType.WATERSKIN) hasWaterskin = true;
             }
         }
         for (Item itm : player.getInventory().getQuickSlots()) {
             if (itm != null) {
                 if (itm.getType() == Item.ItemType.FOOD) hasFood = true;
-                if (itm.getType() == Item.ItemType.POTION_BLUE) hasWaterskin = true;
+                if (itm.getType() == Item.ItemType.WATERSKIN) hasWaterskin = true;
             }
         }
         if (!hasFood) {
             Item starterFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
-            player.getInventory().pickupToBackpack(starterFood);
+            if (starterFood != null) {
+                starterFood.setStackCount(Player.STARTING_RATIONS);
+                player.getInventory().pickupToBackpack(starterFood);
+            }
         }
         if (!hasWaterskin) {
-            Item starterWater = game.getItemDataManager().createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, game.getAssetManager());
-            player.getInventory().pickupToBackpack(starterWater);
+            Item starterWater = game.getItemDataManager().createItem(Item.ItemType.WATERSKIN, 0, 0, ItemColor.TAN, game.getAssetManager());
+            if (starterWater != null) player.getInventory().pickupToBackpack(starterWater);
         }
         // Never a hard lock on the roads: a new expedition always carries fire for one shelter.
         if (!player.getInventory().hasItemOfType(Item.ItemType.TINDER_BUNDLE)) {

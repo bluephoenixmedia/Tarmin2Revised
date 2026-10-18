@@ -45,7 +45,7 @@ public final class Vengeance {
         if (delta <= -TRIVIAL_LEVELS_BELOW) return Role.TRIVIAL;
         com.bpm.minotaur.gamedata.monster.MonsterRole mr = monster.getRole();
         if (mr == com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER) return Role.FODDER;
-        if (mr == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY) return Role.HEAVY;
+        if (mr == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY || isElite(monster)) return Role.HEAVY;
         return Role.SOLDIER;
     }
 

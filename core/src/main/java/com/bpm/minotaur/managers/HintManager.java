@@ -184,7 +184,8 @@ public class HintManager implements SlotScopedState {
      */
     public boolean checkDoom(GameEventManager eventManager) {
         if (hasSeen(HintId.DOOM) || !SettingsManager.getInstance().isShowHints()) return false;
-        String msg = "Doom changed: each death advances the apocalypse. At 50 deaths, the Bridge falls.";
+        String msg = "Tarmin's Hunger grows: each death feeds him. At " + DoomManager.maxDeaths()
+                + " deaths, the Bridge falls.";
         return postHint(HintId.DOOM, eventManager, msg, 4.0f);
     }
 
