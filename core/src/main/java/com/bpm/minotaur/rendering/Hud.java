@@ -546,7 +546,7 @@ public class Hud implements Disposable {
         // The stat block under the bars now holds the anatomical silhouette and three small-font lines
         // (divinities, Tarmin's Hunger / doom, ammo), giving ample breathing room with zero overlap.
         final float statLineGap = 2f;
-        float statBlock = Math.max(52f, 3f * hudSkin.getFontSmall().getLineHeight() + 2f * statLineGap);
+        float statBlock = Math.max(com.bpm.minotaur.ui.UiTheme.HUD_STAT_BLOCK_MIN_H, 3f * hudSkin.getFontSmall().getLineHeight() + 2f * statLineGap);
         final float barGap = 3f;
         final float barsToStats = 4f;
         float barH = HudLayout.vitalsBarHeight(16f, 2f * barGap + barsToStats, statBlock);
@@ -765,8 +765,8 @@ public class Hud implements Disposable {
 
         // Sub-table 2: Combat monster card
         combatMonsterTable.top().left();
-        combatMonsterTable.add(monsterStrengthLabel).left().width(300f).minWidth(0f).padBottom(2).row();
-        combatMonsterTable.add(monsterAffinityLabel).left().width(300f).minWidth(0f).padBottom(4).row();
+        combatMonsterTable.add(monsterStrengthLabel).left().width(com.bpm.minotaur.ui.UiTheme.MONSTER_CARD_W).minWidth(0f).padBottom(2).row();
+        combatMonsterTable.add(monsterAffinityLabel).left().width(com.bpm.minotaur.ui.UiTheme.MONSTER_CARD_W).minWidth(0f).padBottom(4).row();
         combatMonsterTable.add(monsterHpBar).width(210).height(20).padBottom(4).row();
         combatMonsterTable.add(combatStatusLabel).left().padBottom(6).row();
         combatMonsterTable.setVisible(false);
@@ -1382,7 +1382,7 @@ public class Hud implements Disposable {
         dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
         dungeonTagTable.pack();
         dungeonTagTable.setPosition(28f, viewport.getWorldHeight() - 24f - dungeonTagTable.getHeight());
-        controlsHint.setPosition(28f - com.bpm.minotaur.ui.UiTheme.PAD_MD,
+        controlsHint.setPosition(dungeonTagTable.getX() - com.bpm.minotaur.ui.UiTheme.PAD_MD,
                 dungeonTagTable.getY() - com.bpm.minotaur.ui.UiTheme.PAD_SM - controlsHint.getHeight());
 
         navigationClusterTable.pack();

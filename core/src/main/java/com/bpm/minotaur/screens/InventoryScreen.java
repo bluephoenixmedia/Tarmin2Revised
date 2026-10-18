@@ -999,15 +999,15 @@ public class InventoryScreen extends BaseScreen {
         // ── RIGHT COLUMN ─────────────────────────────────────────────
         com.bpm.minotaur.gamedata.player.Hunger.Stage sat = player.getStats().getHungerStage();
         sRow(rightStatsCol, "Hunger",    sat.label,
-             sat.isWeakened() ? Color.RED : sat.isHungry() ? Color.YELLOW : Color.WHITE);
+             com.bpm.minotaur.ui.UiTheme.severity(sat.isWeakened(), sat.isHungry()));
 
         float temp = player.getStats().getBodyTemperature();
         sRow(rightStatsCol, "Body Temp", String.format("%.1fC", temp),
-             (temp < 33f || temp > 41f) ? Color.RED : (temp < 35f || temp > 39f) ? Color.YELLOW : Color.WHITE);
+             com.bpm.minotaur.ui.UiTheme.severity(temp < 33f || temp > 41f, temp < 35f || temp > 39f));
 
         com.bpm.minotaur.gamedata.player.Thirst.Stage hyd = player.getStats().getThirstStage();
         sRow(rightStatsCol, "Thirst",    hyd.label,
-             hyd.isDehydrated() ? Color.RED : hyd.isThirsty() ? Color.YELLOW : Color.WHITE);
+             com.bpm.minotaur.ui.UiTheme.severity(hyd.isDehydrated(), hyd.isThirsty()));
 
         sRow(rightStatsCol, "Arrows",       String.valueOf(player.getArrows()),               Color.WHITE);
         sRow(rightStatsCol, "Treasure",     String.valueOf(player.getTreasureScore()),         Color.GOLD);

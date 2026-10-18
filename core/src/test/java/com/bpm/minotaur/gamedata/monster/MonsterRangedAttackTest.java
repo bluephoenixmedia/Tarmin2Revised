@@ -161,6 +161,21 @@ public class MonsterRangedAttackTest {
     public void testStatusEffectInflictionOnRangedHit() {
         // Monster at (5, 8) with 100% chance to inflict POISONED
         Monster snake = new Monster(Monster.MonsterType.GIANT_SNAKE, 25, 10, 5f, 8f);
+
+        // Ensure the attack hits. The monster attack bonus reads Dexterity from the template, and
+        // only for beasts (CombatManager.calculateMonsterAttackBonus): an agile beast template
+        // gives 1 + (50-10)/4 = +11 against the player's base AC 10, so no d20 roll misses.
+        // (Setting Dexterity on the monster alone stopped counting after the #177/#207 retune,
+        // which left this test passing only when the roll happened to hit.) The template goes on
+        // first, because setTemplate copies HP, AC and every ranged field from it.
+        MonsterTemplate agileBeast = new MonsterTemplate();
+        agileBeast.family = MonsterFamily.BEAST;
+        agileBeast.dexterity = 50;
+        agileBeast.maxHP = 25;
+        agileBeast.armorClass = 10;
+        snake.setTemplate(agileBeast);
+        snake.setDexterity(50);
+
         snake.setHasRangedAttack(true);
         snake.setAttackRange(5);
         snake.setRangedProjectile("VENOM");
@@ -168,9 +183,6 @@ public class MonsterRangedAttackTest {
         snake.setRangedDamageType(DamageType.POISON);
         snake.setRangedEffect("POISONED");
         snake.setRangedEffectChance(1.0f);
-
-        // Ensure attack hits by giving attacker high dexterity (bonus +10) vs player base AC (10)
-        snake.setDexterity(50);
 
         boolean executed = combatManager.performMonsterRangedAttack(snake);
         assertTrue("Ranged attack should hit", executed);
