@@ -1859,7 +1859,12 @@ public class GameScreen extends BaseScreen {
                 && !player.wasLastDamageViolent()
                 && player.getInjuryManager() != null
                 && player.getInjuryManager().hasUntreatedInjuries();
-        if (bledOut) {
+        String survival = telemetry.getSurvivalDeath();
+        if ("thirst".equals(survival)) {
+            sb.append("Died of thirst");
+        } else if ("starvation".equals(survival)) {
+            sb.append("Starved to death");
+        } else if (bledOut) {
             sb.append("Bled out from untended wounds");
         } else if (killer != null && !killer.trim().isEmpty()) {
             String niceName = formatMonsterName(killer);
@@ -1871,7 +1876,7 @@ public class GameScreen extends BaseScreen {
         sb.append(" at Strata Depth ").append(Math.max(1, telemetry.getStrataReached()));
         sb.append(" on turn ").append(telemetry.getTurnsLived());
 
-        if (player != null && player.getStats() != null) {
+        if (survival == null && player != null && player.getStats() != null) {
             PlayerStats stats = player.getStats();
             if (stats.getHungerStage().isWeakened()) {
                 sb.append(" while starving");

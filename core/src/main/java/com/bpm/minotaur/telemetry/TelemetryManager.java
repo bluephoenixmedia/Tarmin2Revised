@@ -116,6 +116,8 @@ public class TelemetryManager {
     private String causeOfDeath;
     private String killerMonster;
     private int killerHouse = -1;
+    /** "thirst" or "starvation" when the body gave out, else null. */
+    private String survivalDeath;
     private int bleedDamageTaken;
     private final long[] life = new long[Counter.values().length];
 
@@ -158,6 +160,7 @@ public class TelemetryManager {
         this.causeOfDeath = null;
         this.killerMonster = null;
         this.killerHouse = -1;
+        this.survivalDeath = null;
         this.bleedDamageTaken = 0;
         java.util.Arrays.fill(life, 0L);
         this.cheatsUsed = false;
@@ -516,6 +519,20 @@ public class TelemetryManager {
 
     public int getKillerHouse() {
         return killerHouse;
+    }
+
+    /**
+     * Records a death of thirst or starvation. The last monster to hurt the player did not kill
+     * them, so its name is cleared rather than left to masquerade as the killer.
+     */
+    public synchronized void setSurvivalDeath(String cause) {
+        this.survivalDeath = cause;
+        this.killerMonster = null;
+        this.killerHouse = -1;
+    }
+
+    public String getSurvivalDeath() {
+        return survivalDeath;
     }
 
     public String getKillerMonster() {
