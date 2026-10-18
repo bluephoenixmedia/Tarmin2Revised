@@ -14,9 +14,9 @@ public class HudReadoutsTest {
 
     @Test
     public void theHungerLabelIsShortAtEveryStage() {
-        assertEquals("HUNGER 4/50", HudReadouts.hungerLabel(4, 50, false));
-        assertEquals("HUNGER 46/50 !", HudReadouts.hungerLabel(46, 50, false));
-        assertEquals("HUNGER 50/50 !", HudReadouts.hungerLabel(50, 50, true));
+        assertEquals("TARMIN 4/50", HudReadouts.hungerLabel(4, 50, false));
+        assertEquals("TARMIN 46/50 !", HudReadouts.hungerLabel(46, 50, false));
+        assertEquals("TARMIN 50/50 !", HudReadouts.hungerLabel(50, 50, true));
         for (int d = 0; d <= 50; d++) {
             assertTrue(HudReadouts.hungerLabel(d, 50, d >= 50).length() <= CELL_CHARS);
         }

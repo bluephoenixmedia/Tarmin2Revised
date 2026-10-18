@@ -47,6 +47,14 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.screens.GameScreen;
+import com.bpm.minotaur.gamedata.player.Exposure;
+import com.bpm.minotaur.gamedata.player.Hunger;
+import com.bpm.minotaur.gamedata.player.Thirst;
+import com.bpm.minotaur.ui.HudReadouts;
+import com.bpm.minotaur.ui.ExposureView;
+import com.bpm.minotaur.ui.AffinityText;
+import com.bpm.minotaur.managers.ActionKeys;
+import com.bpm.minotaur.managers.Action;
 
 public class Hud implements Disposable {
 
@@ -118,7 +126,7 @@ public class Hud implements Disposable {
     private final Label levelLabel, xpLabel;
     private final Label levelBadgeLabel;
     private final Label divinitiesLabel;
-    private final Label doomLabel;
+    private final Label tarminsHungerLabel;
     /** LEVELUP-10: "+n" over the portrait while attribute points are unspent. */
     private Label unspentPointsBadge;
     private Table unspentPointsChip;
@@ -482,7 +490,7 @@ public class Hud implements Disposable {
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
-        doomLabel = new Label("HUNGER 0/50", smallStyle);
+        tarminsHungerLabel = new Label("TARMIN 0/50", smallStyle);
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
@@ -562,20 +570,20 @@ public class Hud implements Disposable {
         // HUD-2 / LEVELUP-3: With compass and clock moved to the top-right cluster (HUD-7),
         // these three vitals lines have plenty of space in the column.
         divinitiesLabel.setEllipsis(true);
-        doomLabel.setEllipsis(true);
+        tarminsHungerLabel.setEllipsis(true);
         ammoLabel.setEllipsis(true);
         // #173: what these two numbers mean, on hover. The Hunger cell keeps a short label;
         // the full text, the next stage and the boss warning live in the tooltip.
-        addReadoutTooltip(divinitiesLabel, () -> com.bpm.minotaur.ui.HudReadouts.divinityTip(
+        addReadoutTooltip(divinitiesLabel, () -> HudReadouts.divinityTip(
                 DivinityManager.getInstance().getCurrentDivinities()));
-        addReadoutTooltip(doomLabel, () -> {
+        addReadoutTooltip(tarminsHungerLabel, () -> {
             DoomManager d = DoomManager.getInstance();
-            return com.bpm.minotaur.ui.HudReadouts.hungerTip(d.getDeathCount(), DoomManager.maxDeaths(),
+            return HudReadouts.hungerTip(d.getDeathCount(), DoomManager.maxDeaths(),
                     d.isBridgeBossActive());
         });
         Table divDoomCol = new Table();
         divDoomCol.add(divinitiesLabel).left().growX().row();
-        divDoomCol.add(doomLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(tarminsHungerLabel).left().growX().padTop(statLineGap).row();
         divDoomCol.add(ammoLabel).left().growX().padTop(statLineGap).row();
         vitalsSubRow.add(divDoomCol).left().growX().minWidth(0f);
 
@@ -721,7 +729,7 @@ public class Hud implements Disposable {
         // The Exposure meter (#194): the band by name, filled with warmth. It keeps the old TEMP
         // gauge's cell in the condition column, clear of the vitals budget (HudLayout).
         tempBar = new ModernStatBar("EXPOSURE", HudSkin.COL_EXPOSURE_COMFORT, hudSkin);
-        addReadoutTooltip(tempBar, () -> com.bpm.minotaur.ui.HudReadouts.exposureTip(
+        addReadoutTooltip(tempBar, () -> HudReadouts.exposureTip(
                 player.getStats().getExposureBand(), player.getStats().getWetnessLevel()));
         toxBar = new ModernStatBar("TOX", HudSkin.COL_TOX, hudSkin);
 
@@ -760,7 +768,7 @@ public class Hud implements Disposable {
                 timeDisplay = dnm.getTimeDisplayString();
                 phase = dnm.getPhase().name();
             }
-            return com.bpm.minotaur.ui.HudReadouts.navigationTip(heading, timeDisplay, phase);
+            return HudReadouts.navigationTip(heading, timeDisplay, phase);
         });
 
         // Sub-table 2: Combat monster card
@@ -1182,7 +1190,7 @@ public class Hud implements Disposable {
         }
 
         DivinityManager dm = DivinityManager.getInstance();
-        divinitiesLabel.setText(com.bpm.minotaur.ui.HudReadouts.divinityLabel(dm.getCurrentDivinities()));
+        divinitiesLabel.setText(HudReadouts.divinityLabel(dm.getCurrentDivinities()));
         divinitiesLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
 
         DoomManager doom = DoomManager.getInstance();
@@ -1190,14 +1198,14 @@ public class Hud implements Disposable {
         float bridge = doom.getBridgeIntegrity();
         // #173 / #188: "TARMIN'S HUNGER n - nn% - BOSS SOON" ran far past this cell and lost its
         // boss suffix to the ellipsis. Short label here; the whole story is in the tooltip.
-        doomLabel.setText(com.bpm.minotaur.ui.HudReadouts.hungerLabel(deaths, DoomManager.maxDeaths(),
+        tarminsHungerLabel.setText(HudReadouts.hungerLabel(deaths, DoomManager.maxDeaths(),
                 doom.isBridgeBossActive()));
         if (doom.isBridgeBossActive() || bridge >= 75f) {
-            doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
+            tarminsHungerLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else if (bridge >= 40f) {
-            doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
+            tarminsHungerLabel.setColor(HudSkin.COL_TEMP_ORANGE);
         } else {
-            doomLabel.setColor(HudSkin.COL_TEXT_ON_DARK);
+            tarminsHungerLabel.setColor(HudSkin.COL_TEXT_ON_DARK);
         }
 
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -1319,8 +1327,8 @@ public class Hud implements Disposable {
 
         // --- 3. Update Condition & Delve / Combat Card (HUD-4) ---
         float foodVal = Math.max(0, player.getFood());
-        float maxFood = com.bpm.minotaur.gamedata.player.Hunger.SATIATED_ABOVE;
-        com.bpm.minotaur.gamedata.player.Hunger.Stage hungerStage = player.getStats().getHungerStage();
+        float maxFood = Hunger.SATIATED_ABOVE;
+        Hunger.Stage hungerStage = player.getStats().getHungerStage();
         boolean foodDanger = (foodVal <= maxFood * 0.25f) || hungerStage.isHungry();
         foodBar.setValue(foodVal, maxFood);
         foodBar.setDangerFrame(foodDanger);
@@ -1334,7 +1342,7 @@ public class Hud implements Disposable {
 
         float waterVal = player.getStats().getHydrationFloat();
         float maxWater = PlayerStats.MAX_HYDRATION;
-        com.bpm.minotaur.gamedata.player.Thirst.Stage thirstStage = player.getStats().getThirstStage();
+        Thirst.Stage thirstStage = player.getStats().getThirstStage();
         boolean waterDanger = (waterVal <= maxWater * 0.25f) || thirstStage.isThirsty();
         waterBar.setValue(waterVal, maxWater);
         waterBar.setDangerFrame(waterDanger);
@@ -1347,13 +1355,12 @@ public class Hud implements Disposable {
         }
 
         float temp = player.getStats().getBodyTemperature();
-        com.bpm.minotaur.gamedata.player.Exposure.Band band = player.getStats().getExposureBand();
-        tempBar.setValue(com.bpm.minotaur.ui.HudReadouts.exposureMeterFill(temp), 1f);
-        tempBar.setCustomText(com.bpm.minotaur.ui.HudReadouts.exposureMeterText(band));
-        tempBar.setBarColor(HudSkin.exposureColor(band));
-        boolean tempDanger = (band == com.bpm.minotaur.gamedata.player.Exposure.Band.FREEZING
-                || band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC
-                || band == com.bpm.minotaur.gamedata.player.Exposure.Band.HOT);
+        Exposure.Band band = player.getStats().getExposureBand();
+        tempBar.setValue(HudReadouts.exposureMeterFill(temp), 1f);
+        tempBar.setCustomText(HudReadouts.exposureMeterText(band));
+        ExposureView exposureView = ExposureView.of(band);
+        tempBar.setBarColor(exposureView.color);
+        boolean tempDanger = exposureView.danger;
         tempBar.setDangerFrame(tempDanger);
 
         float toxVal = player.getStats().getToxicity();
@@ -1408,8 +1415,8 @@ public class Hud implements Disposable {
             combatMonsterTable.setVisible(true);
 
             Monster monster = inCombat ? combatManager.getMonster() : facedMonster;
-            monsterStrengthLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.cardTitle(monster)));
-            monsterAffinityLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.badge(monster)));
+            monsterStrengthLabel.setText(checkScramble(AffinityText.cardTitle(monster)));
+            monsterAffinityLabel.setText(checkScramble(AffinityText.badge(monster)));
             monsterHpBar.setValue(monster.getCurrentHP(), monster.getMaxHP());
 
             switch (combatManager.getCurrentState()) {
@@ -1442,13 +1449,13 @@ public class Hud implements Disposable {
     }
 
     /** Shows a status-style tooltip over a HUD readout while the pointer is on it. */
-    private void addReadoutTooltip(final Actor label, final java.util.function.Supplier<com.bpm.minotaur.ui.HudReadouts.Tip> tip) {
+    private void addReadoutTooltip(final Actor label, final java.util.function.Supplier<HudReadouts.Tip> tip) {
         label.setTouchable(Touchable.enabled);
         label.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (encounterWindow != null && encounterWindow.isVisible()) return;
-                com.bpm.minotaur.ui.HudReadouts.Tip t = tip.get();
+                HudReadouts.Tip t = tip.get();
                 Vector2 pos = label.localToStageCoordinates(new Vector2(0, 0));
                 hudTooltip.showStatus(t.title, t.category, t.details, t.remedy,
                         pos.x + label.getWidth() / 2f, pos.y);
@@ -1466,12 +1473,7 @@ public class Hud implements Disposable {
      * folk and anything the player cannot see get no card, so the card never gives them away.
      */
     private Monster facedLiveMonster() {
-        if (maze == null || player == null || maze.getMonsters() == null) return null;
-        Vector2 dir = player.getFacing().getVector();
-        GridPoint2 front = new GridPoint2((int) (player.getPosition().x + dir.x), (int) (player.getPosition().y + dir.y));
-        Monster m = maze.getMonsters().get(front);
-        if (m == null || !m.isAlive() || m.isAlly() || m.isPeaceful() || m.isInvisible() || m.isHidden()) return null;
-        return m;
+        return player == null ? null : player.hostileMonsterAhead(maze);
     }
 
     private static class ParsedLogLine {
@@ -1872,22 +1874,22 @@ public class Hud implements Disposable {
             yPos -= lineGap;
             defaultFont.setColor(Color.WHITE);
 
-            com.bpm.minotaur.managers.ActionKeys bound = com.bpm.minotaur.managers.ActionKeys.live();
+            ActionKeys bound = ActionKeys.live();
             String[] keyMappings = {
-                    bound.keyName("MOVE_FORWARD") + "/" + bound.keyName("MOVE_BACK") + " : Move",
-                    bound.keyName("TURN_LEFT") + "/" + bound.keyName("TURN_RIGHT") + " : Turn",
-                    bound.keyName("INTERACT") + " : Interact / Craft / Butcher",
-                    bound.keyName("PICKUP_DROP") + " : Pickup Item",
-                    bound.keyName("USE_ITEM") + " : Use Item",
-                    bound.keyName("DESCEND") + " : Climb Ladder",
-                    bound.keyName("FIRST_AID") + " : First Aid",
-                    bound.keyName("QUICK_HEAL") + " : Quick Heal",
-                    bound.keyName("SWAP_HANDS") + " : Swap Hands",
-                    bound.keyName("SWAP_PACK") + " : Use / Loot / Equip, else Swap with Pack",
-                    bound.keyName("ROTATE_PACK") + " : Rotate Pack",
-                    bound.keyName("ATTACK") + "/SPACE : Instant Attack",
+                    bound.keyName(Action.MOVE_FORWARD) + "/" + bound.keyName(Action.MOVE_BACK) + " : Move",
+                    bound.keyName(Action.TURN_LEFT) + "/" + bound.keyName(Action.TURN_RIGHT) + " : Turn",
+                    bound.keyName(Action.INTERACT) + " : Interact / Craft / Butcher",
+                    bound.keyName(Action.PICKUP_DROP) + " : Pickup Item",
+                    bound.keyName(Action.USE_ITEM) + " : Use Item",
+                    bound.keyName(Action.DESCEND) + " : Climb Ladder",
+                    bound.keyName(Action.FIRST_AID) + " : First Aid",
+                    bound.keyName(Action.QUICK_HEAL) + " : Quick Heal",
+                    bound.keyName(Action.SWAP_HANDS) + " : Swap Hands",
+                    bound.keyName(Action.SWAP_PACK) + " : Use / Loot / Equip, else Swap with Pack",
+                    bound.keyName(Action.ROTATE_PACK) + " : Rotate Pack",
+                    bound.keyName(Action.ATTACK) + "/SPACE : Instant Attack",
                     "NUM 7 : Dice Attack",
-                    bound.keyName("MAP") + " : Castle Map"
+                    bound.keyName(Action.MAP) + " : Castle Map"
             };
 
             for (String mapping : keyMappings) {
@@ -2355,7 +2357,7 @@ public class Hud implements Disposable {
     private void updateWorldInteractionCard() {
         if (worldInteractionCard == null) return;
         // #170: every badge names the bound key, so a rebind shows up on the cards too.
-        com.bpm.minotaur.managers.ActionKeys keys = com.bpm.minotaur.managers.ActionKeys.live();
+        ActionKeys keys = ActionKeys.live();
 
         // LEVELUP-1 / HUD-1: this list named four things and the level-up overlay was not one
         // of them, so a corpse's "[ E ] Loot Remains" card was drawn straight across the
@@ -2396,7 +2398,7 @@ public class Hud implements Disposable {
                             "[DEFEATED SPIRIT]",
                             "Remains of " + heroName,
                             "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
-                            keys.badge("SWAP_PACK"),
+                            keys.badge(Action.SWAP_PACK),
                             "Loot Remains",
                             () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                     );
@@ -2406,7 +2408,7 @@ public class Hud implements Disposable {
                             "[ACTIVE GHOST]",
                             "Remains of " + heroName,
                             "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
-                            keys.badge("SWAP_PACK"),
+                            keys.badge(Action.SWAP_PACK),
                             "Examine Remains",
                             () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                     );
@@ -2416,7 +2418,7 @@ public class Hud implements Disposable {
                             "[DORMANT BONES]",
                             "Remains of " + heroName,
                             "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
-                            keys.badge("SWAP_PACK"),
+                            keys.badge(Action.SWAP_PACK),
                             "Disturb Remains",
                             () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                     );
@@ -2430,8 +2432,8 @@ public class Hud implements Disposable {
                         "Corpse of " + creatureName,
                         hasKnife ? "The lifeless remains of a slain " + creatureName + ". Ready to be harvested for meat and bones."
                                 : "The lifeless remains of a slain " + creatureName + ". Requires a bladed tool to butcher.",
-                        keys.badge("SWAP_PACK"),
-                        (hasKnife ? "Butcher / Harvest [" : "Examine Remains [") + keys.keyName("SWAP_PACK") + "]",
+                        keys.badge(Action.SWAP_PACK),
+                        (hasKnife ? "Butcher / Harvest [" : "Examine Remains [") + keys.keyName(Action.SWAP_PACK) + "]",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
             }
@@ -2446,7 +2448,7 @@ public class Hud implements Disposable {
                         "[STORAGE STASH]",
                         "Shelter Storage Chest",
                         "Secure repository for equipment, relics, and treasures. Stored items persist between delve runs.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Open Storage Chest",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2458,7 +2460,7 @@ public class Hud implements Disposable {
                         "[COLD HEARTH]",
                         "Cold Hearth",
                         "A shelter gone dark. Light its hearth with a Tinder Bundle to claim it: every station you have unlocked will stand here, and you can rest and wake here.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Light the Hearth",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2470,7 +2472,7 @@ public class Hud implements Disposable {
                         "[REST & RECOVERY]",
                         "Shelter Bedroll",
                         "Rest to fully replenish Health & Mana, cure status ailments, and save your delve progress.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Rest & Save Game",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2482,7 +2484,7 @@ public class Hud implements Disposable {
                         "[ARTISAN WORKBENCH]",
                         "Artisan's Crafting Bench & Forge",
                         "Hone weapons and armor, salvage dungeon scrap and infuse monster trophies. At the Ossuary, carve three monster bones into a new combat die. Draws from pack and chest.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Open Crafting Bench",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2494,7 +2496,7 @@ public class Hud implements Disposable {
                         "[CAMPFIRE & COOKING]",
                         "Cooking Fire Pot",
                         "Combine harvested meats and forage into hearty meals granting lasting survival buffs.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Cook Meals",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2506,7 +2508,7 @@ public class Hud implements Disposable {
                         "[DIVINITY ALTAR]",
                         "Shelter Altar",
                         "An ancient stone altar humming with banked Divinities. Spend them on permanent Provisions, Repertoire, and Monument upgrades.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Open Shelter Altar",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2518,7 +2520,7 @@ public class Hud implements Disposable {
                         "[CHRONICLE & CODEX]",
                         "Archive Lectern",
                         "An ancient stone lectern holding the Chronicle of Tarmin. Review unlocked armory relics, unsealed arcana, and shelter renovations.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Examine Archive Lectern",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2530,7 +2532,7 @@ public class Hud implements Disposable {
                         "[THE WAR]",
                         "War Table",
                         "A campaign map of the overland pinned with each house's colours. See where the houses are fighting, and who is winning.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Study the War Table",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2542,7 +2544,7 @@ public class Hud implements Disposable {
                         "[CARTOGRAPHY]",
                         "Cartographer's Desk",
                         "Drafting tables and survey instruments. Survey surrounding world sectors, chart biomes, roads, war fronts, and megabeast dens.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Examine Cartographer's Desk",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2554,10 +2556,10 @@ public class Hud implements Disposable {
                         "[BRASS LANTERN]",
                         "Mounted Brass Lantern",
                         "Casts a steady, warm 5.5m golden light. It clips to your belt, leaving both hands free; press "
-                                + com.badlogic.gdx.Input.Keys.toString(com.bpm.minotaur.managers.SettingsManager.getInstance().getKey("TOGGLE_LANTERN"))
+                                + ActionKeys.live().keyName(Action.TOGGLE_LANTERN)
                                 + " to toggle it. Its light reveals enemy weak points (+10% Crit).",
-                        keys.badge("PICKUP_DROP") + " Take Lantern",
-                        keys.badge("INTERACT") + " Toggle Flame",
+                        keys.badge(Action.PICKUP_DROP) + " Take Lantern",
+                        keys.badge(Action.INTERACT) + " Toggle Flame",
                         () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); }
                 );
                 return;
@@ -2568,7 +2570,7 @@ public class Hud implements Disposable {
                         "[TRAINING GROUNDS]",
                         "Training Dummy & Weapon Rack",
                         "Hone martial skills and spend banked skill points to unlock perks and abilities across combat disciplines.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Open Skill Tree",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2584,7 +2586,7 @@ public class Hud implements Disposable {
                     "[BARRED WINDOW]",
                     "Iron-Barred Window",
                     "Three heavy iron bars set into a recessed stone embrasure. You can peer out at the wilderness and weather beyond.",
-                    keys.badge("INTERACT", "SWAP_PACK"),
+                    keys.badge(Action.INTERACT, Action.SWAP_PACK),
                     "Look Outside",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2598,7 +2600,7 @@ public class Hud implements Disposable {
                     isOpen ? "[OPEN]" : "[CLOSED]",
                     "Heavy Timber Door",
                     isOpen ? "The doorway is open." : "Sturdy reinforced door keeping dungeon horrors out.",
-                    keys.badge("INTERACT"),
+                    keys.badge(Action.INTERACT),
                     isOpen ? "Close Door" : "Open Door",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2623,7 +2625,7 @@ public class Hud implements Disposable {
                     gate.isLocked() ? "[SEALED]" : "[GATE]",
                     title,
                     desc,
-                    keys.badge("INTERACT"),
+                    keys.badge(Action.INTERACT),
                     gate.isLocked() ? "Channel Rune of Surrender" : "Pass Through Gate",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2642,7 +2644,7 @@ public class Hud implements Disposable {
                         "[MIMIC]",
                         "Mimic",
                         "The lid breathes. Whatever this is, it is not a chest -- strike it before it strikes you.",
-                        keys.badge("INTERACT"),
+                        keys.badge(Action.INTERACT),
                         "Strike It First",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
@@ -2655,7 +2657,7 @@ public class Hud implements Disposable {
                     "[CONTAINER]",
                     frontItem.getDisplayName(),
                     locked ? "Secured ancient chest. Requires a matching key to unlock." : "Open to search for relics and treasures inside.",
-                    keys.badge("INTERACT"),
+                    keys.badge(Action.INTERACT),
                     locked ? "Unlock Container" : "Open Container",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2670,7 +2672,7 @@ public class Hud implements Disposable {
                     "[CORPSE]",
                     hasStored ? "Lost Adventurer Remains" : frontItem.getDisplayName(),
                     hasStored ? "Recover lost equipment and backpack from your previous demise." : "Fallen creature. Can be harvested for meat, bones, and alchemical viscera.",
-                    keys.badge("INTERACT"),
+                    keys.badge(Action.INTERACT),
                     hasStored ? "Recover Equipment" : "Harvest / Butcher",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
@@ -2690,7 +2692,7 @@ public class Hud implements Disposable {
             String title;
             String desc;
             String action;
-            String descendBadge = " [" + keys.keyName("DESCEND") + "]";
+            String descendBadge = " [" + keys.keyName(Action.DESCEND) + "]";
 
             if (style == Ladder.EntranceStyle.SINKHOLE) {
                 tag = "[STRATA DESCENT]";
@@ -2735,7 +2737,7 @@ public class Hud implements Disposable {
                     header,
                     title,
                     desc,
-                    keys.badge("DESCEND"),
+                    keys.badge(Action.DESCEND),
                     action,
                     () -> { if (gameScreen != null) gameScreen.ascendOrDescendLadder(); }
             );
@@ -2758,11 +2760,11 @@ public class Hud implements Disposable {
             String cat = groundItem.getCategory() != null ? "[" + groundItem.getCategory().name().replace('_', ' ') + "]" : "[ITEM]";
             String title = groundItemDisplayName(groundItem);
             String statDesc = formatItemStatDescription(groundItem);
-            String actionText = "Pick Up [" + keys.keyName("PICKUP_DROP") + "]";
+            String actionText = "Pick Up [" + keys.keyName(Action.PICKUP_DROP) + "]";
             if (groundItem.isWeapon() || groundItem.isArmor() || groundItem.isShield()) {
-                actionText += "  |  Quick Equip [" + keys.keyName("SWAP_PACK") + "]";
+                actionText += "  |  Quick Equip [" + keys.keyName(Action.SWAP_PACK) + "]";
             } else if (groundItem.isConsumableOrTool()) {
-                actionText += "  |  Consume [" + keys.keyName("SWAP_PACK") + "/" + keys.keyName("USE_ITEM") + "]";
+                actionText += "  |  Consume [" + keys.keyName(Action.SWAP_PACK) + "/" + keys.keyName(Action.USE_ITEM) + "]";
             }
             com.bpm.minotaur.gamedata.item.GearComparison.ComparisonResult comp =
                     com.bpm.minotaur.gamedata.item.GearComparison.compare(groundItem, player);
@@ -2773,7 +2775,7 @@ public class Hud implements Disposable {
                     cat,
                     title,
                     statDesc,
-                    keys.badge("PICKUP_DROP", "SWAP_PACK"),
+                    keys.badge(Action.PICKUP_DROP, Action.SWAP_PACK),
                     actionText,
                     () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); },
                     compBadge,
@@ -2927,8 +2929,8 @@ public class Hud implements Disposable {
 
         // 2. Temperature
         if (p.getStats() != null) {
-            com.bpm.minotaur.gamedata.player.Exposure.Band band = p.getStats().getExposureBand();
-            boolean hypothermic = band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC;
+            Exposure.Band band = p.getStats().getExposureBand();
+            boolean hypothermic = band == Exposure.Band.HYPOTHERMIC;
             boolean chilled = band.isCold() && !hypothermic;
 
             if (hypothermic && !wasHypothermic) {
@@ -2940,13 +2942,13 @@ public class Hud implements Disposable {
             wasChilled = chilled;
 
             // 3. Satiation & Dehydration
-            boolean starving = p.getStats().getSatietyFloat() < com.bpm.minotaur.gamedata.player.Hunger.FAINTING_BELOW;
+            boolean starving = p.getStats().getHungerStage().isFainting();
             if (starving && !wasStarving) {
                 showStatusAlertToast("FAINTING! Eat before you pass out or starve!", HudSkin.COL_HP_CRITICAL);
             }
             wasStarving = starving;
 
-            boolean parched = p.getStats().getHydrationFloat() < com.bpm.minotaur.gamedata.player.Thirst.COLLAPSE_BELOW;
+            boolean parched = p.getStats().getThirstStage().isCollapsing();
             if (parched && !wasParchedStatus) {
                 showStatusAlertToast("COLLAPSING! Drink before you pass out or die of thirst!", HudSkin.COL_HP_CRITICAL);
             }

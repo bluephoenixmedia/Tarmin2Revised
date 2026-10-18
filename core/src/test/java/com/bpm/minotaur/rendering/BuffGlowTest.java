@@ -73,4 +73,21 @@ public class BuffGlowTest {
         s = BuffGlow.approach(s, true, 1f);
         assertEquals(1f, s, 1e-6);
     }
+
+    @Test
+    public void theGlowingSetIsTheOldOrderRuleWrittenOut() {
+        // The list replaced "every effect from FOCUSED on, minus the cold and heat states".
+        // Pin that it changed nothing: any status added later must be listed on purpose.
+        java.util.Set<com.bpm.minotaur.gamedata.effects.StatusEffectType> oldRule =
+                java.util.EnumSet.noneOf(com.bpm.minotaur.gamedata.effects.StatusEffectType.class);
+        for (com.bpm.minotaur.gamedata.effects.StatusEffectType t : com.bpm.minotaur.gamedata.effects.StatusEffectType.values()) {
+            if (t.ordinal() >= com.bpm.minotaur.gamedata.effects.StatusEffectType.FOCUSED.ordinal()
+                    && t != com.bpm.minotaur.gamedata.effects.StatusEffectType.CHILLED
+                    && t != com.bpm.minotaur.gamedata.effects.StatusEffectType.HYPOTHERMIA
+                    && t != com.bpm.minotaur.gamedata.effects.StatusEffectType.HEATSTROKE) {
+                oldRule.add(t);
+            }
+        }
+        assertEquals(oldRule, BuffGlow.GLOWING_BUFFS);
+    }
 }

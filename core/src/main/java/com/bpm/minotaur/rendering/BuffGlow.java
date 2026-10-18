@@ -54,12 +54,27 @@ public final class BuffGlow {
         return null;
     }
 
+    /**
+     * The effects that make the idle weapon glow while timed: the beneficial ones. Listed, not
+     * taken from the enum's order, so adding or moving a status can't change it by accident.
+     */
+    static final java.util.Set<StatusEffectType> GLOWING_BUFFS = java.util.Collections.unmodifiableSet(
+            java.util.EnumSet.of(
+            StatusEffectType.FOCUSED, StatusEffectType.ADRENALINE_BOOST, StatusEffectType.HEALTHY, StatusEffectType.IMMUNE_BOOSTED,
+            StatusEffectType.TEMP_STRENGTH, StatusEffectType.TEMP_SPEED, StatusEffectType.TEMP_HEALTH, StatusEffectType.PSYCHIC,
+            StatusEffectType.FLOATING, StatusEffectType.FLYING, StatusEffectType.SUPER_SPEED, StatusEffectType.HARDENED,
+            StatusEffectType.SUPER_INTELLIGENT, StatusEffectType.OMNISCIENT, StatusEffectType.RESIST_FIRE, StatusEffectType.RESIST_COLD,
+            StatusEffectType.RESIST_LIGHTNING, StatusEffectType.RESIST_POISON, StatusEffectType.TELEPATHY, StatusEffectType.INVISIBLE,
+            StatusEffectType.SEE_INVISIBLE, StatusEffectType.METABOLIZING, StatusEffectType.BLOOD_SURGE, StatusEffectType.SPIRITUAL_WARD,
+            StatusEffectType.CARAPACE_HARDENING, StatusEffectType.NIGHT_HUNTER, StatusEffectType.HASTED, StatusEffectType.HEROISM,
+            StatusEffectType.GIANT_STRENGTH, StatusEffectType.INVULNERABILITY, StatusEffectType.DIMINUTIVE, StatusEffectType.ENLARGED,
+            StatusEffectType.RESIST_ACID, StatusEffectType.RESIST_NECROTIC, StatusEffectType.FREE_ACTION, StatusEffectType.WARMTH,
+            StatusEffectType.MOTE_OF_LIGHT, StatusEffectType.COMPREHEND_LANGUAGES));
+
     private static boolean isTimedBuff(ActiveStatusEffect e) {
         StatusEffectType t = e.getType();
         if (t == null || e.getDuration() == -1) return false;
-        if (t == StatusEffectType.CHILLED || t == StatusEffectType.HYPOTHERMIA
-                || t == StatusEffectType.HEATSTROKE) return false;
-        return t.ordinal() >= StatusEffectType.FOCUSED.ordinal();
+        return GLOWING_BUFFS.contains(t);
     }
 
     /** Eases the glow strength toward 1 while the weapon is idle and toward 0 during a swing. */

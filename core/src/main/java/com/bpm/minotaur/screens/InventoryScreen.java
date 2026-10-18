@@ -45,6 +45,8 @@ import com.bpm.minotaur.screens.inventory.ModernInventoryUI;
 import com.bpm.minotaur.paperdoll.data.FragmentResolver;
 import com.bpm.minotaur.paperdoll.data.SkeletonData;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.bpm.minotaur.gamedata.player.Hunger;
+import com.bpm.minotaur.gamedata.player.Thirst;
 
 public class InventoryScreen extends BaseScreen {
 
@@ -108,7 +110,7 @@ public class InventoryScreen extends BaseScreen {
         Item cooked = dm.createItem(ItemType.COOKED_MEAT, (int) player.getPosition().x, (int) player.getPosition().y,
                 com.bpm.minotaur.gamedata.item.ItemColor.RED, am);
         cooked.setCorpseSource(item.getCorpseSource());
-        cooked.setNutrition(com.bpm.minotaur.gamedata.player.Hunger.cookedPart(item.getType(), item.getCorpseSource()));
+        cooked.setNutrition(Hunger.cookedPart(item.getType(), item.getCorpseSource()));
 
         com.bpm.minotaur.gamedata.item.PotionEffectType[] effects = com.bpm.minotaur.gamedata.item.PotionEffectType
                 .values();
@@ -997,17 +999,17 @@ public class InventoryScreen extends BaseScreen {
         sRow(leftStatsCol, "Spell Power","+" + player.getSpellPower(),                                   Color.WHITE);
 
         // ── RIGHT COLUMN ─────────────────────────────────────────────
-        com.bpm.minotaur.gamedata.player.Hunger.Stage sat = player.getStats().getHungerStage();
+        Hunger.Stage sat = player.getStats().getHungerStage();
         sRow(rightStatsCol, "Hunger",    sat.label,
-             com.bpm.minotaur.ui.UiTheme.severity(sat.isWeakened(), sat.isHungry()));
+             com.bpm.minotaur.ui.UiTheme.severity(sat.severity()));
 
         float temp = player.getStats().getBodyTemperature();
         sRow(rightStatsCol, "Body Temp", String.format("%.1fC", temp),
              com.bpm.minotaur.ui.UiTheme.severity(temp < 33f || temp > 41f, temp < 35f || temp > 39f));
 
-        com.bpm.minotaur.gamedata.player.Thirst.Stage hyd = player.getStats().getThirstStage();
+        Thirst.Stage hyd = player.getStats().getThirstStage();
         sRow(rightStatsCol, "Thirst",    hyd.label,
-             com.bpm.minotaur.ui.UiTheme.severity(hyd.isDehydrated(), hyd.isThirsty()));
+             com.bpm.minotaur.ui.UiTheme.severity(hyd.severity()));
 
         sRow(rightStatsCol, "Arrows",       String.valueOf(player.getArrows()),               Color.WHITE);
         sRow(rightStatsCol, "Treasure",     String.valueOf(player.getTreasureScore()),         Color.GOLD);

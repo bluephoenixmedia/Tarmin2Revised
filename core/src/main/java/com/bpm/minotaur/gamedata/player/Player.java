@@ -4259,6 +4259,20 @@ public class Player {
         return stats.getArrows();
     }
 
+    /**
+     * The visible, living hostile on the tile this player faces, or null: the monster a bump
+     * attack would hit and the HUD's monster card shows (#172).
+     */
+    public com.bpm.minotaur.gamedata.monster.Monster hostileMonsterAhead(com.bpm.minotaur.gamedata.Maze maze) {
+        if (maze == null || maze.getMonsters() == null || getFacing() == null) return null;
+        com.badlogic.gdx.math.Vector2 dir = getFacing().getVector();
+        com.badlogic.gdx.math.GridPoint2 front = new com.badlogic.gdx.math.GridPoint2(
+                (int) (getPosition().x + dir.x), (int) (getPosition().y + dir.y));
+        com.bpm.minotaur.gamedata.monster.Monster m = maze.getMonsters().get(front);
+        if (m == null || !m.isAlive() || m.isAlly() || m.isPeaceful() || m.isInvisible() || m.isHidden()) return null;
+        return m;
+    }
+
     public Inventory getInventory() {
         return inventory;
     }

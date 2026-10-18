@@ -1,6 +1,7 @@
 package com.bpm.minotaur.ui;
 
 import com.badlogic.gdx.graphics.Color;
+import com.bpm.minotaur.gamedata.player.Severity;
 
 /**
  * The single token set for every menu, panel and overlay -- SPEC section 3, "Ember".
@@ -113,6 +114,12 @@ public final class UiTheme {
     public static final Color INK = Color.valueOf("3B2614");
     public static final Color INK_DIM = Color.valueOf("6B4E2E");
     public static final Color INK_ACCENT = Color.valueOf("8A2E1C");
+    /** Dark-UI text colour for a {@link Severity}. */
+    public static Color severity(Severity severity) {
+        return severity(severity == Severity.DANGER,
+                severity == Severity.WARNING);
+    }
+
     /** Dark-UI text colour for a graded state: DANGER, else WARNING, else TEXT. */
     public static Color severity(boolean danger, boolean warning) {
         return danger ? DANGER : warning ? WARNING : TEXT;

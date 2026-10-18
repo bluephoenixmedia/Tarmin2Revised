@@ -55,6 +55,11 @@ public class HintManager implements SlotScopedState {
         return SaveManager.getInstance().getActiveSlotFilePath("hints.json");
     }
 
+    /** A hint is shown only while hints are on and it hasn't been seen this save. */
+    private boolean shouldShow(HintId id) {
+        return SettingsManager.getInstance().isShowHints() && !hasSeen(id);
+    }
+
     public synchronized boolean hasSeen(HintId id) {
         return id != null && seenHints.contains(id.name());
     }
@@ -115,7 +120,7 @@ public class HintManager implements SlotScopedState {
      * delve into the maze, return to shelter to rest and save.
      */
     public boolean checkArrival(GameEventManager eventManager) {
-        if (hasSeen(HintId.ARRIVAL) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.ARRIVAL)) return false;
         List<String> lines = new ArrayList<>();
         lines.add("You came to the maze for vengeance against Castle Tarmin.");
         lines.add("Delve into the depths to slay monsters and grow in power.");
@@ -127,7 +132,7 @@ public class HintManager implements SlotScopedState {
      * First Bad monster in view: names category and effect (resists War, weak to Spiritual).
      */
     public boolean checkBadMonster(Monster monster, GameEventManager eventManager) {
-        if (hasSeen(HintId.BAD_MONSTER) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.BAD_MONSTER)) return false;
         String name = monster != null ? AffinityText.nameOf(monster) : "Monster";
         String msg = name + " is Bad: War weapons barely hurt them. Spiritual weapons and spells do more.";
         return postHint(HintId.BAD_MONSTER, eventManager, msg, 4.0f);
@@ -137,7 +142,7 @@ public class HintManager implements SlotScopedState {
      * First Nasty monster in view: names category and effect (resists Spiritual, weak to War).
      */
     public boolean checkNastyMonster(Monster monster, GameEventManager eventManager) {
-        if (hasSeen(HintId.NASTY_MONSTER) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.NASTY_MONSTER)) return false;
         String name = monster != null ? AffinityText.nameOf(monster) : "Monster";
         String msg = name + " is Nasty: Spiritual attacks barely hurt them. War weapons do more.";
         return postHint(HintId.NASTY_MONSTER, eventManager, msg, 4.0f);
@@ -147,7 +152,7 @@ public class HintManager implements SlotScopedState {
      * First hunger state: explains what the state means and the fix.
      */
     public boolean checkHunger(GameEventManager eventManager) {
-        if (hasSeen(HintId.HUNGER) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.HUNGER)) return false;
         String msg = "You are hungry: eat food from your pack before hunger drains your strength.";
         return postHint(HintId.HUNGER, eventManager, msg, 3.5f);
     }
@@ -156,7 +161,7 @@ public class HintManager implements SlotScopedState {
      * First thirst state: explains what the state means and the fix.
      */
     public boolean checkThirst(GameEventManager eventManager) {
-        if (hasSeen(HintId.THIRST) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.THIRST)) return false;
         String msg = "You are thirsty: drink from your waterskin, or face water to refill it.";
         return postHint(HintId.THIRST, eventManager, msg, 3.5f);
     }
@@ -165,7 +170,7 @@ public class HintManager implements SlotScopedState {
      * First cold state: explains what the state means and the fix.
      */
     public boolean checkCold(GameEventManager eventManager) {
-        if (hasSeen(HintId.COLD) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.COLD)) return false;
         String msg = "You are cold: find shelter, build a fire with tinder, or wear warm clothing.";
         return postHint(HintId.COLD, eventManager, msg, 3.5f);
     }
@@ -174,7 +179,7 @@ public class HintManager implements SlotScopedState {
      * First Divinity gained: explains what Divinity is used for.
      */
     public boolean checkDivinity(GameEventManager eventManager) {
-        if (hasSeen(HintId.DIVINITY) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.DIVINITY)) return false;
         String msg = "Divinity gained: offer Divinity at the Shelter Altar to unlock permanent blessings.";
         return postHint(HintId.DIVINITY, eventManager, msg, 4.0f);
     }
@@ -183,7 +188,7 @@ public class HintManager implements SlotScopedState {
      * First Doom change: explains what Doom/Hunger means.
      */
     public boolean checkDoom(GameEventManager eventManager) {
-        if (hasSeen(HintId.DOOM) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.DOOM)) return false;
         String msg = "Tarmin's Hunger grows: each death feeds him. At " + DoomManager.maxDeaths()
                 + " deaths, the Bridge falls.";
         return postHint(HintId.DOOM, eventManager, msg, 4.0f);
@@ -193,7 +198,7 @@ public class HintManager implements SlotScopedState {
      * First locked spell slot selected: explains that slots unlock by level.
      */
     public boolean checkLockedSpellSlot(GameEventManager eventManager) {
-        if (hasSeen(HintId.LOCKED_SPELL_SLOT) || !SettingsManager.getInstance().isShowHints()) return false;
+        if (!shouldShow(HintId.LOCKED_SPELL_SLOT)) return false;
         String msg = "Locked spell slot: spell slots unlock at levels 2, 5, 8 and 11.";
         return postHint(HintId.LOCKED_SPELL_SLOT, eventManager, msg, 3.5f);
     }

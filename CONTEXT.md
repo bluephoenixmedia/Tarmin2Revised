@@ -10,7 +10,7 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 2. **The Expedition**: The player ventures into overland biomes (Forest, Plains, Ruins) or descends vertically into underground strata (Caves of Qud / Dwarf Fortress vertical strata descent available on any chunk).
 3. **Tactical Combat**: Fast turn-based grid combat (bump-to-attack, archery/thrown weapons, tactical spells). Underlying damage calculation honors the classic War vs Spiritual duality.
 4. **Death & Stakes**: Death is permanent for the Incarnation, as in NetHack: its level, stats and carried gear are lost, and the gear and bones stay at the death tile. The Eternal Champion is reborn at the Shelter as a new Incarnation, keeping only what the soul and the world remember. Every death feeds Tarmin's Hunger.
-5. **The Final Run**: Gather ancient seals from deep strata bosses across the world to unlock the gates of Castle Tarmin, brave the final gauntlet, and slay the Minotaur.
+5. **The Final Run**: Gather ancient seals from deep strata bosses across the world to unlock the gates of Castle Tarmin, cut through Tarmin's Minotaur generals in the final gauntlet, and destroy Tarmin.
 
 ## Domain Glossary
 - **War Strength ($W$)**: Physical power, physical weapon attack, and health scaling.
@@ -29,6 +29,8 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Incarnation**: One life of the Eternal Champion, from rebirth (or a new game) to death. Level, stats, skill points and carried gear belong to the Incarnation and die with it. _Avoid_: "run", which is used loosely. Also called a **Life**.
 - **Eternal Champion**: The protagonist's soul, reborn into each Incarnation. It remembers its Known Spells and its Father's Sword; the world remembers unlocks, altar stations, the chronicle, the Shelter Chest and Tarmin's Hunger.
 - **Tarmin's Hunger**: How many times the Eternal Champion has died. Each death is a meal for Tarmin, and the maze grows more savage as he feeds. At 50, the Bridge falls and the game is lost. Within an Expedition, lingering also wakes the maze. _Avoid_ in player-facing text: "Doom", which is the internal name ("Doom Clock").
+- **Tarmin**: The god-like being the protagonist wants dead, ruling from Castle Tarmin and feeding on the condemned (Tarmin-Zul in the chronicles of the Houses). He is not a Minotaur.
+- **Minotaur**: A high-end enemy of Tarmin's army, mostly its generals (the soldiers of his house, the Antlered Host). Met deep in the strata and in the final gauntlet. _Avoid_: treating the Minotaur as the final enemy; that is Tarmin.
 - **The Bridge**: The barrier holding the Maze apart from the world. Tarmin's Hunger wears it down; the bridge boss guards the breach.
 - **Effective Difficulty Level (EDL)**: How dangerous a place is, set by its depth and its distance from the starting shelter. It does not follow the player's level: a stronger character simply finds the same place easier.
 - **Fodder / Soldier / Heavy**: The roles a monster plays in an encounter. Fodder die in a swing or two and come in packs; Soldiers are on-level fights; Heavies are rare, telegraphed threats worth fighting or avoiding.

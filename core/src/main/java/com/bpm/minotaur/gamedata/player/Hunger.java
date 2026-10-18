@@ -106,11 +106,21 @@ public final class Hunger {
         public boolean isWeakened() {
             return ordinal() >= WEAK.ordinal();
         }
+
+        /** Fainting or worse: the player can pass out. */
+        public boolean isFainting() {
+            return ordinal() >= FAINTING.ordinal();
+        }
+
+        /** How much this stage needs attention: Hungry warns, Weak and worse are danger. */
+        public Severity severity() {
+            return isWeakened() ? Severity.DANGER : isHungry() ? Severity.WARNING : Severity.NONE;
+        }
     }
 
     /** Nutrition below which a body of this Constitution has starved to death. */
     public static float starvedBelow(int constitution) {
-        return -(STARVE_BASE + STARVE_PER_CON * Math.max(0, constitution));
+        return SurvivalMeter.deathLine(STARVE_BASE, STARVE_PER_CON, constitution);
     }
 
     /** The lowest value the store holds: the starvation line itself. */

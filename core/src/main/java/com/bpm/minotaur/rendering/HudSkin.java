@@ -58,18 +58,6 @@ public class HudSkin implements Disposable {
     public static final Color COL_EXPOSURE_CHILLY  = Color.valueOf("7FB0D8");
     public static final Color COL_FROST            = Color.valueOf("8CD6FF");
 
-    /** The Exposure meter's fill for a band (#194). */
-    public static Color exposureColor(com.bpm.minotaur.gamedata.player.Exposure.Band band) {
-        switch (band) {
-            case HOT: return COL_HP_CRITICAL;
-            case WARM: return COL_TEMP_ORANGE;
-            case CHILLY: return COL_EXPOSURE_CHILLY;
-            case COLD: return COL_WATER_CYAN;
-            case FREEZING: return COL_FROST;
-            case HYPOTHERMIC: return COL_HP_CRITICAL;
-            default: return COL_EXPOSURE_COMFORT;
-        }
-    }
     /** Blight Taint: ash-crimson, darker than toxicity's rust so the two pills never read alike. */
     public static final Color COL_TAINT            = Color.valueOf("9A3A4E");
     /** Castle map cell for the Blighted Marches. */
