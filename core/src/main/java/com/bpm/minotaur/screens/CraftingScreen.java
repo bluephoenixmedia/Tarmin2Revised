@@ -513,7 +513,7 @@ public class CraftingScreen extends BaseScreen {
         rightPanelContent.add(previewCard).expandX().fillX().padBottom(25).row();
 
         boolean canBrew = craftingManager.canBrew(player, selectedRecipe);
-        TextButton brewBtn = createActionButton("[ BREW POTION ]", canBrew);
+        TextButton brewBtn = createActionButton(brewLabel(selectedRecipe), canBrew);
         brewBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -1041,5 +1041,10 @@ public class CraftingScreen extends BaseScreen {
             }
             return sb;
         }
+    }
+
+    /** The alchemy action button: a Poultice is prepared, not brewed (#190). */
+    static String brewLabel(CraftingManager.AlchemyRecipe recipe) {
+        return recipe != null && recipe.output == Item.ItemType.POULTICE ? "[ PREPARE POULTICE ]" : "[ BREW POTION ]";
     }
 }

@@ -287,4 +287,14 @@ public class ThirstTest {
         ItemSaveData other = new ItemSaveData(Item.fromTemplate(Item.ItemType.FOOD, new ItemTemplate()));
         assertNull("only a waterskin saves contents", other.liquidContent);
     }
+
+    @Test
+    public void acuteFeverBringsRapidThirst() {
+        assertEquals(Thirst.FEVER_THIRST_MULT,
+                Thirst.illnessMult(com.bpm.minotaur.gamedata.injury.IllnessStage.STAGE_2_ACUTE_FEVER), 0.0001f);
+        assertEquals(1f, Thirst.illnessMult(com.bpm.minotaur.gamedata.injury.IllnessStage.STAGE_1_INFECTED_WOUND), 0.0001f);
+        assertEquals(1f, Thirst.illnessMult(null), 0.0001f);
+        assertTrue(Thirst.burn(1f, 1f, Thirst.illnessMult(com.bpm.minotaur.gamedata.injury.IllnessStage.STAGE_2_ACUTE_FEVER))
+                > Thirst.burn(1f, 1f, 1f));
+    }
 }

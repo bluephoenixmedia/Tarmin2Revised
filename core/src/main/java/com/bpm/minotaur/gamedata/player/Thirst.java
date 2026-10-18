@@ -106,6 +106,14 @@ public final class Thirst {
     }
 
     /** Hydration burned over {@code time} standard turns with load and trait multiplier. */
+    /** Acute Fever promises "rapid thirst" (IllnessStage): water burns this much faster. */
+    public static final float FEVER_THIRST_MULT = 1.5f;
+
+    /** The thirst factor an illness stage adds: rapid thirst during Acute Fever, else none. */
+    public static float illnessMult(com.bpm.minotaur.gamedata.injury.IllnessStage stage) {
+        return stage == com.bpm.minotaur.gamedata.injury.IllnessStage.STAGE_2_ACUTE_FEVER ? FEVER_THIRST_MULT : 1f;
+    }
+
     public static float burn(float loadScale, float time, float thirstMult) {
         return BURN_PER_TURN * loadScale * time * thirstMult;
     }
