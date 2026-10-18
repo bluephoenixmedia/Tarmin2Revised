@@ -21,12 +21,19 @@ public final class HudReadouts {
         public final String details;
         public final String remedy;
 
-        Tip(String title, String category, String details, String remedy) {
+        public Tip(String title, String category, String details, String remedy) {
             this.title = UiGlyphs.sanitize(title);
             this.category = UiGlyphs.sanitize(category);
             this.details = UiGlyphs.sanitize(details);
             this.remedy = UiGlyphs.sanitize(remedy);
         }
+    }
+
+    public static Tip navigationTip(String heading, String timeDisplay, String phase) {
+        String details = "Facing: " + (heading != null ? heading : "Unknown")
+                + (timeDisplay != null ? "\nTime: " + timeDisplay : "");
+        String remedy = phase != null ? "Phase: " + phase : "Track your heading and time of day.";
+        return new Tip("Orientation & Time", "[NAVIGATION]", details, remedy);
     }
 
     /** True once the Hunger is close enough to the cap that the boss is the thing to know. */

@@ -62,7 +62,7 @@ Severity: **P0** blocks launch · **P1** fix before launch · **P2** launch-wind
 - [x] HUD-4 P1 `HUNGRY` far from the food bar. Status word inside the bar that triggered it; bar frame turns DANGER below 25%.
 - [x] HUD-5 P1 Four locked spell slots take prime space. One full-size active slot + compact lock chips (`next slot Lv 2`).
 - [x] HUD-6 P1 Chronicle log shouts one line. Body size, newest at bottom, last 4 lines, older lines dimmer.
-- [ ] HUD-7 P1 Minimap is an empty box; compass lives in portrait block. Top-right cluster: minimap + compass + clock/time-of-day.
+- [x] HUD-7 P1 Minimap is an empty box; compass lives in portrait block. Top-right cluster: minimap + compass + clock/time-of-day.
 - [x] HUD-8 P2 Quickbar as 3×2 grid; inventory shows 1–5 (6th clipped). One horizontal row 1–6 everywhere.
 - [ ] HUD-9 P2 Parchment prompt in dark HUD; `[ O ]Open` spacing. Use dark World Prompt component.
 

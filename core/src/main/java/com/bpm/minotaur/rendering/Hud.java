@@ -85,6 +85,7 @@ public class Hud implements Disposable {
     private final HudTooltip hudTooltip;
     private final WorldInteractionCard worldInteractionCard;
     private final Table dungeonTagTable;
+    private final Table navigationClusterTable;
     private final ControlsLegendOverlay controlsLegend;
     /** #170: the permanent pointer to the TAB legend, under the dungeon tag. */
     private final com.bpm.minotaur.ui.KeyHintLegend controlsHint;
@@ -537,15 +538,15 @@ public class Hud implements Disposable {
         portraitCol.add(unspentPointsChip).padTop(3).row();
 
         // One width for the whole column. The bars were pinned to 235 while the stat row beneath
-        // them (compass + silhouette + four labels) was wider, so the block visibly overhung its
-        // own bars -- the same fixed-width-versus-content failure the UX standard warns about.
+        // One width for the whole column. The bars were pinned to 235 while the stat row beneath
+        // them was wider, so the block visibly overhung its own bars.
         final float VITALS_WIDTH = 300f;
 
-        // #108: the stat block under the bars is four small-font lines, and with 22-unit bars the
-        // column was a few units taller than the band, so its last line sat on the HUD's lower
-        // border. The bar height is now whatever leaves the block room, from the font's metrics.
+        // HUD-7: compassMedallion and dayNightLabel moved to the top-right navigation cluster.
+        // The stat block under the bars now holds the anatomical silhouette and three small-font lines
+        // (divinities, Tarmin's Hunger / doom, ammo), giving ample breathing room with zero overlap.
         final float statLineGap = 2f;
-        float statBlock = Math.max(52f, 4f * hudSkin.getFontSmall().getLineHeight() + 3f * statLineGap);
+        float statBlock = Math.max(52f, 3f * hudSkin.getFontSmall().getLineHeight() + 2f * statLineGap);
         final float barGap = 3f;
         final float barsToStats = 4f;
         float barH = HudLayout.vitalsBarHeight(16f, 2f * barGap + barsToStats, statBlock);
@@ -557,14 +558,9 @@ public class Hud implements Disposable {
         barsCol.add(expBar).width(VITALS_WIDTH).height(barH).padBottom(barsToStats).row();
 
         Table vitalsSubRow = new Table();
-        vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
-        vitalsSubRow.add(anatomicalSilhouetteWidget).size(36, 52).padRight(10);
-        // HUD-2 / LEVELUP-3: these four lines each ran wider than the ~200 units left after the
-        // compass and the silhouette, and a Label does not clip -- so "DOOM: 12 (45%) [BOSS
-        // ACTIVE]" and "9:38 AM [MORNING]" spilled sideways across their neighbours and into
-        // the weapon panel, which reads as the lines overprinting each other. Ellipsis plus a
-        // real cell width keeps each one on its own line inside the block.
-        dayNightLabel.setEllipsis(true);
+        vitalsSubRow.add(anatomicalSilhouetteWidget).size(36, 52).padRight(12);
+        // HUD-2 / LEVELUP-3: With compass and clock moved to the top-right cluster (HUD-7),
+        // these three vitals lines have plenty of space in the column.
         divinitiesLabel.setEllipsis(true);
         doomLabel.setEllipsis(true);
         ammoLabel.setEllipsis(true);
@@ -578,8 +574,7 @@ public class Hud implements Disposable {
                     d.isBridgeBossActive());
         });
         Table divDoomCol = new Table();
-        divDoomCol.add(dayNightLabel).left().growX().row();
-        divDoomCol.add(divinitiesLabel).left().growX().padTop(statLineGap).row();
+        divDoomCol.add(divinitiesLabel).left().growX().row();
         divDoomCol.add(doomLabel).left().growX().padTop(statLineGap).row();
         divDoomCol.add(ammoLabel).left().growX().padTop(statLineGap).row();
         vitalsSubRow.add(divDoomCol).left().growX().minWidth(0f);
@@ -749,6 +744,24 @@ public class Hud implements Disposable {
         dungeonTagTable = new Table();
         dungeonTagTable.setBackground(hudSkin.getSlotRecessed());
         dungeonTagTable.add(dungeonLevelLabel).pad(10f, 16f, 10f, 16f);
+
+        // HUD-7: Top-right navigation cluster combining the compass medallion and
+        // the in-game clock directly atop the minimap.
+        navigationClusterTable = new Table();
+        navigationClusterTable.setBackground(hudSkin.getSlotRecessed());
+        navigationClusterTable.add(compassMedallion).size(38f, 38f).pad(5f, 8f, 5f, 8f);
+        navigationClusterTable.add(dayNightLabel).left().expandX().padRight(10f);
+        addReadoutTooltip(navigationClusterTable, () -> {
+            String heading = (player != null && player.getFacing() != null) ? player.getFacing().name() : null;
+            String timeDisplay = null;
+            String phase = null;
+            if (worldManager != null && worldManager.getDayNightManager() != null) {
+                DayNightManager dnm = worldManager.getDayNightManager();
+                timeDisplay = dnm.getTimeDisplayString();
+                phase = dnm.getPhase().name();
+            }
+            return com.bpm.minotaur.ui.HudReadouts.navigationTip(heading, timeDisplay, phase);
+        });
 
         // Sub-table 2: Combat monster card
         combatMonsterTable.top().left();
@@ -941,6 +954,7 @@ public class Hud implements Disposable {
         worldInteractionCard.setAnchorY(spellHotbarTable.getY() + spellHotbarTable.getHeight()
                 + com.bpm.minotaur.ui.UiTheme.PAD_MD);
         stage.addActor(dungeonTagTable);
+        stage.addActor(navigationClusterTable);
         stage.addActor(statusPillBar);
         stage.addActor(hudTooltip);
         stage.addActor(controlsHint);
@@ -1157,7 +1171,7 @@ public class Hud implements Disposable {
 
         if (worldManager != null && worldManager.getDayNightManager() != null) {
             DayNightManager dnm = worldManager.getDayNightManager();
-            dayNightLabel.setText(dnm.getTimeDisplayString());
+            dayNightLabel.setText(com.bpm.minotaur.ui.UiGlyphs.sanitize(dnm.getTimeDisplayString()));
             if (dnm.getPhase() == DayNightManager.Phase.NIGHT) {
                 dayNightLabel.setColor(HudSkin.COL_MP_BLUE);
             } else if (dnm.getPhase() == DayNightManager.Phase.DUSK || dnm.getPhase() == DayNightManager.Phase.DAWN) {
@@ -1370,6 +1384,14 @@ public class Hud implements Disposable {
         dungeonTagTable.setPosition(28f, viewport.getWorldHeight() - 24f - dungeonTagTable.getHeight());
         controlsHint.setPosition(28f - com.bpm.minotaur.ui.UiTheme.PAD_MD,
                 dungeonTagTable.getY() - com.bpm.minotaur.ui.UiTheme.PAD_SM - controlsHint.getHeight());
+
+        navigationClusterTable.pack();
+        float navW = Math.max(MINIMAP_MAX_SIZE + 12f, navigationClusterTable.getWidth());
+        navigationClusterTable.setSize(navW, MINIMAP_HEADER_HEIGHT);
+        navigationClusterTable.setPosition(viewport.getWorldWidth() - MINIMAP_MARGIN_RIGHT - MINIMAP_MAX_SIZE - 6f,
+                viewport.getWorldHeight() - 20f - MINIMAP_HEADER_HEIGHT);
+        boolean showNav = !debugManager.isDebugOverlayVisible() && globalAlpha > 0.05f;
+        navigationClusterTable.setVisible(showNav);
 
         if (statusPillBar != null && player != null) {
             statusPillBar.update(player);
@@ -3082,8 +3104,9 @@ public class Hud implements Disposable {
     public static final float STAGE_WIDTH = 1920f;
     public static final float STAGE_HEIGHT = 1080f;
 
+    public static final float MINIMAP_HEADER_HEIGHT = 48f;
     public static final float MINIMAP_MARGIN_RIGHT = 20f;
-    public static final float MINIMAP_MARGIN_TOP = 20f;
+    public static final float MINIMAP_MARGIN_TOP = 20f + MINIMAP_HEADER_HEIGHT + 6f; // 74f: header (48) + gap (6) + top margin (20)
     public static final float MINIMAP_MAX_SIZE = 300f;
 
     /** Y coordinate where the reserved minimap box ends, for widgets stacking below it. */
