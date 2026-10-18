@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readied Actions Prototype</title>
+<style>
+  :root { --ink:#1d1d1f; --muted:#6b6b70; --line:#dedee3; --bg:#fafaf7; --card:#fff; --accent:#a3271b; --soft:#f4e7e5; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:var(--bg); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .intro { color: var(--muted); max-width: 820px; }
+  .tag { display:inline-block; background:var(--soft); color:var(--accent); border-radius:4px; padding:1px 8px; font-size:12px; font-weight:600; }
+  .grid2 { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:16px; margin-top:16px; }
+  @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .board { display:grid; grid-template-columns: repeat(7, 38px); gap:3px; justify-content:start; }
+  .cell { width:38px; height:38px; border-radius:5px; background:#efefea; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; }
+  .cell.lane { background:#f7dcd8; }
+  .cell.player { background:var(--accent); color:#fff; }
+  .cell.mon { background:#333; color:#fff; }
+  .cell.mon.pinned { outline:3px solid #e0a300; }
+  .cell.mon.dead { background:#bbb; color:#666; text-decoration: line-through; }
+  dl { display:grid; grid-template-columns: max-content 1fr; gap:4px 14px; margin:0; }
+  dt { color:var(--muted); }
+  dd { margin:0; font-weight:600; }
+  dd.changed { color:var(--accent); }
+  table { border-collapse: collapse; width:100%; font-size:14px; }
+  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  .log { font-family: ui-monospace, Consolas, monospace; font-size:13px; max-height: 260px; overflow:auto; }
+  .log div { padding:2px 0; border-bottom:1px dotted var(--line); }
+  .log div.fresh { color:var(--accent); font-weight:600; }
+  .buttons { display:flex; flex-wrap:wrap; gap:8px; }
+  button { font:inherit; font-size:14px; border:1px solid var(--line); background:#fff; border-radius:7px; padding:6px 12px; cursor:pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button:disabled { opacity:.4; cursor:default; }
+  .rules label { display:block; margin:4px 0; }
+  .tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .steps { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .steps .done { opacity:.45; }
+  .watch { background:var(--soft); border-radius:8px; padding:8px 12px; margin:8px 0 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Readied actions: Overwatch and Pin Down <span class="tag">PROTOTYPE, throwaway</span></h1>
+  <p class="intro">
+    <strong>The question:</strong> can the protagonist ready a shot on their turn that goes off during the monsters' turn, and how should it behave?
+    <strong>Overwatch</strong> fires at the first hostile that steps into the line of fire. <strong>Pin Down</strong> holds one target.
+    This page plays out the rules on a small board: you stand at the bottom facing north, and the pink column is your line of fire, six tiles deep.
+    Monsters act one after another and spend their actions the way the game's energy loop does, so a bat gets two moves a turn.
+    Try the walkthroughs, then play freely and flip the rules on the right. Tell me where it feels wrong.
+  </p>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>The board</h2>
+      <div id="board" class="board"></div>
+      <p style="color:var(--muted);font-size:13px;margin:8px 0 0">P = you. G goblin, B bat (fast), A archer (shoots from the line). Yellow ring = pinned.</p>
+    </section>
+    <section class="card">
+      <h2>Current state</h2>
+      <dl id="state"></dl>
+      <h2 style="margin-top:14px">Monsters</h2>
+      <table id="monsters"></table>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Walkthroughs</h2>
+      <div id="tabs" class="tabs"></div>
+      <div id="scenario"></div>
+    </section>
+    <section class="card">
+      <h2>What happened</h2>
+      <div id="log" class="log"></div>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Free play</h2>
+      <div class="buttons" id="free"></div>
+    </section>
+    <section class="card rules">
+      <h2>Rules to try</h2>
+      <div id="rules"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// Pure module: (state, action) => state. No DOM. Liftable into TurnManager /
+// a ReadiedAction class: monstersAct() is the energy loop; reactTo() is the
+// hook that MonsterAiManager.moveMonsterTo would raise after every step.
+// ---------------------------------------------------------------------------
+const Readied = (() => {
+  const W = 7, H = 9, PX = 3, PY = 8, RANGE = 6;
+  const KINDS = {
+    goblin: { name: 'Goblin', glyph: 'G', hp: 8, actions: 1 },
+    bat:    { name: 'Bat',    glyph: 'B', hp: 6, actions: 2 },
+    archer: { name: 'Archer', glyph: 'A', hp: 8, actions: 1 },
+  };
+  const WEAPONS = {
+    bow:    { name: 'Bow',    damage: 5, ammoName: 'arrows' },
+    musket: { name: 'Musket', damage: 9, ammoName: 'balls' },
+  };
+  const BASE_HIT = 0.75, REACTION_MULT = 0.7;
+
+  function initial() {
+    return {
+      turn: 1, hp: 20, weapon: 'bow', ammo: 12, loaded: true, reloadLeft: 0,
+      stance: null,            // null | { type:'overwatch' } | { type:'pin', targetId, model }
+      noise: 0, nextId: 1, seed: 7, monsters: [], log: [],
+      rules: { pinModel: 'hold', laneAttackTriggers: false, stanceHoldsWhileWaiting: true,
+               hitIsRolled: false, damageBreaksOverwatch: false, suppressedCower: false },
+    };
+  }
+
+  const clone = s => JSON.parse(JSON.stringify(s));
+  const say = (s, msg) => { s.log.push({ turn: s.turn, msg }); };
+  const inLane = m => m.alive && m.x === PX && m.y < PY && PY - m.y <= RANGE;
+  const adjacent = m => Math.abs(m.x - PX) + Math.abs(m.y - PY) === 1;
+  const firstInLane = s => s.monsters.filter(inLane).sort((a, b) => b.y - a.y)[0];
+
+  function rng(s) { // mulberry32, kept in state so the module stays pure
+    let t = (s.seed += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  function canFire(s) {
+    if (s.ammo <= 0) return 'Out of ' + WEAPONS[s.weapon].ammoName + '.';
+    if (s.weapon === 'musket' && !s.loaded) return 'The musket is not loaded.';
+    return null;
+  }
+
+  // One shot at a monster. reaction = an Overwatch / Pin reaction shot (x0.7, no crit).
+  function shoot(s, m, label, reaction) {
+    const w = WEAPONS[s.weapon];
+    s.ammo -= 1;
+    if (s.weapon === 'musket') {
+      s.loaded = false; s.noise += 1;
+      say(s, 'BANG. The shot is heard across the level (noise ' + s.noise + ').');
+    }
+    const chance = BASE_HIT * (reaction ? REACTION_MULT : 1);
+    const hit = !s.rules.hitIsRolled || rng(s) < chance;
+    if (!hit) { say(s, label + ' at the ' + KINDS[m.kind].name + ' misses (' + Math.round(chance * 100) + '% chance).'); return false; }
+    m.hp -= w.damage;
+    say(s, label + ' hits the ' + KINDS[m.kind].name + ' for ' + w.damage + (reaction ? ' (reaction shot, no crit)' : '') + '.');
+    if (m.hp <= 0) { m.alive = false; say(s, 'The ' + KINDS[m.kind].name + ' falls.'); }
+    return true;
+  }
+
+  function hurtPlayer(s, dmg, source) {
+    s.hp -= dmg;
+    say(s, source + ' hits you for ' + dmg + '.');
+    if (s.stance && s.stance.type === 'pin' && s.stance.model === 'threat') {
+      const m = s.monsters.find(x => x.id === s.stance.targetId);
+      if (m) m.suppressed = false;
+      s.stance = null;
+      say(s, 'You flinch: the pin breaks.');
+    }
+    if (s.stance && s.stance.type === 'overwatch' && s.rules.damageBreaksOverwatch) {
+      s.stance = null;
+      say(s, 'You flinch: overwatch is lost.');
+    }
+  }
+
+  // The hook: called after a monster steps (moved=true) or attacks from the line.
+  function reactTo(s, m, moved) {
+    if (!s.stance || !m.alive) return;
+    if (s.stance.type === 'overwatch') {
+      const trigger = inLane(m) && (moved || s.rules.laneAttackTriggers);
+      if (!trigger) return;
+      if (canFire(s)) { say(s, 'Overwatch cannot fire: ' + canFire(s)); s.stance = null; return; }
+      s.stance = null; // one shot, then the stance is spent
+      shoot(s, m, 'Overwatch', true);
+    } else if (s.stance.type === 'pin' && s.stance.model === 'threat' && moved && m.id === s.stance.targetId) {
+      s.stance = null;
+      m.suppressed = false;
+      say(s, 'The pinned ' + KINDS[m.kind].name + ' breaks cover.');
+      if (!canFire(s)) shoot(s, m, 'Pin Down', true);
+    }
+  }
+
+  function monsterAct(s, m) {
+    const k = KINDS[m.kind];
+    if (adjacent(m)) { hurtPlayer(s, 3, 'The ' + k.name); return; }
+    if (m.kind === 'archer' && inLane(m)) {
+      hurtPlayer(s, m.suppressed ? 1 : 3, 'The Archer' + (m.suppressed ? ' (suppressed, shooting wild)' : '') + "'s arrow");
+      reactTo(s, m, false);
+      return;
+    }
+    if (m.pinned > 0) { say(s, 'The ' + k.name + ' strains against the pin and cannot move.'); return; }
+    if (m.suppressed && s.rules.suppressedCower) { say(s, 'The ' + k.name + ' keeps its head down.'); return; }
+    // Step toward the line, then down it toward the player.
+    let nx = m.x, ny = m.y;
+    if (m.x !== PX) nx += Math.sign(PX - m.x); else ny += Math.sign(PY - 1 - m.y) || 0;
+    if (s.monsters.some(o => o.alive && o !== m && o.x === nx && o.y === ny)) { say(s, 'The ' + k.name + ' is blocked.'); return; }
+    const wasIn = inLane(m);
+    m.x = nx; m.y = ny;
+    say(s, 'The ' + k.name + ' moves to ' + nx + ',' + ny + (inLane(m) ? (wasIn ? ' (along your line of fire)' : ' (into your line of fire)') : '') + '.');
+    reactTo(s, m, true);
+  }
+
+  // The energy loop: each monster spends all its actions before the next one starts.
+  function monstersAct(s) {
+    for (const m of s.monsters) {
+      for (let a = 0; a < KINDS[m.kind].actions; a++) {
+        if (!m.alive) break; // a reaction shot can kill between a fast monster's actions
+        monsterAct(s, m);
+      }
+    }
+    for (const m of s.monsters) if (m.alive && m.pinned > 0) { m.pinned -= 1; if (!m.pinned) say(s, 'The ' + KINDS[m.kind].name + ' tears free of the pin.'); }
+    s.turn += 1;
+  }
+
+  function endPlayerTurn(s, keepStance) {
+    if (!keepStance) s.stance = null;
+    monstersAct(s);
+  }
+
+  function reduce(state, action) {
+    const s = clone(state);
+    const fresh = s.log.length;
+    switch (action.type) {
+      case 'RESET': return initial();
+      case 'ADD': {
+        const k = KINDS[action.kind];
+        s.monsters.push({ id: s.nextId++, kind: action.kind, x: action.x, y: action.y, hp: k.hp, alive: true, pinned: 0, suppressed: false });
+        say(s, 'A ' + k.name + ' appears at ' + action.x + ',' + action.y + '.');
+        break;
+      }
+      case 'WEAPON': s.weapon = action.weapon; s.loaded = true; s.reloadLeft = 0; say(s, 'You ready the ' + WEAPONS[s.weapon].name + '.'); break;
+      case 'RULE': s.rules[action.rule] = action.value; say(s, 'Rule changed: ' + action.rule + ' = ' + action.value + '.'); break;
+      case 'READY_OVERWATCH': {
+        const why = canFire(s);
+        if (why) { say(s, 'You cannot set overwatch. ' + why); break; }
+        s.stance = { type: 'overwatch' };
+        say(s, 'You hold your aim down the line (Overwatch).');
+        endPlayerTurn(s, true);
+        break;
+      }
+      case 'PIN': {
+        const why = canFire(s); const m = firstInLane(s);
+        if (why || !m) { say(s, 'You cannot pin anything. ' + (why || 'Nothing is in your line of fire.')); break; }
+        if (s.rules.pinModel === 'hold') {
+          say(s, 'Pin Down (hold): you shoot to pin the ' + KINDS[m.kind].name + '.');
+          if (shoot(s, m, 'Pin Down', false) && m.alive) { m.pinned = 3; say(s, 'The ' + KINDS[m.kind].name + ' is pinned for 3 turns.'); }
+          endPlayerTurn(s, false);
+        } else {
+          if (s.ammo < 2) { say(s, 'Pin Down (threat) needs 2 ' + WEAPONS[s.weapon].ammoName + '.'); break; }
+          s.ammo -= 1; // the covering fire itself; the reaction shot spends another
+          if (s.weapon === 'musket') { s.loaded = false; s.noise += 1; say(s, 'BANG. Covering fire is heard across the level.'); }
+          m.suppressed = true;
+          s.stance = { type: 'pin', targetId: m.id, model: 'threat' };
+          say(s, 'Pin Down (threat): covering fire on the ' + KINDS[m.kind].name + '. If it moves, you shoot.');
+          endPlayerTurn(s, true);
+        }
+        break;
+      }
+      case 'SHOOT': {
+        const why = canFire(s); const m = firstInLane(s);
+        if (why) { say(s, why); break; }
+        if (!m) { s.ammo -= 1; if (s.weapon === 'musket') { s.loaded = false; s.noise += 1; } say(s, 'You shoot down an empty line.'); }
+        else shoot(s, m, 'Your shot', false);
+        endPlayerTurn(s, false);
+        break;
+      }
+      case 'WAIT': {
+        const keep = !!s.stance && s.rules.stanceHoldsWhileWaiting;
+        say(s, keep ? 'You wait, still holding your aim.' : 'You wait.' + (s.stance ? ' Your readied shot lapses.' : ''));
+        endPlayerTurn(s, keep);
+        break;
+      }
+      case 'RELOAD': {
+        if (s.weapon !== 'musket' || s.loaded) { say(s, 'Nothing to reload.'); break; }
+        s.reloadLeft = s.reloadLeft || 2;
+        s.reloadLeft -= 1;
+        if (!s.reloadLeft) { s.loaded = true; say(s, 'The musket is loaded.'); } else say(s, 'You ram the charge home (1 more turn).');
+        endPlayerTurn(s, false);
+        break;
+      }
+      case 'HURT': hurtPlayer(s, 2, 'A falling stone'); break;
+    }
+    s.log.forEach((e, i) => e.fresh = i >= fresh);
+    return s;
+  }
+
+  return { initial, reduce, W, H, PX, PY, RANGE, KINDS, WEAPONS, inLane };
+})();
+
+// ---------------------------------------------------------------------------
+// The page: a thin shell over Readied.reduce.
+// ---------------------------------------------------------------------------
+let state = Readied.initial();
+let prev = state;
+
+const SCENARIOS = [
+  { title: 'Overwatch: the happy path',
+    text: 'A goblin is off to the side. Ready Overwatch, then wait. Watch for the shot the moment it steps into your line, before it reaches you.',
+    setup: [{ type: 'ADD', kind: 'goblin', x: 0, y: 4 }],
+    steps: [['Ready Overwatch', { type: 'READY_OVERWATCH' }], ['Wait', { type: 'WAIT' }], ['Wait', { type: 'WAIT' }], ['Shoot', { type: 'SHOOT' }]] },
+  { title: 'A fast bat',
+    text: 'A bat gets two moves a turn. Overwatch interrupts it between them. One shot only: if it survives, it keeps coming.',
+    setup: [{ type: 'ADD', kind: 'bat', x: 5, y: 3 }, { type: 'ADD', kind: 'bat', x: 6, y: 5 }],
+    steps: [['Ready Overwatch', { type: 'READY_OVERWATCH' }], ['Wait', { type: 'WAIT' }], ['Wait', { type: 'WAIT' }]] },
+  { title: 'An archer already in the line',
+    text: 'The archer stands in your line of fire and shoots without moving, so movement-only Overwatch never fires. Then try it again with "an attack from the line triggers Overwatch" turned on.',
+    setup: [{ type: 'ADD', kind: 'archer', x: 3, y: 4 }],
+    steps: [['Ready Overwatch', { type: 'READY_OVERWATCH' }], ['Wait', { type: 'WAIT' }],
+            ['Turn on: an attack from the line triggers', { type: 'RULE', rule: 'laneAttackTriggers', value: true }],
+            ['Ready Overwatch again', { type: 'READY_OVERWATCH' }]] },
+  { title: 'Two goblins, one shot',
+    text: 'Two goblins converge. Overwatch takes the first to enter the line, and is then spent. The second walks in free.',
+    setup: [{ type: 'ADD', kind: 'goblin', x: 1, y: 3 }, { type: 'ADD', kind: 'goblin', x: 5, y: 3 }],
+    steps: [['Ready Overwatch', { type: 'READY_OVERWATCH' }], ['Wait', { type: 'WAIT' }], ['Wait', { type: 'WAIT' }], ['Wait', { type: 'WAIT' }]] },
+  { title: 'Pin Down, Qud style (hold)',
+    text: 'A goblin is in the line. Pin Down shoots it, and on a hit holds it in place for 3 turns. It cannot close; you get free shots.',
+    setup: [{ type: 'ADD', kind: 'goblin', x: 3, y: 3 }, { type: 'ADD', kind: 'goblin', x: 3, y: 2 }],
+    steps: [['Pin Down', { type: 'PIN' }], ['Wait', { type: 'WAIT' }], ['Shoot', { type: 'SHOOT' }], ['Wait', { type: 'WAIT' }]] },
+  { title: 'Pin Down, XCOM style (threat)',
+    text: 'Threat model: covering fire costs 2 shots. The goblin may still move, but the moment it does you get a reaction shot. Then try it again with "suppressed monsters cower" on: the threat alone holds it, as the hold model does, without a hit.',
+    setup: [{ type: 'RULE', rule: 'pinModel', value: 'threat' }, { type: 'ADD', kind: 'goblin', x: 3, y: 2 }],
+    steps: [['Pin Down (covering fire)', { type: 'PIN' }], ['Wait', { type: 'WAIT' }],
+            ['Turn on: suppressed monsters cower', { type: 'RULE', rule: 'suppressedCower', value: true }],
+            ['Pin Down again', { type: 'PIN' }], ['Wait', { type: 'WAIT' }]] },
+  { title: 'Threat pin on an archer',
+    text: 'The awkward case. A suppressed archer still shoots, wildly, for 1 instead of 3. But its hit makes you flinch, and a flinch breaks a threat pin. So a threat pin on anything that shoots back lasts one exchange. Is that right?',
+    setup: [{ type: 'RULE', rule: 'pinModel', value: 'threat' }, { type: 'ADD', kind: 'archer', x: 3, y: 4 }],
+    steps: [['Pin Down (covering fire on the archer)', { type: 'PIN' }], ['Wait', { type: 'WAIT' }]] },
+  { title: 'Overwatch with a musket',
+    text: 'A gun resolves instantly, like the bow does now, but every shot is heard and the reload takes two turns. After its overwatch shot the musket is empty, and Overwatch is refused until you reload.',
+    setup: [{ type: 'WEAPON', weapon: 'musket' }, { type: 'ADD', kind: 'goblin', x: 0, y: 3 }, { type: 'ADD', kind: 'goblin', x: 6, y: 1 }],
+    steps: [['Ready Overwatch', { type: 'READY_OVERWATCH' }], ['Wait', { type: 'WAIT' }], ['Wait', { type: 'WAIT' }],
+            ['Ready Overwatch (should be refused)', { type: 'READY_OVERWATCH' }], ['Reload', { type: 'RELOAD' }], ['Reload', { type: 'RELOAD' }]] },
+];
+
+let active = 0, stepIdx = 0;
+
+function dispatch(action) { prev = state; state = Readied.reduce(state, action); render(); }
+
+function startScenario(i) {
+  active = i; stepIdx = 0;
+  prev = state = Readied.initial();
+  for (const a of SCENARIOS[i].setup) state = Readied.reduce(state, a);
+  prev = state; render();
+}
+
+function render() {
+  const { W, H, PX, PY, RANGE, KINDS, WEAPONS } = Readied;
+  const board = document.getElementById('board'); board.innerHTML = '';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = document.createElement('div'); c.className = 'cell';
+    if (x === PX && y < PY && PY - y <= RANGE) c.classList.add('lane');
+    if (x === PX && y === PY) { c.classList.add('player'); c.textContent = 'P'; }
+    const m = state.monsters.find(m => m.x === x && m.y === y && m.alive) || state.monsters.find(m => m.x === x && m.y === y);
+    if (m) { c.classList.add('mon'); if (!m.alive) c.classList.add('dead'); if (m.pinned) c.classList.add('pinned'); c.textContent = KINDS[m.kind].glyph; }
+    board.appendChild(c);
+  }
+  const stanceText = s => !s.stance ? 'None' : s.stance.type === 'overwatch' ? 'Overwatch (one shot ready)'
+    : 'Pin Down on #' + s.stance.targetId + ' (threat)';
+  const fields = [
+    ['Turn', s => s.turn], ['Your HP', s => s.hp], ['Weapon', s => WEAPONS[s.weapon].name],
+    ['Ammunition', s => s.ammo + ' ' + WEAPONS[s.weapon].ammoName],
+    ['Loaded', s => s.weapon === 'musket' ? (s.loaded ? 'Yes' : 'No' + (s.reloadLeft ? ', reloading' : '')) : 'n/a'],
+    ['Readied shot', stanceText], ['Noise made', s => s.noise],
+  ];
+  document.getElementById('state').innerHTML = fields.map(([k, f]) =>
+    `<dt>${k}</dt><dd class="${String(f(state)) !== String(f(prev)) ? 'changed' : ''}">${f(state)}</dd>`).join('');
+  document.getElementById('monsters').innerHTML = '<tr><th>#</th><th>Monster</th><th>HP</th><th>Where</th><th>Status</th></tr>' +
+    state.monsters.map(m => `<tr><td>${m.id}</td><td>${KINDS[m.kind].name}</td><td>${Math.max(0, m.hp)}</td><td>${m.x},${m.y}${Readied.inLane(m) ? ' (in line)' : ''}</td>
+      <td>${!m.alive ? 'Dead' : m.pinned ? 'Pinned ' + m.pinned : m.suppressed ? 'Suppressed' : ''}</td></tr>`).join('');
+  document.getElementById('log').innerHTML = state.log.slice().reverse().map(e =>
+    `<div class="${e.fresh ? 'fresh' : ''}">T${e.turn} ${e.msg}</div>`).join('') || '<div>Nothing yet.</div>';
+
+  document.getElementById('tabs').innerHTML = SCENARIOS.map((sc, i) =>
+    `<button class="${i === active ? 'active' : ''}" onclick="startScenario(${i})">${i + 1}. ${sc.title}</button>`).join('');
+  const sc = SCENARIOS[active];
+  document.getElementById('scenario').innerHTML = `<div class="watch">${sc.text}</div><div class="steps">` +
+    sc.steps.map(([label], i) => `<button class="${i < stepIdx ? 'done' : i === stepIdx ? 'primary' : ''}" ${i !== stepIdx ? 'disabled' : ''}
+      onclick="stepIdx++; dispatch(SCENARIOS[${active}].steps[${i}][1])">${i + 1}. ${label}</button>`).join('') +
+    `</div><p><button onclick="startScenario(${active})">Restart this walkthrough</button></p>`;
+
+  const free = [
+    ['Ready Overwatch', { type: 'READY_OVERWATCH' }], ['Pin Down', { type: 'PIN' }], ['Shoot', { type: 'SHOOT' }],
+    ['Wait', { type: 'WAIT' }], ['Reload', { type: 'RELOAD' }], ['A stone hits you', { type: 'HURT' }],
+    ['Add goblin (left)', { type: 'ADD', kind: 'goblin', x: 0, y: 3 }], ['Add goblin (right)', { type: 'ADD', kind: 'goblin', x: 6, y: 4 }],
+    ['Add bat', { type: 'ADD', kind: 'bat', x: 6, y: 2 }], ['Add archer in line', { type: 'ADD', kind: 'archer', x: 3, y: 3 }],
+    ['Use bow', { type: 'WEAPON', weapon: 'bow' }], ['Use musket', { type: 'WEAPON', weapon: 'musket' }], ['Reset everything', { type: 'RESET' }],
+  ];
+  document.getElementById('free').innerHTML = free.map(([l], i) => `<button onclick="dispatch(FREE[${i}][1])">${l}</button>`).join('');
+  window.FREE = free;
+
+  const r = state.rules;
+  const rule = (key, label) => `<label><input type="checkbox" ${r[key] ? 'checked' : ''} onchange="dispatch({type:'RULE',rule:'${key}',value:this.checked})"> ${label}</label>`;
+  document.getElementById('rules').innerHTML =
+    `<label>Pin Down model:
+      <select onchange="dispatch({type:'RULE',rule:'pinModel',value:this.value})">
+        <option value="hold" ${r.pinModel === 'hold' ? 'selected' : ''}>Hold (Qud): a hit pins the target in place for 3 turns</option>
+        <option value="threat" ${r.pinModel === 'threat' ? 'selected' : ''}>Threat (XCOM): it may move, but you shoot if it does</option>
+      </select></label>` +
+    rule('laneAttackTriggers', 'An attack from inside the line also triggers Overwatch') +
+    rule('stanceHoldsWhileWaiting', 'A readied shot stays up while you keep waiting') +
+    rule('suppressedCower', 'Suppressed monsters cower: under a threat pin they stay put') +
+    rule('damageBreaksOverwatch', 'Being hit breaks Overwatch too (it always breaks a threat pin)') +
+    rule('hitIsRolled', 'Roll to hit (75%, reaction shots x0.7). Off = every shot hits, so walkthroughs replay the same');
+}
+
+startScenario(0);
+</script>
+</body>
+</html>
