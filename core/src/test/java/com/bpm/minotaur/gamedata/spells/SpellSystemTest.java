@@ -95,12 +95,13 @@ public class SpellSystemTest {
         assertNotNull("Light spell should be loaded", light);
         assertEquals(2, light.mpCost);
 
-        // Player starts with MOTE_OF_LIGHT in prepared slot 0
-        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        // Player starts with Cure Wounds in prepared slot 0
+        assertEquals(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
 
         // When player has enough MP, casting MOTE_OF_LIGHT deducts 2 MP
         player.getStats().setMaxMP(10);
         player.getStats().setCurrentMP(10);
+        player.prepareSpell(0, "MOTE_OF_LIGHT");
 
         boolean castSuccess = player.castPreparedSpell(0, maze, eventManager, null);
         assertTrue("Player should successfully cast Mote of Light with enough MP", castSuccess);
@@ -236,7 +237,7 @@ public class SpellSystemTest {
     @Test
     public void testSpellPreparationAndScribing() {
         // Verify default prepared spells
-        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertEquals(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
         assertNull(player.getPreparedSpell(1));
         assertNull(player.getPreparedSpell(2));
         assertNull(player.getPreparedSpell(3));

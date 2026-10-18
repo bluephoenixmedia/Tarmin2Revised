@@ -214,7 +214,7 @@ public class ComprehensiveSystemsOverhaulTest {
         assertTrue("Inscription should succeed with enough MP even when every slot is full",
                 player.inscribeScroll(scroll, eventManager, null));
         assertTrue(player.getKnownSpellIds().contains("MAGIC_MISSILE"));
-        assertEquals("The full slot keeps its spell", "MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertEquals("The full slot keeps its spell", com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
         assertTrue("Full MP cost is paid", player.getStats().getCurrentMP() < mpBefore);
         assertFalse(player.getInventory().getMainInventory().contains(scroll));
     }

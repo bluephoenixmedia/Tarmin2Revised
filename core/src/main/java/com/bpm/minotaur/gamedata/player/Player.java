@@ -322,6 +322,7 @@ public class Player {
         int expected = slotsForLevel(getLevel());
         if (expected > unlockedSpellSlots) {
             setUnlockedSpellSlots(expected);
+            fillFreeSlotsWithStartingSpells();
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Spell Slot " + expected + " unlocked! Press [Q] to prepare spells.", 4f));
             }
@@ -1029,19 +1030,30 @@ public class Player {
         initStartingSpells();
     }
 
-    /** The spell every seeker knows from the start, ready in the first slot. */
+    /** Mote of Light: known from the start (kept for callers that name it). */
     public static final String STARTING_SPELL = "MOTE_OF_LIGHT";
+    /** Cure Wounds: the lowest-level heal, known from the start and ready in slot 1. */
+    public static final String STARTING_HEAL_SPELL = "CURE_WOUNDS";
+    /**
+     * The spells every Incarnation starts with, in slot order: Cure Wounds takes slot 1 (healing
+     * is the early game's problem, and the lantern already gives light); Mote of Light is known
+     * and takes the next slot to open.
+     */
+    public static final java.util.List<String> STARTING_SPELLS =
+            java.util.List.of(STARTING_HEAL_SPELL, STARTING_SPELL);
 
     private void initStartingSpells() {
         com.bpm.minotaur.gamedata.trait.TraitEffects.clear(); // a new player starts with no trait
         permanentSpellIds.clear();
         runSpellIds.clear();
         knownSpellIds.clear();
-        learnPermanentSpellId(STARTING_SPELL);
+        for (String id : STARTING_SPELLS) {
+            learnPermanentSpellId(id);
+        }
         for (int i = 0; i < preparedSpells.length; i++) {
             preparedSpells[i] = null;
         }
-        preparedSpells[0] = STARTING_SPELL;
+        preparedSpells[0] = STARTING_SPELLS.get(0);
     }
 
     /**
@@ -1050,12 +1062,24 @@ public class Player {
      * keeps their choice; one whose slots were emptied gets it back.
      */
     public void prepareStartingSpells() {
-        learnPermanentSpellId(STARTING_SPELL);
-        if (isSpellPrepared(STARTING_SPELL)) return;
-        for (int i = 0; i < Math.max(1, unlockedSpellSlots) && i < preparedSpells.length; i++) {
-            if (preparedSpells[i] == null) {
-                preparedSpells[i] = STARTING_SPELL;
-                return;
+        for (String id : STARTING_SPELLS) {
+            learnPermanentSpellId(id);
+        }
+        fillFreeSlotsWithStartingSpells();
+    }
+
+    /**
+     * Puts each starting spell that isn't prepared into the first free unlocked slot, in
+     * {@link #STARTING_SPELLS} order: Mote of Light lands in slot 2 when level 2 opens it.
+     */
+    private void fillFreeSlotsWithStartingSpells() {
+        for (String id : STARTING_SPELLS) {
+            if (!knownSpellIds.contains(id) || isSpellPrepared(id)) continue;
+            for (int i = 0; i < Math.max(1, unlockedSpellSlots) && i < preparedSpells.length; i++) {
+                if (preparedSpells[i] == null) {
+                    preparedSpells[i] = id;
+                    break;
+                }
             }
         }
     }
@@ -1594,6 +1618,12 @@ public class Player {
             if (kindleFieldFire(maze, eventManager)) {
                 inventory.consumeOne(item);
             }
+            return;
+        }
+
+        // --- Herbs: bound into a Poultice by hand, anywhere (no bench or kit needed) ---
+        if (PoulticeBinding.isReagent(item.getType())) {
+            PoulticeBinding.bind(this, item, itemDataManager, assetManager, eventManager);
             return;
         }
 

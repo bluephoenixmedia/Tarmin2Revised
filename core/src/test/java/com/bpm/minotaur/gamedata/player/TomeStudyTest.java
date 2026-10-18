@@ -113,7 +113,7 @@ public class TomeStudyTest {
         assertEquals(2, player.getUnlockedSpellSlots());
         assertTrue(player.getKnownSpellIds().contains(chosen));
         assertEquals("Every unlocked slot was full, so the spell waits in the Spellbook",
-                "MOTE_OF_LIGHT", player.getPreparedSpell(0));
+                com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
         assertEquals("FIREBALL", player.getPreparedSpell(1));
     }
 

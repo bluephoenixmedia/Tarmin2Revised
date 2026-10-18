@@ -107,9 +107,9 @@ public class ProgressionRebootTest {
     public void testPlayerStartingKitIsDesperateSurvivor() {
         Player player = new Player(0, 0);
 
-        // Magic stripped down to ONLY Mote of Light
+        // Magic stripped down to the starting pair: Cure Wounds prepared, Mote of Light known
         assertTrue("Player must know MOTE_OF_LIGHT", player.getKnownSpellIds().contains("MOTE_OF_LIGHT"));
-        assertEquals("Slot 0 must have MOTE_OF_LIGHT", "MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertEquals("Slot 0 must have CURE_WOUNDS", "CURE_WOUNDS", player.getPreparedSpell(0));
         assertNull("Slot 1 must be empty", player.getPreparedSpell(1));
         assertNull("Slot 2 must be empty", player.getPreparedSpell(2));
         assertNull("Slot 3 must be empty", player.getPreparedSpell(3));
@@ -117,7 +117,7 @@ public class ProgressionRebootTest {
         // Nukes stripped
         assertFalse("MAGIC_MISSILE must be stripped", player.getKnownSpellIds().contains("MAGIC_MISSILE"));
         assertFalse("FIRE_BOLT must be stripped", player.getKnownSpellIds().contains("FIRE_BOLT"));
-        assertFalse("CURE_WOUNDS must be stripped", player.getKnownSpellIds().contains("CURE_WOUNDS"));
+        assertTrue("CURE_WOUNDS is the starting heal", player.getKnownSpellIds().contains("CURE_WOUNDS"));
         assertFalse("SHIELD must be stripped", player.getKnownSpellIds().contains("SHIELD"));
     }
 

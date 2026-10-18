@@ -230,6 +230,7 @@ public class ItemInspectorPanel extends Table {
         if (item.isFood() || item.isPotion() || item.isScroll()) return true;
         if (item.isSpellbook()) return true;
         if (item.isTome()) return true;
+        if (com.bpm.minotaur.gamedata.player.PoulticeBinding.isReagent(item.getType())) return true;
         return item.isUsable() && !item.isWeapon() && !item.isArmor();
     }
 
@@ -240,6 +241,7 @@ public class ItemInspectorPanel extends Table {
         if (item.isScroll()) return "READ SCROLL";
         if (item.isPotion()) return "DRINK POTION";
         if (item.isFood()) return "EAT FOOD";
+        if (com.bpm.minotaur.gamedata.player.PoulticeBinding.isReagent(item.getType())) return "BIND POULTICE";
         return "USE ITEM";
     }
 

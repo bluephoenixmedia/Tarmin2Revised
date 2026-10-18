@@ -50,7 +50,7 @@ public class SpellSlotAssignmentTest {
 
         // Occupied slot 0 cannot be swapped/overwritten while hostile in view
         assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(0, "MAGIC_MISSILE", maze));
-        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertEquals(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
 
         // Clearing an assigned slot while hostile in view is refused
         assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(1, null, maze));
@@ -76,6 +76,6 @@ public class SpellSlotAssignmentTest {
         assertEquals(Player.SlotChange.OK, player.assignSpellSlot(0, "FIREBALL", maze));
 
         assertEquals("FIREBALL", player.getPreparedSpell(0));
-        assertEquals("The displaced spell takes the vacated slot", "MOTE_OF_LIGHT", player.getPreparedSpell(1));
+        assertEquals("The displaced spell takes the vacated slot", com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(1));
     }
 }

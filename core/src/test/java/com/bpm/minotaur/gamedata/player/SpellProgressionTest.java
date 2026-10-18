@@ -92,8 +92,8 @@ public class SpellProgressionTest {
         player.learnSpellId("FIREBALL");
         player.learnSpellId("MAGIC_MISSILE");
 
-        // Slot 0 has MOTE_OF_LIGHT, slot 1 is empty, slot 2 is empty
-        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        // Slot 0 has Cure Wounds (the starting heal), slot 1 is empty, slot 2 is empty
+        assertEquals(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
         assertNull(player.getPreparedSpell(1));
 
         // Add a monster to view
@@ -105,7 +105,7 @@ public class SpellProgressionTest {
 
         // 2. Swapping into already occupied slot 0 while hostile in view: REFUSED
         assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(0, "MAGIC_MISSILE", maze));
-        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertEquals(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL, player.getPreparedSpell(0));
 
         // 3. Trying to move FIREBALL from slot 1 to slot 2 while hostile in view: REFUSED (moving is a swap/clear)
         assertEquals(Player.SlotChange.HOSTILE_IN_VIEW, player.assignSpellSlot(2, "FIREBALL", maze));

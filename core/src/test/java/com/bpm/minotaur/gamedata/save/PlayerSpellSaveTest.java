@@ -51,8 +51,8 @@ public class PlayerSpellSaveTest {
         Player loaded = roundTrip(player);
 
         assertEquals(3, loaded.getUnlockedSpellSlots());
-        assertEquals(Arrays.asList("MOTE_OF_LIGHT", "FIREBALL", "MAGIC_MISSILE"), loaded.getKnownSpellIds());
-        assertEquals("MOTE_OF_LIGHT", loaded.getPreparedSpell(0));
+        assertEquals(Arrays.asList("CURE_WOUNDS", "MOTE_OF_LIGHT", "FIREBALL", "MAGIC_MISSILE"), loaded.getKnownSpellIds());
+        assertEquals("CURE_WOUNDS", loaded.getPreparedSpell(0));
         assertNull(loaded.getPreparedSpell(1));
         assertEquals("FIREBALL", loaded.getPreparedSpell(2));
     }
@@ -104,8 +104,8 @@ public class PlayerSpellSaveTest {
         Player loaded = new Player(0, 0);
         legacy.applyToPlayer(loaded, null, null);
 
-        assertEquals(Arrays.asList("MOTE_OF_LIGHT", "FIREBALL"), loaded.getKnownSpellIds());
-        assertEquals("MOTE_OF_LIGHT", loaded.getPreparedSpell(0));
+        assertEquals(Arrays.asList("CURE_WOUNDS", "MOTE_OF_LIGHT", "FIREBALL"), loaded.getKnownSpellIds());
+        assertEquals("CURE_WOUNDS", loaded.getPreparedSpell(0));
         assertEquals(1, loaded.getUnlockedSpellSlots());
     }
 }
