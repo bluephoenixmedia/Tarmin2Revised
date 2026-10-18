@@ -78,6 +78,8 @@ public final class UiTheme {
     public static final Color KNELL_RED = Color.valueOf("D8231C");
     /** Behind the knell's red, so it reads over any scene. */
     public static final Color KNELL_SHADOW = new Color(0.04f, 0.0f, 0.0f, 0.9f);
+    /** A resource or state that needs attention soon, short of danger (Hungry, Thirsty, Chilly). */
+    public static final Color WARNING = Color.valueOf("E0943D");
     /** Requirement met, value gained. */
     public static final Color SUCCESS = Color.valueOf("79C267");
     /** Hints and informational strips. */
@@ -111,6 +113,13 @@ public final class UiTheme {
     public static final Color INK = Color.valueOf("3B2614");
     public static final Color INK_DIM = Color.valueOf("6B4E2E");
     public static final Color INK_ACCENT = Color.valueOf("8A2E1C");
+    /** Dark-UI text colour for a graded state: DANGER, else WARNING, else TEXT. */
+    public static Color severity(boolean danger, boolean warning) {
+        return danger ? DANGER : warning ? WARNING : TEXT;
+    }
+
+    /** WARNING for text on parchment: dark enough to read on PAPER. */
+    public static final Color INK_WARNING = Color.valueOf("9A5A0C");
 
     // --- Expedition map (docs/DEsign/Requirements_ Expedition Map.md, section 4) ---
     // Biomes are muted ink washes over dark vellum, not saturated fills: the map's icons and
@@ -163,6 +172,16 @@ public final class UiTheme {
     public static final float PAD_XL = 16 * VU;
     /** A list column beside a reading pane, such as the Annals' houses. */
     public static final float LIST_COLUMN_W = 140 * VU;
+    /** Controls screen: the action description column, and a clash warning spanning the row. */
+    public static final float CONTROLS_DESC_W = 340f;
+    public static final float CONTROLS_CLASH_W = 520f;
+    /** Controls legend: gap between key and action, and between the two columns. */
+    public static final float LEGEND_KEY_GAP = 40f;
+    public static final float LEGEND_COLUMN_GAP = 56f;
+    /** HUD bump-combat monster card: name, strength and affinity lines. */
+    public static final float MONSTER_CARD_W = 100 * VU;
+    /** HUD stat column: the least height for its three lines. */
+    public static final float HUD_STAT_BLOCK_MIN_H = 52f;
     public static final float PAD_XXL = 24 * VU;
 
     // --- Sizes (SPEC section 3, in canvas units) --------------------------

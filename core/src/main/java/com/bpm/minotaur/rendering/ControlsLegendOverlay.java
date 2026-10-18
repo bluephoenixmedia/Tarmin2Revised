@@ -50,7 +50,7 @@ public class ControlsLegendOverlay extends Table {
             Label keyLabel = UiLabels.of("", keyStyle);
             keyLabels.put(entry.getKey(), keyLabel);
 
-            rebindable.add(actionLabel).left().padRight(40f).padTop(4f);
+            rebindable.add(actionLabel).left().padRight(com.bpm.minotaur.ui.UiTheme.LEGEND_KEY_GAP).padTop(4f);
             rebindable.add(keyLabel).right().padTop(4f).row();
         }
 
@@ -59,12 +59,12 @@ public class ControlsLegendOverlay extends Table {
         Label fixedHeader = UiLabels.of("FIXED KEYS", keyStyle);
         fixed.add(fixedHeader).colspan(2).left().padTop(4f).padBottom(4f).row();
         for (FixedKeys.Entry entry : FixedKeys.LEGEND) {
-            fixed.add(UiLabels.of(entry.role, actionStyle)).left().padRight(40f).padTop(4f);
+            fixed.add(UiLabels.of(entry.role, actionStyle)).left().padRight(com.bpm.minotaur.ui.UiTheme.LEGEND_KEY_GAP).padTop(4f);
             fixed.add(UiLabels.of(entry.keys, keyStyle)).right().padTop(4f).row();
         }
         fixed.add(UiLabels.of(FixedKeys.BUMP_TO_ATTACK, actionStyle)).colspan(2).left().padTop(12f).row();
 
-        add(rebindable).top().padRight(56f);
+        add(rebindable).top().padRight(com.bpm.minotaur.ui.UiTheme.LEGEND_COLUMN_GAP);
         add(fixed).top().row();
 
         Label hint = UiLabels.of("[TAB] Close", new Label.LabelStyle(skin.getFontSmall(), UiTheme.TEXT_DIM));

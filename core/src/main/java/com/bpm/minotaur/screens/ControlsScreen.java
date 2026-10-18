@@ -127,14 +127,14 @@ public class ControlsScreen extends BaseScreen {
     }
 
     private void addKeyBindingRow(Table table, final String action, String description) {
-        Label descLabel = UiLabels.wrapping(description, new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-        table.add(descLabel).width(340).left().expandX().padRight(25).padBottom(8);
+        Label descLabel = UiLabels.wrapping(description, new Label.LabelStyle(hudSkin.getFontMain(), com.bpm.minotaur.ui.UiTheme.TEXT));
+        table.add(descLabel).width(com.bpm.minotaur.ui.UiTheme.CONTROLS_DESC_W).left().expandX().padRight(25).padBottom(8);
 
         String keyName = Input.Keys.toString(settingsManager.getKey(action));
         TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
         keyStyle.font = hudSkin.getFontSmall();
         keyStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
-        keyStyle.overFontColor = Color.WHITE;
+        keyStyle.overFontColor = com.bpm.minotaur.ui.UiTheme.FOCUS;
         keyStyle.up = hudSkin.getSlotRecessed();
         keyStyle.down = hudSkin.getSlotActive();
         keyStyle.over = hudSkin.getSlotActive();
@@ -155,7 +155,7 @@ public class ControlsScreen extends BaseScreen {
 
         // Binding onto a fixed key (Z/X/V/B/N, 1-6, G, ...) takes that key over, so say so.
         Label clash = UiLabels.wrapping("", UiStyles.caption(hudSkin, UiTheme.DANGER));
-        clashCells.put(action, table.add(clash).colspan(2).width(520).left());
+        clashCells.put(action, table.add(clash).colspan(2).width(com.bpm.minotaur.ui.UiTheme.CONTROLS_CLASH_W).left());
         table.row();
         refreshClash(action);
     }
@@ -198,7 +198,7 @@ public class ControlsScreen extends BaseScreen {
             TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
             keyStyle.font = hudSkin.getFontSmall();
             keyStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
-            keyStyle.overFontColor = Color.WHITE;
+            keyStyle.overFontColor = com.bpm.minotaur.ui.UiTheme.FOCUS;
             keyStyle.up = hudSkin.getSlotRecessed();
             keyStyle.down = hudSkin.getSlotActive();
             keyStyle.over = hudSkin.getSlotActive();
@@ -228,7 +228,7 @@ public class ControlsScreen extends BaseScreen {
         TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
         keyStyle.font = hudSkin.getFontSmall();
         keyStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
-        keyStyle.overFontColor = Color.WHITE;
+        keyStyle.overFontColor = com.bpm.minotaur.ui.UiTheme.FOCUS;
         keyStyle.up = hudSkin.getSlotRecessed();
         keyStyle.down = hudSkin.getSlotActive();
         keyStyle.over = hudSkin.getSlotActive();

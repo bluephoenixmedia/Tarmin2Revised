@@ -125,7 +125,7 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private Color carryColor() {
         switch (player.getEncumbrance()) {
             case BURDENED:
-                return Color.ORANGE;
+                return com.bpm.minotaur.ui.UiTheme.INK_WARNING;
             case STRESSED:
             case OVERLOADED:
                 return COL_RED;
@@ -137,26 +137,26 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private Color hpColor() {
         int cur = player.getCurrentHP();
         int max = player.getStats().getMaxHP();
-        return cur < max * 0.3f ? COL_RED : cur < max * 0.6f ? Color.ORANGE : COL_GREEN;
+        return cur < max * 0.3f ? COL_RED : cur < max * 0.6f ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
     }
 
     private Color toxColor() {
         int t = player.getStats().getToxicity();
-        return t >= 76 ? COL_RED : t >= 26 ? Color.ORANGE : COL_GREEN;
+        return t >= 76 ? COL_RED : t >= 26 ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
     }
 
     private Color satColor() {
         com.bpm.minotaur.gamedata.player.Hunger.Stage s = player.getStats().getHungerStage();
-        return s.isWeakened() ? COL_RED : s.isHungry() ? Color.ORANGE : COL_GREEN;
+        return s.isWeakened() ? COL_RED : s.isHungry() ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
     }
 
     private Color hydColor() {
         com.bpm.minotaur.gamedata.player.Thirst.Stage s = player.getStats().getThirstStage();
-        return s.isDehydrated() ? COL_RED : s.isThirsty() ? Color.ORANGE : COL_GREEN;
+        return s.isDehydrated() ? COL_RED : s.isThirsty() ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
     }
 
     private Color tempColor(float t) {
-        return (t < 33f || t > 41f) ? COL_RED : (t < 35f || t > 39f) ? Color.ORANGE : COL_GREEN;
+        return (t < 33f || t > 41f) ? COL_RED : (t < 35f || t > 39f) ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
     }
 
     // ── Public / EventBus ─────────────────────────────────────────────
