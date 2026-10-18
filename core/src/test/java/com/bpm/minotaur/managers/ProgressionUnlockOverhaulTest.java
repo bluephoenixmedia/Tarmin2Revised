@@ -244,6 +244,23 @@ public class ProgressionUnlockOverhaulTest {
     }
 
     @Test
+    public void theDepthMilestonePaysOnlyForANewDeepestDepth() {
+        loadedItems();
+        TelemetryManager telemetry = TelemetryManager.getInstance();
+        UnlockManager unlocks = UnlockManager.getInstance();
+
+        telemetry.startNewRun();
+        assertEquals("first return from depth 3 is a new record", 1,
+                unlocks.rollExpeditionUnlockTypes(telemetry, 3, TelemetryManager.Outcome.RETURNED).size());
+        telemetry.startNewRun();
+        assertTrue("returning from the same depth again pays nothing",
+                unlocks.rollExpeditionUnlockTypes(telemetry, 3, TelemetryManager.Outcome.RETURNED).isEmpty());
+        telemetry.startNewRun();
+        assertEquals("going deeper pays again", 1,
+                unlocks.rollExpeditionUnlockTypes(telemetry, 4, TelemetryManager.Outcome.RETURNED).size());
+    }
+
+    @Test
     public void aReturnWithNoMilestoneEarnsNothing() {
         loadedItems();
         TelemetryManager telemetry = TelemetryManager.getInstance();

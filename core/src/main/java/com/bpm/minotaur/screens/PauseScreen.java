@@ -248,7 +248,7 @@ public class PauseScreen extends BaseScreen {
         dialog.getButtonTable().pad(20);
         dialog.getButtonTable().defaults().pad(8).height(48);
 
-        dialog.text(new Label("Are you sure you want to abandon this expedition?\nYou will feed Tarmin's Hunger and leave your gear where you fell.",
+        dialog.text(new Label("Are you sure you want to abandon this expedition?\nYou will feed Tarmin's Hunger and leave your gear with your remains, somewhere in the maze.",
                 new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE)));
         dialog.button("YES, ABANDON", true, alertBtnStyle);
         dialog.button("CANCEL", false, cancelBtnStyle);

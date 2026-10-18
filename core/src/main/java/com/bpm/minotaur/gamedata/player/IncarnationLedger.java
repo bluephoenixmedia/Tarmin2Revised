@@ -34,7 +34,7 @@ public final class IncarnationLedger {
         lines.add(new Line("STATS AND SKILLS", "GONE"));
         int items = Math.max(0, carriedItemsLost);
         lines.add(new Line("CARRIED GEAR", items + (items == 1 ? " ITEM" : " ITEMS")));
-        lines.add(new Line("YOUR GEAR", "LEFT WHERE YOU FELL"));
+        lines.add(new Line("YOUR GEAR", "LEFT WITH YOUR REMAINS, SOMEWHERE IN THE MAZE"));
         return Collections.unmodifiableList(lines);
     }
 

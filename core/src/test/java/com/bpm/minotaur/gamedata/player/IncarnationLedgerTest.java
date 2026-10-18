@@ -27,7 +27,7 @@ public class IncarnationLedgerTest {
         assertTrue(lost.contains("LEVEL"));
         assertTrue(lost.contains("STATS"));
         assertTrue(lost.contains("CARRIED GEAR 7 ITEMS"));
-        assertTrue(lost.contains("WHERE YOU FELL"));
+        assertTrue(lost.contains("WITH YOUR REMAINS"));
         assertTrue(joined(IncarnationLedger.lost(1)).contains("1 ITEM\n"));
     }
 
