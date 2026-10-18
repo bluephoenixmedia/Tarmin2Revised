@@ -717,7 +717,9 @@ public class TurnManager {
         float load = player.getMetabolicTimeScale();
         stats.modifySatiety(-com.bpm.minotaur.gamedata.player.Hunger.burn(load, time, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("hungerMult")));
         stats.modifyHydration(-com.bpm.minotaur.gamedata.player.Thirst.burn(load, time,
-                (isHeatstroke ? 2.0f : 1.0f) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult")));
+                (isHeatstroke ? 2.0f : 1.0f) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult")
+                        * com.bpm.minotaur.gamedata.player.Thirst.illnessMult(player.getInjuryManager() != null
+                                ? player.getInjuryManager().getIllnessStage() : null)));
         refillWaterskinInRain(player, maze, worldManager, eventManager);
 
         // 2. Exposure (#194): air, wetness, clothing and heat move the body temperature

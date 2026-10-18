@@ -96,6 +96,8 @@ public class DoomManager implements SlotScopedState {
                 // Next death while the boss is active wipes the slot!
                 this.apocalypseTriggered = true;
                 SaveManager.getInstance().wipeActiveSlotOnApocalypse();
+                // The slot is gone. Saving now would write doom_state.json back into it.
+                return;
             }
         }
         save();
