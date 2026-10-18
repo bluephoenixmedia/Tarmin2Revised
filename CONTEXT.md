@@ -44,6 +44,9 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Tome Choice**: Picking one not-yet-known spell from a Tome's curated, level-banded pool (falling back to general unlearned spells of that tier). Arcane Attunement at the Altar widens it (options 3→4→5, rerolls, and Level 9 reach for Tarmin).
 - **Study**: Reading a Tome. Instant in the Shelter; in the field a channelled action over 10–25 turns, interrupted by damage or a hostile coming into view, or aborted via ESCAPE. Progress is kept on the Tome.
 - **Inscribe**: Permanently learning a spell scroll into Known Spells for the spell's full MP cost (as opposed to reading it for one free cast).
+- **Weapon Family**: The kind of weapon something is, for Mastery: Blade, Dagger, Axe, Blunt, Polearm, Bow, Crossbow, Thrown, Firearm or Unarmed. Every weapon belongs to exactly one. _Avoid_: "weapon type", "damage type" (Slashing / Piercing / Bludgeoning is how a blow wounds, not what trained it).
+- **Mastery**: The protagonist's rank in one Weapon Family (Untrained, Novice, Adept, Expert, Master), raised by landing blows with that Family on anything that is not Trivial. Belongs to the Incarnation: a new body starts Untrained. _Avoid_: "skill", which means a skill-tree node.
+- **Combat Art**: A named attack a Weapon Family teaches, one each at Adept, Expert and Master. Kept by the soul across deaths like Known Spells, but weaker until the new body retrains the Mastery rank that taught it. An **Active Art** is used on purpose from the Art bar and then cools down; a **Passive Art** fires by itself during ordinary attacks. _Avoid_: "skill", "technique", "move".
 
 ### Houses of the Maze
 See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
