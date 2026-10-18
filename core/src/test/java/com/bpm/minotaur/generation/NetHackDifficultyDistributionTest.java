@@ -337,7 +337,7 @@ public class NetHackDifficultyDistributionTest {
         String spell4 = player.getPendingTomeChoice().getOptions().get(0);
         player.chooseTomeSpell(spell4, eventManager);
         assertTrue(player.getPermanentSpellIds().contains(spell4));
-        assertEquals(5, player.getPermanentSpellIds().size());
+        assertEquals(4 + Player.STARTING_SPELLS.size(), player.getPermanentSpellIds().size());
 
         // Slots unlock via character leveling (level 1 = 1 slot, level 2 = 2 slots)
         assertEquals(1, player.getUnlockedSpellSlots());

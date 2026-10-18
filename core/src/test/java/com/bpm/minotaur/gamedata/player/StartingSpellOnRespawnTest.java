@@ -20,7 +20,7 @@ public class StartingSpellOnRespawnTest {
         p.prepareStartingSpells();
 
         assertTrue(p.getKnownSpellIds().contains(Player.STARTING_SPELL));
-        assertEquals(Player.STARTING_SPELL, p.getPreparedSpells()[0]);
+        assertEquals(Player.STARTING_HEAL_SPELL, p.getPreparedSpells()[0]);
     }
 
     @Test
@@ -40,6 +40,6 @@ public class StartingSpellOnRespawnTest {
                 java.util.Arrays.asList("MAGIC_MISSILE", null), 2);
         p.prepareStartingSpells();
         assertEquals("MAGIC_MISSILE", p.getPreparedSpells()[0]);
-        assertEquals(Player.STARTING_SPELL, p.getPreparedSpells()[1]);
+        assertEquals(Player.STARTING_HEAL_SPELL, p.getPreparedSpells()[1]);
     }
 }
