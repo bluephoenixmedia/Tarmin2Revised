@@ -1408,7 +1408,7 @@ public class Hud implements Disposable {
             combatMonsterTable.setVisible(true);
 
             Monster monster = inCombat ? combatManager.getMonster() : facedMonster;
-            monsterStrengthLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.nameOf(monster)));
+            monsterStrengthLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.cardTitle(monster)));
             monsterAffinityLabel.setText(checkScramble(com.bpm.minotaur.ui.AffinityText.badge(monster)));
             monsterHpBar.setValue(monster.getCurrentHP(), monster.getMaxHP());
 

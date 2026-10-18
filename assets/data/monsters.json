@@ -1736,7 +1736,7 @@
   },
   "KOBOLD": {
     "baseLevel": 1,
-    "role": "FODDER",
+    "role": "SOLDIER",
     "maxHP": 12,
     "maxMP": 4,
     "armorClass": 12,
@@ -1800,7 +1800,7 @@
   },
   "GOBLIN": {
     "baseLevel": 1,
-    "role": "FODDER",
+    "role": "SOLDIER",
     "maxHP": 12,
     "maxMP": 5,
     "armorClass": 12,

@@ -14,6 +14,10 @@ import java.util.TreeMap;
  */
 public class MonsterSpawner {
 
+    /** Heavies are picked at 1/HEAVY_WEIGHT_DIVISOR of their weight, so they stay rare. */
+    static final int HEAVY_WEIGHT_DIVISOR = 4;
+
+
     // Registry maps ID -> Template. We might just need values, but Map is safer if
     // we need IDs.
     private final Map<String, MonsterTemplate> registry; // Or just List<MonsterTemplate>
@@ -152,6 +156,11 @@ public class MonsterSpawner {
             // so out-of-depth spawns are rare encounters rather than dominant spawns.
             if (isOod && template.baseLevel > ctx.edl()) {
                 effectiveWeight = Math.max(1, effectiveWeight / 3);
+            }
+
+            // Heavies are rare (#161, #218): a quarter of the weight. They already come alone.
+            if (template.getRole() == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY) {
+                effectiveWeight = Math.max(1, effectiveWeight / HEAVY_WEIGHT_DIVISOR);
             }
 
             if (effectiveWeight > 0) {

@@ -352,8 +352,11 @@ public class UnlockManager implements SlotScopedState {
 
         int milestoneCount = 0;
         if (telemetry != null) {
-            if (maxFloorReached > 1 && (strataReached > 1 || maxFloorReached > data.deepestLevelReached)) {
+            // Only a new deepest depth pays. deepestLevelReached is updated live while
+            // descending, so it can't tell a new record at the expedition's end.
+            if (maxFloorReached > Math.max(1, data.deepestLevelRewarded)) {
                 milestoneCount++;
+                data.deepestLevelRewarded = maxFloorReached;
             }
             if (telemetry.getExpeditionKills() >= 100) {
                 milestoneCount++;

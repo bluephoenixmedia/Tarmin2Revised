@@ -73,4 +73,21 @@ public class AffinityTextTest {
             assertEquals(b, UiGlyphs.sanitize(b));
         }
     }
+
+    @Test
+    public void theCardTitleMarksAHeavy() {
+        com.bpm.minotaur.gamedata.monster.MonsterTemplate template = new com.bpm.minotaur.gamedata.monster.MonsterTemplate();
+        template.maxHP = 30;
+        template.role = com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY;
+        com.bpm.minotaur.gamedata.monster.Monster ogre = new com.bpm.minotaur.gamedata.monster.Monster(
+                com.bpm.minotaur.gamedata.monster.Monster.MonsterType.OGRE, 30, 10);
+        ogre.setTemplate(template);
+        assertTrue(AffinityText.cardTitle(ogre).startsWith("HEAVY - "));
+        assertEquals("the plain name stays unmarked for log lines",
+                AffinityText.nameOf(ogre), AffinityText.cardTitle(ogre).substring("HEAVY - ".length()));
+        assertEquals(AffinityText.cardTitle(ogre), com.bpm.minotaur.ui.UiGlyphs.sanitize(AffinityText.cardTitle(ogre)));
+
+        template.role = com.bpm.minotaur.gamedata.monster.MonsterRole.SOLDIER;
+        assertEquals(AffinityText.nameOf(ogre), AffinityText.cardTitle(ogre));
+    }
 }

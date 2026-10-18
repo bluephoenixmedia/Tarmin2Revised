@@ -24,6 +24,14 @@ public final class AffinityText {
     }
 
     /** What the player calls this monster: its own name if it has one, else its type's. */
+    /** The HUD monster card's title: the name, marked when the monster is a Heavy (#218). */
+    public static String cardTitle(Monster monster) {
+        if (monster == null) return "";
+        String name = nameOf(monster);
+        return monster.getRole() == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY
+                ? UiGlyphs.sanitize("HEAVY - " + name) : name;
+    }
+
     public static String nameOf(Monster monster) {
         if (monster == null) return "";
         if (monster.getDisplayName() != null && !monster.getDisplayName().isEmpty()) {

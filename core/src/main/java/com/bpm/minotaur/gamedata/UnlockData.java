@@ -10,6 +10,8 @@ public class UnlockData {
     public long totalSteps = 0;
     public long totalDoorsOpened = 0;
     public int deepestLevelReached = 0;
+    /** The deepest level a depth milestone has already paid for; only going deeper pays again. */
+    public int deepestLevelRewarded = 1;
 
     // Map of MonsterType (String) -> Count
     public Map<String, Integer> monsterKills = new HashMap<>();
