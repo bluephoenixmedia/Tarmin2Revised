@@ -252,6 +252,67 @@ public class Hud implements Disposable {
         }
     }
 
+    /** Character level required for the next spell slot to unlock (Player.slotsForLevel). */
+    private int getNextSpellSlotLevel(int currentUnlocked) {
+        switch (currentUnlocked) {
+            case 1: return 2;
+            case 2: return 5;
+            case 3: return 8;
+            case 4: return 11;
+            default: return 11;
+        }
+    }
+
+    /** Rebuilds spell hotbar with unlocked active slots and a compact lock chip (HUD-5). */
+    private void rebuildSpellHotbar(final int unlockedCount) {
+        if (spellHotbarTable == null) return;
+        spellHotbarTable.clearChildren();
+
+        Table spellHeader = new Table();
+        Label spellsLabel = new Label("SPELLS [Q]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
+        spellHeader.add(spellsLabel).left().padLeft(4f).padBottom(2f);
+        spellHeader.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
+                if (gameScreen != null) {
+                    gameScreen.openSpellbook();
+                }
+            }
+        });
+        int cols = Math.max(1, Math.min(5, unlockedCount + (unlockedCount < 5 ? 1 : 0)));
+        spellHotbarTable.add(spellHeader).colspan(cols).left().growX().padBottom(2f).row();
+
+        for (int i = 0; i < unlockedCount && i < 5; i++) {
+            spellHotbarTable.add(spellSlots[i]).size(150f, 24f).pad(2f);
+        }
+
+        if (unlockedCount < 5) {
+            final int nextLv = getNextSpellSlotLevel(unlockedCount);
+            final Table lockChip = new Table();
+            lockChip.setBackground(hudSkin.getSlotRecessed());
+            lockChip.pad(2f, 8f, 2f, 8f);
+            Label lockLabel = new Label("[LOCKED] Next Lv " + nextLv,
+                    new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_TEXT_MUTED));
+            lockChip.add(lockLabel);
+            lockChip.addListener(new InputListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    if (encounterWindow != null && encounterWindow.isVisible()) return;
+                    Vector2 pos = lockChip.localToStageCoordinates(new Vector2(0, 0));
+                    hudTooltip.showSpell("Locked Slot", "Spell Slot " + (unlockedCount + 1), 0,
+                            "Unlocks at Character Level " + nextLv + ".", pos.x + 40f, pos.y, "");
+                }
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    hudTooltip.hide();
+                }
+            });
+            spellHotbarTable.add(lockChip).height(24f).pad(2f);
+        }
+        spellHotbarTable.pack();
+    }
+
     public boolean cycleToast() {
         return pickupToasts.cycle();
     }
@@ -531,10 +592,11 @@ public class Hud implements Disposable {
         // ══════════════════════════════════════════════════════════════════
         // ZONE 2: Equipment Hands & 2x3 Belt (~420px)
         // ══════════════════════════════════════════════════════════════════
+        beltZone.top().center();
         equippedWeaponLabel = new Label("Hands Empty", weaponHeaderStyle);
         equippedWeaponLabel.setEllipsis(true);
         equippedWeaponLabel.setAlignment(Align.center);
-        beltZone.add(equippedWeaponLabel).colspan(3).center().width(390f).minWidth(0f).padBottom(4).row();
+        beltZone.add(equippedWeaponLabel).center().width(390f).minWidth(0f).padTop(4).padBottom(4).row();
 
         float slotSize = 50f;
         Table backpackTable = new Table();
@@ -588,13 +650,10 @@ public class Hud implements Disposable {
             });
         }
 
-        backpackTable.add(backpackSlots[0]).size(slotSize).pad(3);
-        backpackTable.add(backpackSlots[1]).size(slotSize).pad(3);
-        backpackTable.add(backpackSlots[2]).size(slotSize).pad(3);
-        backpackTable.row();
-        backpackTable.add(backpackSlots[3]).size(slotSize).pad(3);
-        backpackTable.add(backpackSlots[4]).size(slotSize).pad(3);
-        backpackTable.add(backpackSlots[5]).size(slotSize).pad(3);
+        // HUD-8: One horizontal row 1–6 matching keyboard row and inventory layout
+        for (int i = 0; i < 6; i++) {
+            backpackTable.add(backpackSlots[i]).size(slotSize).pad(com.bpm.minotaur.ui.UiTheme.PAD_XS);
+        }
 
         leftHandSlot = new Table();
         leftHandSlot.setBackground(hudSkin.getSlotHand());
@@ -652,9 +711,11 @@ public class Hud implements Disposable {
             }
         });
 
-        beltZone.add(leftHandSlot).size(56).padRight(8);
-        beltZone.add(backpackTable).padRight(8);
-        beltZone.add(rightHandSlot).size(56);
+        Table handsTable = new Table();
+        handsTable.add(leftHandSlot).size(52).padRight(20);
+        handsTable.add(rightHandSlot).size(52);
+        beltZone.add(handsTable).center().padBottom(6).row();
+        beltZone.add(backpackTable).center().row();
 
         // ══════════════════════════════════════════════════════════════════
         // ZONE 3: Condition, Delve & Dynamic Combat Card (~330px)
@@ -799,24 +860,10 @@ public class Hud implements Disposable {
         bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
         bottomBarTable.add(chronicleZone).width(648).fillY();
 
-        // --- Assemble 5-Slot Spell Quick-Cast Hotbar ---
+        // --- Assemble Spell Quick-Cast Hotbar (HUD-5) ---
         spellHotbarTable = new Table();
         spellHotbarTable.setBackground(hudSkin.getPanelBg());
         spellHotbarTable.pad(4f);
-
-        Table spellHeader = new Table();
-        Label spellsLabel = new Label("SPELLS [Q]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
-        spellHeader.add(spellsLabel).left().padLeft(4f).padBottom(2f);
-        spellHeader.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (encounterWindow != null && encounterWindow.isVisible()) return;
-                if (gameScreen != null) {
-                    gameScreen.openSpellbook();
-                }
-            }
-        });
-        spellHotbarTable.add(spellHeader).colspan(5).left().growX().padBottom(2f).row();
 
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
@@ -825,9 +872,7 @@ public class Hud implements Disposable {
             spellSlots[i].pad(2f, 5f, 2f, 5f);
             spellSlots[i].top();
 
-            // One row: [key] name  cost. Stacking the badge above the name meant two
-            // lines competing for a slot barely tall enough for one, which is what made
-            // them overlap. The full name, school and description are on hover.
+            // One row: [key] name  cost. Full name, school and description are on hover.
             String slotKey = (i < com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS.length)
                     ? com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i]
                     : String.valueOf(i + 1);
@@ -876,11 +921,9 @@ public class Hud implements Disposable {
                     hudTooltip.hide();
                 }
             });
-
-            spellHotbarTable.add(spellSlots[i]).size(168f, 24f).pad(2f);
         }
 
-        spellHotbarTable.pack();
+        rebuildSpellHotbar(lastSeenUnlockedSlots);
         spellHotbarTable.setPosition(16f, 204f);
 
         // --- Main Container (200px Height) ---
@@ -1060,8 +1103,10 @@ public class Hud implements Disposable {
                     combatManager.getSoundManager().playPlayerLevelUpSound();
                 }
                 lastSeenUnlockedSlots = currentUnlocked;
+                rebuildSpellHotbar(currentUnlocked);
             } else if (currentUnlocked < lastSeenUnlockedSlots) {
                 lastSeenUnlockedSlots = currentUnlocked;
+                rebuildSpellHotbar(currentUnlocked);
             }
         }
 
@@ -1070,11 +1115,18 @@ public class Hud implements Disposable {
         // --- 1. Update Vitals Gauges ---
         hpBar.setValue(player.getCurrentHP(), player.getMaxHP());
         hpBar.setSecondaryValue(player.getStats() != null ? player.getStats().getTemporaryHP() : 0);
-        if (player.getCurrentHP() <= player.getMaxHP() * 0.25f) {
+        boolean hpDanger = player.getCurrentHP() <= player.getMaxHP() * 0.25f;
+        hpBar.setDangerFrame(hpDanger);
+        if (hpDanger) {
             hpBar.setBarColor(HudSkin.COL_HP_CRITICAL);
+            hpBar.setCustomStatus("CRITICAL");
         } else {
             hpBar.setBarColor(HudSkin.COL_HP_RED);
+            hpBar.setCustomStatus(null);
         }
+
+        boolean mpDanger = player.getCurrentMP() <= player.getMaxMP() * 0.25f;
+        mpBar.setDangerFrame(mpDanger);
 
         mpBar.setValue(player.getCurrentMP(), player.getMaxMP());
         expBar.setValue(player.getExperience(), player.getStats().getExperienceToNextLevel());
@@ -1202,17 +1254,13 @@ public class Hud implements Disposable {
             }
         }
 
-        // --- Update Spell Hotbar Slots ---
+        // --- Update Spell Hotbar Slots (HUD-5) ---
         int unlockedSpellSlots = player.getUnlockedSpellSlots();
-        for (int i = 0; i < 5; i++) {
-            if (i >= unlockedSpellSlots) {
-                spellSlots[i].setBackground(hudSkin.getSlotRecessed());
-                spellBadgeLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
-                spellNameLabels[i].setText("LOCKED");
-                spellNameLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
-                spellCostLabels[i].setText("");
-                continue;
-            }
+        if (unlockedSpellSlots != lastSeenUnlockedSlots) {
+            lastSeenUnlockedSlots = unlockedSpellSlots;
+            rebuildSpellHotbar(unlockedSpellSlots);
+        }
+        for (int i = 0; i < unlockedSpellSlots && i < 5; i++) {
             String spellId = player.getPreparedSpell(i);
             if (spellId != null && !spellId.isEmpty()) {
                 com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
@@ -1255,20 +1303,57 @@ public class Hud implements Disposable {
             }
         }
 
-        // --- 3. Update Condition & Delve / Combat Card ---
-        foodBar.setValue(Math.max(0, player.getFood()), com.bpm.minotaur.gamedata.player.Hunger.SATIATED_ABOVE);
-        foodBar.setBarColor(player.getStats().getHungerStage().isHungry() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
+        // --- 3. Update Condition & Delve / Combat Card (HUD-4) ---
+        float foodVal = Math.max(0, player.getFood());
+        float maxFood = com.bpm.minotaur.gamedata.player.Hunger.SATIATED_ABOVE;
+        com.bpm.minotaur.gamedata.player.Hunger.Stage hungerStage = player.getStats().getHungerStage();
+        boolean foodDanger = (foodVal <= maxFood * 0.25f) || hungerStage.isHungry();
+        foodBar.setValue(foodVal, maxFood);
+        foodBar.setDangerFrame(foodDanger);
+        if (hungerStage.isHungry()) {
+            foodBar.setCustomStatus(hungerStage.label.toUpperCase(java.util.Locale.ROOT));
+            foodBar.setBarColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            foodBar.setCustomStatus(null);
+            foodBar.setBarColor(foodDanger ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
+        }
 
-        waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
-        waterBar.setBarColor(player.getStats().getThirstStage().isThirsty() ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
+        float waterVal = player.getStats().getHydrationFloat();
+        float maxWater = PlayerStats.MAX_HYDRATION;
+        com.bpm.minotaur.gamedata.player.Thirst.Stage thirstStage = player.getStats().getThirstStage();
+        boolean waterDanger = (waterVal <= maxWater * 0.25f) || thirstStage.isThirsty();
+        waterBar.setValue(waterVal, maxWater);
+        waterBar.setDangerFrame(waterDanger);
+        if (thirstStage.isThirsty()) {
+            waterBar.setCustomStatus(thirstStage.label.toUpperCase(java.util.Locale.ROOT));
+            waterBar.setBarColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            waterBar.setCustomStatus(null);
+            waterBar.setBarColor(waterDanger ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
+        }
 
         float temp = player.getStats().getBodyTemperature();
         com.bpm.minotaur.gamedata.player.Exposure.Band band = player.getStats().getExposureBand();
         tempBar.setValue(com.bpm.minotaur.ui.HudReadouts.exposureMeterFill(temp), 1f);
         tempBar.setCustomText(com.bpm.minotaur.ui.HudReadouts.exposureMeterText(band));
         tempBar.setBarColor(HudSkin.exposureColor(band));
+        boolean tempDanger = (band == com.bpm.minotaur.gamedata.player.Exposure.Band.FREEZING
+                || band == com.bpm.minotaur.gamedata.player.Exposure.Band.HYPOTHERMIC
+                || band == com.bpm.minotaur.gamedata.player.Exposure.Band.HOT);
+        tempBar.setDangerFrame(tempDanger);
 
-        toxBar.setValue(player.getStats().getToxicity(), player.getStats().getMaxToxicity());
+        float toxVal = player.getStats().getToxicity();
+        float maxTox = player.getStats().getMaxToxicity();
+        boolean toxDanger = (toxVal >= maxTox * 0.75f);
+        toxBar.setValue(toxVal, maxTox);
+        toxBar.setDangerFrame(toxDanger);
+        if (toxDanger) {
+            toxBar.setCustomStatus("POISONED");
+            toxBar.setBarColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            toxBar.setCustomStatus(null);
+            toxBar.setBarColor(HudSkin.COL_TOX);
+        }
 
         String biomeName = "MAZE";
         if (worldManager != null && worldManager.getBiomeManager() != null) {

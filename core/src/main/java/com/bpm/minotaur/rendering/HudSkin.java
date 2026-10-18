@@ -116,6 +116,7 @@ public class HudSkin implements Disposable {
     private Drawable slotHand;
     private Drawable portraitCameo;
     private Drawable gaugeTrack;
+    private Drawable gaugeTrackDanger;
     private Drawable tooltipBg;
     private Drawable doubleBorderPanel;
     private Drawable parchmentCard;
@@ -154,6 +155,7 @@ public class HudSkin implements Disposable {
         buildSlotDrawables();
         buildPortraitCameo();
         buildGaugeTrack();
+        buildGaugeTrackDanger();
         buildTooltipBg();
         buildCompassDial();
         buildDoubleBorderPanel();
@@ -418,6 +420,28 @@ public class HudSkin implements Disposable {
         p.dispose();
         NinePatch np = new NinePatch(tex, 3, 3, 3, 3);
         gaugeTrack = new NinePatchDrawable(np);
+    }
+
+    /** Dark recessed track with danger/critical border for low vitals / status alerts (HUD-4). */
+    private void buildGaugeTrackDanger() {
+        int w = 32;
+        int h = 24;
+        Pixmap p = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+
+        p.setColor(COL_SHADOW_DEEP);
+        p.fill();
+
+        p.setColor(COL_HP_CRITICAL);
+        p.drawRectangle(0, 0, w, h);
+
+        p.setColor(new Color(0.40f, 0.05f, 0.05f, 1f));
+        p.drawLine(1, 1, w - 2, 1);
+        p.drawLine(1, 1, 1, h - 2);
+
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        NinePatch np = new NinePatch(tex, 3, 3, 3, 3);
+        gaugeTrackDanger = new NinePatchDrawable(np);
     }
 
     /** Floating dark card (tooltips, dark info panels). */
@@ -734,6 +758,7 @@ public class HudSkin implements Disposable {
     public Drawable getSlotHand() { return slotHand; }
     public Drawable getPortraitCameo() { return portraitCameo; }
     public Drawable getGaugeTrack() { return gaugeTrack; }
+    public Drawable getGaugeTrackDanger() { return gaugeTrackDanger; }
     public Drawable getTooltipBg() { return tooltipBg; }
     public Drawable getDoubleBorderPanel() { return doubleBorderPanel; }
     public Drawable getParchmentCard() { return parchmentCard; }

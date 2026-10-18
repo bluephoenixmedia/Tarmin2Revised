@@ -25,6 +25,8 @@ public class ModernStatBar extends Actor {
     private boolean isTemperature = false;
     private boolean showPercent = false;
     private String customText = null;
+    private String customStatus = null;
+    private boolean dangerFrame = false;
     private float secondaryValue = 0f;
     private final Color secondaryColor = new Color(0.95f, 0.75f, 0.20f, 0.9f);
 
@@ -65,6 +67,22 @@ public class ModernStatBar extends Actor {
         this.customText = text;
     }
 
+    public void setCustomStatus(String status) {
+        this.customStatus = status;
+    }
+
+    public String getCustomStatus() {
+        return customStatus;
+    }
+
+    public void setDangerFrame(boolean danger) {
+        this.dangerFrame = danger;
+    }
+
+    public boolean isDangerFrame() {
+        return dangerFrame;
+    }
+
     @Override
     public void draw(Batch batch, float parentAlpha) {
         float x = getX();
@@ -72,8 +90,12 @@ public class ModernStatBar extends Actor {
         float w = getWidth();
         float h = getHeight();
 
-        // 1. Draw Recessed Gauge Track
-        skin.getGaugeTrack().draw(batch, x, y, w, h);
+        // 1. Draw Recessed Gauge Track (turns DANGER below 25% or on alert - HUD-4)
+        if (dangerFrame && skin.getGaugeTrackDanger() != null) {
+            skin.getGaugeTrackDanger().draw(batch, x, y, w, h);
+        } else {
+            skin.getGaugeTrack().draw(batch, x, y, w, h);
+        }
 
         // 2. Calculate Fill
         float fillRatio = MathUtils.clamp(currentValue / maxValue, 0f, 1f);
@@ -123,6 +145,13 @@ public class ModernStatBar extends Actor {
         String text;
         if (customText != null) {
             text = customText;
+        } else if (customStatus != null && !customStatus.isEmpty()) {
+            if (showPercent) {
+                int pct = Math.round(fillRatio * 100f);
+                text = String.format("%s: [%s] %d%%", labelName, customStatus, pct);
+            } else {
+                text = String.format("%s: [%s] %.0f/%.0f", labelName, customStatus, currentValue, maxValue);
+            }
         } else if (isTemperature) {
             float fahrenheit = (currentValue * 9.0f / 5.0f) + 32.0f;
             text = String.format("%s: %.1f F", labelName, fahrenheit);

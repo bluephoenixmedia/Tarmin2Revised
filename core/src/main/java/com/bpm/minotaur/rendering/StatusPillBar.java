@@ -166,6 +166,9 @@ public class StatusPillBar extends Table {
         // 5. Starvation & Dehydration
         if (player.getStats() != null) {
             PlayerStats stats = player.getStats();
+            // HUD-4: Ordinary HUNGRY/THIRSTY warnings are anchored directly inside
+            // the food and water gauge bars with danger frame color changes.
+            // Severe penalties (WEAK, FAINT, DRY, COLLAPSE) remain as combat debuff pills.
             com.bpm.minotaur.gamedata.player.Hunger.Stage hunger = stats.getHungerStage();
             if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.FAINTING || hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED) {
                 addPill("FAINT", HudSkin.COL_HP_CRITICAL,
@@ -179,12 +182,6 @@ public class StatusPillBar extends Table {
                         "[SURVIVAL]",
                         "Weak from hunger: STR -2, to-hit -1.",
                         "Eat soon, before you start to faint.");
-            } else if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.HUNGRY) {
-                addPill("HUNGRY", HudSkin.COL_TEMP_ORANGE,
-                        "Hungry",
-                        "[SURVIVAL]",
-                        "Your stomach growls. No penalty yet.",
-                        "Eat before you grow weak.");
             }
 
             com.bpm.minotaur.gamedata.player.Thirst.Stage thirst = stats.getThirstStage();
@@ -200,12 +197,6 @@ public class StatusPillBar extends Table {
                         "[SURVIVAL]",
                         "Dehydrated: DEX -2, every action slower.",
                         "Drink soon, before you collapse.");
-            } else if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.THIRSTY) {
-                addPill("THIRSTY", HudSkin.COL_TEMP_ORANGE,
-                        "Thirsty",
-                        "[SURVIVAL]",
-                        "Your throat is dry. No penalty yet.",
-                        "Drink before you dehydrate.");
             }
         }
 
