@@ -622,6 +622,7 @@ public class TurnManager {
 
         if (stage == com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED) {
             if (player.getCurrentHP() > 0) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setSurvivalDeath("starvation");
                 player.takeTrueDamage(player.getCurrentHP());
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent("You die from starvation.", 2.0f));
@@ -671,6 +672,7 @@ public class TurnManager {
 
         if (stage == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEAD) {
             if (player.getCurrentHP() > 0) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setSurvivalDeath("thirst");
                 player.takeTrueDamage(player.getCurrentHP());
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent("You die of thirst.", 2.0f));
