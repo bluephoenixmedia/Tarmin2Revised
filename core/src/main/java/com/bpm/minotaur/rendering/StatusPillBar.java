@@ -19,6 +19,11 @@ import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.injury.InjuryRecord;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.player.PlayerStats;
+import com.bpm.minotaur.gamedata.player.Exposure;
+import com.bpm.minotaur.gamedata.player.Hunger;
+import com.bpm.minotaur.gamedata.player.Thirst;
+import com.bpm.minotaur.ui.HudReadouts;
+import com.bpm.minotaur.ui.ExposureView;
 
 /**
  * Persistent row of compact status pills displayed in the top-right field of view.
@@ -64,24 +69,17 @@ public class StatusPillBar extends Table {
         // 2. Exposure (#194): the band once it bites, and wetness while it multiplies the cold.
         if (player.getStats() != null) {
             PlayerStats ps = player.getStats();
-            com.bpm.minotaur.gamedata.player.Exposure.Band band = ps.getExposureBand();
-            com.bpm.minotaur.gamedata.player.Exposure.Wetness wet = ps.getWetnessLevel();
-            String pill = null;
-            Color accent = HudSkin.exposureColor(band);
-            switch (band) {
-                case HOT: pill = "HEAT"; break;
-                case CHILLY: pill = "CHILLY"; break;
-                case COLD: pill = "COLD"; break;
-                case FREEZING: pill = "FREEZING"; break;
-                case HYPOTHERMIC: pill = "HYPO"; break;
-                default: break;
-            }
+            Exposure.Band band = ps.getExposureBand();
+            Exposure.Wetness wet = ps.getWetnessLevel();
+            ExposureView view = ExposureView.of(band);
+            String pill = view.pill;
+            Color accent = view.color;
             if (pill != null) {
-                com.bpm.minotaur.ui.HudReadouts.Tip tip = com.bpm.minotaur.ui.HudReadouts.exposureTip(band, wet);
+                HudReadouts.Tip tip = HudReadouts.exposureTip(band, wet);
                 addPill(pill, accent, tip.title, tip.category, tip.details, tip.remedy);
             }
-            if (wet != com.bpm.minotaur.gamedata.player.Exposure.Wetness.DRY) {
-                com.bpm.minotaur.ui.HudReadouts.Tip tip = com.bpm.minotaur.ui.HudReadouts.wetnessTip(wet);
+            if (wet != Exposure.Wetness.DRY) {
+                HudReadouts.Tip tip = HudReadouts.wetnessTip(wet);
                 addPill(wet.label.toUpperCase(java.util.Locale.ROOT), HudSkin.COL_WATER_CYAN,
                         tip.title, tip.category, tip.details, tip.remedy);
             }
@@ -169,14 +167,14 @@ public class StatusPillBar extends Table {
             // HUD-4: Ordinary HUNGRY/THIRSTY warnings are anchored directly inside
             // the food and water gauge bars with danger frame color changes.
             // Severe penalties (WEAK, FAINT, DRY, COLLAPSE) remain as combat debuff pills.
-            com.bpm.minotaur.gamedata.player.Hunger.Stage hunger = stats.getHungerStage();
-            if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.FAINTING || hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.STARVED) {
+            Hunger.Stage hunger = stats.getHungerStage();
+            if (hunger == Hunger.Stage.FAINTING || hunger == Hunger.Stage.STARVED) {
                 addPill("FAINT", HudSkin.COL_HP_CRITICAL,
                         "Fainting",
                         "[SURVIVAL]",
                         "STR -2, to-hit -1. Each turn you may pass out for a few turns. Go on and you starve.",
                         "Eat a ration or cooked food now.");
-            } else if (hunger == com.bpm.minotaur.gamedata.player.Hunger.Stage.WEAK) {
+            } else if (hunger == Hunger.Stage.WEAK) {
                 addPill("WEAK", HudSkin.COL_HP_CRITICAL,
                         "Weak",
                         "[SURVIVAL]",
@@ -184,14 +182,14 @@ public class StatusPillBar extends Table {
                         "Eat soon, before you start to faint.");
             }
 
-            com.bpm.minotaur.gamedata.player.Thirst.Stage thirst = stats.getThirstStage();
-            if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.COLLAPSE || thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEAD) {
+            Thirst.Stage thirst = stats.getThirstStage();
+            if (thirst == Thirst.Stage.COLLAPSE || thirst == Thirst.Stage.DEAD) {
                 addPill("COLLAPSE", HudSkin.COL_HP_CRITICAL,
                         "Collapsing",
                         "[SURVIVAL]",
                         "DEX -2 and slowed. Each turn you may pass out for a few turns. Go on and you die of thirst.",
                         "Drink from your waterskin or any liquid now.");
-            } else if (thirst == com.bpm.minotaur.gamedata.player.Thirst.Stage.DEHYDRATED) {
+            } else if (thirst == Thirst.Stage.DEHYDRATED) {
                 addPill("DRY", HudSkin.COL_HP_CRITICAL,
                         "Dehydrated",
                         "[SURVIVAL]",

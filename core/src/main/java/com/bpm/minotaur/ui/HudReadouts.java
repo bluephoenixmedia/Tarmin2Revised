@@ -1,6 +1,7 @@
 package com.bpm.minotaur.ui;
 
 import com.bpm.minotaur.managers.DoomManager;
+import com.bpm.minotaur.gamedata.player.Exposure;
 
 /**
  * Text for the HUD's Tarmin's Hunger and Divinity readouts and their hover tooltips (#173).
@@ -41,9 +42,12 @@ public final class HudReadouts {
         return max > 0 && deaths * 10 >= max * 9;
     }
 
-    /** "HUNGER 4/50", with a "!" once the bridge boss is near or loose. Fits the vitals cell. */
+    /**
+     * "TARMIN 4/50" (Tarmin's Hunger), with a "!" once the bridge boss is near or loose. Fits the
+     * vitals cell, and reads apart from the food bar and the Hungry pill beside it.
+     */
     public static String hungerLabel(int deaths, int max, boolean bossActive) {
-        String label = "HUNGER " + deaths + "/" + max;
+        String label = "TARMIN " + deaths + "/" + max;
         return (bossActive || bossNear(deaths, max)) ? label + " !" : label;
     }
 
@@ -89,41 +93,30 @@ public final class HudReadouts {
     // --- Exposure (#194) ---------------------------------------------------------------
 
     /** The meter's text: just the band, which fits the 210-unit gauge at every band. */
-    public static String exposureMeterText(com.bpm.minotaur.gamedata.player.Exposure.Band band) {
+    public static String exposureMeterText(Exposure.Band band) {
         return UiGlyphs.sanitize(band.label.toUpperCase(java.util.Locale.ROOT));
     }
 
     /** How full the meter reads, 0..1: empty at the body's floor, full at heatstroke. */
     public static float exposureMeterFill(float bodyTemp) {
-        float lo = com.bpm.minotaur.gamedata.player.Exposure.BODY_FLOOR;
-        float hi = com.bpm.minotaur.gamedata.player.Exposure.HOT_ABOVE + 1f;
+        float lo = Exposure.BODY_FLOOR;
+        float hi = Exposure.HOT_ABOVE + 1f;
         return Math.max(0f, Math.min(1f, (bodyTemp - lo) / (hi - lo)));
     }
 
-    public static Tip exposureTip(com.bpm.minotaur.gamedata.player.Exposure.Band band,
-                                  com.bpm.minotaur.gamedata.player.Exposure.Wetness wet) {
-        String effect;
-        switch (band) {
-            case HOT: effect = "Overheating: thirst runs twice as fast and you tire."; break;
-            case WARM: effect = "Warmed through by a fire or a hearth."; break;
-            case CHILLY: effect = "No penalty yet, but the cold is getting in."; break;
-            case COLD: effect = "Cold: move and attack speed -10%."; break;
-            case FREEZING: effect = "Freezing: speed -20%, and wounds no longer knit on their own."; break;
-            case HYPOTHERMIC: effect = "Hypothermic: speed -20%, no natural healing, 1 damage every "
-                    + com.bpm.minotaur.gamedata.player.Exposure.HYPOTHERMIA_DAMAGE_EVERY
-                    + " turns, and now and then a lost action."; break;
-            default: effect = "No penalty."; break;
-        }
-        String wetLine = wet == com.bpm.minotaur.gamedata.player.Exposure.Wetness.DRY ? ""
+    public static Tip exposureTip(Exposure.Band band,
+                                  Exposure.Wetness wet) {
+        String effect = ExposureView.of(band).effect;
+        String wetLine = wet == Exposure.Wetness.DRY ? ""
                 : "\nYou are " + wet.label.toLowerCase(java.util.Locale.ROOT) + ": heat goes "
                         + (int) wet.heatLossMult + "x as fast.";
-        String remedy = band == com.bpm.minotaur.gamedata.player.Exposure.Band.HOT
+        String remedy = band == Exposure.Band.HOT
                 ? "Drink, and get out of the heat."
                 : "A cloak, warmer gear, a Tinder Bundle fire or a lit shelter hearth.";
         return new Tip("Exposure: " + band.label, "[BODY]", effect + wetLine, remedy);
     }
 
-    public static Tip wetnessTip(com.bpm.minotaur.gamedata.player.Exposure.Wetness wet) {
+    public static Tip wetnessTip(Exposure.Wetness wet) {
         return new Tip(wet.label, "[EXPOSURE]",
                 "Wet clothes lose heat " + (int) wet.heatLossMult + "x as fast. Rain wets you; "
                         + "freezing water soaks you through.",

@@ -12,8 +12,8 @@ import com.bpm.minotaur.managers.ActionKeys;
  */
 public final class LiquidPromptCard {
 
-    public static final String DRINK_ACTION = "INTERACT";
-    public static final String FILL_ACTION = "PICKUP_DROP";
+    public static final String DRINK_ACTION = com.bpm.minotaur.managers.Action.INTERACT;
+    public static final String FILL_ACTION = com.bpm.minotaur.managers.Action.PICKUP_DROP;
 
     private LiquidPromptCard() {
     }

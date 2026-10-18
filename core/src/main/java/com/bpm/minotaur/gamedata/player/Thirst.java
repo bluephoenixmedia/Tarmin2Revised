@@ -82,6 +82,16 @@ public final class Thirst {
             return ordinal() >= THIRSTY.ordinal();
         }
 
+        /** Collapse or worse: the player can pass out. */
+        public boolean isCollapsing() {
+            return ordinal() >= COLLAPSE.ordinal();
+        }
+
+        /** How much this stage needs attention: Thirsty warns, Dehydrated and worse are danger. */
+        public Severity severity() {
+            return isDehydrated() ? Severity.DANGER : isThirsty() ? Severity.WARNING : Severity.NONE;
+        }
+
         public boolean isDehydrated() {
             return ordinal() >= DEHYDRATED.ordinal();
         }
@@ -89,7 +99,7 @@ public final class Thirst {
 
     /** Hydration below which a body of this Constitution dies of thirst. */
     public static float deadBelow(int constitution) {
-        return -(DEATH_BASE + DEATH_PER_CON * Math.max(0, constitution));
+        return SurvivalMeter.deathLine(DEATH_BASE, DEATH_PER_CON, constitution);
     }
 
     /** Lowest value the store holds. */

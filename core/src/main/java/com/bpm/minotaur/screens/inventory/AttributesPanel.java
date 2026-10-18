@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.player.Severity;
 
 /**
  * Three-column attributes panel formatted cleanly for the lower-right box.
@@ -146,13 +147,20 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     }
 
     private Color satColor() {
-        com.bpm.minotaur.gamedata.player.Hunger.Stage s = player.getStats().getHungerStage();
-        return s.isWeakened() ? COL_RED : s.isHungry() ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
+        return inkFor(player.getStats().getHungerStage().severity());
     }
 
     private Color hydColor() {
-        com.bpm.minotaur.gamedata.player.Thirst.Stage s = player.getStats().getThirstStage();
-        return s.isDehydrated() ? COL_RED : s.isThirsty() ? com.bpm.minotaur.ui.UiTheme.INK_WARNING : COL_GREEN;
+        return inkFor(player.getStats().getThirstStage().severity());
+    }
+
+    /** The parchment colour for a survival {@link Severity}. */
+    private static Color inkFor(Severity severity) {
+        switch (severity) {
+            case DANGER: return COL_RED;
+            case WARNING: return com.bpm.minotaur.ui.UiTheme.INK_WARNING;
+            default: return COL_GREEN;
+        }
     }
 
     private Color tempColor(float t) {
