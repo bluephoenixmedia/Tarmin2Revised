@@ -21,8 +21,11 @@ public final class Thirst {
 
     /** Where every expedition, respawn and new game starts. */
     public static final float START = 900f;
-    /** Burned per standard turn (drink roughly every 600 turns). */
-    public static final float BURN_PER_TURN = 1.5f;
+    /**
+     * Burned per standard turn: the same pace as food (#235). At 1.5 a seeker who found no water
+     * was Thirsty by turn 500 and dead by 730; now Thirsty about 750, dead about 1,100.
+     */
+    public static final float BURN_PER_TURN = 1.0f;
 
     // --- Stage thresholds (see Stage for what each one does) -----------------------------
 

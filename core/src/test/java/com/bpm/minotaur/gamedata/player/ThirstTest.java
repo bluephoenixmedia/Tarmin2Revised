@@ -37,7 +37,7 @@ public class ThirstTest {
     // --- The scale ---------------------------------------------------------------------
 
     @Test
-    public void aFreshStartDrinksRoughlyEverySixHundredTurns() {
+    public void aFreshStartDrinksRoughlyEverySevenHundredFiftyTurns() {
         PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
         assertEquals(900f, stats.getHydrationFloat(), 0f);
         assertEquals(Thirst.Stage.HYDRATED, stats.getThirstStage());
@@ -47,12 +47,12 @@ public class ThirstTest {
             stats.modifyHydration(-Thirst.burn(1f, 1f, 1f));
             turns++;
         }
-        assertEquals("1.5 a turn from 900 reaches Thirsty (below 150) on turn 501", 501, turns);
+        assertEquals("1.0 a turn from 900 reaches Thirsty (below 150) on turn 751 (#235)", 751, turns);
         while (!stats.getThirstStage().isDehydrated()) {
             stats.modifyHydration(-Thirst.burn(1f, 1f, 1f));
             turns++;
         }
-        assertEquals("and Dehydrated (below 50) on turn 567", 567, turns);
+        assertEquals("and Dehydrated (below 50) on turn 851", 851, turns);
     }
 
     @Test
