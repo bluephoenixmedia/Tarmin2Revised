@@ -45,6 +45,8 @@ public class PlayerSaveData {
     public int unallocatedAttributePoints = 0;
     public int unallocatedSkillPoints = 0;
     public List<String> unlockedSkills = new ArrayList<>();
+    /** Full hits per Weapon Family name (#231); absent in older saves, which load Untrained. */
+    public java.util.HashMap<String, Integer> masteryHits = new java.util.HashMap<>();
 
     public float satiety = 80f;
     /**
@@ -208,6 +210,7 @@ public class PlayerSaveData {
             for (com.bpm.minotaur.gamedata.progression.SkillId s : stats.getUnlockedSkills()) {
                 this.unlockedSkills.add(s.name());
             }
+            this.masteryHits.putAll(stats.getMastery().toSave());
         }
 
         // Status effects, meal buffs and wounds
@@ -359,6 +362,7 @@ public class PlayerSaveData {
 
             stats.setUnallocatedAttributePoints(unallocatedAttributePoints);
             stats.setUnallocatedSkillPoints(unallocatedSkillPoints);
+            stats.getMastery().restore(masteryHits);
             if (unlockedSkills != null) {
                 for (String s : unlockedSkills) {
                     try {

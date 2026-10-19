@@ -1492,7 +1492,8 @@ public class CombatManager {
         }
 
         int statBonus = Math.max(player.getEffectiveStrengthModifier(), player.getEffectiveDexterityModifier());
-        int attackRoll = DiceRoller.roll("1d20") + statBonus - com.bpm.minotaur.gamedata.item.ThrowRules.toHitPenalty(weapon);
+        int attackRoll = DiceRoller.roll("1d20") + statBonus - com.bpm.minotaur.gamedata.item.ThrowRules.toHitPenalty(weapon)
+                + player.masteryToHitBonus(weapon, true);
 
         if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
             Monster target = hit.hitMonster;
@@ -1507,6 +1508,7 @@ public class CombatManager {
                 showDamageText(actual, hit.collisionPoint);
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                         com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
+                player.trainMastery(weapon, true, target, eventManager);
                 eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " dmg!", 1.5f));
                 postAffinityLine(target, DamageType.PHYSICAL, false);
 
@@ -2189,6 +2191,7 @@ public class CombatManager {
         }
 
         int toHitBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
+        toHitBonus += player.masteryToHitBonus(attackWeapon, false);
         if (player.getInjuryManager() != null) {
             toHitBonus += player.getInjuryManager().getEffectiveAttackModifier();
         }
@@ -2438,6 +2441,10 @@ public class CombatManager {
                     isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
                             : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT,
                     actualDamage);
+            // Only a full hit trains Mastery: a glancing blow means the armour won (#226).
+            if (!isGlancing) {
+                player.trainMastery(attackWeapon, false, monster, eventManager);
+            }
 
             // --- Open5e Ring of the Ram Trigger ---
             if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.RAM) > 0) {

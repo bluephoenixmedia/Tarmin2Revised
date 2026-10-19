@@ -3785,6 +3785,25 @@ public class Player {
         return learned;
     }
 
+    /**
+     * A full hit landed with {@code weapon} (null for bare hands) trains its Weapon Family,
+     * unless the target was Trivial: the Vengeance rule for what is too weak to matter (#226).
+     */
+    public void trainMastery(Item weapon, boolean thrown, Monster target, GameEventManager eventManager) {
+        if (stats == null || Vengeance.roleOf(target, getLevel()) == Vengeance.Role.TRIVIAL) return;
+        WeaponFamily family = Mastery.familyOfHit(weapon, thrown);
+        Mastery.Rank risen = stats.getMastery().recordHit(family);
+        if (risen != null && eventManager != null) {
+            eventManager.addEvent(new GameEvent("Your " + com.bpm.minotaur.ui.UiNames.of(family)
+                    + " Mastery rises to " + com.bpm.minotaur.ui.UiNames.of(risen) + ".", 3f));
+        }
+    }
+
+    /** The Mastery to-hit bonus for an attack with {@code weapon} (null for bare hands). */
+    public int masteryToHitBonus(Item weapon, boolean thrown) {
+        return stats != null ? stats.getMastery().toHitBonus(Mastery.familyOfHit(weapon, thrown)) : 0;
+    }
+
     private void performLevelUp(GameEventManager eventManager) {
         stats.performLevelUp();
         if (soundManager != null) {

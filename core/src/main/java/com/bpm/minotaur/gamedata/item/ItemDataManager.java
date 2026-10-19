@@ -216,6 +216,7 @@ public class ItemDataManager {
                 continue;
             }
             ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+            WeaponFamily.require(typeName, template.weaponFamily);
 
             applyDefaultProbability(entry, template);
 
