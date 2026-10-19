@@ -3864,12 +3864,13 @@ public class Player {
      */
     public float artChance(com.bpm.minotaur.gamedata.arts.CombatArt art) {
         if (art == null || !knowsArt(art)) return 0f;
-        return art.baseChance * Mastery.procMultiplier(art.rank, stats.getMastery().rankOf(art.family));
+        // Capped: Hold the Line is certain at its rank, so ranks above can't push it past certain.
+        return Math.min(1f, art.baseChance * Mastery.procMultiplier(art.rank, stats.getMastery().rankOf(art.family)));
     }
 
     /** An Active's or capstone's cooldown for this body: doubled below the rank that taught it. */
     public int artCooldown(com.bpm.minotaur.gamedata.arts.CombatArt art) {
-        if (art == null) return 0;
+        if (art == null || !knowsArt(art)) return 0;
         return Math.round(art.cooldownTurns * Mastery.cooldownMultiplier(art.rank, stats.getMastery().rankOf(art.family)));
     }
 

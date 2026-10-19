@@ -125,6 +125,23 @@ public class PlayerCombatArtsTest {
     @Test
     public void anArtTheSoulDoesNotKnowNeverFires() {
         assertEquals(0f, player.artChance(CombatArt.RINGING_BLOW), 0f);
+        assertEquals(0, player.artCooldown(CombatArt.BATTERING_RAM));
+    }
+
+    @Test
+    public void noChanceRisesPastCertain() {
+        player.learnArt(CombatArt.HOLD_THE_LINE, events);
+        player.getStats().getMastery().setRank(WeaponFamily.POLEARM, Rank.MASTER);
+        assertEquals(1f, player.artChance(CombatArt.HOLD_THE_LINE), 0f);
+
+        player.getStats().getMastery().setRank(WeaponFamily.POLEARM, Rank.UNTRAINED);
+        assertEquals("a kept Art below its rank still halves", 0.5f, player.artChance(CombatArt.HOLD_THE_LINE), 0f);
+    }
+
+    @Test
+    public void anArtIsLearnedEvenWithNoOneListening() {
+        player.learnArt(CombatArt.TANGLE, null);
+        assertTrue(player.knowsArt(CombatArt.TANGLE));
     }
 
     @Test
