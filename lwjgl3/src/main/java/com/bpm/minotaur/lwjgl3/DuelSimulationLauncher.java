@@ -311,8 +311,11 @@ public class DuelSimulationLauncher implements ApplicationListener {
         }
     }
 
-    /** Dazed (#227) is -2 to-hit; on a d20 that spoils one blow in ten. The game has no Dazed yet. */
-    private static final float DAZED_SPOILS = 0.10f;
+    /**
+     * Dazed (#227) is -2 to-hit, ten points on a d20, which the game has no hook for yet. Monsters
+     * hit about 62% of the time, so the Daze spoils 0.10 / 0.62 of the blows that would have landed.
+     */
+    private static final float DAZED_SPOILS_OF_HITS = 0.10f / 0.62f;
     private static final int DAZED_ACTIONS = 2;
 
     /** The player's tile; the monster stands {@code gap} tiles east of it. */
@@ -387,13 +390,15 @@ public class DuelSimulationLauncher implements ApplicationListener {
                         d.monsterActions++;
                         d.approachShots++;
                     }
-                } else if (dazed[0] > 0 && rng.nextFloat() < DAZED_SPOILS) {
-                    dazed[0]--;
-                    d.monsterActions++; // the Daze spoils the blow
                 } else {
-                    if (dazed[0] > 0) dazed[0]--;
                     combat.monsterMeleeStrike(monster);
                     d.monsterActions++;
+                    if (dazed[0] > 0) {
+                        dazed[0]--;
+                        if (player.getCurrentHP() < hp && rng.nextFloat() < DAZED_SPOILS_OF_HITS) {
+                            player.getStats().setCurrentHP(hp); // the Daze spoils a blow that would have landed
+                        }
+                    }
                 }
                 if (player.getCurrentHP() < hp) {
                     d.monsterHits++;
@@ -439,14 +444,12 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 if (dazed[0] > 0 && monster.applyStun(1)) dazed[0] = 0;
                 else dazed[0] = DAZED_ACTIONS;
                 break;
-            case QUICK_KNUCKLES: {
+            case QUICK_KNUCKLES:
+                // A second knuckle behind the first, at half its damage. Applied straight, not swung,
+                // so a full-damage free strike can't overkill and then be refunded.
                 d.passiveProcs++;
-                int hpBefore = monster.getCurrentHP();
-                strike(combat, monster, d, AdeptPassive.NONE, 0f, dazed);
-                int extra = hpBefore - monster.getCurrentHP();
-                if (monster.getCurrentHP() > 0 && extra > 1) monster.setCurrentHP(monster.getCurrentHP() + extra / 2); // half damage
+                monster.setCurrentHP(Math.max(0, monster.getCurrentHP() - Math.max(1, dealt / 2)));
                 break;
-            }
             default:
                 break;
         }
