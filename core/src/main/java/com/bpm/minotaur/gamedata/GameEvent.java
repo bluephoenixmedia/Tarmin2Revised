@@ -21,7 +21,9 @@ public class GameEvent {
         /** The merchant fired his Void chain laser; payload is the resolved LaserBurst.BurstResult. */
         LASER_BURST,
         /** A stray from the merchant clipped the player; payload is the ShopkeeperNpc making amends. */
-        SHOPKEEPER_RESTITUTION
+        SHOPKEEPER_RESTITUTION,
+        /** The soul learned a Combat Art for the first time; payload is the CombatArt (#241). */
+        ART_LEARNED
     }
 
     // --- Fields ---

@@ -108,6 +108,8 @@ public class PlayerSaveData {
     // those carried only the legacy knownSpells name list.
     public List<String> knownSpellIds;
     public List<String> permanentSpellIds;
+    /** The soul's Combat Arts by name (#241); absent in older saves, which load with none. */
+    public List<String> knownArts;
     public List<String> runSpellIds;
     public List<String> preparedSpells = new ArrayList<>();
     public int unlockedSpellSlots = 1;
@@ -291,6 +293,8 @@ public class PlayerSaveData {
         // Spells
         this.knownSpellIds = new ArrayList<>(player.getKnownSpellIds());
         this.permanentSpellIds = new ArrayList<>(player.getPermanentSpellIds());
+        this.knownArts = new ArrayList<>();
+        for (com.bpm.minotaur.gamedata.arts.CombatArt art : player.getKnownArts()) this.knownArts.add(art.name());
         this.runSpellIds = new ArrayList<>(player.getRunSpellIds());
         java.util.Collections.addAll(this.preparedSpells, player.getPreparedSpells());
         this.unlockedSpellSlots = player.getUnlockedSpellSlots();
@@ -451,6 +455,7 @@ public class PlayerSaveData {
         }
 
         // Spells
+        player.restoreArts(knownArts);
         if (permanentSpellIds != null || runSpellIds != null) {
             player.restoreSpellbook(permanentSpellIds, runSpellIds, preparedSpells, unlockedSpellSlots);
             player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);
