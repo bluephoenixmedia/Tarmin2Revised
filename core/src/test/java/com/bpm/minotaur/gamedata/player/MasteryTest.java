@@ -102,6 +102,17 @@ public class MasteryTest {
     }
 
     @Test
+    public void aFamilyCanBeSetStraightToARankAsIfTrainedThere() {
+        Mastery m = new Mastery();
+        m.setRank(WeaponFamily.BLADE, Rank.ADEPT);
+        assertEquals(Rank.ADEPT, m.rankOf(WeaponFamily.BLADE));
+        assertEquals(2, m.toHitBonus(WeaponFamily.BLADE));
+        assertNull("one more hit is not a new rank", m.recordHit(WeaponFamily.BLADE));
+        m.setRank(WeaponFamily.BLADE, Rank.UNTRAINED);
+        assertEquals(Rank.UNTRAINED, m.rankOf(WeaponFamily.BLADE));
+    }
+
+    @Test
     public void noFamilyNeverTrains() {
         Mastery m = afterHits(WeaponFamily.NONE, 500);
         assertEquals(Rank.UNTRAINED, m.rankOf(WeaponFamily.NONE));
