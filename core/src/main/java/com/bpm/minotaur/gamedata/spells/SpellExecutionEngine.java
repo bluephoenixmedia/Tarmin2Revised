@@ -71,6 +71,7 @@ public class SpellExecutionEngine {
         if (effectiveCost > 0) {
             player.deductMana(effectiveCost);
         }
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordSpellCast(spell.getId());
 
         VisualArchetype archetype = spell.getVisualArchetypeEnum();
         GameScreen gs = (combatManager != null) ? combatManager.getGameScreen() : null;
@@ -599,7 +600,9 @@ public class SpellExecutionEngine {
         if (isHealing(spell)) {
             int amount = DiceRoller.roll(spell.getDamageDice());
             amount = Math.max(1, amount + player.getWisdomModifier());
+            int before = player.getCurrentHP();
             player.heal(amount);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordSpellHealing(spell.getId(), player.getCurrentHP() - before);
             eventManager.addEvent(new GameEvent("Healed " + amount + " HP!", 2.0f));
             if (gs != null && gs.getSpellPostProcessor() != null) {
                 gs.getSpellPostProcessor().triggerVignette(new Color(1f, 0.9f, 0.3f, 1f), 0.8f, 0.5f);

@@ -96,7 +96,38 @@ def report(exps, skipped, out):
         if total:
             p("  %-8s %s   glancing %d" % (mode, rate(hit + glance, total), glance))
 
-    fights = [dict(f, expedition=e["_file"]) for e in exps for f in e.get("fights", [])]
+    # Schema 3 (#234): Weapon Families, Mastery and spells. Older files simply lack them.
+    families = {}
+    for e in exps:
+        for fam, v in e.get("attacksByFamily", {}).items():
+            acc = families.setdefault(fam, [0, 0, 0, 0])
+            for i, k in enumerate(("hit", "glancing", "miss", "qualifying")):
+                acc[i] += v.get(k, 0)
+    if families:
+        p("")
+        p("BY WEAPON FAMILY (full hits / attacks; qualifying = trained Mastery)")
+        for fam in sorted(families):
+            hit, glance, miss, qual = families[fam]
+            p("  %-8s %s   glancing %d   qualifying %d" % (fam, rate(hit, hit + glance + miss), glance, qual))
+    rank_ups = [(e["_file"], r) for e in exps for r in e.get("masteryRankUps", [])]
+    if rank_ups:
+        p("")
+        p("MASTERY RANK-UPS")
+        for f, r in rank_ups:
+            p("  %-8s %-8s turn %s   %s" % (r.get("family"), r.get("rank"), r.get("turn"), f))
+    casts, healing = {}, {}
+    for e in exps:
+        for s, n in e.get("spellsCast", {}).items():
+            casts[s] = casts.get(s, 0) + n
+        for s, n in e.get("spellHealing", {}).items():
+            healing[s] = healing.get(s, 0) + n
+    if casts:
+        p("")
+        p("SPELLS CAST (HP healed)")
+        for s in sorted(casts):
+            p("  %-20s %d%s" % (s, casts[s], ("   healed %d" % healing[s]) if s in healing else ""))
+
+    fights =[dict(f, expedition=e["_file"]) for e in exps for f in e.get("fights", [])]
     p("")
     p("FIGHTS BY DEPTH")
     for depth in sorted({f["depth"] for f in fights}):
