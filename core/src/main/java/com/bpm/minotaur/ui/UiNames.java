@@ -51,6 +51,7 @@ public final class UiNames {
         OVERRIDES.put("BERSERKERS_GAUNTLETS", "Berserker's Gauntlets");
         OVERRIDES.put("ALCHEMISTS_BELT", "Alchemist's Belt");
         OVERRIDES.put("BARDS_FRIEND", "Bard's Friend");
+        OVERRIDES.put("BUTCHERS_FRENZY", "Butcher's Frenzy");
         OVERRIDES.put("DRAGONS_PAW", "Dragon's Paw");
         OVERRIDES.put("FLAIL_FOOTMANS", "Footman's Flail");
         OVERRIDES.put("FLAIL_HORSEMANS", "Horseman's Flail");

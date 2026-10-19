@@ -265,6 +265,8 @@ public class Player {
 
     // --- Spells ---
     private final List<String> permanentSpellIds = new ArrayList<>();
+    /** Combat Arts the soul has learned; kept across deaths, like Known Spells (#241). */
+    private final java.util.Set<com.bpm.minotaur.gamedata.arts.CombatArt> knownArts = new java.util.LinkedHashSet<>();
     private final List<String> runSpellIds = new ArrayList<>();
     private final List<String> knownSpellIds = new ArrayList<>();
     private final String[] preparedSpells = new String[5];
@@ -3816,6 +3818,59 @@ public class Player {
             eventManager.addEvent(new GameEvent("Your " + com.bpm.minotaur.ui.UiNames.of(family)
                     + " Mastery rises to " + com.bpm.minotaur.ui.UiNames.of(risen) + ".", 3f));
         }
+        com.bpm.minotaur.gamedata.arts.CombatArt art = risen != null ? com.bpm.minotaur.gamedata.arts.CombatArt.of(family, risen) : null;
+        if (art == null) return;
+        if (knowsArt(art)) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Your arm remembers " + com.bpm.minotaur.ui.UiNames.of(art) + ".", 3f));
+            }
+        } else {
+            learnArt(art, eventManager);
+        }
+    }
+
+    public boolean knowsArt(com.bpm.minotaur.gamedata.arts.CombatArt art) {
+        return knownArts.contains(art);
+    }
+
+    /** The soul's Combat Arts, in the order learned. */
+    public java.util.Set<com.bpm.minotaur.gamedata.arts.CombatArt> getKnownArts() {
+        return Collections.unmodifiableSet(knownArts);
+    }
+
+    /** The soul learns {@code art}; the first time, the game announces it and shows its card. */
+    public void learnArt(com.bpm.minotaur.gamedata.arts.CombatArt art, GameEventManager eventManager) {
+        if (art == null || !knownArts.add(art) || eventManager == null) return;
+        eventManager.addEvent(new GameEvent("You have learned " + com.bpm.minotaur.ui.UiNames.of(art) + ".", 3.5f));
+        eventManager.addEvent(new GameEvent(GameEvent.EventType.ART_LEARNED, art));
+    }
+
+    /** Restores the soul's Arts from a save; names that are no Art are dropped. */
+    public void restoreArts(java.util.Collection<String> names) {
+        knownArts.clear();
+        if (names == null) return;
+        for (String name : names) {
+            try {
+                knownArts.add(com.bpm.minotaur.gamedata.arts.CombatArt.valueOf(name));
+            } catch (IllegalArgumentException ignored) {
+                // An Art removed since the save was written.
+            }
+        }
+    }
+
+    /**
+     * A Passive's chance to fire for this body: the Art's base chance, scaled by the Family's rank
+     * (half below the rank that taught it, +25% of base per rank above). Zero if the soul lacks it.
+     */
+    public float artChance(com.bpm.minotaur.gamedata.arts.CombatArt art) {
+        if (art == null || !knowsArt(art)) return 0f;
+        return art.baseChance * Mastery.procMultiplier(art.rank, stats.getMastery().rankOf(art.family));
+    }
+
+    /** An Active's or capstone's cooldown for this body: doubled below the rank that taught it. */
+    public int artCooldown(com.bpm.minotaur.gamedata.arts.CombatArt art) {
+        if (art == null) return 0;
+        return Math.round(art.cooldownTurns * Mastery.cooldownMultiplier(art.rank, stats.getMastery().rankOf(art.family)));
     }
 
     /** The Mastery to-hit bonus for an attack with {@code weapon} (null for bare hands). */
