@@ -2444,6 +2444,11 @@ public class CombatManager {
             // Only a full hit trains Mastery: a glancing blow means the armour won (#226).
             if (!isGlancing) {
                 player.trainMastery(attackWeapon, false, monster, eventManager);
+                // A Dual Strike lands both blades, and each hand trains its own Family.
+                Item offHand = player.getInventory().getLeftHand();
+                if (currentMotionProfile != null && currentMotionProfile.isDualStrike && offHand != null) {
+                    player.trainMastery(offHand, false, monster, eventManager);
+                }
             }
 
             // --- Open5e Ring of the Ram Trigger ---
