@@ -1289,6 +1289,11 @@ public class Item implements Renderable {
         return template != null ? template.damageType : "SLASHING";
     }
 
+    /** The Weapon Family this item trains when swung; NONE for anything that is not a weapon. */
+    public WeaponFamily getWeaponFamily() {
+        return WeaponFamily.parse(template != null ? template.weaponFamily : null);
+    }
+
     public int getArmorClassBonus() {
         int totalBonus = this.armorClassBonus;
         for (ItemModifier mod : modifiers) {

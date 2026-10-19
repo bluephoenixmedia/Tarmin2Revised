@@ -33,6 +33,8 @@ public class PlayerStats {
     private int unallocatedAttributePoints = 0;
     private int unallocatedSkillPoints = 0;
     private final java.util.Set<com.bpm.minotaur.gamedata.progression.SkillId> unlockedSkills = new java.util.HashSet<>();
+    /** Rank per Weapon Family; belongs to the body, like level (#226). */
+    private final Mastery mastery = new Mastery();
 
     // --- NEW: Bone & Die System ---
     private java.util.List<com.bpm.minotaur.gamedata.dice.Die> dicePool = new java.util.ArrayList<>();
@@ -219,6 +221,7 @@ public class PlayerStats {
         this.unallocatedAttributePoints = 0;
         this.unallocatedSkillPoints = 0;
         this.unlockedSkills.clear();
+        this.mastery.clear();
 
         this.maxHP = fresh.maxHP;
         this.maxMP = fresh.maxMP;
@@ -924,6 +927,10 @@ public class PlayerStats {
         }
         unallocatedAttributePoints--;
         return true;
+    }
+
+    public Mastery getMastery() {
+        return mastery;
     }
 
     public boolean learnSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {

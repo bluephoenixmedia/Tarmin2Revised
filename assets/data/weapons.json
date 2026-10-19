@@ -1,6 +1,7 @@
 {
     "WOODEN_CROSS": {
         "friendlyName": "Wooden Cross",
+        "weaponFamily": "NONE",
         "description": "A simple wooden cross that channels spiritual energy against chaotic fiends.",
         "texturePath": "images/weapons/wooden_cross.png",
         "modelPath": null,
@@ -68,6 +69,7 @@
     },
     "RUSTY_SWORD": {
         "friendlyName": "Father's Sword",
+        "weaponFamily": "BLADE",
         "description": "Your father's rusty heirloom. Grants +3 Max HP and +5% Crit Chance while carried.",
         "texturePath": "images/weapons/rusty_sword.png",
         "modelPath": null,
@@ -168,6 +170,7 @@
     },
     "ALHULAK": {
         "friendlyName": "Alhulak",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/Alhulak.png",
         "modelPath": null,
@@ -266,6 +269,7 @@
     },
     "ANKUS_ELEPHANT_GOAD": {
         "friendlyName": "Ankus (Elephant Goad)",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/ankuselephantgoad.png",
         "modelPath": null,
@@ -364,6 +368,7 @@
     },
     "ARQUEBUS": {
         "friendlyName": "Arquebus",
+        "weaponFamily": "FIREARM",
         "description": null,
         "texturePath": "images/weapons/Arquebus.png",
         "modelPath": null,
@@ -462,6 +467,7 @@
     },
     "ARROW_DAIKYU": {
         "friendlyName": "Arrow, Daikyu",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_daikyu.png",
         "modelPath": null,
@@ -562,6 +568,7 @@
     },
     "ASSEGAI": {
         "friendlyName": "Assegai",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/assegai.png",
         "modelPath": null,
@@ -660,6 +667,7 @@
     },
     "AXE_BATTLE": {
         "friendlyName": "Axe, Battle",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/battle_axe.png",
         "modelPath": null,
@@ -758,6 +766,7 @@
     },
     "BAGH_NAKH_TIGER_CLAWS": {
         "friendlyName": "Bagh Nakh (Tiger Claws)",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/bagh_nakh_tiger_claws.png",
         "modelPath": null,
@@ -856,6 +865,7 @@
     },
     "BARDS_FRIEND": {
         "friendlyName": "Bard's Friend",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/bard_s_friend.png",
         "modelPath": null,
@@ -954,6 +964,7 @@
     },
     "BASILARD": {
         "friendlyName": "Basilard",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/basilard.png",
         "modelPath": null,
@@ -1052,6 +1063,7 @@
     },
     "BLUNDERBUS": {
         "friendlyName": "Blunderbus",
+        "weaponFamily": "FIREARM",
         "description": null,
         "texturePath": "images/weapons/blunderbus.png",
         "modelPath": null,
@@ -1150,6 +1162,7 @@
     },
     "BO_STICK": {
         "friendlyName": "Bo Stick",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/bo_stick.png",
         "modelPath": null,
@@ -1248,6 +1261,7 @@
     },
     "BOLA": {
         "friendlyName": "Bola",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/bola.png",
         "modelPath": null,
@@ -1346,6 +1360,7 @@
     },
     "BOW_COMPOSITE_LONG": {
         "friendlyName": "Bow, Composite Long",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow_composite_long.png",
         "modelPath": null,
@@ -1444,6 +1459,7 @@
     },
     "BOW_ELVEN": {
         "friendlyName": "Bow, Elven",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/elven_bow.png",
         "modelPath": null,
@@ -1542,6 +1558,7 @@
     },
     "BUCKLER_SPIKED": {
         "friendlyName": "Buckler, Spiked",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/buckler_spiked.png",
         "modelPath": null,
@@ -1640,6 +1657,7 @@
     },
     "CAHULAKS": {
         "friendlyName": "Cahulaks",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/Cahulaks.png",
         "modelPath": null,
@@ -1738,6 +1756,7 @@
     },
     "CARRIKAL": {
         "friendlyName": "Carrikal",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/Carrikal.png",
         "modelPath": null,
@@ -1836,6 +1855,7 @@
     },
     "CAVILER": {
         "friendlyName": "Caviler",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/Caviler.png",
         "modelPath": null,
@@ -1934,6 +1954,7 @@
     },
     "CESTUS": {
         "friendlyName": "Cestus",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/Cestus.png",
         "modelPath": null,
@@ -2032,6 +2053,7 @@
     },
     "CHAIN": {
         "friendlyName": "Chain",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/chain.png",
         "modelPath": null,
@@ -2130,6 +2152,7 @@
     },
     "CHAKRAM": {
         "friendlyName": "Chakram",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/chakram.png",
         "modelPath": null,
@@ -2228,6 +2251,7 @@
     },
     "CHATKCHA": {
         "friendlyName": "Chatkcha",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/chatkcha.png",
         "modelPath": null,
@@ -2326,6 +2350,7 @@
     },
     "CLUB": {
         "friendlyName": "Club",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/club.png",
         "modelPath": null,
@@ -2424,6 +2449,7 @@
     },
     "CLUB_DATCHI": {
         "friendlyName": "Club, Datchi",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/datchi_club.png",
         "modelPath": null,
@@ -2522,6 +2548,7 @@
     },
     "CLUB_DWARVEN_WAR": {
         "friendlyName": "Club, Dwarven War",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/club_dwarven_war.png",
         "modelPath": null,
@@ -2620,6 +2647,7 @@
     },
     "CROSSBOW_DOUBLED": {
         "friendlyName": "Crossbow, Doubled",
+        "weaponFamily": "CROSSBOW",
         "description": null,
         "texturePath": "images/weapons/crossbow_doubled.png",
         "modelPath": null,
@@ -2718,6 +2746,7 @@
     },
     "DAGGER": {
         "friendlyName": "Dagger",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/dagger.png",
         "modelPath": null,
@@ -2816,6 +2845,7 @@
     },
     "DAIKYU": {
         "friendlyName": "Daikyu",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/Daikyu.png",
         "modelPath": null,
@@ -2914,6 +2944,7 @@
     },
     "DART": {
         "friendlyName": "Dart",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/dart.png",
         "modelPath": null,
@@ -3012,6 +3043,7 @@
     },
     "DEJADA": {
         "friendlyName": "Dejada",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/Dejada.png",
         "modelPath": null,
@@ -3110,6 +3142,7 @@
     },
     "DIRK": {
         "friendlyName": "Dirk",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/dirk.png",
         "modelPath": null,
@@ -3208,6 +3241,7 @@
     },
     "DRAGONS_PAW": {
         "friendlyName": "Dragon's Paw",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/dragon_s_paw.png",
         "modelPath": null,
@@ -3306,6 +3340,7 @@
     },
     "FLAIL_BLADEBACK": {
         "friendlyName": "Flail, Bladeback",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/flail_bladeback.png",
         "modelPath": null,
@@ -3404,6 +3439,7 @@
     },
     "FLAIL_CHAIN": {
         "friendlyName": "Flail, Chain",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/flail_chain.png",
         "modelPath": null,
@@ -3502,6 +3538,7 @@
     },
     "FLINDBAR": {
         "friendlyName": "Flindbar",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/Flindbar.png",
         "modelPath": null,
@@ -3600,6 +3637,7 @@
     },
     "GADA": {
         "friendlyName": "Gada",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/Gada.png",
         "modelPath": null,
@@ -3698,6 +3736,7 @@
     },
     "GLOVE_NAIL": {
         "friendlyName": "Glove Nail",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/GloveNail.png",
         "modelPath": null,
@@ -3796,6 +3835,7 @@
     },
     "GOUGE": {
         "friendlyName": "Gouge",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/Gouge.png",
         "modelPath": null,
@@ -3894,6 +3934,7 @@
     },
     "HARPOON_ONE_HANDED": {
         "friendlyName": "Harpoon, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/onehandedharpoon.png",
         "modelPath": null,
@@ -3992,6 +4033,7 @@
     },
     "HORA": {
         "friendlyName": "Hora",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/hora.png",
         "modelPath": null,
@@ -4090,6 +4132,7 @@
     },
     "IMPALER": {
         "friendlyName": "Impaler",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/Impaler.png",
         "modelPath": null,
@@ -4188,6 +4231,7 @@
     },
     "IUAK_SNOW_BLADE": {
         "friendlyName": "Iuak (Snow Blade)",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/IuakSnowBlade.png",
         "modelPath": null,
@@ -4286,6 +4330,7 @@
     },
     "JAMBIYA": {
         "friendlyName": "Jambiya",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/Jambiya.png",
         "modelPath": null,
@@ -4384,6 +4429,7 @@
     },
     "JAVELIN_ONE_HANDED": {
         "friendlyName": "Javelin, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/javelin_one_handed.png",
         "modelPath": null,
@@ -4482,6 +4528,7 @@
     },
     "KATAR_PUNCH_DAGGER": {
         "friendlyName": "Katar (Punch Dagger)",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/KatarPunchDagger.png",
         "modelPath": null,
@@ -4580,6 +4627,7 @@
     },
     "KICK_SLASHER": {
         "friendlyName": "Kick-slasher",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/kickslasher.png",
         "modelPath": null,
@@ -4678,6 +4726,7 @@
     },
     "KNIFE": {
         "friendlyName": "Knife",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/knife.png",
         "modelPath": null,
@@ -4776,6 +4825,7 @@
     },
     "KNOBKERRIE": {
         "friendlyName": "Knobkerrie",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/Knobkerrie.png",
         "modelPath": null,
@@ -4874,6 +4924,7 @@
     },
     "KORA": {
         "friendlyName": "Kora",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/Kora.png",
         "modelPath": null,
@@ -4972,6 +5023,7 @@
     },
     "KUKRI": {
         "friendlyName": "Kukri",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/Kukri.png",
         "modelPath": null,
@@ -5070,6 +5122,7 @@
     },
     "LOTULIS": {
         "friendlyName": "Lotulis",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/Lotulis.png",
         "modelPath": null,
@@ -5168,6 +5221,7 @@
     },
     "MACA": {
         "friendlyName": "Maca",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/Maca.png",
         "modelPath": null,
@@ -5266,6 +5320,7 @@
     },
     "MACE_GREAT": {
         "friendlyName": "Mace, Great",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/great_mace.png",
         "modelPath": null,
@@ -5364,6 +5419,7 @@
     },
     "MACHETE": {
         "friendlyName": "Machete",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/Machete.png",
         "modelPath": null,
@@ -5462,6 +5518,7 @@
     },
     "MADU": {
         "friendlyName": "Madu",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/Madu.png",
         "modelPath": null,
@@ -5560,6 +5617,7 @@
     },
     "MAIN_GAUCHE": {
         "friendlyName": "Main-Gauche",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/main_gauche.png",
         "modelPath": null,
@@ -5658,6 +5716,7 @@
     },
     "MORNING_STAR": {
         "friendlyName": "Morning Star",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/morning_star.png",
         "modelPath": null,
@@ -5756,6 +5815,7 @@
     },
     "MUSKET": {
         "friendlyName": "Musket",
+        "weaponFamily": "FIREARM",
         "description": null,
         "texturePath": "images/weapons/musket.png",
         "modelPath": null,
@@ -5854,6 +5914,7 @@
     },
     "NUNCHAKU": {
         "friendlyName": "Nunchaku",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/nunchaku.png",
         "modelPath": null,
@@ -5952,6 +6013,7 @@
     },
     "NYEK_PLE_NEN_TOH": {
         "friendlyName": "Nyek-ple-nen-toh",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/Nyek-ple-nen-to.png",
         "modelPath": null,
@@ -6050,6 +6112,7 @@
     },
     "PESHKABZ": {
         "friendlyName": "Peshkabz",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/Peshkabz.png",
         "modelPath": null,
@@ -6148,6 +6211,7 @@
     },
     "PICK_FOOTMANS": {
         "friendlyName": "Pick, Footman's",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/pick_footman_s.png",
         "modelPath": null,
@@ -6246,6 +6310,7 @@
     },
     "PIKE_WEIGHTED": {
         "friendlyName": "Pike, Weighted",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/WeightedPike.png",
         "modelPath": null,
@@ -6344,6 +6409,7 @@
     },
     "PISTOL_STARWHEEL": {
         "friendlyName": "Pistol, Starwheel",
+        "weaponFamily": "FIREARM",
         "description": null,
         "texturePath": "images/weapons/Starwheelpistol.png",
         "modelPath": null,
@@ -6442,6 +6508,7 @@
     },
     "POLEARM_AWL_PIKE3": {
         "friendlyName": "Polearm, Awl Pike3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_awl_pike3.png",
         "modelPath": null,
@@ -6540,6 +6607,7 @@
     },
     "POLEARM_BARDICHE": {
         "friendlyName": "Polearm, Bardiche",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_bardiche.png",
         "modelPath": null,
@@ -6638,6 +6706,7 @@
     },
     "POLEARM_BEC_DE_CORBIN": {
         "friendlyName": "Polearm, Bec De Corbin",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_bec_de_corbin.png",
         "modelPath": null,
@@ -6736,6 +6805,7 @@
     },
     "POLEARM_BILL_GUISARME": {
         "friendlyName": "Polearm, Bill-Guisarme",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_bill_guisarme.png",
         "modelPath": null,
@@ -6834,6 +6904,7 @@
     },
     "POLEARM_CRUSHER": {
         "friendlyName": "Polearm, Crusher",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_crusher.png",
         "modelPath": null,
@@ -6932,6 +7003,7 @@
     },
     "POLEARM_FAUCHARD": {
         "friendlyName": "Polearm, Fauchard",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_fauchard.png",
         "modelPath": null,
@@ -7030,6 +7102,7 @@
     },
     "POLEARM_FAUCHARD_FORK": {
         "friendlyName": "Polearm, Fauchard-Fork",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_fauchard_fork.png",
         "modelPath": null,
@@ -7128,6 +7201,7 @@
     },
     "POLEARM_GIANT_KIN_HALBERD": {
         "friendlyName": "Polearm, Giant-kin Halberd",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_giant_kin_halberd.png",
         "modelPath": null,
@@ -7226,6 +7300,7 @@
     },
     "POLEARM_GLAIVE_GUISARME4": {
         "friendlyName": "Polearm, Glaive-Guisarme4",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_glaive_guisarme4.png",
         "modelPath": null,
@@ -7324,6 +7399,7 @@
     },
     "POLEARM_GUISARME_VOULGE": {
         "friendlyName": "Polearm, Guisarme-Voulge",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_guisarme_voulge.png",
         "modelPath": null,
@@ -7422,6 +7498,7 @@
     },
     "POLEARM_GYTHKA": {
         "friendlyName": "Polearm, Gythka",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_gythka.png",
         "modelPath": null,
@@ -7520,6 +7597,7 @@
     },
     "POLEARM_HALBERD": {
         "friendlyName": "Polearm, Halberd",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_halberd.png",
         "modelPath": null,
@@ -7618,6 +7696,7 @@
     },
     "POLEARM_HOOK_FAUCHARD": {
         "friendlyName": "Polearm, Hook Fauchard",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_hook_fauchard.png",
         "modelPath": null,
@@ -7716,6 +7795,7 @@
     },
     "POLEARM_LUCERN_HAMMER3": {
         "friendlyName": "Polearm, Lucern Hammer3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_lucern_hammer3.png",
         "modelPath": null,
@@ -7814,6 +7894,7 @@
     },
     "PUCHIK": {
         "friendlyName": "Puchik",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/Puchik.png",
         "modelPath": null,
@@ -7912,6 +7993,7 @@
     },
     "PUNCH_CUTTER": {
         "friendlyName": "Punch-cutter",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/punchcutter.png",
         "modelPath": null,
@@ -8010,6 +8092,7 @@
     },
     "QUABONE": {
         "friendlyName": "Quabone",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/quabone.png",
         "modelPath": null,
@@ -8108,6 +8191,7 @@
     },
     "QUARREL_HAND": {
         "friendlyName": "Quarrel, Hand",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/quarrel_hand.png",
         "modelPath": null,
@@ -8208,6 +8292,7 @@
     },
     "QUARTERSTAFF": {
         "friendlyName": "Quarterstaff",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/quarterstaff.png",
         "modelPath": null,
@@ -8306,6 +8391,7 @@
     },
     "RITIIK": {
         "friendlyName": "Ritiik",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/ritiik.png",
         "modelPath": null,
@@ -8404,6 +8490,7 @@
     },
     "SAI": {
         "friendlyName": "Sai",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/sai.png",
         "modelPath": null,
@@ -8502,6 +8589,7 @@
     },
     "SAP": {
         "friendlyName": "Sap",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/sap.png",
         "modelPath": null,
@@ -8600,6 +8688,7 @@
     },
     "SCOURGE": {
         "friendlyName": "Scourge",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/scourge.png",
         "modelPath": null,
@@ -8698,6 +8787,7 @@
     },
     "SCYTHE": {
         "friendlyName": "Scythe",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/scythe.png",
         "modelPath": null,
@@ -8796,6 +8886,7 @@
     },
     "SHIELD_SPIKE": {
         "friendlyName": "Shield, Spike",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/shield_spike.png",
         "modelPath": null,
@@ -8894,6 +8985,7 @@
     },
     "SHOKA": {
         "friendlyName": "Shoka",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/shoka.png",
         "modelPath": null,
@@ -8992,6 +9084,7 @@
     },
     "SHOTEL": {
         "friendlyName": "Shotel",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/shotel.png",
         "modelPath": null,
@@ -9090,6 +9183,7 @@
     },
     "SHURIKEN": {
         "friendlyName": "Shuriken",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/shuriken.png",
         "modelPath": null,
@@ -9188,6 +9282,7 @@
     },
     "SICKLE": {
         "friendlyName": "Sickle",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sickle.png",
         "modelPath": null,
@@ -9286,6 +9381,7 @@
     },
     "SLING": {
         "friendlyName": "Sling",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/sling.png",
         "modelPath": null,
@@ -9384,6 +9480,7 @@
     },
     "SLING_BULLET": {
         "friendlyName": "Sling, Bullet",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/sling_bullet.png",
         "modelPath": null,
@@ -9482,6 +9579,7 @@
     },
     "SLING_STONE": {
         "friendlyName": "Sling, Stone",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/sling_stone.png",
         "modelPath": null,
@@ -9580,6 +9678,7 @@
     },
     "SPEAR_CASTER": {
         "friendlyName": "Spear Caster",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/spear_caster.png",
         "modelPath": null,
@@ -9678,6 +9777,7 @@
     },
     "SPEAR_DOUBLE_BLADED": {
         "friendlyName": "Spear, Double-Bladed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_double_bladed.png",
         "modelPath": null,
@@ -9776,6 +9876,7 @@
     },
     "SPEAR_HEAVY_ONE_HANDED": {
         "friendlyName": "Spear, Heavy, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_heavy_one_handed.png",
         "modelPath": null,
@@ -9874,6 +9975,7 @@
     },
     "SPEAR_HEAVY_TWO_HANDED": {
         "friendlyName": "Spear, Heavy, Two-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_heavy_two_handed.png",
         "modelPath": null,
@@ -9972,6 +10074,7 @@
     },
     "SPEAR_HOOK_TAILED": {
         "friendlyName": "Spear, Hook-Tailed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_hook_tailed.png",
         "modelPath": null,
@@ -10070,6 +10173,7 @@
     },
     "SPEAR_LONG_ONE_HANDED": {
         "friendlyName": "Spear, Long, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_long_one_handed.png",
         "modelPath": null,
@@ -10168,6 +10272,7 @@
     },
     "SPEAR_LONG_TWO_HANDED3": {
         "friendlyName": "Spear, Long, Two-Handed3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_long_two_handed3.png",
         "modelPath": null,
@@ -10266,6 +10371,7 @@
     },
     "SPEAR_ONE_HANDED": {
         "friendlyName": "Spear, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_one_handed.png",
         "modelPath": null,
@@ -10364,6 +10470,7 @@
     },
     "SPEAR_PADDLE": {
         "friendlyName": "Spear, Paddle",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_paddle.png",
         "modelPath": null,
@@ -10462,6 +10569,7 @@
     },
     "SPEAR_STONE_ONE_HANDED": {
         "friendlyName": "Spear, Stone, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_stone_one_handed.png",
         "modelPath": null,
@@ -10560,6 +10668,7 @@
     },
     "SPEAR_STONE_TWO_HANDED": {
         "friendlyName": "Spear, Stone, Two-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_stone_two_handed.png",
         "modelPath": null,
@@ -10658,6 +10767,7 @@
     },
     "SPEAR_THROWING": {
         "friendlyName": "Spear, Throwing",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_throwing.png",
         "modelPath": null,
@@ -10756,6 +10866,7 @@
     },
     "SPEAR_TWO_HANDED3": {
         "friendlyName": "Spear, Two-Handed3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_two_handed3.png",
         "modelPath": null,
@@ -10854,6 +10965,7 @@
     },
     "SPIKE_ELBOW": {
         "friendlyName": "Spike, Elbow",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/spike_elbow.png",
         "modelPath": null,
@@ -10952,6 +11064,7 @@
     },
     "SPIKE_HEAD": {
         "friendlyName": "Spike, Head",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/spike_head.png",
         "modelPath": null,
@@ -11050,6 +11163,7 @@
     },
     "SPIKE_KNEE": {
         "friendlyName": "Spike, Knee",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/spike_elbow.png",
         "modelPath": null,
@@ -11148,6 +11262,7 @@
     },
     "SPIKES_BODY": {
         "friendlyName": "Spikes, Body",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/spike_elbow.png",
         "modelPath": null,
@@ -11246,6 +11361,7 @@
     },
     "STAFF_SLING": {
         "friendlyName": "Staff Sling",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/staff_sling.png",
         "modelPath": null,
@@ -11344,6 +11460,7 @@
     },
     "STAFF_SLING_STINKPOT": {
         "friendlyName": "Staff Sling, Stinkpot",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/staff_sling_stinkpot.png",
         "modelPath": null,
@@ -11442,6 +11559,7 @@
     },
     "STAFF_HAMANUS": {
         "friendlyName": "Staff, Hamanu's",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/staff_hamanu_s.png",
         "modelPath": null,
@@ -11540,6 +11658,7 @@
     },
     "STAFF_HORNHEAD": {
         "friendlyName": "Staff, Hornhead",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/staff_hornhead.png",
         "modelPath": null,
@@ -11638,6 +11757,7 @@
     },
     "STICK_GOBLIN": {
         "friendlyName": "Stick, Goblin",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/stick_goblin.png",
         "modelPath": null,
@@ -11736,6 +11856,7 @@
     },
     "STICKS_SINGING": {
         "friendlyName": "Sticks, Singing",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/sticks_singing.png",
         "modelPath": null,
@@ -11834,6 +11955,7 @@
     },
     "STILETTO": {
         "friendlyName": "Stiletto",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/stiletto.png",
         "modelPath": null,
@@ -11932,6 +12054,7 @@
     },
     "SWORD_BASTARD_ONE_HANDED": {
         "friendlyName": "Sword, Bastard, One-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_bastard_one_handed.png",
         "modelPath": null,
@@ -12030,6 +12153,7 @@
     },
     "SWORD_BASTARD_TWO_HANDED": {
         "friendlyName": "Sword, Bastard, Two-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_bastard_two_handed.png",
         "modelPath": null,
@@ -12128,6 +12252,7 @@
     },
     "SWORD_BROAD": {
         "friendlyName": "Sword, Broad",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_broad.png",
         "modelPath": null,
@@ -12226,6 +12351,7 @@
     },
     "SWORD_CLAYMORE": {
         "friendlyName": "Sword, Claymore",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_claymore.png",
         "modelPath": null,
@@ -12324,6 +12450,7 @@
     },
     "SWORD_CUTLASS": {
         "friendlyName": "Sword, Cutlass",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_cutlass.png",
         "modelPath": null,
@@ -12422,6 +12549,7 @@
     },
     "SWORD_DRUSUS": {
         "friendlyName": "Sword, Drusus",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_drusus.png",
         "modelPath": null,
@@ -12520,6 +12648,7 @@
     },
     "SWORD_DWARVEN_CLAYMORE": {
         "friendlyName": "Sword, Dwarven Claymore",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_dwarven_claymore.png",
         "modelPath": null,
@@ -12618,6 +12747,7 @@
     },
     "SWORD_FALCHION": {
         "friendlyName": "Sword, Falchion",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_falchion.png",
         "modelPath": null,
@@ -12716,6 +12846,7 @@
     },
     "SWORD_FLAMBERGE": {
         "friendlyName": "Sword, Flamberge",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_flamberge.png",
         "modelPath": null,
@@ -12814,6 +12945,7 @@
     },
     "SWORD_GIANT_KIN_TWO_HANDED": {
         "friendlyName": "Sword, Giant-kin Two-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_giant_kin_two_handed.png",
         "modelPath": null,
@@ -12912,6 +13044,7 @@
     },
     "SWORD_GREAT_SCIMITAR": {
         "friendlyName": "Sword, Great Scimitar",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_great_scimitar.png",
         "modelPath": null,
@@ -13010,6 +13143,7 @@
     },
     "SWORD_HOOK": {
         "friendlyName": "Sword, Hook",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_hook.png",
         "modelPath": null,
@@ -13108,6 +13242,7 @@
     },
     "SWORD_KATANA_ONE_HANDED": {
         "friendlyName": "Sword, Katana, One-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_katana_one_handed.png",
         "modelPath": null,
@@ -13206,6 +13341,7 @@
     },
     "SWORD_KATANA_TWO_HANDED": {
         "friendlyName": "Sword, Katana, Two-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_katana_two_handed.png",
         "modelPath": null,
@@ -13304,6 +13440,7 @@
     },
     "SWORD_KHANDAR_ONE_HANDED": {
         "friendlyName": "Sword, Khandar, One-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_khandar_one_handed.png",
         "modelPath": null,
@@ -13402,6 +13539,7 @@
     },
     "SWORD_KHANDAR_TWO_HANDED": {
         "friendlyName": "Sword, Khandar, Two-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_khandar_two_handed.png",
         "modelPath": null,
@@ -13500,6 +13638,7 @@
     },
     "SWORD_KHOPESH": {
         "friendlyName": "Sword, Khopesh",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_khopesh.png",
         "modelPath": null,
@@ -13598,6 +13737,7 @@
     },
     "SWORD_LONG": {
         "friendlyName": "Sword, Long",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_long.png",
         "modelPath": null,
@@ -13696,6 +13836,7 @@
     },
     "SWORD_MANDIBLE": {
         "friendlyName": "Sword, Mandible",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_mandible.png",
         "modelPath": null,
@@ -13794,6 +13935,7 @@
     },
     "SWORD_MARINERS": {
         "friendlyName": "Sword, Mariner's",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_mariners.png",
         "modelPath": null,
@@ -13892,6 +14034,7 @@
     },
     "SWORD_PIERCER": {
         "friendlyName": "Sword, Piercer",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_piercer.png",
         "modelPath": null,
@@ -13990,6 +14133,7 @@
     },
     "SWORD_PIXIE": {
         "friendlyName": "Sword, Pixie",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/sword_pixie.png",
         "modelPath": null,
@@ -14088,6 +14232,7 @@
     },
     "SWORD_RAPIER": {
         "friendlyName": "Sword, Rapier",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_rapier.png",
         "modelPath": null,
@@ -14186,6 +14331,7 @@
     },
     "SWORD_SABRE": {
         "friendlyName": "Sword, Sabre",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_sabre.png",
         "modelPath": null,
@@ -14284,6 +14430,7 @@
     },
     "SWORD_SCIMITAR": {
         "friendlyName": "Sword, Scimitar",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_scimitar.png",
         "modelPath": null,
@@ -14382,6 +14529,7 @@
     },
     "SWORD_SHORT": {
         "friendlyName": "Sword, Short",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_short.png",
         "modelPath": null,
@@ -14480,6 +14628,7 @@
     },
     "SWORD_TALWAR": {
         "friendlyName": "Sword, Talwar",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_talwar.png",
         "modelPath": null,
@@ -14578,6 +14727,7 @@
     },
     "SWORD_TWO_HANDED": {
         "friendlyName": "Sword, Two-Handed",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_two_handed.png",
         "modelPath": null,
@@ -14676,6 +14826,7 @@
     },
     "SWORD_WAKIZASHI": {
         "friendlyName": "Sword, Wakizashi",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_wakizashi.png",
         "modelPath": null,
@@ -14774,6 +14925,7 @@
     },
     "SWORDLET": {
         "friendlyName": "Swordlet",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/swordlet.png",
         "modelPath": null,
@@ -14872,6 +15024,7 @@
     },
     "TALID": {
         "friendlyName": "Talid",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/talid.png",
         "modelPath": null,
@@ -14970,6 +15123,7 @@
     },
     "TORTOISE_BLADES": {
         "friendlyName": "Tortoise Blades",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/tortoise_blades.png",
         "modelPath": null,
@@ -15068,6 +15222,7 @@
     },
     "TRIDENT_ONE_HANDED": {
         "friendlyName": "Trident, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/trident.png",
         "modelPath": null,
@@ -15166,6 +15321,7 @@
     },
     "TRIDENT_TWO_HANDED": {
         "friendlyName": "Trident, Two-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/trident.png",
         "modelPath": null,
@@ -15264,6 +15420,7 @@
     },
     "TROMBASH_HELD": {
         "friendlyName": "Trombash, Held",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/trombash_held.png",
         "modelPath": null,
@@ -15362,6 +15519,7 @@
     },
     "TROMBASH_THROWN": {
         "friendlyName": "Trombash, Thrown",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/trombash_thrown.png",
         "modelPath": null,
@@ -15460,6 +15618,7 @@
     },
     "TUFENK": {
         "friendlyName": "Tufenk",
+        "weaponFamily": "FIREARM",
         "description": null,
         "texturePath": "images/weapons/dart.png",
         "modelPath": null,
@@ -15558,6 +15717,7 @@
     },
     "WARHAMMER": {
         "friendlyName": "Warhammer",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/warhammer.png",
         "modelPath": null,
@@ -15656,6 +15816,7 @@
     },
     "WHIP": {
         "friendlyName": "Whip",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/whip.png",
         "modelPath": null,
@@ -15754,6 +15915,7 @@
     },
     "WHIP_CHAIN": {
         "friendlyName": "Whip, Chain",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/chain_whip.png",
         "modelPath": null,
@@ -15852,6 +16014,7 @@
     },
     "WHIP_MASTERS": {
         "friendlyName": "Whip, Master's",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/whip.png",
         "modelPath": null,
@@ -15950,6 +16113,7 @@
     },
     "WRIST_RAZOR": {
         "friendlyName": "Wrist Razor",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/wrist_razor.png",
         "modelPath": null,
@@ -16048,6 +16212,7 @@
     },
     "ZAGHNAL": {
         "friendlyName": "Zaghnal",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/pick_footman_s.png",
         "modelPath": null,
@@ -16146,6 +16311,7 @@
     },
     "BOW": {
         "friendlyName": "Bow",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow.png",
         "modelPath": null,
@@ -16275,6 +16441,7 @@
     },
     "CROSSBOW": {
         "friendlyName": "Crossbow",
+        "weaponFamily": "CROSSBOW",
         "description": null,
         "texturePath": "images/weapons/crossbow_light.png",
         "modelPath": null,
@@ -16404,6 +16571,7 @@
     },
     "AXE": {
         "friendlyName": "Axe",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/axe.png",
         "modelPath": null,
@@ -16533,6 +16701,7 @@
     },
     "SPEAR": {
         "friendlyName": "Spear",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear.png",
         "modelPath": null,
@@ -16661,6 +16830,7 @@
     },
     "BOOK": {
         "friendlyName": "Book",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/book.png",
         "modelPath": null,
@@ -16789,6 +16959,7 @@
     },
     "SMALL_FIREBALL": {
         "friendlyName": "Small Fireball",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/firenball.png",
         "modelPath": null,
@@ -16917,6 +17088,7 @@
     },
     "LARGE_FIREBALL": {
         "friendlyName": "Large Fireball",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/big_fireball.png",
         "modelPath": null,
@@ -17045,6 +17217,7 @@
     },
     "SMALL_LIGHTNING": {
         "friendlyName": "Small Lightning",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/lightning_bolt.png",
         "modelPath": null,
@@ -17173,6 +17346,7 @@
     },
     "LARGE_LIGHTNING": {
         "friendlyName": "Large Lightning",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/big_bolt.png",
         "modelPath": null,
@@ -17301,6 +17475,7 @@
     },
     "SWORD": {
         "friendlyName": "Sword",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword.png",
         "modelPath": null,
@@ -17399,6 +17574,7 @@
     },
     "TWO_HANDED_SWORD": {
         "friendlyName": "Greatsword",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_two_handed.png",
         "modelPath": null,
@@ -17497,6 +17673,7 @@
     },
     "WAND": {
         "friendlyName": "Wand",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/big_bolt.png",
         "modelPath": null,
@@ -17595,6 +17772,7 @@
     },
     "ARROW_FLIGHT": {
         "friendlyName": "Arrow, Flight",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/flightarrow.png",
         "modelPath": null,
@@ -17695,6 +17873,7 @@
     },
     "ARROW_FORGET": {
         "friendlyName": "Arrow, Forget",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_sheaf.png",
         "modelPath": null,
@@ -17795,6 +17974,7 @@
     },
     "ARROW_GIANT_KIN": {
         "friendlyName": "Arrow, Giant-kin",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_war.png",
         "modelPath": null,
@@ -17895,6 +18075,7 @@
     },
     "ARROW_KENYAN": {
         "friendlyName": "Arrow, Kenyan",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_sheaf.png",
         "modelPath": null,
@@ -17993,6 +18174,7 @@
     },
     "ARROW_MAIL_PIERCER": {
         "friendlyName": "Arrow, Mail-Piercer",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_war.png",
         "modelPath": null,
@@ -18093,6 +18275,7 @@
     },
     "ARROW_SHEAF": {
         "friendlyName": "Arrow, Sheaf",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_sheaf.png",
         "modelPath": null,
@@ -18193,6 +18376,7 @@
     },
     "ARROW_SLEEP": {
         "friendlyName": "Arrow, Sleep",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_sheaf.png",
         "modelPath": null,
@@ -18293,6 +18477,7 @@
     },
     "ARROW_STONE_FLIGHT": {
         "friendlyName": "Arrow, Stone Flight",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/flightarrow.png",
         "modelPath": null,
@@ -18393,6 +18578,7 @@
     },
     "ARROW_WAR": {
         "friendlyName": "Arrow, War",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/arrow_war.png",
         "modelPath": null,
@@ -18493,6 +18679,7 @@
     },
     "AXE_FOREARM": {
         "friendlyName": "Axe, Forearm",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/axe.png",
         "modelPath": null,
@@ -18591,6 +18778,7 @@
     },
     "AXE_HAND_THROWING": {
         "friendlyName": "Axe, Hand/Throwing",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/hatchet.png",
         "modelPath": null,
@@ -18689,6 +18877,7 @@
     },
     "AXE_TWO_HANDED_BATTLE": {
         "friendlyName": "Axe, Two-Handed Battle",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/axe_two_handed_battle.png",
         "modelPath": null,
@@ -18787,6 +18976,7 @@
     },
     "BELAYING_PIN": {
         "friendlyName": "Belaying Pin",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/belaying_pin.png",
         "modelPath": null,
@@ -18885,6 +19075,7 @@
     },
     "BLOWGUN": {
         "friendlyName": "Blowgun",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/blowgun.png",
         "modelPath": null,
@@ -18983,6 +19174,7 @@
     },
     "BLOWGUN_BARBED_DART": {
         "friendlyName": "Blowgun, Barbed Dart",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/blowgun.png",
         "modelPath": null,
@@ -19081,6 +19273,7 @@
     },
     "BLOWGUN_NEEDLE": {
         "friendlyName": "Blowgun, Needle",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/blowgun.png",
         "modelPath": null,
@@ -19179,6 +19372,7 @@
     },
     "BOW_COMPOSITE_SHORT": {
         "friendlyName": "Bow, Composite Short",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow_composite_short.png",
         "modelPath": null,
@@ -19277,6 +19471,7 @@
     },
     "BOW_FOLDING_SHORT": {
         "friendlyName": "Bow, Folding Short",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow_short.png",
         "modelPath": null,
@@ -19375,6 +19570,7 @@
     },
     "BOW_GIANT_KIN_LONG": {
         "friendlyName": "Bow, Giant-kin Long",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow_long.png",
         "modelPath": null,
@@ -19473,6 +19669,7 @@
     },
     "BOW_KENYAN_LONG": {
         "friendlyName": "Bow, Kenyan Long",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/elven_bow.png",
         "modelPath": null,
@@ -19571,6 +19768,7 @@
     },
     "BOW_LONG": {
         "friendlyName": "Bow, Long",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow_long.png",
         "modelPath": null,
@@ -19669,6 +19867,7 @@
     },
     "BOW_PIXIE": {
         "friendlyName": "Bow, Pixie",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/elven_bow.png",
         "modelPath": null,
@@ -19767,6 +19966,7 @@
     },
     "BOW_SHORT": {
         "friendlyName": "Bow, Short",
+        "weaponFamily": "BOW",
         "description": null,
         "texturePath": "images/weapons/bow_short.png",
         "modelPath": null,
@@ -19865,6 +20065,7 @@
     },
     "CALTROP": {
         "friendlyName": "Caltrop",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/caltrop.png",
         "modelPath": null,
@@ -19963,6 +20164,7 @@
     },
     "CLUB_GREAT": {
         "friendlyName": "Club, Great",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/club_great.png",
         "modelPath": null,
@@ -20061,6 +20263,7 @@
     },
     "CLUB_RIM": {
         "friendlyName": "Club, Rim",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/club.png",
         "modelPath": null,
@@ -20159,6 +20362,7 @@
     },
     "CROSSBOW_DISK": {
         "friendlyName": "Crossbow, Disk",
+        "weaponFamily": "CROSSBOW",
         "description": null,
         "texturePath": "images/weapons/crossbow_disk.png",
         "modelPath": null,
@@ -20257,6 +20461,7 @@
     },
     "CROSSBOW_HAND": {
         "friendlyName": "Crossbow, Hand",
+        "weaponFamily": "CROSSBOW",
         "description": null,
         "texturePath": "images/weapons/crossbow_hand.png",
         "modelPath": null,
@@ -20355,6 +20560,7 @@
     },
     "CROSSBOW_HEAVY": {
         "friendlyName": "Crossbow, Heavy",
+        "weaponFamily": "CROSSBOW",
         "description": null,
         "texturePath": "images/weapons/crossbow_heavy.png",
         "modelPath": null,
@@ -20453,6 +20659,7 @@
     },
     "CROSSBOW_LIGHT": {
         "friendlyName": "Crossbow, Light",
+        "weaponFamily": "CROSSBOW",
         "description": null,
         "texturePath": "images/weapons/crossbow_light.png",
         "modelPath": null,
@@ -20551,6 +20758,7 @@
     },
     "DAGGER_BONE": {
         "friendlyName": "Dagger, Bone",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/dagger_bone.png",
         "modelPath": null,
@@ -20649,6 +20857,7 @@
     },
     "DAGGER_CLIMBING": {
         "friendlyName": "Dagger, Climbing",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/dagger_climbing.png",
         "modelPath": null,
@@ -20747,6 +20956,7 @@
     },
     "DAGGER_GIANT_KIN": {
         "friendlyName": "Dagger, Giant-kin",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/dagger_bone.png",
         "modelPath": null,
@@ -20845,6 +21055,7 @@
     },
     "DAGGER_PARRYING": {
         "friendlyName": "Dagger, Parrying",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/basiliard.png",
         "modelPath": null,
@@ -20943,6 +21154,7 @@
     },
     "DAGGER_STONE": {
         "friendlyName": "Dagger, Stone",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/dagger_stone.png",
         "modelPath": null,
@@ -21041,6 +21253,7 @@
     },
     "DART_BARBED": {
         "friendlyName": "Dart, Barbed",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/dart.png",
         "modelPath": null,
@@ -21139,6 +21352,7 @@
     },
     "DEJADA_CESTUS": {
         "friendlyName": "Dejada Cestus",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/bagh_nakh_tiger_claws.png",
         "modelPath": null,
@@ -21237,6 +21451,7 @@
     },
     "DISK_CROSSBOW": {
         "friendlyName": "Disk, Crossbow",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/crossbow_disk.png",
         "modelPath": null,
@@ -21335,6 +21550,7 @@
     },
     "FLAIL_FOOTMANS": {
         "friendlyName": "Flail, Footman's",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/flail_footman.png",
         "modelPath": null,
@@ -21433,6 +21649,7 @@
     },
     "FLAIL_GRAIN": {
         "friendlyName": "Flail, Grain",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/flail_footman.png",
         "modelPath": null,
@@ -21531,6 +21748,7 @@
     },
     "FLAIL_HORSEMANS": {
         "friendlyName": "Flail, Horseman's",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/flail_horseman.png",
         "modelPath": null,
@@ -21629,6 +21847,7 @@
     },
     "GAFF_HOOK_ATTACHED": {
         "friendlyName": "Gaff / Hook, Attached",
+        "weaponFamily": "UNARMED",
         "description": null,
         "texturePath": "images/weapons/sword_hook.png",
         "modelPath": null,
@@ -21727,6 +21946,7 @@
     },
     "GAFF_HOOK_HELD": {
         "friendlyName": "Gaff / Hook, Held",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/sword_hook.png",
         "modelPath": null,
@@ -21825,6 +22045,7 @@
     },
     "GLADIATORS_FRIEND_FOOTMANS": {
         "friendlyName": "Gladiator's Friend, Footman's",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/gladiators_friend.png",
         "modelPath": null,
@@ -21923,6 +22144,7 @@
     },
     "GLADIATORS_FRIEND_HORSEMANS": {
         "friendlyName": "Gladiator's Friend, Horseman's",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/gladiators_friend.png",
         "modelPath": null,
@@ -22021,6 +22243,7 @@
     },
     "HARPOON_TWO_HANDED": {
         "friendlyName": "Harpoon, Two-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/harpoon_two_handed.png",
         "modelPath": null,
@@ -22119,6 +22342,7 @@
     },
     "HATCHET": {
         "friendlyName": "Hatchet",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/hatchet.png",
         "modelPath": null,
@@ -22217,6 +22441,7 @@
     },
     "HATCHET_HAWK": {
         "friendlyName": "Hatchet, Hawk",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/hatchet.png",
         "modelPath": null,
@@ -22315,6 +22540,7 @@
     },
     "JAVELIN_STONE_ONE_HANDED": {
         "friendlyName": "Javelin, Stone, One-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/javelin_one_handed.png",
         "modelPath": null,
@@ -22413,6 +22639,7 @@
     },
     "JAVELIN_STONE_TWO_HANDED": {
         "friendlyName": "Javelin, Stone, Two-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/Javelin.png",
         "modelPath": null,
@@ -22511,6 +22738,7 @@
     },
     "JAVELIN_TWO_HANDED": {
         "friendlyName": "Javelin, Two-Handed",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/Javelin.png",
         "modelPath": null,
@@ -22609,6 +22837,7 @@
     },
     "KNIFE_BONE": {
         "friendlyName": "Knife, Bone",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/knife_bone.png",
         "modelPath": null,
@@ -22707,6 +22936,7 @@
     },
     "KNIFE_HARNESS": {
         "friendlyName": "Knife, Harness",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/knife_throwing.png",
         "modelPath": null,
@@ -22805,6 +23035,7 @@
     },
     "KNIFE_STONE": {
         "friendlyName": "Knife, Stone",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/knife_stone.png",
         "modelPath": null,
@@ -22903,6 +23134,7 @@
     },
     "KNIFE_THROWING": {
         "friendlyName": "Knife, Throwing",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/knife_throwing.png",
         "modelPath": null,
@@ -23001,6 +23233,7 @@
     },
     "KNIFE_WIDOWS": {
         "friendlyName": "Knife, Widow's",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/knife_throwing.png",
         "modelPath": null,
@@ -23099,6 +23332,7 @@
     },
     "LANCE_FLIGHT": {
         "friendlyName": "Lance, Flight",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/spear_throwing.png",
         "modelPath": null,
@@ -23197,6 +23431,7 @@
     },
     "LANCE_HEAVY_HORSE1": {
         "friendlyName": "Lance, Heavy Horse1",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/lance_jousting.png",
         "modelPath": null,
@@ -23295,6 +23530,7 @@
     },
     "LANCE_JOUSTING1": {
         "friendlyName": "Lance, Jousting1",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/lance_jousting.png",
         "modelPath": null,
@@ -23393,6 +23629,7 @@
     },
     "LANCE_LIGHT_HORSE1": {
         "friendlyName": "Lance, Light Horse1",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/lance_cavalry.png",
         "modelPath": null,
@@ -23491,6 +23728,7 @@
     },
     "LANCE_MEDIUM_HORSE1": {
         "friendlyName": "Lance, Medium Horse1",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/lance_cavalry.png",
         "modelPath": null,
@@ -23589,6 +23827,7 @@
     },
     "LASSO": {
         "friendlyName": "Lasso",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/lasso.png",
         "modelPath": null,
@@ -23687,6 +23926,7 @@
     },
     "MACE_BLADEBACK": {
         "friendlyName": "Mace, Bladeback",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/mace_footman.png",
         "modelPath": null,
@@ -23785,6 +24025,7 @@
     },
     "MACE_FOOTMANS": {
         "friendlyName": "Mace, Footman's",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/mace_footman.png",
         "modelPath": null,
@@ -23883,6 +24124,7 @@
     },
     "MACE_FOOTMANS_WHISTLING": {
         "friendlyName": "Mace, Footman's Whistling",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/mace_footman.png",
         "modelPath": null,
@@ -23981,6 +24223,7 @@
     },
     "MACE_GIANT_KIN": {
         "friendlyName": "Mace, Giant-kin",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/mace_footman.png",
         "modelPath": null,
@@ -24079,6 +24322,7 @@
     },
     "MACE_HORSEMANS": {
         "friendlyName": "Mace, Horseman's",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/mace_horseman.png",
         "modelPath": null,
@@ -24177,6 +24421,7 @@
     },
     "MACE_HORSEMANS_WHISTLING": {
         "friendlyName": "Mace, Horseman's Whistling",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/mace_horseman.png",
         "modelPath": null,
@@ -24275,6 +24520,7 @@
     },
     "MANCATCHER2": {
         "friendlyName": "Mancatcher2",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/mancatcher.png",
         "modelPath": null,
@@ -24373,6 +24619,7 @@
     },
     "MORNING_STAR_DOUBLE_BALL": {
         "friendlyName": "Morning Star, Double-Ball",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/morning_star_double_ball.png",
         "modelPath": null,
@@ -24471,6 +24718,7 @@
     },
     "NET": {
         "friendlyName": "Net",
+        "weaponFamily": "THROWN",
         "description": null,
         "texturePath": "images/weapons/net.png",
         "modelPath": null,
@@ -24569,6 +24817,7 @@
     },
     "PATA1": {
         "friendlyName": "Pata1",
+        "weaponFamily": "BLADE",
         "description": null,
         "texturePath": "images/weapons/sword_short.png",
         "modelPath": null,
@@ -24667,6 +24916,7 @@
     },
     "PICK_HORSEMANS": {
         "friendlyName": "Pick, Horseman's",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/pick_horseman.png",
         "modelPath": null,
@@ -24765,6 +25015,7 @@
     },
     "PICK_ICE": {
         "friendlyName": "Pick, Ice",
+        "weaponFamily": "AXE",
         "description": null,
         "texturePath": "images/weapons/pick_horseman.png",
         "modelPath": null,
@@ -24863,6 +25114,7 @@
     },
     "POLEARM_GLAIVE4": {
         "friendlyName": "Polearm, Glaive4",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_glaive_guisarme4.png",
         "modelPath": null,
@@ -24961,6 +25213,7 @@
     },
     "POLEARM_GUISARME": {
         "friendlyName": "Polearm, Guisarme",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_guisarme.png",
         "modelPath": null,
@@ -25059,6 +25312,7 @@
     },
     "POLEARM_MILITARY_FORK4": {
         "friendlyName": "Polearm, Military Fork4",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_military_fork.png",
         "modelPath": null,
@@ -25157,6 +25411,7 @@
     },
     "POLEARM_NAGINATA3": {
         "friendlyName": "Polearm, Naginata3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_fauchard.png",
         "modelPath": null,
@@ -25255,6 +25510,7 @@
     },
     "POLEARM_PARTISAN3": {
         "friendlyName": "Polearm, Partisan3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_partisan.png",
         "modelPath": null,
@@ -25353,6 +25609,7 @@
     },
     "POLEARM_QUAD_FAUCHARD": {
         "friendlyName": "Polearm, Quad Fauchard",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_hook_fauchard.png",
         "modelPath": null,
@@ -25451,6 +25708,7 @@
     },
     "POLEARM_RANSEUR3": {
         "friendlyName": "Polearm, Ranseur3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_ranseur.png",
         "modelPath": null,
@@ -25549,6 +25807,7 @@
     },
     "POLEARM_SPETUM3": {
         "friendlyName": "Polearm, Spetum3",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_awl_pike3.png",
         "modelPath": null,
@@ -25647,6 +25906,7 @@
     },
     "POLEARM_TETSUBO": {
         "friendlyName": "Polearm, Tetsubo",
+        "weaponFamily": "BLUNT",
         "description": null,
         "texturePath": "images/weapons/bo_staff.png",
         "modelPath": null,
@@ -25745,6 +26005,7 @@
     },
     "POLEARM_TRIKAL": {
         "friendlyName": "Polearm, Trikal",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_crusher.png",
         "modelPath": null,
@@ -25843,6 +26104,7 @@
     },
     "POLEARM_VOULGE": {
         "friendlyName": "Polearm, Voulge",
+        "weaponFamily": "POLEARM",
         "description": null,
         "texturePath": "images/weapons/polearm_guisarme_voulge.png",
         "modelPath": null,
@@ -25941,6 +26203,7 @@
     },
     "QUARREL_HEAVY": {
         "friendlyName": "Quarrel, Heavy",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/quarrel_heavy.png",
         "modelPath": null,
@@ -26041,6 +26304,7 @@
     },
     "QUARREL_LIGHT": {
         "friendlyName": "Quarrel, Light",
+        "weaponFamily": "NONE",
         "description": null,
         "texturePath": "images/weapons/quarrel_light.png",
         "modelPath": null,
@@ -26141,6 +26405,7 @@
     },
     "RAZOR": {
         "friendlyName": "Razor",
+        "weaponFamily": "DAGGER",
         "description": null,
         "texturePath": "images/weapons/razor.png",
         "modelPath": null,

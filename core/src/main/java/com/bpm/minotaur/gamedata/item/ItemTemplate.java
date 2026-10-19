@@ -111,6 +111,8 @@ public class ItemTemplate {
     public boolean stealthDisadvantage = false;
     public int maxDexBonus = 99;
     public String damageType = "SLASHING"; // SLASHING, PIERCING, BLUDGEONING, SPIRITUAL
+    /** A {@link WeaponFamily} name; required on every weapons.json entry (#224). */
+    public String weaponFamily;
 
     public Vector2Wrapper scale;
 
