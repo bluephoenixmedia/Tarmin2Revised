@@ -64,6 +64,13 @@ public final class Mastery {
         return rankOf(family).ordinal();
     }
 
+    /** Sets {@code family} to exactly the hits that reach {@code rank}, as the duel simulator needs (#232). */
+    public void setRank(WeaponFamily family, Rank rank) {
+        if (family == null || family == WeaponFamily.NONE) return;
+        if (rank == Rank.UNTRAINED) hits.remove(family);
+        else hits.put(family, THRESHOLDS[rank.ordinal() - 1]);
+    }
+
     /** Forgets every Family: a new body starts Untrained. */
     public void clear() {
         hits.clear();

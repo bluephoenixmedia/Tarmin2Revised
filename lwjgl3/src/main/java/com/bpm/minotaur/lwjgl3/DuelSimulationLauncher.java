@@ -18,6 +18,7 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.gamedata.monster.MonsterVariant;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.player.Mastery;
 import com.bpm.minotaur.headless.HeadlessAnimationManager;
 import com.bpm.minotaur.headless.HeadlessSoundManager;
 import com.bpm.minotaur.managers.CombatManager;
@@ -53,8 +54,8 @@ import java.util.Random;
  *
  * Options: --trials=N, --minLevel / --maxLevel (monster base level band), --playerLevel=L,
  * --edl=E (scale monsters to that Effective Difficulty Level, as a chunk at depth E does),
- * --difficulty=MEDIUM, --hp=N (override max HP), --weapon=ITEM_TYPE, --chain=N (back-to-back
- * runs), --seed=S, --csv=path.
+ * --difficulty=MEDIUM, --hp=N (override max HP), --weapon=ITEM_TYPE, --mastery=RANK (the wielded
+ * weapon's Family starts at that Mastery rank, #232), --chain=N (back-to-back runs), --seed=S, --csv=path.
  */
 public class DuelSimulationLauncher implements ApplicationListener {
 
@@ -74,6 +75,8 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private int hpOverride = -1;
     private int acOverride = -1;
     private Item.ItemType weaponOverride;
+    /** The Mastery rank the wielded weapon's Family starts each duel at (#232). */
+    private Mastery.Rank masteryRank = Mastery.Rank.UNTRAINED;
     private int chainRuns = 500;
     private long seed = 42L;
     private String csvPath = "logs/duel-sim.csv";
@@ -179,10 +182,13 @@ public class DuelSimulationLauncher implements ApplicationListener {
 
     private void run(List<Monster.MonsterType> band) throws IOException {
         Player probe = newPlayer();
+        Item held = probe.getInventory().getRightHand();
         System.out.printf(Locale.ROOT, "DUEL SIMULATION  difficulty=%s playerLevel=%d hp=%d weapon=%s AC=%d toHit=+%d speed=%d%n",
-                difficulty, probe.getLevel(), probe.getMaxHP(),
-                probe.getInventory().getRightHand() != null ? probe.getInventory().getRightHand().getType() : "none",
+                difficulty, probe.getLevel(), probe.getMaxHP(), held != null ? held.getType() : "none",
                 probe.getArmorClass(), probe.getToHitBonus(), probe.getEffectiveSpeed());
+        com.bpm.minotaur.gamedata.item.WeaponFamily family = probe.masteryFamilyOf(held, false);
+        System.out.printf(Locale.ROOT, "mastery: %s %s (+%d to-hit)%n", family,
+                probe.getStats().getMastery().rankOf(family), probe.masteryToHitBonus(held, false));
         System.out.printf(Locale.ROOT, "monster band: base level %d-%d (%d species) scaled to EDL %d, %d duels each, seed %d%n%n",
                 minLevel, maxLevel, band.size(), edl, trials, seed);
 
@@ -354,6 +360,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             if (sword != null) p.getInventory().pickupToBackpack(sword);
             p.getInventory().setRightHand(itemDataManager.createItem(weaponOverride, 0, 0, ItemColor.GRAY, assetManager));
         }
+        p.getStats().getMastery().setRank(p.masteryFamilyOf(p.getInventory().getRightHand(), false), masteryRank);
         return p;
     }
 
@@ -406,6 +413,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "hp": hpOverride = Integer.parseInt(v); break;
                 case "ac": acOverride = Integer.parseInt(v); break;
                 case "weapon": weaponOverride = Item.ItemType.valueOf(v.toUpperCase(Locale.ROOT)); break;
+                case "mastery": masteryRank = Mastery.Rank.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;
                 case "csv": csvPath = v; break;
