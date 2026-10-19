@@ -18,6 +18,7 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.gamedata.monster.MonsterVariant;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.player.Mastery;
 import com.bpm.minotaur.headless.HeadlessAnimationManager;
 import com.bpm.minotaur.headless.HeadlessSoundManager;
 import com.bpm.minotaur.managers.CombatManager;
@@ -75,7 +76,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private int acOverride = -1;
     private Item.ItemType weaponOverride;
     /** The Mastery rank the wielded weapon's Family starts each duel at (#232). */
-    private com.bpm.minotaur.gamedata.player.Mastery.Rank masteryRank = com.bpm.minotaur.gamedata.player.Mastery.Rank.UNTRAINED;
+    private Mastery.Rank masteryRank = Mastery.Rank.UNTRAINED;
     private int chainRuns = 500;
     private long seed = 42L;
     private String csvPath = "logs/duel-sim.csv";
@@ -185,8 +186,9 @@ public class DuelSimulationLauncher implements ApplicationListener {
         System.out.printf(Locale.ROOT, "DUEL SIMULATION  difficulty=%s playerLevel=%d hp=%d weapon=%s AC=%d toHit=+%d speed=%d%n",
                 difficulty, probe.getLevel(), probe.getMaxHP(), held != null ? held.getType() : "none",
                 probe.getArmorClass(), probe.getToHitBonus(), probe.getEffectiveSpeed());
-        System.out.printf(Locale.ROOT, "mastery: %s %s (+%d to-hit)%n", probe.masteryFamilyOf(held, false), masteryRank,
-                probe.masteryToHitBonus(held, false));
+        com.bpm.minotaur.gamedata.item.WeaponFamily family = probe.masteryFamilyOf(held, false);
+        System.out.printf(Locale.ROOT, "mastery: %s %s (+%d to-hit)%n", family,
+                probe.getStats().getMastery().rankOf(family), probe.masteryToHitBonus(held, false));
         System.out.printf(Locale.ROOT, "monster band: base level %d-%d (%d species) scaled to EDL %d, %d duels each, seed %d%n%n",
                 minLevel, maxLevel, band.size(), edl, trials, seed);
 
@@ -411,7 +413,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "hp": hpOverride = Integer.parseInt(v); break;
                 case "ac": acOverride = Integer.parseInt(v); break;
                 case "weapon": weaponOverride = Item.ItemType.valueOf(v.toUpperCase(Locale.ROOT)); break;
-                case "mastery": masteryRank = com.bpm.minotaur.gamedata.player.Mastery.Rank.valueOf(v.toUpperCase(Locale.ROOT)); break;
+                case "mastery": masteryRank = Mastery.Rank.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;
                 case "csv": csvPath = v; break;
