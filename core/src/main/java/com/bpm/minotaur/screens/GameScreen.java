@@ -1856,7 +1856,8 @@ public class GameScreen extends BaseScreen {
         // earlier fight masked every genuine bleed-out and this epitaph was effectively dead text.
         boolean bledOut = telemetry.getBleedDamageTaken() > 0
                 && player != null
-                && !player.wasLastDamageViolent()
+                // A tick of bleeding right after a bite is still the biter's kill (#236).
+                && player.bledOutLongAfterTheLastBlow()
                 && player.getInjuryManager() != null
                 && player.getInjuryManager().hasUntreatedInjuries();
         String survival = telemetry.getSurvivalDeath();

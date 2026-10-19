@@ -2960,6 +2960,21 @@ public class Player {
      */
     private void recordHpLoss(boolean violent) {
         lastDamageWasViolent = violent;
+        attritionSinceLastBlow = violent ? 0 : attritionSinceLastBlow + 1;
+    }
+
+    /** Attrition ticks within which a death still belongs to the last blow, not to the bleeding (#236). */
+    public static final int FRESH_WOUND_TICKS = 3;
+
+    /** HP losses to bleeding, hunger or thirst since the last blow landed. */
+    private int attritionSinceLastBlow;
+
+    /**
+     * Whether attrition has outlasted the last blow by more than {@link #FRESH_WOUND_TICKS}.
+     * Dying a tick after a Spider's bite is the Spider's kill, though the last point was blood.
+     */
+    public boolean bledOutLongAfterTheLastBlow() {
+        return !lastDamageWasViolent && attritionSinceLastBlow > FRESH_WOUND_TICKS;
     }
 
     public int takeDamage(int amount, DamageType type) {
