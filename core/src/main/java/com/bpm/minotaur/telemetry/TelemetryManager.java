@@ -11,7 +11,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
@@ -31,7 +33,7 @@ import java.util.UUID;
 public class TelemetryManager {
 
     /** Bumped whenever the file layout changes, so the script can tell old files apart. */
-    public static final int SCHEMA_VERSION = 2;
+    public static final int SCHEMA_VERSION = 3;
 
     /** A fight with no attack either way for this many turns is closed as disengaged. */
     public static final int DISENGAGE_TURNS = 5;
@@ -87,6 +89,11 @@ public class TelemetryManager {
         long damageDealt;
         long damageTaken;
         final EnumSet<AttackMode> modes = EnumSet.noneOf(AttackMode.class);
+        /** Weapon Families the player attacked with, lower-cased (#234). */
+        final Set<String> families = new TreeSet<>();
+        /** The player's level and the monster's Vengeance role when the fight opened. */
+        int playerLevel;
+        String role;
         String outcome;
         int closeTurn;
 
@@ -143,6 +150,12 @@ public class TelemetryManager {
     private final List<Integer> levelUpTurns = new ArrayList<>();
     private final Map<Object, Fight> openFights = new IdentityHashMap<>();
     private final List<Fight> closedFights = new ArrayList<>();
+    /** Per Weapon Family: hit, glancing, miss, qualifying (#234). */
+    private final Map<String, long[]> attacksByFamily = new TreeMap<>();
+    private final List<String> masteryRankUps = new ArrayList<>();
+    private final Map<String, Integer> spellsCast = new TreeMap<>();
+    private final Map<String, Integer> spellHealing = new TreeMap<>();
+    private int levelLast = 1, levelStart = 1;
     private int currentDepth = 1;
     private ExpeditionEndListener expeditionEndListener;
 
@@ -184,6 +197,11 @@ public class TelemetryManager {
         levelUpTurns.clear();
         openFights.clear();
         closedFights.clear();
+        attacksByFamily.clear();
+        masteryRankUps.clear();
+        spellsCast.clear();
+        spellHealing.clear();
+        levelStart = levelLast;
     }
 
     public String getRunId() {
@@ -274,6 +292,7 @@ public class TelemetryManager {
         expeditionMaxDepth = currentDepth;
         hpStart = hpLast;
         mpStart = mpLast;
+        levelStart = levelLast;
         depthFirstReachedTurn.clear();
         depthFirstReachedTurn.put(currentDepth, 0);
     }
@@ -319,6 +338,45 @@ public class TelemetryManager {
         }
     }
 
+    /** The player's current level, sampled each turn; the expedition keeps the level it began at. */
+    public synchronized void notePlayerLevel(int level) {
+        this.levelLast = level;
+    }
+
+    /**
+     * A player attack by Weapon Family (lower-cased in the file). Called beside
+     * {@link #recordPlayerAttack}, which keeps the per-mode totals; {@code monster} adds the
+     * Family to that fight.
+     */
+    public synchronized void recordFamilyAttack(Object monster, String family, HitType type) {
+        if (family == null) return;
+        String key = family.toLowerCase();
+        attacksByFamily.computeIfAbsent(key, k -> new long[4])[type.ordinal()]++;
+        Fight f = monster != null ? openFights.get(monster) : null;
+        if (f != null) f.families.add(key);
+    }
+
+    /** A full hit on a non-Trivial monster: one that trained Mastery. */
+    public synchronized void recordQualifyingHit(String family) {
+        if (family == null) return;
+        attacksByFamily.computeIfAbsent(family.toLowerCase(), k -> new long[4])[3]++;
+    }
+
+    public synchronized void recordMasteryRankUp(String family, String rank) {
+        masteryRankUps.add("{\"family\": " + quoteOrNull(family == null ? null : family.toLowerCase())
+                + ", \"rank\": " + quoteOrNull(rank == null ? null : rank.toLowerCase())
+                + ", \"turn\": " + (turnsLived - expeditionStartTurn) + "}");
+    }
+
+    public synchronized void recordSpellCast(String spellId) {
+        if (spellId != null) spellsCast.merge(spellId, 1, Integer::sum);
+    }
+
+    /** HP a spell actually restored (not what it rolled). */
+    public synchronized void recordSpellHealing(String spellId, int hp) {
+        if (spellId != null && hp > 0) spellHealing.merge(spellId, hp, Integer::sum);
+    }
+
     /** A monster attacked the player; {@code damage} is what landed after armour. */
     public synchronized void recordMonsterAttack(Object monster, String monsterType, int monsterLevel,
                                                  boolean hit, int damage) {
@@ -340,6 +398,11 @@ public class TelemetryManager {
         if (f == null) {
             f = new Fight(monsterType != null ? monsterType : "UNKNOWN", monsterLevel, currentDepth,
                     turnsLived - expeditionStartTurn);
+            f.playerLevel = levelLast;
+            if (monster instanceof com.bpm.minotaur.gamedata.monster.Monster) {
+                f.role = com.bpm.minotaur.gamedata.player.Vengeance.roleOf(
+                        (com.bpm.minotaur.gamedata.monster.Monster) monster, levelLast).name().toLowerCase();
+            }
             openFights.put(monster, f);
             encountersByDepth.merge(currentDepth, 1, Integer::sum);
         }
@@ -684,6 +747,20 @@ public class TelemetryManager {
         j.intMap("depthFirstReachedTurn", stringKeys(depthFirstReachedTurn));
         j.intMap("encountersByDepth", stringKeys(encountersByDepth));
         j.raw("levelUpTurns", levelUpTurns.toString());
+        j.num("playerLevelStart", levelStart);
+
+        j.openObject("attacksByFamily");
+        for (Map.Entry<String, long[]> e : attacksByFamily.entrySet()) {
+            long[] v = e.getValue();
+            j.raw(e.getKey(), "{\"hit\": " + v[0] + ", \"glancing\": " + v[1] + ", \"miss\": " + v[2]
+                    + ", \"qualifying\": " + v[3] + "}");
+        }
+        j.close();
+        j.raw("masteryRankUps", "[" + String.join(", ", masteryRankUps) + "]");
+        j.intMap("spellsCast", spellsCast);
+        j.intMap("spellHealing", spellHealing);
+        // Combat Art uses and Passive procs fill this once the Arts exist (#221).
+        j.intMap("artUses", java.util.Collections.emptyMap());
 
         j.openArray("fights");
         for (Fight f : closedFights) {
@@ -705,6 +782,9 @@ public class TelemetryManager {
                     + ", \"damageDealt\": " + f.damageDealt
                     + ", \"damageTaken\": " + f.damageTaken
                     + ", \"modes\": " + modes
+                    + ", \"families\": " + quotedList(f.families)
+                    + ", \"playerLevel\": " + f.playerLevel
+                    + ", \"role\": " + quoteOrNull(f.role)
                     + ", \"outcome\": " + quoteOrNull(f.outcome) + "}");
         }
         j.closeArray();
@@ -718,6 +798,15 @@ public class TelemetryManager {
             out.put(String.valueOf(e.getKey()), e.getValue());
         }
         return out;
+    }
+
+    private static String quotedList(Set<String> values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (String v : values) {
+            if (sb.length() > 1) sb.append(", ");
+            sb.append(quoteOrNull(v));
+        }
+        return sb.append(']').toString();
     }
 
     private static String quoteOrNull(String s) {

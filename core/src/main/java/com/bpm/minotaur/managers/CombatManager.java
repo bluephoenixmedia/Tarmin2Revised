@@ -1508,6 +1508,7 @@ public class CombatManager {
                 showDamageText(actual, hit.collisionPoint);
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                         com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
+                recordFamilyAttack(target, weapon, true, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT);
                 player.trainMastery(weapon, true, target, eventManager);
                 eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + com.bpm.minotaur.ui.AffinityText.nameOf(target) + " for " + actual + " dmg!", 1.5f));
                 postAffinityLine(target, DamageType.PHYSICAL, false);
@@ -1524,6 +1525,7 @@ public class CombatManager {
             } else {
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                         com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
+                recordFamilyAttack(target, weapon, true, com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS);
                 eventManager.addEvent(new GameEvent("Thrown " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " glanced off " + target.getType() + "!", 1.0f));
                 alertMonsterToPlayer(target);
             }
@@ -2442,6 +2444,8 @@ public class CombatManager {
                     isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
                             : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT,
                     actualDamage);
+            recordFamilyAttack(monster, attackWeapon, false, isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
+                    : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT);
             // Only a full hit trains Mastery: a glancing blow means the armour won (#226).
             if (!isGlancing) {
                 player.trainMastery(attackWeapon, false, monster, eventManager);
@@ -2624,6 +2628,7 @@ public class CombatManager {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(
                     monster, monster.getMonsterType(), monster.getLevel(), attackModeOf(attackWeapon),
                     com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
+            recordFamilyAttack(monster, attackWeapon, false, com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS);
             if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
                 gs.getWeaponOverlay().triggerWhiff();
@@ -3644,6 +3649,13 @@ public class CombatManager {
 
     /** The engaged monster's killing blow came from the weapon in hand. */
     /** How telemetry tags an attack made with this weapon. */
+    /** Telemetry by Weapon Family, read the way Mastery reads it (#234). */
+    private void recordFamilyAttack(Monster target, Item weapon, boolean thrown,
+                                    com.bpm.minotaur.telemetry.TelemetryManager.HitType type) {
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordFamilyAttack(
+                target, player.masteryFamilyOf(weapon, thrown).name(), type);
+    }
+
     private static com.bpm.minotaur.telemetry.TelemetryManager.AttackMode attackModeOf(Item weapon) {
         if (weapon == null) return com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.MELEE;
         Item.ItemType t = weapon.getType();
