@@ -66,6 +66,16 @@ public class PlayerMasteryTest {
     }
 
     @Test
+    public void aPolymorphedBodyFightsWithItsOwnClawsAndTrainsUnarmed() {
+        player.enterForm(new com.bpm.minotaur.gamedata.polymorph.PlayerForm("Wolf", 20, 6, 1f, "1d6", false, false, 100));
+        hit(axe(), monsterOfLevel(1), 10);
+
+        assertEquals(Rank.NOVICE, player.getStats().getMastery().rankOf(WeaponFamily.UNARMED));
+        assertEquals(Rank.UNTRAINED, player.getStats().getMastery().rankOf(WeaponFamily.AXE));
+        assertEquals("the claws get Unarmed's bonus, not the axe's", 1, player.masteryToHitBonus(axe(), false));
+    }
+
+    @Test
     public void aTrivialFoeTeachesNothing() {
         player.setLevel(5);
         hit(axe(), monsterOfLevel(2), 10); // three levels below: Trivial, the Vengeance rule

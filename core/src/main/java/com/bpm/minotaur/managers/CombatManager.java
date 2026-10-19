@@ -1869,6 +1869,7 @@ public class CombatManager {
                 int bashDmg = Math.max(1, DiceRoller.roll("1d4") + shield.getArmorClassBonus());
                 int actual = target.takeDamage(bashDmg, DamageType.PHYSICAL);
                 target.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
+                player.trainMastery(shield, false, target, eventManager); // a spiked shield trains Blunt; a plain one, nothing
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
                 soundManager.playWeaponImpact(true);

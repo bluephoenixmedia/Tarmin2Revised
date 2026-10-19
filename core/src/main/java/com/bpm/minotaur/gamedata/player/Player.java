@@ -3791,7 +3791,7 @@ public class Player {
      */
     public void trainMastery(Item weapon, boolean thrown, Monster target, GameEventManager eventManager) {
         if (stats == null || Vengeance.roleOf(target, getLevel()) == Vengeance.Role.TRIVIAL) return;
-        WeaponFamily family = Mastery.familyOfHit(weapon, thrown);
+        WeaponFamily family = masteryFamilyOf(weapon, thrown);
         Mastery.Rank risen = stats.getMastery().recordHit(family);
         if (risen != null && eventManager != null) {
             eventManager.addEvent(new GameEvent("Your " + com.bpm.minotaur.ui.UiNames.of(family)
@@ -3801,7 +3801,12 @@ public class Player {
 
     /** The Mastery to-hit bonus for an attack with {@code weapon} (null for bare hands). */
     public int masteryToHitBonus(Item weapon, boolean thrown) {
-        return stats != null ? stats.getMastery().toHitBonus(Mastery.familyOfHit(weapon, thrown)) : 0;
+        return stats != null ? stats.getMastery().toHitBonus(masteryFamilyOf(weapon, thrown)) : 0;
+    }
+
+    /** A polymorphed body strikes with its own teeth and claws, whatever is in its hand: Unarmed. */
+    private WeaponFamily masteryFamilyOf(Item weapon, boolean thrown) {
+        return form != null && !thrown ? WeaponFamily.UNARMED : Mastery.familyOfHit(weapon, thrown);
     }
 
     private void performLevelUp(GameEventManager eventManager) {
