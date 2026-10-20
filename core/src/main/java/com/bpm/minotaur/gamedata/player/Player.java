@@ -95,9 +95,27 @@ public class Player {
      * @return whether an item was used, so the caller spends the turn
      */
     public boolean quickHeal(DiscoveryManager discoveryManager, GameEventManager eventManager) {
+        return quickHeal(discoveryManager, eventManager, null, null);
+    }
+
+    /**
+     * Quick heal (H). Casts the prepared starting heal first, when there is MP for it and the
+     * wound is worth it (#263): MP comes back on its own, potions and poultices don't. Otherwise
+     * it falls back to the best potion or poultice carried.
+     */
+    public boolean quickHeal(DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze,
+                             CombatManager combatManager) {
         int missing = stats.getMaxHP() - stats.getCurrentHP();
         String refusal = null;
         Item choice = null;
+        if (missing > 0 && healReady() && missing >= minimumWoundToCastHeal()) {
+            SpellTemplate heal = SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You cast " + heal.getName() + ".", 2f));
+            }
+            return com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(
+                    STARTING_HEAL_SPELL, this, maze, eventManager, combatManager);
+        }
         if (missing <= 0) {
             refusal = "You are unhurt.";
         } else if (activePoultice != null) {
@@ -105,7 +123,10 @@ public class Player {
         } else {
             choice = QuickHeal.choose(inventory.getAllItems(), missing, stats.getMaxHP(),
                     effect -> discoveryManager != null && discoveryManager.isPotionIdentified(effect));
-            if (choice == null) refusal = "You carry nothing to heal with.";
+            if (choice == null) {
+                refusal = healReady() && missing < minimumWoundToCastHeal()
+                        ? "You are barely scratched." : "You carry nothing to heal with.";
+            }
         }
         if (refusal != null) {
             if (eventManager != null) eventManager.addEvent(new GameEvent(refusal, 2f));
@@ -117,6 +138,29 @@ public class Player {
             quaff(choice, discoveryManager, eventManager);
         }
         return true;
+    }
+
+    /** Whether the starting heal is prepared and there is the MP to cast it. */
+    public boolean healReady() {
+        SpellTemplate heal = SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
+        return heal != null && isSpellPrepared(STARTING_HEAL_SPELL) && hasEnoughMana(heal.getMpCost());
+    }
+
+    /** The smallest wound worth the starting heal's MP: half its average heal, rounded up (#263). */
+    public int minimumWoundToCastHeal() {
+        SpellTemplate heal = SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
+        if (heal == null) return 1;
+        double average = averageOf(heal.getDamageDice()) + getWisdomModifier();
+        return Math.max(1, (int) Math.ceil(average / 2.0));
+    }
+
+    /** The mean of an "NdS+K" roll. */
+    private static double averageOf(String dice) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)d(\\d+)([+-]\\d+)?").matcher(dice == null ? "" : dice);
+        if (!m.matches()) return 0;
+        int n = Integer.parseInt(m.group(1)), sides = Integer.parseInt(m.group(2));
+        int k = m.group(3) == null ? 0 : Integer.parseInt(m.group(3));
+        return n * (sides + 1) / 2.0 + k;
     }
 
     public boolean canWieldTwoHanded() {

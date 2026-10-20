@@ -94,6 +94,8 @@ public class TurnManager {
                         worldManager.getWorldSeed(), com.bpm.minotaur.BuildInfo.VERSION);
             }
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().notePlayerLevel(player.getLevel());
+            // Below half health with the starting heal ready, once a save: say which key (#263).
+            com.bpm.minotaur.managers.HintManager.getInstance().checkHealReady(player, eventManager);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().onTurn(turnCounter, maze.getLevel(),
                     maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y),
                     player.getCurrentHP(), player.getCurrentMP(),

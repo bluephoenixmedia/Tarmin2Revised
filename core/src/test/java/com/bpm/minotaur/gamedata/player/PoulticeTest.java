@@ -51,6 +51,7 @@ public class PoulticeTest {
         int max = player.getStats().getMaxHP();
         player.takeTrueDamage(max - 1);
         player.getInventory().addItem(poultice());
+        player.getStats().setCurrentMP(0); // with MP, H casts Cure Wounds first (#263)
 
         assertTrue(player.quickHeal(null, events));
         assertFalse("the poultice was used up", player.getInventory().hasItemOfType(Item.ItemType.POULTICE));
