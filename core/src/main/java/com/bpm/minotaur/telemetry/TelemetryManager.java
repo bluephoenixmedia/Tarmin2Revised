@@ -393,6 +393,11 @@ public class TelemetryManager {
     /** A monster attacked the player; {@code damage} is what landed after armour. */
     public synchronized void recordMonsterAttack(Object monster, String monsterType, int monsterLevel,
                                                  boolean hit, int damage) {
+        // Every monster attack path reports here, ranged and duel included, so the killer is set here
+        // too. It was set on melee hits only, and a ranged death named the last monster to hit in melee.
+        if (hit && damage > 0 && monsterType != null) {
+            this.killerMonster = monsterType;
+        }
         Fight f = fightFor(monster, monsterType, monsterLevel);
         if (f != null) {
             f.monsterAttacks++;
