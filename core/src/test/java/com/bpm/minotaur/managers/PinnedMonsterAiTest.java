@@ -83,4 +83,18 @@ public class PinnedMonsterAiTest {
         assertFalse(ghoul.isPinned());
         assertFalse(ghoul.isDazed());
     }
+
+    @Test
+    public void aMonsterInAModalDuelWearsItsDazeAndPinDownToo() {
+        Monster ghoul = huntingGhoulAt(6f);
+        // A modal monster attack looks its weapon up, so this duel needs an item manager.
+        CombatManager duel = new CombatManager(player, maze, null, new AnimationManager() {}, new GameEventManager(),
+                new HeadlessSoundManager(), new com.bpm.minotaur.gamedata.item.ItemDataManager(), null, null, null, null);
+        duel.startCombat(ghoul);
+        ghoul.applyPin();
+        ghoul.applyDaze();
+        for (int i = 0; i < Monster.PIN_TURNS; i++) duel.monsterAttack();
+        assertFalse(ghoul.isPinned());
+        assertFalse(ghoul.isDazed());
+    }
 }

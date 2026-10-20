@@ -3358,7 +3358,13 @@ public class CombatManager {
     public void monsterAttack() {
         if (monster == null)
             return;
+        Monster acting = monster;
+        monsterTurn();
+        // The duelled monster skips MonsterAiManager, so it wears its Daze and Pin down here (#242).
+        acting.tickDazeAndPin();
+    }
 
+    private void monsterTurn() {
         // Process Statuses FIRST (DoT, etc.)
         processMonsterStatusEffects();
         if (currentState == CombatState.VICTORY)

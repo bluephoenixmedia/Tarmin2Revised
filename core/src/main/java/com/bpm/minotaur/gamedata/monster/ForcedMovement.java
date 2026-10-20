@@ -57,9 +57,7 @@ public final class ForcedMovement {
         if (to.equals(player) || maze.getMonsters().containsKey(to) || !monster.mayStandAt(toX, toY)) {
             return Result.BLOCKED;
         }
-        maze.getMonsters().remove(from);
-        monster.getPosition().set(toX + 0.5f, toY + 0.5f);
-        maze.getMonsters().put(to, monster);
+        maze.moveMonster(monster, toX, toY); // keeps the map key and position together, and leaves the blood trail
         return Result.MOVED;
     }
 

@@ -100,4 +100,16 @@ public class ForcedMovementTest {
         assertEquals(Result.IMMOVABLE, ForcedMovement.pull(maze, elite, PLAYER));
         assertEquals(new GridPoint2(4, 3), tile(heavy));
     }
+
+    @Test
+    public void aBossCannotBeMovedEither() {
+        Maze maze = new Maze(1, new int[8][8]);
+        MonsterTemplate t = new MonsterTemplate();
+        t.baseLevel = 5;
+        Monster minotaur = new Monster(Monster.MonsterType.MINOTAUR, 40, 14, 4, 3);
+        minotaur.setTemplate(t);
+        maze.addMonster(minotaur);
+
+        assertEquals(Result.IMMOVABLE, ForcedMovement.knockBack(maze, minotaur, Direction.EAST, PLAYER));
+    }
 }

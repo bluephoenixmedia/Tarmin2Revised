@@ -1775,13 +1775,27 @@ public class Monster implements Renderable {
         return pinnedTurns > 0;
     }
 
-    /**
-     * Heavies and elites hold their ground against knockback and pull (#227). Elites and bosses are
-     * the templates whose kill XP is lifted above their level's, as Vengeance reads them.
-     */
-    public boolean isImmovable() {
+    /** Elites and bosses are the templates whose kill XP is lifted above their level's. */
+    public boolean isElite() {
         MonsterTemplate t = getTemplate();
-        return getRole() == MonsterRole.HEAVY || (t != null && t.xpMultiplier > 1.0f);
+        return t != null && t.xpMultiplier > 1.0f;
+    }
+
+    /**
+     * Everything too great to be shoved: the Bridge boss, a theme champion, a seal lord, a
+     * megabeast, and the Minotaurs, Liches, Vampires and Golems. Wider than the combat music's boss
+     * test in CombatManager, which leaves seal lords and megabeasts out.
+     */
+    public boolean isBoss() {
+        if (isBridgeBoss() || isThemeChampion() || holdsCourt() || getMegabeastId() >= 0) return true;
+        if (getType() == null) return false;
+        String typeName = getType().name();
+        return typeName.contains("MINOTAUR") || typeName.contains("LICH") || typeName.contains("VAMPIRE") || typeName.contains("GOLEM");
+    }
+
+    /** Heavies, elites and bosses hold their ground against knockback and pull (#227). */
+    public boolean isImmovable() {
+        return getRole() == MonsterRole.HEAVY || isElite() || isBoss();
     }
 
     /** One of the monster's turns passes: a Daze and a Pin each wear down by one. */
