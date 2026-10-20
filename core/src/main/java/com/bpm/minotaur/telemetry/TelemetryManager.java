@@ -375,6 +375,11 @@ public class TelemetryManager {
         if (spellId != null) spellsCast.merge(spellId, 1, Integer::sum);
     }
 
+    /** Damage dealt outside an attack roll, such as Quick Knuckles' second blow (#243). */
+    public synchronized void recordDamageDealt(int amount) {
+        if (amount > 0) life[Counter.DAMAGE_DEALT.ordinal()] += amount;
+    }
+
     /** A Combat Art was used, or a Passive fired. */
     public synchronized void recordArtUse(String artName) {
         if (artName != null) artUses.merge(artName, 1, Integer::sum);

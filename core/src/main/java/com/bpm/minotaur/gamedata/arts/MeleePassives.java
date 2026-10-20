@@ -30,8 +30,8 @@ public final class MeleePassives {
     }
 
     /** The floating words (spec section 6). */
-    public static final String DAZE = "DAZE", STUN = "STUN", BLEED = "BLEED", EXTRA_CUT = "+1 CUT",
-            EXTRA_BLOW = "+1 BLOW", COUNTER = "COUNTER", FIRST_STRIKE = "FIRST STRIKE";
+    public static final String DAZE = "DAZE", STUN = "STUN", BLEED_AND_SLOW = "BLEED SLOW", EXTRA_CUT = "+1 CUT",
+            COUNTER = "COUNTER", FIRST_STRIKE = "FIRST STRIKE";
 
     /** Cut the Sinew: the bleed and the slow each last two turns. */
     static final int SINEW_TURNS = 2;
@@ -63,13 +63,16 @@ public final class MeleePassives {
                 if (target.getStatusManager() != null) {
                     target.getStatusManager().addEffect(StatusEffectType.SLOWED, SINEW_TURNS, 1, false);
                 }
-                word = BLEED;
+                word = BLEED_AND_SLOW;
                 break;
-            case QUICK_KNUCKLES:
+            case QUICK_KNUCKLES: {
                 // Half the blow that already landed, so resistance and armour soak are not taken twice.
-                target.takeDamage(Math.max(1, damage / 2), false, true);
-                word = EXTRA_BLOW;
+                // The amount rides on the word, so the second knuckle shows: "+3 BLOW 6".
+                int extra = target.takeDamage(Math.max(1, damage / 2), false, true);
+                TelemetryManager.getInstance().recordDamageDealt(extra);
+                word = "+" + extra + " BLOW";
                 break;
+            }
             case WIDE_CHOP:
                 word = chopTheOthers(player, target, maze, strike) ? EXTRA_CUT : null;
                 break;

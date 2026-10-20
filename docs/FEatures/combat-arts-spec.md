@@ -95,7 +95,20 @@ Every name is original: nothing is taken from Caves of Qud or XCOM. Each capston
 - **Skill Tree screen (K):** a Mastery section listing all ten Families with exact counts, for example "Axe: Adept, 62 / 150 full hits". It also lists the soul's kept Arts, with "retrain at Adept" where the body is below the rank.
 - **Item inspector:** the weapon's Family and your rank in it, by rank name only.
 - **Learning an Art:** the first time the soul learns one, a card in the style of the Discovery card shows its name, Family, rank and a one-line effect. When a body retrains a kept Art: *"Your arm remembers Ringing Blow."*
-- **When a Passive fires:** a short prefix on the floating damage number (DAZE, STUN, BLEED, SLOW, PIN, +1 CUT), and **no** log line.
+- **When a Passive fires:** a short prefix on the floating damage number, and **no** log line. The melee words (#243) are:
+
+  | Passive | Word |
+  |---|---|
+  | Ringing Blow | DAZE, or STUN |
+  | Cut the Sinew | BLEED SLOW |
+  | Wide Chop | +1 CUT, on each free cut |
+  | Quick Knuckles | +n BLOW, carrying the second blow's damage |
+  | Answering Steel | COUNTER |
+  | Hold the Line | FIRST STRIKE |
+
+  A free strike that misses shows "<word> MISS". Ranged Passives add PIN and their own words.
+- **Free strikes** (Answering Steel, Wide Chop, Hold the Line) are full swings of the weapon that fired the Passive. A hit trains Mastery like any full hit. A free strike never draws a return blow and never fires another Passive.
+- **Hold the Line** fires when a monster *steps* next to you by its own move, once per monster. Spawning beside you, or being pulled in by Reel In, does not count.
 - **Actives and capstones:** a combat log line.
 - **Pause ledger:** adds "Arts remembered: n".
 

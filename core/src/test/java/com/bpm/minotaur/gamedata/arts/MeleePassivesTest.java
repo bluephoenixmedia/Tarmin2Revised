@@ -117,7 +117,7 @@ public class MeleePassivesTest {
         know(CombatArt.CUT_THE_SINEW);
         Monster foe = monsterAt(4, 3);
 
-        assertEquals("BLEED", alwaysFires().onFullHit(player, weapon("DAGGER"), foe, maze, 4, strike));
+        assertEquals("BLEED SLOW", alwaysFires().onFullHit(player, weapon("DAGGER"), foe, maze, 4, strike));
         assertTrue(foe.getBleedTurns() > 0);
         assertTrue(foe.getStatusManager().hasEffect(StatusEffectType.SLOWED));
     }
@@ -128,7 +128,7 @@ public class MeleePassivesTest {
         Monster foe = monsterAt(4, 3);
         int hp = foe.getCurrentHP();
 
-        assertEquals("+1 BLOW", alwaysFires().onFullHit(player, null, foe, maze, 6, strike));
+        assertEquals("+3 BLOW", alwaysFires().onFullHit(player, null, foe, maze, 6, strike));
         assertEquals(hp - 3, foe.getCurrentHP());
     }
 
