@@ -927,7 +927,8 @@ public class CombatManager {
                 statMod = Math.max(MONSTER_STAT_MOD_FLOOR, t.maxHP / 14);
             }
         }
-        return profBonus + statMod;
+        // A Dazed monster swings two worse (#242).
+        return profBonus + statMod - (attacker.isDazed() ? Monster.DAZED_TO_HIT : 0);
     }
 
     public boolean shouldTriggerDeathInversion(Monster attacker) {

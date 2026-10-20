@@ -1369,6 +1369,9 @@ public class Monster implements Renderable {
 
     public int getEffectiveSpeed() {
         int speed = moveSpeed;
+        if (isDazed()) {
+            speed = Math.round(speed * DAZED_SPEED);
+        }
         if (statusManager.hasEffect(StatusEffectType.SLOWED)) {
             speed /= 2;
         }
@@ -1729,6 +1732,62 @@ public class Monster implements Renderable {
 
     public boolean isStunned() {
         return stunTurns > 0;
+    }
+
+    // --- Dazed and Pinned (#242): the effects the Combat Arts deal ---
+
+    /** What a Daze did: dazed, or stunned because the monster was already Dazed. */
+    public enum DazeOutcome { DAZED, STUNNED }
+
+    /** A Daze lasts this many of the monster's turns; a Pin, {@link #PIN_TURNS}. */
+    public static final int DAZE_TURNS = 2;
+    public static final int PIN_TURNS = 3;
+    /** Dazed: -2 to-hit, and a quarter slower. */
+    public static final int DAZED_TO_HIT = 2;
+    public static final float DAZED_SPEED = 0.75f;
+
+    private int dazedTurns = 0;
+    private int pinnedTurns = 0;
+
+    /**
+     * Dazes the monster. Dazing a monster that is already Dazed stuns it instead, unless it is
+     * still immune after a stun, when it only stays Dazed.
+     */
+    public DazeOutcome applyDaze() {
+        if (isDazed() && applyStun(1)) {
+            dazedTurns = 0;
+            return DazeOutcome.STUNNED;
+        }
+        dazedTurns = DAZE_TURNS;
+        return DazeOutcome.DAZED;
+    }
+
+    public boolean isDazed() {
+        return dazedTurns > 0;
+    }
+
+    /** Pinned: cannot move for {@link #PIN_TURNS} turns, but can still attack. */
+    public void applyPin() {
+        pinnedTurns = PIN_TURNS;
+    }
+
+    public boolean isPinned() {
+        return pinnedTurns > 0;
+    }
+
+    /**
+     * Heavies and elites hold their ground against knockback and pull (#227). Elites and bosses are
+     * the templates whose kill XP is lifted above their level's, as Vengeance reads them.
+     */
+    public boolean isImmovable() {
+        MonsterTemplate t = getTemplate();
+        return getRole() == MonsterRole.HEAVY || (t != null && t.xpMultiplier > 1.0f);
+    }
+
+    /** One of the monster's turns passes: a Daze and a Pin each wear down by one. */
+    public void tickDazeAndPin() {
+        if (dazedTurns > 0) dazedTurns--;
+        if (pinnedTurns > 0) pinnedTurns--;
     }
 
     public int getStunTurns() {
