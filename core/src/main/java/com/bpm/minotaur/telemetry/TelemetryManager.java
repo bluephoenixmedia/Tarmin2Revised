@@ -155,6 +155,8 @@ public class TelemetryManager {
     private final List<String> masteryRankUps = new ArrayList<>();
     private final Map<String, Integer> spellsCast = new TreeMap<>();
     private final Map<String, Integer> spellHealing = new TreeMap<>();
+    /** Combat Art uses and Passive procs, by Art name (#243). */
+    private final Map<String, Integer> artUses = new TreeMap<>();
     private int levelLast = 1, levelStart = 1;
     private int currentDepth = 1;
     private ExpeditionEndListener expeditionEndListener;
@@ -201,6 +203,7 @@ public class TelemetryManager {
         masteryRankUps.clear();
         spellsCast.clear();
         spellHealing.clear();
+        artUses.clear();
         levelStart = levelLast;
     }
 
@@ -370,6 +373,11 @@ public class TelemetryManager {
 
     public synchronized void recordSpellCast(String spellId) {
         if (spellId != null) spellsCast.merge(spellId, 1, Integer::sum);
+    }
+
+    /** A Combat Art was used, or a Passive fired. */
+    public synchronized void recordArtUse(String artName) {
+        if (artName != null) artUses.merge(artName, 1, Integer::sum);
     }
 
     /** HP a spell actually restored (not what it rolled). */
@@ -759,8 +767,7 @@ public class TelemetryManager {
         j.raw("masteryRankUps", "[" + String.join(", ", masteryRankUps) + "]");
         j.intMap("spellsCast", spellsCast);
         j.intMap("spellHealing", spellHealing);
-        // Combat Art uses and Passive procs fill this once the Arts exist (#221).
-        j.intMap("artUses", java.util.Collections.emptyMap());
+        j.intMap("artUses", artUses);
 
         j.openArray("fights");
         for (Fight f : closedFights) {
