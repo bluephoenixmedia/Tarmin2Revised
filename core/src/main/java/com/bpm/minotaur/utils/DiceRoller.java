@@ -59,6 +59,24 @@ public class DiceRoller {
         return 0;
     }
 
+    /** The mean of a roll in the same notation as {@link #roll}: "2d6+1" is 8.0. */
+    public static double average(String notation) {
+        if (notation == null || notation.isEmpty()) return 0;
+        String clean = notation.replaceAll("\s+", "");
+        try {
+            return Integer.parseInt(clean);
+        } catch (NumberFormatException e) {
+            // Not a static number
+        }
+        Matcher matcher = DICE_PATTERN.matcher(clean.toLowerCase());
+        if (!matcher.matches()) return 0;
+        String dice = matcher.group(1), mod = matcher.group(3);
+        int numDice = (dice == null || dice.isEmpty()) ? 1 : Integer.parseInt(dice);
+        int sides = Integer.parseInt(matcher.group(2));
+        int modifier = (mod == null || mod.isEmpty()) ? 0 : Integer.parseInt(mod);
+        return Math.max(0, numDice * (sides + 1) / 2.0 + modifier);
+    }
+
     /**
      * Rolls a d20.
      */

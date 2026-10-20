@@ -1446,7 +1446,7 @@
     "mpCost": 3,
     "range": 1,
     "targetType": "TOUCH",
-    "damageDice": "1d8",
+    "damageDice": "2d6",
     "damageType": "FORCE",
     "domain": "SPIRITUAL",
     "duration": "Instantaneous",

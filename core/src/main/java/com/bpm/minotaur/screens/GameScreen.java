@@ -3905,7 +3905,7 @@ public class GameScreen extends BaseScreen {
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             // Quick heal (#190) spends the combat turn when it uses something.
             if (actionKeys.is(keycode, "QUICK_HEAL")) {
-                if (player.quickHeal(discoveryManager, eventManager)) {
+                if (player.quickHeal(discoveryManager, eventManager, maze, combatManager)) {
                     combatManager.passTurnToMonster();
                 }
                 return true;
@@ -4199,11 +4199,11 @@ public class GameScreen extends BaseScreen {
                     } else {
                         eventManager.addEvent(new GameEvent(
                                 "Nothing here needs tending. Press " + actionKeys.keyName("QUICK_HEAL")
-                                        + " to heal with a poultice or potion.", 2.5f));
+                                        + " to heal: Cure Wounds first, then a poultice or potion.", 2.5f));
                     }
                     return true;
                 case "QUICK_HEAL":
-                    if (player.quickHeal(discoveryManager, eventManager)) {
+                    if (player.quickHeal(discoveryManager, eventManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;

@@ -95,9 +95,24 @@ public class Player {
      * @return whether an item was used, so the caller spends the turn
      */
     public boolean quickHeal(DiscoveryManager discoveryManager, GameEventManager eventManager) {
+        return quickHeal(discoveryManager, eventManager, null, null);
+    }
+
+    /**
+     * Quick heal (H). Casts the prepared starting heal first, when there is MP for it and the
+     * wound is worth it (#263): MP comes back on its own, potions and poultices don't. Otherwise
+     * it falls back to the best potion or poultice carried.
+     */
+    public boolean quickHeal(DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze,
+                             CombatManager combatManager) {
         int missing = stats.getMaxHP() - stats.getCurrentHP();
         String refusal = null;
         Item choice = null;
+        if (missing > 0 && healReady() && missing >= minimumWoundToCastHeal()) {
+            // The cast names itself ("Cast Cure Wounds!"), so there is no second message here.
+            return com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(
+                    STARTING_HEAL_SPELL, this, maze, eventManager, combatManager);
+        }
         if (missing <= 0) {
             refusal = "You are unhurt.";
         } else if (activePoultice != null) {
@@ -105,7 +120,10 @@ public class Player {
         } else {
             choice = QuickHeal.choose(inventory.getAllItems(), missing, stats.getMaxHP(),
                     effect -> discoveryManager != null && discoveryManager.isPotionIdentified(effect));
-            if (choice == null) refusal = "You carry nothing to heal with.";
+            if (choice == null) {
+                refusal = healReady() && missing < minimumWoundToCastHeal()
+                        ? "You are barely scratched." : "You carry nothing to heal with.";
+            }
         }
         if (refusal != null) {
             if (eventManager != null) eventManager.addEvent(new GameEvent(refusal, 2f));
@@ -117,6 +135,34 @@ public class Player {
             quaff(choice, discoveryManager, eventManager);
         }
         return true;
+    }
+
+    /** Whether the starting heal is prepared, there is the MP to cast it, and hands to cast with. */
+    public boolean healReady() {
+        SpellTemplate heal = startingHeal();
+        return heal != null && handsFree() && isSpellPrepared(STARTING_HEAL_SPELL)
+                && hasEnoughMana(com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.effectiveCost(heal, this));
+    }
+
+    private static SpellTemplate startingHeal() {
+        return SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
+    }
+
+    /** The smallest wound worth the starting heal's MP: half its average heal, rounded up (#263). */
+    public int minimumWoundToCastHeal() {
+        SpellTemplate heal = startingHeal();
+        if (heal == null) return 1;
+        double average = com.bpm.minotaur.utils.DiceRoller.average(heal.getDamageDice()) + getWisdomModifier();
+        return Math.max(1, (int) Math.ceil(average / 2.0));
+    }
+
+    /** The key that casts the starting heal from its spell slot, or null if it isn't prepared. */
+    public String startingHealSlotKey() {
+        String[] keys = com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS;
+        for (int i = 0; i < preparedSpells.length && i < keys.length; i++) {
+            if (STARTING_HEAL_SPELL.equals(preparedSpells[i])) return keys[i];
+        }
+        return null;
     }
 
     public boolean canWieldTwoHanded() {

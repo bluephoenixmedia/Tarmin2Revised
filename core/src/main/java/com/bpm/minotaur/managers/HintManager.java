@@ -32,7 +32,8 @@ public class HintManager implements SlotScopedState {
         COLD,
         DIVINITY,
         DOOM,
-        LOCKED_SPELL_SLOT
+        LOCKED_SPELL_SLOT,
+        HEAL_READY
     }
 
     private static HintManager instance;
@@ -149,8 +150,24 @@ public class HintManager implements SlotScopedState {
     }
 
     /**
+     * Below half health with the starting heal ready: name the key (#263). The heal sat unused for
+     * four lives because nothing said it was there.
+     */
+    public boolean checkHealReady(com.bpm.minotaur.gamedata.player.Player player, GameEventManager eventManager) {
+        if (player == null || !shouldShow(HintId.HEAL_READY)) return false;
+        if (player.getCurrentHP() * 2 >= player.getStats().getMaxHP() || !player.healReady()) return false;
+        com.bpm.minotaur.gamedata.spells.SpellTemplate heal = com.bpm.minotaur.gamedata.spells.SpellDataManager
+                .getInstance().getSpell(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL);
+        String quickHeal = ActionKeys.live().keyName(Action.QUICK_HEAL);
+        String slotKey = player.startingHealSlotKey(); // wherever the player has put it
+        String msg = heal.getName() + " is ready: press " + quickHeal + (slotKey != null ? " (or " + slotKey + ")." : ".");
+        return postHint(HintId.HEAL_READY, eventManager, msg, 4f);
+    }
+
+    /**
      * First hunger state: explains what the state means and the fix.
      */
+
     public boolean checkHunger(GameEventManager eventManager) {
         if (!shouldShow(HintId.HUNGER)) return false;
         String msg = "You are hungry: eat food from your pack before hunger drains your strength.";
