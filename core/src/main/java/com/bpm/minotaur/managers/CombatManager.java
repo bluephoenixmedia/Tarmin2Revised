@@ -104,6 +104,9 @@ public class CombatManager {
     private Monster monster;
     private final Maze maze;
     private final Random random = new Random();
+    /** The melee Adept Passives (#243); their roll is swappable so tests can force a proc. */
+    private com.bpm.minotaur.gamedata.arts.MeleePassives meleePassives =
+            new com.bpm.minotaur.gamedata.arts.MeleePassives(() -> random.nextFloat());
     private final Tarmin2 game;
     private final AnimationManager animationManager;
     private final GameEventManager eventManager;
@@ -601,6 +604,60 @@ public class CombatManager {
         }
     }
 
+    /** The weapon a Passive's free strike swings: the one that fired it, else the main hand. */
+    private Item freeStrikeWeapon;
+
+    /** For tests: the draw the melee Passives roll against their chance. */
+    void setArtRoll(java.util.function.DoubleSupplier roll) {
+        meleePassives = new com.bpm.minotaur.gamedata.arts.MeleePassives(roll);
+    }
+
+    /** A monster just stepped next to the player: Hold the Line may strike it first (#243). */
+    public void onMonsterClosed(Monster monster) {
+        if (player == null || monster == null) return;
+        meleePassives.onMonsterStepsAdjacent(player, player.getInventory().getRightHand(), monster, this::freeStrike);
+    }
+
+    /**
+     * A free strike a Passive grants: one swing of the held weapon at {@code target}, shown with
+     * {@code word}. Resolved apart from {@link #resolveAttack}, which would end with the target
+     * striking back and could fire more Passives; here neither happens, so procs never chain.
+     */
+    private void freeStrike(Monster target, String word) {
+        if (player == null || target == null || target.getCurrentHP() <= 0) return;
+        Item weapon = freeStrikeWeapon != null ? freeStrikeWeapon : player.getInventory().getRightHand();
+        if (weapon != null && weapon.isRanged()) return;
+        GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
+        com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        int d20 = DiceRoller.d20();
+        int toHit = (weapon != null && weapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
+        toHit += player.masteryToHitBonus(weapon, false);
+        boolean crit = d20 == 20;
+        if (!crit && d20 + toHit < target.getArmorClass()) {
+            telemetry.recordPlayerAttack(target, target.getMonsterType(), target.getLevel(), attackModeOf(weapon),
+                    com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
+            recordFamilyAttack(target, weapon, false, com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS);
+            // A Passive writes no log line (spec section 6): the miss shows where the blow went.
+            if (animationManager != null) {
+                animationManager.addAnimation(new Animation(Animation.AnimationType.DAMAGE_TEXT, at, word + " MISS",
+                        com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 1.2f));
+            }
+            return;
+        }
+        String dice = player.isPolymorphed() ? player.getForm().damageDice()
+                : weapon != null ? player.getInventory().getActiveDamageDice(weapon) : "1d2";
+        if (dice == null || dice.isEmpty()) dice = "1d4";
+        int bonus = (weapon != null && weapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+        int actual = target.takeDamage(Math.max(1, DiceRoller.roll(dice) + bonus), DamageType.PHYSICAL, crit);
+        alertMonsterToPlayer(target);
+        showDamageText(actual, at, word + " ", com.badlogic.gdx.graphics.Color.ORANGE);
+        telemetry.recordPlayerAttack(target, target.getMonsterType(), target.getLevel(), attackModeOf(weapon),
+                com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
+        recordFamilyAttack(target, weapon, false, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT);
+        player.trainMastery(weapon, false, target, eventManager);
+        if (target.getCurrentHP() <= 0) handleRemoteKill(target, heldWeaponKillCause());
+    }
+
     private boolean isBossMonster(Monster monster) {
         if (monster == null) return false;
         if (monster.isBridgeBoss() || monster.isThemeChampion()) return true;
@@ -829,6 +886,7 @@ public class CombatManager {
         } else {
             eventManager.addEvent(new GameEvent(attacker.getName() + " misses!", 1f));
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), false, 0);
+            meleePassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), attacker, this::freeStrike);
         }
 
         damageTakenInCombat += actualDamage;
@@ -2436,6 +2494,17 @@ public class CombatManager {
             }
             postAffinityLine(monster, dmgType, isCrit);
 
+            // A full hit may fire the wielded Family's Adept Passive (#243); its word leads the number.
+            if (!isGlancing) {
+                freeStrikeWeapon = attackWeapon; // an off-hand axe's Wide Chop cuts with the off-hand axe
+                try {
+                    String artWord = meleePassives.onFullHit(player, attackWeapon, monster, maze, actualDamage, this::freeStrike);
+                    if (artWord != null) dmgPrefix = artWord + " " + dmgPrefix;
+                } finally {
+                    freeStrikeWeapon = null;
+                }
+            }
+
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
             lastDamageDealt = actualDamage;
             lastHitCritOrFinisher = isCrit || (currentMotionProfile != null && currentMotionProfile.isFinisher);
@@ -3513,6 +3582,7 @@ public class CombatManager {
         } else {
             eventManager.addEvent(new GameEvent(monster.getName() + " misses!", 1f));
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(monster, monster.getMonsterType(), monster.getLevel(), false, 0);
+            meleePassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), monster, this::freeStrike);
         }
 
         damageTakenInCombat += actualDamage;
@@ -3636,6 +3706,7 @@ public class CombatManager {
             return true;
         } else {
             eventManager.addEvent(new GameEvent(attacker.getName() + " tries to flank but misses!", 1.5f));
+            meleePassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), attacker, this::freeStrike);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), false, 0);
             return false;
         }

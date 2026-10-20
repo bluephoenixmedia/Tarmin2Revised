@@ -55,10 +55,21 @@ public class MonsterAiManager {
         if (maze == null || monster == null || player == null || !allowMonsterMovement) {
             return;
         }
-        takeTurn(monster, maze, player, combatManager);
+        turnPlayer = player;
+        turnCombat = combatManager;
+        try {
+            takeTurn(monster, maze, player, combatManager);
+        } finally {
+            turnPlayer = null;
+            turnCombat = null;
+        }
         // At the end of the turn, whichever way it ended: a 3-turn Pin holds for three turns (#242).
         monster.tickDazeAndPin();
     }
+
+    /** The player and combat of the monster turn in progress, for moves that close on the player. */
+    private Player turnPlayer;
+    private CombatManager turnCombat;
 
     private void takeTurn(Monster monster, Maze maze, Player player, CombatManager combatManager) {
         engagedByPlayer = combatManager != null ? combatManager.getMonster() : null;
@@ -764,6 +775,7 @@ public class MonsterAiManager {
     private void moveMonsterTo(Monster monster, Maze maze, int targetX, int targetY) {
         // A Pinned monster can't move, though it can still attack from where it stands (#242).
         if (monster.isPinned()) return;
+        boolean wasBeside = besidePlayer(monster);
         // A tethered monster holds its ground: the Bringer of Death does not leave his island.
         if (!monster.mayStandAt(targetX, targetY)) return;
         tempPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
@@ -771,6 +783,17 @@ public class MonsterAiManager {
         maze.getMonsters().remove(tempPos);
         monster.getPosition().set(targetX + 0.5f, targetY + 0.5f);
         maze.getMonsters().put(new GridPoint2(targetX, targetY), monster);
+        // Closing to melee is Hold the Line's moment (#243).
+        if (!wasBeside && besidePlayer(monster) && turnCombat != null && !monster.isAlly() && !monster.isPeaceful()) {
+            turnCombat.onMonsterClosed(monster);
+        }
+    }
+
+    private boolean besidePlayer(Monster monster) {
+        if (turnPlayer == null) return false;
+        int dx = (int) monster.getPosition().x - (int) turnPlayer.getPosition().x;
+        int dy = (int) monster.getPosition().y - (int) turnPlayer.getPosition().y;
+        return Math.abs(dx) + Math.abs(dy) == 1;
     }
 
     // Keep random move
