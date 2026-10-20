@@ -109,10 +109,7 @@ public class Player {
         String refusal = null;
         Item choice = null;
         if (missing > 0 && healReady() && missing >= minimumWoundToCastHeal()) {
-            SpellTemplate heal = SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You cast " + heal.getName() + ".", 2f));
-            }
+            // The cast names itself ("Cast Cure Wounds!"), so there is no second message here.
             return com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(
                     STARTING_HEAL_SPELL, this, maze, eventManager, combatManager);
         }
@@ -140,27 +137,32 @@ public class Player {
         return true;
     }
 
-    /** Whether the starting heal is prepared and there is the MP to cast it. */
+    /** Whether the starting heal is prepared, there is the MP to cast it, and hands to cast with. */
     public boolean healReady() {
-        SpellTemplate heal = SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
-        return heal != null && isSpellPrepared(STARTING_HEAL_SPELL) && hasEnoughMana(heal.getMpCost());
+        SpellTemplate heal = startingHeal();
+        return heal != null && handsFree() && isSpellPrepared(STARTING_HEAL_SPELL)
+                && hasEnoughMana(com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.effectiveCost(heal, this));
+    }
+
+    private static SpellTemplate startingHeal() {
+        return SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
     }
 
     /** The smallest wound worth the starting heal's MP: half its average heal, rounded up (#263). */
     public int minimumWoundToCastHeal() {
-        SpellTemplate heal = SpellDataManager.getInstance().getSpell(STARTING_HEAL_SPELL);
+        SpellTemplate heal = startingHeal();
         if (heal == null) return 1;
-        double average = averageOf(heal.getDamageDice()) + getWisdomModifier();
+        double average = com.bpm.minotaur.utils.DiceRoller.average(heal.getDamageDice()) + getWisdomModifier();
         return Math.max(1, (int) Math.ceil(average / 2.0));
     }
 
-    /** The mean of an "NdS+K" roll. */
-    private static double averageOf(String dice) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)d(\\d+)([+-]\\d+)?").matcher(dice == null ? "" : dice);
-        if (!m.matches()) return 0;
-        int n = Integer.parseInt(m.group(1)), sides = Integer.parseInt(m.group(2));
-        int k = m.group(3) == null ? 0 : Integer.parseInt(m.group(3));
-        return n * (sides + 1) / 2.0 + k;
+    /** The key that casts the starting heal from its spell slot, or null if it isn't prepared. */
+    public String startingHealSlotKey() {
+        String[] keys = com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS;
+        for (int i = 0; i < preparedSpells.length && i < keys.length; i++) {
+            if (STARTING_HEAL_SPELL.equals(preparedSpells[i])) return keys[i];
+        }
+        return null;
     }
 
     public boolean canWieldTwoHanded() {

@@ -38,6 +38,20 @@ import java.util.List;
  */
 public class SpellExecutionEngine {
 
+    /**
+     * The MP a cast will charge before Runic Conservation's chance of a free cast: the spell's cost
+     * less Spell Weaver, through the traits. Quick heal checks affordability with it (#263).
+     */
+    public static int effectiveCost(SpellTemplate spell, Player player) {
+        int cost = spell.getMpCost();
+        if (cost <= 0) return cost;
+        if (player.hasSkill(SkillId.SPELL_WEAVER)) {
+            cost = Math.max(1, cost - 1);
+        }
+        return Math.max(1, Math.round(cost * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("spellCostMult")
+                + com.bpm.minotaur.gamedata.trait.TraitEffects.add("spellCostFlat")));
+    }
+
     public static boolean castSpell(String spellId, Player player, Maze maze, GameEventManager eventManager, CombatManager combatManager) {
         if (spellId == null || spellId.isEmpty()) {
             return false;
@@ -50,13 +64,8 @@ public class SpellExecutionEngine {
         }
 
         // Check MP (Cantrips level 0 cost 0 MP)
-        int effectiveCost = spell.getMpCost();
+        int effectiveCost = effectiveCost(spell, player);
         if (effectiveCost > 0) {
-            if (player.hasSkill(SkillId.SPELL_WEAVER)) {
-                effectiveCost = Math.max(1, effectiveCost - 1);
-            }
-            effectiveCost = Math.max(1, Math.round(effectiveCost * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("spellCostMult")
-                    + com.bpm.minotaur.gamedata.trait.TraitEffects.add("spellCostFlat")));
             if (player.hasSkill(SkillId.RUNIC_CONSERVATION) && com.badlogic.gdx.math.MathUtils.randomBoolean(0.25f)) {
                 effectiveCost = 0;
                 eventManager.addEvent(new GameEvent("RUNIC CONSERVATION: Free spell cast!", 1.5f));

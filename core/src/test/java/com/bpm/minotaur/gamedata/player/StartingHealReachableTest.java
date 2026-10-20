@@ -113,7 +113,30 @@ public class StartingHealReachableTest {
         assertEquals(4, player.minimumWoundToCastHeal());
     }
 
+    @Test
+    public void aFormWithNoHandsCannotCastSoHFallsBackToItems() {
+        player.enterForm(new com.bpm.minotaur.gamedata.polymorph.PlayerForm("Wolf", 20, 6, 1f, "1d6", false, false, 100));
+        wound(10);
+
+        assertFalse(player.quickHeal(null, events, null, null));
+
+        assertEquals("no MP spent", 11, player.getStats().getCurrentMP());
+        assertTrue(said("You carry nothing to heal with"));
+    }
+
     // --- the hint ---
+
+    @Test
+    public void theHintNamesTheSlotTheHealIsIn() {
+        player.setUnlockedSpellSlots(3);
+        player.prepareSpell(0, null);
+        player.prepareSpell(2, Player.STARTING_HEAL_SPELL);
+        wound(player.getStats().getMaxHP() / 2 + 1);
+
+        assertTrue(HintManager.getInstance().checkHealReady(player, events));
+        assertTrue(said("(or V)"));
+    }
+
 
     @Test
     public void theHintComesOnceAtHalfHealthWithTheHealReady() {

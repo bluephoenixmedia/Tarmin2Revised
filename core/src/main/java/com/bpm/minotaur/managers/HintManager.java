@@ -150,9 +150,6 @@ public class HintManager implements SlotScopedState {
     }
 
     /**
-     * First hunger state: explains what the state means and the fix.
-     */
-    /**
      * Below half health with the starting heal ready: name the key (#263). The heal sat unused for
      * four lives because nothing said it was there.
      */
@@ -161,11 +158,15 @@ public class HintManager implements SlotScopedState {
         if (player.getCurrentHP() * 2 >= player.getStats().getMaxHP() || !player.healReady()) return false;
         com.bpm.minotaur.gamedata.spells.SpellTemplate heal = com.bpm.minotaur.gamedata.spells.SpellDataManager
                 .getInstance().getSpell(com.bpm.minotaur.gamedata.player.Player.STARTING_HEAL_SPELL);
-        String quickHeal = com.badlogic.gdx.Input.Keys.toString(SettingsManager.getInstance().getKey("QUICK_HEAL"));
-        String slotKey = com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[0];
-        String msg = heal.getName() + " is ready: press " + quickHeal + " (or " + slotKey + ").";
+        String quickHeal = ActionKeys.live().keyName(Action.QUICK_HEAL);
+        String slotKey = player.startingHealSlotKey(); // wherever the player has put it
+        String msg = heal.getName() + " is ready: press " + quickHeal + (slotKey != null ? " (or " + slotKey + ")." : ".");
         return postHint(HintId.HEAL_READY, eventManager, msg, 4f);
     }
+
+    /**
+     * First hunger state: explains what the state means and the fix.
+     */
 
     public boolean checkHunger(GameEventManager eventManager) {
         if (!shouldShow(HintId.HUNGER)) return false;
