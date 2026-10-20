@@ -67,10 +67,8 @@ public final class Vengeance {
         return monsterLevel - playerLevel >= OUT_OF_DEPTH_LEVELS_ABOVE;
     }
 
-    /** Elites and bosses are the templates whose kill XP is lifted above their level's. */
     private static boolean isElite(Monster monster) {
-        MonsterTemplate template = monster.getTemplate();
-        return template != null && template.xpMultiplier > 1.0f;
+        return monster.isElite();
     }
 
     /** HP restored for a kill of {@code role}; any kill worth something restores at least 1. */

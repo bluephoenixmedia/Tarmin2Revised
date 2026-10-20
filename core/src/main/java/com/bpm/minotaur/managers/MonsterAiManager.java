@@ -55,6 +55,12 @@ public class MonsterAiManager {
         if (maze == null || monster == null || player == null || !allowMonsterMovement) {
             return;
         }
+        takeTurn(monster, maze, player, combatManager);
+        // At the end of the turn, whichever way it ended: a 3-turn Pin holds for three turns (#242).
+        monster.tickDazeAndPin();
+    }
+
+    private void takeTurn(Monster monster, Maze maze, Player player, CombatManager combatManager) {
         engagedByPlayer = combatManager != null ? combatManager.getMonster() : null;
         // A town's guard at peace stands its post.
         if (monster.isPeaceful()) return;
@@ -756,6 +762,8 @@ public class MonsterAiManager {
     // Removed unused performSeekingMove wrapper
 
     private void moveMonsterTo(Monster monster, Maze maze, int targetX, int targetY) {
+        // A Pinned monster can't move, though it can still attack from where it stands (#242).
+        if (monster.isPinned()) return;
         // A tethered monster holds its ground: the Bringer of Death does not leave his island.
         if (!monster.mayStandAt(targetX, targetY)) return;
         tempPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
