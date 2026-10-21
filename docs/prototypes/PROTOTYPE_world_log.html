@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Log Prototype</title>
+<!-- PROTOTYPE, throwaway: four World Log screens, switchable via ?variant=A..D, for
+     "Prototype: the World Log screen" (#270). Colours are the game's UiTheme tokens. -->
+<style>
+  :root { --void:#0B0907; --panel:#15100B; --raised:#1F170F; --inset:#0E0B08; --line-dim:#3A2A18; --line:#6E4D25;
+          --line-bright:#B8862F; --focus:#FFD77A; --text:#EFE3CC; --dim:#B39C78; --off:#6F5E46; --gold:#E9B44C; --blood:#B4442E; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--void); color:var(--text); font:15px/1.5 "Courier New", ui-monospace, monospace; }
+  h1, h2, h3 { font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin:0; }
+  h1 { font-size:20px; color:var(--gold); }
+  h2 { font-size:14px; color:var(--gold); }
+  .frame { max-width:1180px; margin:16px auto 90px; padding:0 16px; }
+  .panel { background:var(--panel); border:2px solid var(--line); box-shadow: inset 0 0 0 1px var(--line-dim); padding:14px; }
+  .dim { color:var(--dim); } .off { color:var(--off); } .gold { color:var(--gold); } .blood { color:var(--blood); }
+  .tag { display:inline-block; border:1px solid var(--line); padding:0 6px; font-size:12px; color:var(--dim); }
+  button { font:inherit; background:var(--raised); color:var(--text); border:1px solid var(--line); padding:4px 10px; cursor:pointer; }
+  button:hover, button.on { border-color:var(--focus); color:var(--focus); }
+  ul.deeds { margin:6px 0; padding-left:18px; } ul.deeds li { margin:2px 0; }
+  .voice { border-left:3px solid var(--line-bright); padding:4px 10px; margin:8px 0; background:var(--inset); }
+  .voice .who { font-size:12px; color:var(--gold); text-transform:uppercase; }
+  .switcher { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); background:#fff; color:#111;
+              border-radius:999px; padding:6px 10px; display:flex; gap:10px; align-items:center; box-shadow:0 6px 24px #0008;
+              font:13px system-ui, sans-serif; z-index:9; }
+  .switcher button { background:#111; color:#fff; border:none; border-radius:999px; padding:4px 10px; }
+  /* A: ledger */
+  .ledger { display:grid; grid-template-columns: 340px 1fr; gap:14px; }
+  .ledger .row { padding:6px 8px; border-bottom:1px solid var(--line-dim); cursor:pointer; }
+  .ledger .row.sel { background:var(--raised); outline:1px solid var(--line-bright); }
+  /* B: timeline */
+  .bridge { height:16px; background:var(--inset); border:1px solid var(--line); position:relative; }
+  .bridge > div { height:100%; background:linear-gradient(90deg, var(--line), var(--blood)); }
+  .track { display:flex; gap:4px; margin:14px 0; overflow-x:auto; padding-bottom:6px; }
+  .seg { flex:0 0 auto; min-width:110px; background:var(--raised); border:1px solid var(--line); padding:6px; cursor:pointer; }
+  .seg.sel { border-color:var(--focus); }
+  .seg .bar { height:6px; background:var(--line-bright); margin:4px 0; }
+  /* C: graves */
+  .graves { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:14px; }
+  .stone { background:linear-gradient(#3a342c, #24201b); border:2px solid #57503f; border-radius:60px 60px 6px 6px; padding:18px 10px 10px;
+           text-align:center; min-height:190px; cursor:pointer; color:#d9d0bd; }
+  .stone.sel { border-color:var(--focus); }
+  .stone .ep { font-size:12px; color:#a99f88; font-style:italic; }
+  /* D: chronicle */
+  .scroll { max-width:760px; margin:0 auto; background:#e6d7b5; color:#2a1d10; padding:28px 36px; border:2px solid #8b6a3a;
+            font-family: Georgia, "Times New Roman", serif; font-size:16px; line-height:1.6; }
+  .scroll h2 { color:#5a3a12; font-family: Georgia, serif; }
+  .scroll .life { margin:18px 0; } .scroll .drop:first-letter { font-size:2.4em; float:left; line-height:.9; margin-right:6px; color:#7b2b14; }
+  .scroll details { font-family:"Courier New", monospace; font-size:13px; color:#4a3a25; }
+  @media (max-width:760px) { .ledger { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="frame" id="app"></div>
+<div class="switcher"><button id="prev">&larr;</button><span id="label"></span><button id="next">&rarr;</button></div>
+<script>
+// ---- Sample history: what the World Log would be built from (records per #268). ----
+const SOUL = "Theseus";
+const HUNGER = 10, UNREMEMBERED = 3;
+const LIVES = [
+  { n:4, name:"Brannoc of Velmere", origin:"Raided from Velmere, a fishing village, in the Thaw of Year 3", season:"Thaw, Y3",
+    deeds:["Slew the first of the Host he met: a Skeleton archer at Depth 1",
+           "Reached Depth 2, deeper than the soul had been",
+           "Swore an oath to House Vey'ranth"],
+    death:{ epitaph:"Fell to Gorvak the Gnawer at Depth 2 on turn 612", killer:"Gorvak the Gnawer", place:"the Weeping Stair", turn:612 },
+    voices:[["House Vey'ranth, the Faithful","A sworn blade, lost at the Weeping Stair. We remember the oath he kept."],
+            ["House Kurrath, the Unforgiving","A fisherman with a borrowed sword. Gorvak made short work of him."]] },
+  { n:5, name:"Sefa the Unshriven", origin:"Tithed by the Crown of Asterholm for heresy", season:"High Sun, Y3",
+    deeds:["Reached Adept with the Bow","Learned Swift Nock, first of the soul's Arts","Pacified the megabeast Ossalith"],
+    death:{ epitaph:"Died of thirst at Depth 3 on turn 1,104", killer:null, place:"the Ashen Wastes", turn:1104 },
+    voices:[["House Vey'ranth, the Faithful","She calmed the bone-beast and asked nothing for it."],
+            ["Tarmin's Knell","Thirst. How small. I thank her for the stone."]] },
+  { n:6, name:"Old Garric", origin:"Raided from Harrowfield, a farmstead", season:"Harvest, Y3",
+    deeds:["Slew a Heavy: the Hydra of the Sunken Mire","Won the Seal of the Mire"],
+    death:{ epitaph:"Fell to a Minotaur general at Depth 4 on turn 2,240", killer:"Askeron, Horn of the Host", place:"the Gash of Teeth", turn:2240 },
+    voices:[["The Antlered Host","A farmer took a seal from us. Askeron took it back, with his head."],
+            ["House Kurrath, the Unforgiving","The Mire-Seal passed through an old man's hands. It will not do so again."]] },
+  { n:7, name:"Ilse Two-Knives", origin:"Tithed by the Free City of Morrow for murder", season:"Frost, Y4",
+    deeds:["Reached Expert with the Dagger","Broke her oath to House Vey'ranth"],
+    death:{ epitaph:"Fell to Gorvak the Gnawer at Depth 2 on turn 380", killer:"Gorvak the Gnawer", place:"the Weeping Stair", turn:380 },
+    voices:[["House Vey'ranth, the Faithful","The oathbreaker went the way of the first. Gorvak keeps his own tally."]] },
+];
+// Gorvak killed two lives: the world remembers him for it (#269).
+let sel = LIVES.length - 1;
+
+function deathLine(l){ return l.death.epitaph; }
+function entry(l){
+  return `<h2>Life ${l.n}: ${l.name}</h2>
+    <div class="dim">${l.origin} &middot; the Champion ${SOUL} reborn</div>
+    <ul class="deeds">${l.deeds.map(d=>`<li>${d}</li>`).join("")}</ul>
+    <div class="blood">${deathLine(l)}</div>
+    ${l.death.killer ? `<div class="off">Killer: ${l.death.killer} &middot; at ${l.death.place}</div>` : `<div class="off">At ${l.death.place}</div>`}
+    <h2 style="margin-top:12px">As the chronicles tell it</h2>
+    ${l.voices.map(v=>`<div class="voice"><div class="who">${v[0]}</div>${v[1]}</div>`).join("")}`;
+}
+const unremembered = `<span class="off">${UNREMEMBERED} lives unremembered</span>`;
+
+// ---- Variant A: the Ledger. A list of lives on the left, the open page on the right. ----
+function A(){
+  return `<div class="panel" style="margin-bottom:12px"><h1>World Log</h1>
+    <span class="dim">The Champion ${SOUL} &middot; ${HUNGER} lives spent &middot; Tarmin's Hunger ${HUNGER}/50</span></div>
+    <div class="ledger">
+      <div class="panel">${[...LIVES].reverse().map(l=>`<div class="row ${l===LIVES[sel]?'sel':''}" data-i="${LIVES.indexOf(l)}">
+          <span class="gold">${l.n}.</span> ${l.name}<br><span class="off">${l.death.killer ? 'Fell to '+l.death.killer : 'Died at '+l.death.place}</span></div>`).join("")}
+        <div class="row" style="cursor:default">${unremembered}</div></div>
+      <div class="panel">${entry(LIVES[sel])}</div>
+    </div>`;
+}
+// ---- Variant B: the Timeline. The Bridge above, lives as a strip of seasons, entry below. ----
+function B(){
+  return `<div class="panel"><h1>The Bridge of Souls</h1>
+      <div class="bridge" title="${HUNGER}/50 stones"><div style="width:${HUNGER*2}%"></div></div>
+      <div class="dim" style="margin-top:4px">${HUNGER} of 50 stones laid &middot; each life below is one</div>
+      <div class="track"><div class="seg" style="opacity:.55;cursor:default"><div class="off">Lives 1-${UNREMEMBERED}</div><div class="bar" style="background:var(--off)"></div><div class="off">unremembered</div></div>
+        ${LIVES.map((l,i)=>`<div class="seg ${i===sel?'sel':''}" data-i="${i}"><div class="gold">${l.n}. ${l.name.split(' ')[0]}</div>
+          <div class="bar" style="width:${Math.min(100, 30 + l.death.turn/25)}%"></div><div class="off">${l.season}</div></div>`).join("")}</div></div>
+    <div class="panel" style="margin-top:12px">${entry(LIVES[sel])}</div>`;
+}
+// ---- Variant C: the Graveyard. A headstone per life; the epitaph is the face, the record behind it. ----
+function C(){
+  return `<div class="panel" style="margin-bottom:12px"><h1>The Graves of ${SOUL}</h1><span class="dim">Here lie the bodies the soul wore. ${unremembered}.</span></div>
+    <div class="graves">${LIVES.map((l,i)=>`<div class="stone ${i===sel?'sel':''}" data-i="${i}">
+        <div style="font-size:12px;color:#a99f88">LIFE ${l.n}</div><div style="font-weight:700;margin:6px 0">${l.name}</div>
+        <div class="ep">${l.death.epitaph}</div></div>`).join("")}</div>
+    <div class="panel" style="margin-top:14px">${entry(LIVES[sel])}</div>`;
+}
+// ---- Variant D: the Chronicle. One continuous telling in a chronicler's prose; the plain record folds open. ----
+function D(){
+  const prose = l => {
+    const lead = l.voices[0][1];
+    return `<div class="life"><p class="drop">In the ${l.season.replace(', ',' of ')}, the soul called ${SOUL} woke in ${l.name}.
+      ${l.origin.replace(/^Raided/,'They had been raided').replace(/^Tithed/,'They had been tithed')}. ${l.deeds[0]}. ${lead}
+      ${l.death.killer ? `At ${l.death.place}, ${l.death.killer} ended it.` : `At ${l.death.place} it ended, without a blow.`}</p>
+      <details><summary>The plain record</summary><ul>${l.deeds.map(d=>`<li>${d}</li>`).join("")}</ul>${l.death.epitaph}</details></div>`;
+  };
+  return `<div class="scroll"><h2>The Chronicle of the Champion ${SOUL}</h2>
+    <p><em>Of the first ${UNREMEMBERED} lives nothing is remembered; the maze kept them.</em></p>
+    ${LIVES.map(prose).join("")}
+    <p><em>${HUNGER} stones laid. There will be another.</em></p></div>`;
+}
+
+const VARIANTS = { A:["A","The Ledger"], B:["B","The Timeline"], C:["C","The Graveyard"], D:["D","The Chronicle"] };
+const KEYS = Object.keys(VARIANTS);
+function current(){ const v = new URLSearchParams(location.search).get("variant"); return KEYS.includes(v) ? v : "A"; }
+function go(k){ const u = new URL(location); u.searchParams.set("variant", k); history.replaceState(null, "", u); render(); }
+function render(){
+  const v = current();
+  document.getElementById("app").innerHTML = ({A,B,C,D})[v]();
+  document.getElementById("label").textContent = VARIANTS[v][0] + " (" + VARIANTS[v][1] + ")";
+  document.querySelectorAll("[data-i]").forEach(el => el.onclick = () => { sel = +el.dataset.i; render(); });
+}
+function step(d){ const i = KEYS.indexOf(current()); go(KEYS[(i + d + KEYS.length) % KEYS.length]); }
+document.getElementById("prev").onclick = () => step(-1);
+document.getElementById("next").onclick = () => step(1);
+document.addEventListener("keydown", e => { if (e.target.matches("input,textarea,[contenteditable]")) return;
+  if (e.key === "ArrowLeft") step(-1); if (e.key === "ArrowRight") step(1); });
+render();
+</script>
+</body>
+</html>
