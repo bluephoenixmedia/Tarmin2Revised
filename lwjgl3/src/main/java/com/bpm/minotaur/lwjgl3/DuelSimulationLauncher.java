@@ -386,9 +386,18 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 }
                 int hp = player.getCurrentHP();
                 if (gap > 1) {
-                    if (combat.performMonsterRangedAttack(monster)) {
-                        d.monsterActions++;
-                        d.approachShots++;
+                    // The game's own tactics (#255): shoot, then spend the wait closing in.
+                    if (com.bpm.minotaur.gamedata.monster.MonsterTactics.decide(monster, gap, true)
+                            == com.bpm.minotaur.gamedata.monster.MonsterTactics.Move.SHOOT) {
+                        if (combat.performMonsterRangedAttack(monster)) {
+                            d.monsterActions++;
+                            d.approachShots++;
+                            monster.setRangedShotCooldown(com.bpm.minotaur.gamedata.monster.MonsterTactics.SHOT_WAIT_ACTIONS);
+                        }
+                    } else {
+                        monster.tickRangedShotCooldown();
+                        gap--; // it closes the gap itself
+                        placeMonster(maze, monster, gap);
                     }
                 } else {
                     combat.monsterMeleeStrike(monster);

@@ -19,6 +19,12 @@ public final class MonsterTactics {
 
     /** At this distance or nearer, everything but an elite closes to melee. */
     public static final int MELEE_CLOSING_DISTANCE = 2;
+    /**
+     * After a shot, a monster spends this many of its own actions moving before it may shoot again
+     * (#255): a shot is an event, not a stream. It was 1; depth-1 archers wore a fresh body down
+     * on the approach.
+     */
+    public static final int SHOT_WAIT_ACTIONS = 2;
 
     /** An elite backs away while the player is nearer than this. */
     public static final int ELITE_STANDOFF_DISTANCE = 3;
@@ -45,7 +51,7 @@ public final class MonsterTactics {
             if (distance < ELITE_STANDOFF_DISTANCE) {
                 return Move.RETREAT;
             }
-            return canShoot ? Move.SHOOT : Move.ADVANCE;
+            return canShoot && monster.getRangedShotCooldown() <= 0 ? Move.SHOOT : Move.ADVANCE;
         }
         if (canShoot && distance > MELEE_CLOSING_DISTANCE && monster.getRangedShotCooldown() <= 0) {
             return Move.SHOOT;

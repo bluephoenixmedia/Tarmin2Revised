@@ -566,17 +566,19 @@ public class MonsterAiManager {
                     GridPoint2 retreatCell = findRetreatStep(monsterGridPos, playerGridPos, maze, player);
                     if (retreatCell != null) {
                         moveMonsterTo(monster, maze, retreatCell.x, retreatCell.y);
+                        monster.tickRangedShotCooldown(); // a step back is an action spent moving
                         return;
                     }
-                    // Cornered: shoot from where it stands rather than freezing.
-                    if (canShoot && combatManager.performMonsterRangedAttack(monster)) {
+                    // Cornered: shoot from where it stands rather than freezing, if it may shoot yet.
+                    if (canShoot && monster.getRangedShotCooldown() <= 0 && combatManager.performMonsterRangedAttack(monster)) {
+                        monster.setRangedShotCooldown(MonsterTactics.SHOT_WAIT_ACTIONS);
                         return;
                     }
                     break;
                 case SHOOT:
                     if (combatManager.performMonsterRangedAttack(monster)) {
-                        // The shot is this turn's action; the next one is spent closing in.
-                        monster.setRangedShotCooldown(1);
+                        // The shot is this action; the next ones are spent closing in (#255).
+                        monster.setRangedShotCooldown(MonsterTactics.SHOT_WAIT_ACTIONS);
                         return;
                     }
                     break;
