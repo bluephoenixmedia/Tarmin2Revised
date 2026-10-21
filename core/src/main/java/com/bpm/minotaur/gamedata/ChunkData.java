@@ -270,6 +270,7 @@ public class ChunkData {
             monster.setCurrentHP(data.warStrength);
             monster.setCurrentMP(data.spiritualStrength);
             monster.setAllyTurns(data.allyTurns);
+            monster.setRangedShotCooldown(data.rangedShotCooldown);
             monster.setBlighted(data.blighted);
             if (data.faction != null) {
                 try {
@@ -644,6 +645,8 @@ public class ChunkData {
         public int moveSpeed = 0;
         /** Charm state: 0 none, -1 permanent, else turns left. Old saves read 0. */
         public int allyTurns = 0;
+        /** Actions left before it may shoot again (#264); absent in older saves, which load ready. */
+        public int rangedShotCooldown = 0;
         /** Blighted Marches variant; false on old saves. */
         public boolean blighted = false;
         /**
@@ -683,6 +686,7 @@ public class ChunkData {
             this.maxHP = monster.getMaxHP();
             this.moveSpeed = monster.getMoveSpeed();
             this.allyTurns = monster.getAllyTurns();
+            this.rangedShotCooldown = monster.getRangedShotCooldown();
             this.blighted = monster.isBlighted();
             this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
             this.houseId = monster.getHouseId();

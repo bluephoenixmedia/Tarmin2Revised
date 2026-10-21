@@ -238,6 +238,79 @@ public class MonsterRangedAttackTest {
     }
 
     @Test
+    public void aShooterWaitsTwoOfItsOwnActionsBeforeShootingAgain() {
+        Monster archer = plainArcher(5f, 0f);
+        archer.setRangedShotCooldown(MonsterTactics.SHOT_WAIT_ACTIONS);
+
+        assertEquals(MonsterTactics.Move.ADVANCE, MonsterTactics.decide(archer, 5, true));
+        archer.tickRangedShotCooldown();
+        assertEquals(MonsterTactics.Move.ADVANCE, MonsterTactics.decide(archer, 4, true));
+        archer.tickRangedShotCooldown();
+        assertEquals(MonsterTactics.Move.SHOOT, MonsterTactics.decide(archer, 3, true));
+    }
+
+    @Test
+    public void anEliteSkirmisherWaitsBetweenShotsToo() {
+        Monster elite = eliteSkirmisher(5f, 0f);
+        elite.setRangedShotCooldown(MonsterTactics.SHOT_WAIT_ACTIONS);
+
+        assertNotEquals("no shot while it waits", MonsterTactics.Move.SHOOT, MonsterTactics.decide(elite, 5, true));
+        assertEquals("but it still backs off when crowded", MonsterTactics.Move.RETREAT, MonsterTactics.decide(elite, 1, true));
+    }
+
+    @Test
+    public void anArcherShootsThenClosesForTwoActionsThenShootsAgain() {
+        Monster archer = plainArcher(5f, 0f); // five tiles south, lined up with the player at (5, 5)
+        MonsterAiManager aiManager = new MonsterAiManager();
+
+        aiManager.updateMonster(archer, maze, player, true, combatManager);
+        assertEquals("it shoots and holds", new Vector2(5.5f, 0.5f), archer.getPosition());
+        aiManager.updateMonster(archer, maze, player, true, combatManager);
+        assertEquals("closes", new Vector2(5.5f, 1.5f), archer.getPosition());
+        aiManager.updateMonster(archer, maze, player, true, combatManager);
+        assertEquals("closes again", new Vector2(5.5f, 2.5f), archer.getPosition());
+        aiManager.updateMonster(archer, maze, player, true, combatManager);
+        assertEquals("then shoots again from where it stands", new Vector2(5.5f, 2.5f), archer.getPosition());
+    }
+
+    @Test
+    public void theWaitCountsTheMonstersOwnTurnsNotThePlayers() {
+        Monster archer = plainArcher(5f, 0f);
+        archer.markShot();
+        archer.endTurn(); // the turn it shot does not count
+        assertFalse(archer.mayShoot());
+
+        // A fast monster takes both its next actions inside one player turn.
+        archer.endTurn();
+        archer.endTurn();
+        assertTrue(archer.mayShoot());
+    }
+
+    @Test
+    public void aWaitingArcherBesideThePlayerStillStrikesInMelee() {
+        Monster archer = plainArcher(5f, 4f); // adjacent to the player at (5, 5)
+        archer.setDexterity(20);
+        archer.markShot();
+        archer.endTurn();
+        int hp = player.getCurrentHP();
+        MonsterAiManager aiManager = new MonsterAiManager();
+
+        for (int i = 0; i < 20 && player.getCurrentHP() == hp; i++) {
+            aiManager.updateMonster(archer, maze, player, true, combatManager);
+        }
+
+        assertTrue("the wait gates shots, not blows", player.getCurrentHP() < hp);
+    }
+
+    @Test
+    public void theWaitIsSavedWithTheMonster() {
+        Monster archer = plainArcher(5f, 0f);
+        archer.markShot();
+        assertEquals(MonsterTactics.SHOT_WAIT_ACTIONS,
+                new com.bpm.minotaur.gamedata.ChunkData.MonsterData(archer).rangedShotCooldown);
+    }
+
+    @Test
     public void anEliteSkirmisherStillKitesWhenCrowded() {
         Monster elite = eliteSkirmisher(5f, 4f);
         MonsterAiManager aiManager = new MonsterAiManager();
