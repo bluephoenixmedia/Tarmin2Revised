@@ -51,9 +51,9 @@ public final class MonsterTactics {
             if (distance < ELITE_STANDOFF_DISTANCE) {
                 return Move.RETREAT;
             }
-            return canShoot && monster.getRangedShotCooldown() <= 0 ? Move.SHOOT : Move.ADVANCE;
+            return canShoot && monster.mayShoot() ? Move.SHOOT : Move.ADVANCE;
         }
-        if (canShoot && distance > MELEE_CLOSING_DISTANCE && monster.getRangedShotCooldown() <= 0) {
+        if (canShoot && distance > MELEE_CLOSING_DISTANCE && monster.mayShoot()) {
             return Move.SHOOT;
         }
         return Move.ADVANCE;

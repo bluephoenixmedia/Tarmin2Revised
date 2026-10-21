@@ -1229,6 +1229,30 @@ public class Monster implements Renderable {
         }
     }
 
+    /** Set by {@link #markShot}: the turn a monster shoots does not count toward its wait. */
+    private boolean shotThisTurn;
+
+    /** Whether the wait since its last shot is over (#264). */
+    public boolean mayShoot() {
+        return rangedShotCooldown <= 0;
+    }
+
+    /** It shot: the next {@link MonsterTactics#SHOT_WAIT_ACTIONS} of its own turns are spent otherwise. */
+    public void markShot() {
+        rangedShotCooldown = MonsterTactics.SHOT_WAIT_ACTIONS;
+        shotThisTurn = true;
+    }
+
+    /**
+     * The end of one of the monster's own turns, however it was spent: Daze and Pin wear down, and
+     * the wait since a shot counts one action, unless this was the turn it shot.
+     */
+    public void endTurn() {
+        tickDazeAndPin();
+        if (shotThisTurn) shotThisTurn = false;
+        else tickRangedShotCooldown();
+    }
+
     public float getRangedPreferredDistance() {
         if (rangedPreferredDistance > 0) return rangedPreferredDistance;
         MonsterTemplate t = getTemplate();

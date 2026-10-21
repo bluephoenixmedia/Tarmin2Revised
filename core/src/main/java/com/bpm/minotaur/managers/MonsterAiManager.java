@@ -63,8 +63,9 @@ public class MonsterAiManager {
             turnPlayer = null;
             turnCombat = null;
         }
-        // At the end of the turn, whichever way it ended: a 3-turn Pin holds for three turns (#242).
-        monster.tickDazeAndPin();
+        // At the end of the turn, whichever way it ended: a 3-turn Pin holds for three turns (#242),
+        // and the wait since a shot counts one of the monster's own actions (#264).
+        monster.endTurn();
     }
 
     /** The player and combat of the monster turn in progress, for moves that close on the player. */
@@ -566,26 +567,23 @@ public class MonsterAiManager {
                     GridPoint2 retreatCell = findRetreatStep(monsterGridPos, playerGridPos, maze, player);
                     if (retreatCell != null) {
                         moveMonsterTo(monster, maze, retreatCell.x, retreatCell.y);
-                        monster.tickRangedShotCooldown(); // a step back is an action spent moving
                         return;
                     }
                     // Cornered: shoot from where it stands rather than freezing, if it may shoot yet.
-                    if (canShoot && monster.getRangedShotCooldown() <= 0 && combatManager.performMonsterRangedAttack(monster)) {
-                        monster.setRangedShotCooldown(MonsterTactics.SHOT_WAIT_ACTIONS);
+                    if (canShoot && monster.mayShoot() && combatManager.performMonsterRangedAttack(monster)) {
+                        monster.markShot();
                         return;
                     }
                     break;
                 case SHOOT:
                     if (combatManager.performMonsterRangedAttack(monster)) {
                         // The shot is this action; the next ones are spent closing in (#255).
-                        monster.setRangedShotCooldown(MonsterTactics.SHOT_WAIT_ACTIONS);
+                        monster.markShot();
                         return;
                     }
                     break;
                 default:
-                    // Walking in is what pays off the shot it just took.
-                    monster.tickRangedShotCooldown();
-                    break;
+                    break; // walking in: endTurn counts the action toward the wait
             }
         }
 

@@ -3429,8 +3429,8 @@ public class CombatManager {
             return;
         Monster acting = monster;
         monsterTurn();
-        // The duelled monster skips MonsterAiManager, so it wears its Daze and Pin down here (#242).
-        acting.tickDazeAndPin();
+        // The duelled monster skips MonsterAiManager, so its turn ends here (#242, #264).
+        acting.endTurn();
     }
 
     private void monsterTurn() {
@@ -3488,8 +3488,9 @@ public class CombatManager {
             // Try Ranged
             if (monster.hasRangedAttack()) {
                 float dist = monster.getPosition().dst(player.getPosition());
-                if (dist > 1.5f && dist <= monster.getAttackRange()) {
+                if (dist > 1.5f && dist <= monster.getAttackRange() && monster.mayShoot()) {
                     if (performMonsterRangedAttack(monster)) {
+                        monster.markShot(); // a duelled archer waits between shots too (#264)
                         currentState = CombatState.PLAYER_MENU;
                         return; // Ranged handles its own transition/return
                     }

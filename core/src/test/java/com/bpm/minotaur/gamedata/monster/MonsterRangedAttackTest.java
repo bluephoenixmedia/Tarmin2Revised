@@ -274,6 +274,43 @@ public class MonsterRangedAttackTest {
     }
 
     @Test
+    public void theWaitCountsTheMonstersOwnTurnsNotThePlayers() {
+        Monster archer = plainArcher(5f, 0f);
+        archer.markShot();
+        archer.endTurn(); // the turn it shot does not count
+        assertFalse(archer.mayShoot());
+
+        // A fast monster takes both its next actions inside one player turn.
+        archer.endTurn();
+        archer.endTurn();
+        assertTrue(archer.mayShoot());
+    }
+
+    @Test
+    public void aWaitingArcherBesideThePlayerStillStrikesInMelee() {
+        Monster archer = plainArcher(5f, 4f); // adjacent to the player at (5, 5)
+        archer.setDexterity(20);
+        archer.markShot();
+        archer.endTurn();
+        int hp = player.getCurrentHP();
+        MonsterAiManager aiManager = new MonsterAiManager();
+
+        for (int i = 0; i < 20 && player.getCurrentHP() == hp; i++) {
+            aiManager.updateMonster(archer, maze, player, true, combatManager);
+        }
+
+        assertTrue("the wait gates shots, not blows", player.getCurrentHP() < hp);
+    }
+
+    @Test
+    public void theWaitIsSavedWithTheMonster() {
+        Monster archer = plainArcher(5f, 0f);
+        archer.markShot();
+        assertEquals(MonsterTactics.SHOT_WAIT_ACTIONS,
+                new com.bpm.minotaur.gamedata.ChunkData.MonsterData(archer).rangedShotCooldown);
+    }
+
+    @Test
     public void anEliteSkirmisherStillKitesWhenCrowded() {
         Monster elite = eliteSkirmisher(5f, 4f);
         MonsterAiManager aiManager = new MonsterAiManager();
