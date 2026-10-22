@@ -27,7 +27,7 @@ public class HudReadoutsTest {
         HudReadouts.Tip tip = HudReadouts.hungerTip(12, 50, false);
         assertEquals("Tarmin's Hunger", tip.title);
         assertTrue(tip.details, tip.details.contains("12 of 50"));
-        assertTrue(tip.details, tip.details.contains("Bridge falls"));
+        assertTrue(tip.details, tip.details.contains("far shore"));
         assertTrue("next stage named", tip.details.contains("25 deaths"));
         assertFalse("never the internal name", (tip.title + tip.details + tip.remedy).toLowerCase().contains("doom"));
     }
@@ -35,7 +35,7 @@ public class HudReadoutsTest {
     @Test
     public void theHungerTipWarnsWhenTheBossIsLoose() {
         HudReadouts.Tip tip = HudReadouts.hungerTip(50, 50, true);
-        assertTrue(tip.details, tip.details.contains("Bringer of Death is loose"));
+        assertTrue(tip.details, tip.details.contains("Warden"));
         assertTrue(tip.remedy, tip.remedy.contains("Slay"));
     }
 

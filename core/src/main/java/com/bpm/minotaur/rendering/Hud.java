@@ -3853,6 +3853,13 @@ public class Hud implements Disposable {
         spriteBatch.end();
     }
 
+    /** The Bridge bar's words: the Warden guards the last stone at 100% (#267, #273). */
+    public static String bridgeBarText(float integrity, boolean bossActive) {
+        if (integrity >= 100f && bossActive) return "THE BRIDGE IS COMPLETE: SLAY ITS WARDEN (100%)";
+        if (integrity >= 90f) return String.format("WARNING: BRIDGE AT %.0f%% - THE FAR SHORE IS NEAR", integrity);
+        return String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
+    }
+
     private void drawBridgeIntegrityBar() {
         if (com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() <= 0)
             return;
@@ -3861,16 +3868,13 @@ public class Hud implements Disposable {
         boolean bossActive = com.bpm.minotaur.managers.DoomManager.getInstance().isBridgeBossActive();
 
         // Determine text and colors first to size bar cleanly
-        String text;
+        String text = bridgeBarText(integrity, bossActive);
         Color textColor;
         if (integrity >= 100f && bossActive) {
-            text = "BRIDGE APOCALYPSE: SLAY THE BRINGER OF DEATH (100%)";
             textColor = Color.RED;
         } else if (integrity >= 90f) {
-            text = String.format("WARNING: BRIDGE AT %.0f%% - APOCALYPSE IMMINENT", integrity);
             textColor = Color.valueOf("FFA500");
         } else {
-            text = String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
             textColor = HudSkin.COL_GOLD_BRIGHT;
         }
         glyphLayout.setText(font, text);

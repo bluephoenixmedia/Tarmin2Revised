@@ -123,7 +123,7 @@ public class HintManager implements SlotScopedState {
     public boolean checkArrival(GameEventManager eventManager) {
         if (!shouldShow(HintId.ARRIVAL)) return false;
         List<String> lines = new ArrayList<>();
-        lines.add("You came to the maze for vengeance against Castle Tarmin.");
+        lines.add("You were dragged into the maze in chains. You want vengeance on Castle Tarmin.");
         lines.add("Delve into the depths to slay monsters and grow in power.");
         lines.add("Return to this shelter to rest, craft and save your progress.");
         return postMultiLineHint(HintId.ARRIVAL, eventManager, lines, 6.0f);

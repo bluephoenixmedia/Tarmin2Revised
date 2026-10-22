@@ -85,8 +85,8 @@ public class DoomManager implements SlotScopedState {
         }
         if (this.deathCount >= MAX_DEATHS_ALLOWED) {
             if (!this.bridgeBossActive) {
-                // First time reaching 100% integrity (50 deaths):
-                // Instead of wiping the save, the Bringer of Death spawns!
+                // First time reaching 100% integrity (50 deaths): the Bridge reaches the far
+                // shore, and its Warden (the Iron Golem) comes to guard the last stone (#267).
                 this.bridgeBossActive = true;
                 this.bridgeBossSummons++;
                 if (Gdx.app != null) {
@@ -111,7 +111,7 @@ public class DoomManager implements SlotScopedState {
         save();
     }
 
-    /** The death count at which the Bridge falls and the bridge boss comes. */
+    /** The death count at which the Bridge reaches the far shore and its Warden comes. */
     public static int maxDeaths() {
         return MAX_DEATHS_ALLOWED;
     }

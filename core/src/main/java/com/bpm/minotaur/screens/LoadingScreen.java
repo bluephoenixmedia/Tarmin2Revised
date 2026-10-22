@@ -33,7 +33,7 @@ public class LoadingScreen extends ScreenAdapter {
         "Carving forgotten catacombs...",
         "Kindling subterranean torches...",
         "Awakening ancient horrors...",
-        "Stirring the Minotaur from his slumber...",
+        "Stirring Tarmin's generals from their slumber...",
         "Planning your demise..."
     };
 

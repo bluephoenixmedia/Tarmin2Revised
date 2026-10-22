@@ -3342,7 +3342,7 @@ public class CombatManager {
             DoomManager.getInstance().onBridgeBossDefeated();
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(
-                        "THE BRIDGE GUARDIAN FALLS! The bridge holds. Integrity restored.", 5.0f));
+                        "THE WARDEN FALLS! The Bridge of Souls crumbles back to nothing.", 5.0f));
             }
         }
 
