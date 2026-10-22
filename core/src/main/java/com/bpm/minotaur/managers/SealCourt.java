@@ -269,6 +269,8 @@ public final class SealCourt {
     private static String awardSeal(Monster m, HistoryManager history,
             com.bpm.minotaur.gamedata.shelter.ShelterNetwork network) {
         network.awardSeal(m.getSealRoad());
+        WorldLogManager.getInstance().log().note(com.bpm.minotaur.gamedata.worldlog.Fact.of(
+                com.bpm.minotaur.gamedata.worldlog.Fact.Kind.SEAL_WON, m.getName()));
         int gash = SealLord.gashIndexForRoad(m.getSealRoad());
         return com.bpm.minotaur.ui.UiGlyphs.sanitize("You take the seal of " + history.world().gashName(gash)
                 + " from the body. (" + network.getSealCount() + "/"

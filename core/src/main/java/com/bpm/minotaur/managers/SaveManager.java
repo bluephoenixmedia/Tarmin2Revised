@@ -368,6 +368,7 @@ public class SaveManager {
             ShelterChest.getInstance().save();
             DoomManager.getInstance().save();
             DivinityManager.getInstance().save();
+            WorldLogManager.getInstance().save();
 
             // 5. Update and save Metadata
             SlotMetadata meta = getSlotMetadata(activeSlotIndex);

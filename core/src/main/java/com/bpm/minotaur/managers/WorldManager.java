@@ -471,6 +471,7 @@ public class WorldManager {
 
         // Update Deepest Level Tracking
         UnlockManager.getInstance().updateDeepestLevel(this.currentLevel);
+        WorldLogManager.getInstance().log().noteDepth(this.currentLevel);
 
         // Rearm Shelter Altar commune on venturing into deeper strata
         com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
@@ -852,6 +853,7 @@ public class WorldManager {
         }
         DoomManager.getInstance().setCurrentLevel(level);
         UnlockManager.getInstance().updateDeepestLevel(level);
+        WorldLogManager.getInstance().log().noteDepth(level);
         this.currentLevelTheme = getThemeForLevel(level);
         if (level == 1 && soundManager != null && weatherManager != null) {
             soundManager.updateWeatherAudio(weatherManager.getCurrentWeather(), weatherManager.getCurrentIntensity());

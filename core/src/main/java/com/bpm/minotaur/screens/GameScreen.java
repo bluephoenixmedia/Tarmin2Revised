@@ -729,6 +729,7 @@ public class GameScreen extends BaseScreen {
                     && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 if (player.needsLife()) {
                     player.beginLife(lifeHistory.world(), new java.util.Random().nextLong());
+                    com.bpm.minotaur.managers.WorldLogManager.getInstance().log().wake(player.getLife());
                 }
                 if (player.isLifeRevealPending()) {
                     game.setScreen(new RebirthScreen(game, this, player, lifeHistory.world(), soulName()));
@@ -1438,8 +1439,20 @@ public class GameScreen extends BaseScreen {
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
             if (DoomManager.getInstance().recordDeath(activeExpeditionRunId)) {
                 // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
+                String killer = killerForTheLog();
                 worldManager.getHistory().recordSeekerFell(
-                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse());
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse(), killer);
+                // The life's record closes with its death (#280).
+                int deathLevel = worldManager != null ? worldManager.getCurrentLevel() : 1;
+                String deathEpitaph;
+                try {
+                    deathEpitaph = buildEpitaph(com.bpm.minotaur.telemetry.TelemetryManager.getInstance());
+                } catch (Exception e) {
+                    deathEpitaph = "Fell in the depths";
+                }
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().log().die(deathEpitaph, killer, "level " + deathLevel,
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().save();
             }
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
@@ -1912,6 +1925,15 @@ public class GameScreen extends BaseScreen {
             sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
         }
         return sb.toString();
+    }
+
+    /** What killed the player, in words: a monster's name, a survival cause, or the maze itself. */
+    private static String killerForTheLog() {
+        com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        String killer = telemetry.getKillerMonster();
+        if (killer == null || killer.isEmpty()) killer = telemetry.getSurvivalDeath();
+        if (killer == null || killer.isEmpty()) return "the maze";
+        return killer.matches("[A-Z_]+") ? com.bpm.minotaur.ui.UiNames.fromConstant(killer) : killer;
     }
 
     /** The soul's name, the one typed or generated at a new game (#268). */

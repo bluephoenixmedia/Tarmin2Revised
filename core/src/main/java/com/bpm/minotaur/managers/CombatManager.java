@@ -1224,6 +1224,7 @@ public class CombatManager {
         claimVengeance(m);
         eventManager.addEvent(new GameEvent("Killed " + nameOf(m) + "!", 2f));
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(m, m.getMonsterType());
+        noteKillInWorldLog(m);
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
@@ -3339,6 +3340,8 @@ public class CombatManager {
         // so it keys off the monster itself.
         if (monster != null && monster.isBridgeBoss()) {
             DoomManager.getInstance().onBridgeBossDefeated();
+            WorldLogManager.getInstance().log().note(
+                    com.bpm.minotaur.gamedata.worldlog.Fact.of(com.bpm.minotaur.gamedata.worldlog.Fact.Kind.WARDEN_DESTROYED));
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(
                         "THE BRIDGE GUARDIAN FALLS! The bridge holds. Integrity restored.", 5.0f));
@@ -3716,6 +3719,13 @@ public class CombatManager {
 
     public void setCurrentState(CombatState state) { this.currentState = state; }
 
+    /** A kill the life's record may keep (#280): every boss, and its first Heavy. The Warden has its own line. */
+    private static void noteKillInWorldLog(Monster m) {
+        if (m == null || m.isBridgeBoss()) return;
+        WorldLogManager.getInstance().log().noteKill(nameOf(m),
+                m.getRole() == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY, m.isBoss());
+    }
+
     // Extracted death logic to reuse for Poison kills
     /** A named figure by name, anything else by its type as words. */
     private static String nameOf(Monster m) {
@@ -3790,6 +3800,7 @@ public class CombatManager {
 
         UnlockManager.getInstance().recordKill(monster.getMonsterType());
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster, monster.getMonsterType());
+        noteKillInWorldLog(monster);
 
         // A themed chunk's objective may hang on this kill (the champion, or the
         // last combatant in the arena).
