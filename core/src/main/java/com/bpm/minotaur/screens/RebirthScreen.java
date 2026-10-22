@@ -15,6 +15,7 @@ import com.bpm.minotaur.gamedata.history.Life;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.HudSkin;
 import com.bpm.minotaur.ui.UiGlyphs;
+import com.bpm.minotaur.ui.UiNames;
 import com.bpm.minotaur.ui.UiStyles;
 import com.bpm.minotaur.ui.UiTheme;
 
@@ -77,9 +78,8 @@ public class RebirthScreen extends BaseScreen {
                 new Label.LabelStyle(skin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         name.setWrap(true);
         card.add(name).growX().padBottom(UiTheme.PAD_MD).row();
-        card.add(new Label(life.origin == Life.Origin.RAIDED ? "RAIDED" : "TITHED",
-                UiStyles.caption(skin, HudSkin.COL_GOLD_MUTED))).left().row();
-        Label how = new Label(UiGlyphs.sanitize(origin(life)), UiStyles.body(skin));
+        card.add(new Label(UiNames.caps(life.origin), UiStyles.caption(skin, HudSkin.COL_GOLD_MUTED))).left().row();
+        Label how = new Label(UiGlyphs.sanitize(life.howTheyCame()), UiStyles.body(skin));
         how.setWrap(true);
         card.add(how).growX().row();
         root.add(card).width(CARD_W).row();
@@ -105,13 +105,6 @@ public class RebirthScreen extends BaseScreen {
         buttons.add(rise).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H);
         root.add(buttons).padTop(UiTheme.PAD_XL).row();
         stage.addActor(root);
-    }
-
-    private static String origin(Life life) {
-        if (life.origin == Life.Origin.RAIDED) {
-            return "Taken from " + life.settlement + " in a raid by " + life.raider + ".";
-        }
-        return "Tithed to the maze by " + life.kingdom + " for " + life.crime + ".";
     }
 
     private void reroll() {
@@ -143,7 +136,7 @@ public class RebirthScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(10f / 255f, 8f / 255f, 6f / 255f, 1f);
+        Gdx.gl.glClearColor(UiTheme.BG_VOID.r, UiTheme.BG_VOID.g, UiTheme.BG_VOID.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);
         stage.draw();

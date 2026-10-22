@@ -387,6 +387,9 @@ public class SaveSlotSelectScreen extends BaseScreen {
         dialog.show(stage);
     }
 
+    /** Long enough for "Kaelaster the Unbound", short enough for the slot card. */
+    private static final int SOUL_NAME_MAX = 20;
+
     /** The soul's name, typed or generated, comes before the new world (#268, #279). */
     private void startNewExpedition(final int slotIndex, final String mode) {
         final TextField nameField = new TextField("", UiStyles.textField(hudSkin));
@@ -403,14 +406,20 @@ public class SaveSlotSelectScreen extends BaseScreen {
             protected void result(Object object) {
                 if (Boolean.TRUE.equals(object)) {
                     String typed = UiGlyphs.sanitize(nameField.getText().trim());
-                    beginExpedition(slotIndex, mode, typed.isEmpty() ? com.bpm.minotaur.gamedata.history.LifeForge.soulName(rng) : typed);
+                    if (typed.isEmpty()) {
+                        // Never begin under a name the player has not seen: offer one and stay open.
+                        nameField.setText(com.bpm.minotaur.gamedata.history.LifeForge.soulName(rng));
+                        cancel();
+                        return;
+                    }
+                    beginExpedition(slotIndex, mode, typed);
                 }
             }
         };
         UiModal.style(dialog, hudSkin, "NAME YOUR SOUL", false);
         UiModal.text(dialog, hudSkin, "The Eternal Champion keeps this name through every life it is reborn into.");
         Table row = new Table();
-        row.add(nameField).width(380f).height(UiTheme.BUTTON_H).padRight(UiTheme.PAD_MD);
+        row.add(nameField).width(UiTheme.LIST_COLUMN_W).height(UiTheme.BUTTON_H).padRight(UiTheme.PAD_MD);
         TextButton generate = new TextButton("GENERATE", UiStyles.secondary(hudSkin));
         generate.addListener(new ClickListener() {
             @Override
@@ -428,8 +437,6 @@ public class SaveSlotSelectScreen extends BaseScreen {
         stage.setKeyboardFocus(nameField);
         nameField.selectAll();
     }
-
-    private static final int SOUL_NAME_MAX = 20;
 
     private void beginExpedition(int slotIndex, String mode, String soulName) {
         MonsterPursuitManager.getInstance().clear();

@@ -64,6 +64,27 @@ public class LifeForgeTest {
     }
 
     @Test
+    public void aRaidOnABoughtSettlementNamesTheHouseThatOpenedItsGate() throws IOException {
+        HistoryWorld bought = HistorySimulator.prehistory(21L, DoctrineCatalogTest.loadCatalog());
+        House traitor = null;
+        for (House h : bought.livingHouses()) {
+            if (!h.holdsCastle) {
+                traitor = h;
+                break;
+            }
+        }
+        for (Settlement s : bought.settlements()) HistorySimulator.forceSuborn(bought, s.id, traitor.id);
+        boolean raided = false;
+        for (long seed = 0; seed < 50; seed++) {
+            Life life = LifeForge.forge(bought, seed);
+            if (life.origin != Life.Origin.RAIDED) continue;
+            raided = true;
+            assertTrue(life.raider, life.raider.contains(traitor.name));
+        }
+        assertTrue(raided);
+    }
+
+    @Test
     public void everyPrisonerCanBeWrittenInTheGameFont() {
         for (long seed = 0; seed < 100; seed++) {
             String s = LifeForge.forge(world, seed).summary();

@@ -1914,17 +1914,18 @@ public class GameScreen extends BaseScreen {
         return sb.toString();
     }
 
-    /**
-     * Awakens the player in the Starting Shelter bed following death:
-     * fully regenerates the entire world from a new seed, restores vitals,
-     * rehydrates the shelter chest, and switches the display back to GameScreen.
-     */
     /** The soul's name, the one typed or generated at a new game (#268). */
     private static String soulName() {
         com.bpm.minotaur.managers.SaveManager saves = com.bpm.minotaur.managers.SaveManager.getInstance();
         com.bpm.minotaur.gamedata.save.SlotMetadata meta = saves.getSlotMetadata(saves.getActiveSlotIndex());
         return meta != null && meta.characterName != null ? meta.characterName : "Hero";
     }
+
+    /**
+     * Awakens the player in the Starting Shelter bed following death:
+     * fully regenerates the entire world from a new seed, restores vitals,
+     * rehydrates the shelter chest, and switches the display back to GameScreen.
+     */
 
     public void respawnInShelter(int lostCount, int retainedCount, int deaths, float bridge) {
         // Begin a fresh expedition run: reset the death idempotency lock and start

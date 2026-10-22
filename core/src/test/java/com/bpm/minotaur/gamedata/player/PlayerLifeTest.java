@@ -91,4 +91,29 @@ public class PlayerLifeTest {
         new PlayerSaveData().applyToPlayer(loaded, null, null);
         assertTrue(loaded.needsLife());
     }
+
+    @Test
+    public void aSaveFromBeforeLivesIsGivenItsPrisonerWithoutAWakingMidExpedition() {
+        Player loaded = new Player(2, 2);
+        new PlayerSaveData().applyToPlayer(loaded, null, null);
+        loaded.beginLife(world, 7L);
+        assertNotNull(loaded.getLife());
+        assertFalse(loaded.isLifeRevealPending());
+
+        loaded.beginNewIncarnation(Difficulty.values()[0]);
+        loaded.beginLife(world, 8L);
+        assertTrue("the next rebirth is shown as usual", loaded.isLifeRevealPending());
+    }
+
+    @Test
+    public void aSaveWrittenBetweenDeathAndWakingStillShowsTheWaking() {
+        player.beginLife(world, 7L);
+        player.beginNewIncarnation(Difficulty.values()[0]);
+        Json json = new Json();
+        PlayerSaveData restored = json.fromJson(PlayerSaveData.class, json.toJson(new PlayerSaveData(player)));
+        Player loaded = new Player(2, 2);
+        restored.applyToPlayer(loaded, null, null);
+        loaded.beginLife(world, 8L);
+        assertTrue(loaded.isLifeRevealPending());
+    }
 }

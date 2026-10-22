@@ -122,6 +122,8 @@ public class PlayerSaveData {
     public long lifeSeed;
     public boolean lifeRerolled;
     public boolean lifeRevealPending;
+    /** True in every save written since lives began; false in older ones, whose prisoner is given silently. */
+    public boolean livesRecorded;
     public List<String> runSpellIds;
     public List<String> preparedSpells = new ArrayList<>();
     public int unlockedSpellSlots = 1;
@@ -307,6 +309,7 @@ public class PlayerSaveData {
         this.permanentSpellIds = new ArrayList<>(player.getPermanentSpellIds());
         this.knownArts = new ArrayList<>();
         for (com.bpm.minotaur.gamedata.arts.CombatArt art : player.getKnownArts()) this.knownArts.add(art.name());
+        this.livesRecorded = true;
         com.bpm.minotaur.gamedata.history.Life life = player.getLife();
         if (life != null) {
             this.lifeName = life.name;
@@ -495,7 +498,7 @@ public class PlayerSaveData {
 
         // Spells
         player.restoreArts(knownArts);
-        player.restoreLife(savedLife(), lifeSeed, lifeRerolled, lifeRevealPending);
+        player.restoreLife(savedLife(), lifeSeed, lifeRerolled, lifeRevealPending, !livesRecorded);
         if (permanentSpellIds != null || runSpellIds != null) {
             player.restoreSpellbook(permanentSpellIds, runSpellIds, preparedSpells, unlockedSpellSlots);
             player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);

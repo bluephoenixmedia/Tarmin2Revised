@@ -1151,10 +1151,14 @@ public class Player {
     }
 
     // --- The prisoner this Incarnation wakes in (#279) ---
+    /** How many seeds a reroll tries for a different prisoner before settling. */
+    private static final int REROLL_SEARCH = 16;
     private com.bpm.minotaur.gamedata.history.Life life;
     private long lifeSeed;
     private boolean lifeRerolled;
     private boolean lifeRevealPending;
+    /** False for a save from before lives: its expedition is under way, so its prisoner is not woken on screen. */
+    private boolean revealNextLife = true;
 
     public com.bpm.minotaur.gamedata.history.Life getLife() {
         return life;
@@ -1170,7 +1174,8 @@ public class Player {
         this.lifeSeed = seed;
         this.life = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed);
         this.lifeRerolled = false;
-        this.lifeRevealPending = true;
+        this.lifeRevealPending = revealNextLife;
+        this.revealNextLife = true;
     }
 
     public boolean canRerollLife() {
@@ -1187,7 +1192,7 @@ public class Player {
         do {
             seed++;
             next = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed);
-        } while (next.summary().equals(before) && seed - lifeSeed < 16);
+        } while (next.summary().equals(before) && seed - lifeSeed < REROLL_SEARCH);
         this.lifeSeed = seed;
         this.life = next;
         this.lifeRerolled = true;
@@ -1212,7 +1217,9 @@ public class Player {
     }
 
     /** Puts a saved life back exactly as it was, history changes notwithstanding. */
-    public void restoreLife(com.bpm.minotaur.gamedata.history.Life saved, long seed, boolean rerolled, boolean revealPending) {
+    public void restoreLife(com.bpm.minotaur.gamedata.history.Life saved, long seed, boolean rerolled, boolean revealPending,
+            boolean fromBeforeLives) {
+        this.revealNextLife = !fromBeforeLives;
         this.life = saved;
         this.lifeSeed = seed;
         this.lifeRerolled = rerolled;

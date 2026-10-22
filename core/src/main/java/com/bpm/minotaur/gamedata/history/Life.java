@@ -45,11 +45,16 @@ public final class Life {
         return name + " of " + settlement;
     }
 
+    /** "Taken from the Ashen Ford in a raid by the Antlered Host." */
+    public String howTheyCame() {
+        if (origin == Origin.RAIDED) {
+            return "Taken from " + settlement + " in a raid by " + raider + ".";
+        }
+        return "Tithed to the maze by " + kingdom + " for " + crime + ".";
+    }
+
     /** One line: who they were and how they came to the maze. */
     public String summary() {
-        if (origin == Origin.RAIDED) {
-            return title() + ", taken in a raid by " + raider + ".";
-        }
-        return title() + ", tithed to the maze by " + kingdom + " for " + crime + ".";
+        return title() + ". " + howTheyCame();
     }
 }

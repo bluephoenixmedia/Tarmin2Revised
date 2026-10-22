@@ -107,7 +107,7 @@ public final class UiStyles {
         s.background = skin.getSlotRecessed();
         s.focusedBackground = skin.getSlotActive();
         s.cursor = ((TextureRegionDrawable) skin.getWhitePixelDrawable()).tint(UiTheme.GOLD);
-        s.cursor.setMinWidth(3f);
+        s.cursor.setMinWidth(UiTheme.VU);
         s.selection = ((TextureRegionDrawable) skin.getWhitePixelDrawable()).tint(UiTheme.TEXT_OFF);
         return s;
     }

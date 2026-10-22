@@ -41,7 +41,7 @@ public final class LifeForge {
         Allegiance power = home.allegiance;
         String name = power.givenName(rng) + " " + power.familyName(rng);
         if (rng.nextBoolean()) {
-            return new Life(name, home.id, home.name, power, Life.Origin.RAIDED, raider(world, rng), null, null);
+            return new Life(name, home.id, home.name, power, Life.Origin.RAIDED, raider(world, home, rng), null, null);
         }
         String crime = CRIMES[rng.nextInt(CRIMES.length)];
         return new Life(name, home.id, home.name, power, Life.Origin.TITHED, null, crime, power.displayName);
@@ -52,14 +52,22 @@ public final class LifeForge {
         return SOUL_FIRST[rng.nextInt(SOUL_FIRST.length)] + SOUL_LAST[rng.nextInt(SOUL_LAST.length)];
     }
 
-    /** "the Antlered Host under Vorath", naming one of its living members when it has any. */
-    private static String raider(HistoryWorld world, Random rng) {
+    /**
+     * "the Antlered Host under Vorath", naming one of its living members when it has any, and
+     * the house that bought the settlement when one has: a bought gate is how the Host got in.
+     */
+    private static String raider(HistoryWorld world, Settlement home, Random rng) {
+        String host = "the Antlered Host";
         for (House h : world.livingHouses()) {
             if (!h.holdsCastle) continue;
             List<Figure> members = new ArrayList<>(world.livingMembers(h));
-            if (members.isEmpty()) return h.name;
-            return h.name + " under " + members.get(rng.nextInt(members.size())).name;
+            host = members.isEmpty() ? h.name : h.name + " under " + members.get(rng.nextInt(members.size())).name;
+            break;
         }
-        return "the Antlered Host";
+        House buyer = world.house(home.subornedBy);
+        if (buyer != null && !buyer.isExtinct()) {
+            return host + ", the gate opened by " + buyer.name;
+        }
+        return host;
     }
 }
