@@ -1147,6 +1147,76 @@ public class Player {
         }
         syncKeepsakeBonuses();
         stats.setCurrentHP(stats.getMaxHP());
+        life = null; // the prisoner died with the body; the next one is forged at waking
+    }
+
+    // --- The prisoner this Incarnation wakes in (#279) ---
+    private com.bpm.minotaur.gamedata.history.Life life;
+    private long lifeSeed;
+    private boolean lifeRerolled;
+    private boolean lifeRevealPending;
+
+    public com.bpm.minotaur.gamedata.history.Life getLife() {
+        return life;
+    }
+
+    /** True when this body has no life yet: a new game, a rebirth, or a save from before lives. */
+    public boolean needsLife() {
+        return life == null;
+    }
+
+    /** Wakes in the prisoner {@code seed} forges, to be shown before play goes on. */
+    public void beginLife(com.bpm.minotaur.gamedata.history.HistoryWorld world, long seed) {
+        this.lifeSeed = seed;
+        this.life = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed);
+        this.lifeRerolled = false;
+        this.lifeRevealPending = true;
+    }
+
+    public boolean canRerollLife() {
+        return life != null && !lifeRerolled;
+    }
+
+    /** The one reroll of the whole identity. False, and nothing changes, once it is spent. */
+    public boolean rerollLife(com.bpm.minotaur.gamedata.history.HistoryWorld world) {
+        if (!canRerollLife()) return false;
+        // A seed one step on can forge the same prisoner; walk on until it doesn't.
+        String before = life.summary();
+        long seed = lifeSeed;
+        com.bpm.minotaur.gamedata.history.Life next;
+        do {
+            seed++;
+            next = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed);
+        } while (next.summary().equals(before) && seed - lifeSeed < 16);
+        this.lifeSeed = seed;
+        this.life = next;
+        this.lifeRerolled = true;
+        return true;
+    }
+
+    public boolean isLifeRevealPending() {
+        return lifeRevealPending;
+    }
+
+    /** The player has seen who they are and risen. */
+    public void acknowledgeLife() {
+        lifeRevealPending = false;
+    }
+
+    public long getLifeSeed() {
+        return lifeSeed;
+    }
+
+    public boolean isLifeRerolled() {
+        return lifeRerolled;
+    }
+
+    /** Puts a saved life back exactly as it was, history changes notwithstanding. */
+    public void restoreLife(com.bpm.minotaur.gamedata.history.Life saved, long seed, boolean rerolled, boolean revealPending) {
+        this.life = saved;
+        this.lifeSeed = seed;
+        this.lifeRerolled = rerolled;
+        this.lifeRevealPending = saved != null && revealPending;
     }
 
     public Player(float startX, float startY, Difficulty difficulty,

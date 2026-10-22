@@ -18,6 +18,7 @@ import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SaveManager;
 import com.bpm.minotaur.rendering.HudSkin;
 import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiGlyphs;
 import com.bpm.minotaur.ui.UiLabels;
 import com.bpm.minotaur.ui.UiModal;
 import com.bpm.minotaur.ui.UiStyles;
@@ -386,9 +387,53 @@ public class SaveSlotSelectScreen extends BaseScreen {
         dialog.show(stage);
     }
 
-    private void startNewExpedition(int slotIndex, String mode) {
+    /** The soul's name, typed or generated, comes before the new world (#268, #279). */
+    private void startNewExpedition(final int slotIndex, final String mode) {
+        final TextField nameField = new TextField("", UiStyles.textField(hudSkin));
+        nameField.setMaxLength(SOUL_NAME_MAX);
+        // Only what intellivision.ttf can draw, so the name survives UiGlyphs.sanitize untouched.
+        nameField.setTextFieldFilter((field, c) -> Character.isLetter(c) && c < 128 || c == ' ' || c == '\'' || c == '-');
+        nameField.setMessageText("A name for the soul");
+        final java.util.Random rng = new java.util.Random();
+        nameField.setText(com.bpm.minotaur.gamedata.history.LifeForge.soulName(rng));
+
+        Dialog dialog = new Dialog("", new Window.WindowStyle(hudSkin.getFontHeader(), Color.WHITE,
+                hudSkin.getDoubleBorderPanel())) {
+            @Override
+            protected void result(Object object) {
+                if (Boolean.TRUE.equals(object)) {
+                    String typed = UiGlyphs.sanitize(nameField.getText().trim());
+                    beginExpedition(slotIndex, mode, typed.isEmpty() ? com.bpm.minotaur.gamedata.history.LifeForge.soulName(rng) : typed);
+                }
+            }
+        };
+        UiModal.style(dialog, hudSkin, "NAME YOUR SOUL", false);
+        UiModal.text(dialog, hudSkin, "The Eternal Champion keeps this name through every life it is reborn into.");
+        Table row = new Table();
+        row.add(nameField).width(380f).height(UiTheme.BUTTON_H).padRight(UiTheme.PAD_MD);
+        TextButton generate = new TextButton("GENERATE", UiStyles.secondary(hudSkin));
+        generate.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                nameField.setText(com.bpm.minotaur.gamedata.history.LifeForge.soulName(rng));
+            }
+        });
+        row.add(generate).height(UiTheme.BUTTON_H);
+        dialog.getContentTable().add(row).padTop(UiTheme.PAD_MD).row();
+        dialog.button("BEGIN", true, UiStyles.primary(hudSkin));
+        dialog.button("CANCEL", false, UiStyles.secondary(hudSkin));
+        dialog.key(Input.Keys.ENTER, true);
+        dialog.key(Input.Keys.ESCAPE, false);
+        dialog.show(stage);
+        stage.setKeyboardFocus(nameField);
+        nameField.selectAll();
+    }
+
+    private static final int SOUL_NAME_MAX = 20;
+
+    private void beginExpedition(int slotIndex, String mode, String soulName) {
         MonsterPursuitManager.getInstance().clear();
-        SaveManager.getInstance().startNewGame(slotIndex, mode, "Hero", "Warrior");
+        SaveManager.getInstance().startNewGame(slotIndex, mode, soulName, "Warrior");
         MusicManager.getInstance().stopWithFade(0.5f);
 
         com.bpm.minotaur.gamedata.GameMode gameMode = "CLASSIC".equalsIgnoreCase(mode) ? com.bpm.minotaur.gamedata.GameMode.CLASSIC : com.bpm.minotaur.gamedata.GameMode.ADVANCED;

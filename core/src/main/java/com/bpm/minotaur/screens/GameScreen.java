@@ -723,6 +723,18 @@ public class GameScreen extends BaseScreen {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
                 return;
             }
+            // Who the soul wakes in (#279), before the trait: a new game, a rebirth, or an older save.
+            com.bpm.minotaur.managers.HistoryManager lifeHistory = worldManager != null ? worldManager.getHistory() : null;
+            if (player != null && lifeHistory != null && lifeHistory.world() != null
+                    && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                if (player.needsLife()) {
+                    player.beginLife(lifeHistory.world(), new java.util.Random().nextLong());
+                }
+                if (player.isLifeRevealPending()) {
+                    game.setScreen(new RebirthScreen(game, this, player, lifeHistory.world(), soulName()));
+                    return;
+                }
+            }
             if (player != null && player.needsTraitOffer()) {
                 player.offerTraits(); // a new game, or a save from before traits
             }
@@ -1907,6 +1919,13 @@ public class GameScreen extends BaseScreen {
      * fully regenerates the entire world from a new seed, restores vitals,
      * rehydrates the shelter chest, and switches the display back to GameScreen.
      */
+    /** The soul's name, the one typed or generated at a new game (#268). */
+    private static String soulName() {
+        com.bpm.minotaur.managers.SaveManager saves = com.bpm.minotaur.managers.SaveManager.getInstance();
+        com.bpm.minotaur.gamedata.save.SlotMetadata meta = saves.getSlotMetadata(saves.getActiveSlotIndex());
+        return meta != null && meta.characterName != null ? meta.characterName : "Hero";
+    }
+
     public void respawnInShelter(int lostCount, int retainedCount, int deaths, float bridge) {
         // Begin a fresh expedition run: reset the death idempotency lock and start
         // a new telemetry run so the next demise is tracked independently.
