@@ -1627,12 +1627,13 @@ public class WorldManager {
      * says is dead. A Nemesis keeps its level and chunk, so it is here after every Shifting, in
      * whatever the new maze has made of the place. Returns what the player notices, or null.
      */
-    public String tendNemeses(Maze maze) {
+    public String tendNemeses(Maze maze, com.badlogic.gdx.math.Vector2 playerPos) {
         if (history == null || maze == null || currentPlayerChunkId == null) return null;
         String visit = currentLevel + ":" + currentPlayerChunkId.x + ":" + currentPlayerChunkId.y;
         if (!visit.equals(nemesisVisit)) {
             nemesisVisit = visit;
             nemesesPlacedThisVisit.clear();
+            nemesesSpokenThisVisit.clear();
         }
         java.util.Set<Integer> here = new java.util.HashSet<>();
         for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
@@ -1644,8 +1645,18 @@ public class WorldManager {
             }
             if (m.getNemesisId() < 0) continue;
             com.bpm.minotaur.gamedata.history.Nemesis n = history.world().nemesis(m.getNemesisId());
-            if (n == null || !n.isAlive()) maze.removeMonster(m);
-            else here.add(n.id);
+            if (n == null || !n.isAlive()) {
+                maze.removeMonster(m);
+                continue;
+            }
+            here.add(n.id);
+            // It knows the soul when it sees it, and says so once a visit (#284).
+            if (playerPos != null && n.tally() > 0 && !nemesesSpokenThisVisit.contains(n.id) && m.isAlive()
+                    && playerPos.dst(m.getPosition()) <= com.bpm.minotaur.gamedata.monster.HostileSight.SIGHT_RANGE_TILES
+                    && com.bpm.minotaur.gamedata.laser.LaserBurst.hasLineOfSight(maze, playerPos, m.getPosition())) {
+                nemesesSpokenThisVisit.add(n.id);
+                return n.name + ": \"" + com.bpm.minotaur.gamedata.history.text.NemesisSpeech.line(n, nemesisVoice) + "\"";
+            }
         }
         // Not in a Shelter or a town: they are sanctuary, whoever fell there.
         if (maze.isSanctuary() || townHere() != null) return null;
@@ -1676,6 +1687,8 @@ public class WorldManager {
 
     private String nemesisVisit;
     private final java.util.Set<Integer> nemesesPlacedThisVisit = new java.util.HashSet<>();
+    private final java.util.Set<Integer> nemesesSpokenThisVisit = new java.util.HashSet<>();
+    private final java.util.Random nemesisVoice = new java.util.Random();
 
     private com.bpm.minotaur.gamedata.history.Nemesis nemesisOfFigure(int figureId) {
         for (com.bpm.minotaur.gamedata.history.Nemesis n : history.world().nemeses()) {
@@ -1690,7 +1703,36 @@ public class WorldManager {
         com.bpm.minotaur.gamedata.history.Nemesis n = m.getNemesisId() >= 0
                 ? history.world().nemesis(m.getNemesisId())
                 : m.getFigureId() >= 0 ? nemesisOfFigure(m.getFigureId()) : null;
-        if (n != null && n.isAlive()) history.recordNemesisSlain(n.id);
+        if (n == null || !n.isAlive()) return;
+        history.recordNemesisSlain(n.id);
+        // It gives up what it took from the lives it ended (#284).
+        Maze maze = getCurrentMaze();
+        if (maze == null) return;
+        int x0 = (int) m.getPosition().x, y0 = (int) m.getPosition().y;
+        for (com.bpm.minotaur.gamedata.save.ItemSaveData saved
+                : NemesisHoardManager.getInstance().hoard().claim(n.id)) {
+            GridPoint2 at = freeFloorNear(maze, x0, y0);
+            if (at == null) break;
+            com.bpm.minotaur.gamedata.item.Item item = saved.toItem(itemDataManager, assetManager);
+            if (item == null) continue;
+            item.setPosition(at.x, at.y);
+            maze.addItem(item);
+        }
+        NemesisHoardManager.getInstance().save();
+    }
+
+    /** The nearest passable tile with nothing on it, within three of (x, y). */
+    private static GridPoint2 freeFloorNear(Maze maze, int x, int y) {
+        for (int r = 0; r <= 3; r++) {
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dy = -r; dy <= r; dy++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) != r) continue;
+                    GridPoint2 at = new GridPoint2(x + dx, y + dy);
+                    if (maze.isPassable(at.x, at.y) && !maze.getItems().containsKey(at)) return at;
+                }
+            }
+        }
+        return null;
     }
 
     /** The player is leaving: a megabeast hunting them nearby follows, a few turns behind. */

@@ -12,6 +12,7 @@ public final class Fact {
     public enum Kind {
         WARDEN_DESTROYED(100, "Destroyed the Warden of the Bridge.",
                 "The Warden fell, and the Bridge of Souls crumbled back to nothing."),
+        NEMESIS_SLAIN(70, "Slew {s}, who had taken {o}.", "{s} paid at last for {o}."),
         BOSS_SLAIN(60, "Slew {s}.", "{s} fell before them, and the maze remembers it."),
         SLEW_MEGABEAST(55, "Slew {s}.", "{s} was ended, and the deep went quiet."),
         SEAL_WON(50, "Won the seal of {s}.", "The seal of {s} was torn from its keeper."),
