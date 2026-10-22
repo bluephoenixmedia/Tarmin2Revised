@@ -36,7 +36,7 @@ public class DimensionalManager {
     public static final String[] VOID_LORE_GLYPHS = new String[] {
         "Rune of the Valley: Castle Tarmin casts its crimson shadow upon the mortal realm. We rang the bells, but none could avert the twilight. (Story I)",
         "Rune of the Scribe: In the sacred codex, the scholar inscribed the name of the Antlered Lord, sealing the rites in flame. (Story II)",
-        "Rune of the Horned King: From the obsidian rift strode the Minotaur, leading legions of titans and creeping carapaces. (Story III)",
+        "Rune of the Horned King: From the obsidian rift strode the Antlered Lord, his Minotaur generals before him, leading legions of titans and creeping carapaces. (Story III)",
         "Rune of Ash: The village stones turned to embers. Fire consumed the hearth of man beneath a blood-red sun. (Story IV)",
         "Rune of the Cages: Chained within iron bars beneath a thunderous sky, our kin were ferried to the Maw of Tarmin. (Story V)",
         "Rune of Tarmin-Zul: The Antlered Nether Lord extracted the mortal spirit, tearing open the primordial Raycast Void. (Story VI)",

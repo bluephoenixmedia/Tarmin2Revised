@@ -25,7 +25,7 @@ Every task below traces to these. A task that contradicts one is a defect in the
 | D3 | Wars are caused by **internal politics only**: a War-of-the-Roses epic, procedurally generated. |
 | D4 | **Content ceiling:** political cruelty and gore, written vividly; sprites show aftermath (corpses, impalements, banners). **No sexual content of any kind.** Enforced by test (see T1.9). |
 | D5 | **Three great houses** hold the three gashes at the seal sites, plus **4-8 lesser houses** that swear, rebel and usurp. Seats can change hands; there are always three gashes. |
-| D6 | **Tarmin-Zul** (the Minotaur) is a Maze lord who broke out through the obsidian rift. His castle is a fourth seat. The houses hate him and covet it. |
+| D6 | **Tarmin-Zul** (no Minotaur: the Minotaurs are his generals) is a Maze lord who broke out through the obsidian rift. His castle is a fourth seat. The houses hate him and covet it. |
 | D7 | The **seal bosses** (unbuilt Phase 5) are the lords currently holding each gash: generated characters with names, histories and grudges. |
 | D8 | History is **pre-generated at world creation and simulated live**. |
 | D9 | The simulation tracks **houses and named characters**: lords, heirs, vassals, traits, relationships, titles, seats. |
@@ -61,7 +61,7 @@ Every task below traces to these. A task that contradicts one is a defect in the
 | D39 | Quests are **generated from the history** by templates, and completing one is a history event. |
 | D40 | Towns owe allegiance to **mortal powers** (refugee councils, Goblin Clans, Outcast cults). A town can be **secretly suborned** by a Maze house, which a betrayal event later reveals. |
 | D41 | **Standing is per town**, with allegiance-wide spillover. Hostile towns turn their guards on the player. |
-| D42 | Tarmin-Zul's house acts in the history. Each Doom Clock stage becomes a chronicled **ascendancy event** (he bleeds the houses to feed the sacrifice), with **no change to doom numbers**. |
+| D42 | Tarmin-Zul's house acts in the history. Each Doom Clock stage becomes a chronicled **ascendancy event** (he bleeds the houses to feed the Bridge), with **no change to doom numbers**. |
 | D43 | A **gash interior** is 3-5 Maze strata themed by the holding house's doctrine, ending in the lord's court and its seal. It re-themes when the holder changes. |
 | D44 | **6-8 authored doctrines.** Each sets a roster, palette, interior theme, boss archetype and chronicler grammar flavour. Houses add generated names, sigils, words and mottos. |
 | D45 | **The player's deaths enter the history.** Each dead expedition is chronicled. A ghost player carries its epithet. The house that killed it gains prestige. |

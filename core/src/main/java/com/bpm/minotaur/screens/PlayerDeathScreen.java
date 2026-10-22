@@ -225,19 +225,15 @@ public class PlayerDeathScreen extends BaseScreen {
         // One escalating line instead of a fixed lore paragraph. The paragraph was identical on
         // every death, so by the tenth it was furniture; this makes the panel read as a meter.
         float pressure = (maxDeaths > 0) ? (deathCount / (float) maxDeaths) : 0f;
-        String line;
+        String line = hungerLine(pressure);
         Color lineColor;
         if (pressure >= 0.9f) {
-            line = "The ritual is all but complete.";
             lineColor = HudSkin.COL_HP_CRITICAL;
         } else if (pressure >= 0.6f) {
-            line = "The boundary is failing.";
             lineColor = HudSkin.COL_HP_ON_DARK;
         } else if (pressure >= 0.3f) {
-            line = "The Minotaur stirs beneath the castle.";
             lineColor = HudSkin.COL_TEMP_ON_DARK;
         } else {
-            line = "Something beneath the castle took note.";
             lineColor = HudSkin.COL_TEXT_MUTED;
         }
         Label lore = new Label(line, new Label.LabelStyle(hudSkin.getFontSmall(), lineColor));
@@ -314,6 +310,17 @@ public class PlayerDeathScreen extends BaseScreen {
 
         bar.add(stack).grow();
         return bar;
+    }
+
+    /**
+     * The Hunger's line on the death screen, as the Bridge of Souls nears the far shore (#267,
+     * #273): each death is a stone in it, and Tarmin's generals are what stir, not Tarmin.
+     */
+    public static String hungerLine(float pressure) {
+        if (pressure >= 0.9f) return "The Bridge is all but complete.";
+        if (pressure >= 0.6f) return "The Bridge nears the far shore.";
+        if (pressure >= 0.3f) return "Tarmin's generals stir beneath the castle.";
+        return "Something beneath the castle took note.";
     }
 
     private Table buildFooter() {

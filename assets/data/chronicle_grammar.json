@@ -366,7 +366,7 @@
       ],
       "FOR": [
         "In the year {year} {A} killed the {ordinal} seeker, and hung the body where the others could see.",
-        "The {ordinal} seeker came to the maze for vengeance in the year {year}. {A} found the seeker first.",
+        "The {ordinal} seeker was dragged to the maze in chains in the year {year}, wanting vengeance. {A} found the seeker first.",
         "In the year {year} {A} added the {ordinal} seeker to its trophies. {wordsA}."
       ],
       "AGAINST": [
@@ -400,7 +400,7 @@
       ],
       "FOR": [
         "In the year {year} the Antlered Lord's hunger grew, and the lesser houses learned what they were for. {wordsA}.",
-        "The sacrifice draws near. In the year {year} {A} took its tithe from every house, and none refused twice.",
+        "The Bridge nears the far shore. In the year {year} {A} took its tithe from every house, and none refused twice.",
         "In the year {year} Tarmin-Zul stirred upon his seat, and the Maze remembered whose door it was."
       ],
       "AGAINST": [

@@ -35,7 +35,7 @@ public class HudReadoutsTest {
     @Test
     public void theHungerTipWarnsWhenTheBossIsLoose() {
         HudReadouts.Tip tip = HudReadouts.hungerTip(50, 50, true);
-        assertTrue(tip.details, tip.details.contains("Bringer of Death is loose"));
+        assertTrue(tip.details, tip.details.contains("Warden"));
         assertTrue(tip.remedy, tip.remedy.contains("Slay"));
     }
 
