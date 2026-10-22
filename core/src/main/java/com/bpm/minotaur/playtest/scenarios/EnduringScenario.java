@@ -23,7 +23,11 @@ import java.util.List;
  * Dies for real and checks that the Enduring outlive the Shifting (#289): the Houses and their
  * lords, the Gashes and their holders, the living Megabeasts, a Nemesis, a spent god's dark
  * shrine and the bones of the dead are all still in the world when the maze has been remade.
- * Run it on a slot you can lose: the death is real.
+ * It checks what the world holds, not where the new maze has put it.
+ *
+ * <p>The death is real and the slot keeps it (a spent god, a Nemesis, a grave): snapshot
+ * {@code saves/} in the same command that runs it, as AGENTS.md requires, and restore from that
+ * copy.
  */
 public final class EnduringScenario implements PlaytestScenario {
 
@@ -43,9 +47,8 @@ public final class EnduringScenario implements PlaytestScenario {
 
     private static List<String> census(HistoryWorld world) {
         List<String> seen = new ArrayList<>();
-        for (House h : world.livingHouses()) {
-            seen.add("house " + h.name + " lord " + (world.lordOf(h) != null ? world.lordOf(h).name : "-"));
-        }
+        // Houses, not lords: a lord may die of age in any season, and that is the history, not the Shifting.
+        for (House h : world.livingHouses()) seen.add("house " + h.name);
         for (int g = 0; g < HistoryWorld.GASH_COUNT; g++) {
             House holder = world.gashHolder(g);
             seen.add("gash " + world.gashName(g) + " held by " + (holder != null ? holder.name : "-"));

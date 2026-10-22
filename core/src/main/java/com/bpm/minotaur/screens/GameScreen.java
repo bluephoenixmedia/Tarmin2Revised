@@ -2015,6 +2015,7 @@ public class GameScreen extends BaseScreen {
 
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
+        if (worldManager.getHistory() != null) worldManager.getHistory().endHunt();
         DivinityManager.getInstance().onWorldReset();
         // A new expedition starts the escalation clock over; only the sleep and altar paths did.
         DoomManager.getInstance().resetExpeditionTurns();
