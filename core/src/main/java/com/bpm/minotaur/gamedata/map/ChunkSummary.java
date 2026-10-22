@@ -62,7 +62,7 @@ public final class ChunkSummary {
         if (data.scenery != null) {
             for (ChunkData.SceneryData sc : data.scenery) {
                 if (sc == null || sc.bonesData == null || !seen(data, sc.x, sc.y)) continue;
-                s.graves.add(new Grave(sc.bonesData.playerName, sc.bonesData.epitaph,
+                s.graves.add(new Grave(sc.bonesData.name(), sc.bonesData.epitaph,
                         sc.bonesData.awakened, sc.bonesData.defeated));
             }
         }

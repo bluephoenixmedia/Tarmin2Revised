@@ -2391,13 +2391,13 @@ public class Hud implements Disposable {
         if (frontScenery != null && frontScenery.isCorpse()) {
             com.bpm.minotaur.gamedata.bones.BonesData bd = frontScenery.getBonesData();
             if (frontScenery.isDecomposingCorpse() && bd != null) {
-                String heroName = (bd.playerName != null) ? bd.playerName : "Fallen Hero";
+                String heroName = com.bpm.minotaur.ui.UiGlyphs.sanitize(bd.name());
                 if (bd.defeated) {
                     worldInteractionCard.show(
                             "[MORTAL REMAINS]",
                             "[DEFEATED SPIRIT]",
                             "Remains of " + heroName,
-                            "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
+                            com.bpm.minotaur.ui.UiGlyphs.sanitize(bd.graveText() + ". The shade is laid to rest; what they carried is yours to reclaim."),
                             keys.badge(Action.SWAP_PACK),
                             "Loot Remains",
                             () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
@@ -2407,7 +2407,7 @@ public class Hud implements Disposable {
                             "[MORTAL REMAINS]",
                             "[ACTIVE GHOST]",
                             "Remains of " + heroName,
-                            "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
+                            com.bpm.minotaur.ui.UiGlyphs.sanitize(bd.graveText() + ". Their wrathful shade guards these remains: lay it to rest before looting."),
                             keys.badge(Action.SWAP_PACK),
                             "Examine Remains",
                             () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
@@ -2417,7 +2417,7 @@ public class Hud implements Disposable {
                             "[MORTAL REMAINS]",
                             "[DORMANT BONES]",
                             "Remains of " + heroName,
-                            "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
+                            com.bpm.minotaur.ui.UiGlyphs.sanitize(bd.graveText() + ". A faint spectral chill lingers in the air."),
                             keys.badge(Action.SWAP_PACK),
                             "Disturb Remains",
                             () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }

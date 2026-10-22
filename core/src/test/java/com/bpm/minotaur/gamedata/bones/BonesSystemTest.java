@@ -98,6 +98,24 @@ public class BonesSystemTest {
     }
 
     @Test
+    public void theBonesCarryThePrisonersNameAndKillerNotTheSouls() throws java.io.IOException {
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = com.bpm.minotaur.gamedata.history.HistorySimulator
+                .prehistory(21L, com.bpm.minotaur.gamedata.history.DoctrineCatalogTest.loadCatalog());
+        Player player = new Player(5, 5);
+        player.beginLife(world, 7L);
+        com.bpm.minotaur.gamedata.history.Life life = player.getLife();
+
+        BonesData bones = BonesManager.getInstance().recordBonesOnDeath(player, 2, "Slain", GameMode.ADVANCED, "Kobold");
+        assertNotNull(bones);
+        createdBonesForCleanup.add(bones);
+
+        assertEquals(life.name, bones.name());
+        assertEquals(life.settlement, bones.lifeSettlement);
+        assertEquals("Kobold", bones.killer);
+        assertEquals("the shade of " + life.name, bones.shadeName());
+    }
+
+    @Test
     public void testRetroModeClassicIsolation() {
         Player player = new Player(5, 5);
         BonesManager bm = BonesManager.getInstance();

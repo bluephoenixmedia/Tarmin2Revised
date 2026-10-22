@@ -85,8 +85,8 @@ public class BonesManager {
         return recordBonesOnDeath(player, floorLevel, epitaph, gameMode, null);
     }
 
-    /** As above; {@code epithet} is what the Maze called the fallen, carried by their ghost (D45). */
-    public BonesData recordBonesOnDeath(Player player, int floorLevel, String epitaph, GameMode gameMode, String epithet) {
+    /** As above; {@code killer} names what felled the life (#282), or is null. */
+    public BonesData recordBonesOnDeath(Player player, int floorLevel, String epitaph, GameMode gameMode, String killer) {
         if (gameMode == GameMode.CLASSIC) {
             log("Retro Classic mode active: skipping bones file generation.");
             return null;
@@ -104,21 +104,16 @@ public class BonesManager {
         long timestamp = System.currentTimeMillis();
         String id = UUID.randomUUID().toString();
 
-        String charName = "Fallen Hero";
-        try {
-            SaveManager sm = SaveManager.getInstance();
-            if (sm != null) {
-                int slot = sm.getActiveSlotIndex();
-                if (sm.getSlotMetadata(slot) != null && sm.getSlotMetadata(slot).characterName != null) {
-                    charName = sm.getSlotMetadata(slot).characterName;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-
-        if (epithet != null && !epithet.isEmpty()) charName = charName + " " + epithet;
+        // The bones are the prisoner's, not the soul's (#282): the soul's name lives on in the next body.
+        com.bpm.minotaur.gamedata.history.Life life = player.getLife();
+        String charName = life != null ? life.name : BonesData.NAMELESS;
         PlayerSaveData playerData = new PlayerSaveData(player);
         BonesData bones = new BonesData(id, charName, epitaph, clampedFloor, strataDepth, playerData);
+        if (life != null) {
+            bones.lifeName = life.name;
+            bones.lifeSettlement = life.settlement;
+        }
+        bones.killer = killer;
 
         String fileName = "bones_strata_" + strataDepth + "_" + timestamp + ".json";
         String filePath = bonesDir() + fileName;

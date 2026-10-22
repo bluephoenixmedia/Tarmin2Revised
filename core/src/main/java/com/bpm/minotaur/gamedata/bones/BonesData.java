@@ -10,7 +10,14 @@ import com.bpm.minotaur.gamedata.save.PlayerSaveData;
 public class BonesData {
 
     public String id;
-    public String playerName = "Fallen Hero";
+    /** The name the bones were written under; all an older file has. Read through {@link #name()}. */
+    public String playerName = NAMELESS;
+    /** The prisoner this life was (#282); null in bones written before lives had names. */
+    public String lifeName;
+    /** Their home settlement: "the Ashen Ford". */
+    public String lifeSettlement;
+    /** What felled them, in words, or null. */
+    public String killer;
     public String epitaph = "Fell in the depths";
     public int floorLevel = 1;
     public int strataDepth = 1;
@@ -41,6 +48,28 @@ public class BonesData {
         this.strataDepth = strataDepth;
         this.playerData = playerData;
         this.timestamp = System.currentTimeMillis();
+    }
+
+    /** Who the bones were when no life had been forged for them: never a Fallen Hero (#282). */
+    public static final String NAMELESS = "a nameless prisoner";
+
+    /** Whose bones these are: the prisoner's name, or the name an older file kept. */
+    public String name() {
+        if (lifeName != null) return lifeName;
+        return playerName != null ? playerName : NAMELESS;
+    }
+
+    /** "Here lies Brannoc Thatch of the Ashen Ford, who fell to Gorvak the Gnawer" */
+    public String graveText() {
+        StringBuilder text = new StringBuilder("Here lies ").append(name());
+        if (lifeName != null && lifeSettlement != null) text.append(" of ").append(lifeSettlement);
+        if (killer != null) text.append(", who fell to ").append(killer);
+        return text.toString();
+    }
+
+    /** "the shade of Brannoc Thatch": a ghost is one life, never a Fallen Hero. */
+    public String shadeName() {
+        return "the shade of " + name();
     }
 
     private transient java.util.List<com.bpm.minotaur.gamedata.item.Item> extractedItems = null;
