@@ -108,13 +108,13 @@ A grave reads "Here lies Brannoc of Velmere, who fell to Gorvak the Gnawer". A g
   Everything else is generated anew. Progression carries forward. Each save slot is its own world.
 - **The Warden falls:** the Bridge crumbles, the Hunger goes to 0, and a Reckoning closes the Bridge. Each summoning is harder, as today.
 - **Tarmin crosses** (a death while the Warden stands): he lays waste to the mortal world, and the old gods drag him back.
-  - One god is **spent**: its shrine goes dark for good.
+  - One god is **spent**, chosen by the player at rebirth ("Which of us will hold him back?"; Asterion is always last). Its shrine and rite go dark until the Treasure is returned ([#278](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/278)). The Shelter and the Bridge bar show "N keepers remain".
   - The soul returns, the Hunger goes to 0, and the maze shifts.
   - The log gets the life's death, a Reckoning of the crossing, and the involved Houses' Tellings of the scramble for the throne.
   - The apocalypse slot wipe is removed.
-  - What happens when the last god is spent is an open ticket on the map: "Grilling: when the last old god goes dark".
+  - **The Last Crossing** (#278): a crossing with no god left to spend is final. Tarmin stays, the Knell writes the last Reckoning, and the slot becomes a finished world: readable in the World Log, never playable again.
 - **The Champion slays Tarmin** (the final run). This is a real choice:
-  - **Return the Treasure:** the Rift is sealed and the soul rests, until the curse wakes it. The House that wins hell's war takes the throne and the name. The closing line is in the soul's name ("…returned the Treasure to the Rift, and was allowed to die").
+  - **Return the Treasure:** the Rift is sealed, every spent god wakes again (#278), and the soul rests, until the curse wakes it. The House that wins hell's war takes the throne and the name. The closing line is in the soul's name ("…returned the Treasure to the Rift, and was allowed to die").
   - **Take the throne:** that Incarnation becomes the new Tarmin, an Enduring figure, and the next life is a prisoner sent to hunt it.
 
   Either way an Age ends, a new Age and Bridge begin, and the Hunger goes to 0. The Tarmin fight itself is not built and is not part of this spec: build against a "Tarmin slain" hook that a playtest scenario can fire.
@@ -152,7 +152,7 @@ Each is a `ready-for-agent` issue on milestone 0.0.4 and a sub-issue of the map,
 | [Ages: Tarmin slain and the throne](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/291) (§8) | Bridges |
 | [A monster takes Tarmin's throne](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/292) (§8) | Ages |
 
-Still a decision: [Grilling: when the last old god goes dark](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/278). The Bridges slice has an interim rule until it resolves.
+[Grilling: when the last old god goes dark](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/278) is folded into the Bridges and Ages slices.
 
 ## Out of scope
 
