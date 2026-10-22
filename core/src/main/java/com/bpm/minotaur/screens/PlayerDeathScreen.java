@@ -90,6 +90,8 @@ public class PlayerDeathScreen extends BaseScreen {
     @Override
     public void show() {
         MusicManager.getInstance().stop();
+        // Shown again on return from the Book of Lives: the old stage goes first.
+        if (stage != null) stage.dispose();
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
 
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -336,10 +338,35 @@ public class PlayerDeathScreen extends BaseScreen {
         });
         footer.add(awaken).minWidth(760f).height(64f).expandX();
 
+        com.bpm.minotaur.gamedata.worldlog.LifeRecord ended = lastLife();
+        if (ended != null) {
+            TextButton book = new TextButton(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                    "LIFE " + ended.number + " ENDS: THE BOOK OF LIVES   [L]"), com.bpm.minotaur.ui.UiStyles.secondary(hudSkin));
+            book.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    openBookOfLives();
+                }
+            });
+            footer.add(book).height(64f).padLeft(com.bpm.minotaur.ui.UiTheme.PAD_MD);
+        }
+
         Label hint = new Label("[ESC] RETURN",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
         footer.add(hint).right();
         return footer;
+    }
+
+    /** The life that just ended, as the World Log wrote it (#281); null if the log has none. */
+    private static com.bpm.minotaur.gamedata.worldlog.LifeRecord lastLife() {
+        java.util.List<com.bpm.minotaur.gamedata.worldlog.LifeRecord> lives =
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().log().lives();
+        return lives.isEmpty() ? null : lives.get(lives.size() - 1);
+    }
+
+    private void openBookOfLives() {
+        if (transitionTriggered || lastLife() == null) return;
+        game.setScreen(new WorldLogScreen(game, this, GameScreen.soulName()));
     }
 
     private void awakenInShelter() {
@@ -352,6 +379,10 @@ public class PlayerDeathScreen extends BaseScreen {
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE || keycode == Input.Keys.ESCAPE) {
             awakenInShelter();
+            return true;
+        }
+        if (keycode == Input.Keys.L) {
+            openBookOfLives();
             return true;
         }
         return false;

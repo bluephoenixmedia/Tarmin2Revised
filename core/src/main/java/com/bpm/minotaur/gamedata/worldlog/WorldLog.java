@@ -17,9 +17,18 @@ public final class WorldLog {
     /** The deepest level any life of the soul has reached; only a new one is worth a line. */
     private int soulDeepest;
     private ArrayList<LifeRecord> lives = new ArrayList<>();
+    /** What every Era of this log is named from. */
+    private long eraSeed;
+    /** Each Era's name by stage, fixed the first time a life wakes in it; "" until then. */
+    private ArrayList<String> eraNames = new ArrayList<>();
 
     /** A new world: nothing forgotten, nothing reached. Also the save reader's constructor. */
     public WorldLog() {
+        this(new java.util.Random().nextLong());
+    }
+
+    public WorldLog(long eraSeed) {
+        this.eraSeed = eraSeed;
     }
 
     /** The log for a slot that lived before it: {@code hunger} lives forgotten, their depth kept. */
@@ -55,12 +64,43 @@ public final class WorldLog {
      * being chosen -- the reroll -- so it takes the new identity instead of starting another.
      */
     public void wake(Life life) {
+        wake(life, -1);
+    }
+
+    /** As {@link #wake(Life)}, at {@code hunger} deaths: the life's Era. -1 when not known. */
+    public void wake(Life life, int hunger) {
         LifeRecord open = current();
         if (open != null && open.lines.isEmpty()) {
             open.wake(life);
             return;
         }
-        lives.add(new LifeRecord(unremembered + lives.size() + 1, life));
+        LifeRecord record = new LifeRecord(unremembered + lives.size() + 1, life);
+        record.hunger = hunger;
+        lives.add(record);
+        eraName(Era.stageOf(record.hungerAtWaking()));
+    }
+
+    /** Every Era with a life in it, newest first, each with its lives newest first. */
+    public List<Era> eras() {
+        List<Era> eras = new ArrayList<>();
+        Era era = null;
+        for (int i = lives.size() - 1; i >= 0; i--) {
+            LifeRecord life = lives.get(i);
+            int stage = Era.stageOf(life.hungerAtWaking());
+            if (era == null || era.stage != stage) {
+                era = new Era(stage, eraName(stage));
+                eras.add(era);
+            }
+            era.lives.add(life);
+        }
+        return eras;
+    }
+
+    /** The stage's name, named now and kept if it has none yet. */
+    private String eraName(int stage) {
+        while (eraNames.size() <= stage) eraNames.add("");
+        if (eraNames.get(stage).isEmpty()) eraNames.set(stage, Era.nameFor(eraSeed, stage));
+        return eraNames.get(stage);
     }
 
     public void note(Fact fact) {

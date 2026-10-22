@@ -205,6 +205,11 @@ public final class UiTheme {
     public static final float BUTTON_MIN_W = 96 * VU;
     /** Every item in a vertical menu shares this width, so the column is not ragged. */
     public static final float MENU_ITEM_W = 160 * VU;
+    /** The World Log's Bridge bar (#281): one stone per death, fifty across. */
+    public static final float BRIDGE_STONE_W = 8 * VU;
+    public static final float BRIDGE_STONE_H = 12 * VU;
+    /** The World Log's open page, beside the list of lives. */
+    public static final float LEDGER_PAGE_W = 330 * VU;
     public static final float SLOT = 20 * VU;
     public static final float ICON_XS = 8 * VU;
     public static final float ICON_SM = 16 * VU;

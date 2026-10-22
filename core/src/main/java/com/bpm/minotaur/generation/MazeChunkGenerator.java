@@ -722,6 +722,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
                         placePortalNiche(maze, layout, layoutY, x, y, itemDataManager, assetManager);
                     }
                 } else if (c == 'A') {
+                    if (maze.isHomeTile(x, y)) {
+                        // furnish() stands the Book of Lives beside it (#281).
+                        maze.setAltarTile(new com.badlogic.gdx.math.GridPoint2(x, y));
+                    }
                     if (maze.isHomeTile(x, y) && itemDataManager != null) {
                         maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
                                 assetManager));
