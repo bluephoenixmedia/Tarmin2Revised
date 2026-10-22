@@ -83,6 +83,10 @@ public final class WorldLogManager implements SlotScopedState {
             case SLEW_FIGURE: {
                 Figure f = world.figure(deed.target);
                 if (f == null) return null;
+                // A Figure that was a Nemesis is told once, by its NEMESIS_SLAIN line (#284).
+                for (com.bpm.minotaur.gamedata.history.Nemesis n : world.nemeses()) {
+                    if (n.figureId == f.id) return null;
+                }
                 House h = world.house(f.houseId);
                 return Fact.of(Fact.Kind.SLEW_FIGURE, f.name, h != null ? h.name : null);
             }
@@ -102,6 +106,13 @@ public final class WorldLogManager implements SlotScopedState {
                 return Fact.of(Fact.Kind.SWORE_OATH, houseName(world, deed.target));
             case BROKE_OATH:
                 return Fact.of(Fact.Kind.BROKE_OATH, houseName(world, deed.target));
+            case SLEW_NEMESIS: {
+                com.bpm.minotaur.gamedata.history.Nemesis n = world.nemesis(deed.target);
+                if (n == null) return null;
+                String taken = n.tally() == 1 ? n.victims.get(0)
+                        : com.bpm.minotaur.ui.UiNames.plural(n.tally(), "life", "lives");
+                return Fact.of(Fact.Kind.NEMESIS_SLAIN, n.name, taken);
+            }
             case SEAL_GRANTED:
                 return Fact.of(Fact.Kind.SEAL_GRANTED, null, houseName(world, deed.target));
             default:

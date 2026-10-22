@@ -1440,8 +1440,12 @@ public class GameScreen extends BaseScreen {
                 // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
                 com.bpm.minotaur.gamedata.history.Nemesis nemesis =
                         worldManager.getHistory().recordSeekerFell(seekerDeath(killer, curLvl));
-                // A killer the history has just named is remembered by that name (#283).
-                if (nemesis != null) killer = nemesis.name;
+                // A killer the history has just named is remembered by that name (#283), and keeps
+                // what the life had in hand and on its back, to give up when it falls (#284).
+                if (nemesis != null) {
+                    killer = nemesis.name;
+                    hoardGearOf(nemesis.id);
+                }
                 // The life's record closes with its death (#280).
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
                         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
@@ -1945,6 +1949,19 @@ public class GameScreen extends BaseScreen {
         GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
         return death.of(player.getLife() != null ? player.getLife().name : null)
                 .at(level, chunk != null ? chunk.x : 0, chunk != null ? chunk.y : 0);
+    }
+
+    /** The dying life's gear in hand and equipped goes to the Nemesis that killed it (#284). */
+    private void hoardGearOf(int nemesisId) {
+        com.bpm.minotaur.gamedata.history.NemesisHoard hoard = com.bpm.minotaur.managers.NemesisHoardManager.getInstance().hoard();
+        java.util.List<Item> gear = new java.util.ArrayList<>();
+        gear.add(player.getInventory().getRightHand());
+        gear.add(player.getInventory().getLeftHand());
+        if (player.getEquipment() != null) gear.addAll(player.getEquipment().getAllEquipped());
+        for (Item item : gear) {
+            if (item != null) hoard.take(nemesisId, new com.bpm.minotaur.gamedata.save.ItemSaveData(item));
+        }
+        com.bpm.minotaur.managers.NemesisHoardManager.getInstance().save();
     }
 
     /** What killed the player, in words: a monster's name, a survival cause, or the maze itself. */
@@ -3112,7 +3129,7 @@ public class GameScreen extends BaseScreen {
         }
         String beast = worldManager.tendMegabeasts(maze, player != null ? player.getPosition() : null);
         if (beast != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(beast), 4f));
-        String nemesis = worldManager.tendNemeses(maze);
+        String nemesis = worldManager.tendNemeses(maze, player != null ? player.getPosition() : null);
         if (nemesis != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(nemesis), 4f));
         // Blood on him and his gear dries from crimson toward black as the delve goes on.
         if (player != null) {
