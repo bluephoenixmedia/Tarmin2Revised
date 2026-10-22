@@ -1342,6 +1342,14 @@ public class GameScreen extends BaseScreen {
                     hud.getEncounterWindow().configure(player, game.getEncounterManager(), eventManager,
                             game.getItemDataManager(), game.getMonsterDataManager(), game.getAssetManager(),
                             maze, null);
+                    // A statue is an old god's shrine, dark if its god is spent (#287).
+                    com.bpm.minotaur.gamedata.history.OldGod god =
+                            com.bpm.minotaur.gamedata.history.OldGod.forEncounter(encounter.id);
+                    if (god != null) {
+                        boolean dark = worldManager != null && worldManager.getHistory() != null
+                                && worldManager.getHistory().world().isSpent(god);
+                        encounter = com.bpm.minotaur.gamedata.history.Shrine.view(encounter, god, dark);
+                    }
                     hud.getEncounterWindow().show(encounter);
                 }
             }

@@ -801,7 +801,7 @@ public class CodexScreen extends BaseScreen {
         // Monument
         int monTier = altar.getMonumentTier();
         treesGrid.add(buildTreeCard("MONUMENT", monTier, 3,
-                "Consecrated stone pillars increasing frequency of divine statue encounter shrines in the strata.",
+                "Consecrated stone pillars that wake more of the old gods' shrines in the strata.",
                 String.format("Current Benefit: %.0f%% shrine event frequency.", altar.getStatueEventFrequency() * 100)))
                 .size(415, 150).pad(6);
         treesGrid.row();

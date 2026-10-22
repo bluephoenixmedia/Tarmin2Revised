@@ -57,7 +57,12 @@ public class PlayerDeed {
         /** House {@link #target}'s lord granted the player the seal of its gash (W26). */
         SEAL_GRANTED,
         /** The player slew Nemesis {@link #target} (#283): it is dead, and is placed no more. */
-        SLEW_NEMESIS
+        SLEW_NEMESIS,
+        /**
+         * Not the player's doing but their run's: old god {@link #note} (an {@link OldGod} name)
+         * was spent holding Tarmin back, and its shrine is dark for good (#287, #290).
+         */
+        GOD_SPENT
     }
 
     public Kind kind;

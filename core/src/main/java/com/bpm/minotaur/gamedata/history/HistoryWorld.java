@@ -27,6 +27,8 @@ public class HistoryWorld {
     final List<Megabeast> megabeasts = new ArrayList<>();
     /** The killers of the soul's lives, raised by the death deeds (#283). */
     final List<Nemesis> nemeses = new ArrayList<>();
+    /** Old gods spent holding Tarmin back: their shrines are dark (#287). */
+    final java.util.EnumSet<OldGod> spentGods = java.util.EnumSet.noneOf(OldGod.class);
     /** Unordered pairs of allied houses, encoded by {@link #pairKey}. */
     final Set<Long> alliances = new HashSet<>();
     final Set<String> usedNames = new HashSet<>();
@@ -101,6 +103,10 @@ public class HistoryWorld {
 
     public List<Nemesis> nemeses() {
         return Collections.unmodifiableList(nemeses);
+    }
+
+    public boolean isSpent(OldGod god) {
+        return spentGods.contains(god);
     }
 
     public Nemesis nemesis(int id) {

@@ -904,6 +904,14 @@ public final class HistorySimulator {
             House killer = world.house(deed.target);
             if (killer != null) killer.prestige += 3;
             Nemeses.fell(world, deed);
+        } else if (deed.kind == PlayerDeed.Kind.GOD_SPENT) {
+            if (deed.note != null) {
+                try {
+                    world.spentGods.add(OldGod.valueOf(deed.note));
+                } catch (IllegalArgumentException ignored) {
+                    // A god the game no longer knows: nothing to darken.
+                }
+            }
         } else if (deed.kind == PlayerDeed.Kind.SLEW_NEMESIS) {
             Nemesis n = world.nemesis(deed.target);
             if (n != null && n.isAlive()) n.deathSeason = world.season;

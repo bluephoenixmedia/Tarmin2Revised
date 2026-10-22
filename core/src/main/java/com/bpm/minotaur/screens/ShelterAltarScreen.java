@@ -347,7 +347,7 @@ public class ShelterAltarScreen extends BaseScreen {
         body.add(repertoireCard).grow().padRight(20);
 
         Table monumentCard = buildTreeCard("MONUMENT",
-                "Raises the frequency of statue encounter events from a 15% baseline up to 35% per chunk.");
+                "Wakes more of the old gods' shrines: statue encounters rise from a 15% baseline up to 35% per chunk.");
         monumentTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         monumentCard.add(monumentTierLabel).left().padTop(10).row();
         monumentBtn = createActionButton("UPGRADE MONUMENT");
