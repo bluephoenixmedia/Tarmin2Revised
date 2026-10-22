@@ -278,6 +278,14 @@ public final class HistoryManager {
         hunt = h;
     }
 
+    /**
+     * The seeker died: a megabeast hunting them loses the scent (#289). Its hunt named a chunk of
+     * the maze the Shifting has just remade; the beast itself endures and keeps to its lair.
+     */
+    public void endHunt() {
+        hunt = null;
+    }
+
     public com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt() {
         return hunt;
     }
