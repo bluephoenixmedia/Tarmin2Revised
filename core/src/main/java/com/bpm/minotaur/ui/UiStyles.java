@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
@@ -95,6 +96,19 @@ public final class UiStyles {
         s.fontColor = UiTheme.ON_GOLD;
         s.downFontColor = UiTheme.ON_GOLD;
         s.disabledFontColor = UiTheme.TEXT_OFF;
+        return s;
+    }
+
+    /** A one-line text entry: recessed slot, body font, a thin gold cursor. */
+    public static TextField.TextFieldStyle textField(HudSkin skin) {
+        TextField.TextFieldStyle s = new TextField.TextFieldStyle();
+        s.font = skin.getFontMain();
+        s.fontColor = UiTheme.TEXT;
+        s.background = skin.getSlotRecessed();
+        s.focusedBackground = skin.getSlotActive();
+        s.cursor = ((TextureRegionDrawable) skin.getWhitePixelDrawable()).tint(UiTheme.GOLD);
+        s.cursor.setMinWidth(UiTheme.VU);
+        s.selection = ((TextureRegionDrawable) skin.getWhitePixelDrawable()).tint(UiTheme.TEXT_OFF);
         return s;
     }
 

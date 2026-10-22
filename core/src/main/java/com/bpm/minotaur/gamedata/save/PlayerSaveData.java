@@ -110,6 +110,20 @@ public class PlayerSaveData {
     public List<String> permanentSpellIds;
     /** The soul's Combat Arts by name (#241); absent in older saves, which load with none. */
     public List<String> knownArts;
+    /** The prisoner this Incarnation wakes in (#279); lifeName is null in older saves, which forge one. */
+    public String lifeName;
+    public int lifeSettlementId = -1;
+    public String lifeSettlement;
+    public String lifeAllegiance;
+    public String lifeOrigin;
+    public String lifeRaider;
+    public String lifeCrime;
+    public String lifeKingdom;
+    public long lifeSeed;
+    public boolean lifeRerolled;
+    public boolean lifeRevealPending;
+    /** True in every save written since lives began; false in older ones, whose prisoner is given silently. */
+    public boolean livesRecorded;
     public List<String> runSpellIds;
     public List<String> preparedSpells = new ArrayList<>();
     public int unlockedSpellSlots = 1;
@@ -295,6 +309,21 @@ public class PlayerSaveData {
         this.permanentSpellIds = new ArrayList<>(player.getPermanentSpellIds());
         this.knownArts = new ArrayList<>();
         for (com.bpm.minotaur.gamedata.arts.CombatArt art : player.getKnownArts()) this.knownArts.add(art.name());
+        this.livesRecorded = true;
+        com.bpm.minotaur.gamedata.history.Life life = player.getLife();
+        if (life != null) {
+            this.lifeName = life.name;
+            this.lifeSettlementId = life.settlementId;
+            this.lifeSettlement = life.settlement;
+            this.lifeAllegiance = life.allegiance.name();
+            this.lifeOrigin = life.origin.name();
+            this.lifeRaider = life.raider;
+            this.lifeCrime = life.crime;
+            this.lifeKingdom = life.kingdom;
+            this.lifeSeed = player.getLifeSeed();
+            this.lifeRerolled = player.isLifeRerolled();
+            this.lifeRevealPending = player.isLifeRevealPending();
+        }
         this.runSpellIds = new ArrayList<>(player.getRunSpellIds());
         java.util.Collections.addAll(this.preparedSpells, player.getPreparedSpells());
         this.unlockedSpellSlots = player.getUnlockedSpellSlots();
@@ -303,6 +332,19 @@ public class PlayerSaveData {
             this.pendingTomeType = pending.getTomeItem().getType();
             this.pendingTomeOptions.addAll(pending.getOptions());
             this.pendingTomeRerolls = pending.getRerollsLeft();
+        }
+    }
+
+    /** The saved life, or null for a save from before lives (or one whose power no longer exists). */
+    private com.bpm.minotaur.gamedata.history.Life savedLife() {
+        if (lifeName == null) return null;
+        try {
+            return new com.bpm.minotaur.gamedata.history.Life(lifeName, lifeSettlementId, lifeSettlement,
+                    com.bpm.minotaur.gamedata.history.town.Allegiance.valueOf(lifeAllegiance),
+                    com.bpm.minotaur.gamedata.history.Life.Origin.valueOf(lifeOrigin),
+                    lifeRaider, lifeCrime, lifeKingdom);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return null;
         }
     }
 
@@ -456,6 +498,7 @@ public class PlayerSaveData {
 
         // Spells
         player.restoreArts(knownArts);
+        player.restoreLife(savedLife(), lifeSeed, lifeRerolled, lifeRevealPending, !livesRecorded);
         if (permanentSpellIds != null || runSpellIds != null) {
             player.restoreSpellbook(permanentSpellIds, runSpellIds, preparedSpells, unlockedSpellSlots);
             player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);

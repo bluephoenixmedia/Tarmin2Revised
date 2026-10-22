@@ -219,6 +219,16 @@ public final class PlaytestContext {
     public void settleTraits() {
         Player p = screen.getPlayer();
         if (p != null) {
+            // The rebirth reveal (#279) comes before the trait; a scenario rises as whoever it wakes in.
+            com.bpm.minotaur.managers.HistoryManager history = screen.getWorldManager() != null
+                    ? screen.getWorldManager().getHistory() : null;
+            if (p.needsLife() && history != null && history.world() != null) {
+                p.beginLife(history.world(), 0L);
+            }
+            p.acknowledgeLife();
+            if (game.getScreen() instanceof com.bpm.minotaur.screens.RebirthScreen) {
+                game.setScreen(screen);
+            }
             if (p.needsTraitOffer()) {
                 p.offerTraits();
             }
