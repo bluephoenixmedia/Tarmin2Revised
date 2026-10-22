@@ -41,6 +41,35 @@ public final class WorldLogManager implements SlotScopedState {
         return log;
     }
 
+    /** The life being lived gains a line, if a life is being lived. */
+    public void note(Fact fact) {
+        log().note(fact);
+    }
+
+    public void noteDepth(int level) {
+        log().noteDepth(level);
+    }
+
+    public void noteKill(String monster, boolean heavy, boolean boss) {
+        log().noteKill(monster, heavy, boss);
+    }
+
+    /**
+     * Keeps the log level with the player: a life the player is living but the log has not
+     * woken -- a new body, a reroll, or a save from before the log -- is woken now.
+     */
+    public void keepUpWith(com.bpm.minotaur.gamedata.history.Life life) {
+        if (life == null) return;
+        com.bpm.minotaur.gamedata.worldlog.LifeRecord open = log().current();
+        if (open == null || !life.title().equals(open.title)) log().wake(life);
+    }
+
+    /** The life being lived ends; the log is written at once, before anything else can go wrong. */
+    public void die(String epitaph, String killer, String place, int turn) {
+        log().die(epitaph, killer, place, turn);
+        save();
+    }
+
     /** A deed of the player's own, as a line of the life being lived; the run's other deeds are not. */
     public void noteDeed(PlayerDeed deed, HistoryWorld world) {
         Fact fact = factFor(deed, world);

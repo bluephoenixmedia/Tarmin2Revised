@@ -38,10 +38,6 @@ public final class WorldLog {
         return soulDeepest;
     }
 
-    public void setSoulDeepest(int level) {
-        this.soulDeepest = level;
-    }
-
     /** Oldest first. */
     public List<LifeRecord> lives() {
         return Collections.unmodifiableList(lives);

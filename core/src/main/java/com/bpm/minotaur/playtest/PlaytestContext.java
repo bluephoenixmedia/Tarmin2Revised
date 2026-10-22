@@ -224,7 +224,6 @@ public final class PlaytestContext {
                     ? screen.getWorldManager().getHistory() : null;
             if (p.needsLife() && history != null && history.world() != null) {
                 p.beginLife(history.world(), 0L);
-                com.bpm.minotaur.managers.WorldLogManager.getInstance().log().wake(p.getLife());
             }
             p.acknowledgeLife();
             if (game.getScreen() instanceof com.bpm.minotaur.screens.RebirthScreen) {

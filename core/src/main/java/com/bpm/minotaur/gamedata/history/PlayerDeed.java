@@ -9,7 +9,10 @@ public class PlayerDeed {
     public enum Kind {
         /** The player killed a named figure. {@link #target} is the figure id. */
         SLEW_FIGURE,
-        /** An expedition ended in death. {@link #target} is the killing house id, or -1. */
+        /**
+         * An expedition ended in death. {@link #target} is the killing house id, or -1; {@link #note}
+         * names what killed the seeker (#280), and is null in deaths saved before it did.
+         */
         SEEKER_FELL,
         /**
          * The Doom Clock reached a stage it never had before. {@link #target} is the stage. Not

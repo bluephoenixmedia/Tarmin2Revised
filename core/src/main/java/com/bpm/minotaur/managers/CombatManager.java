@@ -3340,8 +3340,6 @@ public class CombatManager {
         // so it keys off the monster itself.
         if (monster != null && monster.isBridgeBoss()) {
             DoomManager.getInstance().onBridgeBossDefeated();
-            WorldLogManager.getInstance().log().note(
-                    com.bpm.minotaur.gamedata.worldlog.Fact.of(com.bpm.minotaur.gamedata.worldlog.Fact.Kind.WARDEN_DESTROYED));
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(
                         "THE BRIDGE GUARDIAN FALLS! The bridge holds. Integrity restored.", 5.0f));
@@ -3719,11 +3717,21 @@ public class CombatManager {
 
     public void setCurrentState(CombatState state) { this.currentState = state; }
 
-    /** A kill the life's record may keep (#280): every boss, and its first Heavy. The Warden has its own line. */
+    /**
+     * A kill of the player's the life's record may keep (#280): the Warden, a boss, the life's
+     * first Heavy. Called only from the player's kill payouts, never from monster infighting. A
+     * seal lord and a megabeast are lines already, through their history deeds and the seal.
+     */
     private static void noteKillInWorldLog(Monster m) {
-        if (m == null || m.isBridgeBoss()) return;
-        WorldLogManager.getInstance().log().noteKill(nameOf(m),
-                m.getRole() == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY, m.isBoss());
+        if (m == null) return;
+        WorldLogManager log = WorldLogManager.getInstance();
+        if (m.isBridgeBoss()) {
+            log.note(com.bpm.minotaur.gamedata.worldlog.Fact.of(com.bpm.minotaur.gamedata.worldlog.Fact.Kind.WARDEN_DESTROYED));
+            return;
+        }
+        boolean toldElsewhere = m.holdsCourt() || m.getMegabeastId() >= 0;
+        log.noteKill(nameOf(m), m.getRole() == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY,
+                m.isBoss() && !toldElsewhere);
     }
 
     // Extracted death logic to reuse for Poison kills

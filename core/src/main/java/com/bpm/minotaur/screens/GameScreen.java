@@ -729,7 +729,10 @@ public class GameScreen extends BaseScreen {
                     && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 if (player.needsLife()) {
                     player.beginLife(lifeHistory.world(), new java.util.Random().nextLong());
-                    com.bpm.minotaur.managers.WorldLogManager.getInstance().log().wake(player.getLife());
+                }
+                if (!isDeathTransitionTriggered) {
+                    // The World Log follows whoever the player is: a new body, a reroll, a loaded save (#280).
+                    com.bpm.minotaur.managers.WorldLogManager.getInstance().keepUpWith(player.getLife());
                 }
                 if (player.isLifeRevealPending()) {
                     game.setScreen(new RebirthScreen(game, this, player, lifeHistory.world(), soulName()));
@@ -1420,18 +1423,19 @@ public class GameScreen extends BaseScreen {
             // is ever processed per expedition run.
             eventManager.consumeAll(GameEvent.EventType.PLAYER_DIED);
 
+            int curLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
+            String epitaph = "Fell in the depths";
+            try {
+                com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+                if (player.getInjuryManager() != null) {
+                    telemetry.setBleedDamageTaken(player.getInjuryManager().getBleedDamageThisRun());
+                }
+                epitaph = buildEpitaph(telemetry);
+            } catch (Exception ignored) {
+            }
+
             // Record Bones File for Advanced Mode (full player snapshot before item retention)
             if (gameMode == GameMode.ADVANCED) {
-                int curLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
-                String epitaph = "Fell in the depths";
-                try {
-                    com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
-                    if (player.getInjuryManager() != null) {
-                        telemetry.setBleedDamageTaken(player.getInjuryManager().getBleedDamageThisRun());
-                    }
-                    epitaph = buildEpitaph(telemetry);
-                } catch (Exception ignored) {
-                }
                 BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode,
                         com.bpm.minotaur.gamedata.history.text.Epithets.player(worldManager.getHistory().world()));
             }
@@ -1443,16 +1447,8 @@ public class GameScreen extends BaseScreen {
                 worldManager.getHistory().recordSeekerFell(
                         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse(), killer);
                 // The life's record closes with its death (#280).
-                int deathLevel = worldManager != null ? worldManager.getCurrentLevel() : 1;
-                String deathEpitaph;
-                try {
-                    deathEpitaph = buildEpitaph(com.bpm.minotaur.telemetry.TelemetryManager.getInstance());
-                } catch (Exception e) {
-                    deathEpitaph = "Fell in the depths";
-                }
-                com.bpm.minotaur.managers.WorldLogManager.getInstance().log().die(deathEpitaph, killer, "level " + deathLevel,
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
                         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
-                com.bpm.minotaur.managers.WorldLogManager.getInstance().save();
             }
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();

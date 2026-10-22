@@ -59,8 +59,7 @@ public class WorldLogTest {
 
     @Test
     public void onlyANewDepthForTheSoulIsWorthALine() {
-        WorldLog log = new WorldLog();
-        log.setSoulDeepest(4);
+        WorldLog log = WorldLog.upgradedFrom(0, 4);
         log.wake(brenna());
         log.noteDepth(3);
         log.noteDepth(4);
