@@ -71,7 +71,7 @@ public class WorldLogScreen extends BaseScreen {
         Table root = new Table();
         root.setFillParent(true);
         root.top().pad(UiTheme.PAD_XL);
-        root.add(new Label("THE BOOK OF LIVES", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
+        root.add(UiLabels.of("THE BOOK OF LIVES", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
                 .colspan(2).padBottom(UiTheme.PAD_SM).row();
         root.add(bridgeBar()).colspan(2).padBottom(UiTheme.PAD_XL).row();
 
@@ -92,7 +92,7 @@ public class WorldLogScreen extends BaseScreen {
         root.add(scroll).width(UiTheme.LIST_COLUMN_W + UiTheme.PAD_XL).growY().top().padRight(UiTheme.PAD_XL);
         root.add(page()).width(UiTheme.LEDGER_PAGE_W).growY().top().row();
 
-        root.add(UiLabels.of("[UP / DOWN] TURN THE PAGE    [ESC] CLOSE", UiStyles.caption(skin, UiTheme.TEXT_OFF)))
+        root.add(UiLabels.of("[UP / DOWN] TURN THE PAGE    [ESC / ENTER] CLOSE", UiStyles.caption(skin, UiTheme.TEXT_OFF)))
                 .colspan(2).padTop(UiTheme.PAD_MD);
         stage.addActor(root);
         stage.setScrollFocus(scroll);
@@ -156,16 +156,16 @@ public class WorldLogScreen extends BaseScreen {
         page.add(wrap(life.title.toUpperCase(), new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD))).row();
         page.add(wrap("Life " + life.number + ": the Champion " + soulName + " reborn.", UiStyles.caption(skin, UiTheme.TEXT_DIM)))
                 .padBottom(UiTheme.PAD_MD).row();
-        page.add(UiLabels.of(UiNames.caps(life.origin), UiStyles.caption(skin, UiTheme.GOLD))).row();
+        page.add(UiLabels.ellipsized(UiNames.caps(life.origin), UiStyles.caption(skin, UiTheme.GOLD))).row();
         page.add(wrap(life.howTheyCame, UiStyles.body(skin))).padBottom(UiTheme.PAD_MD).row();
 
-        page.add(UiLabels.of("DEEDS", UiStyles.caption(skin, UiTheme.GOLD))).row();
+        page.add(UiLabels.ellipsized("DEEDS", UiStyles.caption(skin, UiTheme.GOLD))).row();
         if (life.lines.isEmpty()) {
             page.add(wrap("Nothing the Book keeps.", UiStyles.body(skin, UiTheme.TEXT_OFF))).row();
         }
         for (Fact line : life.lines) page.add(wrap("- " + line.plain(), UiStyles.body(skin))).row();
 
-        page.add(UiLabels.of("DEATH", UiStyles.caption(skin, UiTheme.GOLD))).padTop(UiTheme.PAD_MD).row();
+        page.add(UiLabels.ellipsized("DEATH", UiStyles.caption(skin, UiTheme.GOLD))).padTop(UiTheme.PAD_MD).row();
         if (life.isDead()) {
             page.add(wrap(life.epitaph, UiStyles.body(skin))).row();
             page.add(wrap("Felled by " + life.killer + " on " + life.place + ", turn " + life.turn + ".",
@@ -174,13 +174,13 @@ public class WorldLogScreen extends BaseScreen {
             page.add(wrap("Lives still.", UiStyles.body(skin))).row();
         }
 
-        page.add(UiLabels.of("AS THE CHRONICLES TELL IT", UiStyles.caption(skin, UiTheme.GOLD))).padTop(UiTheme.PAD_MD).row();
+        page.add(UiLabels.ellipsized("AS THE CHRONICLES TELL IT", UiStyles.caption(skin, UiTheme.GOLD))).padTop(UiTheme.PAD_MD).row();
         page.add(wrap("No telling of this life has been found.", UiStyles.body(skin, UiTheme.TEXT_OFF))).row();
         return page;
     }
 
     private static Label wrap(String text, Label.LabelStyle style) {
-        return UiLabels.wrapping(UiGlyphs.sanitize(text), style);
+        return UiLabels.wrapping(text, style);
     }
 
     private void close() {

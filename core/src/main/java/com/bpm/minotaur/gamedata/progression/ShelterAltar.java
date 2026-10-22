@@ -273,6 +273,16 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
             }
         }
         com.badlogic.gdx.math.GridPoint2 altar = maze.getAltarTile();
+        if (altar == null) {
+            // A shelter saved before its altar tile was kept: find the altar it already holds.
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, com.bpm.minotaur.gamedata.item.Item> e : maze.getItems().entrySet()) {
+                if (e.getValue().getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ALTAR) {
+                    altar = e.getKey();
+                    maze.setAltarTile(altar);
+                    break;
+                }
+            }
+        }
         if (altar != null && idm != null && !maze.getItems().containsKey(altar)) {
             com.bpm.minotaur.gamedata.item.Item item = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ALTAR,
                     altar.x, altar.y, com.bpm.minotaur.gamedata.item.ItemColor.GOLD, am);

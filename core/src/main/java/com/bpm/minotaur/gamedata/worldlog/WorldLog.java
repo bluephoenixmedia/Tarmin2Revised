@@ -52,6 +52,11 @@ public final class WorldLog {
         return Collections.unmodifiableList(lives);
     }
 
+    /** The newest life, living or dead, or null before any. */
+    public LifeRecord last() {
+        return lives.isEmpty() ? null : lives.get(lives.size() - 1);
+    }
+
     /** The life being lived, or null between a death and the next waking. */
     public LifeRecord current() {
         if (lives.isEmpty()) return null;

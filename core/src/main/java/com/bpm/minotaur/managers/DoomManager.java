@@ -40,9 +40,9 @@ public class DoomManager implements SlotScopedState {
      * from 25, stage 4 from 40. Deaths no longer scale monster damage; unlocks and altar
      * stations are what offset the growing Hunger.
      */
-    private static final int DEATHS_FOR_STAGE_2 = 10;
-    private static final int DEATHS_FOR_STAGE_3 = 25;
-    private static final int DEATHS_FOR_STAGE_4 = 40;
+    public static final int DEATHS_FOR_STAGE_2 = 10;
+    public static final int DEATHS_FOR_STAGE_3 = 25;
+    public static final int DEATHS_FOR_STAGE_4 = 40;
     private static final float LOOT_DECAY_RATE = 0.02f; // -2% loot chance per death
     private String getSaveFilePath() {
         return SaveManager.getInstance().getActiveSlotFilePath("doom_state.json");

@@ -10,8 +10,12 @@ import java.util.Random;
  */
 public final class Era {
 
-    /** The Hunger at which each later stage begins; mirrors DoomManager's stage thresholds. */
-    private static final int[] STAGE_STARTS = {10, 25, 40};
+    /** The Hunger at which each later stage begins: the Doom stages, so an Era is a stage. */
+    private static final int[] STAGE_STARTS = {
+            com.bpm.minotaur.managers.DoomManager.DEATHS_FOR_STAGE_2,
+            com.bpm.minotaur.managers.DoomManager.DEATHS_FOR_STAGE_3,
+            com.bpm.minotaur.managers.DoomManager.DEATHS_FOR_STAGE_4
+    };
 
     private static final String[][] WORDS = {
             {"First Stones", "Raids", "Tithes", "Lanterns", "Small Graves", "Iron Collars", "Thin Bread"},

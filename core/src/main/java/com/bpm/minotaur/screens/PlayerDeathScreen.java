@@ -348,7 +348,7 @@ public class PlayerDeathScreen extends BaseScreen {
                     openBookOfLives();
                 }
             });
-            footer.add(book).height(64f).padLeft(com.bpm.minotaur.ui.UiTheme.PAD_MD);
+            footer.add(book).height(com.bpm.minotaur.ui.UiTheme.BUTTON_H).padLeft(com.bpm.minotaur.ui.UiTheme.PAD_MD);
         }
 
         Label hint = new Label("[ESC] RETURN",
@@ -359,9 +359,7 @@ public class PlayerDeathScreen extends BaseScreen {
 
     /** The life that just ended, as the World Log wrote it (#281); null if the log has none. */
     private static com.bpm.minotaur.gamedata.worldlog.LifeRecord lastLife() {
-        java.util.List<com.bpm.minotaur.gamedata.worldlog.LifeRecord> lives =
-                com.bpm.minotaur.managers.WorldLogManager.getInstance().log().lives();
-        return lives.isEmpty() ? null : lives.get(lives.size() - 1);
+        return com.bpm.minotaur.managers.WorldLogManager.getInstance().log().last();
     }
 
     private void openBookOfLives() {
