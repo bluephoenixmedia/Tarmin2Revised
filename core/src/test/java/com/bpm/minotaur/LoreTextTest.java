@@ -46,6 +46,7 @@ public class LoreTextTest {
     @Test
     public void theRitualIsTheBridgeAndNothingIsSacrificed() throws IOException {
         for (String text : playerFacingLore()) {
+            if (text.length() < 400) assertEquals(text, com.bpm.minotaur.ui.UiGlyphs.sanitize(text));
             String lower = text.toLowerCase();
             assertFalse(text, lower.contains("ritual"));
             assertFalse(text, lower.contains("sacrifice"));

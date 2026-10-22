@@ -111,7 +111,7 @@ public class DoomManager implements SlotScopedState {
         save();
     }
 
-    /** The death count at which the Bridge falls and the bridge boss comes. */
+    /** The death count at which the Bridge reaches the far shore and its Warden comes. */
     public static int maxDeaths() {
         return MAX_DEATHS_ALLOWED;
     }

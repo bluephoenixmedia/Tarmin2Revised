@@ -60,14 +60,14 @@ public final class HudReadouts {
         String remedy;
         if (bossActive) {
             details.append("The Bridge reaches the far shore. Its Warden guards the last stone,\n");
-            details.append("and one more death before it falls ends the game.");
+            details.append("and one more death before the Warden falls ends the game.");
             remedy = "Slay the Warden and the Bridge crumbles: the Hunger falls back to 0.";
         } else {
             int next = DoomManager.nextDeathStageAt(deaths);
             if (next > 0) {
                 details.append("It turns more savage again at ").append(next).append(" deaths.\n");
             }
-            details.append("At ").append(max).append(" the Bridge falls and the Warden comes.");
+            details.append("At ").append(max).append(" the Bridge reaches the far shore and its Warden comes.");
             remedy = bossNear(deaths, max)
                     ? "The boss is near. Unlocks and altar stations are your answer."
                     : "Unlocks and altar stations offset the growing Hunger.";
