@@ -1438,10 +1438,10 @@ public class GameScreen extends BaseScreen {
             String killer = killerForTheLog();
             if (DoomManager.getInstance().recordDeath(activeExpeditionRunId)) {
                 // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
-                com.bpm.minotaur.gamedata.history.SeekerDeath death = seekerDeath(killer, curLvl);
-                worldManager.getHistory().recordSeekerFell(death);
+                com.bpm.minotaur.gamedata.history.Nemesis nemesis =
+                        worldManager.getHistory().recordSeekerFell(seekerDeath(killer, curLvl));
                 // A killer the history has just named is remembered by that name (#283).
-                killer = nemesisNameOr(killer);
+                if (nemesis != null) killer = nemesis.name;
                 // The life's record closes with its death (#280).
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
                         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
@@ -1934,25 +1934,17 @@ public class GameScreen extends BaseScreen {
         Object ref = telemetry.getSurvivalDeath() == null ? telemetry.getKillerRef() : null;
         com.bpm.minotaur.gamedata.monster.Monster m = ref instanceof com.bpm.minotaur.gamedata.monster.Monster
                 ? (com.bpm.minotaur.gamedata.monster.Monster) ref : null;
-        boolean nameable = m != null && m.getMegabeastId() < 0 && !m.isBridgeBoss()
+        // Only a monster standing in this maze: a bleed or a trap long after some other fight is no one's kill.
+        boolean nameable = m != null && maze != null && maze.getMonsters().containsValue(m)
+                && m.getMegabeastId() < 0 && !m.isBridgeBoss()
                 && m.getType() != com.bpm.minotaur.gamedata.monster.Monster.MonsterType.PLAYER_GHOST;
         com.bpm.minotaur.gamedata.history.SeekerDeath death = com.bpm.minotaur.gamedata.history.SeekerDeath.by(
                 nameable && m.getNemesisId() >= 0 ? m.getName() : killer,
-                nameable ? m.getType().name() : null, telemetry.getKillerHouse());
+                nameable ? m.getType().name() : null, nameable ? m.getHouseId() : telemetry.getKillerHouse());
         if (nameable) death.figure(m.getFigureId()).nemesis(m.getNemesisId());
         GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
         return death.of(player.getLife() != null ? player.getLife().name : null)
                 .at(level, chunk != null ? chunk.x : 0, chunk != null ? chunk.y : 0);
-    }
-
-    /** The Nemesis whose newest victim is this life, by its name; otherwise {@code killer}. */
-    private String nemesisNameOr(String killer) {
-        if (player.getLife() == null || worldManager.getHistory() == null) return killer;
-        String life = player.getLife().name;
-        for (com.bpm.minotaur.gamedata.history.Nemesis n : worldManager.getHistory().world().nemeses()) {
-            if (!n.victims.isEmpty() && life.equals(n.victims.get(n.victims.size() - 1))) return n.name;
-        }
-        return killer;
     }
 
     /** What killed the player, in words: a monster's name, a survival cause, or the maze itself. */

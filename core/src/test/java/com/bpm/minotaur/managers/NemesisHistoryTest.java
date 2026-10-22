@@ -120,6 +120,24 @@ public class NemesisHistoryTest {
     }
 
     @Test
+    public void theDeathTellsWhichNemesisTookTheLife() {
+        HistoryManager m = HistoryManager.create(11L, catalog);
+        Nemesis born = m.recordSeekerFell(byKobold("Brannoc Thatch"));
+        assertSame(m.world().nemeses().get(0), born);
+        assertSame(born, m.recordSeekerFell(SeekerDeath.by(born.name, "KOBOLD", -1).nemesis(born.id).of("Brannoc Thatch")));
+        assertNull(m.recordSeekerFell(SeekerDeath.by("thirst", null, -1).of("Maud Fenn")));
+    }
+
+    @Test
+    public void noTwoNemesesShareAName() {
+        HistoryManager m = HistoryManager.create(11L, catalog);
+        for (int i = 0; i < 300; i++) m.recordSeekerFell(byKobold("Life " + i));
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (Nemesis n : m.world().nemeses()) assertTrue(n.name, names.add(n.name));
+        assertEquals(300, names.size());
+    }
+
+    @Test
     public void nemesisNamesAreTheSameForTheSameHistory() {
         HistoryManager a = HistoryManager.create(11L, catalog);
         HistoryManager b = HistoryManager.create(11L, catalog);

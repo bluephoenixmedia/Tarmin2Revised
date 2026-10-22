@@ -20,6 +20,8 @@ final class Nemeses {
             "Gutripper", "the Lean", "Many-Teeth", "the Quiet", "Skullsplitter", "the Waiting"
     };
 
+    private static final String[] ORDINALS = {"", "", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh"};
+
     private Nemeses() {
     }
 
@@ -46,10 +48,16 @@ final class Nemeses {
     /** "Gorvak the Gnawer": seeded by the history and how many have fallen, so a replay agrees. */
     private static String forge(HistoryWorld world) {
         Random rng = new Random(world.seed * 1_000_003L + world.seekersFallen);
-        for (int attempt = 0; ; attempt++) {
-            String name = FIRST[rng.nextInt(FIRST.length)] + LAST[rng.nextInt(LAST.length)] + " "
+        String name = null;
+        for (int attempt = 0; attempt < 16; attempt++) {
+            name = FIRST[rng.nextInt(FIRST.length)] + LAST[rng.nextInt(LAST.length)] + " "
                     + TITLES[rng.nextInt(TITLES.length)];
-            if (world.usedNames.add(name) || attempt > 8) return name;
+            if (world.usedNames.add(name)) return name;
+        }
+        // Every draw taken: a namesake of an older one ("Gorvak the Gnawer the Second").
+        for (int n = 2; ; n++) {
+            String heir = name + " the " + (n < ORDINALS.length ? ORDINALS[n] : "Later " + n);
+            if (world.usedNames.add(heir)) return heir;
         }
     }
 }

@@ -593,6 +593,7 @@ public class TelemetryManager {
     /** Tracks the most recent source of player damage, used for cause-of-death attribution. */
     public synchronized void setLastDamageSource(String attackerName) {
         this.killerMonster = attackerName;
+        this.killerRef = null; // not a monster's blow: no monster to remember
     }
 
     /** The Maze house of whatever last hurt the player, or -1 (Houses of the Maze D45). */
