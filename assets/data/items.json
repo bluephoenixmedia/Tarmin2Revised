@@ -786,6 +786,63 @@
             }
         ]
     },
+    "HOME_BOOK_OF_LIVES": {
+        "friendlyName": "Book of Lives",
+        "texturePath": "images/items/scroll.png",
+        "isImpassable": true,
+        "spriteData": [
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "..........####..........",
+            ".........######.........",
+            "........########........",
+            ".......##########.......",
+            ".......##########.......",
+            "........########........",
+            ".........######.........",
+            "..........####..........",
+            "..........####..........",
+            "..........####..........",
+            ".........######.........",
+            "........########........",
+            ".......##########.......",
+            "......############......",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "description": "A great book on a stand beside the Altar, where the old gods keep the record of every life the Champion has lived: who each prisoner was, what they did, and how they died.",
+        "baseValue": 0,
+        "damageDice": 0,
+        "armorClassBonus": 0,
+        "isWeapon": false,
+        "isRanged": false,
+        "isArmor": false,
+        "isPotion": false,
+        "isFood": false,
+        "isTreasure": false,
+        "isKey": false,
+        "isUsable": false,
+        "isContainer": false,
+        "isRing": false,
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "variants": [
+            {
+                "color": "GOLD",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 1
+            }
+        ]
+    },
     "HOME_CARTOGRAPHER_DESK": {
         "friendlyName": "Cartographer's Desk",
         "texturePath": "images/items/cartographer_desk.png",

@@ -273,10 +273,26 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
             }
         }
         com.badlogic.gdx.math.GridPoint2 altar = maze.getAltarTile();
+        if (altar == null) {
+            // A shelter saved before its altar tile was kept: find the altar it already holds.
+            for (java.util.Map.Entry<com.badlogic.gdx.math.GridPoint2, com.bpm.minotaur.gamedata.item.Item> e : maze.getItems().entrySet()) {
+                if (e.getValue().getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ALTAR) {
+                    altar = e.getKey();
+                    maze.setAltarTile(altar);
+                    break;
+                }
+            }
+        }
         if (altar != null && idm != null && !maze.getItems().containsKey(altar)) {
             com.bpm.minotaur.gamedata.item.Item item = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ALTAR,
                     altar.x, altar.y, com.bpm.minotaur.gamedata.item.ItemColor.GOLD, am);
             if (item != null) maze.addItem(item);
+        }
+        // The old gods keep the record of the soul's lives, so their Book stands by their Altar from
+        // the first day (#281): the death screen sends the player to it after the very first death.
+        if (altar != null) {
+            placeBeside(maze, altar, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_BOOK_OF_LIVES,
+                    com.bpm.minotaur.gamedata.item.ItemColor.GOLD, idm, am);
         }
     }
 
@@ -287,21 +303,30 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     public void placeWarTable(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 lectern,
                                com.bpm.minotaur.gamedata.item.ItemDataManager idm,
                                com.badlogic.gdx.assets.AssetManager am) {
+        placeBeside(maze, lectern, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE,
+                com.bpm.minotaur.gamedata.item.ItemColor.TAN, idm, am);
+    }
+
+    /** Puts {@code type} on the first free floor beside {@code anchor}, unless one already stands there. */
+    private static void placeBeside(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 anchor,
+                                    com.bpm.minotaur.gamedata.item.Item.ItemType type,
+                                    com.bpm.minotaur.gamedata.item.ItemColor color,
+                                    com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                                    com.badlogic.gdx.assets.AssetManager am) {
         if (idm == null) return;
         int[][] around = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         for (int[] d : around) {
-            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(lectern.x + d[0], lectern.y + d[1]);
+            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(anchor.x + d[0], anchor.y + d[1]);
             com.bpm.minotaur.gamedata.item.Item there = maze.getItems().get(at);
-            if (there != null && there.getType() == com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE) return;
+            if (there != null && there.getType() == type) return;
         }
         for (int[] d : around) {
-            int x = lectern.x + d[0], y = lectern.y + d[1];
+            int x = anchor.x + d[0], y = anchor.y + d[1];
             com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(x, y);
             if (!maze.isHomeTile(x, y) || !maze.isPassable(x, y) || maze.getItems().containsKey(at)
                     || isStationSlot(maze, at) || at.equals(maze.getAltarTile()) || at.equals(maze.getHearthTile())) continue;
-            com.bpm.minotaur.gamedata.item.Item table = idm.createItem(com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_WAR_TABLE,
-                    x, y, com.bpm.minotaur.gamedata.item.ItemColor.TAN, am);
-            if (table != null) maze.addItem(table);
+            com.bpm.minotaur.gamedata.item.Item item = idm.createItem(type, x, y, color, am);
+            if (item != null) maze.addItem(item);
             return;
         }
     }

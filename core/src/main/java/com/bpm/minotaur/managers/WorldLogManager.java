@@ -61,7 +61,9 @@ public final class WorldLogManager implements SlotScopedState {
     public void keepUpWith(com.bpm.minotaur.gamedata.history.Life life) {
         if (life == null) return;
         com.bpm.minotaur.gamedata.worldlog.LifeRecord open = log().current();
-        if (open == null || !life.title().equals(open.title)) log().wake(life);
+        if (open == null || !life.title().equals(open.title)) {
+            log().wake(life, DoomManager.getInstance().getDeathCount());
+        }
     }
 
     /** The life being lived ends; the log is written at once, before anything else can go wrong. */

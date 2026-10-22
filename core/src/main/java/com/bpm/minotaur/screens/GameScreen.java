@@ -1933,7 +1933,7 @@ public class GameScreen extends BaseScreen {
     }
 
     /** The soul's name, the one typed or generated at a new game (#268). */
-    private static String soulName() {
+    static String soulName() {
         com.bpm.minotaur.managers.SaveManager saves = com.bpm.minotaur.managers.SaveManager.getInstance();
         com.bpm.minotaur.gamedata.save.SlotMetadata meta = saves.getSlotMetadata(saves.getActiveSlotIndex());
         return meta != null && meta.characterName != null ? meta.characterName : "Hero";
@@ -4956,6 +4956,14 @@ public class GameScreen extends BaseScreen {
             }
             CodexScreen codexScreen = new CodexScreen(game, this, player);
             game.setScreen(codexScreen);
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_BOOK_OF_LIVES) {
+            if (soundManager != null) {
+                soundManager.playBookFlipSound();
+            }
+            game.setScreen(new WorldLogScreen(game, this, soulName()));
             return;
         }
 

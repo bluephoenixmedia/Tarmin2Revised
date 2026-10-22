@@ -24,6 +24,8 @@ public final class LifeRecord {
     public String howTheyCame;
     /** Most notable first. */
     public ArrayList<Fact> lines = new ArrayList<>();
+    /** Tarmin's Hunger when the life woke, which sets its Era; -1 in records saved before Eras. */
+    public int hunger = -1;
     /** Whether this life has felled a Heavy yet; only the first is a line. */
     public boolean firstHeavyNoted;
 
@@ -47,6 +49,11 @@ public final class LifeRecord {
         this.title = life.title();
         this.origin = life.origin;
         this.howTheyCame = life.howTheyCame();
+    }
+
+    /** The Hunger at waking; a record from before Eras assumes no Warden had fallen yet. */
+    public int hungerAtWaking() {
+        return hunger >= 0 ? hunger : number - 1;
     }
 
     public boolean isDead() {

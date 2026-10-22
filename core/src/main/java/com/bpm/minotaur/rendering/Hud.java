@@ -2526,6 +2526,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.HOME_BOOK_OF_LIVES) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[THE WORLD LOG]",
+                        "Book of Lives",
+                        "The old gods' record of every life the Champion has lived: who each prisoner was, what they did, and how they died.",
+                        keys.badge(Action.INTERACT),
+                        "Read the Book of Lives",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
             if (frontItem.getType() == Item.ItemType.HOME_WAR_TABLE) {
                 worldInteractionCard.show(
                         "[SHELTER HUB]",
