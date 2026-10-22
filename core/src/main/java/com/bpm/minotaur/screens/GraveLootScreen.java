@@ -107,7 +107,7 @@ public class GraveLootScreen extends BaseScreen {
         stage.addActor(root);
 
         // Header
-        String name = (bonesData != null && bonesData.playerName != null) ? bonesData.playerName.toUpperCase() : "FALLEN HERO";
+        String name = (bonesData != null && bonesData.name() != null) ? bonesData.name().toUpperCase() : "FALLEN HERO";
         Label title = new Label("REMAINS OF " + name, new Label.LabelStyle(titleFont, new Color(0.3f, 0.85f, 0.75f, 1f)));
         root.add(title).padTop(40).padBottom(6).colspan(3).row();
 

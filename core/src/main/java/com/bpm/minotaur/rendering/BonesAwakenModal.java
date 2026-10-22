@@ -120,7 +120,7 @@ public class BonesAwakenModal extends Table {
         this.activeSoundManager = soundManager;
         this.activeAssetManager = assetManager;
 
-        String heroName = (bones != null && bones.playerName != null) ? bones.playerName : "Fallen Hero";
+        String heroName = (bones != null && bones.name() != null) ? bones.name() : "Fallen Hero";
         int floor = (bones != null) ? bones.floorLevel : 1;
         int strata = (bones != null) ? bones.strataDepth : 1;
         String epitaph = (bones != null && bones.epitaph != null) ? bones.epitaph : "Fell in battle";
@@ -158,7 +158,7 @@ public class BonesAwakenModal extends Table {
         }
 
         if (activeEventManager != null) {
-            activeEventManager.addEvent(new GameEvent("A chilling gale howls! The ghost of " + activeBones.playerName + " awakens to battle!", 3.5f));
+            activeEventManager.addEvent(new GameEvent("A chilling gale howls! The " + activeBones.shadeName() + " awakens to battle!", 3.5f));
         }
 
         close();

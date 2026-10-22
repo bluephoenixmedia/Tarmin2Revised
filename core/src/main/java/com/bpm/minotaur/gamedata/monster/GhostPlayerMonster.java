@@ -28,7 +28,7 @@ public class GhostPlayerMonster extends Monster {
     public GhostPlayerMonster(BonesData bonesData, float startX, float startY, AssetManager assetManager) {
         super(MonsterType.PLAYER_GHOST, 20, 10, startX, startY);
         this.bonesData = bonesData;
-        this.ghostPlayerName = (bonesData != null && bonesData.playerName != null) ? bonesData.playerName : "Fallen Hero";
+        this.ghostPlayerName = (bonesData != null && bonesData.name() != null) ? bonesData.name() : "Fallen Hero";
         this.knownSpells = new ArrayList<>();
 
         PlayerSaveData pd = (bonesData != null) ? bonesData.playerData : null;

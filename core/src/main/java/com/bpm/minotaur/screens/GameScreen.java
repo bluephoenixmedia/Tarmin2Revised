@@ -1436,8 +1436,7 @@ public class GameScreen extends BaseScreen {
 
             // Record Bones File for Advanced Mode (full player snapshot before item retention)
             if (gameMode == GameMode.ADVANCED) {
-                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode,
-                        com.bpm.minotaur.gamedata.history.text.Epithets.player(worldManager.getHistory().world()));
+                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode, killerForTheLog());
             }
 
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
@@ -5877,7 +5876,7 @@ public class GameScreen extends BaseScreen {
                 );
             }
         } else if (!bData.defeated) {
-            if (hud != null) hud.addMessage("The wrathful ghost of " + bData.playerName + " blocks you from disturbing the remains!");
+            if (hud != null) hud.addMessage("The wrathful " + bData.shadeName() + " blocks you from disturbing the remains!");
             if (soundManager != null) {
                 soundManager.playSound("player_spiritual_attack");
             }

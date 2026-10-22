@@ -3802,7 +3802,7 @@ public class CombatManager {
                     }
                 }
             }
-            eventManager.addEvent(new GameEvent("The ghost of " + ghost.getGhostPlayerName() + " has been laid to rest!", 3f));
+            eventManager.addEvent(new GameEvent("The shade of " + ghost.getGhostPlayerName() + " has been laid to rest!", 3f));
             eventManager.addEvent(new GameEvent("The decomposing remains can now be safely looted!", 3f));
         }
 
