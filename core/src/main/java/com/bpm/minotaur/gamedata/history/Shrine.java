@@ -24,7 +24,8 @@ public final class Shrine {
         view.maxDepth = base.maxDepth;
         view.choices = new ArrayList<>();
         if (dark) {
-            view.text = base.title + " stands dark. " + capital(god.fullName) + " is spent, and nothing answers.";
+            String shrine = base.title.startsWith("The ") ? base.title : "The " + base.title;
+            view.text = shrine + " stands dark. " + capital(god.fullName) + " is spent, and nothing answers.";
             view.choices.add(wayOut(base));
             return view;
         }

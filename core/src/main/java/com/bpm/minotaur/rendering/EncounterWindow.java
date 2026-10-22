@@ -243,7 +243,8 @@ public class EncounterWindow extends Table {
 
             if (!reqMet) {
                 if (choice.requirement != null) {
-                    btn.setText(buttonText + "  [Req: " + choice.requirement.stat + " > " + choice.requirement.value + "]");
+                    btn.setText(buttonText + "  [Req: " + com.bpm.minotaur.ui.UiNames.fromConstant(choice.requirement.stat)
+                            + " > " + choice.requirement.value + "]");
                 }
             } else if (!costMet) {
                 if (choice.cost != null) {

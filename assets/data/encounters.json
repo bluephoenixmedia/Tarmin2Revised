@@ -51,7 +51,7 @@
             "text": "A massive, horned effigy of the Minotaur King stands grim and watchful. A solemn labyrinth pulse vibrates through your chest.",
             "choices": [
                 {
-                    "text": "Kneel and invoke the King's battle rite (Lose 4 HP).",
+                    "text": "Kneel and swear the King's battle oath (Lose 4 HP).",
                     "type": "TRADE",
                     "cost": {
                         "type": "HP",
