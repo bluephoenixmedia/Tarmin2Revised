@@ -232,6 +232,8 @@ public class EncounterWindow extends Table {
             String buttonText = "[ " + (i + 1) + " ]  " + choice.text;
             TextButton btn = new TextButton(buttonText, uniqueStyle);
             btn.getLabel().setAlignment(Align.left);
+            // A rite names its god now (#287): long choices wrap rather than run off the window.
+            btn.getLabel().setWrap(true);
             btn.pad(8, 20, 8, 20);
 
             boolean reqMet = encounterManager.checkRequirement(player, choice.requirement);
@@ -284,7 +286,7 @@ public class EncounterWindow extends Table {
 
             choiceButtons.add(btn);
             choiceData.add(choice);
-            choicesTable.add(btn).growX().height(44).padBottom(8).row();
+            choicesTable.add(btn).growX().minHeight(44).padBottom(8).row();
         }
 
         updateSelectionVisuals();

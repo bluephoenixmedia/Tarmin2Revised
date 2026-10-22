@@ -158,6 +158,13 @@ public final class HistoryManager {
         return null;
     }
 
+    /** An old god is spent holding Tarmin back: its shrine is dark for good (#287). */
+    public void recordGodSpent(com.bpm.minotaur.gamedata.history.OldGod god) {
+        PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.GOD_SPENT, -1, world.liveSeasons());
+        deed.note = god.name();
+        apply(deed);
+    }
+
     /** The player slew a Nemesis: it is placed no more (#283). */
     public void recordNemesisSlain(int nemesisId) {
         apply(new PlayerDeed(PlayerDeed.Kind.SLEW_NEMESIS, nemesisId, world.liveSeasons()));

@@ -45,10 +45,10 @@
         },
         {
             "id": "EVENT_TARMIN_STATUE",
-            "title": "Colossus of Minotaur Tarmin",
+            "title": "Colossus of the Minotaur King",
             "imagePath": "images/events/statue/tarmin_statue.png",
             "minDepth": 3,
-            "text": "A massive, horned effigy of Minotaur King Tarmin stands grim and watchful. A solemn labyrinth pulse vibrates through your chest.",
+            "text": "A massive, horned effigy of the Minotaur King stands grim and watchful. A solemn labyrinth pulse vibrates through your chest.",
             "choices": [
                 {
                     "text": "Kneel and invoke the King's battle rite (Lose 4 HP).",
