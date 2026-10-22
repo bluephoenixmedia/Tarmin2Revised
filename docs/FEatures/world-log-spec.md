@@ -112,7 +112,7 @@ A grave reads "Here lies Brannoc of Velmere, who fell to Gorvak the Gnawer". A g
   - The soul returns, the Hunger goes to 0, and the maze shifts.
   - The log gets the life's death, a Reckoning of the crossing, and the involved Houses' Tellings of the scramble for the throne.
   - The apocalypse slot wipe is removed.
-  - What happens when the last god is spent is an open ticket on the map.
+  - What happens when the last god is spent is an open ticket on the map: "Grilling: when the last old god goes dark".
 - **The Champion slays Tarmin** (the final run). This is a real choice:
   - **Return the Treasure:** the Rift is sealed and the soul rests, until the curse wakes it. The House that wins hell's war takes the throne and the name. The closing line is in the soul's name ("…returned the Treasure to the Rift, and was allowed to die").
   - **Take the throne:** that Incarnation becomes the new Tarmin, an Enduring figure, and the next life is a prisoner sent to hunt it.
@@ -134,6 +134,25 @@ It runs as a test, and it is part of the acceptance criteria of every slice that
 ## Build slices
 
 Each is a `ready-for-agent` issue on milestone 0.0.4 and a sub-issue of the map, with its blocking edges wired natively.
+
+| Slice | Blocked by |
+|---|---|
+| [The soul's name and each life's prisoner](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/279) (§2) | none |
+| [A life's record, and the lives unremembered](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/280) (§2) | identity |
+| [The Ledger screen, its Shelter station and the death-screen link](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/281) (§3) | record |
+| [Graves and ghosts carry the life's name](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/282) (§5) | identity |
+| [The Nemesis is born and endures](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/283) (§4) | record |
+| [The Nemesis remembers, and its fall pays](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/284) (§4) | Nemesis born |
+| [The Houses' Tellings, found as fragments](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/285) (§6) | record, Nemesis born, screen |
+| [The coherence check for many lives](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/286) (§9) | Tellings |
+| [Old gods: the thirteen at their shrines](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/287) (§7) | none |
+| [Old gods: the layered reveal](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/288) (§7) | shrines, lore text (#273) |
+| [The Enduring survive the Shifting](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/289) (§8) | Nemesis born, graves, shrines |
+| [Bridges and Reckonings: the Warden's fall and Tarmin's crossing](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/290) (§8) | screen, shrines, Tellings |
+| [Ages: Tarmin slain and the throne](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/291) (§8) | Bridges |
+| [A monster takes Tarmin's throne](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/292) (§8) | Ages |
+
+Still a decision: [Grilling: when the last old god goes dark](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/278). The Bridges slice has an interim rule until it resolves.
 
 ## Out of scope
 
