@@ -2391,7 +2391,7 @@ public class Hud implements Disposable {
         if (frontScenery != null && frontScenery.isCorpse()) {
             com.bpm.minotaur.gamedata.bones.BonesData bd = frontScenery.getBonesData();
             if (frontScenery.isDecomposingCorpse() && bd != null) {
-                String heroName = (bd.name() != null) ? bd.name() : "Fallen Hero";
+                String heroName = com.bpm.minotaur.ui.UiGlyphs.sanitize(bd.name());
                 if (bd.defeated) {
                     worldInteractionCard.show(
                             "[MORTAL REMAINS]",

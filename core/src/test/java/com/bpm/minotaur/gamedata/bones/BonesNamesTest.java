@@ -30,6 +30,13 @@ public class BonesNamesTest {
     }
 
     @Test
+    public void bonesWithNoLifeForgedAreANamelessPrisonerNotAFallenHero() {
+        BonesData nameless = new BonesData();
+        assertEquals("Here lies a nameless prisoner", nameless.graveText());
+        assertEquals("the shade of a nameless prisoner", nameless.shadeName());
+    }
+
+    @Test
     public void bonesFromBeforeLivesStillReadByTheNameTheyKept() {
         BonesData old = new Json().fromJson(BonesData.class,
                 "{\"id\":\"x\",\"playerName\":\"Hero the Oathbreaker\",\"epitaph\":\"Fell\"}");

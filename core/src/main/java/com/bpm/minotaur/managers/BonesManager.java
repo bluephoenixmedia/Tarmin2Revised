@@ -85,7 +85,6 @@ public class BonesManager {
         return recordBonesOnDeath(player, floorLevel, epitaph, gameMode, null);
     }
 
-    /** As above; {@code epithet} is what the Maze called the fallen, carried by their ghost (D45). */
     /** As above; {@code killer} names what felled the life (#282), or is null. */
     public BonesData recordBonesOnDeath(Player player, int floorLevel, String epitaph, GameMode gameMode, String killer) {
         if (gameMode == GameMode.CLASSIC) {
@@ -107,7 +106,7 @@ public class BonesManager {
 
         // The bones are the prisoner's, not the soul's (#282): the soul's name lives on in the next body.
         com.bpm.minotaur.gamedata.history.Life life = player.getLife();
-        String charName = life != null ? life.name : "Fallen Hero";
+        String charName = life != null ? life.name : BonesData.NAMELESS;
         PlayerSaveData playerData = new PlayerSaveData(player);
         BonesData bones = new BonesData(id, charName, epitaph, clampedFloor, strataDepth, playerData);
         if (life != null) {

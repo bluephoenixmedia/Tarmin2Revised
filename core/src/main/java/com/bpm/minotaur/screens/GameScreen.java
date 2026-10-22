@@ -1928,7 +1928,10 @@ public class GameScreen extends BaseScreen {
         String killer = telemetry.getKillerMonster();
         if (killer == null || killer.isEmpty()) killer = telemetry.getSurvivalDeath();
         if (killer == null || killer.isEmpty()) return "the maze";
-        return killer.matches("[A-Z_]+") ? com.bpm.minotaur.ui.UiNames.fromConstant(killer) : killer;
+        if (!killer.matches("[A-Z_]+")) return killer;
+        // A monster's kind, not a name: "a Kobold", "an Ogre".
+        String kind = com.bpm.minotaur.ui.UiNames.fromConstant(killer);
+        return ("AEIOU".indexOf(Character.toUpperCase(kind.charAt(0))) >= 0 ? "an " : "a ") + kind;
     }
 
     /** The soul's name, the one typed or generated at a new game (#268). */
@@ -5876,7 +5879,7 @@ public class GameScreen extends BaseScreen {
                 );
             }
         } else if (!bData.defeated) {
-            if (hud != null) hud.addMessage("The wrathful " + bData.shadeName() + " blocks you from disturbing the remains!");
+            if (hud != null) hud.addMessage("The wrathful shade of " + bData.name() + " blocks you from disturbing the remains!");
             if (soundManager != null) {
                 soundManager.playSound("player_spiritual_attack");
             }

@@ -28,7 +28,9 @@ public class GhostPlayerMonster extends Monster {
     public GhostPlayerMonster(BonesData bonesData, float startX, float startY, AssetManager assetManager) {
         super(MonsterType.PLAYER_GHOST, 20, 10, startX, startY);
         this.bonesData = bonesData;
-        this.ghostPlayerName = (bonesData != null && bonesData.name() != null) ? bonesData.name() : "Fallen Hero";
+        this.ghostPlayerName = bonesData != null ? bonesData.name() : BonesData.NAMELESS;
+        // Its name in the target panel and the combat log is the shade's, not a generic ghost's (#282).
+        setDisplayName("Shade of " + ghostPlayerName);
         this.knownSpells = new ArrayList<>();
 
         PlayerSaveData pd = (bonesData != null) ? bonesData.playerData : null;
@@ -145,7 +147,7 @@ public class GhostPlayerMonster extends Monster {
             int healAmount = 14 + getIntelligence() / 2;
             setCurrentHP(Math.min(getMaxHP(), getCurrentHP() + healAmount));
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts Heal! (+" + healAmount + " HP)", 2f));
+                eventManager.addEvent(new GameEvent("The shade of " + ghostPlayerName + " casts Heal! (+" + healAmount + " HP)", 2f));
             }
             if (soundManager != null) soundManager.playSound("player_spiritual_attack");
             return true;
@@ -156,7 +158,7 @@ public class GhostPlayerMonster extends Monster {
             setCurrentMP(getCurrentMP() - 10);
             setArmorClass(getArmorClass() + 3);
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " hardens with Iron Skin! (+3 AC)", 2f));
+                eventManager.addEvent(new GameEvent("The shade of " + ghostPlayerName + " hardens with Iron Skin! (+3 AC)", 2f));
             }
             return true;
         }
@@ -167,7 +169,7 @@ public class GhostPlayerMonster extends Monster {
             int spellDmg = target.reduceSpellDamage(7 + getIntelligence() / 2);
             target.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts Magic Arrow! (" + spellDmg + " dmg)", 2f));
+                eventManager.addEvent(new GameEvent("The shade of " + ghostPlayerName + " casts Magic Arrow! (" + spellDmg + " dmg)", 2f));
             }
             BalanceLogger.getInstance().logCombatRound("GHOST", "Magic Arrow", -1, spellDmg, target.getWarStrength());
             return true;
@@ -178,7 +180,7 @@ public class GhostPlayerMonster extends Monster {
         int spellDmg = target.reduceSpellDamage(5 + getIntelligence() / 3);
         target.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
         if (eventManager != null) {
-            eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts a phantom bolt! (" + spellDmg + " dmg)", 2f));
+            eventManager.addEvent(new GameEvent("The shade of " + ghostPlayerName + " casts a phantom bolt! (" + spellDmg + " dmg)", 2f));
         }
         return true;
     }
