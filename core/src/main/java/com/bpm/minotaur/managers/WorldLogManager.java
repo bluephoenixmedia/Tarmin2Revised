@@ -83,6 +83,10 @@ public final class WorldLogManager implements SlotScopedState {
             case SLEW_FIGURE: {
                 Figure f = world.figure(deed.target);
                 if (f == null) return null;
+                // A Figure that was a Nemesis is told once, by its NEMESIS_SLAIN line (#284).
+                for (com.bpm.minotaur.gamedata.history.Nemesis n : world.nemeses()) {
+                    if (n.figureId == f.id) return null;
+                }
                 House h = world.house(f.houseId);
                 return Fact.of(Fact.Kind.SLEW_FIGURE, f.name, h != null ? h.name : null);
             }

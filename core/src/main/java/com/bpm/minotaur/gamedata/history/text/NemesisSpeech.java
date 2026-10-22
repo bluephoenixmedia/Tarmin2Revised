@@ -38,12 +38,13 @@ public final class NemesisSpeech {
 
     public static String line(Nemesis nemesis, Random rng) {
         List<String> victims = nemesis.victims;
-        int taken = victims.size();
+        int taken = nemesis.tally();
         if (taken > 1 && rng.nextInt(3) == 0) {
             String line = MANY[rng.nextInt(MANY.length)].replace("{n}", count(taken)).replace("{m}", count(taken + 1));
             return Character.toUpperCase(line.charAt(0)) + line.substring(1);
         }
-        String victim = taken == 0 ? "the last one" : victims.get(rng.nextInt(taken));
+        if (taken == 0) throw new IllegalArgumentException(nemesis.name + " has taken no life to remember");
+        String victim = victims.get(rng.nextInt(taken));
         String line = ONE[rng.nextInt(ONE.length)].replace("{v}", victim);
         return Character.toUpperCase(line.charAt(0)) + line.substring(1);
     }
