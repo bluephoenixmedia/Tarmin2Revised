@@ -730,6 +730,10 @@ public class GameScreen extends BaseScreen {
                 if (player.needsLife()) {
                     player.beginLife(lifeHistory.world(), new java.util.Random().nextLong());
                 }
+                if (!isDeathTransitionTriggered) {
+                    // The World Log follows whoever the player is: a new body, a reroll, a loaded save (#280).
+                    com.bpm.minotaur.managers.WorldLogManager.getInstance().keepUpWith(player.getLife());
+                }
                 if (player.isLifeRevealPending()) {
                     game.setScreen(new RebirthScreen(game, this, player, lifeHistory.world(), soulName()));
                     return;
@@ -1419,18 +1423,19 @@ public class GameScreen extends BaseScreen {
             // is ever processed per expedition run.
             eventManager.consumeAll(GameEvent.EventType.PLAYER_DIED);
 
+            int curLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
+            String epitaph = "Fell in the depths";
+            try {
+                com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+                if (player.getInjuryManager() != null) {
+                    telemetry.setBleedDamageTaken(player.getInjuryManager().getBleedDamageThisRun());
+                }
+                epitaph = buildEpitaph(telemetry);
+            } catch (Exception ignored) {
+            }
+
             // Record Bones File for Advanced Mode (full player snapshot before item retention)
             if (gameMode == GameMode.ADVANCED) {
-                int curLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
-                String epitaph = "Fell in the depths";
-                try {
-                    com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
-                    if (player.getInjuryManager() != null) {
-                        telemetry.setBleedDamageTaken(player.getInjuryManager().getBleedDamageThisRun());
-                    }
-                    epitaph = buildEpitaph(telemetry);
-                } catch (Exception ignored) {
-                }
                 BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode,
                         com.bpm.minotaur.gamedata.history.text.Epithets.player(worldManager.getHistory().world()));
             }
@@ -1438,8 +1443,12 @@ public class GameScreen extends BaseScreen {
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
             if (DoomManager.getInstance().recordDeath(activeExpeditionRunId)) {
                 // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
+                String killer = killerForTheLog();
                 worldManager.getHistory().recordSeekerFell(
-                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse());
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse(), killer);
+                // The life's record closes with its death (#280).
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
+                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
             }
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
@@ -1912,6 +1921,15 @@ public class GameScreen extends BaseScreen {
             sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
         }
         return sb.toString();
+    }
+
+    /** What killed the player, in words: a monster's name, a survival cause, or the maze itself. */
+    private static String killerForTheLog() {
+        com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        String killer = telemetry.getKillerMonster();
+        if (killer == null || killer.isEmpty()) killer = telemetry.getSurvivalDeath();
+        if (killer == null || killer.isEmpty()) return "the maze";
+        return killer.matches("[A-Z_]+") ? com.bpm.minotaur.ui.UiNames.fromConstant(killer) : killer;
     }
 
     /** The soul's name, the one typed or generated at a new game (#268). */

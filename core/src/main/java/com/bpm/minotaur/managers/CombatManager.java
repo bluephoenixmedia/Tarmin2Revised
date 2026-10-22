@@ -1224,6 +1224,7 @@ public class CombatManager {
         claimVengeance(m);
         eventManager.addEvent(new GameEvent("Killed " + nameOf(m) + "!", 2f));
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(m, m.getMonsterType());
+        noteKillInWorldLog(m);
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
@@ -3716,6 +3717,23 @@ public class CombatManager {
 
     public void setCurrentState(CombatState state) { this.currentState = state; }
 
+    /**
+     * A kill of the player's the life's record may keep (#280): the Warden, a boss, the life's
+     * first Heavy. Called only from the player's kill payouts, never from monster infighting. A
+     * seal lord and a megabeast are lines already, through their history deeds and the seal.
+     */
+    private static void noteKillInWorldLog(Monster m) {
+        if (m == null) return;
+        WorldLogManager log = WorldLogManager.getInstance();
+        if (m.isBridgeBoss()) {
+            log.note(com.bpm.minotaur.gamedata.worldlog.Fact.of(com.bpm.minotaur.gamedata.worldlog.Fact.Kind.WARDEN_DESTROYED));
+            return;
+        }
+        boolean toldElsewhere = m.holdsCourt() || m.getMegabeastId() >= 0;
+        log.noteKill(nameOf(m), m.getRole() == com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY,
+                m.isBoss() && !toldElsewhere);
+    }
+
     // Extracted death logic to reuse for Poison kills
     /** A named figure by name, anything else by its type as words. */
     private static String nameOf(Monster m) {
@@ -3790,6 +3808,7 @@ public class CombatManager {
 
         UnlockManager.getInstance().recordKill(monster.getMonsterType());
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster, monster.getMonsterType());
+        noteKillInWorldLog(monster);
 
         // A themed chunk's objective may hang on this kill (the champion, or the
         // last combatant in the arena).

@@ -27,6 +27,20 @@ public class HistoryManagerTest {
     }
 
     @Test
+    public void aSeekersDeathCarriesItsKillerAndAnOlderDeathStillReplays() {
+        HistoryManager m = HistoryManager.create(11L, catalog);
+        m.recordSeekerFell(-1, "a Kobold");
+        com.bpm.minotaur.gamedata.history.HistorySaveData save = m.toSave();
+        com.bpm.minotaur.gamedata.history.PlayerDeed fell = save.deeds.get(save.deeds.size() - 1);
+        assertEquals(com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SEEKER_FELL, fell.kind);
+        assertEquals("a Kobold", fell.note);
+
+        fell.note = null; // a death written before deaths named their killer
+        HistoryManager loaded = HistoryManager.fromSave(11L, save, catalog);
+        assertEquals(1, loaded.world().seekersFallen());
+    }
+
+    @Test
     public void sleepingAdvancesExactlyOneSeasonAndReportsItsNews() {
         HistoryManager m = HistoryManager.create(11L, catalog);
         int seasonBefore = m.world().season();
@@ -45,8 +59,8 @@ public class HistoryManagerTest {
         HistoryManager b = HistoryManager.create(5L, catalog);
         for (int i = 0; i < 6; i++) {
             if (i == 2) {
-                a.recordSeekerFell(-1);
-                b.recordSeekerFell(-1);
+                a.recordSeekerFell(-1, null);
+                b.recordSeekerFell(-1, null);
             }
             a.onSleep();
             b.onSleep();
@@ -60,7 +74,7 @@ public class HistoryManagerTest {
         live.onSleep();
         live.recordKill(live.world().lordOf(live.world().gashHolder(1)).id);
         live.onSleep();
-        live.recordSeekerFell(live.world().gashHolder(0).id);
+        live.recordSeekerFell(live.world().gashHolder(0).id, null);
         live.onSleep();
         live.unlock(3);
 
@@ -112,8 +126,8 @@ public class HistoryManagerTest {
         House killer = m.world().gashHolder(2);
         int prestige = killer.prestige;
 
-        m.recordSeekerFell(killer.id);
-        m.recordSeekerFell(-1);
+        m.recordSeekerFell(killer.id, null);
+        m.recordSeekerFell(-1, null);
 
         assertEquals(2, m.world().seekersFallen());
         assertEquals(prestige + 3, killer.prestige);

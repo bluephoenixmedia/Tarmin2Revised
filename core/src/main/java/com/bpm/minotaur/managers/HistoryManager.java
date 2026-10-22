@@ -65,7 +65,7 @@ public final class HistoryManager {
         HistoryManager m = past(save.seed != null ? save.seed : fallbackSeed, catalog);
         for (int season = 0; season <= save.liveSeasons; season++) {
             for (PlayerDeed d : save.deeds) {
-                if (d.liveSeason == season) m.apply(d);
+                if (d.liveSeason == season) m.replay(d);
             }
             if (season < save.liveSeasons) HistorySimulator.tickSeason(m.world, catalog);
         }
@@ -134,10 +134,16 @@ public final class HistoryManager {
         apply(new PlayerDeed(PlayerDeed.Kind.SLEW_FIGURE, figureId, world.liveSeasons()));
     }
 
-    /** An expedition ended in death; {@code killerHouseId} is -1 when no house did it. */
-    public void recordSeekerFell(int killerHouseId) {
+    /**
+     * An expedition ended in death; {@code killerHouseId} is -1 when no house did it, and
+     * {@code killer} names what did ("a Kobold"), or is null when nothing did. The name rides
+     * on the deed's note and is not replayed into the history (#280).
+     */
+    public void recordSeekerFell(int killerHouseId, String killer) {
         encounters.newExpedition(false);
-        apply(new PlayerDeed(PlayerDeed.Kind.SEEKER_FELL, killerHouseId, world.liveSeasons()));
+        PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.SEEKER_FELL, killerHouseId, world.liveSeasons());
+        deed.note = killer;
+        apply(deed);
     }
 
     /**
@@ -549,7 +555,14 @@ public final class HistoryManager {
         return save;
     }
 
+    /** A deed done now: the history takes it, and the life being lived remembers it (#280). */
     private void apply(PlayerDeed deed) {
+        replay(deed);
+        WorldLogManager.getInstance().noteDeed(deed, world);
+    }
+
+    /** A deed the history takes again from the save; the World Log already holds it. */
+    private void replay(PlayerDeed deed) {
         deeds.add(deed);
         HistorySimulator.applyDeed(world, deed);
     }

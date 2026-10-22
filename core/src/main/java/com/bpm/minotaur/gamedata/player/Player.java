@@ -3937,6 +3937,11 @@ public class Player {
         telemetry.recordQualifyingHit(family.name());
         Mastery.Rank risen = stats.getMastery().recordHit(family);
         if (risen != null) telemetry.recordMasteryRankUp(family.name(), risen.name());
+        if (risen != null && risen.ordinal() >= Mastery.Rank.ADEPT.ordinal()) {
+            com.bpm.minotaur.managers.WorldLogManager.getInstance().note(com.bpm.minotaur.gamedata.worldlog.Fact.of(
+                    com.bpm.minotaur.gamedata.worldlog.Fact.Kind.MASTERY,
+                    com.bpm.minotaur.ui.UiNames.of(family), com.bpm.minotaur.ui.UiNames.of(risen)));
+        }
         if (risen != null && eventManager != null) {
             eventManager.addEvent(new GameEvent("Your " + com.bpm.minotaur.ui.UiNames.of(family)
                     + " Mastery rises to " + com.bpm.minotaur.ui.UiNames.of(risen) + ".", 3f));
@@ -3963,7 +3968,11 @@ public class Player {
 
     /** The soul learns {@code art}; the first time, the game announces it and shows its card. */
     public void learnArt(com.bpm.minotaur.gamedata.arts.CombatArt art, GameEventManager eventManager) {
-        if (art == null || !knownArts.add(art) || eventManager == null) return;
+        if (art == null || !knownArts.add(art)) return;
+        // Only the soul's first learning is a line; a kept Art retrained is not (#280).
+        com.bpm.minotaur.managers.WorldLogManager.getInstance().note(com.bpm.minotaur.gamedata.worldlog.Fact.of(
+                com.bpm.minotaur.gamedata.worldlog.Fact.Kind.ART_LEARNED, com.bpm.minotaur.ui.UiNames.of(art)));
+        if (eventManager == null) return;
         eventManager.addEvent(new GameEvent("You have learned " + com.bpm.minotaur.ui.UiNames.of(art) + ".", 3.5f));
         eventManager.addEvent(new GameEvent(GameEvent.EventType.ART_LEARNED, art));
     }
