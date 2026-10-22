@@ -55,7 +55,9 @@ public class PlayerDeed {
         /** The player broke its oath to house {@link #target} (W21). */
         BROKE_OATH,
         /** House {@link #target}'s lord granted the player the seal of its gash (W26). */
-        SEAL_GRANTED
+        SEAL_GRANTED,
+        /** The player slew Nemesis {@link #target} (#283): it is dead, and is placed no more. */
+        SLEW_NEMESIS
     }
 
     public Kind kind;
@@ -68,6 +70,17 @@ public class PlayerDeed {
     public String note;
     /** The live season the deed happened in: {@link HistoryWorld#liveSeasons()} at the time. */
     public int liveSeason;
+    /**
+     * For {@code SEEKER_FELL} (#283): the killer's monsters.json type (null when no monster
+     * killed, and in deaths saved before Nemeses), the Nemesis it already was or -1, the life's
+     * name, and the level and chunk of the death.
+     */
+    public String monsterType;
+    public int nemesis = -1;
+    public String victim;
+    public int level = -1;
+    public int chunkX;
+    public int chunkY;
 
     /** For the save reader. */
     public PlayerDeed() {

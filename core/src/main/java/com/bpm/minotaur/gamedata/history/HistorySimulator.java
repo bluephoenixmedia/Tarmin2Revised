@@ -903,6 +903,10 @@ public final class HistorySimulator {
             e.detail = world.seekersFallen;
             House killer = world.house(deed.target);
             if (killer != null) killer.prestige += 3;
+            Nemeses.fell(world, deed);
+        } else if (deed.kind == PlayerDeed.Kind.SLEW_NEMESIS) {
+            Nemesis n = world.nemesis(deed.target);
+            if (n != null && n.isAlive()) n.deathSeason = world.season;
         } else if (deed.kind == PlayerDeed.Kind.DOOM_STAGE) {
             ascend(deed.target);
         } else if (deed.kind == PlayerDeed.Kind.SLEW_MEGABEAST) {
