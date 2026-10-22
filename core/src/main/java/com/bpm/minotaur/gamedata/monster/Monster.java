@@ -266,6 +266,8 @@ public class Monster implements Renderable {
     private transient int disguiseScrutiny;
     /** The megabeast of the history this monster is, or -1 (T3.3). Megabeasts are never saved in a chunk. */
     private int megabeastId = -1;
+    /** The Nemesis of the history this monster is (#283), or -1. */
+    private int nemesisId = -1;
     /** A damage type this one takes extra harm from, beyond its category's (a megabeast's weakness). */
     private DamageType extraWeakness;
     /** The town this monster guards, or null (T4.4). A guard is placed on every load and never saved. */
@@ -1519,6 +1521,8 @@ public class Monster implements Renderable {
     }
 
     public int getFigureId() { return figureId; }
+    public int getNemesisId() { return nemesisId; }
+    public void setNemesisId(int nemesisId) { this.nemesisId = nemesisId; }
     public void setFigureId(int figureId) { this.figureId = figureId; }
     public int getSealRoad() { return sealRoad; }
     public void setSealRoad(int sealRoad) { this.sealRoad = sealRoad; }

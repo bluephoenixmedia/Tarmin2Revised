@@ -140,10 +140,18 @@ public final class HistoryManager {
      * on the deed's note and is not replayed into the history (#280).
      */
     public void recordSeekerFell(int killerHouseId, String killer) {
+        recordSeekerFell(com.bpm.minotaur.gamedata.history.SeekerDeath.by(killer, null, killerHouseId));
+    }
+
+    /** An expedition ended in death, with all the history knows of it: its killer may become a Nemesis (#283). */
+    public void recordSeekerFell(com.bpm.minotaur.gamedata.history.SeekerDeath death) {
         encounters.newExpedition(false);
-        PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.SEEKER_FELL, killerHouseId, world.liveSeasons());
-        deed.note = killer;
-        apply(deed);
+        apply(death.deed(world.liveSeasons()));
+    }
+
+    /** The player slew a Nemesis: it is placed no more (#283). */
+    public void recordNemesisSlain(int nemesisId) {
+        apply(new PlayerDeed(PlayerDeed.Kind.SLEW_NEMESIS, nemesisId, world.liveSeasons()));
     }
 
     /**

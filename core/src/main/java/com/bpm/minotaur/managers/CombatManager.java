@@ -1226,6 +1226,7 @@ public class CombatManager {
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(m, m.getMonsterType());
         noteKillInWorldLog(m);
         if (worldManager != null) worldManager.onMonsterSlain(m, eventManager);
+        if (worldManager != null) worldManager.onNemesisSlainByPlayer(m);
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
             int remoteDiv = DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
@@ -3786,6 +3787,7 @@ public class CombatManager {
         eventManager.addEvent((new GameEvent("You have defeated " + nameOf(monster), 2f)));
         // A named figure of the Maze's history: chronicled, and a seal lord gives up its seal.
         if (worldManager != null) worldManager.onMonsterSlain(monster, eventManager);
+        if (worldManager != null) worldManager.onNemesisSlainByPlayer(monster);
 
         if (monster instanceof GhostPlayerMonster) {
             GhostPlayerMonster ghost = (GhostPlayerMonster) monster;

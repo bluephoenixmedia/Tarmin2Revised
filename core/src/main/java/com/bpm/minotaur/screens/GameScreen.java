@@ -1434,20 +1434,22 @@ public class GameScreen extends BaseScreen {
             } catch (Exception ignored) {
             }
 
-            // Record Bones File for Advanced Mode (full player snapshot before item retention)
-            if (gameMode == GameMode.ADVANCED) {
-                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode, killerForTheLog());
-            }
-
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
+            String killer = killerForTheLog();
             if (DoomManager.getInstance().recordDeath(activeExpeditionRunId)) {
                 // Once per run, like the clock: the Maze remembers the fallen, and who felled them.
-                String killer = killerForTheLog();
-                worldManager.getHistory().recordSeekerFell(
-                        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getKillerHouse(), killer);
+                com.bpm.minotaur.gamedata.history.SeekerDeath death = seekerDeath(killer, curLvl);
+                worldManager.getHistory().recordSeekerFell(death);
+                // A killer the history has just named is remembered by that name (#283).
+                killer = nemesisNameOr(killer);
                 // The life's record closes with its death (#280).
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
                         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
+            }
+
+            // Record Bones File for Advanced Mode (full player snapshot before item retention)
+            if (gameMode == GameMode.ADVANCED) {
+                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode, killer);
             }
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
@@ -1920,6 +1922,37 @@ public class GameScreen extends BaseScreen {
             sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
         }
         return sb.toString();
+    }
+
+    /**
+     * The death as the history takes it (#283): the killing monster, if a monster killed, may
+     * become a Nemesis in this level and chunk. A megabeast, the Warden and a shade are already
+     * named, so they are remembered by name only.
+     */
+    private com.bpm.minotaur.gamedata.history.SeekerDeath seekerDeath(String killer, int level) {
+        com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+        Object ref = telemetry.getSurvivalDeath() == null ? telemetry.getKillerRef() : null;
+        com.bpm.minotaur.gamedata.monster.Monster m = ref instanceof com.bpm.minotaur.gamedata.monster.Monster
+                ? (com.bpm.minotaur.gamedata.monster.Monster) ref : null;
+        boolean nameable = m != null && m.getMegabeastId() < 0 && !m.isBridgeBoss()
+                && m.getType() != com.bpm.minotaur.gamedata.monster.Monster.MonsterType.PLAYER_GHOST;
+        com.bpm.minotaur.gamedata.history.SeekerDeath death = com.bpm.minotaur.gamedata.history.SeekerDeath.by(
+                nameable && m.getNemesisId() >= 0 ? m.getName() : killer,
+                nameable ? m.getType().name() : null, telemetry.getKillerHouse());
+        if (nameable) death.figure(m.getFigureId()).nemesis(m.getNemesisId());
+        GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
+        return death.of(player.getLife() != null ? player.getLife().name : null)
+                .at(level, chunk != null ? chunk.x : 0, chunk != null ? chunk.y : 0);
+    }
+
+    /** The Nemesis whose newest victim is this life, by its name; otherwise {@code killer}. */
+    private String nemesisNameOr(String killer) {
+        if (player.getLife() == null || worldManager.getHistory() == null) return killer;
+        String life = player.getLife().name;
+        for (com.bpm.minotaur.gamedata.history.Nemesis n : worldManager.getHistory().world().nemeses()) {
+            if (!n.victims.isEmpty() && life.equals(n.victims.get(n.victims.size() - 1))) return n.name;
+        }
+        return killer;
     }
 
     /** What killed the player, in words: a monster's name, a survival cause, or the maze itself. */
@@ -3087,6 +3120,8 @@ public class GameScreen extends BaseScreen {
         }
         String beast = worldManager.tendMegabeasts(maze, player != null ? player.getPosition() : null);
         if (beast != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(beast), 4f));
+        String nemesis = worldManager.tendNemeses(maze);
+        if (nemesis != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(nemesis), 4f));
         // Blood on him and his gear dries from crimson toward black as the delve goes on.
         if (player != null) {
             player.ageBlood(1);

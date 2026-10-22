@@ -174,6 +174,7 @@ public class TelemetryManager {
         this.strataReached = 1;
         this.causeOfDeath = null;
         this.killerMonster = null;
+        this.killerRef = null;
         this.killerHouse = -1;
         this.survivalDeath = null;
         this.bleedDamageTaken = 0;
@@ -397,6 +398,7 @@ public class TelemetryManager {
         // too. It was set on melee hits only, and a ranged death named the last monster to hit in melee.
         if (hit && damage > 0 && monsterType != null) {
             this.killerMonster = monsterType;
+            this.killerRef = monster;
         }
         Fight f = fightFor(monster, monsterType, monsterLevel);
         if (f != null) {
@@ -609,11 +611,19 @@ public class TelemetryManager {
     public synchronized void setSurvivalDeath(String cause) {
         this.survivalDeath = cause;
         this.killerMonster = null;
+        this.killerRef = null;
         this.killerHouse = -1;
     }
 
     public String getSurvivalDeath() {
         return survivalDeath;
+    }
+
+    /** The monster that last hurt the player, the one that may become their Nemesis (#283); null if none. */
+    private Object killerRef;
+
+    public synchronized Object getKillerRef() {
+        return killerRef;
     }
 
     public String getKillerMonster() {

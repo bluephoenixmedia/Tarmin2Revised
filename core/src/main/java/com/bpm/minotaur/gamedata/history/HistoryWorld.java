@@ -25,6 +25,8 @@ public class HistoryWorld {
     final List<War> wars = new ArrayList<>();
     final List<Grudge> grudges = new ArrayList<>();
     final List<Megabeast> megabeasts = new ArrayList<>();
+    /** The killers of the soul's lives, raised by the death deeds (#283). */
+    final List<Nemesis> nemeses = new ArrayList<>();
     /** Unordered pairs of allied houses, encoded by {@link #pairKey}. */
     final Set<Long> alliances = new HashSet<>();
     final Set<String> usedNames = new HashSet<>();
@@ -95,6 +97,14 @@ public class HistoryWorld {
 
     public List<Megabeast> megabeasts() {
         return Collections.unmodifiableList(megabeasts);
+    }
+
+    public List<Nemesis> nemeses() {
+        return Collections.unmodifiableList(nemeses);
+    }
+
+    public Nemesis nemesis(int id) {
+        return id >= 0 && id < nemeses.size() ? nemeses.get(id) : null;
     }
 
     public Megabeast megabeast(int id) {

@@ -1621,6 +1621,48 @@ public class WorldManager {
         return followed ? present.name + " has followed you." : "The ground trembles. Something enormous is near.";
     }
 
+    /**
+     * Places the Nemeses whose region this is (#283), each once, and sends away one the history
+     * says is dead. A Nemesis keeps its level and chunk, so it is here after every Shifting, in
+     * whatever the new maze has made of the place. Returns what the player notices, or null.
+     */
+    public String tendNemeses(Maze maze) {
+        if (history == null || maze == null || currentPlayerChunkId == null) return null;
+        java.util.Set<Integer> here = new java.util.HashSet<>();
+        for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
+            if (m == null || m.getNemesisId() < 0) continue;
+            com.bpm.minotaur.gamedata.history.Nemesis n = history.world().nemesis(m.getNemesisId());
+            if (n == null || !n.isAlive()) maze.removeMonster(m);
+            else here.add(n.id);
+        }
+        String noticed = null;
+        for (com.bpm.minotaur.gamedata.history.Nemesis n : history.world().nemeses()) {
+            if (!n.isAlive() || here.contains(n.id) || n.level != currentLevel
+                    || n.chunkX != currentPlayerChunkId.x || n.chunkY != currentPlayerChunkId.y) continue;
+            GridPoint2 at = findBossSeat(maze);
+            if (at == null) continue;
+            com.bpm.minotaur.gamedata.monster.Monster body;
+            try {
+                body = new com.bpm.minotaur.gamedata.monster.Monster(
+                        com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(n.monsterType), at.x, at.y,
+                        com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+            } catch (IllegalArgumentException e) {
+                continue; // a kind the game no longer has
+            }
+            NemesisForge.dress(body, n);
+            maze.addMonster(body);
+            noticed = "Something here remembers you.";
+        }
+        return noticed;
+    }
+
+    /** The player felled a Nemesis: the history marks it dead, and it is placed no more (#283). */
+    public void onNemesisSlainByPlayer(com.bpm.minotaur.gamedata.monster.Monster m) {
+        if (m == null || m.getNemesisId() < 0 || history == null) return;
+        com.bpm.minotaur.gamedata.history.Nemesis n = history.world().nemesis(m.getNemesisId());
+        if (n != null && n.isAlive()) history.recordNemesisSlain(n.id);
+    }
+
     /** The player is leaving: a megabeast hunting them nearby follows, a few turns behind. */
     public void megabeastsFollow(Maze maze, com.badlogic.gdx.math.Vector2 playerPos, GridPoint2 toChunk, int toLevel) {
         if (history == null || maze == null || playerPos == null || toChunk == null) return;
