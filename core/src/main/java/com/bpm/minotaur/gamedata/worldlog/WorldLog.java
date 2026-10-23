@@ -23,6 +23,8 @@ public final class WorldLog {
     private ArrayList<String> eraNames = new ArrayList<>();
     /** How many of the myth's revelations the soul has read, in order (#288). */
     private int revelationsRead;
+    /** The deepest layer of the myth the Hunger has ever opened; a Warden's fall never closes it. */
+    private int deepestLayer;
 
     /** A new world: nothing forgotten, nothing reached. Also the save reader's constructor. */
     public WorldLog() {
@@ -47,6 +49,14 @@ public final class WorldLog {
 
     public void markRevelationRead() {
         revelationsRead++;
+    }
+
+    public int deepestLayer() {
+        return deepestLayer;
+    }
+
+    public void reachLayer(int layer) {
+        deepestLayer = Math.max(deepestLayer, layer);
     }
 
     public int unremembered() {

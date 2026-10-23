@@ -17,15 +17,15 @@ public final class Shrine {
 
     /** The shrine with everything known of its god. */
     public static Encounter view(Encounter base, OldGod god, boolean dark) {
-        return view(base, god, dark, Reveal.Layer.LAST_STAND);
+        return view(base, god, dark, true);
     }
 
     /**
-     * The shrine as the soul knows it (#288): before the Bridge is known, one of the old shrines,
-     * its god and Kindred unnamed, its rites only the old rites.
+     * The shrine as the soul knows it (#288): until it has read the old gods' names, one of the
+     * old shrines, its god and Kindred unnamed, its rites only the old rites.
      */
-    public static Encounter view(Encounter base, OldGod god, boolean dark, Reveal.Layer layer) {
-        boolean named = layer.ordinal() >= Reveal.Layer.BRIDGE.ordinal();
+    public static Encounter view(Encounter base, OldGod god, boolean dark, boolean godsKnown) {
+        boolean named = godsKnown;
         Encounter view = new Encounter();
         view.id = base.id;
         view.title = base.title;

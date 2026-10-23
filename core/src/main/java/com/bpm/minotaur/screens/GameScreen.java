@@ -1351,7 +1351,9 @@ public class GameScreen extends BaseScreen {
                     if (god != null) {
                         boolean dark = worldManager != null && worldManager.getHistory() != null
                                 && worldManager.getHistory().world().isSpent(god);
-                        encounter = com.bpm.minotaur.gamedata.history.Shrine.view(encounter, god, dark, revealLayer());
+                        encounter = com.bpm.minotaur.gamedata.history.Shrine.view(encounter, god, dark,
+                                com.bpm.minotaur.gamedata.history.Reveal.godsKnown(
+                                        com.bpm.minotaur.managers.WorldLogManager.getInstance().log()));
                     }
                     hud.getEncounterWindow().show(encounter);
                 }
@@ -2917,7 +2919,7 @@ public class GameScreen extends BaseScreen {
 
     /** Tells the next revelation the soul has earned and not read; false if there is none. */
     private boolean revealIfDue() {
-        String revelation = com.bpm.minotaur.gamedata.history.Reveal.take(
+        String revelation = com.bpm.minotaur.gamedata.history.Reveal.readNext(
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().log(), revealLayer());
         if (revelation == null) return false;
         com.bpm.minotaur.managers.WorldLogManager.getInstance().save();
@@ -2949,8 +2951,9 @@ public class GameScreen extends BaseScreen {
         if (item == null || item.fragmentKind() == null || item.isTrophyRead()) return;
         if (item.isChronicleFragment()) player.getInventory().removeItem(item);
         item.markTrophyRead();
-        // A revelation of the myth the soul has earned comes before the history's own news (#288).
-        if (revealIfDue()) return;
+        // A page or proclamation may also give up a revelation of the myth the soul has earned,
+        // before the history's own news (#288). A trophy tells only its own story.
+        if (item.isChronicleFragment()) revealIfDue();
         com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(item.fragmentKind());
         if (told == null) {
             eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));

@@ -39,13 +39,13 @@ public class RevealTest {
 
     @Test
     public void untilTheBridgeIsKnownAShrineIsOnlyAnOldShrine() {
-        Encounter hidden = Shrine.view(wyrm(), OldGod.IXXATH, false, Reveal.Layer.ARRIVAL);
+        Encounter hidden = Shrine.view(wyrm(), OldGod.IXXATH, false, false);
         assertFalse(hidden.text, hidden.text.contains("Ixxath"));
         assertFalse(hidden.text, hidden.text.contains("Spirit-born"));
         assertTrue(hidden.text, hidden.text.contains("old shrines"));
         assertTrue(hidden.choices.get(0).text, hidden.choices.get(0).text.startsWith("The old rite: "));
 
-        Encounter named = Shrine.view(wyrm(), OldGod.IXXATH, false, Reveal.Layer.BRIDGE);
+        Encounter named = Shrine.view(wyrm(), OldGod.IXXATH, false, true);
         assertTrue(named.text.contains("Ixxath"));
         assertTrue(named.choices.get(0).text.startsWith("Ixxath's rite: "));
     }
@@ -53,29 +53,44 @@ public class RevealTest {
     @Test
     public void revelationsComeInOrderEachAtItsLayerAndOnce() {
         WorldLog log = new WorldLog(1L);
-        assertNull("nothing is revealed on arrival", Reveal.take(log, Reveal.Layer.ARRIVAL));
+        assertNull("nothing is revealed on arrival", Reveal.readNext(log, Reveal.Layer.ARRIVAL));
 
-        String first = Reveal.take(log, Reveal.Layer.BRIDGE);
+        String first = Reveal.readNext(log, Reveal.Layer.BRIDGE);
         assertNotNull(first);
         assertTrue(first, first.contains("Bridge"));
         int bridgeLayer = 1;
         String next;
-        while ((next = Reveal.take(log, Reveal.Layer.BRIDGE)) != null) bridgeLayer++;
+        while ((next = Reveal.readNext(log, Reveal.Layer.BRIDGE)) != null) bridgeLayer++;
         assertTrue("the Bridge layer has several revelations", bridgeLayer >= 3);
-        assertNull("the Bridge layer is spent", Reveal.take(log, Reveal.Layer.BRIDGE));
+        assertNull("the Bridge layer is spent", Reveal.readNext(log, Reveal.Layer.BRIDGE));
 
-        String deeper = Reveal.take(log, Reveal.Layer.LAST_STAND);
+        String deeper = Reveal.readNext(log, Reveal.Layer.LAST_STAND);
         assertNotNull("a deeper layer goes on where the last left off", deeper);
         assertTrue(deeper, deeper.contains("Treasure") || deeper.contains("Minotaur King"));
 
         Json json = new Json();
         json.setOutputType(JsonWriter.OutputType.json);
         WorldLog loaded = json.fromJson(WorldLog.class, json.toJson(log));
-        assertNotEquals("what was read stays read", first, Reveal.take(loaded, Reveal.Layer.LAST_STAND));
+        assertNotEquals("what was read stays read", first, Reveal.readNext(loaded, Reveal.Layer.LAST_STAND));
 
         String last = null;
-        while ((next = Reveal.take(loaded, Reveal.Layer.LAST_STAND)) != null) last = next;
+        while ((next = Reveal.readNext(loaded, Reveal.Layer.LAST_STAND)) != null) last = next;
         assertTrue("the whole truth comes last: " + last, last.contains("first seeker"));
+    }
+
+    @Test
+    public void theGodsAreKnownByReadingTheirNamesAndAWardensFallForgetsNothing() {
+        WorldLog log = new WorldLog(1L);
+        assertFalse(Reveal.godsKnown(log));
+        Reveal.readNext(log, Reveal.Layer.BRIDGE);
+        Reveal.readNext(log, Reveal.Layer.BRIDGE);
+        assertFalse("the Hunger alone names no god", Reveal.godsKnown(log));
+        // The Warden falls: the Hunger is back to nothing, but the Bridge layer stays open.
+        String third = Reveal.readNext(log, Reveal.Layer.ARRIVAL);
+        assertNotNull(third);
+        assertTrue(third, third.contains("Ixxath") && third.contains("Hollow Hood"));
+        assertTrue(Reveal.godsKnown(log));
+        assertEquals(3, Reveal.learned(log).size());
     }
 
     @Test
