@@ -25,7 +25,7 @@ public final class WorldLogCoherence {
         Set<String> names = new HashSet<>();
         Map<String, List<String>> felledBy = new HashMap<>();
         for (LifeRecord life : log.lives()) {
-            if (!names.add(life.name)) problems.add(life.name + " is the name of two lives, twice told");
+            if (!names.add(life.name)) problems.add(life.name + " is the name of two lives");
             if (life.isDead() && life.killer != null) {
                 felledBy.computeIfAbsent(life.killer, k -> new ArrayList<>()).add(life.name);
             }
@@ -47,6 +47,7 @@ public final class WorldLogCoherence {
         Set<String> nemesisNames = new HashSet<>();
         for (Nemesis n : world.nemeses()) {
             if (!nemesisNames.add(n.name)) problems.add("two Nemeses are named " + n.name);
+            if (names.contains(n.name)) problems.add(n.name + " is the name of a Nemesis and of a life");
             List<String> felled = felledBy.getOrDefault(n.name, new ArrayList<>());
             if (!felled.equals(n.victims)) {
                 for (String life : felled) {

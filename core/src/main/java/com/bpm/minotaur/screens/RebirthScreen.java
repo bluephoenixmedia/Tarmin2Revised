@@ -108,7 +108,7 @@ public class RebirthScreen extends BaseScreen {
     }
 
     private void reroll() {
-        if (player.rerollLife(world)) build();
+        if (player.rerollLife(world, com.bpm.minotaur.managers.WorldLogManager.getInstance().lifeNames())) build();
     }
 
     private void rise() {

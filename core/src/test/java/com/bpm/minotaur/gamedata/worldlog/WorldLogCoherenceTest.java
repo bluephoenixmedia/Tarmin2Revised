@@ -30,6 +30,7 @@ public class WorldLogCoherenceTest {
     private static final int LIVES = 60;
     private static HistoryManager history;
     private static WorldLog log;
+    private static final List<Life> forged = new ArrayList<>();
 
     @BeforeClass
     public static void liveSixtyLives() throws IOException {
@@ -41,6 +42,7 @@ public class WorldLogCoherenceTest {
             Set<String> taken = new HashSet<>();
             for (LifeRecord lived : log.lives()) taken.add(lived.name);
             Life life = LifeForge.forge(history.world(), 1000L + i, taken);
+            forged.add(life);
             log.wake(life, i);
 
             List<House> houses = history.world().livingHouses();
@@ -55,7 +57,11 @@ public class WorldLogCoherenceTest {
             List<Nemesis> alive = new ArrayList<>();
             for (Nemesis n : history.world().nemeses()) if (n.isAlive()) alive.add(n);
             SeekerDeath death;
-            if (!alive.isEmpty() && r.nextBoolean()) {
+            List<Figure> members = history.world().livingMembers(house);
+            if (r.nextInt(6) == 0 && !members.isEmpty()) {
+                Figure f = members.get(members.size() - 1);
+                death = SeekerDeath.by(f.name, "ORC", house.id).figure(f.id);
+            } else if (!alive.isEmpty() && r.nextBoolean()) {
                 Nemesis again = alive.get(r.nextInt(alive.size()));
                 death = SeekerDeath.by(again.name, again.monsterType, -1).nemesis(again.id);
             } else {
@@ -66,23 +72,28 @@ public class WorldLogCoherenceTest {
             log.die("Slain", killer != null ? killer.name : "a beast", "level 2", 10 * i);
 
             LifeRecord ended = log.last();
-            int killerHouse = -1;
-            boolean newStage = Era.stageOf(i + 1) > Era.stageOf(i);
-            List<Telling> tellings = new ArrayList<>();
-            for (Tellings.Teller teller : Tellings.involved(history.world(), history.lastLifeDeeds(), newStage)) {
-                tellings.add(Tellings.tell(teller, ended, history.world(), killerHouse));
-            }
-            log.tell(ended.number, tellings);
+            // As the game does at a death (WorldLogManager.tellLastLife), at the Hunger after it.
+            log.tell(ended.number, Tellings.forLife(history.world(), history.lastLifeDeeds(), ended, i + 1));
         }
     }
 
     @Test
     public void sixtyLivesTellNothingThatDisagrees() {
         assertEquals(LIVES, log.lives().size());
-        assertTrue("the simulation raised Nemeses", !history.world().nemeses().isEmpty());
-        boolean anyTelling = false;
-        for (LifeRecord life : log.lives()) anyTelling |= !life.tellings.isEmpty();
-        assertTrue("the simulation raised Tellings", anyTelling);
+        // Every rule is exercised, so none can pass for want of a case.
+        assertTrue("a Nemesis took more than one life",
+                history.world().nemeses().stream().anyMatch(n -> n.tally() >= 2));
+        assertTrue("a house Figure became a Nemesis",
+                history.world().nemeses().stream().anyMatch(n -> n.figureId >= 0));
+        java.util.EnumSet<Tellings.Role> voices = java.util.EnumSet.noneOf(Tellings.Role.class);
+        for (LifeRecord life : log.lives()) for (Telling t : life.tellings) voices.add(t.role);
+        assertTrue("voices heard: " + voices, voices.containsAll(java.util.EnumSet.of(
+                Tellings.Role.KILLER, Tellings.Role.KNELL, Tellings.Role.OATHBROKEN, Tellings.Role.SWORN)));
+        for (int i = 0; i < LIVES; i++) {
+            LifeRecord life = log.lives().get(i);
+            assertEquals(forged.get(i).name, life.name);
+            assertEquals(forged.get(i).settlement, life.homeName());
+        }
         assertEquals(new ArrayList<String>(), WorldLogCoherence.check(log, history.world()));
     }
 
@@ -106,7 +117,7 @@ public class WorldLogCoherenceTest {
         broken.tell(1, java.util.Collections.singletonList(wrong));
 
         List<String> problems = WorldLogCoherence.check(broken, history.world());
-        assertTrue(problems.toString(), problems.stream().anyMatch(p -> p.contains("Brenna Thatch") && p.contains("twice")));
+        assertTrue(problems.toString(), problems.stream().anyMatch(p -> p.contains("Brenna Thatch") && p.contains("two lives")));
         assertTrue(problems.toString(), problems.stream().anyMatch(p -> p.contains("House Gall")));
         assertTrue("a Nemesis named the killer of a life it never took: " + problems,
                 problems.stream().anyMatch(p -> p.contains(stranger) && p.contains("Brenna Thatch")));

@@ -1192,7 +1192,13 @@ public class Player {
 
     /** The one reroll of the whole identity. False, and nothing changes, once it is spent. */
     public boolean rerollLife(com.bpm.minotaur.gamedata.history.HistoryWorld world) {
+        return rerollLife(world, lifeNamesTaken);
+    }
+
+    /** As above, never under a name in {@code taken}: the soul's earlier lives' names (#286). */
+    public boolean rerollLife(com.bpm.minotaur.gamedata.history.HistoryWorld world, java.util.Set<String> taken) {
         if (!canRerollLife()) return false;
+        this.lifeNamesTaken = taken;
         // A seed one step on can forge the same prisoner; walk on until it doesn't.
         String before = life.summary();
         long seed = lifeSeed;
