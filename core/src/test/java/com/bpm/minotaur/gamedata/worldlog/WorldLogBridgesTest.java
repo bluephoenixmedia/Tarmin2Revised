@@ -27,7 +27,7 @@ public class WorldLogBridgesTest {
         live(log, "A", 0);
         live(log, "B", 12);
         Reckoning r = Reckonings.wardenFell("the First Bridge", log.last());
-        log.closeBridge(Reckoning.End.WARDEN_FELL, r);
+        log.closeBridge(r);
         live(log, "C", 0);
         live(log, "D", 3);
         return log;

@@ -11,7 +11,7 @@ import com.badlogic.gdx.utils.JsonWriter.OutputType;
  * - Tracks total deaths (DoomCounter), which raise a slow stage baseline.
  * - Escalates the stage with turns spent inside one Expedition.
  * - Calculates resource scarcity (Starvation Curve).
- * - Tracks Bridge Integrity (Apocalypse condition).
+ * - Tracks Bridge Integrity, its Warden, and Tarmin's crossings (#290).
  * 
  * Persists data separately from world saves to allow "Resurrection" mechanics
  * where the world resets but the meta-difficulty increases.
@@ -22,7 +22,6 @@ public class DoomManager implements SlotScopedState {
     // --- Core Variables ---
     private int deathCount = 0;
     private boolean bridgeBossActive = false;
-    private boolean apocalypseTriggered = false;
     /** Tarmin has crossed, and no god has yet been spent to drag him back (#290). */
     private boolean crossingPending = false;
     /**
@@ -109,7 +108,6 @@ public class DoomManager implements SlotScopedState {
     public void resetDeaths() {
         this.deathCount = 0;
         this.bridgeBossActive = false;
-        this.apocalypseTriggered = false;
         this.bridgeBossSummons = 0;
         save();
     }
@@ -244,13 +242,6 @@ public class DoomManager implements SlotScopedState {
         return Math.min(100f, integrity);
     }
 
-    /**
-     * @return True if the bridge is complete and apocalypse triggered (Game Over / Wipe).
-     */
-    public boolean isApocalypse() {
-        return apocalypseTriggered;
-    }
-
     /** Tarmin crossed with the last death; the rebirth must spend an old god (#290). */
     public boolean isCrossingPending() {
         return crossingPending;
@@ -282,7 +273,6 @@ public class DoomManager implements SlotScopedState {
     public void onBridgeBossDefeated() {
         this.bridgeBossActive = false;
         this.deathCount = 0;
-        this.apocalypseTriggered = false;
         this.crossingPending = false;
         save();
         if (Gdx.app != null) {
@@ -309,12 +299,11 @@ public class DoomManager implements SlotScopedState {
     }
 
     /**
-     * Resets the Doom counter. Used after a full wipe/apocalypse.
+     * Resets the Doom counter.
      */
     public void reset() {
         this.deathCount = 0;
         this.bridgeBossActive = false;
-        this.apocalypseTriggered = false;
         this.crossingPending = false;
         save();
         if (Gdx.app != null) {
@@ -337,7 +326,6 @@ public class DoomManager implements SlotScopedState {
             DoomState state = new DoomState();
             state.deathCount = this.deathCount;
             state.bridgeBossActive = this.bridgeBossActive;
-            state.apocalypseTriggered = this.apocalypseTriggered;
             state.bridgeBossSummons = this.bridgeBossSummons;
             state.crossingPending = this.crossingPending;
             state.expeditionTurns = this.expeditionTurns;
@@ -362,7 +350,6 @@ public class DoomManager implements SlotScopedState {
                 if (state != null) {
                     this.deathCount = state.deathCount;
                     this.bridgeBossActive = state.bridgeBossActive;
-                    this.apocalypseTriggered = state.apocalypseTriggered;
                     this.bridgeBossSummons = state.bridgeBossSummons;
                     this.crossingPending = state.crossingPending;
                     this.expeditionTurns = state.expeditionTurns;
@@ -386,6 +373,7 @@ public class DoomManager implements SlotScopedState {
     public static class DoomState {
         public int deathCount = 0;
         public boolean bridgeBossActive = false;
+        /** Read from saves written before crossings, and ignored: nothing is wiped any more (#290). */
         public boolean apocalypseTriggered = false;
         public int bridgeBossSummons = 0;
         /** A crossing waiting for its god (#290); absent in older saves, which have none. */
@@ -398,7 +386,6 @@ public class DoomManager implements SlotScopedState {
     public void reloadForActiveSlot() {
         this.deathCount = 0;
         this.bridgeBossActive = false;
-        this.apocalypseTriggered = false;
         this.bridgeBossSummons = 0;
         this.crossingPending = false;
         resetExpeditionTurns();
@@ -409,7 +396,6 @@ public class DoomManager implements SlotScopedState {
     public void resetForNewGame() {
         this.deathCount = 0;
         this.bridgeBossActive = false;
-        this.apocalypseTriggered = false;
         this.bridgeBossSummons = 0;
         this.crossingPending = false;
         resetExpeditionTurns();

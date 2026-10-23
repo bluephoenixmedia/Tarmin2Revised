@@ -3339,8 +3339,15 @@ public class CombatManager {
         // objective, which only fired for a sealed chunk; the boss roams now,
         // so it keys off the monster itself.
         if (monster != null && monster.isBridgeBoss()) {
+            // Only the Warden of the Bridge being built ends it: one left over from an ended
+            // Bridge, or one that followed the seeker, falls without closing another (#290).
+            boolean guarding = DoomManager.getInstance().isBridgeBossActive();
             DoomManager.getInstance().onBridgeBossDefeated();
-            WorldLogManager.getInstance().closeBridgeByWarden(worldManager != null ? worldManager.getHistory() : null);
+            if (guarding) {
+                WorldLogManager.getInstance().closeBridgeByWarden(worldManager != null ? worldManager.getHistory() : null);
+                // The deed and the Reckoning reach the disk together.
+                SaveManager.getInstance().saveActiveSlot(player, worldManager);
+            }
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(
                         "THE WARDEN FALLS! The Bridge of Souls crumbles back to nothing.", 5.0f));

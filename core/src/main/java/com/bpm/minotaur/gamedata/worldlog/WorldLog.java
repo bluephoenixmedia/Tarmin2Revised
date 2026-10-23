@@ -123,8 +123,7 @@ public final class WorldLog {
     }
 
     /** The Bridge being built ends, told by its Reckoning; the next life wakes in a new one. */
-    public void closeBridge(Reckoning.End end, Reckoning reckoning) {
-        reckoning.end = end;
+    public void closeBridge(Reckoning reckoning) {
         reckoning.bridge = currentBridge;
         reckonings.add(reckoning);
         currentBridge++;

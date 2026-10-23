@@ -57,8 +57,8 @@ public class GodChoiceScreen extends BaseScreen {
         Table root = new Table();
         root.setFillParent(true);
         root.pad(UiTheme.PAD_XXL);
-        root.add(UiLabels.of("WHICH OF US WILL HOLD HIM BACK?", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
-                .colspan(COLUMNS).padBottom(UiTheme.PAD_MD).row();
+        root.add(UiLabels.wrapping("WHICH OF US WILL HOLD HIM BACK?", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
+                .colspan(COLUMNS).width(UiTheme.LEDGER_PAGE_W).padBottom(UiTheme.PAD_MD).row();
         int keepers = OldGod.keepers(history.world());
         root.add(UiLabels.wrapping("Tarmin has crossed the Bridge of Souls. One of the old gods must drag him back, "
                         + "and will be spent doing it: its shrines go dark for good. "
@@ -92,6 +92,8 @@ public class GodChoiceScreen extends BaseScreen {
     private void choose(OldGod god) {
         WorldLogManager.getInstance().spendGodForCrossing(history, god);
         DoomManager.getInstance().clearCrossing();
+        // The god's spending is a deed of the history, saved with the slot: write it with the Reckoning.
+        com.bpm.minotaur.managers.SaveManager.getInstance().saveActiveSlot(parent.getPlayer(), parent.getWorldManager());
         game.setScreen(parent);
     }
 

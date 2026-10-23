@@ -210,7 +210,8 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
             // Doom Death Counter
             Color doomColor = (meta.deathCount > 35) ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_TEMP_ORANGE;
-            Label doomLabel = new Label("Tarmin's Hunger: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
+            Label doomLabel = new Label(meta.finished ? "The Last Crossing: this world has ended"
+                    : "Tarmin's Hunger: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
                     new Label.LabelStyle(hudSkin.getFontSmall(), doomColor));
             card.add(doomLabel).padBottom(12).row();
 
@@ -457,6 +458,13 @@ public class SaveSlotSelectScreen extends BaseScreen {
     }
 
     public static void launchResumeGame(Tarmin2 game, int slotIndex) {
+        SlotMetadata finishedMeta = SaveManager.getInstance().getSlotMetadata(slotIndex);
+        if (finishedMeta != null && finishedMeta.finished) {
+            // The Last Crossing ended this world (#290): it is read, never played again.
+            SaveManager.getInstance().setActiveSlotIndex(slotIndex);
+            game.setScreen(new WorldLogScreen(game, new MainMenuScreen(game), finishedMeta.characterName, 0));
+            return;
+        }
         SaveManager.getInstance().setActiveSlotIndex(slotIndex);
         MusicManager.getInstance().stopWithFade(0.5f);
 

@@ -243,7 +243,6 @@ public class CoreLoopExpansionsBatch4Test {
         assertEquals(0, doom.getDeathCount());
         assertEquals(0f, doom.getBridgeIntegrity(), 0.001f);
         assertFalse(doom.isBridgeBossActive());
-        assertFalse(doom.isApocalypse());
 
         // Increment 49 deaths (98% integrity)
         for (int i = 0; i < 49; i++) {
@@ -252,14 +251,12 @@ public class CoreLoopExpansionsBatch4Test {
         assertEquals(49, doom.getDeathCount());
         assertEquals(98f, doom.getBridgeIntegrity(), 0.001f);
         assertFalse("Bridge boss should not be active before 100%", doom.isBridgeBossActive());
-        assertFalse("Apocalypse must not trigger at 98%", doom.isApocalypse());
 
         // 50th death (100% integrity) -> spawns boss instead of wiping save
         doom.incrementDeaths();
         assertEquals(50, doom.getDeathCount());
         assertEquals(100f, doom.getBridgeIntegrity(), 0.001f);
         assertTrue("Bridge boss must activate at 100% integrity", doom.isBridgeBossActive());
-        assertFalse("Apocalypse wipe must NOT trigger on first 100% completion", doom.isApocalypse());
     }
 
     @Test
@@ -307,7 +304,6 @@ public class CoreLoopExpansionsBatch4Test {
         // the 50-death cap still arrives over a long enough campaign.
         assertEquals("Defeating the guardian resets the death count", 0, doom.getDeathCount());
         assertEquals("Integrity should be back to 0%", 0f, doom.getBridgeIntegrity(), 0.001f);
-        assertFalse(doom.isApocalypse());
         assertTrue("The summoning must be counted, or the next boss is no harder",
                 doom.getBridgeBossSummons() >= 1);
         assertTrue("The next summoning must be harder than the authored value",
@@ -322,12 +318,10 @@ public class CoreLoopExpansionsBatch4Test {
             doom.incrementDeaths();
         }
         assertTrue("Boss should be active at 50 deaths", doom.isBridgeBossActive());
-        assertFalse("Apocalypse must not trigger on initial boss spawn", doom.isApocalypse());
 
         // A death while the Warden stands is a crossing (#276, #290): no wipe, the Bridge begins again.
         doom.incrementDeaths();
 
-        assertFalse("a crossing wipes nothing", doom.isApocalypse());
         assertTrue("the crossing waits for a god to be spent at the rebirth", doom.isCrossingPending());
         assertEquals(0, doom.getDeathCount());
         assertFalse(doom.isBridgeBossActive());

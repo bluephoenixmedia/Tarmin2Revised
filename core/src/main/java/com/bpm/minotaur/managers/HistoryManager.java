@@ -181,6 +181,11 @@ public final class HistoryManager {
         apply(new PlayerDeed(PlayerDeed.Kind.WARDEN_FELL, -1, world.liveSeasons()));
     }
 
+    /** While Tarmin was gone, {@code houseId} took the most of the Maze (#276, #290). */
+    public void recordHouseRose(int houseId) {
+        apply(new PlayerDeed(PlayerDeed.Kind.HOUSE_ROSE, houseId, world.liveSeasons()));
+    }
+
     /** Tarmin crossed the Bridge (#276, #290). */
     public void recordCrossing() {
         apply(new PlayerDeed(PlayerDeed.Kind.TARMIN_CROSSED, -1, world.liveSeasons()));

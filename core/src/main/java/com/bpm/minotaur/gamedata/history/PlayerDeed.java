@@ -66,7 +66,9 @@ public class PlayerDeed {
         /** The Bridge's Warden fell, and the Bridge crumbled back to nothing (#290). */
         WARDEN_FELL,
         /** The seeker died while the Warden stood, and Tarmin crossed (#276, #290). */
-        TARMIN_CROSSED
+        TARMIN_CROSSED,
+        /** While Tarmin was gone, house {@link #target} took the most of the Maze (#276, #290). */
+        HOUSE_ROSE
     }
 
     public Kind kind;

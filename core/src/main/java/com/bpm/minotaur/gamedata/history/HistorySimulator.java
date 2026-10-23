@@ -188,6 +188,9 @@ public final class HistorySimulator {
     }
 
     /** Applies a player deed immediately; its consequences resolve at the next season. */
+    /** What a House gains by taking the Maze while Tarmin was across (#290). */
+    static final int HOUSE_ROSE_PRESTIGE = 5;
+
     public static void applyDeed(HistoryWorld world, PlayerDeed deed) {
         new HistorySimulator(world, null).deed(deed);
     }
@@ -908,6 +911,9 @@ public final class HistorySimulator {
             world.wardensFallen++;
         } else if (deed.kind == PlayerDeed.Kind.TARMIN_CROSSED) {
             world.crossings++;
+        } else if (deed.kind == PlayerDeed.Kind.HOUSE_ROSE) {
+            House rose = world.house(deed.target);
+            if (rose != null) rose.prestige += HOUSE_ROSE_PRESTIGE;
         } else if (deed.kind == PlayerDeed.Kind.GOD_SPENT) {
             if (deed.note != null) {
                 try {

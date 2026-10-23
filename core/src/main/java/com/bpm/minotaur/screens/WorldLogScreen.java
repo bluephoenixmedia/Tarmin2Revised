@@ -133,9 +133,12 @@ public class WorldLogScreen extends BaseScreen {
             stones.add(stone).width(UiTheme.BRIDGE_STONE_W).height(UiTheme.BRIDGE_STONE_H).padRight(UiTheme.PAD_XS);
         }
         bar.add(stones).row();
-        String keeping = keepers < 0 ? "" : "    " + UiNames.plural(keepers, "KEEPER", "KEEPERS") + " REMAIN";
-        bar.add(UiLabels.of(UiGlyphs.sanitize("THE BRIDGE OF SOULS: " + laid + " OF " + span + " STONES LAID" + keeping),
-                UiStyles.caption(skin, UiTheme.TEXT_DIM))).padTop(UiTheme.PAD_XS);
+        bar.add(UiLabels.of(UiGlyphs.sanitize("THE BRIDGE OF SOULS: " + laid + " OF " + span + " STONES LAID"),
+                UiStyles.caption(skin, UiTheme.TEXT_DIM))).padTop(UiTheme.PAD_XS).row();
+        if (keepers >= 0) {
+            bar.add(UiLabels.of(UiNames.plural(keepers, "KEEPER", "KEEPERS") + " REMAIN",
+                    UiStyles.caption(skin, keepers == 0 ? UiTheme.DANGER : UiTheme.GOLD))).padTop(UiTheme.PAD_XS);
+        }
         return bar;
     }
 

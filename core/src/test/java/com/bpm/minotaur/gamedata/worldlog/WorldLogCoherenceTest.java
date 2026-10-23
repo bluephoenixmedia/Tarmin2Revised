@@ -42,7 +42,7 @@ public class WorldLogCoherenceTest {
         for (int i = 0; i < LIVES; i++) {
             // The Bridge ends twice: its Warden falls after life 20, Tarmin crosses after life 40 (#290).
             if (i == 20) {
-                log.closeBridge(Reckoning.End.WARDEN_FELL, Reckonings.wardenFell(Bridge.nameOf(log.currentBridge()), log.last()));
+                log.closeBridge(Reckonings.wardenFell(Bridge.nameOf(log.currentBridge()), log.last()));
                 history.recordWardenFell();
                 bridgeBegan = i;
             } else if (i == 40) {
@@ -50,8 +50,7 @@ public class WorldLogCoherenceTest {
                 com.bpm.minotaur.gamedata.history.OldGod god =
                         com.bpm.minotaur.gamedata.history.OldGod.spendable(history.world()).get(0);
                 history.recordGodSpent(god);
-                log.closeBridge(Reckoning.End.CROSSED,
-                        Reckonings.crossed(Bridge.nameOf(log.currentBridge()), god, "House Gall", log.last()));
+                log.closeBridge(Reckonings.crossed(Bridge.nameOf(log.currentBridge()), god, "House Gall", log.last()));
                 bridgeBegan = i;
             }
             int hunger = i - bridgeBegan;
