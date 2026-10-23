@@ -85,6 +85,18 @@ public class LifeForgeTest {
     }
 
     @Test
+    public void aPrisonerNeverTakesTheNameOfAnEarlierLife() {
+        Set<String> taken = new HashSet<>();
+        for (long seed = 0; seed < 40; seed++) taken.add(LifeForge.forge(world, seed).name);
+        for (long seed = 0; seed < 40; seed++) {
+            Life life = LifeForge.forge(world, seed, taken);
+            assertFalse(life.name, taken.contains(life.name));
+        }
+        assertEquals("nothing taken, nothing changes", LifeForge.forge(world, 3L).summary(),
+                LifeForge.forge(world, 3L, new HashSet<>()).summary());
+    }
+
+    @Test
     public void everyPrisonerCanBeWrittenInTheGameFont() {
         for (long seed = 0; seed < 100; seed++) {
             String s = LifeForge.forge(world, seed).summary();

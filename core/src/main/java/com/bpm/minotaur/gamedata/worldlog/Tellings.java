@@ -114,6 +114,21 @@ public final class Tellings {
         if (had == null || role.weight > had.weight) roles.put(houseId, role);
     }
 
+    /**
+     * Every account of a life that has just ended (#285): from its deeds (the last one its death),
+     * with the Knell's when the Hunger it died at opened a new stage.
+     */
+    public static List<Telling> forLife(HistoryWorld world, List<PlayerDeed> deeds, LifeRecord life, int hunger) {
+        int killerHouse = -1;
+        for (PlayerDeed d : deeds) {
+            if (d.kind == PlayerDeed.Kind.SEEKER_FELL) killerHouse = d.target;
+        }
+        boolean newStage = Era.stageOf(hunger) > Era.stageOf(hunger - 1);
+        List<Telling> tellings = new ArrayList<>();
+        for (Teller teller : involved(world, deeds, newStage)) tellings.add(tell(teller, life, world, killerHouse));
+        return tellings;
+    }
+
     /** The teller's account of the life; {@code killerHouse} is the House that truly killed it, or -1. */
     public static Telling tell(Teller teller, LifeRecord life, HistoryWorld world, int killerHouse) {
         House house = world.house(teller.houseId);
@@ -132,9 +147,7 @@ public final class Tellings {
     }
 
     private static String fill(String template, LifeRecord life, String house, String fate) {
-        String home = life.title != null && life.title.startsWith(life.name + " of ")
-                ? life.title.substring(life.name.length() + 4) : "nowhere remembered";
-        String text = template.replace("{name}", life.name).replace("{home}", home)
+        String text = template.replace("{name}", life.name).replace("{home}", life.homeName())
                 .replace("{nth}", ordinal(life.number)).replace("{house}", house).replace("{fate}", fate)
                 .replace("{killer}", life.killer != null ? life.killer : "the maze");
         return capital(text);

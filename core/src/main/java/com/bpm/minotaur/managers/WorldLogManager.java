@@ -41,6 +41,13 @@ public final class WorldLogManager implements SlotScopedState {
         return log;
     }
 
+    /** The names of every life the log holds, which no new prisoner may share (#286). */
+    public java.util.Set<String> lifeNames() {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (com.bpm.minotaur.gamedata.worldlog.LifeRecord life : log().lives()) names.add(life.name);
+        return names;
+    }
+
     /** The life being lived gains a line, if a life is being lived. */
     public void note(Fact fact) {
         log().note(fact);
@@ -75,18 +82,7 @@ public final class WorldLogManager implements SlotScopedState {
         // Only the life this death closed: if no life was open, no earlier one is told again.
         com.bpm.minotaur.gamedata.worldlog.LifeRecord life = log().last();
         if (life == null || life.number != justDied || !life.tellings.isEmpty()) return;
-        int killerHouse = -1;
-        for (com.bpm.minotaur.gamedata.history.PlayerDeed d : deeds) {
-            if (d.kind == com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SEEKER_FELL) killerHouse = d.target;
-        }
-        boolean newStage = com.bpm.minotaur.gamedata.worldlog.Era.stageOf(hunger)
-                > com.bpm.minotaur.gamedata.worldlog.Era.stageOf(hunger - 1);
-        java.util.List<com.bpm.minotaur.gamedata.worldlog.Telling> tellings = new java.util.ArrayList<>();
-        for (com.bpm.minotaur.gamedata.worldlog.Tellings.Teller teller
-                : com.bpm.minotaur.gamedata.worldlog.Tellings.involved(world, deeds, newStage)) {
-            tellings.add(com.bpm.minotaur.gamedata.worldlog.Tellings.tell(teller, life, world, killerHouse));
-        }
-        log().tell(life.number, tellings);
+        log().tell(life.number, com.bpm.minotaur.gamedata.worldlog.Tellings.forLife(world, deeds, life, hunger));
         save();
     }
 

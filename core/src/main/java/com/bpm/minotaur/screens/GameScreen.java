@@ -731,7 +731,8 @@ public class GameScreen extends BaseScreen {
             if (player != null && lifeHistory != null && lifeHistory.world() != null
                     && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 if (player.needsLife()) {
-                    player.beginLife(lifeHistory.world(), new java.util.Random().nextLong());
+                    player.beginLife(lifeHistory.world(), new java.util.Random().nextLong(),
+                            com.bpm.minotaur.managers.WorldLogManager.getInstance().lifeNames());
                 }
                 if (!isDeathTransitionTriggered) {
                     // The World Log follows whoever the player is: a new body, a reroll, a loaded save (#280).

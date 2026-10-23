@@ -1157,6 +1157,8 @@ public class Player {
     private long lifeSeed;
     private boolean lifeRerolled;
     private boolean lifeRevealPending;
+    /** The names of the soul's earlier lives, which a reroll may not take either. */
+    private java.util.Set<String> lifeNamesTaken = java.util.Collections.emptySet();
     /** False for a save from before lives: its expedition is under way, so its prisoner is not woken on screen. */
     private boolean revealNextLife = true;
 
@@ -1171,8 +1173,14 @@ public class Player {
 
     /** Wakes in the prisoner {@code seed} forges, to be shown before play goes on. */
     public void beginLife(com.bpm.minotaur.gamedata.history.HistoryWorld world, long seed) {
+        beginLife(world, seed, java.util.Collections.emptySet());
+    }
+
+    /** As above, never under a name an earlier life of the soul bore (#286). */
+    public void beginLife(com.bpm.minotaur.gamedata.history.HistoryWorld world, long seed, java.util.Set<String> taken) {
+        this.lifeNamesTaken = taken;
         this.lifeSeed = seed;
-        this.life = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed);
+        this.life = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed, taken);
         this.lifeRerolled = false;
         this.lifeRevealPending = revealNextLife;
         this.revealNextLife = true;
@@ -1184,14 +1192,20 @@ public class Player {
 
     /** The one reroll of the whole identity. False, and nothing changes, once it is spent. */
     public boolean rerollLife(com.bpm.minotaur.gamedata.history.HistoryWorld world) {
+        return rerollLife(world, lifeNamesTaken);
+    }
+
+    /** As above, never under a name in {@code taken}: the soul's earlier lives' names (#286). */
+    public boolean rerollLife(com.bpm.minotaur.gamedata.history.HistoryWorld world, java.util.Set<String> taken) {
         if (!canRerollLife()) return false;
+        this.lifeNamesTaken = taken;
         // A seed one step on can forge the same prisoner; walk on until it doesn't.
         String before = life.summary();
         long seed = lifeSeed;
         com.bpm.minotaur.gamedata.history.Life next;
         do {
             seed++;
-            next = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed);
+            next = com.bpm.minotaur.gamedata.history.LifeForge.forge(world, seed, lifeNamesTaken);
         } while (next.summary().equals(before) && seed - lifeSeed < REROLL_SEARCH);
         this.lifeSeed = seed;
         this.life = next;
