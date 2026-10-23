@@ -3635,6 +3635,20 @@ public class CombatManager {
     }
 
     // --- FLANK ATTACK LOGIC ---
+    /**
+     * Whether a wall or a shut door stands between two side-by-side tiles. Walls are kept on the
+     * edges of tiles, on either side, so both are asked (playtest 2026-10-22: a monster struck
+     * through a wall).
+     */
+    static boolean wallBetween(Maze maze, int ax, int ay, int bx, int by) {
+        for (Direction dir : Direction.values()) {
+            if (ax + (int) dir.getVector().x != bx || ay + (int) dir.getVector().y != by) continue;
+            Direction back = Direction.values()[(dir.ordinal() + 2) % 4];
+            return maze.isWallBlocking(ax, ay, dir) || maze.isWallBlocking(bx, by, back);
+        }
+        return false;
+    }
+
     public boolean performMonsterFlankAttack(Monster attacker) {
         if (player == null || player.getCurrentHP() <= 0) return false;
         if (attacker == null || attacker == this.monster || !attacker.isAlive())
@@ -3645,6 +3659,11 @@ public class CombatManager {
                 + Math.abs(attacker.getPosition().y - player.getPosition().y));
         if (dist > 1)
             return false; // Too far
+        // Beside the player is not enough: a wall (or a shut door) between them stops the blow.
+        if (maze != null && wallBetween(maze, (int) attacker.getPosition().x, (int) attacker.getPosition().y,
+                (int) player.getPosition().x, (int) player.getPosition().y)) {
+            return false;
+        }
 
         // Determine Direction for Indicator
         Direction attackDir = null;
