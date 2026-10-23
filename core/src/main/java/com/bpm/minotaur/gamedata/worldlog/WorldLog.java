@@ -117,21 +117,57 @@ public final class WorldLog {
 
     /** Whether {@code houseId} has an account not yet found, of any life. */
     public boolean hasUnfoundTelling(int houseId) {
-        return unfound(houseId) != null;
+        return unfound(houseId, false) != null;
     }
 
-    /** Finds the oldest account {@code houseId} has not yet given up; null if none is left. */
+    /**
+     * A soldier of {@code houseId} takes up its oldest account no other soldier carries; false if
+     * none is left to carry. One scroll per account, so no scroll is found empty.
+     */
+    public boolean carryTelling(int houseId) {
+        Telling t = unfound(houseId, true);
+        if (t == null) return false;
+        t.carried = true;
+        return true;
+    }
+
+    /** Finds the oldest account {@code houseId} has not yet given up, carried first; null if none is left. */
     public Telling findTelling(int houseId) {
-        Telling t = unfound(houseId);
-        if (t != null) t.found = true;
+        Telling t = null;
+        for (Telling carried : tellingsOf(houseId)) {
+            if (carried.carried && !carried.found) {
+                t = carried;
+                break;
+            }
+        }
+        if (t == null) t = unfound(houseId, false);
+        if (t != null) {
+            t.found = true;
+            t.carried = false;
+        }
         return t;
     }
 
-    private Telling unfound(int houseId) {
+    /** A death shifts the maze: scrolls left lying in the old one are gone, and may be carried again. */
+    public void dropUncollectedTellings() {
+        for (LifeRecord life : lives) {
+            for (Telling t : life.tellings) t.carried = false;
+        }
+    }
+
+    private List<Telling> tellingsOf(int houseId) {
+        List<Telling> of = new ArrayList<>();
         for (LifeRecord life : lives) {
             for (Telling t : life.tellings) {
-                if (t.tellerHouseId == houseId && !t.found) return t;
+                if (t.tellerHouseId == houseId) of.add(t);
             }
+        }
+        return of;
+    }
+
+    private Telling unfound(int houseId, boolean uncarried) {
+        for (Telling t : tellingsOf(houseId)) {
+            if (!t.found && (!uncarried || !t.carried)) return t;
         }
         return null;
     }

@@ -2921,7 +2921,8 @@ public class GameScreen extends BaseScreen {
     /** Every pickup is toasted; a fragment of the Maze's history is read on the spot (plan T1.10). */
     private void onItemPickedUp(Item item) {
         hud.showPickupToast(item);
-        // A House's Telling is no fragment of the history: it is read from the World Log (#285).
+        // A Telling is a fragment of one of the soul's lives, not of the history's events: it is
+        // read from the World Log, where the Tellings are kept (#285).
         if (item != null && item.getType() == Item.ItemType.HOUSE_TELLING) {
             readTelling(item);
             return;

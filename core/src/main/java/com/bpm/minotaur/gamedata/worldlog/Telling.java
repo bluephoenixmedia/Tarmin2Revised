@@ -14,6 +14,8 @@ public final class Telling {
     public String plain;
     public String mythic;
     public boolean found;
+    /** A soldier carries it now, so no other drops it; cleared when a death shifts the maze. */
+    public boolean carried;
 
     /** For the save reader. */
     public Telling() {

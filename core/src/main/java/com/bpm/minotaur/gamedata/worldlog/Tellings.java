@@ -100,8 +100,11 @@ public final class Tellings {
         for (Map.Entry<Integer, Role> e : roles.entrySet()) {
             if (world.house(e.getKey()) != null) tellers.add(new Teller(e.getKey(), e.getValue()));
         }
-        // The Knell is Tarmin's own house's voice; its soldiers, the Legion, carry its Tellings.
-        if (newStage && world.tarminHouse() != null) tellers.add(new Teller(world.tarminHouse().id, Role.KNELL));
+        // The Knell is Tarmin's own house's voice; his Legion carries its Tellings. A house tells a
+        // life once, so if his house already tells it as its killer, the Knell keeps silent.
+        if (newStage && world.tarminHouse() != null && !roles.containsKey(world.tarminHouse().id)) {
+            tellers.add(new Teller(world.tarminHouse().id, Role.KNELL));
+        }
         return tellers;
     }
 

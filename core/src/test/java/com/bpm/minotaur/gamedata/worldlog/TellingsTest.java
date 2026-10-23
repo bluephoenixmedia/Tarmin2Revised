@@ -105,6 +105,31 @@ public class TellingsTest {
     }
 
     @Test
+    public void oneScrollPerTellingAndALostOneMayBeCarriedAgain() {
+        WorldLog log = WorldLog.upgradedFrom(2, 0);
+        log.wake(new Life("Brannoc Thatch", 1, "the Ashen Ford", Allegiance.REFUGEE_COUNCIL, Life.Origin.RAIDED,
+                "the Antlered Host", null, null), 2);
+        log.die("Slain", "a Kobold", "level 3", 40);
+        LifeRecord life = log.lives().get(0);
+        log.tell(life.number, Arrays.asList(
+                Tellings.tell(new Tellings.Teller(killer.id, Tellings.Role.KILLER), life, world, killer.id)));
+
+        assertTrue(log.carryTelling(killer.id));
+        assertFalse("a second soldier carries nothing", log.carryTelling(killer.id));
+        log.dropUncollectedTellings();
+        assertTrue("the scroll was lost to the Shifting: another may carry it", log.carryTelling(killer.id));
+        assertNotNull(log.findTelling(killer.id));
+        assertFalse(log.carryTelling(killer.id));
+    }
+
+    @Test
+    public void tarminsHouseTellsALifeItKilledOnceEvenAtANewStage() {
+        List<Tellings.Teller> tellers = Tellings.involved(world,
+                Arrays.asList(deed(PlayerDeed.Kind.SEEKER_FELL, castle.id)), true);
+        assertEquals(Arrays.asList(new Tellings.Teller(castle.id, Tellings.Role.KILLER)), tellers);
+    }
+
+    @Test
     public void aTellingIsFoundOnceThenShownAndKeptThroughTheSave() {
         WorldLog log = WorldLog.upgradedFrom(2, 0);
         log.wake(new Life("Brannoc Thatch", 1, "the Ashen Ford", Allegiance.REFUGEE_COUNCIL, Life.Origin.RAIDED,

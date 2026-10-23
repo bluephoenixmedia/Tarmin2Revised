@@ -1700,16 +1700,15 @@ public class WorldManager {
 
     /**
      * A soldier of a House that still has a life of the soul to tell may carry its account (#285):
-     * the Houses' own soldiers bear their Tellings, and the Antlered Host bears the Knell's.
+     * the Houses' own soldiers bear their Tellings, and Tarmin's Legion bears the Knell's.
      */
     private void dropTelling(com.bpm.minotaur.gamedata.monster.Monster m, int house) {
         if (m == null || house < 0 || tellingRoll.nextFloat() >= TELLING_DROP_CHANCE) return;
-        if (!WorldLogManager.getInstance().log().hasUnfoundTelling(house)) return;
         Maze maze = getCurrentMaze();
         if (maze == null || itemDataManager == null) return;
         java.util.List<GridPoint2> floor = freeFloorFrom(maze,
                 new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
-        if (floor.isEmpty()) return;
+        if (floor.isEmpty() || !WorldLogManager.getInstance().log().carryTelling(house)) return;
         GridPoint2 at = floor.get(0);
         com.bpm.minotaur.gamedata.item.Item telling = itemDataManager.createItem(
                 com.bpm.minotaur.gamedata.item.Item.ItemType.HOUSE_TELLING, at.x, at.y,

@@ -72,8 +72,9 @@ public final class WorldLogManager implements SlotScopedState {
      */
     public void tellLastLife(com.bpm.minotaur.gamedata.history.HistoryWorld world,
                              java.util.List<com.bpm.minotaur.gamedata.history.PlayerDeed> deeds, int hunger) {
+        // Only the life this death closed: if no life was open, no earlier one is told again.
         com.bpm.minotaur.gamedata.worldlog.LifeRecord life = log().last();
-        if (life == null || !life.isDead() || !life.tellings.isEmpty()) return;
+        if (life == null || life.number != justDied || !life.tellings.isEmpty()) return;
         int killerHouse = -1;
         for (com.bpm.minotaur.gamedata.history.PlayerDeed d : deeds) {
             if (d.kind == com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SEEKER_FELL) killerHouse = d.target;
@@ -98,9 +99,15 @@ public final class WorldLogManager implements SlotScopedState {
 
     /** The life being lived ends; the log is written at once, before anything else can go wrong. */
     public void die(String epitaph, String killer, String place, int turn) {
+        com.bpm.minotaur.gamedata.worldlog.LifeRecord open = log().current();
+        justDied = open != null ? open.number : -1;
         log().die(epitaph, killer, place, turn);
+        log().dropUncollectedTellings();
         save();
     }
+
+    /** The number of the life the last death closed, or -1 if it closed none. */
+    private int justDied = -1;
 
     /** A deed of the player's own, as a line of the life being lived; the run's other deeds are not. */
     public void noteDeed(PlayerDeed deed, HistoryWorld world) {
