@@ -29,6 +29,9 @@ public final class LifeRecord {
     /** Whether this life has felled a Heavy yet; only the first is a line. */
     public boolean firstHeavyNoted;
 
+    /** The Houses' accounts of this life, written at its death (#285). */
+    public ArrayList<Telling> tellings = new ArrayList<>();
+
     public boolean dead;
     public String epitaph;
     public String killer;

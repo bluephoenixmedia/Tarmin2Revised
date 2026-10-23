@@ -321,6 +321,7 @@ public class WorldManager {
                     "A contract kept. Return to a war camp of your house to be paid.", 5f));
         }
         onNemesisSlain(m);
+        dropTelling(m, house);
         String message = SealCourt.onSlain(m, getHistory(), com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance());
         if (message != null && events != null) {
             events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(message, 6f));
@@ -1692,6 +1693,30 @@ public class WorldManager {
     private final java.util.Set<Integer> nemesesSpokenThisVisit = new java.util.HashSet<>();
     /** Picks what a Nemesis says: presentation only, never history, so it needs no seed. */
     private final java.util.Random nemesisVoice = new java.util.Random();
+
+    /** How often a slain soldier carries its House's account of one of the soul's lives (#285). */
+    static final float TELLING_DROP_CHANCE = 0.2f;
+    private final java.util.Random tellingRoll = new java.util.Random();
+
+    /**
+     * A soldier of a House that still has a life of the soul to tell may carry its account (#285):
+     * the Houses' own soldiers bear their Tellings, and Tarmin's Legion bears the Knell's.
+     */
+    private void dropTelling(com.bpm.minotaur.gamedata.monster.Monster m, int house) {
+        if (m == null || house < 0 || tellingRoll.nextFloat() >= TELLING_DROP_CHANCE) return;
+        Maze maze = getCurrentMaze();
+        if (maze == null || itemDataManager == null) return;
+        java.util.List<GridPoint2> floor = freeFloorFrom(maze,
+                new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
+        if (floor.isEmpty() || !WorldLogManager.getInstance().log().carryTelling(house)) return;
+        GridPoint2 at = floor.get(0);
+        com.bpm.minotaur.gamedata.item.Item telling = itemDataManager.createItem(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.HOUSE_TELLING, at.x, at.y,
+                com.bpm.minotaur.gamedata.item.ItemColor.TAN, assetManager);
+        if (telling == null) return;
+        telling.setTrophyHouseId(house);
+        maze.addItem(telling);
+    }
 
     private com.bpm.minotaur.gamedata.history.Nemesis nemesisOfFigure(int figureId) {
         for (com.bpm.minotaur.gamedata.history.Nemesis n : history.world().nemeses()) {

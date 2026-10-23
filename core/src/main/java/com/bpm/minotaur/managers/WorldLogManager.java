@@ -66,11 +66,48 @@ public final class WorldLogManager implements SlotScopedState {
         }
     }
 
-    /** The life being lived ends; the log is written at once, before anything else can go wrong. */
-    public void die(String epitaph, String killer, String place, int turn) {
-        log().die(epitaph, killer, place, turn);
+    /**
+     * The Houses tell the life that has just ended (#285): every House it touched, and the Knell
+     * when its death brought the Hunger to a new stage.
+     */
+    public void tellLastLife(com.bpm.minotaur.gamedata.history.HistoryWorld world,
+                             java.util.List<com.bpm.minotaur.gamedata.history.PlayerDeed> deeds, int hunger) {
+        // Only the life this death closed: if no life was open, no earlier one is told again.
+        com.bpm.minotaur.gamedata.worldlog.LifeRecord life = log().last();
+        if (life == null || life.number != justDied || !life.tellings.isEmpty()) return;
+        int killerHouse = -1;
+        for (com.bpm.minotaur.gamedata.history.PlayerDeed d : deeds) {
+            if (d.kind == com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.SEEKER_FELL) killerHouse = d.target;
+        }
+        boolean newStage = com.bpm.minotaur.gamedata.worldlog.Era.stageOf(hunger)
+                > com.bpm.minotaur.gamedata.worldlog.Era.stageOf(hunger - 1);
+        java.util.List<com.bpm.minotaur.gamedata.worldlog.Telling> tellings = new java.util.ArrayList<>();
+        for (com.bpm.minotaur.gamedata.worldlog.Tellings.Teller teller
+                : com.bpm.minotaur.gamedata.worldlog.Tellings.involved(world, deeds, newStage)) {
+            tellings.add(com.bpm.minotaur.gamedata.worldlog.Tellings.tell(teller, life, world, killerHouse));
+        }
+        log().tell(life.number, tellings);
         save();
     }
+
+    /** Gives up {@code houseId}'s oldest unfound account, marked found and saved; null if none is left. */
+    public com.bpm.minotaur.gamedata.worldlog.Telling findTelling(int houseId) {
+        com.bpm.minotaur.gamedata.worldlog.Telling t = log().findTelling(houseId);
+        if (t != null) save();
+        return t;
+    }
+
+    /** The life being lived ends; the log is written at once, before anything else can go wrong. */
+    public void die(String epitaph, String killer, String place, int turn) {
+        com.bpm.minotaur.gamedata.worldlog.LifeRecord open = log().current();
+        justDied = open != null ? open.number : -1;
+        log().die(epitaph, killer, place, turn);
+        log().dropUncollectedTellings();
+        save();
+    }
+
+    /** The number of the life the last death closed, or -1 if it closed none. */
+    private int justDied = -1;
 
     /** A deed of the player's own, as a line of the life being lived; the run's other deeds are not. */
     public void noteDeed(PlayerDeed deed, HistoryWorld world) {
