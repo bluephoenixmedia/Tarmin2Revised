@@ -21,6 +21,8 @@ public final class WorldLog {
     private long eraSeed;
     /** Each Era's name by stage, fixed the first time a life wakes in it; "" until then. */
     private ArrayList<String> eraNames = new ArrayList<>();
+    /** How many of the myth's revelations the soul has read, in order (#288). */
+    private int revelationsRead;
 
     /** A new world: nothing forgotten, nothing reached. Also the save reader's constructor. */
     public WorldLog() {
@@ -37,6 +39,14 @@ public final class WorldLog {
         log.unremembered = Math.max(0, hunger);
         log.soulDeepest = deepestLevel;
         return log;
+    }
+
+    public int revelationsRead() {
+        return revelationsRead;
+    }
+
+    public void markRevelationRead() {
+        revelationsRead++;
     }
 
     public int unremembered() {

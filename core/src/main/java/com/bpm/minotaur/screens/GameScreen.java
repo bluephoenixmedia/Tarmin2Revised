@@ -252,8 +252,11 @@ public class GameScreen extends BaseScreen {
                     com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().hasSeal(road));
         });
         // The Void's glyphs tell how Tarmin-Zul came through; reading one enters it in the chronicle.
-        DimensionalManager.getInstance().setOnLoreRead(() -> worldManager.getHistory()
-                .readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.VOID_GLYPH));
+        DimensionalManager.getInstance().setOnLoreRead(() -> {
+            worldManager.getHistory().readFragment(com.bpm.minotaur.gamedata.history.FragmentKind.VOID_GLYPH);
+            // The Void's glyphs also give up the myth, a layer at a time (#288).
+            revealIfDue();
+        });
         this.monsterAiManager.setOnPlayerNoticed(alertMonitor::noteMonsterNoticed);
 
         // Initialize Input Multiplexer
@@ -1348,7 +1351,7 @@ public class GameScreen extends BaseScreen {
                     if (god != null) {
                         boolean dark = worldManager != null && worldManager.getHistory() != null
                                 && worldManager.getHistory().world().isSpent(god);
-                        encounter = com.bpm.minotaur.gamedata.history.Shrine.view(encounter, god, dark);
+                        encounter = com.bpm.minotaur.gamedata.history.Shrine.view(encounter, god, dark, revealLayer());
                     }
                     hud.getEncounterWindow().show(encounter);
                 }
@@ -2906,6 +2909,22 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** How much of the myth the soul may know now: by the Hunger, or all of it at the last stand (#288). */
+    private static com.bpm.minotaur.gamedata.history.Reveal.Layer revealLayer() {
+        DoomManager doom = DoomManager.getInstance();
+        return com.bpm.minotaur.gamedata.history.Reveal.layerFor(doom.getDeathCount(), doom.isBridgeBossActive());
+    }
+
+    /** Tells the next revelation the soul has earned and not read; false if there is none. */
+    private boolean revealIfDue() {
+        String revelation = com.bpm.minotaur.gamedata.history.Reveal.take(
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().log(), revealLayer());
+        if (revelation == null) return false;
+        com.bpm.minotaur.managers.WorldLogManager.getInstance().save();
+        eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize("You understand: " + revelation), 10f));
+        return true;
+    }
+
     /** A House's account of one of the soul's lives (#285): read now, kept in the Book of Lives. */
     private void readTelling(Item item) {
         player.getInventory().removeItem(item);
@@ -2930,6 +2949,8 @@ public class GameScreen extends BaseScreen {
         if (item == null || item.fragmentKind() == null || item.isTrophyRead()) return;
         if (item.isChronicleFragment()) player.getInventory().removeItem(item);
         item.markTrophyRead();
+        // A revelation of the myth the soul has earned comes before the history's own news (#288).
+        if (revealIfDue()) return;
         com.bpm.minotaur.gamedata.history.HistoryEvent told = worldManager.getHistory().readFragment(item.fragmentKind());
         if (told == null) {
             eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));

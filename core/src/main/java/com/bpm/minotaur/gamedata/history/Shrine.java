@@ -15,7 +15,17 @@ public final class Shrine {
     private Shrine() {
     }
 
+    /** The shrine with everything known of its god. */
     public static Encounter view(Encounter base, OldGod god, boolean dark) {
+        return view(base, god, dark, Reveal.Layer.LAST_STAND);
+    }
+
+    /**
+     * The shrine as the soul knows it (#288): before the Bridge is known, one of the old shrines,
+     * its god and Kindred unnamed, its rites only the old rites.
+     */
+    public static Encounter view(Encounter base, OldGod god, boolean dark, Reveal.Layer layer) {
+        boolean named = layer.ordinal() >= Reveal.Layer.BRIDGE.ordinal();
         Encounter view = new Encounter();
         view.id = base.id;
         view.title = base.title;
@@ -25,15 +35,19 @@ public final class Shrine {
         view.choices = new ArrayList<>();
         if (dark) {
             String shrine = base.title.startsWith("The ") ? base.title : "The " + base.title;
-            view.text = shrine + " stands dark. " + capital(god.fullName) + " is spent, and nothing answers.";
+            view.text = shrine + " stands dark. " + (named ? capital(god.fullName) + " is spent" : "Its power is spent")
+                    + ", and nothing answers.";
             view.choices.add(wayOut(base));
             return view;
         }
-        view.text = base.text + "\n\nThis is the shrine of " + god.fullName + ", of " + god.domain + ". "
-                + god.kindred.title + ": " + god.kindred.fear + ".";
+        view.text = base.text + (named
+                ? "\n\nThis is the shrine of " + god.fullName + ", of " + god.domain + ". "
+                        + god.kindred.title + ": " + god.kindred.fear + "."
+                : "\n\nThis is one of the old shrines; whose, no one remembers.");
+        String owner = named ? god.riteOwner() : "The old rite";
         for (EncounterChoice choice : base.choices) {
             EncounterChoice rite = copy(choice);
-            if (!isLeave(choice)) rite.text = god.riteOwner() + ": " + choice.text;
+            if (!isLeave(choice)) rite.text = owner + ": " + choice.text;
             view.choices.add(rite);
         }
         return view;
