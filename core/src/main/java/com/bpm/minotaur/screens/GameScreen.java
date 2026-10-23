@@ -2103,8 +2103,6 @@ public class GameScreen extends BaseScreen {
         player.giveStarterLantern(game.getItemDataManager().createItem(
                 Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, game.getAssetManager()),
                 com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().getItems());
-        player.giveStarterWaterskin(game.getItemDataManager().createItem(
-                Item.ItemType.WATERSKIN, 0, 0, ItemColor.TAN, game.getAssetManager()));
 
         // Reset the combat dice pool so it cleanly contains the starter Rusty Iron Die
         if (player.getStats() != null && player.getStats().getDicePool() != null) {

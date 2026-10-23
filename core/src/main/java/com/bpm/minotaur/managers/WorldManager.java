@@ -660,7 +660,8 @@ public class WorldManager {
 
         // Water: common on the surface, scarce in the strata (#193).
         com.bpm.minotaur.generation.WaterSupply.apply(newMaze, biome, currentLevel, chunkSeed,
-                com.bpm.minotaur.generation.WaterSupply.nearShelter(chunkId, new GridPoint2(0, 0), respawnChunk));
+                com.bpm.minotaur.generation.WaterSupply.nearShelter(chunkId,
+                        com.bpm.minotaur.generation.WaterSupply.HOME_CHUNK, respawnChunk));
 
         // Hidden choice events (data/events.json). Statues are placed by the generators and are
         // a separate feature; see docs/DEsign/events.md.

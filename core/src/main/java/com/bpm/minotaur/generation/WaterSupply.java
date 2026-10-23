@@ -27,13 +27,15 @@ public final class WaterSupply {
     static final int PUDDLES_MIN = 2;
     static final int PUDDLES_MAX = 4;
 
-    private WaterSupply() {
-    }
-
     /** How far, in chunks, a Shelter's promise of water reaches. */
     static final int HOME_REACH = 2;
     /** The deepest level near home that is promised clean water: the first stratum. */
     static final int HOME_WATER_DEPTH = 2;
+    /** The chunk of the home Shelter, where every new game begins. */
+    public static final GridPoint2 HOME_CHUNK = new GridPoint2(0, 0);
+
+    private WaterSupply() {
+    }
 
     /** Applies the rule for this chunk's depth. */
     public static void apply(Maze maze, Biome biome, int level, long chunkSeed) {
@@ -74,12 +76,7 @@ public final class WaterSupply {
 
     /** One small spring of clean water on open floor. */
     private static void addSpring(Maze maze, Random rng) {
-        List<GridPoint2> open = new ArrayList<>();
-        for (int y = 2; y < maze.getHeight() - 2; y++) {
-            for (int x = 2; x < maze.getWidth() - 2; x++) {
-                if (isOpen(maze, x, y)) open.add(new GridPoint2(x, y));
-            }
-        }
+        List<GridPoint2> open = openTiles(maze);
         if (open.isEmpty()) return;
         GridPoint2 c = open.get(rng.nextInt(open.size()));
         maze.getLiquidManager().setLiquidAt(c.x, c.y, LiquidType.WATER);
@@ -124,12 +121,7 @@ public final class WaterSupply {
     private static void addPuddles(Maze maze, Random rng) {
         LiquidManager liquids = maze.getLiquidManager();
         if (countWater(liquids, maze.getWidth(), maze.getHeight()) >= SURFACE_MIN_WATER) return;
-        List<GridPoint2> open = new ArrayList<>();
-        for (int y = 2; y < maze.getHeight() - 2; y++) {
-            for (int x = 2; x < maze.getWidth() - 2; x++) {
-                if (isOpen(maze, x, y)) open.add(new GridPoint2(x, y));
-            }
-        }
+        List<GridPoint2> open = openTiles(maze);
         if (open.isEmpty()) return;
         int puddles = PUDDLES_MIN + rng.nextInt(PUDDLES_MAX - PUDDLES_MIN + 1);
         for (int i = 0; i < puddles; i++) {
@@ -143,6 +135,17 @@ public final class WaterSupply {
                 }
             }
         }
+    }
+
+    /** Open floor away from the chunk's edge, where water may be laid. */
+    private static List<GridPoint2> openTiles(Maze maze) {
+        List<GridPoint2> open = new ArrayList<>();
+        for (int y = 2; y < maze.getHeight() - 2; y++) {
+            for (int x = 2; x < maze.getWidth() - 2; x++) {
+                if (isOpen(maze, x, y)) open.add(new GridPoint2(x, y));
+            }
+        }
+        return open;
     }
 
     private static boolean isOpen(Maze maze, int x, int y) {
