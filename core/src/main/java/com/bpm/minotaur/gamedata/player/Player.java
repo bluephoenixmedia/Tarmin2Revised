@@ -4270,6 +4270,16 @@ public class Player {
     /** Tinder Bundles a new character carries: enough to claim the first two shelters. */
     public static final int STARTING_TINDER = 2;
 
+    /**
+     * Every life sets out with a full skin of clean water, not only the first: the rebirth used
+     * to give none, and two lives in a row died parched (playtest 2026-10-22).
+     */
+    public boolean giveStarterWaterskin(Item skin) {
+        if (skin == null || !com.bpm.minotaur.gamedata.item.Waterskin.is(skin)) return false;
+        com.bpm.minotaur.gamedata.item.Waterskin.fill(skin, com.bpm.minotaur.gamedata.liquid.LiquidType.WATER, false);
+        return inventory.pickupToBackpack(skin);
+    }
+
     public boolean giveStarterLantern(Item lantern) {
         return giveStarterLantern(lantern, java.util.Collections.<Item>emptyList());
     }

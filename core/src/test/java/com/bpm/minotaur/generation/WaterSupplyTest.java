@@ -37,4 +37,43 @@ public class WaterSupplyTest {
         assertTrue(counts.getOrDefault(LiquidType.BLACK_MUCK, 0) > 0);
         assertTrue(counts.getOrDefault(LiquidType.FREEZING_SLUSH, 0) > 0);
     }
+    private static com.bpm.minotaur.gamedata.Maze dryChunk() {
+        // Open floor, no liquid at all: the worst case a tundra start or a fouled stratum leaves.
+        return new com.bpm.minotaur.gamedata.Maze(1, new int[24][24]);
+    }
+
+    private static int cleanWater(com.bpm.minotaur.gamedata.Maze maze) {
+        return WaterSupply.countWater(maze.getLiquidManager(), maze.getWidth(), maze.getHeight());
+    }
+
+    @Test
+    public void nearHomeThereIsAlwaysCleanWaterOnTheSurfaceAndTheFirstStratum() {
+        com.bpm.minotaur.gamedata.Maze tundra = dryChunk();
+        WaterSupply.apply(tundra, Biome.TUNDRA, 1, 11L, true);
+        assertTrue("a tundra chunk by the Shelter gets a spring", cleanWater(tundra) > 0);
+
+        com.bpm.minotaur.gamedata.Maze stratum = dryChunk();
+        WaterSupply.apply(stratum, Biome.MAZE, 2, 12L, true);
+        assertTrue("so does the first stratum beneath it, after the fouling", cleanWater(stratum) > 0);
+    }
+
+    @Test
+    public void farFromHomeOrDeeperTheWaterIsLeftAsItIs() {
+        com.bpm.minotaur.gamedata.Maze far = dryChunk();
+        WaterSupply.apply(far, Biome.TUNDRA, 1, 13L, false);
+        assertEquals(0, cleanWater(far));
+
+        com.bpm.minotaur.gamedata.Maze deep = dryChunk();
+        WaterSupply.apply(deep, Biome.MAZE, 3, 14L, true);
+        assertEquals("only the first stratum is promised water", 0, cleanWater(deep));
+    }
+
+    @Test
+    public void onlyChunksWithinTwoOfAShelterAreNearHome() {
+        com.badlogic.gdx.math.GridPoint2 home = new com.badlogic.gdx.math.GridPoint2(0, 0);
+        assertTrue(WaterSupply.nearShelter(new com.badlogic.gdx.math.GridPoint2(2, -2), home, null));
+        assertFalse(WaterSupply.nearShelter(new com.badlogic.gdx.math.GridPoint2(3, 0), home, null));
+        assertTrue("the Shelter the soul now wakes in counts too",
+                WaterSupply.nearShelter(new com.badlogic.gdx.math.GridPoint2(9, 1), home, new com.badlogic.gdx.math.GridPoint2(8, 0)));
+    }
 }
