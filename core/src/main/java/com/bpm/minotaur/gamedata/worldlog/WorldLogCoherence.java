@@ -61,6 +61,24 @@ public final class WorldLogCoherence {
             }
         }
 
+        // Every Bridge but the one being built has ended, and says how (#290).
+        Map<Integer, Integer> inBridges = new HashMap<>();
+        for (Bridge bridge : log.bridges()) {
+            if (bridge.index < log.currentBridge() && bridge.reckoning == null) {
+                problems.add(bridge.name + " ended, but no Reckoning tells how");
+            }
+            if (bridge.reckoning != null && (bridge.reckoning.plain == null || !bridge.reckoning.plain.toLowerCase().contains("bridge"))) {
+                problems.add(bridge.name + "'s Reckoning does not tell of the Bridge: " + bridge.reckoning.plain);
+            }
+            for (Era era : bridge.eras) {
+                for (LifeRecord life : era.lives) inBridges.merge(life.number, 1, Integer::sum);
+            }
+        }
+        for (LifeRecord life : log.lives()) {
+            int count = inBridges.getOrDefault(life.number, 0);
+            if (count != 1) problems.add("life " + life.number + " stands in " + count + " Bridges, not one");
+        }
+
         Map<Integer, Integer> inEras = new HashMap<>();
         for (Era era : log.eras()) {
             for (LifeRecord life : era.lives) inEras.merge(life.number, 1, Integer::sum);

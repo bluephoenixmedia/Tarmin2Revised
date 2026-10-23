@@ -222,11 +222,12 @@ public class SaveManager {
 
     public int getMostRecentOccupiedSlot() {
         int last = getProfile().lastPlayedSlot;
-        if (last >= 1 && last <= MAX_SLOTS && getSlotMetadata(last).isOccupied) {
+        // A finished world is read, never continued (#290).
+        if (last >= 1 && last <= MAX_SLOTS && getSlotMetadata(last).isOccupied && !getSlotMetadata(last).finished) {
             return last;
         }
         for (int i = 1; i <= MAX_SLOTS; i++) {
-            if (getSlotMetadata(i).isOccupied) {
+            if (getSlotMetadata(i).isOccupied && !getSlotMetadata(i).finished) {
                 return i;
             }
         }
@@ -309,11 +310,21 @@ public class SaveManager {
         }
     }
 
-    public void wipeActiveSlotOnApocalypse() {
-        log("APOCALYPSE: Wiping active slot " + activeSlotIndex);
+    /**
+     * The Last Crossing ended the active world (#278, #290). Nothing is wiped: the slot is kept,
+     * finished, so its World Log can still be read; it can never be played again.
+     */
+    public void markActiveSlotFinished() {
+        SlotMetadata meta = getSlotMetadata(activeSlotIndex);
+        if (meta == null) return;
+        meta.finished = true;
         getProfile().totalRunsAttempted++;
         saveProfile();
-        deleteSlot(activeSlotIndex);
+        try {
+            atomicWriteJson(getFileHandle(getActiveSlotFilePath("meta.json")), meta);
+        } catch (Exception e) {
+            logError("Failed to mark slot " + activeSlotIndex + " finished", e);
+        }
     }
 
     // --- Save Orchestration ---

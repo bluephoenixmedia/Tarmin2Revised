@@ -726,6 +726,12 @@ public class GameScreen extends BaseScreen {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
                 return;
             }
+            // Tarmin crossed with the last death: an old god must be spent before the soul wakes (#290).
+            if (DoomManager.getInstance().isCrossingPending() && worldManager != null && worldManager.getHistory() != null
+                    && !isDeathTransitionTriggered) {
+                game.setScreen(new GodChoiceScreen(game, this, worldManager.getHistory()));
+                return;
+            }
             // Who the soul wakes in (#279), before the trait: a new game, a rebirth, or an older save.
             com.bpm.minotaur.managers.HistoryManager lifeHistory = worldManager != null ? worldManager.getHistory() : null;
             if (player != null && lifeHistory != null && lifeHistory.world() != null
@@ -1467,6 +1473,15 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().tellLastLife(
                         worldManager.getHistory().world(), worldManager.getHistory().lastLifeDeeds(),
                         DoomManager.getInstance().getDeathCount());
+                if (DoomManager.getInstance().isCrossingPending()) {
+                    // A death while the Warden stood: Tarmin crosses (#276, #290).
+                    worldManager.getHistory().recordCrossing();
+                    if (com.bpm.minotaur.gamedata.history.OldGod.spendable(worldManager.getHistory().world()).isEmpty()) {
+                        lastCrossing = com.bpm.minotaur.managers.WorldLogManager.getInstance()
+                                .lastCrossing(worldManager.getHistory());
+                        DoomManager.getInstance().clearCrossing();
+                    }
+                }
             }
 
             // Record Bones File for Advanced Mode (full player snapshot before item retention)
@@ -1477,14 +1492,12 @@ public class GameScreen extends BaseScreen {
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
             Gdx.app.log("GameScreen", "Doom updated on death. Count: " + deaths + " (" + (int) bridge + "%)");
 
-            // 2. Check for Apocalypse Wipe (50 deaths reached)
-            if (DoomManager.getInstance().isApocalypse()) {
-                Gdx.app.log("GameScreen", "Apocalypse condition met! Triggering GameOverScreen.");
-                // The 50th death used to return here before the death sound and the unlock roll,
-                // making the most significant death in the game the only silent one. It now gets
-                // the same sequence as any other death -- but still no unlocks, because the
-                // ritual consumes the run and there is no future expedition to unlock for.
-                beginDeathSequence(new GameOverScreen(game));
+            // 2. The Last Crossing (#278, #290): no old god was left to hold Tarmin. The world ends;
+            //    the slot is finished, and can only be read in the World Log from now on.
+            if (lastCrossing != null) {
+                Gdx.app.log("GameScreen", "The Last Crossing. The slot is finished.");
+                SaveManager.getInstance().markActiveSlotFinished();
+                beginDeathSequence(new GameOverScreen(game, lastCrossing));
                 return;
             }
 
@@ -1992,6 +2005,15 @@ public class GameScreen extends BaseScreen {
         // A monster's kind, not a name: "a Kobold", "an Ogre".
         String kind = com.bpm.minotaur.ui.UiNames.fromConstant(killer);
         return ("AEIOU".indexOf(Character.toUpperCase(kind.charAt(0))) >= 0 ? "an " : "a ") + kind;
+    }
+
+    /** The Last Crossing's Reckoning, once no god was left to hold Tarmin; null until then. */
+    private com.bpm.minotaur.gamedata.worldlog.Reckoning lastCrossing;
+
+    /** How many old gods still keep the soul, or -1 when there is no history to ask (#290). */
+    int keepers() {
+        return worldManager != null && worldManager.getHistory() != null
+                ? com.bpm.minotaur.gamedata.history.OldGod.keepers(worldManager.getHistory().world()) : -1;
     }
 
     /** The soul's name, the one typed or generated at a new game (#268). */
@@ -5068,7 +5090,7 @@ public class GameScreen extends BaseScreen {
             if (soundManager != null) {
                 soundManager.playBookFlipSound();
             }
-            game.setScreen(new WorldLogScreen(game, this, soulName()));
+            game.setScreen(new WorldLogScreen(game, this, soulName(), keepers()));
             return;
         }
 

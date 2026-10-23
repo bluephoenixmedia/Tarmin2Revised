@@ -33,6 +33,9 @@ public final class Tellings {
         SWORN(1,
                 "{name} of {home}, the {nth} seeker, swore to {house} and died a loyal sword, cut down by {killer}.",
                 "{house} remembers the {nth} seeker, {name} of {home}: faithful to the last, and lost to the dark."),
+        ROSE(0,
+                "{name} of {home}, the {nth} seeker, died, and Tarmin crossed. While he was gone, {house} took the Maze.",
+                "{house} gives thanks for the {nth} seeker, {name} of {home}, whose death opened the throne to the bold."),
         KNELL(0,
                 "Another stone for the Bridge: {name} of {home}, the {nth} seeker, is dead. Tarmin hungers.",
                 "The Knell tolls for the {nth} seeker, {name} of {home}, and the far shore draws nearer.");

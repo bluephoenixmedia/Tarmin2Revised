@@ -49,10 +49,16 @@ public class WorldLogScreen extends BaseScreen {
     private int selected;
     private Stage stage;
 
-    public WorldLogScreen(Tarmin2 game, Screen back, String soulName) {
+    /** How many old gods still keep the soul; -1 when unknown. */
+    private final int keepers;
+    /** The list entries that stand for a Bridge's Reckoning, and the Bridge each stands for. */
+    private final java.util.Map<LifeRecord, com.bpm.minotaur.gamedata.worldlog.Bridge> reckoningPages = new java.util.HashMap<>();
+
+    public WorldLogScreen(Tarmin2 game, Screen back, String soulName, int keepers) {
         super(game);
         this.back = back;
         this.soulName = soulName;
+        this.keepers = keepers;
         this.skin = new HudSkin();
         this.log = WorldLogManager.getInstance().log();
     }
@@ -78,14 +84,24 @@ public class WorldLogScreen extends BaseScreen {
                 .colspan(2).padBottom(UiTheme.PAD_SM).row();
         root.add(bridgeBar()).colspan(2).padBottom(UiTheme.PAD_XL).row();
 
-        List<Era> eras = log.eras();
         order.clear();
+        reckoningPages.clear();
         Table list = new Table();
         list.top().left();
-        for (Era era : eras) {
-            Label heading = UiLabels.ellipsized(UiGlyphs.sanitize(era.name.toUpperCase()), UiStyles.caption(skin, UiTheme.GOLD));
-            list.add(heading).width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_MD).row();
-            for (LifeRecord life : era.lives) list.add(entry(life)).width(UiTheme.LIST_COLUMN_W).row();
+        // Bridge by Bridge, newest first; an ended Bridge's Reckoning heads its lives (#290).
+        for (com.bpm.minotaur.gamedata.worldlog.Bridge bridge : log.bridges()) {
+            list.add(UiLabels.ellipsized(UiGlyphs.sanitize(bridge.name.toUpperCase()), new Label.LabelStyle(skin.getFontMain(), UiTheme.GOLD)))
+                    .width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_MD).row();
+            if (bridge.reckoning != null) {
+                LifeRecord page = new LifeRecord();
+                reckoningPages.put(page, bridge);
+                list.add(entry(page)).width(UiTheme.LIST_COLUMN_W).row();
+            }
+            for (Era era : bridge.eras) {
+                Label heading = UiLabels.ellipsized(UiGlyphs.sanitize(era.name.toUpperCase()), UiStyles.caption(skin, UiTheme.GOLD));
+                list.add(heading).width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_SM).row();
+                for (LifeRecord life : era.lives) list.add(entry(life)).width(UiTheme.LIST_COLUMN_W).row();
+            }
         }
         if (log.unremembered() > 0) list.add(entry(null)).width(UiTheme.LIST_COLUMN_W).padTop(UiTheme.PAD_MD).row();
         // Last, so the Book still opens on the newest life.
@@ -118,14 +134,19 @@ public class WorldLogScreen extends BaseScreen {
         }
         bar.add(stones).row();
         bar.add(UiLabels.of(UiGlyphs.sanitize("THE BRIDGE OF SOULS: " + laid + " OF " + span + " STONES LAID"),
-                UiStyles.caption(skin, UiTheme.TEXT_DIM))).padTop(UiTheme.PAD_XS);
+                UiStyles.caption(skin, UiTheme.TEXT_DIM))).padTop(UiTheme.PAD_XS).row();
+        if (keepers >= 0) {
+            bar.add(UiLabels.of(UiNames.plural(keepers, "KEEPER", "KEEPERS") + " REMAIN",
+                    UiStyles.caption(skin, keepers == 0 ? UiTheme.DANGER : UiTheme.GOLD))).padTop(UiTheme.PAD_XS);
+        }
         return bar;
     }
 
     private TextButton entry(final LifeRecord life) {
         final int index = order.size();
         order.add(life);
-        String text = life == LEARNED ? "WHAT THE SOUL HAS LEARNED"
+        String text = reckoningPages.containsKey(life) ? "HOW IT ENDED"
+                : life == LEARNED ? "WHAT THE SOUL HAS LEARNED"
                 : life == null ? UiNames.plural(log.unremembered(), "LIFE", "LIVES") + " UNREMEMBERED"
                 : life.number + ". " + life.name.toUpperCase();
         TextButton button = new TextButton(UiGlyphs.sanitize(text), UiStyles.menu(skin));
@@ -152,6 +173,15 @@ public class WorldLogScreen extends BaseScreen {
             return page;
         }
         LifeRecord life = order.get(selected);
+        if (reckoningPages.containsKey(life)) {
+            com.bpm.minotaur.gamedata.worldlog.Bridge bridge = reckoningPages.get(life);
+            page.add(wrap(bridge.name.toUpperCase(), new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
+                    .padBottom(UiTheme.PAD_MD).row();
+            page.add(wrap(bridge.reckoning.plain, UiStyles.body(skin))).padBottom(UiTheme.PAD_MD).row();
+            page.add(UiLabels.ellipsized("AS THE KNELL TELLS IT", UiStyles.caption(skin, UiTheme.GOLD))).row();
+            page.add(wrap(bridge.reckoning.mythic, UiStyles.body(skin, UiTheme.TEXT_DIM))).row();
+            return page;
+        }
         if (life == LEARNED) {
             page.add(wrap("WHAT THE SOUL HAS LEARNED", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
                     .padBottom(UiTheme.PAD_MD).row();

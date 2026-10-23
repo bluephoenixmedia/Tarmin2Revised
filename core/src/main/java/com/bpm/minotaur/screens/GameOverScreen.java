@@ -57,8 +57,16 @@ public class GameOverScreen extends BaseScreen {
             "..##......##............",
     };
 
+    /** The Last Crossing's Reckoning (#290), or null for an ordinary ending. */
+    private final com.bpm.minotaur.gamedata.worldlog.Reckoning reckoning;
+
     public GameOverScreen(Tarmin2 game) {
+        this(game, null);
+    }
+
+    public GameOverScreen(Tarmin2 game, com.bpm.minotaur.gamedata.worldlog.Reckoning reckoning) {
         super(game);
+        this.reckoning = reckoning;
         this.hudSkin = new com.bpm.minotaur.rendering.HudSkin();
 
         // --- FIX: Initialize DebugManager before SoundManager to avoid null pointers
@@ -193,7 +201,7 @@ public class GameOverScreen extends BaseScreen {
 
         // Draw text
         com.bpm.minotaur.managers.DoomManager doom = com.bpm.minotaur.managers.DoomManager.getInstance();
-        boolean isApocalypse = doom.isApocalypse();
+        boolean isApocalypse = reckoning != null;
 
         float centerX = game.getViewport().getWorldWidth() / 2f;
         float centerY = game.getViewport().getWorldHeight() / 2f;
@@ -204,9 +212,13 @@ public class GameOverScreen extends BaseScreen {
 
         if (isApocalypse) {
             fontCompass.setColor(com.bpm.minotaur.rendering.HudSkin.COL_HP_CRITICAL);
-            fontCompass.draw(game.getBatch(), "THE BRIDGE IS COMPLETE", centerX - 260, centerY + 80);
-            fontHeader.setColor(com.bpm.minotaur.rendering.HudSkin.COL_GOLD_BRIGHT);
-            fontHeader.draw(game.getBatch(), "TARMIN FEASTS...", centerX - 120, centerY + 20);
+            fontCompass.draw(game.getBatch(), "THE LAST CROSSING", centerX - 260, centerY + 160);
+            fontMain.setColor(Color.LIGHT_GRAY);
+            fontMain.draw(game.getBatch(), com.bpm.minotaur.ui.UiGlyphs.sanitize(reckoning.plain),
+                    centerX - 450, centerY + 80, 900, com.badlogic.gdx.utils.Align.center, true);
+            fontMain.setColor(com.bpm.minotaur.rendering.HudSkin.COL_GOLD_BRIGHT);
+            fontMain.draw(game.getBatch(), com.bpm.minotaur.ui.UiGlyphs.sanitize(reckoning.mythic),
+                    centerX - 450, centerY - 20, 900, com.badlogic.gdx.utils.Align.center, true);
         } else {
             fontCompass.setColor(com.bpm.minotaur.rendering.HudSkin.COL_HP_CRITICAL);
             fontCompass.draw(game.getBatch(), "GAME OVER", centerX - 120, centerY + 80);

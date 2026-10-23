@@ -26,6 +26,8 @@ public class SlotMetadata {
      */
     public boolean classicModeUnlocked = false;
     public int deathCount = 0;
+    /** The Last Crossing ended this world (#278, #290): it is read in the World Log, never played again. */
+    public boolean finished;
     public int maxDeaths = 50;
     public long playTimeSeconds = 0;
     public long lastPlayedTimestamp = 0;

@@ -38,12 +38,27 @@ public class WorldLogCoherenceTest {
         log = new WorldLog(5L);
         Random r = new Random(9L);
         String[] kinds = {"KOBOLD", "ORC", "OGRE", "GIANT_SPIDER", "SKELETON"};
+        int bridgeBegan = 0;
         for (int i = 0; i < LIVES; i++) {
+            // The Bridge ends twice: its Warden falls after life 20, Tarmin crosses after life 40 (#290).
+            if (i == 20) {
+                log.closeBridge(Reckonings.wardenFell(Bridge.nameOf(log.currentBridge()), log.last()));
+                history.recordWardenFell();
+                bridgeBegan = i;
+            } else if (i == 40) {
+                history.recordCrossing();
+                com.bpm.minotaur.gamedata.history.OldGod god =
+                        com.bpm.minotaur.gamedata.history.OldGod.spendable(history.world()).get(0);
+                history.recordGodSpent(god);
+                log.closeBridge(Reckonings.crossed(Bridge.nameOf(log.currentBridge()), god, "House Gall", log.last()));
+                bridgeBegan = i;
+            }
+            int hunger = i - bridgeBegan;
             Set<String> taken = new HashSet<>();
             for (LifeRecord lived : log.lives()) taken.add(lived.name);
             Life life = LifeForge.forge(history.world(), 1000L + i, taken);
             forged.add(life);
-            log.wake(life, i);
+            log.wake(life, hunger);
 
             List<House> houses = history.world().livingHouses();
             House house = houses.get(r.nextInt(houses.size()));
@@ -73,13 +88,14 @@ public class WorldLogCoherenceTest {
 
             LifeRecord ended = log.last();
             // As the game does at a death (WorldLogManager.tellLastLife), at the Hunger after it.
-            log.tell(ended.number, Tellings.forLife(history.world(), history.lastLifeDeeds(), ended, i + 1));
+            log.tell(ended.number, Tellings.forLife(history.world(), history.lastLifeDeeds(), ended, hunger + 1));
         }
     }
 
     @Test
     public void sixtyLivesTellNothingThatDisagrees() {
         assertEquals(LIVES, log.lives().size());
+        assertEquals("a Warden's fall and a crossing make three Bridges", 3, log.bridges().size());
         // Every rule is exercised, so none can pass for want of a case.
         assertTrue("a Nemesis took more than one life",
                 history.world().nemeses().stream().anyMatch(n -> n.tally() >= 2));

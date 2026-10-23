@@ -210,7 +210,8 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
             // Doom Death Counter
             Color doomColor = (meta.deathCount > 35) ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_TEMP_ORANGE;
-            Label doomLabel = new Label("Tarmin's Hunger: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
+            Label doomLabel = new Label(meta.finished ? "The Last Crossing: this world has ended"
+                    : "Tarmin's Hunger: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
                     new Label.LabelStyle(hudSkin.getFontSmall(), doomColor));
             card.add(doomLabel).padBottom(12).row();
 
@@ -232,13 +233,18 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
             // SLOTS-3: Overwrite used to wear the same gold fill as Create, so the destructive
             // action and the inviting one were indistinguishable. Destructive is never gold.
-            TextButton playBtn = new TextButton(newGameMode ? "OVERWRITE" : "RESUME DELVE",
+            // A world the Last Crossing ended is read, never played (#290).
+            final boolean finished = meta.finished && !newGameMode;
+            TextButton playBtn = new TextButton(newGameMode ? "OVERWRITE" : finished ? "READ THE BOOK OF LIVES" : "RESUME DELVE",
                     newGameMode ? UiStyles.danger(hudSkin) : playStyle);
             playBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     if (newGameMode) {
                         confirmOverwrite(slotIndex, meta);
+                    } else if (finished) {
+                        SaveManager.getInstance().setActiveSlotIndex(slotIndex);
+                        game.setScreen(new WorldLogScreen(game, SaveSlotSelectScreen.this, meta.characterName, 0));
                     } else {
                         launchResumeGame(slotIndex);
                     }
@@ -452,6 +458,13 @@ public class SaveSlotSelectScreen extends BaseScreen {
     }
 
     public static void launchResumeGame(Tarmin2 game, int slotIndex) {
+        SlotMetadata finishedMeta = SaveManager.getInstance().getSlotMetadata(slotIndex);
+        if (finishedMeta != null && finishedMeta.finished) {
+            // The Last Crossing ended this world (#290): it is read, never played again.
+            SaveManager.getInstance().setActiveSlotIndex(slotIndex);
+            game.setScreen(new WorldLogScreen(game, new MainMenuScreen(game), finishedMeta.characterName, 0));
+            return;
+        }
         SaveManager.getInstance().setActiveSlotIndex(slotIndex);
         MusicManager.getInstance().stopWithFade(0.5f);
 

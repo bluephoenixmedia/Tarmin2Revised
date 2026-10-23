@@ -62,7 +62,13 @@ public class PlayerDeed {
          * Not the player's doing but their run's: old god {@link #note} (an {@link OldGod} name)
          * was spent holding Tarmin back, and its shrine is dark for good (#287, #290).
          */
-        GOD_SPENT
+        GOD_SPENT,
+        /** The Bridge's Warden fell, and the Bridge crumbled back to nothing (#290). */
+        WARDEN_FELL,
+        /** The seeker died while the Warden stood, and Tarmin crossed (#276, #290). */
+        TARMIN_CROSSED,
+        /** While Tarmin was gone, house {@link #target} took the most of the Maze (#276, #290). */
+        HOUSE_ROSE
     }
 
     public Kind kind;

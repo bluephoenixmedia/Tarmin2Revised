@@ -21,6 +21,10 @@ public final class WorldLog {
     private long eraSeed;
     /** Each Era's name by stage, fixed the first time a life wakes in it; "" until then. */
     private ArrayList<String> eraNames = new ArrayList<>();
+    /** The Bridge being built, counting from 0 (#290). */
+    private int currentBridge;
+    /** How every ended Bridge ended, oldest first. */
+    private ArrayList<Reckoning> reckonings = new ArrayList<>();
     /** How many of the myth's revelations the soul has read, in order (#288). */
     private int revelationsRead;
     /** The deepest layer of the myth the Hunger has ever opened; a Warden's fall never closes it. */
@@ -101,31 +105,64 @@ public final class WorldLog {
         }
         LifeRecord record = new LifeRecord(unremembered + lives.size() + 1, life);
         record.hunger = hunger;
+        record.bridge = currentBridge;
         lives.add(record);
-        eraName(Era.stageOf(record.hungerAtWaking()));
+        eraName(currentBridge, Era.stageOf(record.hungerAtWaking()));
     }
 
     /** Every Era with a life in it, newest first, each with its lives newest first. */
     public List<Era> eras() {
         List<Era> eras = new ArrayList<>();
-        Era era = null;
-        for (int i = lives.size() - 1; i >= 0; i--) {
-            LifeRecord life = lives.get(i);
-            int stage = Era.stageOf(life.hungerAtWaking());
-            if (era == null || era.stage != stage) {
-                era = new Era(stage, eraName(stage));
-                eras.add(era);
-            }
-            era.lives.add(life);
-        }
+        for (Bridge bridge : bridges()) eras.addAll(bridge.eras);
         return eras;
     }
 
-    /** The stage's name, named now and kept if it has none yet. */
-    private String eraName(int stage) {
-        while (eraNames.size() <= stage) eraNames.add("");
-        if (eraNames.get(stage).isEmpty()) eraNames.set(stage, Era.nameFor(eraSeed, stage));
-        return eraNames.get(stage);
+    /** The Bridge being built, counting from 0. */
+    public int currentBridge() {
+        return currentBridge;
+    }
+
+    /** The Bridge being built ends, told by its Reckoning; the next life wakes in a new one. */
+    public void closeBridge(Reckoning reckoning) {
+        reckoning.bridge = currentBridge;
+        reckonings.add(reckoning);
+        currentBridge++;
+    }
+
+    /** Every Bridge with a life in it or an ending, newest first, each with its Eras newest first. */
+    public List<Bridge> bridges() {
+        List<Bridge> bridges = new ArrayList<>();
+        for (int b = currentBridge; b >= 0; b--) {
+            Bridge bridge = new Bridge(b, reckoningOf(b));
+            Era era = null;
+            for (int i = lives.size() - 1; i >= 0; i--) {
+                LifeRecord life = lives.get(i);
+                if (life.bridgeIndex() != b) continue;
+                int stage = Era.stageOf(life.hungerAtWaking());
+                if (era == null || era.stage != stage) {
+                    era = new Era(stage, eraName(b, stage));
+                    bridge.eras.add(era);
+                }
+                era.lives.add(life);
+            }
+            if (!bridge.eras.isEmpty() || bridge.reckoning != null) bridges.add(bridge);
+        }
+        return bridges;
+    }
+
+    private Reckoning reckoningOf(int bridge) {
+        for (Reckoning r : reckonings) {
+            if (r.bridge == bridge) return r;
+        }
+        return null;
+    }
+
+    /** The Era's name, named now and kept if it has none yet; each Bridge names its own. */
+    private String eraName(int bridge, int stage) {
+        int key = bridge * Era.STAGES + stage;
+        while (eraNames.size() <= key) eraNames.add("");
+        if (eraNames.get(key).isEmpty()) eraNames.set(key, Era.nameFor(eraSeed + bridge * 7919L, stage));
+        return eraNames.get(key);
     }
 
     /** The Houses' accounts of life {@code number}, written as it ends (#285). */
