@@ -132,9 +132,7 @@ public final class Tellings {
     }
 
     private static String fill(String template, LifeRecord life, String house, String fate) {
-        String home = life.title != null && life.title.startsWith(life.name + " of ")
-                ? life.title.substring(life.name.length() + 4) : "nowhere remembered";
-        String text = template.replace("{name}", life.name).replace("{home}", home)
+        String text = template.replace("{name}", life.name).replace("{home}", life.homeName())
                 .replace("{nth}", ordinal(life.number)).replace("{house}", house).replace("{fate}", fate)
                 .replace("{killer}", life.killer != null ? life.killer : "the maze");
         return capital(text);

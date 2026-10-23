@@ -41,6 +41,13 @@ public final class WorldLogManager implements SlotScopedState {
         return log;
     }
 
+    /** The names of every life the log holds, which no new prisoner may share (#286). */
+    public java.util.Set<String> lifeNames() {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (com.bpm.minotaur.gamedata.worldlog.LifeRecord life : log().lives()) names.add(life.name);
+        return names;
+    }
+
     /** The life being lived gains a line, if a life is being lived. */
     public void note(Fact fact) {
         log().note(fact);

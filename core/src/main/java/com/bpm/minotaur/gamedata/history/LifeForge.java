@@ -35,11 +35,30 @@ public final class LifeForge {
 
     /** The prisoner for this seed. The same world and seed always forge the same life. */
     public static Life forge(HistoryWorld world, long seed) {
+        return forge(world, seed, java.util.Collections.emptySet());
+    }
+
+    /** How many draws a name gets before the prisoner is set apart by a byname. */
+    private static final int NAME_DRAWS = 24;
+    private static final String[] BYNAMES = {"the Younger", "the Elder", "Twice-Named", "the Other"};
+
+    /**
+     * As {@link #forge(HistoryWorld, long)}, but never a name in {@code taken} -- the names of the
+     * soul's earlier lives -- so no two lives of the World Log share one (#286).
+     */
+    public static Life forge(HistoryWorld world, long seed, java.util.Set<String> taken) {
         Random rng = new Random(seed);
         List<Settlement> towns = world.settlements();
         Settlement home = towns.get(rng.nextInt(towns.size()));
         Allegiance power = home.allegiance;
         String name = power.givenName(rng) + " " + power.familyName(rng);
+        for (int draw = 0; taken.contains(name) && draw < NAME_DRAWS; draw++) {
+            name = power.givenName(rng) + " " + power.familyName(rng);
+        }
+        for (int i = 0; taken.contains(name); i++) {
+            String byname = i < BYNAMES.length ? BYNAMES[i] : BYNAMES[0] + " " + (i + 1);
+            if (!taken.contains(name + " " + byname)) name = name + " " + byname;
+        }
         if (rng.nextBoolean()) {
             return new Life(name, home.id, home.name, power, Life.Origin.RAIDED, raider(world, home, rng), null, null);
         }
