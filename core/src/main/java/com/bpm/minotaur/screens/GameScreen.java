@@ -2012,6 +2012,9 @@ public class GameScreen extends BaseScreen {
         // a new telemetry run so the next demise is tracked independently.
         this.activeExpeditionRunId = java.util.UUID.randomUUID().toString();
         this.isDeathTransitionTriggered = false;
+        // A death event still queued from the last life's final frames would kill this one on
+        // waking, with no wound at all (playtest 2026-10-22: Nell of the Ash, dead on turn 0).
+        eventManager.consumeAll(GameEvent.EventType.PLAYER_DIED);
         this.deathWatch.reset();
         this.deathSequence.reset();
         this.pendingDeathScreen = null;
