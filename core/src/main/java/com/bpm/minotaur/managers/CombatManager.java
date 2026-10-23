@@ -3340,6 +3340,7 @@ public class CombatManager {
         // so it keys off the monster itself.
         if (monster != null && monster.isBridgeBoss()) {
             DoomManager.getInstance().onBridgeBossDefeated();
+            WorldLogManager.getInstance().closeBridgeByWarden(worldManager != null ? worldManager.getHistory() : null);
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(
                         "THE WARDEN FALLS! The Bridge of Souls crumbles back to nothing.", 5.0f));

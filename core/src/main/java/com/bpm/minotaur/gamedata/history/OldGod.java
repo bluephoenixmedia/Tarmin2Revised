@@ -57,6 +57,24 @@ public enum OldGod {
         return Character.toUpperCase(shortName.charAt(0)) + shortName.substring(1) + "'s rite";
     }
 
+    /** How many old gods still keep the soul (#278, #290). */
+    public static int keepers(HistoryWorld world) {
+        int keepers = 0;
+        for (OldGod god : values()) if (!world.isSpent(god)) keepers++;
+        return keepers;
+    }
+
+    /**
+     * The gods who may hold Tarmin back after a crossing: every keeper but Asterion, the old
+     * warden, who goes last. Empty when no keeper is left: that crossing is the last.
+     */
+    public static java.util.List<OldGod> spendable(HistoryWorld world) {
+        java.util.List<OldGod> gods = new java.util.ArrayList<>();
+        for (OldGod god : values()) if (god != ASTERION && !world.isSpent(god)) gods.add(god);
+        if (gods.isEmpty() && !world.isSpent(ASTERION)) gods.add(ASTERION);
+        return gods;
+    }
+
     /** The god whose shrine this encounter is, or null for any other encounter. */
     public static OldGod forEncounter(String encounterId) {
         for (OldGod god : values()) {

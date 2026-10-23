@@ -29,6 +29,9 @@ public class HistoryWorld {
     final List<Nemesis> nemeses = new ArrayList<>();
     /** Old gods spent holding Tarmin back: their shrines are dark (#287). */
     final java.util.EnumSet<OldGod> spentGods = java.util.EnumSet.noneOf(OldGod.class);
+    /** How many Bridges have ended, by a Warden's fall or a crossing (#290). */
+    int wardensFallen;
+    int crossings;
     /** Unordered pairs of allied houses, encoded by {@link #pairKey}. */
     final Set<Long> alliances = new HashSet<>();
     final Set<String> usedNames = new HashSet<>();
@@ -103,6 +106,14 @@ public class HistoryWorld {
 
     public List<Nemesis> nemeses() {
         return Collections.unmodifiableList(nemeses);
+    }
+
+    public int wardensFallen() {
+        return wardensFallen;
+    }
+
+    public int crossings() {
+        return crossings;
     }
 
     public boolean isSpent(OldGod god) {

@@ -93,6 +93,46 @@ public final class WorldLogManager implements SlotScopedState {
         return t;
     }
 
+    /** The Warden fell: its Bridge closes with the Knell's Reckoning, and the history keeps it (#290). */
+    public void closeBridgeByWarden(HistoryManager history) {
+        com.bpm.minotaur.gamedata.worldlog.LifeRecord slayer = log().current() != null ? log().current() : log().last();
+        log().closeBridge(com.bpm.minotaur.gamedata.worldlog.Reckoning.End.WARDEN_FELL,
+                com.bpm.minotaur.gamedata.worldlog.Reckonings.wardenFell(bridgeName(), slayer));
+        if (history != null) history.recordWardenFell();
+        save();
+    }
+
+    /** {@code god} is spent dragging Tarmin back: its shrines go dark, and the Bridge closes (#290). */
+    public void spendGodForCrossing(HistoryManager history, com.bpm.minotaur.gamedata.history.OldGod god) {
+        history.recordGodSpent(god);
+        log().closeBridge(com.bpm.minotaur.gamedata.worldlog.Reckoning.End.CROSSED,
+                com.bpm.minotaur.gamedata.worldlog.Reckonings.crossed(bridgeName(), god, risen(history.world()), log().last()));
+        save();
+    }
+
+    /** No god was left to hold Tarmin: the world's last Reckoning (#278, #290). */
+    public com.bpm.minotaur.gamedata.worldlog.Reckoning lastCrossing(HistoryManager history) {
+        com.bpm.minotaur.gamedata.worldlog.Reckoning r = com.bpm.minotaur.gamedata.worldlog.Reckonings.lastCrossing(
+                bridgeName(), risen(history.world()), log().last());
+        log().closeBridge(com.bpm.minotaur.gamedata.worldlog.Reckoning.End.LAST_CROSSING, r);
+        save();
+        return r;
+    }
+
+    private String bridgeName() {
+        return com.bpm.minotaur.gamedata.worldlog.Bridge.nameOf(log().currentBridge());
+    }
+
+    /** The House that rose while Tarmin was gone: the proudest House of the Maze but his own. */
+    private static String risen(com.bpm.minotaur.gamedata.history.HistoryWorld world) {
+        com.bpm.minotaur.gamedata.history.House best = null;
+        for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
+            if (h.holdsCastle) continue;
+            if (best == null || h.prestige > best.prestige) best = h;
+        }
+        return best != null ? best.name : "a house of the Maze";
+    }
+
     /** The life being lived ends; the log is written at once, before anything else can go wrong. */
     public void die(String epitaph, String killer, String place, int turn) {
         com.bpm.minotaur.gamedata.worldlog.LifeRecord open = log().current();

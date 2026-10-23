@@ -23,6 +23,8 @@ public class DoomManager implements SlotScopedState {
     private int deathCount = 0;
     private boolean bridgeBossActive = false;
     private boolean apocalypseTriggered = false;
+    /** Tarmin has crossed, and no god has yet been spent to drag him back (#290). */
+    private boolean crossingPending = false;
     /**
      * How many times the bridge boss has been summoned in this run.
      *
@@ -93,11 +95,12 @@ public class DoomManager implements SlotScopedState {
                     Gdx.app.log("DoomManager", "Bridge integrity reached 100%! Summoning Bridge Boss!");
                 }
             } else {
-                // Next death while the boss is active wipes the slot!
-                this.apocalypseTriggered = true;
-                SaveManager.getInstance().wipeActiveSlotOnApocalypse();
-                // The slot is gone. Saving now would write doom_state.json back into it.
-                return;
+                // A death while the Warden stands: Tarmin crosses (#276, #290). Nothing is wiped.
+                // The old gods drag him back at the cost of one of them, chosen at the rebirth;
+                // the Bridge begins again from nothing, and its next Warden is the harder for it.
+                this.crossingPending = true;
+                this.bridgeBossActive = false;
+                this.deathCount = 0;
             }
         }
         save();
@@ -248,6 +251,17 @@ public class DoomManager implements SlotScopedState {
         return apocalypseTriggered;
     }
 
+    /** Tarmin crossed with the last death; the rebirth must spend an old god (#290). */
+    public boolean isCrossingPending() {
+        return crossingPending;
+    }
+
+    /** A god has been spent, or none was left: the crossing is told. */
+    public void clearCrossing() {
+        this.crossingPending = false;
+        save();
+    }
+
     public boolean isBridgeBossActive() {
         return bridgeBossActive;
     }
@@ -269,6 +283,7 @@ public class DoomManager implements SlotScopedState {
         this.bridgeBossActive = false;
         this.deathCount = 0;
         this.apocalypseTriggered = false;
+        this.crossingPending = false;
         save();
         if (Gdx.app != null) {
             Gdx.app.log("DoomManager", "Bridge Boss defeated! Integrity reset to 0. Summons so far: "
@@ -300,6 +315,7 @@ public class DoomManager implements SlotScopedState {
         this.deathCount = 0;
         this.bridgeBossActive = false;
         this.apocalypseTriggered = false;
+        this.crossingPending = false;
         save();
         if (Gdx.app != null) {
             Gdx.app.log("DoomManager", "DOOM RESET. The cycle begins anew.");
@@ -323,6 +339,7 @@ public class DoomManager implements SlotScopedState {
             state.bridgeBossActive = this.bridgeBossActive;
             state.apocalypseTriggered = this.apocalypseTriggered;
             state.bridgeBossSummons = this.bridgeBossSummons;
+            state.crossingPending = this.crossingPending;
             state.expeditionTurns = this.expeditionTurns;
 
             file.writeString(json.prettyPrint(state), false);
@@ -347,6 +364,7 @@ public class DoomManager implements SlotScopedState {
                     this.bridgeBossActive = state.bridgeBossActive;
                     this.apocalypseTriggered = state.apocalypseTriggered;
                     this.bridgeBossSummons = state.bridgeBossSummons;
+                    this.crossingPending = state.crossingPending;
                     this.expeditionTurns = state.expeditionTurns;
                     if (Gdx.app != null) {
                         Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount + " | BridgeBoss: " + bridgeBossActive);
@@ -370,6 +388,8 @@ public class DoomManager implements SlotScopedState {
         public boolean bridgeBossActive = false;
         public boolean apocalypseTriggered = false;
         public int bridgeBossSummons = 0;
+        /** A crossing waiting for its god (#290); absent in older saves, which have none. */
+        public boolean crossingPending = false;
         /** Feeds the Doom stage; absent (0) in saves written before it was persisted. */
         public int expeditionTurns = 0;
     }
@@ -380,6 +400,7 @@ public class DoomManager implements SlotScopedState {
         this.bridgeBossActive = false;
         this.apocalypseTriggered = false;
         this.bridgeBossSummons = 0;
+        this.crossingPending = false;
         resetExpeditionTurns();
         load();
     }
@@ -390,6 +411,7 @@ public class DoomManager implements SlotScopedState {
         this.bridgeBossActive = false;
         this.apocalypseTriggered = false;
         this.bridgeBossSummons = 0;
+        this.crossingPending = false;
         resetExpeditionTurns();
         save();
     }

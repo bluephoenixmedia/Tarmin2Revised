@@ -26,6 +26,8 @@ public final class LifeRecord {
     public String howTheyCame;
     /** Most notable first. */
     public ArrayList<Fact> lines = new ArrayList<>();
+    /** The Bridge the life woke in, counting from 0; -1 in records saved before Bridges (#290). */
+    public int bridge = -1;
     /** Tarmin's Hunger when the life woke, which sets its Era; -1 in records saved before Eras. */
     public int hunger = -1;
     /** Whether this life has felled a Heavy yet; only the first is a line. */
@@ -55,6 +57,11 @@ public final class LifeRecord {
         this.home = life.settlement;
         this.origin = life.origin;
         this.howTheyCame = life.howTheyCame();
+    }
+
+    /** The Bridge it woke in; a record from before Bridges stands in the first. */
+    public int bridgeIndex() {
+        return Math.max(0, bridge);
     }
 
     /** The Hunger at waking; a record from before Eras assumes no Warden had fallen yet. */

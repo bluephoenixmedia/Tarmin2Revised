@@ -9,7 +9,7 @@ import com.bpm.minotaur.managers.SaveManager;
 /**
  * Persistent Shelter Altar meta-progression: three upgrade trees purchased with
  * banked Divinities. Like Divinities themselves, altar tiers survive death and
- * world resets, and are only cleared by a full Apocalypse wipe.
+ * world resets, and are only cleared by a new game (a Tarmin crossing wipes nothing, #290).
  */
 public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
 

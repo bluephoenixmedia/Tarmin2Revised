@@ -176,6 +176,16 @@ public final class HistoryManager {
         return new ArrayList<>(deeds.subList(start + 1, end + 1));
     }
 
+    /** The Bridge's Warden fell, and the Bridge with it (#290). */
+    public void recordWardenFell() {
+        apply(new PlayerDeed(PlayerDeed.Kind.WARDEN_FELL, -1, world.liveSeasons()));
+    }
+
+    /** Tarmin crossed the Bridge (#276, #290). */
+    public void recordCrossing() {
+        apply(new PlayerDeed(PlayerDeed.Kind.TARMIN_CROSSED, -1, world.liveSeasons()));
+    }
+
     /** An old god is spent holding Tarmin back: its shrine is dark for good (#287). */
     public void recordGodSpent(com.bpm.minotaur.gamedata.history.OldGod god) {
         PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.GOD_SPENT, -1, world.liveSeasons());

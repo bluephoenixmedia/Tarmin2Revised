@@ -2507,7 +2507,7 @@ public class Hud implements Disposable {
                         "[SHELTER HUB]",
                         "[DIVINITY ALTAR]",
                         "Shelter Altar",
-                        "An ancient stone altar humming with banked Divinities. Spend them on permanent Provisions, Repertoire, and Monument upgrades.",
+                        com.bpm.minotaur.ui.UiGlyphs.sanitize("An ancient stone altar humming with banked Divinities. Spend them on permanent Provisions, Repertoire, and Monument upgrades." + keepersLine()),
                         keys.badge(Action.INTERACT),
                         "Open Shelter Altar",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
@@ -3851,6 +3851,20 @@ public class Hud implements Disposable {
         font.setColor(HudSkin.COL_GOLD_MUTED);
         font.draw(spriteBatch, "Any key stops", x + (maxW - glyphLayout.width) / 2, y - 8);
         spriteBatch.end();
+    }
+
+    /** The old gods' Altar remembers who still keeps the soul and who is spent (#290). */
+    private String keepersLine() {
+        if (worldManager == null || worldManager.getHistory() == null) return "";
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        StringBuilder line = new StringBuilder(" ").append(com.bpm.minotaur.ui.UiNames.plural(
+                com.bpm.minotaur.gamedata.history.OldGod.keepers(world), "keeper", "keepers")).append(" remain.");
+        StringBuilder dark = new StringBuilder();
+        for (com.bpm.minotaur.gamedata.history.OldGod god : com.bpm.minotaur.gamedata.history.OldGod.values()) {
+            if (world.isSpent(god)) dark.append(dark.length() == 0 ? "" : ", ").append(god.shortName);
+        }
+        if (dark.length() > 0) line.append(" Dark: ").append(dark).append(".");
+        return line.toString();
     }
 
     /** The Bridge bar's words: the Warden guards the last stone at 100% (#267, #273). */

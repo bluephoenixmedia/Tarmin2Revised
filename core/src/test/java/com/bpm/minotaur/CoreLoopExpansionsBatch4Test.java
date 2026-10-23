@@ -324,11 +324,13 @@ public class CoreLoopExpansionsBatch4Test {
         assertTrue("Boss should be active at 50 deaths", doom.isBridgeBossActive());
         assertFalse("Apocalypse must not trigger on initial boss spawn", doom.isApocalypse());
 
-        // Subsequent death while boss is active
+        // A death while the Warden stands is a crossing (#276, #290): no wipe, the Bridge begins again.
         doom.incrementDeaths();
 
-        assertTrue("Subsequent death while Bridge Boss is active MUST trigger apocalypse wipe",
-                doom.isApocalypse());
+        assertFalse("a crossing wipes nothing", doom.isApocalypse());
+        assertTrue("the crossing waits for a god to be spent at the rebirth", doom.isCrossingPending());
+        assertEquals(0, doom.getDeathCount());
+        assertFalse(doom.isBridgeBossActive());
 
         // Clean up
         doom.reset();

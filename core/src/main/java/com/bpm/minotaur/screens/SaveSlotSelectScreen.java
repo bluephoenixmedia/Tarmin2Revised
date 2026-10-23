@@ -232,13 +232,18 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
             // SLOTS-3: Overwrite used to wear the same gold fill as Create, so the destructive
             // action and the inviting one were indistinguishable. Destructive is never gold.
-            TextButton playBtn = new TextButton(newGameMode ? "OVERWRITE" : "RESUME DELVE",
+            // A world the Last Crossing ended is read, never played (#290).
+            final boolean finished = meta.finished && !newGameMode;
+            TextButton playBtn = new TextButton(newGameMode ? "OVERWRITE" : finished ? "READ THE BOOK OF LIVES" : "RESUME DELVE",
                     newGameMode ? UiStyles.danger(hudSkin) : playStyle);
             playBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     if (newGameMode) {
                         confirmOverwrite(slotIndex, meta);
+                    } else if (finished) {
+                        SaveManager.getInstance().setActiveSlotIndex(slotIndex);
+                        game.setScreen(new WorldLogScreen(game, SaveSlotSelectScreen.this, meta.characterName, 0));
                     } else {
                         launchResumeGame(slotIndex);
                     }

@@ -904,6 +904,10 @@ public final class HistorySimulator {
             House killer = world.house(deed.target);
             if (killer != null) killer.prestige += 3;
             Nemeses.fell(world, deed);
+        } else if (deed.kind == PlayerDeed.Kind.WARDEN_FELL) {
+            world.wardensFallen++;
+        } else if (deed.kind == PlayerDeed.Kind.TARMIN_CROSSED) {
+            world.crossings++;
         } else if (deed.kind == PlayerDeed.Kind.GOD_SPENT) {
             if (deed.note != null) {
                 try {

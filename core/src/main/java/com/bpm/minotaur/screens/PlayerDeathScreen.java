@@ -371,7 +371,7 @@ public class PlayerDeathScreen extends BaseScreen {
 
     private void openBookOfLives() {
         if (transitionTriggered || lastLife() == null) return;
-        game.setScreen(new WorldLogScreen(game, this, GameScreen.soulName()));
+        game.setScreen(new WorldLogScreen(game, this, GameScreen.soulName(), parentScreen.keepers()));
     }
 
     private void awakenInShelter() {

@@ -10,8 +10,8 @@ import java.util.Set;
 /**
  * Tracks the player's Divinities: a permanent-progression currency that is banked
  * automatically as it is earned and is never lost, including on death. Divinities are
- * spent at the Shelter altar on permanent upgrades; only a full Apocalypse wipe (see {@link SaveManager#wipeActiveSlotOnApocalypse()})
- * ever resets them.
+ * spent at the Shelter altar on permanent upgrades; only a new game ever resets them (a Tarmin
+ * crossing wipes nothing, #290).
  *
  * <p><b>Income target (#197, decided in #160):</b> about 15-25 per depth-1 expedition, so
  * the first station (Lantern 10, Bed 15) comes after the first or second expedition and a
