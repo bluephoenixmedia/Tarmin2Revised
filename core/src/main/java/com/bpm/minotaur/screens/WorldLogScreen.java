@@ -41,6 +41,9 @@ public class WorldLogScreen extends BaseScreen {
     private final String soulName;
     private final HudSkin skin;
     private final WorldLog log;
+    /** Stands for the page of what the soul has learned of the myth (#288). */
+    private static final LifeRecord LEARNED = new LifeRecord();
+
     /** Every life in the order the list shows them; null stands for the lives unremembered. */
     private final List<LifeRecord> order = new ArrayList<>();
     private int selected;
@@ -85,6 +88,10 @@ public class WorldLogScreen extends BaseScreen {
             for (LifeRecord life : era.lives) list.add(entry(life)).width(UiTheme.LIST_COLUMN_W).row();
         }
         if (log.unremembered() > 0) list.add(entry(null)).width(UiTheme.LIST_COLUMN_W).padTop(UiTheme.PAD_MD).row();
+        // Last, so the Book still opens on the newest life.
+        if (!com.bpm.minotaur.gamedata.history.Reveal.learned(log).isEmpty()) {
+            list.add(entry(LEARNED)).width(UiTheme.LIST_COLUMN_W).padTop(UiTheme.PAD_MD).row();
+        }
         selected = Math.max(0, Math.min(selected, order.size() - 1));
 
         ScrollPane scroll = new ScrollPane(list, UiStyles.scrollPane(skin));
@@ -118,8 +125,8 @@ public class WorldLogScreen extends BaseScreen {
     private TextButton entry(final LifeRecord life) {
         final int index = order.size();
         order.add(life);
-        String text = life == null
-                ? UiNames.plural(log.unremembered(), "LIFE", "LIVES") + " UNREMEMBERED"
+        String text = life == LEARNED ? "WHAT THE SOUL HAS LEARNED"
+                : life == null ? UiNames.plural(log.unremembered(), "LIFE", "LIVES") + " UNREMEMBERED"
                 : life.number + ". " + life.name.toUpperCase();
         TextButton button = new TextButton(UiGlyphs.sanitize(text), UiStyles.menu(skin));
         button.getLabel().setEllipsis(true);
@@ -145,6 +152,14 @@ public class WorldLogScreen extends BaseScreen {
             return page;
         }
         LifeRecord life = order.get(selected);
+        if (life == LEARNED) {
+            page.add(wrap("WHAT THE SOUL HAS LEARNED", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
+                    .padBottom(UiTheme.PAD_MD).row();
+            for (String revelation : com.bpm.minotaur.gamedata.history.Reveal.learned(log)) {
+                page.add(wrap(revelation, UiStyles.body(skin))).padBottom(UiTheme.PAD_SM).row();
+            }
+            return page;
+        }
         if (life == null) {
             page.add(wrap(UiNames.plural(log.unremembered(), "life", "lives").toUpperCase() + " UNREMEMBERED",
                     new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD))).padBottom(UiTheme.PAD_MD).row();
