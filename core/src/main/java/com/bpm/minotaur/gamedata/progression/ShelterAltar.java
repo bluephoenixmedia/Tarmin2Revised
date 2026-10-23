@@ -307,28 +307,113 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
                 com.bpm.minotaur.gamedata.item.ItemColor.TAN, idm, am);
     }
 
-    /** Puts {@code type} on the first free floor beside {@code anchor}, unless one already stands there. */
+    private static final int[][] AROUND = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+    /**
+     * Puts {@code type} on free floor beside {@code anchor}, unless one already stands there. A
+     * piece that stands where it closes a way through the Shelter -- as the Book of Lives once
+     * did, across the way out -- is taken up and stood somewhere it closes nothing.
+     */
     private static void placeBeside(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 anchor,
                                     com.bpm.minotaur.gamedata.item.Item.ItemType type,
                                     com.bpm.minotaur.gamedata.item.ItemColor color,
                                     com.bpm.minotaur.gamedata.item.ItemDataManager idm,
                                     com.badlogic.gdx.assets.AssetManager am) {
         if (idm == null) return;
-        int[][] around = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-        for (int[] d : around) {
+        for (int[] d : AROUND) {
             com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(anchor.x + d[0], anchor.y + d[1]);
             com.bpm.minotaur.gamedata.item.Item there = maze.getItems().get(at);
-            if (there != null && there.getType() == type) return;
+            if (there == null || there.getType() != type) continue;
+            if (!blocks(maze, at, anchor)) return;
+            maze.removeItem(there);
+            break;
         }
-        for (int[] d : around) {
+        com.badlogic.gdx.math.GridPoint2 at = safeSpotBeside(maze, anchor);
+        if (at == null) return;
+        com.bpm.minotaur.gamedata.item.Item item = idm.createItem(type, at.x, at.y, color, am);
+        if (item != null) maze.addItem(item);
+    }
+
+    /** The first floor beside {@code anchor} where a piece stands without closing any way through; null if none. */
+    static com.badlogic.gdx.math.GridPoint2 safeSpotBeside(com.bpm.minotaur.gamedata.Maze maze,
+                                                           com.badlogic.gdx.math.GridPoint2 anchor) {
+        for (int[] d : AROUND) {
             int x = anchor.x + d[0], y = anchor.y + d[1];
             com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(x, y);
             if (!maze.isHomeTile(x, y) || !maze.isPassable(x, y) || maze.getItems().containsKey(at)
                     || isStationSlot(maze, at) || at.equals(maze.getAltarTile()) || at.equals(maze.getHearthTile())) continue;
-            com.bpm.minotaur.gamedata.item.Item item = idm.createItem(type, x, y, color, am);
-            if (item != null) maze.addItem(item);
-            return;
+            if (wouldCut(maze, at, anchor) || byTheWayOut(maze, at)) continue;
+            return at;
         }
+        return null;
+    }
+
+    /** Whether standing something on {@code at} splits the Shelter's floor in two (the anchor counts as blocked). */
+    static boolean wouldCut(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at,
+                            com.badlogic.gdx.math.GridPoint2 anchor) {
+        java.util.Set<com.badlogic.gdx.math.GridPoint2> blocked = new java.util.HashSet<>();
+        blocked.add(anchor);
+        int before = regions(maze, blocked, at);
+        blocked.add(at);
+        return regions(maze, blocked, at) > before;
+    }
+
+    /** Whether the piece already on {@code at} holds the Shelter's floor apart, or stands in the way out. */
+    private static boolean blocks(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at,
+                                  com.badlogic.gdx.math.GridPoint2 anchor) {
+        return wouldCut(maze, at, anchor) || byTheWayOut(maze, at);
+    }
+
+    /** Whether {@code at} is a door, or beside one or the Shelter's entry: the way out stays clear. */
+    static boolean byTheWayOut(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at) {
+        com.badlogic.gdx.math.GridPoint2 entry = maze.getShelterEntry();
+        if (maze.getGameObjectAt(at.x, at.y) instanceof com.bpm.minotaur.gamedata.Door) return true;
+        for (int[] d : AROUND) {
+            int x = at.x + d[0], y = at.y + d[1];
+            if (entry != null && entry.x == x && entry.y == y) return true;
+            if (maze.getGameObjectAt(x, y) instanceof com.bpm.minotaur.gamedata.Door) return true;
+        }
+        return false;
+    }
+
+    /**
+     * How many separate stretches of Shelter floor there are, walking only between home tiles,
+     * through no wall and over no impassable piece but {@code ignore} (the one being weighed);
+     * doors count as open, since they open.
+     */
+    private static int regions(com.bpm.minotaur.gamedata.Maze maze,
+                               java.util.Set<com.badlogic.gdx.math.GridPoint2> blocked,
+                               com.badlogic.gdx.math.GridPoint2 ignore) {
+        java.util.Set<com.badlogic.gdx.math.GridPoint2> seen = new java.util.HashSet<>();
+        int regions = 0;
+        for (com.badlogic.gdx.math.GridPoint2 start : maze.getHomeTiles()) {
+            if (seen.contains(start) || !open(maze, start, blocked, ignore)) continue;
+            regions++;
+            java.util.ArrayDeque<com.badlogic.gdx.math.GridPoint2> queue = new java.util.ArrayDeque<>();
+            queue.add(start);
+            seen.add(start);
+            while (!queue.isEmpty()) {
+                com.badlogic.gdx.math.GridPoint2 here = queue.poll();
+                for (com.bpm.minotaur.gamedata.Direction dir : com.bpm.minotaur.gamedata.Direction.values()) {
+                    if (maze.isWallBlocking(here.x, here.y, dir)) continue;
+                    com.badlogic.gdx.math.GridPoint2 next = new com.badlogic.gdx.math.GridPoint2(
+                            here.x + (int) dir.getVector().x, here.y + (int) dir.getVector().y);
+                    if (seen.contains(next) || !maze.isHomeTile(next.x, next.y) || !open(maze, next, blocked, ignore)) continue;
+                    seen.add(next);
+                    queue.add(next);
+                }
+            }
+        }
+        return regions;
+    }
+
+    private static boolean open(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at,
+                                java.util.Set<com.badlogic.gdx.math.GridPoint2> blocked,
+                                com.badlogic.gdx.math.GridPoint2 ignore) {
+        if (blocked.contains(at)) return false;
+        if (at.equals(ignore)) return true;
+        com.bpm.minotaur.gamedata.item.Item item = maze.getItems().get(at);
+        return item == null || !item.isImpassable();
     }
 
     private static boolean isStationSlot(com.bpm.minotaur.gamedata.Maze maze, com.badlogic.gdx.math.GridPoint2 at) {
