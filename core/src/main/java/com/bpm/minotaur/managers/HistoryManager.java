@@ -158,6 +158,24 @@ public final class HistoryManager {
         return null;
     }
 
+    /**
+     * The deeds of the life that last ended (#285): those after the death before it, through its
+     * own death. Empty before any death.
+     */
+    public List<PlayerDeed> lastLifeDeeds() {
+        int end = -1;
+        for (int i = deeds.size() - 1; i >= 0; i--) {
+            if (deeds.get(i).kind == PlayerDeed.Kind.SEEKER_FELL) {
+                end = i;
+                break;
+            }
+        }
+        if (end < 0) return new ArrayList<>();
+        int start = end - 1;
+        while (start >= 0 && deeds.get(start).kind != PlayerDeed.Kind.SEEKER_FELL) start--;
+        return new ArrayList<>(deeds.subList(start + 1, end + 1));
+    }
+
     /** An old god is spent holding Tarmin back: its shrine is dark for good (#287). */
     public void recordGodSpent(com.bpm.minotaur.gamedata.history.OldGod god) {
         PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.GOD_SPENT, -1, world.liveSeasons());

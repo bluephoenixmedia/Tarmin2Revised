@@ -232,6 +232,8 @@ public class Item implements Renderable {
 
         // Fragments of the Maze's history, read on pickup (Houses of the Maze plan T1.10)
         CHRONICLE_PAGE, HERALD_PROCLAMATION, TORN_BANNER,
+        // A House's account of one of the Champion's lives, carried by its soldiers (#285)
+        HOUSE_TELLING,
 
         // A trophy of a broken house: worth coin, and it tells a story (Houses of the Maze T2.7)
         SIGNET_RING

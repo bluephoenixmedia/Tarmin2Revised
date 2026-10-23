@@ -175,7 +175,16 @@ public class WorldLogScreen extends BaseScreen {
         }
 
         page.add(UiLabels.ellipsized("AS THE CHRONICLES TELL IT", UiStyles.caption(skin, UiTheme.GOLD))).padTop(UiTheme.PAD_MD).row();
-        page.add(wrap("No telling of this life has been found.", UiStyles.body(skin, UiTheme.TEXT_OFF))).row();
+        boolean anyFound = false;
+        for (com.bpm.minotaur.gamedata.worldlog.Telling t : life.tellings) {
+            if (!t.found) continue;
+            anyFound = true;
+            page.add(wrap(t.teller + ": " + t.mythic, UiStyles.body(skin))).padBottom(UiTheme.PAD_XS).row();
+        }
+        if (!anyFound) {
+            page.add(wrap(life.tellings.isEmpty() ? "No House tells of this life."
+                    : "No telling of this life has been found.", UiStyles.body(skin, UiTheme.TEXT_OFF))).row();
+        }
         return page;
     }
 

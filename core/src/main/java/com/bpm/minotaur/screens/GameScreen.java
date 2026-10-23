@@ -1457,6 +1457,10 @@ public class GameScreen extends BaseScreen {
                 // The life's record closes with its death (#280).
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
                         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
+                // The Houses it touched, and the Knell at a new stage, tell the life (#285).
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().tellLastLife(
+                        worldManager.getHistory().world(), worldManager.getHistory().lastLifeDeeds(),
+                        DoomManager.getInstance().getDeathCount());
             }
 
             // Record Bones File for Advanced Mode (full player snapshot before item retention)
@@ -2902,9 +2906,26 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** A House's account of one of the soul's lives (#285): read now, kept in the Book of Lives. */
+    private void readTelling(Item item) {
+        player.getInventory().removeItem(item);
+        com.bpm.minotaur.gamedata.worldlog.Telling t =
+                com.bpm.minotaur.managers.WorldLogManager.getInstance().findTelling(item.getTrophyHouseId());
+        if (t == null) {
+            eventManager.addEvent(new GameEvent("The writing is too far gone to read.", 3f));
+            return;
+        }
+        eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(t.teller + ": " + t.plain), 8f));
+    }
+
     /** Every pickup is toasted; a fragment of the Maze's history is read on the spot (plan T1.10). */
     private void onItemPickedUp(Item item) {
         hud.showPickupToast(item);
+        // A House's Telling is no fragment of the history: it is read from the World Log (#285).
+        if (item != null && item.getType() == Item.ItemType.HOUSE_TELLING) {
+            readTelling(item);
+            return;
+        }
         if (item == null || item.fragmentKind() == null || item.isTrophyRead()) return;
         if (item.isChronicleFragment()) player.getInventory().removeItem(item);
         item.markTrophyRead();

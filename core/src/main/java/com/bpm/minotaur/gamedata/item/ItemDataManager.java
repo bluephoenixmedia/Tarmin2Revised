@@ -1298,6 +1298,9 @@ public class ItemDataManager {
                 "A proclamation of one of the Maze's houses, nailed up for all to read.", ItemType.SCROLL);
         registerFragmentTemplate(ItemType.TORN_BANNER, "Torn Banner",
                 "A house banner left on a battlefield. Its stains tell a story.", ItemType.SCROLL);
+        registerFragmentTemplate(ItemType.HOUSE_TELLING, "A House's Telling",
+                "A House's account of one of your lives, as that House would have it told. Read it to learn what it says.",
+                ItemType.SCROLL);
         registerFragmentTemplate(ItemType.SIGNET_RING, "Signet Ring",
                 "A house's signet, taken from its broken army. Merchants pay well for one.", ItemType.SMALL_RING);
         itemTemplates.get(ItemType.SIGNET_RING).baseValue = 120;

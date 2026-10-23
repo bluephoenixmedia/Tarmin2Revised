@@ -108,6 +108,34 @@ public final class WorldLog {
         return eraNames.get(stage);
     }
 
+    /** The Houses' accounts of life {@code number}, written as it ends (#285). */
+    public void tell(int number, List<Telling> tellings) {
+        for (LifeRecord life : lives) {
+            if (life.number == number) life.tellings.addAll(tellings);
+        }
+    }
+
+    /** Whether {@code houseId} has an account not yet found, of any life. */
+    public boolean hasUnfoundTelling(int houseId) {
+        return unfound(houseId) != null;
+    }
+
+    /** Finds the oldest account {@code houseId} has not yet given up; null if none is left. */
+    public Telling findTelling(int houseId) {
+        Telling t = unfound(houseId);
+        if (t != null) t.found = true;
+        return t;
+    }
+
+    private Telling unfound(int houseId) {
+        for (LifeRecord life : lives) {
+            for (Telling t : life.tellings) {
+                if (t.tellerHouseId == houseId && !t.found) return t;
+            }
+        }
+        return null;
+    }
+
     public void note(Fact fact) {
         LifeRecord open = current();
         if (open != null) open.note(fact);
