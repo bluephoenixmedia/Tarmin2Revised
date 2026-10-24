@@ -25,15 +25,26 @@ import java.util.function.DoubleSupplier;
  */
 public final class AdeptPassives {
 
-    /** Resolves a free strike against {@code target}; {@code word} is shown on its damage number. */
+    /** What the combat code lends a Passive. Only {@link #strike} must be supplied. */
     public interface FreeStrike {
+        /** Resolves a free strike against {@code target}; {@code word} is shown on its damage number. */
         void strike(Monster target, String word);
+
+        /** Swift Nock: a second shot from the held bow, spending an arrow. False if none was loosed. */
+        default boolean loose(Monster target, String word) {
+            return false;
+        }
+
+        /** Practised Hands: a turn off the reload under way. False if there was none to shorten. */
+        default boolean cutReload() {
+            return false;
+        }
     }
 
     /** The floating words (spec section 6). */
     public static final String DAZE = "DAZE", STUN = "STUN", BLEED_AND_SLOW = "BLEED SLOW", EXTRA_CUT = "+1 CUT",
             COUNTER = "COUNTER", FIRST_STRIKE = "FIRST STRIKE", SECOND_ARROW = "SECOND ARROW",
-            QUICK_LOAD = "QUICK LOAD", TANGLED = "TANGLE";
+            QUICK_LOAD = "QUICK LOAD", TANGLE = "TANGLE";
 
     /** Tangle: the slow lasts two turns. */
     static final int TANGLE_TURNS = 2;
@@ -83,16 +94,15 @@ public final class AdeptPassives {
                 break;
             case SWIFT_NOCK:
                 // The second arrow is its own shot with its own number, so it carries the word.
-                if (player.getArrows() <= 0) return null;
+                if (!strike.loose(target, SECOND_ARROW)) return null;
                 TelemetryManager.getInstance().recordArtUse(art.name());
-                strike.strike(target, SECOND_ARROW);
                 return null;
             case STAGGERING_BOLT:
                 word = target.applyDaze() == Monster.DazeOutcome.STUNNED ? STUN : DAZE;
                 break;
             case PRACTISED_HANDS:
-                player.cutNextReload();
-                word = QUICK_LOAD;
+                // The shot's own reload began as it fired: that is the reload this one cuts.
+                word = strike.cutReload() ? QUICK_LOAD : null;
                 break;
             default:
                 return null; // Answering Steel, Hold the Line and Tangle fire at other moments
@@ -108,7 +118,7 @@ public final class AdeptPassives {
                 || target.getStatusManager() == null) return null;
         target.getStatusManager().addEffect(StatusEffectType.SLOWED, TANGLE_TURNS, 1, false);
         TelemetryManager.getInstance().recordArtUse(art.name());
-        return TANGLED;
+        return TANGLE;
     }
 
     /** A monster's melee blow missed: Answering Steel may answer it with a free counter-cut. */

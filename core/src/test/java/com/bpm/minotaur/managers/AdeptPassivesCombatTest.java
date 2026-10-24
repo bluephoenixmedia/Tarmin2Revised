@@ -211,14 +211,37 @@ public class AdeptPassivesCombatTest {
         int full = com.bpm.minotaur.gamedata.firearm.FirearmProfile.reloadTurns(Item.ItemType.MUSKET);
 
         combat.playerAttackInstant();
-        assertEquals("the shot that fires the Art reloads in full", full, combat.getActiveReload().getTurnsRequired());
-        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("QUICK LOAD ")));
 
-        combat.abandonReload();
-        combat.setArtRoll(() -> 0.999); // this time the Art does not fire
-        combat.setCurrentState(CombatManager.CombatState.INACTIVE);
+        assertEquals("the shot's own reload is the one cut", Math.max(1, full - 1),
+                combat.getActiveReload().getTurnsRequired());
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("QUICK LOAD ")));
+    }
+
+    @Test
+    public void staggeringBoltDazesTheTargetOfARealShot() {
+        know(CombatArt.STAGGERING_BOLT);
+        player.getInventory().setRightHand(shooter(Item.ItemType.CROSSBOW, "CROSSBOW"));
+        player.getStats().setArrows(10);
+        Monster foe = foeDownrange();
+
         combat.playerAttackInstant();
-        assertEquals(Math.max(1, full - 1), combat.getActiveReload().getTurnsRequired());
+
+        assertTrue(foe.isDazed() || foe.isStunned());
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("DAZE ")));
+    }
+
+    @Test
+    public void tangleSlowsWhatAThrownWeaponHits() {
+        know(CombatArt.TANGLE);
+        Monster foe = foeDownrange();
+
+        for (int i = 0; i < 30 && !foe.getStatusManager().hasEffect(
+                com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOWED); i++) {
+            combat.throwWeapon(weapon("BLADE"));
+        }
+
+        assertTrue(foe.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOWED));
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("TANGLE ")));
     }
 
     private boolean missedOnce() {

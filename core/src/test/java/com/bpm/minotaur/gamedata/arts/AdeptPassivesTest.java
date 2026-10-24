@@ -189,12 +189,36 @@ public class AdeptPassivesTest {
 
     // --- The ranged Passives (#244) ---
 
+    /** Whether a reload is under way for Practised Hands to cut. */
+    private boolean reloading;
+    /** The combat code's hand: records loosed arrows as strikes, and owns one reload. */
+    private final AdeptPassives.FreeStrike hand = new AdeptPassives.FreeStrike() {
+        @Override
+        public void strike(Monster target, String word) {
+            struck.add(target);
+            words.add(word);
+        }
+
+        @Override
+        public boolean loose(Monster target, String word) {
+            strike(target, word);
+            return true;
+        }
+
+        @Override
+        public boolean cutReload() {
+            boolean cut = reloading;
+            reloading = false;
+            return cut;
+        }
+    };
+
     @Test
     public void swiftNockLoosesASecondArrowAtTheSameTarget() {
         know(CombatArt.SWIFT_NOCK);
         Monster foe = monsterAt(6, 3);
 
-        String word = alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, strike);
+        String word = alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, hand);
 
         assertEquals(List.of(foe), struck);
         assertEquals(List.of(AdeptPassives.SECOND_ARROW), words);
@@ -203,36 +227,49 @@ public class AdeptPassivesTest {
     }
 
     @Test
+    public void swiftNockThatLoosesNothingIsNotCounted() {
+        know(CombatArt.SWIFT_NOCK);
+        Monster foe = monsterAt(6, 3);
+
+        alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, strike); // a hand with no arrow to loose
+
+        assertTrue(struck.isEmpty());
+        assertFalse(TelemetryManager.getInstance().toJson().contains("SWIFT_NOCK"));
+    }
+
+    @Test
     public void staggeringBoltDazesAndThenStuns() {
         know(CombatArt.STAGGERING_BOLT);
         Monster foe = monsterAt(6, 3);
         AdeptPassives passives = alwaysFires();
 
-        assertEquals("DAZE", passives.onFullHit(player, weapon("CROSSBOW"), foe, maze, 5, strike));
-        assertEquals("a dazed target is stunned", "STUN", passives.onFullHit(player, weapon("CROSSBOW"), foe, maze, 5, strike));
+        assertEquals("DAZE", passives.onFullHit(player, weapon("CROSSBOW"), foe, maze, 5, hand));
+        assertEquals("a dazed target is stunned", "STUN", passives.onFullHit(player, weapon("CROSSBOW"), foe, maze, 5, hand));
         assertTrue(TelemetryManager.getInstance().toJson().contains("\"STAGGERING_BOLT\": 2"));
     }
 
     @Test
-    public void practisedHandsCutsTheNextReloadOnce() {
+    public void practisedHandsCutsTheReloadUnderWayAndOnlyCountsWhenItDoes() {
         know(CombatArt.PRACTISED_HANDS);
         Monster foe = monsterAt(6, 3);
+        AdeptPassives passives = alwaysFires();
+        reloading = true;
 
-        assertEquals(AdeptPassives.QUICK_LOAD, alwaysFires().onFullHit(player, weapon("FIREARM"), foe, maze, 9, strike));
-
-        assertTrue(player.takeReloadCut());
-        assertFalse("one hit cuts one reload", player.takeReloadCut());
+        assertEquals(AdeptPassives.QUICK_LOAD, passives.onFullHit(player, weapon("FIREARM"), foe, maze, 9, hand));
+        assertFalse("the reload was cut", reloading);
+        assertNull("nothing left to cut, nothing to show", passives.onFullHit(player, weapon("FIREARM"), foe, maze, 9, hand));
         assertTrue(TelemetryManager.getInstance().toJson().contains("\"PRACTISED_HANDS\": 1"));
     }
 
     @Test
-    public void aReloadCutNeverDropsBelowOneTurn() {
-        com.bpm.minotaur.gamedata.firearm.ReloadChannel full =
+    public void aReloadIsCutByATurnButNeverToNothing() {
+        com.bpm.minotaur.gamedata.firearm.ReloadChannel reload =
                 new com.bpm.minotaur.gamedata.firearm.ReloadChannel(Item.ItemType.MUSKET);
-        com.bpm.minotaur.gamedata.firearm.ReloadChannel cut =
-                new com.bpm.minotaur.gamedata.firearm.ReloadChannel(Item.ItemType.MUSKET, 1);
-        assertEquals(Math.max(1, full.getTurnsRequired() - 1), cut.getTurnsRequired());
-        assertEquals(1, new com.bpm.minotaur.gamedata.firearm.ReloadChannel(Item.ItemType.MUSKET, 99).getTurnsRequired());
+        int full = reload.getTurnsRequired();
+        int cuts = 0;
+        while (reload.cut()) cuts++;
+        assertEquals(full - 1, cuts);
+        assertEquals(1, reload.getTurnsRemaining());
     }
 
     @Test
@@ -240,7 +277,7 @@ public class AdeptPassivesTest {
         know(CombatArt.TANGLE);
         Monster foe = monsterAt(6, 3);
 
-        assertEquals(AdeptPassives.TANGLED, alwaysFires().onThrownHit(player, weapon("BLADE"), foe));
+        assertEquals(AdeptPassives.TANGLE, alwaysFires().onThrownHit(player, weapon("BLADE"), foe));
 
         assertTrue(foe.getStatusManager().hasEffect(StatusEffectType.SLOWED));
         assertTrue(TelemetryManager.getInstance().toJson().contains("\"TANGLE\": 1"));
@@ -251,7 +288,7 @@ public class AdeptPassivesTest {
         know(CombatArt.TANGLE);
         Monster foe = monsterAt(4, 3);
 
-        assertNull("a dagger in the hand is a Blade", alwaysFires().onFullHit(player, weapon("BLADE"), foe, maze, 5, strike));
+        assertNull("a dagger in the hand is a Blade", alwaysFires().onFullHit(player, weapon("BLADE"), foe, maze, 5, hand));
         assertFalse(foe.getStatusManager().hasEffect(StatusEffectType.SLOWED));
     }
 
@@ -262,18 +299,19 @@ public class AdeptPassivesTest {
         }
         Monster foe = monsterAt(6, 3);
         AdeptPassives passives = neverFires();
+        reloading = true;
         for (String family : new String[]{"BOW", "CROSSBOW", "FIREARM"}) {
-            assertNull(family, passives.onFullHit(player, weapon(family), foe, maze, 5, strike));
+            assertNull(family, passives.onFullHit(player, weapon(family), foe, maze, 5, hand));
         }
         assertNull(passives.onThrownHit(player, weapon("BLADE"), foe));
         assertTrue(struck.isEmpty());
-        assertFalse(player.takeReloadCut());
+        assertTrue("the reload was not cut", reloading);
     }
 
     @Test
     public void anUnknownRangedArtNeverFires() {
         Monster foe = monsterAt(6, 3);
-        assertNull(alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, strike));
+        assertNull(alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, hand));
         assertNull(alwaysFires().onThrownHit(player, weapon("BLADE"), foe));
         assertTrue(struck.isEmpty());
     }
