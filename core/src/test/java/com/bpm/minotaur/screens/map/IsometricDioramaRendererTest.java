@@ -3,8 +3,12 @@ package com.bpm.minotaur.screens.map;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.gamedata.map.MapModel;
 import com.bpm.minotaur.generation.Biome;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -259,5 +263,163 @@ public class IsometricDioramaRendererTest {
         assertEquals(-5.0f, boardBaseZ, 0.001f);
         assertEquals(0.0f, boardTopZ, 0.001f);
         assertEquals(10.2f, visitedLandZ + wallHeightDelta, 0.001f);
+    }
+
+    @Test
+    public void testMulberry32AndHashDeterminism() {
+        int h1 = IsometricDioramaRenderer.hash(4, 5);
+        int h2 = IsometricDioramaRenderer.hash(4, 5);
+        assertEquals("Hash must be identical for same coordinates", h1, h2);
+
+        IsometricDioramaRenderer.Mulberry32 rng1 = new IsometricDioramaRenderer.Mulberry32(h1 + 7);
+        IsometricDioramaRenderer.Mulberry32 rng2 = new IsometricDioramaRenderer.Mulberry32(h2 + 7);
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals("RNG sequence must be deterministic", rng1.nextFloat(), rng2.nextFloat(), 0.00001f);
+        }
+    }
+
+    @Test
+    public void testGlimpsedBiomeProps() {
+        List<IsometricDioramaRenderer.Prop> props = new ArrayList<>();
+
+        // Forest: 7 pines
+        IsometricDioramaRenderer.generateGlimpsedProps(2, 3, Biome.FOREST, false, props);
+        assertEquals(7, props.size());
+        for (IsometricDioramaRenderer.Prop p : props) {
+            assertEquals(IsometricDioramaRenderer.Prop.Kind.PINE, p.kind);
+        }
+
+        // Mountains: 3 crags
+        props.clear();
+        IsometricDioramaRenderer.generateGlimpsedProps(1, 1, Biome.MOUNTAINS, false, props);
+        assertEquals(3, props.size());
+        for (IsometricDioramaRenderer.Prop p : props) {
+            assertEquals(IsometricDioramaRenderer.Prop.Kind.CRAG, p.kind);
+        }
+
+        // Desert with Seal
+        props.clear();
+        IsometricDioramaRenderer.generateGlimpsedProps(7, 7, Biome.DESERT, true, props);
+        boolean foundSeal = false;
+        for (IsometricDioramaRenderer.Prop p : props) {
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.SEAL) {
+                foundSeal = true;
+                assertEquals(0.5f, p.u, 0.001f);
+                assertEquals(0.5f, p.v, 0.001f);
+            }
+        }
+        assertTrue("Seal prop must be generated when hasSeal=true", foundSeal);
+
+        // Lakelands: pool and reeds
+        props.clear();
+        IsometricDioramaRenderer.generateGlimpsedProps(3, 4, Biome.LAKELANDS, false, props);
+        boolean foundPool = false;
+        for (IsometricDioramaRenderer.Prop p : props) {
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.POOL) foundPool = true;
+        }
+        assertTrue("Lakelands should generate POOL prop", foundPool);
+
+        // Maze: wallstubs
+        props.clear();
+        IsometricDioramaRenderer.generateGlimpsedProps(5, 5, Biome.MAZE, false, props);
+        assertEquals(5, props.size());
+        for (IsometricDioramaRenderer.Prop p : props) {
+            assertEquals(IsometricDioramaRenderer.Prop.Kind.WALLSTUB, p.kind);
+        }
+    }
+
+    @Test
+    public void testVisitedBiomeAndLandmarkProps() {
+        List<IsometricDioramaRenderer.Prop> props = new ArrayList<>();
+
+        MapKnowledgeMask.KnowledgeProvider provider = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.VISITED; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return true; }
+            @Override
+            public MapModel.ShelterMark getShelter(int cx, int cy) {
+                return (cx == 4 && cy == 5) ? MapModel.ShelterMark.HOME : null;
+            }
+            @Override
+            public boolean hasReturnPortal(int cx, int cy) { return cx == 5 && cy == 3; }
+            @Override
+            public boolean hasLadder(int cx, int cy) { return cx == 5 && cy == 4; }
+            @Override
+            public int getGraveCount(int cx, int cy) { return (cx == 3 && cy == 3) ? 2 : 0; }
+            @Override
+            public boolean hasPlayer(int cx, int cy) { return cx == 4 && cy == 5; }
+            @Override
+            public float getPlayerU(int cx, int cy) { return 0.4f; }
+            @Override
+            public float getPlayerV(int cx, int cy) { return 0.6f; }
+            @Override
+            public float getPlayerFaceX(int cx, int cy) { return 1f; }
+            @Override
+            public float getPlayerFaceY(int cx, int cy) { return 0f; }
+        };
+
+        // Shelter chunk (4, 5): should have SHELTER, FIRE, and PLAYER
+        IsometricDioramaRenderer.generateVisitedProps(4, 5, Biome.FOREST, null, provider, props);
+        boolean foundShelter = false;
+        boolean foundFire = false;
+        boolean foundPlayer = false;
+        for (IsometricDioramaRenderer.Prop p : props) {
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.SHELTER) {
+                foundShelter = true;
+                assertEquals(MapModel.ShelterMark.HOME, p.shelterType);
+            }
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.FIRE) foundFire = true;
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.PLAYER) {
+                foundPlayer = true;
+                assertEquals(0.4f, p.u, 0.001f);
+                assertEquals(0.6f, p.v, 0.001f);
+                assertEquals(1.0f, p.faceX, 0.001f);
+                assertEquals(0.0f, p.faceY, 0.001f);
+            }
+        }
+        assertTrue("Shelter prop must be present", foundShelter);
+        assertTrue("Fire prop must be present for non-cold shelter", foundFire);
+        assertTrue("Player prop must be present", foundPlayer);
+
+        // Portal chunk (5, 3)
+        props.clear();
+        IsometricDioramaRenderer.generateVisitedProps(5, 3, Biome.MAZE, null, provider, props);
+        boolean foundPortal = false;
+        for (IsometricDioramaRenderer.Prop p : props) {
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.PORTAL) foundPortal = true;
+        }
+        assertTrue("Portal prop must be present", foundPortal);
+
+        // Graves chunk (3, 3)
+        props.clear();
+        IsometricDioramaRenderer.generateVisitedProps(3, 3, Biome.MAZE, null, provider, props);
+        int graveCount = 0;
+        for (IsometricDioramaRenderer.Prop p : props) {
+            if (p.kind == IsometricDioramaRenderer.Prop.Kind.GRAVE) graveCount++;
+        }
+        assertEquals("Two graves should be generated", 2, graveCount);
+    }
+
+    @Test
+    public void testPropPaletteConstants() {
+        assertEquals("2d343c", IsometricDioramaRenderer.COLOR_SIL_LIT.toString().substring(0, 6));
+        assertEquals("20262c", IsometricDioramaRenderer.COLOR_SIL_DARK.toString().substring(0, 6));
+        assertEquals("6ccfe0", IsometricDioramaRenderer.COLOR_PLAYER_CYAN.toString().substring(0, 6));
+        assertEquals("e3cfa6", IsometricDioramaRenderer.COLOR_PLAYER_HEAD.toString().substring(0, 6));
+        assertEquals("ffcf6a", IsometricDioramaRenderer.COLOR_WINDOW_LIT.toString().substring(0, 6));
+        assertEquals("e9b44c", IsometricDioramaRenderer.COLOR_FLAG_GOLD.toString().substring(0, 6));
+        assertEquals("7a3b26", IsometricDioramaRenderer.COLOR_ROOF_LIT_L.toString().substring(0, 6));
+    }
+
+    @Test
+    public void testColorShade() {
+        Color base = new Color(0.5f, 0.5f, 0.5f, 1f);
+        Color lighter = IsometricDioramaRenderer.shade(base, 0.5f);
+        assertTrue("Positive shade should be lighter", lighter.r > base.r);
+
+        Color darker = IsometricDioramaRenderer.shade(base, -0.5f);
+        assertTrue("Negative shade should be darker", darker.r < base.r);
     }
 }

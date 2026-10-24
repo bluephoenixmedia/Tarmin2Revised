@@ -30,6 +30,39 @@ public final class MapKnowledgeMask implements Disposable {
         default ChunkTiles getChunkTiles(int cx, int cy) {
             return null;
         }
+        default com.bpm.minotaur.gamedata.map.MapModel.ShelterMark getShelter(int cx, int cy) {
+            return null;
+        }
+        default boolean hasSeal(int cx, int cy) {
+            return false;
+        }
+        default boolean hasReturnPortal(int cx, int cy) {
+            return false;
+        }
+        default boolean hasLadder(int cx, int cy) {
+            return false;
+        }
+        default int getGraveCount(int cx, int cy) {
+            return 0;
+        }
+        default int getChestCount(int cx, int cy) {
+            return 0;
+        }
+        default boolean hasPlayer(int cx, int cy) {
+            return false;
+        }
+        default float getPlayerU(int cx, int cy) {
+            return 0.5f;
+        }
+        default float getPlayerV(int cx, int cy) {
+            return 0.5f;
+        }
+        default float getPlayerFaceX(int cx, int cy) {
+            return 0f;
+        }
+        default float getPlayerFaceY(int cx, int cy) {
+            return 1f;
+        }
     }
 
     private Texture maskTexture;

@@ -365,6 +365,88 @@ final class MapSurface extends Actor implements Disposable {
                 public ChunkTiles getChunkTiles(int cx, int cy) {
                     return getOrLoadTiles(floor, new GridPoint2(cx, cy));
                 }
+
+                @Override
+                public MapModel.ShelterMark getShelter(int cx, int cy) {
+                    if (shelters != null) {
+                        for (MapModel.KnownShelter s : shelters) {
+                            if (s.getChunk().x == cx && s.getChunk().y == cy) {
+                                return s.getMark();
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public boolean hasSeal(int cx, int cy) {
+                    ShelterRoads roadLayout = (model == null || model.getBiomes() == null) ? null : model.getBiomes().getRoads();
+                    if (roadLayout != null) {
+                        for (ShelterRoads.Road road : roadLayout.getRoads()) {
+                            if (road.getKind() == ShelterRoads.Kind.SEAL && model.isSealSiteKnown(road.getIndex())) {
+                                GridPoint2 end = road.getEnd();
+                                if (end != null && end.x == cx && end.y == cy) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                }
+
+                @Override
+                public boolean hasReturnPortal(int cx, int cy) {
+                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
+                    return s != null && s.hasReturnPortal();
+                }
+
+                @Override
+                public boolean hasLadder(int cx, int cy) {
+                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
+                    return s != null && (s.hasUpLadder() || s.hasDownLadder());
+                }
+
+                @Override
+                public int getGraveCount(int cx, int cy) {
+                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
+                    return s != null ? s.getGraves().size() : 0;
+                }
+
+                @Override
+                public int getChestCount(int cx, int cy) {
+                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
+                    return s != null ? s.getLoot() : 0;
+                }
+
+                @Override
+                public boolean hasPlayer(int cx, int cy) {
+                    return player != null && player.floor == floor && player.chunk != null
+                            && player.chunk.x == cx && player.chunk.y == cy;
+                }
+
+                @Override
+                public float getPlayerU(int cx, int cy) {
+                    if (player == null) return 0.5f;
+                    return (player.tileX + 0.5f) / Math.max(1, player.chunkWidth);
+                }
+
+                @Override
+                public float getPlayerV(int cx, int cy) {
+                    if (player == null) return 0.5f;
+                    return (player.tileY + 0.5f) / Math.max(1, player.chunkHeight);
+                }
+
+                @Override
+                public float getPlayerFaceX(int cx, int cy) {
+                    if (player == null || player.facing == null) return 0f;
+                    return player.facing.getVector().x;
+                }
+
+                @Override
+                public float getPlayerFaceY(int cx, int cy) {
+                    if (player == null || player.facing == null) return 1f;
+                    return player.facing.getVector().y;
+                }
             };
 
             batch.flush();
