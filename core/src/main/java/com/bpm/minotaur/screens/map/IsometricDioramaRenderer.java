@@ -431,7 +431,11 @@ public final class IsometricDioramaRenderer implements Disposable {
         surfaceRegion.flip(false, true);
 
         fboBatch = new SpriteBatch();
+        fboBatch.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
+
         shapeRenderer = new ShapeRenderer();
+        shapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
+        shapeRenderer.updateMatrices();
 
         noiseTextures.buildTextures();
         fogShader = new MapFogShader();
@@ -634,11 +638,14 @@ public final class IsometricDioramaRenderer implements Disposable {
         return t < 0.5f ? 2f * t * t : 1f - (float) Math.pow(-2f * t + 2f, 2) / 2f;
     }
 
+    public TextureRegion getFboRegion() {
+        return fboRegion;
+    }
+
     /**
-     * Renders the low-res FBO scene and draws it upscaled into the destination bounds.
+     * Renders the low-res 2.5D diorama scene into the internal 720x448 FBO.
      */
-    public void render(Batch batch, float targetX, float targetY, float targetWidth, float targetHeight,
-                       MapKnowledgeMask.KnowledgeProvider provider) {
+    public void renderFbo(MapKnowledgeMask.KnowledgeProvider provider) {
         if (!initialized) {
             init();
             if (provider != null && knowledgeMask.getMaskTexture() == null) {
@@ -647,6 +654,10 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
 
         if (fbo == null) return;
+
+        shapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
+        shapeRenderer.updateMatrices();
+        fboBatch.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
 
         float ft = ease(floorT);
 
@@ -742,9 +753,17 @@ public final class IsometricDioramaRenderer implements Disposable {
 
             fbo.end();
         }
+    }
 
-        // Draw upscaled FBO to screen stage batch
-        batch.draw(fboRegion, targetX, targetY, targetWidth, targetHeight);
+    /**
+     * Renders the low-res FBO scene and draws it upscaled into the destination bounds.
+     */
+    public void render(Batch batch, float targetX, float targetY, float targetWidth, float targetHeight,
+                       MapKnowledgeMask.KnowledgeProvider provider) {
+        renderFbo(provider);
+        if (batch != null && batch.isDrawing() && fboRegion != null) {
+            batch.draw(fboRegion, targetX, targetY, targetWidth, targetHeight);
+        }
     }
 
     public static int hash(int x, int y) {

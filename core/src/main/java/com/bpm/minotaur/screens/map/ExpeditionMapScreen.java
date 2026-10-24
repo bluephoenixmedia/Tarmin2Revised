@@ -123,6 +123,8 @@ public class ExpeditionMapScreen extends BaseScreen {
     private TextButton takeSugBtn;
     private TextButton zoomActionBtn;
     private TextButton cyclePinBtn;
+    private TextButton.TextButtonStyle compactPrimary;
+    private TextButton.TextButtonStyle compactSecondary;
 
     /** The map was closed in the chunk view; it reopens there once the panels exist. */
     private boolean reopenChunk;
@@ -187,6 +189,7 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
         skin = new HudSkin();
+        initButtonStyles();
         surface = new MapSurface(skin, this::loadSummary);
         surface.setTileLoader(this::tilesFor);
         model = buildModel();
@@ -312,7 +315,7 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         // Zoom button group
         Table zoomGroup = new Table();
-        worldZoomBtn = new TextButton("WORLD", UiStyles.secondary(skin));
+        worldZoomBtn = new TextButton("WORLD", compactSecondary);
         worldZoomBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -323,9 +326,9 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        zoomGroup.add(worldZoomBtn).width(72f).height(40f);
+        zoomGroup.add(worldZoomBtn).width(76f).height(38f);
 
-        regionZoomBtn = new TextButton("REGION", UiStyles.secondary(skin));
+        regionZoomBtn = new TextButton("REGION", compactSecondary);
         regionZoomBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -336,9 +339,9 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        zoomGroup.add(regionZoomBtn).width(72f).height(40f);
+        zoomGroup.add(regionZoomBtn).width(76f).height(38f);
 
-        chunkZoomBtn = new TextButton("CHUNK", UiStyles.secondary(skin));
+        chunkZoomBtn = new TextButton("CHUNK", compactSecondary);
         chunkZoomBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -347,12 +350,12 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        zoomGroup.add(chunkZoomBtn).width(72f).height(40f);
+        zoomGroup.add(chunkZoomBtn).width(76f).height(38f);
         header.add(zoomGroup).padRight(14f);
 
         // Rotate buttons
         Table rotGroup = new Table();
-        rotLBtn = new TextButton("[Q]", UiStyles.secondary(skin));
+        rotLBtn = new TextButton("[Q]", compactSecondary);
         rotLBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -361,9 +364,9 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        rotGroup.add(rotLBtn).width(44f).height(40f).padRight(4f);
+        rotGroup.add(rotLBtn).width(40f).height(38f).padRight(4f);
 
-        rotRBtn = new TextButton("[E]", UiStyles.secondary(skin));
+        rotRBtn = new TextButton("[E]", compactSecondary);
         rotRBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -372,20 +375,42 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        rotGroup.add(rotRBtn).width(44f).height(40f);
+        rotGroup.add(rotRBtn).width(40f).height(38f);
         header.add(rotGroup).padRight(14f);
 
         // Close button
-        closeBtn = new TextButton("CLOSE  M", UiStyles.secondary(skin));
+        closeBtn = new TextButton("CLOSE  M", compactSecondary);
         closeBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 close();
             }
         });
-        header.add(closeBtn).height(40f);
+        header.add(closeBtn).width(96f).height(38f);
 
         return header;
+    }
+
+    private void initButtonStyles() {
+        compactPrimary = new TextButton.TextButtonStyle();
+        compactPrimary.font = skin.getFontSmall();
+        compactPrimary.up = skin.getTabActive();
+        compactPrimary.down = skin.solid(UiTheme.GOLD);
+        compactPrimary.over = skin.getTabActive();
+        compactPrimary.focused = skin.getTabActive();
+        compactPrimary.fontColor = UiTheme.FOCUS;
+        compactPrimary.downFontColor = UiTheme.ON_GOLD;
+        compactPrimary.overFontColor = UiTheme.FOCUS;
+
+        compactSecondary = new TextButton.TextButtonStyle();
+        compactSecondary.font = skin.getFontSmall();
+        compactSecondary.up = skin.getCardBg();
+        compactSecondary.down = skin.solid(UiTheme.GOLD);
+        compactSecondary.over = skin.getTabActive();
+        compactSecondary.focused = skin.getTabActive();
+        compactSecondary.fontColor = UiTheme.TEXT;
+        compactSecondary.downFontColor = UiTheme.ON_GOLD;
+        compactSecondary.overFontColor = UiTheme.GOLD;
     }
 
     private Actor createDivider() {
@@ -453,7 +478,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         bottomRow.add(pinLegendTable).left().bottom();
 
         Table overlayBtns = new Table();
-        fitAreaBtn = new TextButton(UiGlyphs.sanitize("[ FIT TO KNOWN AREA ]"), UiStyles.secondary(skin));
+        fitAreaBtn = new TextButton("FIT KNOWN AREA", compactSecondary);
         fitAreaBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -461,15 +486,15 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         });
 
-        centeredOnYouBtn = new TextButton(UiGlyphs.sanitize("[ CENTRED ON YOU ]"), UiStyles.secondary(skin));
+        centeredOnYouBtn = new TextButton("CENTRE ON YOU", compactSecondary);
         centeredOnYouBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 recenter();
             }
         });
-        overlayBtns.add(fitAreaBtn).padRight(8f);
-        overlayBtns.add(centeredOnYouBtn);
+        overlayBtns.add(fitAreaBtn).height(34f).padRight(8f);
+        overlayBtns.add(centeredOnYouBtn).height(34f);
         bottomRow.add().growX();
         bottomRow.add(overlayBtns).right().bottom();
 
@@ -495,14 +520,14 @@ public class ExpeditionMapScreen extends BaseScreen {
             final int targetFloor = f;
             boolean isCurrent = (f == surface.getFloor());
             TextButton floorBtn = new TextButton(UiGlyphs.sanitize(name),
-                    isCurrent ? UiStyles.primary(skin) : UiStyles.secondary(skin));
+                    isCurrent ? compactPrimary : compactSecondary);
             floorBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
                     changeFloor(targetFloor - surface.getFloor());
                 }
             });
-            floorStackTable.add(floorBtn).width(160f).height(36f).padBottom(4f).row();
+            floorStackTable.add(floorBtn).width(160f).height(34f).padBottom(4f).row();
         }
     }
 
@@ -557,7 +582,7 @@ public class ExpeditionMapScreen extends BaseScreen {
 
     private Table buildActionGrid() {
         Table grid = new Table();
-        setWpBtn = new TextButton("SET WAYPOINT  W", UiStyles.primary(skin));
+        setWpBtn = new TextButton("SET WAYPOINT  W", compactPrimary);
         setWpBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -565,7 +590,7 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         });
 
-        takeSugBtn = new TextButton("TAKE SUGGESTION  G", UiStyles.secondary(skin));
+        takeSugBtn = new TextButton("TAKE SUGGESTION  G", compactSecondary);
         takeSugBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -573,7 +598,7 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         });
 
-        zoomActionBtn = new TextButton("ZOOM IN  ENTER", UiStyles.secondary(skin));
+        zoomActionBtn = new TextButton("ZOOM IN  ENTER", compactSecondary);
         zoomActionBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -582,7 +607,7 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         });
 
-        cyclePinBtn = new TextButton("CYCLE PIN  P", UiStyles.secondary(skin));
+        cyclePinBtn = new TextButton("CYCLE PIN  P", compactSecondary);
         cyclePinBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -928,9 +953,9 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         show(floorBreadcrumbLabel, MapNames.floor(floor).toUpperCase(Locale.ROOT));
         MapSurface.Zoom z = surface.getZoom();
-        worldZoomBtn.setStyle(z == MapSurface.Zoom.WORLD ? UiStyles.primary(skin) : UiStyles.secondary(skin));
-        regionZoomBtn.setStyle(z == MapSurface.Zoom.REGION ? UiStyles.primary(skin) : UiStyles.secondary(skin));
-        chunkZoomBtn.setStyle(z == MapSurface.Zoom.CHUNK ? UiStyles.primary(skin) : UiStyles.secondary(skin));
+        worldZoomBtn.setStyle(z == MapSurface.Zoom.WORLD ? compactPrimary : compactSecondary);
+        regionZoomBtn.setStyle(z == MapSurface.Zoom.REGION ? compactPrimary : compactSecondary);
+        chunkZoomBtn.setStyle(z == MapSurface.Zoom.CHUNK ? compactPrimary : compactSecondary);
 
         if (z == MapSurface.Zoom.WORLD) {
             show(viewLevelLabel, "WORLD");
@@ -1110,8 +1135,8 @@ public class ExpeditionMapScreen extends BaseScreen {
     }
 
     private void addStatRow(Table table, String label, String value, float totalW, Color valColor) {
-        Label lbl = UiLabels.of(label, UiStyles.caption(skin, UiTheme.TEXT_DIM));
-        Label val = UiLabels.of(value, UiStyles.body(skin, valColor));
+        Label lbl = UiLabels.ellipsized(label, UiStyles.caption(skin, UiTheme.TEXT_DIM));
+        Label val = UiLabels.ellipsized(value, UiStyles.body(skin, valColor));
         table.add(lbl).width(128f).left().padBottom(4f);
         table.add(val).width(totalW - 128f).left().padBottom(4f).row();
     }

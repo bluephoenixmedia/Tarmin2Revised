@@ -78,14 +78,17 @@ public final class MapFogShader implements Disposable {
         }
 
         batch.setShader(shader);
+        shader.bind();
 
         noise.getTexBody().bind(1);
         noise.getTexShade().bind(2);
         noise.getTexHi().bind(3);
         noise.getTexWisp().bind(4);
         maskTexture.bind(5);
+        dummyWhiteTexture.bind(0);
         Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
+        shader.setUniformi("u_texture", 0);
         shader.setUniformi("u_texBody", 1);
         shader.setUniformi("u_texShade", 2);
         shader.setUniformi("u_texHi", 3);

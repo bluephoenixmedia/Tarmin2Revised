@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import com.bpm.minotaur.gamedata.Direction;
@@ -41,7 +42,17 @@ import java.util.function.BiFunction;
  * and {@link MapKnowledge}. The cursor chunk is always at the centre: moving the cursor is
  * panning. See docs/DEsign/Requirements_ Expedition Map.md, section 5.
  */
-final class MapSurface extends Actor implements Disposable {
+final class MapSurface extends Widget implements Disposable {
+
+    @Override
+    public float getPrefWidth() {
+        return 1440f;
+    }
+
+    @Override
+    public float getPrefHeight() {
+        return 896f;
+    }
 
     /** The three zoom steps. Each cell size is an integer, so nothing draws at a fractional scale. */
     enum Zoom {
@@ -546,8 +557,17 @@ final class MapSurface extends Actor implements Disposable {
                 }
             };
 
-            batch.flush();
-            dioramaRenderer.render(batch, getX(), getY(), getWidth(), getHeight(), provider);
+            batch.end();
+            dioramaRenderer.renderFbo(provider);
+            if (getStage() != null) {
+                getStage().getViewport().apply();
+            }
+            batch.begin();
+            batch.setColor(1f, 1f, 1f, parentAlpha);
+            TextureRegion reg = dioramaRenderer.getFboRegion();
+            if (reg != null) {
+                batch.draw(reg, getX(), getY(), getWidth(), getHeight());
+            }
             batch.setColor(Color.WHITE);
             return;
         }
