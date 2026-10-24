@@ -646,7 +646,7 @@ public class CombatManager {
         if (player == null || target == null || target.getCurrentHP() <= 0) return;
         Item weapon = freeStrikeWeapon != null ? freeStrikeWeapon : player.getInventory().getRightHand();
         if (weapon != null && weapon.isRanged()) return; // a bow's free shot is freeShot, not a swing
-        landFreeBlow(target, word, weapon);
+        landFreeBlow(target, word, weapon, 0, 0);
     }
 
     /**
@@ -660,17 +660,20 @@ public class CombatManager {
         consumeAmmoFor(weapon);
         GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
         fireRangedEffects(weapon, new HitResult(at, HitResult.HitType.MONSTER, target));
-        landFreeBlow(target, word, weapon);
+        landFreeBlow(target, word, weapon, 0, 0);
         return true;
     }
 
-    /** The blow a free swing, a free shot or an Active lands: rolled, shown with {@code word}, counted. */
-    private boolean landFreeBlow(Monster target, String word, Item weapon) {
+    /**
+     * The blow a free swing, a free shot or an Active lands: rolled, shown with {@code word}, counted.
+     * An Active may add {@code toHitBonus} to the roll and {@code extraDamage} to the damage.
+     */
+    private boolean landFreeBlow(Monster target, String word, Item weapon, int toHitBonus, int extraDamage) {
         GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
         com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
         int d20 = DiceRoller.d20();
         int toHit = (weapon != null && weapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
-        toHit += player.masteryToHitBonus(weapon, false);
+        toHit += player.masteryToHitBonus(weapon, false) + toHitBonus;
         boolean crit = d20 == 20;
         if (!crit && d20 + toHit < target.getArmorClass()) {
             telemetry.recordPlayerAttack(target, target.getMonsterType(), target.getLevel(), attackModeOf(weapon),
@@ -687,7 +690,7 @@ public class CombatManager {
                 : weapon != null ? player.getInventory().getActiveDamageDice(weapon) : "1d2";
         if (dice == null || dice.isEmpty()) dice = "1d4";
         int bonus = (weapon != null && weapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
-        int actual = target.takeDamage(Math.max(1, DiceRoller.roll(dice) + bonus), DamageType.PHYSICAL, crit);
+        int actual = target.takeDamage(Math.max(1, DiceRoller.roll(dice) + bonus + extraDamage), DamageType.PHYSICAL, crit);
         alertMonsterToPlayer(target);
         showDamageText(actual, at, word + " ", com.badlogic.gdx.graphics.Color.ORANGE);
         telemetry.recordPlayerAttack(target, target.getMonsterType(), target.getLevel(), attackModeOf(weapon),
@@ -726,17 +729,43 @@ public class CombatManager {
                 }
 
                 @Override
-                public Monster foeInFront() {
-                    int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
-                    if (maze.isWallBlocking(px, py, player.getFacing())) return null;
-                    Monster m = maze.getMonsters().get(new GridPoint2(
-                            px + (int) player.getFacing().getVector().x, py + (int) player.getFacing().getVector().y));
-                    return m == null || m.getCurrentHP() <= 0 || m.isAlly() || m.isPeaceful() ? null : m;
+                public Monster foeAhead(int tiles) {
+                    Direction facing = player.getFacing();
+                    int x = (int) player.getPosition().x, y = (int) player.getPosition().y;
+                    for (int i = 1; i <= tiles; i++) {
+                        if (maze.isWallBlocking(x, y, facing)) return null;
+                        x += (int) facing.getVector().x;
+                        y += (int) facing.getVector().y;
+                        Monster m = maze.getMonsters().get(new GridPoint2(x, y));
+                        if (i < tiles) {
+                            if (m != null || !maze.isPassable(x, y)) return null; // something stands between
+                        } else if (m != null && m.getCurrentHP() > 0 && !m.isAlly() && !m.isPeaceful()) {
+                            return m;
+                        }
+                    }
+                    return null;
                 }
 
                 @Override
-                public boolean blow(Monster target, Item weapon, String word) {
-                    return landFreeBlow(target, word, weapon);
+                public boolean stepForward() {
+                    int x = (int) player.getPosition().x, y = (int) player.getPosition().y;
+                    Direction facing = player.getFacing();
+                    int nx = x + (int) facing.getVector().x, ny = y + (int) facing.getVector().y;
+                    // Only open, dry floor: a door, a gate or a chunk's edge is not a step to lunge
+                    // through, and water would owe the world a wading turn the lunge cannot pay.
+                    if (maze.isWallBlocking(x, y, facing) || !maze.isPassable(nx, ny)
+                            || maze.getGameObjectAt(nx, ny) != null
+                            || maze.getLiquidManager() != null && maze.getLiquidManager().slowsMovement(nx, ny, player)) {
+                        return false;
+                    }
+                    abandonReload(); // a step gives up the reload, as walking does
+                    player.move(facing, maze, eventManager, com.bpm.minotaur.gamedata.GameMode.ADVANCED, soundManager);
+                    return (int) player.getPosition().x == nx && (int) player.getPosition().y == ny;
+                }
+
+                @Override
+                public boolean blow(Monster target, Item weapon, String word, int toHitBonus, int extraDamage) {
+                    return landFreeBlow(target, word, weapon, toHitBonus, extraDamage);
                 }
 
                 @Override
@@ -1086,8 +1115,9 @@ public class CombatManager {
                 statMod = Math.max(MONSTER_STAT_MOD_FLOOR, t.maxHP / 14);
             }
         }
-        // A Dazed monster swings two worse (#242).
-        return profBonus + statMod - (attacker.isDazed() ? Monster.DAZED_TO_HIT : 0);
+        // A Dazed monster swings two worse (#242), and one held in an Iron Grip two worse again (#246).
+        return profBonus + statMod - (attacker.isDazed() ? Monster.DAZED_TO_HIT : 0)
+                - (attacker.isGripped() ? Monster.GRIPPED_TO_HIT : 0);
     }
 
     public boolean shouldTriggerDeathInversion(Monster attacker) {

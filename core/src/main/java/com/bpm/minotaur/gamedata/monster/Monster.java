@@ -1246,7 +1246,8 @@ public class Monster implements Renderable {
     }
 
     /**
-     * The end of one of the monster's own turns, however it was spent: Daze and Pin wear down, and
+     * The end of one of the monster's own turns, however it was spent: Daze, Pin, a hewn hide and a
+     * grip wear down, and
      * the wait since a shot counts one action, unless this was the turn it shot.
      */
     public void endTurn() {
@@ -1269,6 +1270,9 @@ public class Monster implements Renderable {
         int ac = armorClass;
         if (isStaggered()) {
             ac -= 2;
+        }
+        if (hewnTurns > 0) {
+            ac -= HEW_ARMOR;
         }
         return ac;
     }
@@ -1803,6 +1807,57 @@ public class Monster implements Renderable {
         return pinnedTurns > 0;
     }
 
+    // --- Hew Through and Iron Grip (#246) ---
+
+    /** Hew Through: this much armour off, for this many of the monster's turns, and a bleed. */
+    public static final int HEW_ARMOR = 3;
+    public static final int HEW_TURNS = 5;
+    public static final int HEW_BLEED_TURNS = 3;
+    public static final int HEW_BLEED = 1;
+    /** Iron Grip: held in place and swinging this much worse, for this many turns. */
+    public static final int GRIP_TURNS = 3;
+    public static final int GRIPPED_TO_HIT = 2;
+
+    private int hewnTurns = 0;
+    private int grippedTurns = 0;
+
+    /**
+     * Hew Through: the armour is split, {@link #HEW_ARMOR} off for {@link #HEW_TURNS} turns, and the
+     * wound bleeds. A second hew renews the split; it does not stack.
+     */
+    public void hew() {
+        hewnTurns = HEW_TURNS;
+        applyBleed(HEW_BLEED_TURNS, HEW_BLEED);
+    }
+
+    public boolean isHewn() {
+        return hewnTurns > 0;
+    }
+
+    /** Iron Grip: cannot move, and at {@link #GRIPPED_TO_HIT} worse to hit, for {@link #GRIP_TURNS} turns. */
+    public void applyGrip() {
+        grippedTurns = GRIP_TURNS;
+        pinnedTurns = Math.max(pinnedTurns, GRIP_TURNS);
+    }
+
+    public boolean isGripped() {
+        return grippedTurns > 0;
+    }
+
+    /**
+     * How many of the statuses the Arts deal it carries (#246, Gutting Stab): Bleeding, Slowed,
+     * Dazed, Pinned and Stunned. A grip pins, so it counts as Pinned.
+     */
+    public int countArtStatuses() {
+        int n = 0;
+        if (bleedTurns > 0) n++;
+        if (statusManager != null && statusManager.hasEffect(StatusEffectType.SLOWED)) n++;
+        if (isDazed()) n++;
+        if (isPinned()) n++;
+        if (isStunned()) n++;
+        return n;
+    }
+
     /** Elites and bosses are the templates whose kill XP is lifted above their level's. */
     public boolean isElite() {
         MonsterTemplate t = getTemplate();
@@ -1826,10 +1881,12 @@ public class Monster implements Renderable {
         return getRole() == MonsterRole.HEAVY || isElite() || isBoss();
     }
 
-    /** One of the monster's turns passes: a Daze and a Pin each wear down by one. */
+    /** One of the monster's turns passes: a Daze, a Pin, a hewn hide and a grip each wear down by one. */
     public void tickDazeAndPin() {
         if (dazedTurns > 0) dazedTurns--;
         if (pinnedTurns > 0) pinnedTurns--;
+        if (hewnTurns > 0) hewnTurns--;
+        if (grippedTurns > 0) grippedTurns--;
     }
 
     public int getStunTurns() {

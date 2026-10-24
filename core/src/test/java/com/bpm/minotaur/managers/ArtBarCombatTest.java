@@ -112,6 +112,88 @@ public class ArtBarCombatTest {
         assertEquals(3, player.getArtCooldowns().turnsLeft(CombatArt.BATTERING_RAM));
     }
 
+    private void wieldAndKnow(String family, CombatArt art) {
+        ItemTemplate t = new ItemTemplate();
+        t.isWeapon = true;
+        t.weaponFamily = family;
+        t.damageDice = "1d2";
+        player.getInventory().setRightHand(Item.fromTemplate(Item.ItemType.SWORD, t));
+        player.learnArt(art, null);
+        player.getStats().getMastery().setRank(art.family, Rank.EXPERT);
+    }
+
+    @Test
+    public void closingThrustReallyStepsThePlayerIn() {
+        wieldAndKnow("BLADE", CombatArt.CLOSING_THRUST);
+        Monster foe = foeAt(5, 3);
+
+        assertEquals(ActiveArts.Outcome.USED, combat.useArt(0));
+
+        assertEquals(new GridPoint2(4, 3), new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
+        assertTrue(foe.getCurrentHP() < 200);
+    }
+
+    @Test
+    public void closingThrustWillNotLungeThroughACreatureInTheWay() {
+        wieldAndKnow("BLADE", CombatArt.CLOSING_THRUST);
+        Monster near = foeAt(4, 3);
+        near.setAllyTurns(50);
+        foeAt(5, 3);
+
+        assertEquals(ActiveArts.Outcome.NO_TARGET, combat.useArt(0));
+        assertEquals(new GridPoint2(3, 3), new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
+    }
+
+    @Test
+    public void aFoeReeledInDoesNotSetOffHoldTheLine() {
+        wieldAndKnow("POLEARM", CombatArt.REEL_IN);
+        player.learnArt(CombatArt.HOLD_THE_LINE, null);
+        combat.setArtRoll(() -> 0.0);
+        Monster foe = foeAt(5, 3);
+
+        assertEquals(ActiveArts.Outcome.USED, combat.useArt(0));
+
+        assertEquals(new GridPoint2(4, 3), new GridPoint2((int) foe.getPosition().x, (int) foe.getPosition().y));
+        assertEquals("no free strike: being pulled in is not stepping in", 200, foe.getCurrentHP());
+    }
+
+    @Test
+    public void aGrippedMonsterCannotWalkAway() {
+        player.learnArt(CombatArt.IRON_GRIP, null);
+        player.getStats().getMastery().setRank(CombatArt.IRON_GRIP.family, Rank.EXPERT);
+        player.getInventory().setRightHand(null);
+        Monster foe = foeAt(4, 3);
+        assertEquals(ActiveArts.Outcome.USED, combat.useArt(0));
+        // The player backs off: a free monster would follow.
+        player.getPosition().set(1f, 3f);
+        foe.setState(Monster.MonsterState.HUNTING);
+        foe.setLastKnownTargetPos(new GridPoint2(1, 3));
+
+        new MonsterAiManager().updateMonster(foe, maze, player, true, combat);
+
+        assertEquals(new GridPoint2(4, 3), new GridPoint2((int) foe.getPosition().x, (int) foe.getPosition().y));
+    }
+
+    @Test
+    public void anUngrippedMonsterFollows() {
+        Monster foe = foeAt(4, 3);
+        player.getPosition().set(1f, 3f);
+        foe.setState(Monster.MonsterState.HUNTING);
+        foe.setLastKnownTargetPos(new GridPoint2(1, 3));
+
+        new MonsterAiManager().updateMonster(foe, maze, player, true, combat);
+
+        assertEquals("the control for the grip test: free, it walks", 3, (int) foe.getPosition().x);
+    }
+
+    @Test
+    public void aGrippedMonsterSwingsTwoWorse() {
+        Monster foe = foeAt(4, 3);
+        int free = CombatManager.calculateMonsterAttackBonus(foe);
+        foe.applyGrip();
+        assertEquals(free - Monster.GRIPPED_TO_HIT, CombatManager.calculateMonsterAttackBonus(foe));
+    }
+
     @Test
     public void aWallBetweenThePlayerAndTheFoeMeansNoFoeInReach() {
         maze.setTile(3, 3, Direction.EAST.getWallMask());
