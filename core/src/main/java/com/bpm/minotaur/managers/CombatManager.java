@@ -105,8 +105,8 @@ public class CombatManager {
     private final Maze maze;
     private final Random random = new Random();
     /** The melee Adept Passives (#243); their roll is swappable so tests can force a proc. */
-    private com.bpm.minotaur.gamedata.arts.MeleePassives meleePassives =
-            new com.bpm.minotaur.gamedata.arts.MeleePassives(() -> random.nextFloat());
+    private com.bpm.minotaur.gamedata.arts.AdeptPassives adeptPassives =
+            new com.bpm.minotaur.gamedata.arts.AdeptPassives(() -> random.nextFloat());
     private final Tarmin2 game;
     private final AnimationManager animationManager;
     private final GameEventManager eventManager;
@@ -609,13 +609,13 @@ public class CombatManager {
 
     /** For tests: the draw the melee Passives roll against their chance. */
     void setArtRoll(java.util.function.DoubleSupplier roll) {
-        meleePassives = new com.bpm.minotaur.gamedata.arts.MeleePassives(roll);
+        adeptPassives = new com.bpm.minotaur.gamedata.arts.AdeptPassives(roll);
     }
 
     /** A monster just stepped next to the player: Hold the Line may strike it first (#243). */
     public void onMonsterClosed(Monster monster) {
         if (player == null || monster == null) return;
-        meleePassives.onMonsterStepsAdjacent(player, player.getInventory().getRightHand(), monster, this::freeStrike);
+        adeptPassives.onMonsterStepsAdjacent(player, player.getInventory().getRightHand(), monster, this::freeStrike);
     }
 
     /**
@@ -626,7 +626,11 @@ public class CombatManager {
     private void freeStrike(Monster target, String word) {
         if (player == null || target == null || target.getCurrentHP() <= 0) return;
         Item weapon = freeStrikeWeapon != null ? freeStrikeWeapon : player.getInventory().getRightHand();
-        if (weapon != null && weapon.isRanged()) return;
+        if (weapon != null && weapon.isRanged()) {
+            // Only Swift Nock looses a free shot, and it spends a real arrow (#244).
+            if (!com.bpm.minotaur.gamedata.arts.AdeptPassives.SECOND_ARROW.equals(word) || !hasAmmoFor(weapon)) return;
+            consumeAmmoFor(weapon);
+        }
         GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
         com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
         int d20 = DiceRoller.d20();
@@ -886,7 +890,7 @@ public class CombatManager {
         } else {
             eventManager.addEvent(new GameEvent(attacker.getName() + " misses!", 1f));
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), false, 0);
-            meleePassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), attacker, this::freeStrike);
+            adeptPassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), attacker, this::freeStrike);
         }
 
         damageTakenInCombat += actualDamage;
@@ -1151,7 +1155,7 @@ public class CombatManager {
         if (weapon == null || !FirearmProfile.isFirearm(weapon.getType())) {
             return;
         }
-        activeReload = new ReloadChannel(weapon.getType());
+        activeReload = new ReloadChannel(weapon.getType(), player.takeReloadCut() ? 1 : 0);
         eventManager.addEvent(new GameEvent(
                 "Reloading -- " + activeReload.getTurnsRequired() + " turns.", 1.5f));
     }
@@ -1565,7 +1569,12 @@ public class CombatManager {
                 alertMonsterToPlayer(target);
                 spawnHitFx(target, GoreProfile.fromMonster(target),
                         actual / (float) Math.max(1, target.getMaxHP()), false);
-                showDamageText(actual, hit.collisionPoint);
+                String tangle = adeptPassives.onThrownHit(player, weapon, target); // Tangle (#244)
+                if (tangle != null) {
+                    showDamageText(actual, hit.collisionPoint, tangle + " ", com.badlogic.gdx.graphics.Color.ORANGE);
+                } else {
+                    showDamageText(actual, hit.collisionPoint);
+                }
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPlayerAttack(target, target.getMonsterType(), target.getLevel(),
                         com.bpm.minotaur.telemetry.TelemetryManager.AttackMode.THROWN, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
                 recordFamilyAttack(target, weapon, true, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT);
@@ -2499,7 +2508,7 @@ public class CombatManager {
             if (!isGlancing) {
                 freeStrikeWeapon = attackWeapon; // an off-hand axe's Wide Chop cuts with the off-hand axe
                 try {
-                    String artWord = meleePassives.onFullHit(player, attackWeapon, monster, maze, actualDamage, this::freeStrike);
+                    String artWord = adeptPassives.onFullHit(player, attackWeapon, monster, maze, actualDamage, this::freeStrike);
                     if (artWord != null) dmgPrefix = artWord + " " + dmgPrefix;
                 } finally {
                     freeStrikeWeapon = null;
@@ -3592,7 +3601,7 @@ public class CombatManager {
         } else {
             eventManager.addEvent(new GameEvent(monster.getName() + " misses!", 1f));
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(monster, monster.getMonsterType(), monster.getLevel(), false, 0);
-            meleePassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), monster, this::freeStrike);
+            adeptPassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), monster, this::freeStrike);
         }
 
         damageTakenInCombat += actualDamage;
@@ -3735,7 +3744,7 @@ public class CombatManager {
             return true;
         } else {
             eventManager.addEvent(new GameEvent(attacker.getName() + " tries to flank but misses!", 1.5f));
-            meleePassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), attacker, this::freeStrike);
+            adeptPassives.onMonsterMeleeMiss(player, player.getInventory().getRightHand(), attacker, this::freeStrike);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(attacker, attacker.getMonsterType(), attacker.getLevel(), false, 0);
             return false;
         }

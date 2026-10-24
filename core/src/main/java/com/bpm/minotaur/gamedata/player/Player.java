@@ -4014,6 +4014,20 @@ public class Player {
         return Math.min(1f, art.baseChance * Mastery.procMultiplier(art.rank, stats.getMastery().rankOf(art.family)));
     }
 
+    /** Practised Hands (#244) fired: the next reload is a turn shorter. Not saved; one reload's worth. */
+    private transient boolean reloadCut;
+
+    public void cutNextReload() {
+        reloadCut = true;
+    }
+
+    /** Spends a waiting Practised Hands cut: true once, for the reload that takes it. */
+    public boolean takeReloadCut() {
+        boolean cut = reloadCut;
+        reloadCut = false;
+        return cut;
+    }
+
     /** An Active's or capstone's cooldown for this body: doubled below the rank that taught it. */
     public int artCooldown(com.bpm.minotaur.gamedata.arts.CombatArt art) {
         if (art == null || !knowsArt(art)) return 0;
