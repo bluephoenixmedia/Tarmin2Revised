@@ -4014,6 +4014,23 @@ public class Player {
         return Math.min(1f, art.baseChance * Mastery.procMultiplier(art.rank, stats.getMastery().rankOf(art.family)));
     }
 
+    /** This body's Arts on cooldown (#245): they die with it, unlike the soul's Arts. */
+    private final com.bpm.minotaur.gamedata.arts.ArtCooldowns artCooldowns = new com.bpm.minotaur.gamedata.arts.ArtCooldowns();
+    /** The readied Art drawn and waiting (Held Arrow), shown as Held on the Art bar; null for none. */
+    private com.bpm.minotaur.gamedata.arts.CombatArt heldArt;
+
+    public com.bpm.minotaur.gamedata.arts.ArtCooldowns getArtCooldowns() {
+        return artCooldowns;
+    }
+
+    public com.bpm.minotaur.gamedata.arts.CombatArt getHeldArt() {
+        return heldArt;
+    }
+
+    public void setHeldArt(com.bpm.minotaur.gamedata.arts.CombatArt art) {
+        heldArt = art;
+    }
+
     /** An Active's or capstone's cooldown for this body: doubled below the rank that taught it. */
     public int artCooldown(com.bpm.minotaur.gamedata.arts.CombatArt art) {
         if (art == null || !knowsArt(art)) return 0;

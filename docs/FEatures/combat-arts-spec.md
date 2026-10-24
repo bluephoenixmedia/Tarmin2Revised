@@ -88,6 +88,7 @@ Every name is original: nothing is taken from Caves of Qud or XCOM. Each capston
   - kept but not retrained (a hollow rank mark, doubled cooldown);
   - Held (Held Arrow while readied).
 - **Placement:** a second strip of the same shape beside the spell slots. The layout is coordinated with "Wayfinder: Complete UI/UX Overhaul" (#209).
+  - *As built (#245):* the strip sits directly above the spell strip, because five spell slots and four full Art names do not fit side by side on the 1920 canvas. The hollow rank mark is the rank letter standing bare and dim, where a trained Art's is framed ("[E]"): `intellivision.ttf` draws parentheses as brackets.
 - **UI rules:** `UiTheme`/`HudSkin` tokens, `UiNames`, Scene2D tables, and `UiGlyphs.sanitize` on every string.
 
 ## 6. Showing Mastery and Arts ([#238](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/238))

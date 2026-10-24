@@ -58,6 +58,25 @@ public class SettingsManager {
         keyBindingDescriptions.put("MAP_SUGGEST", "Map: Take Suggested Step");
         keyBindingDescriptions.put("MAP_PIN", "Map: Pin");
         keyBindingDescriptions.put("MAP_RECENTER", "Map: Centre on You");
+        for (int slot = 0; slot < com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS; slot++) {
+            keyBindingDescriptions.put(artAction(slot), "Combat Art " + (slot + 1));
+        }
+    }
+
+    /** "ART_1" for slot 0: the Art bar's slots (#245), each key pressed with Ctrl. */
+    public static String artAction(int slot) {
+        return "ART_" + (slot + 1);
+    }
+
+    /** An Art bar action, read only with Ctrl held. */
+    public static boolean isArtAction(String action) {
+        return action != null && action.startsWith("ART_");
+    }
+
+    /** How a binding reads to the player: "Ctrl+1" for an Art slot, else the key's name. */
+    public static String keyLabel(String action, int keycode) {
+        String key = Input.Keys.toString(keycode);
+        return isArtAction(action) ? "Ctrl+" + key : key;
     }
 
     public static SettingsManager getInstance() {
@@ -275,6 +294,11 @@ public class SettingsManager {
             case "MAP_SUGGEST": return Input.Keys.G;
             case "MAP_PIN": return Input.Keys.P;
             case "MAP_RECENTER": return Input.Keys.C;
+            // Chorded with Ctrl, so they share the quick slots' digits without a clash.
+            case "ART_1": return Input.Keys.NUM_1;
+            case "ART_2": return Input.Keys.NUM_2;
+            case "ART_3": return Input.Keys.NUM_3;
+            case "ART_4": return Input.Keys.NUM_4;
             default: return Input.Keys.UNKNOWN;
         }
     }
