@@ -181,6 +181,57 @@ public final class IsometricDioramaRenderer implements Disposable {
     public static final Color COLOR_PLAYER_CYAN_DARK = new Color(0x3d / 255f, 0x8a / 255f, 0x99 / 255f, 1f); // #3d8a99
     public static final Color COLOR_PLAYER_HEAD = new Color(0xe3 / 255f, 0xcf / 255f, 0xa6 / 255f, 1f); // #e3cfa6
 
+    // Overlay colors and badges matching Main.dc.html
+    public static final Color COLOR_INK = new Color(0x20 / 255f, 0x15 / 255f, 0x0b / 255f, 1f); // #20150B
+    public static final Color COLOR_CYAN = new Color(0x6c / 255f, 0xcf / 255f, 0xe0 / 255f, 1f); // #6CCFE0
+    public static final Color COLOR_CYAN_HI = new Color(0xd8 / 255f, 0xf6 / 255f, 0xfb / 255f, 1f); // #D8F6FB
+    public static final Color COLOR_CASTLE_PURPLE = new Color(0x8e / 255f, 0x5b / 255f, 0xc4 / 255f, 1f); // #8E5BC4
+    public static final Color COLOR_CASTLE_DARK = new Color(0x24 / 255f, 0x14 / 255f, 0x30 / 255f, 1f); // #241430
+    public static final Color COLOR_GOLD = new Color(0xe9 / 255f, 0xb4 / 255f, 0x4c / 255f, 1f); // #E9B44C
+    public static final Color COLOR_BRIGHT_GOLD = new Color(0xff / 255f, 0xd7 / 255f, 0x7a / 255f, 1f); // #FFD77A
+    public static final Color COLOR_SEAL_AMBER = new Color(0xd0 / 255f, 0x68 / 255f, 0x3f / 255f, 1f); // #D0683F
+    public static final Color COLOR_PORTAL_LAVENDER = new Color(0xc9 / 255f, 0xa6 / 255f, 0xe8 / 255f, 1f); // #C9A6E8
+    public static final Color COLOR_GRAVE_STONE = new Color(0xb9 / 255f, 0xb1 / 255f, 0xa2 / 255f, 1f); // #B9B1A2
+    public static final Color COLOR_LADDER_BRONZE = new Color(0xb8 / 255f, 0x86 / 255f, 0x2f / 255f, 1f); // #B8862F
+    public static final Color COLOR_RUMOUR_BG = new Color(0x3a / 255f, 0x2a / 255f, 0x18 / 255f, 1f); // #3A2A18
+    public static final Color COLOR_COLD_SHELTER = new Color(0x85 / 255f, 0x7a / 255f, 0x6c / 255f, 1f); // #857A6C
+
+    public static final java.util.Map<String, Color> PIN_COLORS = new java.util.HashMap<>();
+    static {
+        PIN_COLORS.put("danger", new Color(0xd0 / 255f, 0x7a / 255f, 0x5a / 255f, 1f)); // #D07A5A
+        PIN_COLORS.put("loot", new Color(0xe2 / 255f, 0xbe / 255f, 0x6a / 255f, 1f)); // #E2BE6A
+        PIN_COLORS.put("return", new Color(0xcd / 255f, 0xbf / 255f, 0x9a / 255f, 1f)); // #CDBF9A
+        PIN_COLORS.put("trader", new Color(0xbf / 255f, 0xa8 / 255f, 0x6c / 255f, 1f)); // #BFA86C
+        PIN_COLORS.put("locked", new Color(0xa8 / 255f, 0x97 / 255f, 0x7c / 255f, 1f)); // #A8977C
+        PIN_COLORS.put("unknown", new Color(0xb3 / 255f, 0xa5 / 255f, 0x8e / 255f, 1f)); // #B3A58E
+    }
+
+    public static final java.util.Map<String, String[]> GLYPHS = new java.util.HashMap<>();
+    static {
+        GLYPHS.put("danger", new String[]{".#####.", "#######", "#..#..#", "#######", ".##.##.", ".#####.", ".#.#.#."});
+        GLYPHS.put("loot", new String[]{".......", ".#####.", "#.....#", "###.###", "#..#..#", "#.....#", "#######"});
+        GLYPHS.put("return", new String[]{".#.....", ".####..", ".#####.", ".####..", ".#.....", ".#.....", "###...."});
+        GLYPHS.put("trader", new String[]{"...#...", "#######", "#..#..#", "#..#..#", "##.#.##", "...#...", ".#####."});
+        GLYPHS.put("locked", new String[]{"..###..", ".#...#.", ".#...#.", "#######", "###.###", "###.###", "#######"});
+        GLYPHS.put("unknown", new String[]{".#####.", "#.....#", ".....#.", "...##..", "...#...", ".......", "...#..."});
+        GLYPHS.put("grave", new String[]{"..###..", ".#####.", ".##.##.", ".#...#.", ".##.##.", ".#####.", "#######"});
+        GLYPHS.put("portal", new String[]{"..###..", ".#...#.", "#..#..#", "#.#.#.#", "#..#..#", ".#...#.", "..###.."});
+        GLYPHS.put("ladder", new String[]{"#.....#", "#######", "#.....#", "#######", "#.....#", "#######", "#.....#"});
+        GLYPHS.put("shelter", new String[]{"...#...", "..###..", ".#####.", "#######", ".#...#.", ".#.#.#.", ".#.#.#."});
+        GLYPHS.put("home", new String[]{"#..#...", "##.#...", "#.###..", ".#####.", "#######", ".#.#.#.", ".#####."});
+        GLYPHS.put("seal", new String[]{"..#.#..", ".#####.", "##...##", ".#.#.#.", "##...##", ".#####.", "..#.#.."});
+        GLYPHS.put("castle", new String[]{"#.#.#.#", "#######", ".#####.", ".##.##.", ".#####.", ".##.##.", "#######"});
+        GLYPHS.put("event", new String[]{"...#...", "..###..", "..###..", "...#...", "...#...", ".......", "...#..."});
+        GLYPHS.put("flag", new String[]{"##.....", "####...", "#####..", "####...", "##.....", "#......", "#......"});
+    }
+
+    public static final java.util.Map<Integer, String[]> DIGITS = new java.util.HashMap<>();
+    static {
+        DIGITS.put(1, new String[]{".#.", "##.", ".#.", ".#.", "###"});
+        DIGITS.put(2, new String[]{"##.", "..#", ".#.", "#..", "###"});
+        DIGITS.put(3, new String[]{"##.", "..#", ".#.", "..#", "##."});
+    }
+
     public static class BiomeColors {
         public final Color top;
         public final Color sideA;
@@ -531,10 +582,13 @@ public final class IsometricDioramaRenderer implements Disposable {
         Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f); // #0B0907
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Render 3D diorama scene (board, chunk blocks, floor tiles, maze walls)
+        // 2. Render 3D diorama scene (board, chunk blocks, floor tiles, maze walls, props)
         renderDioramaScene(provider);
 
-        // Render fog shader pass on top
+        // 3. Additive lights pass (campfires, beacon beams, portal swirls, seal glows, blight pulses)
+        renderLights(shapeRenderer, provider);
+
+        // 4. Render fog shader pass on top
         if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -546,6 +600,12 @@ public final class IsometricDioramaRenderer implements Disposable {
                     fogStrength, isCave, FBO_WIDTH, FBO_HEIGHT);
             fboBatch.end();
         }
+
+        // 5. Screen perimeter vignette
+        renderVignette(shapeRenderer);
+
+        // 6. Overlays (ember road, rumour beam, castle mark/arrow, badges, marks, player, selection)
+        renderOverlays(shapeRenderer, provider);
 
         fbo.end();
 
@@ -1731,6 +1791,792 @@ public final class IsometricDioramaRenderer implements Disposable {
         for (Prop p : chunkProps) {
             drawProp(shapeRenderer, p, cx, cy, h, true);
         }
+    }
+
+    public static void drawRectCanvas(ShapeRenderer shapes, float x, float y, float w, float h, Color color) {
+        shapes.setColor(color);
+        shapes.rect(x, FBO_HEIGHT - y - h, w, h);
+    }
+
+    public static float getChunkTopZ(MapKnowledgeMask.KnowledgeProvider provider, int cx, int cy) {
+        if (provider == null) return 0f;
+        MapKnowledgeMask.KnowledgeProvider.State state = provider.getChunkState(cx, cy);
+        Biome b = provider.getBiome(cx, cy);
+        boolean isOcean = (b == Biome.OCEAN);
+        if (state == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+            return isOcean ? 2.0f : 6.0f;
+        } else if (state == MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED) {
+            return isOcean ? 1.2f : 2.5f;
+        }
+        return 0f;
+    }
+
+    public static void drawGlow(ShapeRenderer shapes, float cx, float cy, float r, float red, float green, float blue, float alpha) {
+        if (r < 1f || alpha <= 0.001f) return;
+        Vector2 g = toGdxScreen(new Vector2(cx, cy));
+        Color centerCol = new Color(red, green, blue, alpha);
+        Color edgeCol = new Color(red, green, blue, 0f);
+
+        int segments = 16;
+        float prevX = g.x + r;
+        float prevY = g.y;
+        for (int i = 1; i <= segments; i++) {
+            float angle = (float) (i * 2.0 * Math.PI / segments);
+            float currX = g.x + r * (float) Math.cos(angle);
+            float currY = g.y + r * (float) Math.sin(angle);
+            shapes.triangle(g.x, g.y, prevX, prevY, currX, currY, centerCol, edgeCol, edgeCol);
+            prevX = currX;
+            prevY = currY;
+        }
+    }
+
+    public static void drawBeam(ShapeRenderer shapes, float x, float y, float w, float h, float red, float green, float blue, float alpha) {
+        if (w < 0.5f || h < 0.5f || alpha <= 0.001f) return;
+        Vector2 b0 = toGdxScreen(new Vector2(x - w * 0.5f, y));
+        Vector2 b1 = toGdxScreen(new Vector2(x + w * 0.5f, y));
+        Vector2 t0 = toGdxScreen(new Vector2(x - w * 0.5f, y - h));
+        Vector2 t1 = toGdxScreen(new Vector2(x + w * 0.5f, y - h));
+
+        Color baseCol = new Color(red, green, blue, alpha);
+        Color topCol = new Color(red, green, blue, 0f);
+
+        shapes.triangle(b0.x, b0.y, b1.x, b1.y, t1.x, t1.y, baseCol, baseCol, topCol);
+        shapes.triangle(b0.x, b0.y, t1.x, t1.y, t0.x, t0.y, baseCol, topCol, topCol);
+    }
+
+    public static void drawThickLine(ShapeRenderer shapes, float x0, float y0, float x1, float y1, float width, Color color) {
+        float dx = x1 - x0;
+        float dy = y1 - y0;
+        float len = (float) Math.hypot(dx, dy);
+        if (len < 0.001f) return;
+        float nx = -dy / len * (width * 0.5f);
+        float ny = dx / len * (width * 0.5f);
+
+        shapes.setColor(color);
+        shapes.triangle(x0 + nx, y0 + ny, x0 - nx, y0 - ny, x1 + nx, y1 + ny);
+        shapes.triangle(x0 - nx, y0 - ny, x1 - nx, y1 - ny, x1 + nx, y1 + ny);
+    }
+
+    public static void drawDashedThickLine(ShapeRenderer shapes, float x0, float y0, float x1, float y1,
+                                           float width, Color color, float dashLen, float gapLen, float dashOffset) {
+        float dx = x1 - x0;
+        float dy = y1 - y0;
+        float len = (float) Math.hypot(dx, dy);
+        if (len < 0.5f) return;
+        dx /= len;
+        dy /= len;
+
+        float cycle = dashLen + gapLen;
+        float offset = dashOffset % cycle;
+        if (offset < 0) offset += cycle;
+
+        float d = -offset;
+        while (d < len) {
+            float start = Math.max(0f, d);
+            float end = Math.min(len, d + dashLen);
+            if (end > start) {
+                float sx = x0 + dx * start;
+                float sy = y0 + dy * start;
+                float ex = x0 + dx * end;
+                float ey = y0 + dy * end;
+                drawThickLine(shapes, sx, sy, ex, ey, width, color);
+            }
+            d += cycle;
+        }
+    }
+
+    public static void drawArc(ShapeRenderer shapes, float cx, float cy, float rx, float ry, float startAngle, float endAngle, float lineWidth, Color color) {
+        int segs = 16;
+        float prevX = cx + rx * (float) Math.cos(startAngle);
+        float prevY = cy + ry * (float) Math.sin(startAngle);
+        for (int i = 1; i <= segs; i++) {
+            float a = startAngle + (endAngle - startAngle) * (i / (float) segs);
+            float currX = cx + rx * (float) Math.cos(a);
+            float currY = cy + ry * (float) Math.sin(a);
+            drawThickLine(shapes, prevX, prevY, currX, currY, lineWidth, color);
+            prevX = currX;
+            prevY = currY;
+        }
+    }
+
+    public void drawRing(ShapeRenderer shapes, float wx, float wy, float z, float radius, Color color,
+                         float lineWidth, float[] dash, float dashOffset) {
+        Vector2 p = project(wx, wy, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        float hw = 28f * camZoom;
+        float hh = 14f * camZoom;
+        float rx = radius * hw * 1.41421356f;
+        float ry = radius * hh * 1.41421356f;
+        if (rx < 0.5f || ry < 0.5f) return;
+
+        Vector2 cp = toGdxScreen(p);
+
+        int segments = 48;
+        float dashLen = (dash != null && dash.length >= 2) ? dash[0] : 0f;
+        float gapLen = (dash != null && dash.length >= 2) ? dash[1] : 0f;
+        float cycle = dashLen + gapLen;
+
+        float prevX = cp.x + rx;
+        float prevY = cp.y;
+        float distTraveled = 0f;
+
+        for (int i = 1; i <= segments; i++) {
+            float angle = (float) (i * 2.0 * Math.PI / segments);
+            float currX = cp.x + rx * (float) Math.cos(angle);
+            float currY = cp.y + ry * (float) Math.sin(angle);
+            float segLen = (float) Math.hypot(currX - prevX, currY - prevY);
+
+            boolean drawSegment = true;
+            if (cycle > 0f) {
+                float pos = (distTraveled - dashOffset) % cycle;
+                if (pos < 0f) pos += cycle;
+                drawSegment = (pos < dashLen);
+            }
+
+            if (drawSegment) {
+                if (lineWidth > 1.5f) {
+                    drawThickLine(shapes, prevX, prevY, currX, currY, lineWidth, color);
+                } else {
+                    drawThickLine(shapes, prevX, prevY, currX, currY, 1f, color);
+                }
+            }
+
+            distTraveled += segLen;
+            prevX = currX;
+            prevY = currY;
+        }
+    }
+
+    public static void drawPlate(ShapeRenderer shapes, float cx, float by, String name, Color bg, Color ink) {
+        int x0 = Math.round(cx) - 5;
+        int y0 = Math.round(by) - 14;
+        String[] G = GLYPHS.get(name);
+        if (G == null) G = GLYPHS.get("unknown");
+
+        Color shadow = new Color(0f, 0f, 0f, 0.5f);
+        drawRectCanvas(shapes, x0 + 1, y0 + 2, 11, 10, shadow);
+
+        drawRectCanvas(shapes, x0, y0 + 1, 11, 9, ink);
+        drawRectCanvas(shapes, x0 + 1, y0, 9, 11, ink);
+
+        drawRectCanvas(shapes, x0 + 1, y0 + 1, 9, 9, bg);
+
+        for (int j = 0; j < 7; j++) {
+            String row = G[j];
+            for (int i = 0; i < 7; i++) {
+                if (row.charAt(i) == '#') {
+                    drawRectCanvas(shapes, x0 + 2 + i, y0 + 2 + j, 1, 1, ink);
+                }
+            }
+        }
+
+        drawRectCanvas(shapes, x0 + 3, y0 + 11, 5, 1, ink);
+        drawRectCanvas(shapes, x0 + 4, y0 + 12, 3, 1, ink);
+        drawRectCanvas(shapes, x0 + 5, y0 + 13, 1, 1, ink);
+    }
+
+    public static void drawDepthBadge(ShapeRenderer shapes, float cx, float by, int n) {
+        int x0 = Math.round(cx) - 7;
+        int y0 = Math.round(by) - 14;
+
+        Color shadow = new Color(0f, 0f, 0f, 0.5f);
+        drawRectCanvas(shapes, x0 + 1, y0 + 2, 15, 10, shadow);
+
+        drawRectCanvas(shapes, x0, y0 + 1, 15, 9, COLOR_LADDER_BRONZE);
+        drawRectCanvas(shapes, x0 + 1, y0, 13, 11, COLOR_LADDER_BRONZE);
+
+        Color bg = new Color(0x15 / 255f, 0x10 / 255f, 0x0b / 255f, 1f);
+        drawRectCanvas(shapes, x0 + 1, y0 + 1, 13, 9, bg);
+
+        drawRectCanvas(shapes, x0 + 2, y0 + 3, 5, 1, COLOR_GOLD);
+        drawRectCanvas(shapes, x0 + 3, y0 + 4, 3, 1, COLOR_GOLD);
+        drawRectCanvas(shapes, x0 + 4, y0 + 5, 1, 1, COLOR_GOLD);
+        drawRectCanvas(shapes, x0 + 4, y0 + 6, 1, 2, COLOR_GOLD);
+
+        String[] D = DIGITS.get(n);
+        if (D == null) D = DIGITS.get(1);
+        Color digitCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, 1f);
+        for (int j = 0; j < 5; j++) {
+            String row = D[j];
+            for (int i = 0; i < 3; i++) {
+                if (row.charAt(i) == '#') {
+                    drawRectCanvas(shapes, x0 + 9 + i, y0 + 3 + j, 1, 1, digitCol);
+                }
+            }
+        }
+
+        drawRectCanvas(shapes, x0 + 5, y0 + 11, 5, 1, COLOR_LADDER_BRONZE);
+        drawRectCanvas(shapes, x0 + 6, y0 + 12, 3, 1, COLOR_LADDER_BRONZE);
+        drawRectCanvas(shapes, x0 + 7, y0 + 13, 1, 1, COLOR_LADDER_BRONZE);
+    }
+
+    public void renderLights(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        float t = elapsedTime;
+        float s = camZoom;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        if (!isCave) {
+            int litIndex = 0;
+            for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+                for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                    MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
+                    if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
+                        float h = getChunkTopZ(provider, cx, cy);
+                        float fl = 0.85f + 0.1f * (float) Math.sin(t * 9f + litIndex * 2f) + 0.05f * (float) Math.sin(t * 23f + litIndex);
+                        Vector2 f = project(cx + 0.68f, cy + 0.66f, h + 1f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawGlow(shapes, f.x, f.y, 15f * s * fl, 240 / 255f, 140 / 255f, 60 / 255f, 0.34f * fl);
+
+                        Vector2 b = project(cx + 0.5f, cy + 0.5f, h + 6.6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawBeam(shapes, b.x, b.y, Math.max(1f, s * 1.1f), 22f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.32f * fl);
+                        drawGlow(shapes, b.x, b.y, 5f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.45f * fl);
+                        litIndex++;
+                    }
+
+                    if (provider.hasReturnPortal(cx, cy)) {
+                        float ph = getChunkTopZ(provider, cx, cy);
+                        Vector2 pp = project(cx + 0.5f, cy + 0.5f, ph + 2.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        float pu = 0.8f + 0.2f * (float) Math.sin(t * 2f);
+                        drawGlow(shapes, pp.x, pp.y, 9f * s, 201 / 255f, 166 / 255f, 232 / 255f, 0.32f * pu);
+
+                        Color swirlCol = new Color(220 / 255f, 200 / 255f, 255 / 255f, 0.45f);
+                        Vector2 gpp = toGdxScreen(pp);
+                        float rx = 1.4f * s;
+                        float ry = 2.3f * s;
+                        float lw = Math.max(1f, s * 0.35f);
+                        for (int i = 0; i < 3; i++) {
+                            float a0 = t * 2f + i * 2.1f;
+                            drawArc(shapes, gpp.x, gpp.y, rx, ry, a0, a0 + 1.7f, lw, swirlCol);
+                        }
+                    }
+
+                    if (provider.hasSeal(cx, cy)) {
+                        float sh = getChunkTopZ(provider, cx, cy);
+                        Vector2 sp = project(cx + 0.5f, cy + 0.5f, sh + 1.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawGlow(shapes, sp.x, sp.y, 10f * s, 208 / 255f, 104 / 255f, 63 / 255f, 0.24f + 0.06f * (float) Math.sin(t * 1.3f));
+                    }
+
+                    if (provider.getBiome(cx, cy) == Biome.BLIGHT) {
+                        float bh = getChunkTopZ(provider, cx, cy);
+                        Vector2 bp = project(cx + 0.5f, cy + 0.5f, bh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawGlow(shapes, bp.x, bp.y, 22f * s, 170 / 255f, 50 / 255f, 70 / 255f, 0.09f + 0.04f * (float) Math.sin(t * 0.9f));
+                    }
+                }
+            }
+        } else {
+            for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+                for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                    if (provider.hasLadder(cx, cy)) {
+                        Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawGlow(shapes, lp.x, lp.y, 12f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.24f);
+                        drawBeam(shapes, lp.x, lp.y, Math.max(2f, s * 1.6f), 14f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.22f);
+                    }
+                    if (provider.getChunkState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+                        Mulberry32 rng = new Mulberry32(hash(cx, cy) + 111);
+                        for (int i = 0; i < 4; i++) {
+                            float fu = rng.nextFloat();
+                            float fv = rng.nextFloat();
+                            float fph = rng.nextFloat() * 6.28f;
+                            Vector2 fp = project(cx + fu, cy + fv, 5.3f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                            float fa = 0.3f + 0.12f * (float) Math.sin(t * 1.7f + fph);
+                            drawGlow(shapes, fp.x, fp.y, 4.5f * s, 108 / 255f, 207 / 255f, 224 / 255f, fa);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!isCave) {
+            int litIndex = 0;
+            for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+                for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                    MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
+                    if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
+                        float h = getChunkTopZ(provider, cx, cy);
+                        Vector2 f0 = project(cx + 0.68f, cy + 0.66f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        float kk = Math.max(1f, s * 0.45f);
+                        float fl = (float) Math.sin(t * 11f + litIndex * 3f);
+                        float hgt = (2.6f + 0.8f * fl) * kk;
+
+                        drawRectCanvas(shapes, f0.x - kk, f0.y - hgt - kk * 0.5f, 2f * kk, hgt, COLOR_SEAL_AMBER);
+                        drawRectCanvas(shapes, f0.x - kk * 0.5f, f0.y - hgt * 0.7f - kk * 0.5f, kk, hgt * 0.7f, COLOR_BRIGHT_GOLD);
+                        litIndex++;
+                    }
+                }
+            }
+        }
+
+        shapes.end();
+    }
+
+    public void renderVignette(ShapeRenderer shapes) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        float cx = FBO_WIDTH / 2f;
+        float cy = FBO_HEIGHT / 2f;
+        float rxInner = FBO_HEIGHT * 0.32f;
+        float ryInner = rxInner;
+        float rxOuter = FBO_WIDTH * 0.7f;
+        float ryOuter = rxOuter;
+
+        Color cInner = new Color(4 / 255f, 3 / 255f, 2 / 255f, 0f);
+        Color cOuter = new Color(4 / 255f, 3 / 255f, 2 / 255f, 0.62f);
+
+        int segs = 32;
+        for (int i = 0; i < segs; i++) {
+            float a0 = (float) (i * 2.0 * Math.PI / segs);
+            float a1 = (float) ((i + 1) * 2.0 * Math.PI / segs);
+
+            float inX0 = cx + rxInner * (float) Math.cos(a0);
+            float inY0 = cy + ryInner * (float) Math.sin(a0);
+            float inX1 = cx + rxInner * (float) Math.cos(a1);
+            float inY1 = cy + ryInner * (float) Math.sin(a1);
+
+            float outX0 = cx + rxOuter * (float) Math.cos(a0);
+            float outY0 = cy + ryOuter * (float) Math.sin(a0);
+            float outX1 = cx + rxOuter * (float) Math.cos(a1);
+            float outY1 = cy + ryOuter * (float) Math.sin(a1);
+
+            shapes.triangle(inX0, inY0, outX0, outY0, outX1, outY1, cInner, cOuter, cOuter);
+            shapes.triangle(inX0, inY0, outX1, outY1, inX1, inY1, cInner, cOuter, cInner);
+        }
+
+        shapes.end();
+    }
+
+    public void drawRoads(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        List<MapKnowledgeMask.RoadInfo> roads = provider.getRoadSegments();
+        if (roads == null || roads.isEmpty()) return;
+
+        float s = camZoom;
+        float darkWidth = Math.max(3f, 1.4f * s);
+        float roadWidth = Math.max(1.5f, 0.7f * s);
+        float dashLen = Math.max(3f, 2.2f * s);
+        float gapLen = Math.max(2f, 1.4f * s);
+        float dashOffset = -elapsedTime * 4f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        Color darkBacking = new Color(16 / 255f, 10 / 255f, 5 / 255f, 0.75f);
+
+        for (MapKnowledgeMask.RoadInfo r : roads) {
+            float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
+            float z1 = getChunkTopZ(provider, (int) r.toX, (int) r.toY) + 0.4f;
+            Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 p1 = toGdxScreen(project(r.toX + 0.5f, r.toY + 0.5f, z1, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            drawThickLine(shapes, p0.x, p0.y, p1.x, p1.y, darkWidth, darkBacking);
+        }
+
+        for (MapKnowledgeMask.RoadInfo r : roads) {
+            float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
+            float z1 = getChunkTopZ(provider, (int) r.toX, (int) r.toY) + 0.4f;
+            Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 p1 = toGdxScreen(project(r.toX + 0.5f, r.toY + 0.5f, z1, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+
+            Color col = r.spent ? new Color(208 / 255f, 104 / 255f, 63 / 255f, 0.35f) : r.color;
+            drawDashedThickLine(shapes, p0.x, p0.y, p1.x, p1.y, roadWidth, col, dashLen, gapLen, dashOffset);
+        }
+        shapes.end();
+    }
+
+    public void drawRumour(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        GridPoint2 sug = provider.getSuggestionChunk();
+        if (sug == null) return;
+
+        Vector2 b = project(sug.x + 0.5f, sug.y + 0.5f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        float t = elapsedTime;
+        float s = camZoom;
+        float hgt = 34f + 16f * Math.min(s, 3f);
+        float fl = 0.75f + 0.15f * (float) Math.sin(t * 3.1f) + 0.1f * (float) Math.sin(t * 7.3f);
+        float w = 2f + s * 0.6f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        float midY = b.y - hgt * 0.55f;
+        float topY = b.y - hgt;
+
+        Vector2 b0 = toGdxScreen(new Vector2(b.x - w * 0.5f, b.y));
+        Vector2 b1 = toGdxScreen(new Vector2(b.x + w * 0.5f, b.y));
+        Vector2 m0 = toGdxScreen(new Vector2(b.x - w * 0.5f, midY));
+        Vector2 m1 = toGdxScreen(new Vector2(b.x + w * 0.5f, midY));
+        Vector2 t0 = toGdxScreen(new Vector2(b.x - w * 0.5f, topY));
+        Vector2 t1 = toGdxScreen(new Vector2(b.x + w * 0.5f, topY));
+
+        Color col0 = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0f);
+        Color colMid = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0.5f * fl);
+        Color colTop = new Color(255 / 255f, 215 / 255f, 122 / 255f, 0f);
+
+        shapes.triangle(b0.x, b0.y, b1.x, b1.y, m1.x, m1.y, col0, col0, colMid);
+        shapes.triangle(b0.x, b0.y, m1.x, m1.y, m0.x, m0.y, col0, colMid, colMid);
+        shapes.triangle(m0.x, m0.y, m1.x, m1.y, t1.x, t1.y, colMid, colMid, colTop);
+        shapes.triangle(m0.x, m0.y, t1.x, t1.y, t0.x, t0.y, colMid, colTop, colTop);
+
+        drawGlow(shapes, b.x, midY, 7f + 4f * fl, 255 / 255f, 210 / 255f, 120 / 255f, 0.55f * fl);
+        shapes.end();
+
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        drawPlate(shapes, b.x, topY - 2f, "shelter", COLOR_RUMOUR_BG, COLOR_GOLD);
+        shapes.end();
+    }
+
+    public void drawCastleMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        Vector2 castleSite = provider.getCastleSite();
+        if (castleSite == null) return;
+
+        Vector2 p = project(castleSite.x, castleSite.y, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        float m = 26f;
+        float W = FBO_WIDTH;
+        float H = FBO_HEIGHT;
+        float cx = W / 2f;
+        float cy = H / 2f;
+
+        float dx = p.x - cx;
+        float dy = p.y - cy;
+        float len = (float) Math.hypot(dx, dy);
+        if (len < 0.001f) len = 1f;
+        dx /= len;
+        dy /= len;
+
+        boolean inside = (p.x > m && p.x < W - m && p.y > m && p.y < H - m);
+        Vector2 q;
+        if (!inside) {
+            float tx = dx > 0 ? (W - m - cx) / dx : (dx < 0 ? (m - cx) / dx : Float.POSITIVE_INFINITY);
+            float ty = dy > 0 ? (H - m - cy) / dy : (dy < 0 ? (m - cy) / dy : Float.POSITIVE_INFINITY);
+            float tt = Math.min(tx, ty);
+            q = new Vector2(cx + dx * tt, cy + dy * tt);
+        } else {
+            q = new Vector2(p.x, p.y);
+        }
+
+        float k = inside ? Math.min(2.2f, Math.max(1.0f, camZoom)) : 1.2f;
+        float sx = q.x - dx * (inside ? 0f : 34f);
+        float sy = q.y - dy * (inside ? 0f : 34f) + 30f * k;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        Color castleDark = new Color(COLOR_CASTLE_DARK.r, COLOR_CASTLE_DARK.g, COLOR_CASTLE_DARK.b, 0.42f);
+        drawRectCanvas(shapes, sx - 14f * k, sy - 10f * k, 28f * k, 10f * k, castleDark);
+        drawRectCanvas(shapes, sx - 7f * k, sy - 46f * k, 14f * k, 40f * k, castleDark);
+        drawRectCanvas(shapes, sx - 15f * k, sy - 28f * k, 7f * k, 20f * k, castleDark);
+        drawRectCanvas(shapes, sx + 8f * k, sy - 26f * k, 7f * k, 18f * k, castleDark);
+        for (int i = 0; i < 4; i++) {
+            drawRectCanvas(shapes, sx - 7f * k + i * 4f * k, sy - 50f * k, 2f * k, 4f * k, castleDark);
+        }
+
+        Color castlePurple = new Color(COLOR_CASTLE_PURPLE.r, COLOR_CASTLE_PURPLE.g, COLOR_CASTLE_PURPLE.b, 0.60f);
+        drawRectCanvas(shapes, sx - 1f * k, sy - 38f * k, 2f * k, 4f * k, castlePurple);
+
+        if (!inside) {
+            float ax = q.x;
+            float ay = q.y;
+            float nx = -dy;
+            float ny = dx;
+
+            Vector2 t0 = toGdxScreen(new Vector2(ax + dx * 8f, ay + dy * 8f));
+            Vector2 t1 = toGdxScreen(new Vector2(ax - dx * 4f + nx * 7f, ay - dy * 4f + ny * 7f));
+            Vector2 t2 = toGdxScreen(new Vector2(ax - dx * 4f - nx * 7f, ay - dy * 4f - ny * 7f));
+            shapes.setColor(COLOR_TABLE_BG);
+            shapes.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
+
+            Vector2 it0 = toGdxScreen(new Vector2(ax + dx * 6f, ay + dy * 6f));
+            Vector2 it1 = toGdxScreen(new Vector2(ax - dx * 3f + nx * 5f, ay - dy * 3f + ny * 5f));
+            Vector2 it2 = toGdxScreen(new Vector2(ax - dx * 3f - nx * 5f, ay - dy * 3f - ny * 5f));
+            shapes.setColor(COLOR_CASTLE_PURPLE);
+            shapes.triangle(it0.x, it0.y, it1.x, it1.y, it2.x, it2.y);
+
+            drawPlate(shapes, ax - dx * 18f, ay - dy * 18f + 7f, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG);
+        } else {
+            drawPlate(shapes, sx, sy - 52f * k, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG);
+        }
+
+        shapes.end();
+    }
+
+    static final class BadgeEntry {
+        final String name;
+        final Color color;
+        final int depth;
+        final boolean isDepth;
+
+        BadgeEntry(String name, Color color) {
+            this.name = name;
+            this.color = color;
+            this.depth = 0;
+            this.isDepth = false;
+        }
+
+        BadgeEntry(int depth) {
+            this.name = null;
+            this.color = null;
+            this.depth = depth;
+            this.isDepth = true;
+        }
+    }
+
+    public void drawBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        ZoomLevel zoomLvl = levelOf(camZoom);
+        int L = (zoomLvl == ZoomLevel.WORLD) ? 0 : ((zoomLvl == ZoomLevel.REGION) ? 1 : 2);
+        float m = 30f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        List<BadgeEntry> items = new ArrayList<>(6);
+
+        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                MapKnowledgeMask.KnowledgeProvider.State state = provider.getChunkState(cx, cy);
+                String pin = provider.getChunkPin(cx, cy);
+                if (state == MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN && pin == null) continue;
+
+                items.clear();
+                MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
+                if (shelter != null && shelter != MapModel.ShelterMark.RUMOURED) {
+                    if (shelter == MapModel.ShelterMark.HOME) {
+                        items.add(new BadgeEntry("home", COLOR_BRIGHT_GOLD));
+                    } else if (shelter == MapModel.ShelterMark.LIT) {
+                        items.add(new BadgeEntry("shelter", COLOR_GOLD));
+                    } else {
+                        items.add(new BadgeEntry("shelter", COLOR_COLD_SHELTER));
+                    }
+                }
+
+                if (provider.hasSeal(cx, cy)) {
+                    items.add(new BadgeEntry("seal", COLOR_SEAL_AMBER));
+                }
+
+                if (L >= 1) {
+                    if (pin != null) {
+                        Color pinColor = PIN_COLORS.getOrDefault(pin, COLOR_GOLD);
+                        items.add(new BadgeEntry(pin, pinColor));
+                    }
+                    if (provider.getGraveCount(cx, cy) > 0) {
+                        items.add(new BadgeEntry("grave", COLOR_GRAVE_STONE));
+                    }
+                    if (provider.hasReturnPortal(cx, cy)) {
+                        items.add(new BadgeEntry("portal", COLOR_PORTAL_LAVENDER));
+                    }
+                    int depth = provider.getStratumDepth(cx, cy);
+                    if (depth > 0) {
+                        items.add(new BadgeEntry(depth));
+                    }
+                }
+
+                if (!items.isEmpty()) {
+                    float h = getChunkTopZ(provider, cx, cy);
+                    Vector2 p = project(cx + 0.5f, cy + 0.5f, h + (L == 2 ? 15f : 8f), camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    if (p.x >= -m && p.x <= FBO_WIDTH + m && p.y >= -m && p.y <= FBO_HEIGHT + m) {
+                        for (int i = 0; i < items.size(); i++) {
+                            BadgeEntry it = items.get(i);
+                            float x = p.x + (i - (items.size() - 1) / 2f) * 14f;
+                            if (it.isDepth) {
+                                drawDepthBadge(shapes, x, p.y, it.depth);
+                            } else {
+                                drawPlate(shapes, x, p.y, it.name, it.color, COLOR_INK);
+                            }
+                        }
+                    }
+                }
+
+                if (L == 2 && state == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+                    float h = getChunkTopZ(provider, cx, cy);
+                    if (provider.getChestCount(cx, cy) > 0) {
+                        Vector2 p = project(cx + 0.5f, cy + 0.5f, h + 4f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK);
+                    }
+                    if (provider.hasLadder(cx, cy)) {
+                        Vector2 p = project(cx + 4.5f / 8f, cy + 4.5f / 8f, h + 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawPlate(shapes, p.x, p.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK);
+                    }
+                }
+            }
+        }
+
+        shapes.end();
+    }
+
+    public void drawMarks(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        float t = elapsedTime;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        GridPoint2 w = provider.getWaypointChunk();
+        if (w != null && w.x >= 0 && w.x < CHUNK_GRID_SIZE && w.y >= 0 && w.y < CHUNK_GRID_SIZE) {
+            float wh = getChunkTopZ(provider, w.x, w.y);
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, COLOR_TABLE_BG, 3f, null, 0f);
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, COLOR_GOLD, 1f, new float[]{4f, 3f}, -t * 6f);
+
+            float ph = (t * 0.6f) % 1f;
+            Color pulseCol = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, (1f - ph) * 0.8f);
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f + 0.25f * ph, pulseCol, 1f, null, 0f);
+
+            Vector2 wp = project(w.x + 0.5f, w.y + 0.5f, wh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            drawPlate(shapes, wp.x - 8f, wp.y - 6f, "flag", COLOR_GOLD, COLOR_INK);
+        }
+
+        GridPoint2 sug = provider.getSuggestionChunk();
+        if (sug != null && (w == null || !sug.equals(w)) && sug.x >= 0 && sug.x < CHUNK_GRID_SIZE && sug.y >= 0 && sug.y < CHUNK_GRID_SIZE) {
+            float sh = getChunkTopZ(provider, sug.x, sug.y);
+            float a = 0.45f + 0.25f * (float) Math.sin(t * 2.4f);
+            Color sugCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, a);
+            drawRing(shapes, sug.x + 0.5f, sug.y + 0.5f, sh, 0.3f, sugCol, 1f, new float[]{2f, 3f}, t * 4f);
+
+            Vector2 sp = project(sug.x + 0.5f, sug.y + 0.5f, sh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            Color flagBg = new Color(COLOR_RUMOUR_BG.r, COLOR_RUMOUR_BG.g, COLOR_RUMOUR_BG.b, a);
+            Color flagInk = new Color(0xb3 / 255f, 0x9c / 255f, 0x78 / 255f, a);
+            drawPlate(shapes, sp.x - 16f, sp.y - 4f, "flag", flagBg, flagInk);
+        }
+
+        shapes.end();
+    }
+
+    public void drawPlayerMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        float t = elapsedTime;
+
+        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                if (provider.hasPlayer(cx, cy)) {
+                    float pu = provider.getPlayerU(cx, cy);
+                    float pv = provider.getPlayerV(cx, cy);
+                    float faceX = provider.getPlayerFaceX(cx, cy);
+                    float faceY = provider.getPlayerFaceY(cx, cy);
+                    float h = getChunkTopZ(provider, cx, cy);
+                    float wx = cx + pu;
+                    float wy = cy + pv;
+
+                    ZoomLevel lvl = levelOf(camZoom);
+                    boolean isChunk = (lvl == ZoomLevel.CHUNK);
+
+                    Gdx.gl.glEnable(GL20.GL_BLEND);
+                    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                    shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+                    float ph = (t * 0.8f) % 1f;
+                    float ringR = (isChunk ? 0.04f : 0.08f) + (isChunk ? 0.06f : 0.16f) * ph;
+                    Color pulseCyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, 1f - ph);
+                    drawRing(shapes, wx, wy, h, ringR, pulseCyan, 1f, null, 0f);
+
+                    Vector2 p = project(wx, wy, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+
+                    if (isChunk) {
+                        float k = camZoom * 0.75f;
+                        float yTop = Math.round(p.y - 11f * k);
+                        float x = Math.round(p.x);
+
+                        drawRectCanvas(shapes, x - 4, yTop - 4, 9, 3, COLOR_TABLE_BG);
+                        drawRectCanvas(shapes, x - 3, yTop - 1, 7, 2, COLOR_TABLE_BG);
+                        drawRectCanvas(shapes, x - 1, yTop + 1, 3, 2, COLOR_TABLE_BG);
+
+                        drawRectCanvas(shapes, x - 3, yTop - 3, 7, 1, COLOR_CYAN);
+                        drawRectCanvas(shapes, x - 2, yTop - 2, 5, 1, COLOR_CYAN);
+                        drawRectCanvas(shapes, x - 1, yTop - 1, 3, 1, COLOR_CYAN);
+                        drawRectCanvas(shapes, x, yTop, 1, 1, COLOR_CYAN);
+                    } else {
+                        Vector2 f = project(wx + faceX * 0.3f, wy + faceY * 0.3f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        Vector2 gp = toGdxScreen(p);
+                        Vector2 gf = toGdxScreen(f);
+                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 3f, COLOR_TABLE_BG);
+                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 1f, COLOR_CYAN);
+
+                        float x = Math.round(p.x);
+                        float y = Math.round(p.y) - 7;
+                        int[] rows = new int[]{1, 3, 5, 7, 5, 3, 1};
+                        for (int j = 0; j < rows.length; j++) {
+                            int w = rows[j];
+                            drawRectCanvas(shapes, x - (w + 2 - 1) / 2f, y - 4 + j, w + 2, 1, COLOR_TABLE_BG);
+                        }
+                        drawRectCanvas(shapes, x, y - 5, 1, 1, COLOR_TABLE_BG);
+                        drawRectCanvas(shapes, x, y + 3, 1, 1, COLOR_TABLE_BG);
+
+                        for (int j = 0; j < rows.length; j++) {
+                            int w = rows[j];
+                            drawRectCanvas(shapes, x - (w - 1) / 2f, y - 4 + j, w, 1, COLOR_CYAN);
+                        }
+                        drawRectCanvas(shapes, x - 1, y - 2, 1, 1, COLOR_CYAN_HI);
+                    }
+
+                    shapes.end();
+                    return;
+                }
+            }
+        }
+    }
+
+    public void drawSelection(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        GridPoint2 sel = provider.getSelectedChunk();
+        if (sel == null || sel.x < 0 || sel.x >= CHUNK_GRID_SIZE || sel.y < 0 || sel.y >= CHUNK_GRID_SIZE) return;
+
+        float z = isCave ? 5f : getChunkTopZ(provider, sel.x, sel.y);
+
+        Vector2[] pts = new Vector2[]{
+            toGdxScreen(project(sel.x, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+            toGdxScreen(project(sel.x + 1, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+            toGdxScreen(project(sel.x + 1, sel.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+            toGdxScreen(project(sel.x, sel.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT))
+        };
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        Color darkBorder = new Color(11 / 255f, 9 / 255f, 7 / 255f, 0.85f);
+        for (int i = 0; i < 4; i++) {
+            Vector2 a = pts[i];
+            Vector2 b = pts[(i + 1) % 4];
+            drawThickLine(shapes, a.x, a.y, b.x, b.y, 3f, darkBorder);
+        }
+
+        float pulse = 0.7f + 0.3f * (float) Math.sin(elapsedTime * 3.0);
+        Color goldBorder = new Color(COLOR_BRIGHT_GOLD.r, COLOR_BRIGHT_GOLD.g, COLOR_BRIGHT_GOLD.b, pulse);
+        for (int i = 0; i < 4; i++) {
+            Vector2 a = pts[i];
+            Vector2 b = pts[(i + 1) % 4];
+            drawThickLine(shapes, a.x, a.y, b.x, b.y, 1f, goldBorder);
+        }
+
+        shapes.setColor(COLOR_BRIGHT_GOLD);
+        for (int i = 0; i < 4; i++) {
+            Vector2 p = pts[i];
+            shapes.rect(Math.round(p.x) - 1, Math.round(p.y) - 1, 3, 3);
+        }
+
+        shapes.end();
+    }
+
+    public void renderOverlays(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        if (provider == null) return;
+        if (!isCave) {
+            drawRoads(shapes, provider);
+            drawRumour(shapes, provider);
+            drawCastleMark(shapes, provider);
+            drawBadges(shapes, provider);
+            drawMarks(shapes, provider);
+            drawPlayerMark(shapes, provider);
+        } else {
+            drawBadges(shapes, provider);
+            drawPlayerMark(shapes, provider);
+        }
+        drawSelection(shapes, provider);
     }
 
     private static Vector2 toGdxScreen(Vector2 topDown) {

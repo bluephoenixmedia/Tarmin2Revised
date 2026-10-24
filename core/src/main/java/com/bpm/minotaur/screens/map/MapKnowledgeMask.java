@@ -63,6 +63,49 @@ public final class MapKnowledgeMask implements Disposable {
         default float getPlayerFaceY(int cx, int cy) {
             return 1f;
         }
+
+        default java.util.List<RoadInfo> getRoadSegments() {
+            return java.util.Collections.emptyList();
+        }
+        default com.badlogic.gdx.math.GridPoint2 getSelectedChunk() {
+            return null;
+        }
+        default com.badlogic.gdx.math.GridPoint2 getWaypointChunk() {
+            return null;
+        }
+        default com.badlogic.gdx.math.GridPoint2 getSuggestionChunk() {
+            return null;
+        }
+        default com.badlogic.gdx.math.Vector2 getCastleSite() {
+            return null;
+        }
+        default boolean isCastleKnown() {
+            return false;
+        }
+        default String getChunkPin(int cx, int cy) {
+            return null;
+        }
+        default int getStratumDepth(int cx, int cy) {
+            return 0;
+        }
+        default int getFloor() {
+            return 1;
+        }
+    }
+
+    public static final class RoadInfo {
+        public final float fromX, fromY, toX, toY;
+        public final boolean spent;
+        public final com.badlogic.gdx.graphics.Color color;
+
+        public RoadInfo(float fromX, float fromY, float toX, float toY, boolean spent, com.badlogic.gdx.graphics.Color color) {
+            this.fromX = fromX;
+            this.fromY = fromY;
+            this.toX = toX;
+            this.toY = toY;
+            this.spent = spent;
+            this.color = color;
+        }
     }
 
     private Texture maskTexture;

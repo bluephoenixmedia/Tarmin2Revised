@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -421,5 +422,142 @@ public class IsometricDioramaRendererTest {
 
         Color darker = IsometricDioramaRenderer.shade(base, -0.5f);
         assertTrue("Negative shade should be darker", darker.r < base.r);
+    }
+
+    @Test
+    public void testGlyphDefinitions() {
+        String[] requiredGlyphs = {
+            "danger", "loot", "return", "trader", "locked", "unknown",
+            "grave", "portal", "ladder", "shelter", "home", "seal",
+            "castle", "event", "flag"
+        };
+        for (String g : requiredGlyphs) {
+            assertTrue("Glyph " + g + " must be defined", IsometricDioramaRenderer.GLYPHS.containsKey(g));
+            String[] rows = IsometricDioramaRenderer.GLYPHS.get(g);
+            assertEquals("Glyph " + g + " must have 7 rows", 7, rows.length);
+            for (int r = 0; r < 7; r++) {
+                assertEquals("Glyph " + g + " row " + r + " must have 7 characters", 7, rows[r].length());
+            }
+        }
+
+        for (int d = 1; d <= 3; d++) {
+            assertTrue("Digit " + d + " must be defined", IsometricDioramaRenderer.DIGITS.containsKey(d));
+            String[] rows = IsometricDioramaRenderer.DIGITS.get(d);
+            assertEquals("Digit " + d + " must have 5 rows", 5, rows.length);
+            for (int r = 0; r < 5; r++) {
+                assertEquals("Digit " + d + " row " + r + " must have 3 characters", 3, rows[r].length());
+            }
+        }
+    }
+
+    @Test
+    public void testOverlayColorsAndPins() {
+        String[] requiredPins = {"danger", "loot", "return", "trader", "locked", "unknown"};
+        for (String p : requiredPins) {
+            assertTrue("Pin " + p + " must be in PIN_COLORS", IsometricDioramaRenderer.PIN_COLORS.containsKey(p));
+            assertNotNull(IsometricDioramaRenderer.PIN_COLORS.get(p));
+        }
+
+        assertEquals("8e5bc4", IsometricDioramaRenderer.COLOR_CASTLE_PURPLE.toString().substring(0, 6));
+        assertEquals("241430", IsometricDioramaRenderer.COLOR_CASTLE_DARK.toString().substring(0, 6));
+        assertEquals("6ccfe0", IsometricDioramaRenderer.COLOR_CYAN.toString().substring(0, 6));
+        assertEquals("e9b44c", IsometricDioramaRenderer.COLOR_GOLD.toString().substring(0, 6));
+        assertEquals("ffd77a", IsometricDioramaRenderer.COLOR_BRIGHT_GOLD.toString().substring(0, 6));
+        assertEquals("20150b", IsometricDioramaRenderer.COLOR_INK.toString().substring(0, 6));
+    }
+
+    @Test
+    public void testRoadInfo() {
+        Color c = new Color(0.8f, 0.4f, 0.2f, 1f);
+        MapKnowledgeMask.RoadInfo road = new MapKnowledgeMask.RoadInfo(4f, 5f, 5f, 5f, false, c);
+        assertEquals(4f, road.fromX, 0.001f);
+        assertEquals(5f, road.fromY, 0.001f);
+        assertEquals(5f, road.toX, 0.001f);
+        assertEquals(5f, road.toY, 0.001f);
+        assertFalse(road.spent);
+        assertEquals(c, road.color);
+
+        MapKnowledgeMask.RoadInfo spent = new MapKnowledgeMask.RoadInfo(5f, 5f, 6f, 5f, true, c);
+        assertTrue(spent.spent);
+    }
+
+    @Test
+    public void testChunkTopZCalculation() {
+        MapKnowledgeMask.KnowledgeProvider visitedLand = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.VISITED; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return true; }
+            @Override
+            public Biome getBiome(int cx, int cy) { return Biome.MAZE; }
+        };
+        assertEquals(6.0f, IsometricDioramaRenderer.getChunkTopZ(visitedLand, 0, 0), 0.001f);
+
+        MapKnowledgeMask.KnowledgeProvider visitedOcean = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.VISITED; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return true; }
+            @Override
+            public Biome getBiome(int cx, int cy) { return Biome.OCEAN; }
+        };
+        assertEquals(2.0f, IsometricDioramaRenderer.getChunkTopZ(visitedOcean, 0, 0), 0.001f);
+
+        MapKnowledgeMask.KnowledgeProvider glimpsedLand = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.GLIMPSED; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return false; }
+            @Override
+            public Biome getBiome(int cx, int cy) { return Biome.FOREST; }
+        };
+        assertEquals(2.5f, IsometricDioramaRenderer.getChunkTopZ(glimpsedLand, 0, 0), 0.001f);
+
+        MapKnowledgeMask.KnowledgeProvider glimpsedOcean = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.GLIMPSED; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return false; }
+            @Override
+            public Biome getBiome(int cx, int cy) { return Biome.OCEAN; }
+        };
+        assertEquals(1.2f, IsometricDioramaRenderer.getChunkTopZ(glimpsedOcean, 0, 0), 0.001f);
+
+        MapKnowledgeMask.KnowledgeProvider unknown = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.UNKNOWN; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return false; }
+        };
+        assertEquals(0f, IsometricDioramaRenderer.getChunkTopZ(unknown, 0, 0), 0.001f);
+    }
+
+    @Test
+    public void testCastleClampingMath() {
+        // Center is (360, 224), margin m = 26.
+        // Castle far northeast at (14.5, -4.5):
+        Vector2 p = IsometricDioramaRenderer.project(14.5f, -4.5f, 0f, 5f, 5f, 1f, 0f, 720f, 448f);
+        // Project to verify it's off-screen
+        float m = 26f;
+        float W = 720f;
+        float H = 448f;
+        boolean inside = (p.x > m && p.x < W - m && p.y > m && p.y < H - m);
+        assertFalse("Castle at (14.5, -4.5) must be outside screen bounds at default zoom", inside);
+
+        float cx = W / 2f;
+        float cy = H / 2f;
+        float dx = p.x - cx;
+        float dy = p.y - cy;
+        float len = (float) Math.hypot(dx, dy);
+        dx /= len;
+        dy /= len;
+
+        float tx = dx > 0 ? (W - m - cx) / dx : (dx < 0 ? (m - cx) / dx : Float.POSITIVE_INFINITY);
+        float ty = dy > 0 ? (H - m - cy) / dy : (dy < 0 ? (m - cy) / dy : Float.POSITIVE_INFINITY);
+        float tt = Math.min(tx, ty);
+        Vector2 q = new Vector2(cx + dx * tt, cy + dy * tt);
+
+        assertTrue("Clamped castle position X must be within screen margin", q.x >= m - 0.01f && q.x <= W - m + 0.01f);
+        assertTrue("Clamped castle position Y must be within screen margin", q.y >= m - 0.01f && q.y <= H - m + 0.01f);
     }
 }

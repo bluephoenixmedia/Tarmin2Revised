@@ -447,6 +447,81 @@ final class MapSurface extends Actor implements Disposable {
                     if (player == null || player.facing == null) return 1f;
                     return player.facing.getVector().y;
                 }
+
+                @Override
+                public List<MapKnowledgeMask.RoadInfo> getRoadSegments() {
+                    if (roads == null || roads.isEmpty()) return java.util.Collections.emptyList();
+                    List<MapKnowledgeMask.RoadInfo> list = new java.util.ArrayList<>(roads.size());
+                    for (MapModel.RoadSegment s : roads) {
+                        Color c = BeaconPalette.roadColor(s.getRoad());
+                        list.add(new MapKnowledgeMask.RoadInfo(
+                                s.getFrom().x, s.getFrom().y,
+                                s.getTo().x, s.getTo().y,
+                                s.isSpent(), c));
+                    }
+                    return list;
+                }
+
+                @Override
+                public GridPoint2 getSelectedChunk() {
+                    return getCursor();
+                }
+
+                @Override
+                public GridPoint2 getWaypointChunk() {
+                    if (knowledge != null) {
+                        MapKnowledge.Spot wp = knowledge.getWaypoint();
+                        if (wp != null && wp.getFloor() == floor) {
+                            return wp.getChunk();
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public GridPoint2 getSuggestionChunk() {
+                    return suggestion == null ? null : new GridPoint2(suggestion);
+                }
+
+                @Override
+                public Vector2 getCastleSite() {
+                    if (model != null && model.getBiomes() != null) {
+                        GridPoint2 site = model.getBiomes().getCastleSite();
+                        if (site != null) {
+                            return new Vector2(site.x + 0.5f, site.y + 0.5f);
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public boolean isCastleKnown() {
+                    return model != null && model.isCastleKnown();
+                }
+
+                @Override
+                public String getChunkPin(int cx, int cy) {
+                    if (knowledge != null) {
+                        Map<GridPoint2, MapKnowledge.Pin> pins = knowledge.getPins(floor);
+                        if (pins != null) {
+                            MapKnowledge.Pin pin = pins.get(new GridPoint2(cx, cy));
+                            if (pin != null) {
+                                return pin.name().toLowerCase();
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public int getStratumDepth(int cx, int cy) {
+                    return model != null ? model.deepestStratumBelow(new GridPoint2(cx, cy)) : 0;
+                }
+
+                @Override
+                public int getFloor() {
+                    return floor;
+                }
             };
 
             batch.flush();
