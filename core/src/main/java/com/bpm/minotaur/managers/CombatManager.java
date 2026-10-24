@@ -664,8 +664,8 @@ public class CombatManager {
         return true;
     }
 
-    /** The blow a free swing or a free shot lands: rolled, shown with {@code word}, counted. */
-    private void landFreeBlow(Monster target, String word, Item weapon) {
+    /** The blow a free swing, a free shot or an Active lands: rolled, shown with {@code word}, counted. */
+    private boolean landFreeBlow(Monster target, String word, Item weapon) {
         GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
         com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
         int d20 = DiceRoller.d20();
@@ -681,7 +681,7 @@ public class CombatManager {
                 animationManager.addAnimation(new Animation(Animation.AnimationType.DAMAGE_TEXT, at, word + " MISS",
                         com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 1.2f));
             }
-            return;
+            return false;
         }
         String dice = player.isPolymorphed() ? player.getForm().damageDice()
                 : weapon != null ? player.getInventory().getActiveDamageDice(weapon) : "1d2";
@@ -695,7 +695,60 @@ public class CombatManager {
         recordFamilyAttack(target, weapon, false, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT);
         player.trainMastery(weapon, false, target, eventManager);
         if (target.getCurrentHP() <= 0) handleRemoteKill(target, heldWeaponKillCause());
+        return true;
     }
+
+    /**
+     * Uses the Art in Art bar slot {@code slot} (#245). Returns what happened; only
+     * {@link com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome#USED} takes the player's turn.
+     */
+    public com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome useArt(int slot) {
+        return com.bpm.minotaur.gamedata.arts.ActiveArts.use(player, slot, artArena);
+    }
+
+    /** What an Active acts through: the maze, the foe in front, a blow of the held weapon, the log. */
+    private final com.bpm.minotaur.gamedata.arts.ActiveArts.Arena artArena =
+            new com.bpm.minotaur.gamedata.arts.ActiveArts.Arena() {
+                @Override
+                public Maze maze() {
+                    return maze;
+                }
+
+                @Override
+                public Monster foeInFront() {
+                    GridPoint2 front = new GridPoint2(
+                            (int) player.getPosition().x + (int) player.getFacing().getVector().x,
+                            (int) player.getPosition().y + (int) player.getFacing().getVector().y);
+                    Monster m = maze.getMonsters().get(front);
+                    if (m == null || m.getCurrentHP() <= 0 || m.isAlly() || m.isPeaceful()) return null;
+                    int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
+                    return maze.isWallBlocking(px, py, player.getFacing()) ? null : m;
+                }
+
+                @Override
+                public boolean blow(Monster target, String word) {
+                    return landFreeBlow(target, word, player.getInventory().getRightHand());
+                }
+
+                @Override
+                public void hurt(Monster target, int damage, String word) {
+                    int actual = target.takeDamage(Math.max(1, damage), DamageType.PHYSICAL, false);
+                    showDamageText(actual, new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y),
+                            word + " ", com.badlogic.gdx.graphics.Color.ORANGE);
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageDealt(actual);
+                    if (target.getCurrentHP() <= 0) handleRemoteKill(target, heldWeaponKillCause());
+                }
+
+                @Override
+                public int roll(String dice) {
+                    return DiceRoller.roll(dice);
+                }
+
+                @Override
+                public void log(String line) {
+                    eventManager.addEvent(new GameEvent(line, 2f));
+                }
+            };
 
     private boolean isBossMonster(Monster monster) {
         if (monster == null) return false;

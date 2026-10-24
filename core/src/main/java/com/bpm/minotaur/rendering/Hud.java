@@ -31,6 +31,8 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.ui.UiGlyphs;
+import com.bpm.minotaur.ui.UiTheme;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.*;
 import com.bpm.minotaur.gamedata.monster.Monster;
@@ -147,6 +149,14 @@ public class Hud implements Disposable {
     private final Label[] spellNameLabels = new Label[5];
     private final Label[] spellCostLabels = new Label[5];
     private int lastSeenUnlockedSlots = 1;
+
+    // --- Art bar (#245): four slots beside the spell strip, filled by the hands ---
+    private final Table artBarTable = new Table();
+    private final Table[] artSlots = new Table[com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS];
+    private final Label[] artKeyLabels = new Label[com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS];
+    private final Label[] artRankLabels = new Label[com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS];
+    private final Label[] artNameLabels = new Label[com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS];
+    private final Label[] artStateLabels = new Label[com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS];
     private final float[] slotPulseTimers = new float[5];
 
     // --- Action Chronicle Labels (5 lines) ---
@@ -270,6 +280,121 @@ public class Hud implements Disposable {
             case 4: return 11;
             default: return 11;
         }
+    }
+
+    /** The Art bar's four slots (#245): [key] rank-mark name turns-left. Hover shows the Art. */
+    private void buildArtBar() {
+        artBarTable.setBackground(hudSkin.getPanelBg());
+        artBarTable.pad(UiTheme.PAD_XS);
+        // Ctrl is said once, in the header, so each slot's badge is just its key.
+        Label header = new Label("ARTS [CTRL]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
+        artBarTable.add(header).colspan(artSlots.length).left().padLeft(UiTheme.PAD_XS).padBottom(UiTheme.PAD_XS / 2f).row();
+        for (int i = 0; i < artSlots.length; i++) {
+            final int slot = i;
+            artSlots[i] = new Table();
+            artSlots[i].setBackground(hudSkin.getSlotRecessed());
+            artSlots[i].pad(UiTheme.PAD_XS / 2f, UiTheme.PAD_XS, UiTheme.PAD_XS / 2f, UiTheme.PAD_XS);
+            String key = com.badlogic.gdx.Input.Keys.toString(com.bpm.minotaur.managers.SettingsManager.getInstance()
+                    .getKey(com.bpm.minotaur.managers.SettingsManager.artAction(i)));
+            // White styles: a Label's colour multiplies its style's, so each state's colour is set on the actor.
+            artKeyLabels[i] = new Label(UiGlyphs.sanitize("[" + key + "]"),
+                    new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
+            artKeyLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
+            artRankLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
+            artNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
+            artNameLabels[i].setEllipsis(true);
+            artStateLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
+            artSlots[i].add(artKeyLabels[i]).left().padRight(UiTheme.PAD_XS);
+            artSlots[i].add(artRankLabels[i]).left().padRight(UiTheme.PAD_XS);
+            // minWidth(0) lets the cell shrink so the ellipsis actually engages.
+            artSlots[i].add(artNameLabels[i]).expandX().fillX().minWidth(0f).left();
+            artSlots[i].add(artStateLabels[i]).right().padLeft(UiTheme.PAD_XS);
+            artSlots[i].addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (encounterWindow != null && encounterWindow.isVisible()) return;
+                    if (gameScreen != null) gameScreen.useArt(slot);
+                }
+            });
+            artSlots[i].addListener(new InputListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    if (encounterWindow != null && encounterWindow.isVisible() || player == null) return;
+                    com.bpm.minotaur.gamedata.arts.ArtBar.Slot s = com.bpm.minotaur.gamedata.arts.ArtBar.slots(player)[slot];
+                    if (s.art == null) return;
+                    String details = s.art.summary;
+                    if (s.kept) details += " Kept from an earlier life: retrain at "
+                            + com.bpm.minotaur.ui.UiNames.of(s.art.rank) + " to halve the cooldown.";
+                    if (s.state == com.bpm.minotaur.gamedata.arts.ArtBar.State.COOLING) {
+                        details += " Ready in " + s.turnsLeft + " turns.";
+                    }
+                    Vector2 pos = artSlots[slot].localToStageCoordinates(new Vector2(0, 0));
+                    String action = com.bpm.minotaur.managers.SettingsManager.artAction(slot);
+                    hudTooltip.showCustomText(UiGlyphs.sanitize(com.bpm.minotaur.ui.UiNames.of(s.art)),
+                            UiGlyphs.sanitize(details), pos.x + UiTheme.PAD_XL, pos.y,
+                            UiGlyphs.sanitize(com.bpm.minotaur.managers.SettingsManager.keyLabel(action,
+                                    com.bpm.minotaur.managers.SettingsManager.getInstance().getKey(action))));
+                }
+
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    hudTooltip.hide();
+                }
+            });
+            artBarTable.add(artSlots[i]).size(UiTheme.ART_SLOT_W, UiTheme.ART_SLOT_H).pad(UiTheme.PAD_XS / 2f);
+        }
+        artBarTable.pack();
+    }
+
+    /**
+     * Shows each slot's state: ready, cooling (dimmed, turns left), Held, and a hollow rank mark for
+     * an Art kept from an earlier life. The strip hides while every slot is empty, and sits just above
+     * the spell strip: beside it, five spells and four full Art names do not fit the canvas.
+     */
+    private void updateArtBar() {
+        if (player == null) return;
+        com.bpm.minotaur.gamedata.arts.ArtBar.Slot[] slots = com.bpm.minotaur.gamedata.arts.ArtBar.slots(player);
+        boolean any = false;
+        for (int i = 0; i < slots.length; i++) {
+            com.bpm.minotaur.gamedata.arts.ArtBar.Slot s = slots[i];
+            if (s.art == null) {
+                artSlots[i].setBackground(hudSkin.getSlotRecessed());
+                artRankLabels[i].setText("");
+                artNameLabels[i].setText("---");
+                artNameLabels[i].setColor(HudSkin.COL_SPELL_EMPTY);
+                artStateLabels[i].setText("");
+                continue;
+            }
+            any = true;
+            String rank = s.art.rank == com.bpm.minotaur.gamedata.player.Mastery.Rank.MASTER ? "M" : "E";
+            // A trained Art's rank sits in a frame; a kept one's stands bare and dim: the hollow mark.
+            // (Not parentheses: intellivision.ttf draws them as brackets.)
+            artRankLabels[i].setText(s.kept ? " " + rank + " " : "[" + rank + "]");
+            artRankLabels[i].setColor(s.kept ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_GOLD_BRIGHT);
+            artNameLabels[i].setText(UiGlyphs.sanitize(com.bpm.minotaur.ui.UiNames.of(s.art)));
+            switch (s.state) {
+                case HELD:
+                    artSlots[i].setBackground(hudSkin.getSlotActive());
+                    artNameLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
+                    artStateLabels[i].setText("HELD");
+                    artStateLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
+                    break;
+                case COOLING:
+                    artSlots[i].setBackground(hudSkin.getSlotRecessed());
+                    artNameLabels[i].setColor(HudSkin.COL_SPELL_UNAFFORDABLE);
+                    artStateLabels[i].setText(String.valueOf(s.turnsLeft));
+                    artStateLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
+                    break;
+                default:
+                    artSlots[i].setBackground(hudSkin.getSlotActive());
+                    artNameLabels[i].setColor(HudSkin.COL_TEXT_ON_DARK);
+                    artStateLabels[i].setText("");
+                    break;
+            }
+        }
+        artBarTable.setVisible(any);
+        artBarTable.setPosition(spellHotbarTable.getX(),
+                spellHotbarTable.getY() + spellHotbarTable.getHeight() + UiTheme.PAD_XS);
     }
 
     /** Rebuilds spell hotbar with unlocked active slots and a compact lock chip (HUD-5). */
@@ -955,6 +1080,8 @@ public class Hud implements Disposable {
 
         stage.addActor(mainContainer);
         stage.addActor(spellHotbarTable);
+        buildArtBar();
+        stage.addActor(artBarTable);
 
         // HUD-1: the prompt used to sit at a hard-coded 208, which is inside the spell hotbar's
         // own band, so a centred prompt covered the right-hand spell slots. It now rests one
@@ -1324,6 +1451,8 @@ public class Hud implements Disposable {
                 }
             }
         }
+
+        updateArtBar();
 
         // --- 3. Update Condition & Delve / Combat Card (HUD-4) ---
         float foodVal = Math.max(0, player.getFood());

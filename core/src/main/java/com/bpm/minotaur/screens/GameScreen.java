@@ -3210,6 +3210,13 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** Uses the Art in Art bar slot {@code slot} (#245): from its key or a click on the HUD strip. */
+    public void useArt(int slot) {
+        if (combatManager.useArt(slot) == com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome.USED) {
+            playerTurnTakesAction();
+        }
+    }
+
     private void playerTurnTakesAction() {
         if (MusicManager.getInstance().isResting()) {
             MusicManager.getInstance().setResting(false);
@@ -3219,6 +3226,7 @@ public class GameScreen extends BaseScreen {
         player.getStatusManager().updateTurn();
         checkForMimicInFront();
         combatManager.tickReload();
+        player.getArtCooldowns().tick();
         tickPowderDampness();
         tickAreaEffects();
         if (player.getInjuryManager() != null) {
@@ -3873,6 +3881,13 @@ public class GameScreen extends BaseScreen {
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+            // The Art bar (#245): Ctrl plus the ART_n key, Ctrl+1 to Ctrl+4 unless rebound.
+            for (int slot = 0; slot < com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS; slot++) {
+                if (keycode == SettingsManager.getInstance().getKey(SettingsManager.artAction(slot))) {
+                    useArt(slot);
+                    return true;
+                }
+            }
             if (keycode == Input.Keys.UP) { // fixed: Ctrl chord scrolls the chronicle
                 if (hud != null) {
                     hud.scrollChronicle(1);

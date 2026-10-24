@@ -78,7 +78,7 @@ public class ControlsLegendOverlay extends Table {
 
     private void refreshKeyLabels() {
         for (Map.Entry<String, Label> entry : keyLabels.entrySet()) {
-            entry.getValue().setText(UiGlyphs.sanitize(Input.Keys.toString(settingsManager.getKey(entry.getKey()))));
+            entry.getValue().setText(UiGlyphs.sanitize(com.bpm.minotaur.managers.SettingsManager.keyLabel(entry.getKey(), settingsManager.getKey(entry.getKey()))));
         }
     }
 

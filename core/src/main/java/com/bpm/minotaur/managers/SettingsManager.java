@@ -58,6 +58,23 @@ public class SettingsManager {
         keyBindingDescriptions.put("MAP_SUGGEST", "Map: Take Suggested Step");
         keyBindingDescriptions.put("MAP_PIN", "Map: Pin");
         keyBindingDescriptions.put("MAP_RECENTER", "Map: Centre on You");
+        for (int slot = 0; slot < ART_SLOTS; slot++) {
+            keyBindingDescriptions.put(artAction(slot), "Combat Art " + (slot + 1));
+        }
+    }
+
+    /** The Art bar's four slots (#245): each action's key is pressed with Ctrl. */
+    private static final int ART_SLOTS = 4;
+
+    /** "ART_1" for slot 0. */
+    public static String artAction(int slot) {
+        return "ART_" + (slot + 1);
+    }
+
+    /** How a binding reads to the player: "Ctrl+1" for an Art slot, else the key's name. */
+    public static String keyLabel(String action, int keycode) {
+        String key = Input.Keys.toString(keycode);
+        return action != null && action.startsWith("ART_") ? "Ctrl+" + key : key;
     }
 
     public static SettingsManager getInstance() {
@@ -275,6 +292,11 @@ public class SettingsManager {
             case "MAP_SUGGEST": return Input.Keys.G;
             case "MAP_PIN": return Input.Keys.P;
             case "MAP_RECENTER": return Input.Keys.C;
+            // Chorded with Ctrl, so they share the quick slots' digits without a clash.
+            case "ART_1": return Input.Keys.NUM_1;
+            case "ART_2": return Input.Keys.NUM_2;
+            case "ART_3": return Input.Keys.NUM_3;
+            case "ART_4": return Input.Keys.NUM_4;
             default: return Input.Keys.UNKNOWN;
         }
     }

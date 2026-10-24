@@ -130,7 +130,7 @@ public class ControlsScreen extends BaseScreen {
         Label descLabel = UiLabels.wrapping(description, new Label.LabelStyle(hudSkin.getFontMain(), com.bpm.minotaur.ui.UiTheme.TEXT));
         table.add(descLabel).width(com.bpm.minotaur.ui.UiTheme.CONTROLS_DESC_W).left().expandX().padRight(25).padBottom(8);
 
-        String keyName = Input.Keys.toString(settingsManager.getKey(action));
+        String keyName = SettingsManager.keyLabel(action, settingsManager.getKey(action));
         TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
         keyStyle.font = hudSkin.getFontSmall();
         keyStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
@@ -194,7 +194,7 @@ public class ControlsScreen extends BaseScreen {
 
     private void cancelListening() {
         if (listeningButton != null && actionToBind != null) {
-            String keyName = Input.Keys.toString(settingsManager.getKey(actionToBind));
+            String keyName = SettingsManager.keyLabel(actionToBind, settingsManager.getKey(actionToBind));
             TextButton.TextButtonStyle keyStyle = new TextButton.TextButtonStyle();
             keyStyle.font = hudSkin.getFontSmall();
             keyStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
@@ -234,7 +234,7 @@ public class ControlsScreen extends BaseScreen {
         keyStyle.over = hudSkin.getSlotActive();
 
         listeningButton.setStyle(keyStyle);
-        listeningButton.setText(Input.Keys.toString(keycode));
+        listeningButton.setText(SettingsManager.keyLabel(actionToBind, keycode));
 
         isListeningForKey = false;
         actionToBind = null;

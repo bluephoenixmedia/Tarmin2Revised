@@ -211,6 +211,9 @@ public final class UiTheme {
     /** The World Log's open page, beside the list of lives. */
     public static final float LEDGER_PAGE_W = 330 * VU;
     public static final float SLOT = 20 * VU;
+    /** One Art bar slot (#245): the spell strip's shape, wide enough for a key, a rank mark and a full name. */
+    public static final float ART_SLOT_W = 90 * VU;
+    public static final float ART_SLOT_H = 8 * VU;
     public static final float ICON_XS = 8 * VU;
     public static final float ICON_SM = 16 * VU;
     public static final float ICON_MD = 24 * VU;

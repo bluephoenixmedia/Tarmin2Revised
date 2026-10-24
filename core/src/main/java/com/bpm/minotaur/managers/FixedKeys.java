@@ -54,10 +54,11 @@ public final class FixedKeys {
 
     /**
      * The fixed role {@code action} would take over if bound to {@code keycode}, or null.
-     * The {@code MAP_} actions are read only while the map is open, so they never clash.
+     * The {@code MAP_} actions are read only while the map is open, and the {@code ART_} actions
+     * only with Ctrl held, so they never clash.
      */
     public static String clashFor(String action, int keycode) {
-        if (action == null || action.startsWith("MAP_")) return null;
+        if (action == null || action.startsWith("MAP_") || action.startsWith("ART_")) return null;
         for (Entry e : LEGEND) {
             if (e.covers(keycode)) return e.role;
         }
