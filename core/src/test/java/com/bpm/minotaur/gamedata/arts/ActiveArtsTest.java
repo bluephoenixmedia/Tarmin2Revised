@@ -37,12 +37,17 @@ public class ActiveArtsTest {
         }
 
         @Override
-        public Monster foeInFront() {
-            return maze.getMonsters().get(new GridPoint2(4, 3));
+        public Monster foeAhead(int tiles) {
+            return maze.getMonsters().get(new GridPoint2(3 + tiles, 3));
         }
 
         @Override
-        public boolean blow(Monster target, Item weapon, String word) {
+        public boolean stepForward() {
+            return false;
+        }
+
+        @Override
+        public boolean blow(Monster target, Item weapon, String word, int toHitBonus, int extraDamage) {
             return blowsLand;
         }
 

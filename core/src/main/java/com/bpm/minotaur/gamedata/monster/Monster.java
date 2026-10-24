@@ -1270,6 +1270,9 @@ public class Monster implements Renderable {
         if (isStaggered()) {
             ac -= 2;
         }
+        if (hewnTurns > 0) {
+            ac -= HEW_ARMOR;
+        }
         return ac;
     }
 
@@ -1803,6 +1806,37 @@ public class Monster implements Renderable {
         return pinnedTurns > 0;
     }
 
+    // --- Hew Through and Iron Grip (#246) ---
+
+    /** Hew Through: this much armour off, for this many of the monster's turns. */
+    public static final int HEW_ARMOR = 3;
+    public static final int HEW_TURNS = 5;
+    /** Iron Grip: held in place and swinging this much worse, for this many turns. */
+    public static final int GRIP_TURNS = 3;
+    public static final int GRIPPED_TO_HIT = 2;
+
+    private int hewnTurns = 0;
+    private int grippedTurns = 0;
+
+    /** Hew Through: the armour is split for {@link #HEW_TURNS} turns. A second hew renews it; it does not stack. */
+    public void hewArmor() {
+        hewnTurns = HEW_TURNS;
+    }
+
+    public boolean isHewn() {
+        return hewnTurns > 0;
+    }
+
+    /** Iron Grip: cannot move, and at {@link #GRIPPED_TO_HIT} worse to hit, for {@link #GRIP_TURNS} turns. */
+    public void applyGrip() {
+        grippedTurns = GRIP_TURNS;
+        pinnedTurns = Math.max(pinnedTurns, GRIP_TURNS);
+    }
+
+    public boolean isGripped() {
+        return grippedTurns > 0;
+    }
+
     /** Elites and bosses are the templates whose kill XP is lifted above their level's. */
     public boolean isElite() {
         MonsterTemplate t = getTemplate();
@@ -1826,10 +1860,12 @@ public class Monster implements Renderable {
         return getRole() == MonsterRole.HEAVY || isElite() || isBoss();
     }
 
-    /** One of the monster's turns passes: a Daze and a Pin each wear down by one. */
+    /** One of the monster's turns passes: a Daze, a Pin, a hewn hide and a grip each wear down by one. */
     public void tickDazeAndPin() {
         if (dazedTurns > 0) dazedTurns--;
         if (pinnedTurns > 0) pinnedTurns--;
+        if (hewnTurns > 0) hewnTurns--;
+        if (grippedTurns > 0) grippedTurns--;
     }
 
     public int getStunTurns() {
