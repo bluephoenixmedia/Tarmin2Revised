@@ -1,5 +1,8 @@
 package com.bpm.minotaur.gamedata.arts;
 
+import com.bpm.minotaur.gamedata.item.WeaponFamily;
+import com.bpm.minotaur.gamedata.player.Mastery.Rank;
+
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -9,12 +12,21 @@ import java.util.Set;
 /**
  * The body's Arts on cooldown (#245; spec section 5), counted in the player's turns. The soul keeps
  * its Arts from life to life; the cooldowns belong to one body and die with it.
+ *
+ * <p>It also keeps the capstones' windows (#248): while one is open, its Family's Adept Passive is
+ * certain -- from its use until the end of the turns that follow it -- and when it closes the
+ * Family's Expert Active is handed its cooldown. Windows are saved with the cooldowns, so a reload
+ * mid-window neither ends it nor skips the hand-off.
  */
 public final class ArtCooldowns {
 
     private final Map<CombatArt, Integer> left = new EnumMap<>(CombatArt.class);
     /** Started this turn: the turn an Art is used in does not count toward its cooldown. */
     private final Set<CombatArt> fresh = EnumSet.noneOf(CombatArt.class);
+    /** Open capstone windows: turns left in each, and the cooldown handed to the Expert Active after. */
+    private final Map<WeaponFamily, Integer> windowTurns = new EnumMap<>(WeaponFamily.class);
+    private final Map<WeaponFamily, Integer> handOff = new EnumMap<>(WeaponFamily.class);
+    private final Set<WeaponFamily> freshWindows = EnumSet.noneOf(WeaponFamily.class);
 
     /** {@code art} was used: it cools for the {@code turns} of the player's turns that follow. */
     public void start(CombatArt art, int turns) {
@@ -37,11 +49,37 @@ public final class ArtCooldowns {
         return turnsLeft(art) > 0;
     }
 
+    /**
+     * A capstone opens {@code family}'s window: its Adept Passive is certain for the {@code turns}
+     * that follow, and then its Expert Active cools for {@code expertCooldown} (none if 0).
+     */
+    public void openWindow(WeaponFamily family, int turns, int expertCooldown) {
+        if (family == null || turns <= 0) return;
+        windowTurns.put(family, turns);
+        handOff.put(family, expertCooldown);
+        freshWindows.add(family);
+    }
+
+    /** Whether a capstone has made {@code family}'s Adept Passive certain this turn. */
+    public boolean isCertain(WeaponFamily family) {
+        return windowTurns.containsKey(family);
+    }
+
     /** One of the player's turns passes. */
     public void tick() {
         left.replaceAll((art, turns) -> fresh.contains(art) ? turns : turns - 1);
         left.values().removeIf(turns -> turns <= 0);
         fresh.clear();
+        windowTurns.replaceAll((family, turns) -> freshWindows.contains(family) ? turns : turns - 1);
+        freshWindows.clear();
+        windowTurns.entrySet().removeIf(window -> {
+            if (window.getValue() > 0) return false;
+            // The window closes: the Family's Expert Active is handed its cooldown, never a shorter one.
+            CombatArt expert = CombatArt.of(window.getKey(), Rank.EXPERT);
+            Integer cooldown = handOff.remove(window.getKey());
+            if (expert != null && cooldown != null && cooldown > 0) left.merge(expert, cooldown, Math::max);
+            return true;
+        });
     }
 
     /** For the save: turns left by Art name. */
@@ -49,6 +87,34 @@ public final class ArtCooldowns {
         Map<String, Integer> out = new LinkedHashMap<>();
         left.forEach((art, turns) -> out.put(art.name(), turns));
         return out;
+    }
+
+    /** For the save: each open window's turns left, by Family name. */
+    public Map<String, Integer> windowsToSave() {
+        Map<String, Integer> out = new LinkedHashMap<>();
+        windowTurns.forEach((family, turns) -> out.put(family.name(), turns));
+        return out;
+    }
+
+    /** For the save: the cooldown each open window hands its Expert Active, by Family name. */
+    public Map<String, Integer> handOffsToSave() {
+        Map<String, Integer> out = new LinkedHashMap<>();
+        handOff.forEach((family, turns) -> out.put(family.name(), turns));
+        return out;
+    }
+
+    /** Restores the save's open windows; names that are no Family are dropped. */
+    public void restoreWindows(Map<String, Integer> windows, Map<String, Integer> handOffs) {
+        windowTurns.clear();
+        handOff.clear();
+        if (windows == null) return;
+        windows.forEach((name, turns) -> {
+            WeaponFamily family = WeaponFamily.parse(name);
+            if (family == WeaponFamily.NONE || turns == null || turns <= 0) return;
+            windowTurns.put(family, turns);
+            Integer after = handOffs != null ? handOffs.get(name) : null;
+            handOff.put(family, after != null ? after : 0);
+        });
     }
 
     /** Restores the save's cooldowns; names that are no Art are dropped. */

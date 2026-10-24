@@ -112,6 +112,9 @@ public class PlayerSaveData {
     public List<String> knownArts;
     /** This body's Art cooldowns, turns left by Art name (#245); absent in older saves. */
     public java.util.HashMap<String, Integer> artCooldowns;
+    /** Open capstone windows by Family, and the cooldown each hands its Expert Active (#248). */
+    public java.util.HashMap<String, Integer> artWindows;
+    public java.util.HashMap<String, Integer> artHandOffs;
     /** The prisoner this Incarnation wakes in (#279); lifeName is null in older saves, which forge one. */
     public String lifeName;
     public int lifeSettlementId = -1;
@@ -312,6 +315,8 @@ public class PlayerSaveData {
         this.knownArts = new ArrayList<>();
         for (com.bpm.minotaur.gamedata.arts.CombatArt art : player.getKnownArts()) this.knownArts.add(art.name());
         this.artCooldowns = new java.util.HashMap<>(player.getArtCooldowns().toSave());
+        this.artWindows = new java.util.HashMap<>(player.getArtCooldowns().windowsToSave());
+        this.artHandOffs = new java.util.HashMap<>(player.getArtCooldowns().handOffsToSave());
         this.livesRecorded = true;
         com.bpm.minotaur.gamedata.history.Life life = player.getLife();
         if (life != null) {
@@ -502,6 +507,7 @@ public class PlayerSaveData {
         // Spells
         player.restoreArts(knownArts);
         player.getArtCooldowns().restore(artCooldowns);
+        player.getArtCooldowns().restoreWindows(artWindows, artHandOffs);
         player.restoreLife(savedLife(), lifeSeed, lifeRerolled, lifeRevealPending, !livesRecorded);
         if (permanentSpellIds != null || runSpellIds != null) {
             player.restoreSpellbook(permanentSpellIds, runSpellIds, preparedSpells, unlockedSpellSlots);

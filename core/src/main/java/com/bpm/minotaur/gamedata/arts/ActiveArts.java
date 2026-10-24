@@ -5,6 +5,7 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.ForcedMovement;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.player.Mastery.Rank;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.telemetry.TelemetryManager;
 import com.bpm.minotaur.ui.AffinityText;
@@ -150,42 +151,9 @@ public final class ActiveArts {
         }
         if (player.getHeldArt() != art) lapse(player, arena); // using another Art is not waiting
         Item weapon = handOf(player, slot);
-        Outcome outcome;
-        switch (art) {
-            case BATTERING_RAM:
-                outcome = batteringRam(player, weapon, arena);
-                break;
-            case CLOSING_THRUST:
-                outcome = closingThrust(weapon, arena);
-                break;
-            case GUTTING_STAB:
-                outcome = guttingStab(weapon, arena);
-                break;
-            case HEW_THROUGH:
-                outcome = hewThrough(weapon, arena);
-                break;
-            case REEL_IN:
-                outcome = reelIn(player, arena);
-                break;
-            case IRON_GRIP:
-                outcome = ironGrip(arena);
-                break;
-            case HELD_ARROW:
-                outcome = heldArrow(player, weapon, arena);
-                break;
-            case NAIL_IN_PLACE:
-                outcome = nailInPlace(weapon, arena);
-                break;
-            case MARKED_SKULL:
-                outcome = markedSkull(player, weapon, arena);
-                break;
-            case SHATTERING_THROW:
-                outcome = shatteringThrow(weapon, arena);
-                break;
-            default:
-                arena.log(name + " cannot be used yet.");
-                return Outcome.UNAVAILABLE;
-        }
+        Outcome outcome = art.kind == CombatArt.Kind.CAPSTONE ? capstone(player, art, arena)
+                : active(player, art, weapon, arena);
+        if (outcome == Outcome.UNAVAILABLE) return outcome;
         if (outcome == Outcome.NO_TARGET) {
             arena.log(name + ": no foe in reach.");
         } else if (outcome == Outcome.NO_ROOM) {
@@ -197,6 +165,35 @@ public final class ActiveArts {
             TelemetryManager.getInstance().recordArtUse(art.name());
         }
         return outcome;
+    }
+
+    /** The Expert Active {@code art}, swung or shot with {@code weapon}. */
+    private static Outcome active(Player player, CombatArt art, Item weapon, Arena arena) {
+        switch (art) {
+            case BATTERING_RAM:
+                return batteringRam(player, weapon, arena);
+            case CLOSING_THRUST:
+                return closingThrust(weapon, arena);
+            case GUTTING_STAB:
+                return guttingStab(weapon, arena);
+            case HEW_THROUGH:
+                return hewThrough(weapon, arena);
+            case REEL_IN:
+                return reelIn(player, arena);
+            case IRON_GRIP:
+                return ironGrip(arena);
+            case HELD_ARROW:
+                return heldArrow(player, weapon, arena);
+            case NAIL_IN_PLACE:
+                return nailInPlace(weapon, arena);
+            case MARKED_SKULL:
+                return markedSkull(player, weapon, arena);
+            case SHATTERING_THROW:
+                return shatteringThrow(weapon, arena);
+            default:
+                arena.log(UiNames.of(art) + " cannot be used yet.");
+                return Outcome.UNAVAILABLE;
+        }
     }
 
     /** The weapon a slot's Art swings: slots 1-2 belong to the right hand, 3-4 to the left. */
@@ -472,6 +469,18 @@ public final class ActiveArts {
         }
         arena.splash(hurl.struck, Math.max(1, hurl.damage / 2), "SHATTER");
         arena.log(name + " bursts on " + who + ", and the shards strike everything beside it.");
+        return Outcome.USED;
+    }
+
+    /**
+     * A capstone (#248): for its turns, the Family's Adept Passive is certain; when they end, the
+     * Family's Expert Active goes on its cooldown. The capstone's own cooldown starts now.
+     */
+    private static Outcome capstone(Player player, CombatArt art, Arena arena) {
+        CombatArt expert = CombatArt.of(art.family, Rank.EXPERT);
+        player.getArtCooldowns().openWindow(art.family, art.durationTurns, player.artCooldown(expert));
+        String text = art.describe();
+        arena.log(UiNames.of(art) + ": " + Character.toLowerCase(text.charAt(0)) + text.substring(1));
         return Outcome.USED;
     }
 

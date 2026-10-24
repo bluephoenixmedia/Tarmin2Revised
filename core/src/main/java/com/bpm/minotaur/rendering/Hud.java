@@ -316,7 +316,7 @@ public class Hud implements Disposable {
                     if (encounterWindow != null && encounterWindow.isVisible() || player == null) return;
                     com.bpm.minotaur.gamedata.arts.ArtBar.Slot s = com.bpm.minotaur.gamedata.arts.ArtBar.slots(player)[slot];
                     if (s.art == null) return;
-                    String details = s.art.summary;
+                    String details = s.art.describe();
                     if (s.kept) details += " Kept from an earlier life: retrain at "
                             + com.bpm.minotaur.ui.UiNames.of(s.art.rank) + " to halve the cooldown.";
                     if (s.state == com.bpm.minotaur.gamedata.arts.ArtBar.State.COOLING) {

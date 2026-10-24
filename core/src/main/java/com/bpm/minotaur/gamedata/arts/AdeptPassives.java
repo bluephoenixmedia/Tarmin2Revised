@@ -131,7 +131,10 @@ public final class AdeptPassives {
 
     /** A monster stepped next to the player: Hold the Line strikes first, once per monster. */
     public void onMonsterStepsAdjacent(Player player, Item weapon, Monster monster, FreeStrike strike) {
-        if (monster == null || lineHeld.contains(monster)) return;
+        if (monster == null) return;
+        // Once per monster, but in a Thicket of Points (#248) every closing is struck.
+        if (lineHeld.contains(monster) && (player == null
+                || !certain(player, CombatArt.of(player.masteryFamilyOf(weapon, false), Mastery.Rank.ADEPT)))) return;
         CombatArt art = procs(player, weapon, false);
         if (art != CombatArt.HOLD_THE_LINE) return;
         lineHeld.add(monster);
@@ -144,8 +147,14 @@ public final class AdeptPassives {
         if (player == null) return null;
         CombatArt art = CombatArt.of(player.masteryFamilyOf(weapon, thrown), Mastery.Rank.ADEPT);
         if (art == null) return null;
+        if (certain(player, art)) return art; // a capstone's window (#248)
         float chance = player.artChance(art);
         return chance > 0f && roll.getAsDouble() < chance ? art : null;
+    }
+
+    /** A capstone has made the Adept Passive {@code art} certain, and the soul knows it. */
+    private static boolean certain(Player player, CombatArt art) {
+        return art != null && player.knowsArt(art) && player.getArtCooldowns().isCertain(art.family);
     }
 
     /** Wide Chop: every other hostile beside the player takes a free cut. */
