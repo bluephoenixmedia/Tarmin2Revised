@@ -133,6 +133,8 @@ public final class WorldLog {
         reckoning.bridge = currentBridge;
         reckonings.add(reckoning);
         currentBridge++;
+        // Bridges closed before Ages were kept stood in the first Age.
+        while (bridgeAges.size() < currentBridge - 1) bridgeAges.add(0);
         bridgeAges.add(currentAge);
     }
 

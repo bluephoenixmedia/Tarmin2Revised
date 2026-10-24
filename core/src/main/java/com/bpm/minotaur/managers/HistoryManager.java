@@ -172,7 +172,9 @@ public final class HistoryManager {
         }
         if (end < 0) return new ArrayList<>();
         int start = end - 1;
-        while (start >= 0 && deeds.get(start).kind != PlayerDeed.Kind.SEEKER_FELL) start--;
+        // A life ends at a death, or when the Champion slays Tarmin and is given rest or the throne (#291).
+        while (start >= 0 && deeds.get(start).kind != PlayerDeed.Kind.SEEKER_FELL
+                && deeds.get(start).kind != PlayerDeed.Kind.TARMIN_SLAIN) start--;
         return new ArrayList<>(deeds.subList(start + 1, end + 1));
     }
 

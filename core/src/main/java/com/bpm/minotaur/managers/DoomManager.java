@@ -242,6 +242,17 @@ public class DoomManager implements SlotScopedState {
         return Math.min(100f, integrity);
     }
 
+    /**
+     * A new Tarmin reigns (#291, #292): his Bridge begins from nothing, but the Warden keeps the
+     * strength every summoning gave it, as at a Warden's fall (#276).
+     */
+    public void beginNewBridge() {
+        this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.crossingPending = false;
+        save();
+    }
+
     /** Tarmin crossed with the last death; the rebirth must spend an old god (#290). */
     public boolean isCrossingPending() {
         return crossingPending;

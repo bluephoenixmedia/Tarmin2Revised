@@ -1464,7 +1464,8 @@ public class GameScreen extends BaseScreen {
                 // what the life had in hand and on its back, to give up when it falls (#284).
                 if (nemesis != null) {
                     killer = nemesis.name;
-                    hoardGearOf(nemesis.id);
+                    // One that left for Tarmin's throne in this same death carries nothing off.
+                    if (nemesis.isAlive()) hoardGearOf(nemesis.id);
                 }
                 // The life's record closes with its death (#280).
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().die(epitaph, killer, "level " + curLvl,
@@ -1476,7 +1477,7 @@ public class GameScreen extends BaseScreen {
                 // A monster may have slain Tarmin off-screen as this death opened an Era: the Age
                 // ends, and the new Tarmin begins his Bridge from nothing (#292).
                 if (com.bpm.minotaur.managers.WorldLogManager.getInstance().closeAgesEnded(worldManager.getHistory())) {
-                    DoomManager.getInstance().resetDeaths();
+                    DoomManager.getInstance().beginNewBridge();
                 }
                 if (DoomManager.getInstance().isCrossingPending()) {
                     // A death while the Warden stood: Tarmin crosses (#276, #290).
@@ -2035,8 +2036,9 @@ public class GameScreen extends BaseScreen {
                 tookThrone ? "the throne" : "rest", "Castle Tarmin",
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
         log.closeAgeByChampion(ending);
-        // The new Tarmin begins his own Bridge, from nothing.
-        DoomManager.getInstance().resetDeaths();
+        // The new Tarmin's Bridge begins from nothing; the history's deed is saved with the log.
+        DoomManager.getInstance().beginNewBridge();
+        SaveManager.getInstance().saveActiveSlot(player, worldManager);
         // The life is over: what it carried stays with it, as at a death.
         player.getInventory().setRightHand(null);
         player.getInventory().setLeftHand(null);

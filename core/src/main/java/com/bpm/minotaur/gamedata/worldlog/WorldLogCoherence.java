@@ -86,7 +86,9 @@ public final class WorldLogCoherence {
             }
             // A Bridge ends by its own Reckoning, or by its Age's, which tells of the Age instead.
             String tellsOf = bridge.reckoning != null && bridge.reckoning.end == Reckoning.End.AGE_ENDED ? "age" : "bridge";
-            if (bridge.reckoning != null && (bridge.reckoning.plain == null || !bridge.reckoning.plain.toLowerCase().contains(tellsOf))) {
+            if (bridge.reckoning != null && (bridge.reckoning.plain == null
+                    || !java.util.regex.Pattern.compile("\\b" + tellsOf + "\\b", java.util.regex.Pattern.CASE_INSENSITIVE)
+                            .matcher(bridge.reckoning.plain).find())) {
                 problems.add(bridge.name + "'s Reckoning does not tell of the Bridge: " + bridge.reckoning.plain);
             }
             for (Era era : bridge.eras) {

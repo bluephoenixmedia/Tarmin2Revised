@@ -128,7 +128,7 @@ public final class WorldLogManager implements SlotScopedState {
 
     /**
      * A monster slew Tarmin off-screen (#292): the log learns of it at the Shifting and ends the
-     * Age. Returns whether any Age ended, so the caller can begin the new Tarmin's Bridge.
+     * Age. Returns whether any Age ended, so the caller can begin the new reign's Bridge.
      */
     public boolean closeAgesEnded(HistoryManager history) {
         if (history == null) return false;

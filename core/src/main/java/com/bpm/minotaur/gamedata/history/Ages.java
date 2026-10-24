@@ -45,9 +45,11 @@ final class Ages {
         Random rng = new Random(world.seed * 7_919L + world.seekersFallen * 104_729L + world.age);
         if (rng.nextFloat() >= USURP_CHANCE) return;
         float kind = rng.nextFloat();
-        if (kind < BY_SIEGE || !(kind < BY_SIEGE + BY_NEMESIS ? byNemesis(world) : byMegabeast(world))) {
-            bySiege(world);
-        }
+        boolean done = false;
+        if (kind >= BY_SIEGE + BY_NEMESIS) done = byMegabeast(world);
+        else if (kind >= BY_SIEGE) done = byNemesis(world);
+        // A siege is the likeliest way, and the way it goes when no Nemesis or Megabeast can.
+        if (!done) bySiege(world);
     }
 
     private static boolean bySiege(HistoryWorld world) {
@@ -73,7 +75,7 @@ final class Ages {
 
     private static boolean byMegabeast(HistoryWorld world) {
         for (Megabeast b : world.megabeasts) {
-            if (!b.isAlive()) continue;
+            if (!b.isAlive() || !b.isAwake(world.season) || b.isPacified()) continue;
             b.deathSeason = world.season; // it leaves its lair for the throne
             end(world, AgeEnding.Kind.MEGABEAST, AgeEnding.titleFrom(b.name), b.name);
             return true;

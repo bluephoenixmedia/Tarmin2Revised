@@ -53,9 +53,9 @@ public final class Reckonings {
                                 + "empty throne: " + ending.newTitle + " sits on it now.");
             case THRONE:
                 return new Reckoning(Reckoning.End.AGE_ENDED,
-                        capital(age) + " ended when " + who + " slew " + old + " and sat down on his throne. "
+                        capital(age) + " ended when " + who + " slew " + old + " and sat down on the throne. "
                                 + who + " is " + ending.newTitle + " now, and the next life of the soul is sent to hunt them.",
-                        "The soul's own hand slew Tarmin, and the soul's own hand wears his crown. "
+                        "The soul's own hand slew Tarmin, and the soul's own hand wears the crown. "
                                 + ending.newTitle + " begins a new Bridge.");
             default:
                 return new Reckoning(Reckoning.End.AGE_ENDED,
@@ -67,7 +67,7 @@ public final class Reckonings {
 
     private static String usurpation(com.bpm.minotaur.gamedata.history.AgeEnding ending) {
         switch (ending.kind) {
-            case NEMESIS: return ending.by + ", grown fat on the soul's lives, challenged Tarmin in his hall";
+            case NEMESIS: return ending.by + ", grown fat on the soul's lives, challenged Tarmin in the castle hall";
             case MEGABEAST: return ending.by + " broke into Castle Tarmin";
             default: return "the siege of " + ending.by + " broke Castle Tarmin";
         }
