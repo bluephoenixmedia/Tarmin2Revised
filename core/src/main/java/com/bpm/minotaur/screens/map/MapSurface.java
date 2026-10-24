@@ -143,6 +143,20 @@ final class MapSurface extends Actor implements Disposable {
     private PlayerMark player;
     private float time;
     private int loadsThisFrame;
+    private final IsometricDioramaRenderer dioramaRenderer = new IsometricDioramaRenderer();
+    private boolean dioramaEnabled = true;
+
+    void setDioramaEnabled(boolean enabled) {
+        this.dioramaEnabled = enabled;
+    }
+
+    boolean isDioramaEnabled() {
+        return dioramaEnabled;
+    }
+
+    IsometricDioramaRenderer getDioramaRenderer() {
+        return dioramaRenderer;
+    }
 
     MapSurface(HudSkin skin, BiFunction<Integer, GridPoint2, ChunkSummary> summaryLoader) {
         this.skin = skin;
@@ -263,6 +277,41 @@ final class MapSurface extends Actor implements Disposable {
     public void draw(Batch batch, float parentAlpha) {
         if (model == null) return;
         loadsThisFrame = 0;
+
+        if (dioramaEnabled && zoom != Zoom.CHUNK && Gdx.gl != null) {
+            dioramaRenderer.update(Gdx.graphics != null ? Gdx.graphics.getDeltaTime() : 0.016f);
+            dioramaRenderer.setCave(floor != 1);
+            float currentZoom = (zoom == Zoom.WORLD) ? 1.0f : 2.6f;
+            dioramaRenderer.setCamera(cursor.x + 0.5f, cursor.y + 0.5f, currentZoom, 0f);
+
+            MapKnowledgeMask.KnowledgeProvider provider = new MapKnowledgeMask.KnowledgeProvider() {
+                @Override
+                public State getChunkState(int cx, int cy) {
+                    GridPoint2 p = new GridPoint2(cx, cy);
+                    if (model.visited(floor) != null && model.visited(floor).contains(p)) {
+                        return State.VISITED;
+                    }
+                    if (glimpsed != null && glimpsed.contains(p)) {
+                        return State.GLIMPSED;
+                    }
+                    return State.UNKNOWN;
+                }
+
+                @Override
+                public boolean isTileSeen(int cx, int cy, int lx, int ly) {
+                    if (tiles != null && cursor.x == cx && cursor.y == cy) {
+                        return tiles.isSeen(lx, ly);
+                    }
+                    return true;
+                }
+            };
+
+            batch.flush();
+            dioramaRenderer.render(batch, getX(), getY(), getWidth(), getHeight(), provider);
+            batch.setColor(Color.WHITE);
+            return;
+        }
+
         batch.setColor(Color.WHITE);
         batch.draw(vellum, getX(), getY(), getWidth(), getHeight());
         if (!clipBegin(getX(), getY(), getWidth(), getHeight())) return;
@@ -880,6 +929,7 @@ final class MapSurface extends Actor implements Disposable {
 
     @Override
     public void dispose() {
+        dioramaRenderer.dispose();
         vellum.dispose();
         for (Texture t : icons.values()) t.dispose();
     }
