@@ -751,9 +751,14 @@ public class CombatManager {
                     int x = (int) player.getPosition().x, y = (int) player.getPosition().y;
                     Direction facing = player.getFacing();
                     int nx = x + (int) facing.getVector().x, ny = y + (int) facing.getVector().y;
-                    // Only open floor: a door, a gate or a chunk's edge is not a step to lunge through.
+                    // Only open, dry floor: a door, a gate or a chunk's edge is not a step to lunge
+                    // through, and water would owe the world a wading turn the lunge cannot pay.
                     if (maze.isWallBlocking(x, y, facing) || !maze.isPassable(nx, ny)
-                            || maze.getGameObjectAt(nx, ny) != null) return false;
+                            || maze.getGameObjectAt(nx, ny) != null
+                            || maze.getLiquidManager() != null && maze.getLiquidManager().slowsMovement(nx, ny, player)) {
+                        return false;
+                    }
+                    abandonReload(); // a step gives up the reload, as walking does
                     player.move(facing, maze, eventManager, com.bpm.minotaur.gamedata.GameMode.ADVANCED, soundManager);
                     return (int) player.getPosition().x == nx && (int) player.getPosition().y == ny;
                 }

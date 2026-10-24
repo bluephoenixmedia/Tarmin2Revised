@@ -2,7 +2,6 @@ package com.bpm.minotaur.gamedata.arts;
 
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.ForcedMovement;
 import com.bpm.minotaur.gamedata.monster.Monster;
@@ -58,6 +57,8 @@ public final class ActiveArts {
         COOLING,
         /** No foe for it to act on. */
         NO_TARGET,
+        /** A foe, but no open floor to close on it. */
+        NO_ROOM,
         /** An Art the game cannot use yet. */
         UNAVAILABLE
     }
@@ -69,9 +70,6 @@ public final class ActiveArts {
     static final int CLOSING_TO_HIT = 2;
     /** Gutting Stab: one of these for every status on the target. */
     static final String GUT_DIE = "d4";
-    /** Hew Through's bleed: turns, and damage each turn. */
-    static final int HEW_BLEED_TURNS = 3;
-    static final int HEW_BLEED = 1;
 
     private ActiveArts() {
     }
@@ -114,6 +112,8 @@ public final class ActiveArts {
         }
         if (outcome == Outcome.NO_TARGET) {
             arena.log(name + ": no foe in reach.");
+        } else if (outcome == Outcome.NO_ROOM) {
+            arena.log(name + ": no open floor to close across.");
         } else if (outcome == Outcome.USED) {
             cooldowns.start(art, player.artCooldown(art));
             TelemetryManager.getInstance().recordArtUse(art.name());
@@ -124,17 +124,6 @@ public final class ActiveArts {
     /** The weapon a slot's Art swings: slots 1-2 belong to the right hand, 3-4 to the left. */
     static Item handOf(Player player, int slot) {
         return slot < 2 ? player.getInventory().getRightHand() : player.getInventory().getLeftHand();
-    }
-
-    /** The statuses Gutting Stab counts: Bleeding, Slowed, Dazed, Pinned and Stunned. */
-    static int statusesOn(Monster foe) {
-        int n = 0;
-        if (foe.getBleedTurns() > 0) n++;
-        if (foe.getStatusManager() != null && foe.getStatusManager().hasEffect(StatusEffectType.SLOWED)) n++;
-        if (foe.isDazed()) n++;
-        if (foe.isPinned()) n++;
-        if (foe.isStunned()) n++;
-        return n;
     }
 
     /**
@@ -189,7 +178,8 @@ public final class ActiveArts {
         boolean closed = false;
         if (foe == null) {
             foe = arena.foeAhead(2);
-            if (foe == null || !arena.stepForward()) return Outcome.NO_TARGET;
+            if (foe == null) return Outcome.NO_TARGET;
+            if (!arena.stepForward()) return Outcome.NO_ROOM;
             closed = true;
         }
         String who = AffinityText.nameOf(foe);
@@ -206,7 +196,7 @@ public final class ActiveArts {
         if (foe == null) return Outcome.NO_TARGET;
         String name = UiNames.of(CombatArt.GUTTING_STAB);
         String who = AffinityText.nameOf(foe);
-        int wounds = statusesOn(foe);
+        int wounds = foe.countArtStatuses();
         int extra = wounds > 0 ? arena.roll(wounds + GUT_DIE) : 0;
         if (!arena.blow(foe, weapon, "GUT", 0, extra)) {
             arena.log(name + ": " + who + " twists away.");
@@ -218,7 +208,7 @@ public final class ActiveArts {
         return Outcome.USED;
     }
 
-    /** Hew Through: a chop that splits the target's armour, 3 AC for 5 turns, and makes it Bleed. */
+    /** Hew Through: a chop that splits the target's armour for a while and makes it Bleed ({@link Monster#hew}). */
     private static Outcome hewThrough(Item weapon, Arena arena) {
         Monster foe = arena.foeAhead(1);
         if (foe == null) return Outcome.NO_TARGET;
@@ -229,9 +219,8 @@ public final class ActiveArts {
         } else if (foe.getCurrentHP() <= 0) {
             arena.log(name + " fells " + who + ".");
         } else {
-            foe.hewArmor();
-            foe.applyBleed(HEW_BLEED_TURNS, HEW_BLEED);
-            arena.log(name + " splits " + who + "'s armour, and it bleeds.");
+            foe.hew();
+            arena.log(name + " splits the armour of " + who + ", and it bleeds.");
         }
         return Outcome.USED;
     }

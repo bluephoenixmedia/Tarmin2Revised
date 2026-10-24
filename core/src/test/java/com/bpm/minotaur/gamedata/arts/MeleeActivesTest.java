@@ -191,13 +191,13 @@ public class MeleeActivesTest {
     @Test
     public void everyStatusTheSpecNamesCounts() {
         Monster foe = foeAt(4, 3, MonsterRole.SOLDIER);
-        assertEquals(0, ActiveArts.statusesOn(foe));
+        assertEquals(0, foe.countArtStatuses());
         foe.applyBleed(3, 1);
         foe.getStatusManager().addEffect(StatusEffectType.SLOWED, 2, 1, false);
         foe.applyDaze();
         foe.applyPin();
         foe.applyStun(2);
-        assertEquals("Bleeding, Slowed, Dazed, Pinned, Stunned", 5, ActiveArts.statusesOn(foe));
+        assertEquals("Bleeding, Slowed, Dazed, Pinned, Stunned", 5, foe.countArtStatuses());
     }
 
     // --- Hew Through (Axe) ---
