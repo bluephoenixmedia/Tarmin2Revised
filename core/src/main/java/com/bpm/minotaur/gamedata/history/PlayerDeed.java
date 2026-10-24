@@ -68,7 +68,12 @@ public class PlayerDeed {
         /** The seeker died while the Warden stood, and Tarmin crossed (#276, #290). */
         TARMIN_CROSSED,
         /** While Tarmin was gone, house {@link #target} took the most of the Maze (#276, #290). */
-        HOUSE_ROSE
+        HOUSE_ROSE,
+        /**
+         * The Champion slew Tarmin (#291): {@link #target} is 1 if they took the throne, 0 if they
+         * returned the Treasure; {@link #victim} is the life's name.
+         */
+        TARMIN_SLAIN
     }
 
     public Kind kind;
@@ -90,6 +95,8 @@ public class PlayerDeed {
     public int nemesis = -1;
     public String victim;
     public int level = -1;
+    /** For {@code SEEKER_FELL}: Tarmin's Hunger after the death, which may open a new Era (#292); -1 if unknown. */
+    public int hunger = -1;
     public int chunkX;
     public int chunkY;
 

@@ -61,13 +61,34 @@ public final class WorldLogCoherence {
             }
         }
 
+        // Every Age but the one being lived has ended, and says how; every life stands in one (#291).
+        Map<Integer, Integer> inAges = new HashMap<>();
+        for (Age age : log.ages()) {
+            if (age.index < log.currentAge() && age.reckoning == null) {
+                problems.add(age.name + " ended, but no Reckoning tells how");
+            }
+            for (Bridge bridge : age.bridges) {
+                for (Era era : bridge.eras) {
+                    for (LifeRecord life : era.lives) inAges.merge(life.number, 1, Integer::sum);
+                }
+            }
+        }
+        for (LifeRecord life : log.lives()) {
+            int count = inAges.getOrDefault(life.number, 0);
+            if (count != 1) problems.add("life " + life.number + " stands in " + count + " Ages, not one");
+        }
+
         // Every Bridge but the one being built has ended, and says how (#290).
         Map<Integer, Integer> inBridges = new HashMap<>();
         for (Bridge bridge : log.bridges()) {
             if (bridge.index < log.currentBridge() && bridge.reckoning == null) {
                 problems.add(bridge.name + " ended, but no Reckoning tells how");
             }
-            if (bridge.reckoning != null && (bridge.reckoning.plain == null || !bridge.reckoning.plain.toLowerCase().contains("bridge"))) {
+            // A Bridge ends by its own Reckoning, or by its Age's, which tells of the Age instead.
+            String tellsOf = bridge.reckoning != null && bridge.reckoning.end == Reckoning.End.AGE_ENDED ? "age" : "bridge";
+            if (bridge.reckoning != null && (bridge.reckoning.plain == null
+                    || !java.util.regex.Pattern.compile("\\b" + tellsOf + "\\b", java.util.regex.Pattern.CASE_INSENSITIVE)
+                            .matcher(bridge.reckoning.plain).find())) {
                 problems.add(bridge.name + "'s Reckoning does not tell of the Bridge: " + bridge.reckoning.plain);
             }
             for (Era era : bridge.eras) {

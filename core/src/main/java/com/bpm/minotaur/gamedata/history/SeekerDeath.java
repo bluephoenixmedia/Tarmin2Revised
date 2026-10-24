@@ -14,6 +14,7 @@ public final class SeekerDeath {
     int killerNemesis = -1;
     String victim;
     int level = -1;
+    int hunger = -1;
     int chunkX;
     int chunkY;
 
@@ -53,6 +54,12 @@ public final class SeekerDeath {
         return this;
     }
 
+    /** Tarmin's Hunger after this death: a new Era may see Tarmin slain off-screen (#292). */
+    public SeekerDeath hunger(int hunger) {
+        this.hunger = hunger;
+        return this;
+    }
+
     /** The deed the history keeps and replays. */
     public PlayerDeed deed(int liveSeason) {
         PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.SEEKER_FELL, killerHouse, liveSeason);
@@ -64,6 +71,7 @@ public final class SeekerDeath {
         deed.level = level;
         deed.chunkX = chunkX;
         deed.chunkY = chunkY;
+        deed.hunger = hunger;
         return deed;
     }
 }

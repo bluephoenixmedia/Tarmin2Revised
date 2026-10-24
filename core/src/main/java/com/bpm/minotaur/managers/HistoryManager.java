@@ -172,13 +172,26 @@ public final class HistoryManager {
         }
         if (end < 0) return new ArrayList<>();
         int start = end - 1;
-        while (start >= 0 && deeds.get(start).kind != PlayerDeed.Kind.SEEKER_FELL) start--;
+        // A life ends at a death, or when the Champion slays Tarmin and is given rest or the throne (#291).
+        while (start >= 0 && deeds.get(start).kind != PlayerDeed.Kind.SEEKER_FELL
+                && deeds.get(start).kind != PlayerDeed.Kind.TARMIN_SLAIN) start--;
         return new ArrayList<>(deeds.subList(start + 1, end + 1));
     }
 
     /** The Bridge's Warden fell, and the Bridge with it (#290). */
     public void recordWardenFell() {
         apply(new PlayerDeed(PlayerDeed.Kind.WARDEN_FELL, -1, world.liveSeasons()));
+    }
+
+    /**
+     * The Champion slew Tarmin (#291), and returned the Treasure or took the throne as
+     * {@code lifeName}. Returns how the Age ended.
+     */
+    public com.bpm.minotaur.gamedata.history.AgeEnding recordTarminSlain(boolean tookThrone, String lifeName) {
+        PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.TARMIN_SLAIN, tookThrone ? 1 : 0, world.liveSeasons());
+        deed.victim = lifeName;
+        apply(deed);
+        return world.ageEndings().get(world.ageEndings().size() - 1);
     }
 
     /** While Tarmin was gone, {@code houseId} took the most of the Maze (#276, #290). */

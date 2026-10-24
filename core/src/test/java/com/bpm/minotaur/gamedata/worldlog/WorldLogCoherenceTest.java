@@ -45,6 +45,11 @@ public class WorldLogCoherenceTest {
                 log.closeBridge(Reckonings.wardenFell(Bridge.nameOf(log.currentBridge()), log.last()));
                 history.recordWardenFell();
                 bridgeBegan = i;
+            } else if (i == 50) {
+                // The Champion slays Tarmin and takes his throne: the Age ends with its Bridge (#291).
+                log.closeAge(Reckonings.ageEnded(Age.nameOf(log.currentAge()), log.last(),
+                        history.recordTarminSlain(true, log.last().name)));
+                bridgeBegan = i;
             } else if (i == 40) {
                 history.recordCrossing();
                 com.bpm.minotaur.gamedata.history.OldGod god =
@@ -83,19 +88,24 @@ public class WorldLogCoherenceTest {
                 int killerHouse = r.nextBoolean() ? house.id : -1;
                 death = SeekerDeath.by("a beast", kinds[r.nextInt(kinds.length)], killerHouse);
             }
-            Nemesis killer = history.recordSeekerFell(death.of(life.name).at(2 + r.nextInt(4), r.nextInt(5), r.nextInt(5)));
+            Nemesis killer = history.recordSeekerFell(death.of(life.name).at(2 + r.nextInt(4), r.nextInt(5), r.nextInt(5))
+                    .hunger(hunger + 1));
             log.die("Slain", killer != null ? killer.name : "a beast", "level 2", 10 * i);
 
             LifeRecord ended = log.last();
             // As the game does at a death (WorldLogManager.tellLastLife), at the Hunger after it.
             log.tell(ended.number, Tellings.forLife(history.world(), history.lastLifeDeeds(), ended, hunger + 1));
+            // A monster may have slain Tarmin off-screen: the log learns of it now, and a new Bridge begins (#292).
+            if (log.closeAgesEnded(history.world().ageEndings()) > 0) bridgeBegan = i + 1;
         }
     }
 
     @Test
     public void sixtyLivesTellNothingThatDisagrees() {
         assertEquals(LIVES, log.lives().size());
-        assertEquals("a Warden's fall and a crossing make three Bridges", 3, log.bridges().size());
+        assertTrue("a Warden's fall, a crossing and a throne make at least four Bridges", log.bridges().size() >= 4);
+        assertTrue("the Champion's slaying ended an Age", log.currentAge() >= 1);
+        assertEquals(history.world().age(), log.currentAge());
         // Every rule is exercised, so none can pass for want of a case.
         assertTrue("a Nemesis took more than one life",
                 history.world().nemeses().stream().anyMatch(n -> n.tally() >= 2));

@@ -25,6 +25,12 @@ public final class WorldLog {
     private int currentBridge;
     /** How every ended Bridge ended, oldest first. */
     private ArrayList<Reckoning> reckonings = new ArrayList<>();
+    /** The Age being lived, counting from 0: one Tarmin's reign (#291). */
+    private int currentAge;
+    /** The Age each Bridge after the first was begun in: entry {@code b - 1} is Bridge {@code b}'s. */
+    private ArrayList<Integer> bridgeAges = new ArrayList<>();
+    /** How every ended Age ended, oldest first. */
+    private ArrayList<Reckoning> ageReckonings = new ArrayList<>();
     /** How many of the myth's revelations the soul has read, in order (#288). */
     private int revelationsRead;
     /** The deepest layer of the myth the Hunger has ever opened; a Warden's fall never closes it. */
@@ -127,6 +133,66 @@ public final class WorldLog {
         reckoning.bridge = currentBridge;
         reckonings.add(reckoning);
         currentBridge++;
+        // Bridges closed before Ages were kept stood in the first Age.
+        while (bridgeAges.size() < currentBridge - 1) bridgeAges.add(0);
+        bridgeAges.add(currentAge);
+    }
+
+    /** The Age being lived, counting from 0. */
+    public int currentAge() {
+        return currentAge;
+    }
+
+    /**
+     * Tarmin is slain and the Age ends, told by its Reckoning (#291, #292). Its Bridge ends with it:
+     * the next Tarmin begins his own, and the next life wakes in both.
+     */
+    public void closeAge(Reckoning reckoning) {
+        reckoning.age = currentAge;
+        ageReckonings.add(reckoning);
+        currentAge++;
+        closeBridge(reckoning);
+    }
+
+    /**
+     * Ends every Age the history has ended and the log has not (#291, #292): a monster may slay
+     * Tarmin off-screen, and the log learns of it at the next Shifting. Returns how many it ended.
+     */
+    public int closeAgesEnded(List<com.bpm.minotaur.gamedata.history.AgeEnding> endings) {
+        int closed = 0;
+        for (com.bpm.minotaur.gamedata.history.AgeEnding e : endings) {
+            if (e.age < currentAge) continue;
+            closeAge(Reckonings.ageEnded(Age.nameOf(currentAge), last(), e));
+            closed++;
+        }
+        return closed;
+    }
+
+    /** Every Age with a Bridge or an ending, newest first, each with its Bridges newest first. */
+    public List<Age> ages() {
+        List<Bridge> bridges = bridges();
+        List<Age> ages = new ArrayList<>();
+        for (int a = currentAge; a >= 0; a--) {
+            Age age = new Age(a, ageReckoningOf(a));
+            for (Bridge bridge : bridges) {
+                if (ageOfBridge(bridge.index) == a) age.bridges.add(bridge);
+            }
+            if (!age.bridges.isEmpty() || age.reckoning != null) ages.add(age);
+        }
+        return ages;
+    }
+
+    /** The Age a Bridge was begun in; Bridges from before Ages stand in the first. */
+    public int ageOfBridge(int bridge) {
+        if (bridge <= 0 || bridge - 1 >= bridgeAges.size()) return 0;
+        return bridgeAges.get(bridge - 1);
+    }
+
+    private Reckoning ageReckoningOf(int age) {
+        for (Reckoning r : ageReckonings) {
+            if (r.age == age) return r;
+        }
+        return null;
     }
 
     /** Every Bridge with a life in it or an ending, newest first, each with its Eras newest first. */

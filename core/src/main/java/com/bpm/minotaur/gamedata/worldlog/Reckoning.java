@@ -6,10 +6,12 @@ package com.bpm.minotaur.gamedata.worldlog;
  */
 public final class Reckoning {
 
-    public enum End { WARDEN_FELL, CROSSED, LAST_CROSSING }
+    public enum End { WARDEN_FELL, CROSSED, LAST_CROSSING, AGE_ENDED }
 
     /** Which Bridge it closed, counting from 0. */
     public int bridge;
+    /** For the end of an Age, which Age it closed (#291); -1 otherwise. */
+    public int age = -1;
     public End end;
     public String plain;
     public String mythic;
