@@ -258,6 +258,55 @@ public class CapstonesTest {
     }
 
     @Test
+    public void anOpenWindowAndItsHandOffSurviveTheSave() {
+        master(WeaponFamily.BLUNT);
+        ActiveArts.use(player, 1, arena);
+        player.getArtCooldowns().tick();
+        player.getArtCooldowns().tick();
+        com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
+        json.setOutputType(com.badlogic.gdx.utils.JsonWriter.OutputType.json);
+        com.bpm.minotaur.gamedata.save.PlayerSaveData loaded = json.fromJson(
+                com.bpm.minotaur.gamedata.save.PlayerSaveData.class,
+                json.toJson(new com.bpm.minotaur.gamedata.save.PlayerSaveData(player)));
+
+        ArtCooldowns restored = new ArtCooldowns();
+        restored.restore(loaded.artCooldowns);
+        restored.restoreWindows(loaded.artWindows, loaded.artHandOffs);
+
+        assertTrue(restored.isCertain(WeaponFamily.BLUNT));
+        int ticks = 0;
+        while (restored.isCertain(WeaponFamily.BLUNT) && ticks < 10) {
+            restored.tick();
+            ticks++;
+        }
+        assertEquals("the reload kept the window's four turns left", CombatArt.CAPSTONE_TURNS - 1, ticks);
+        assertEquals("the hand-off came through the reload", CombatArt.ACTIVE_COOLDOWN,
+                restored.turnsLeft(CombatArt.BATTERING_RAM));
+    }
+
+    @Test
+    public void theHandOffNeverShortensALongerCooldown() {
+        ArtCooldowns cooldowns = new ArtCooldowns();
+        cooldowns.openWindow(WeaponFamily.BLUNT, 1, 5);
+        cooldowns.start(CombatArt.BATTERING_RAM, 40);
+        cooldowns.tick(); // the turn of use: neither counts
+        cooldowns.tick(); // the window closes, handing off 5 against the 39 left
+        assertEquals("kept at 39, not cut to 5", 39, cooldowns.turnsLeft(CombatArt.BATTERING_RAM));
+    }
+
+    @Test
+    public void aCapstoneDescribesItsWindowWithItsOwnLength() {
+        for (CombatArt art : CombatArt.values()) {
+            if (art.kind != CombatArt.Kind.CAPSTONE) {
+                assertEquals(art.summary, art.describe());
+                continue;
+            }
+            assertTrue(art.describe(), art.describe().startsWith("For " + CombatArt.CAPSTONE_TURNS + " turns, "));
+            assertFalse("the length is not typed into the summary", art.summary.contains("turns"));
+        }
+    }
+
+    @Test
     public void aCoolingCapstoneCannotBeUsed() {
         master(WeaponFamily.AXE);
         ActiveArts.use(player, 1, arena);

@@ -133,7 +133,8 @@ public final class AdeptPassives {
     public void onMonsterStepsAdjacent(Player player, Item weapon, Monster monster, FreeStrike strike) {
         if (monster == null) return;
         // Once per monster, but in a Thicket of Points (#248) every closing is struck.
-        if (lineHeld.contains(monster) && !certainFor(player, weapon, false)) return;
+        if (lineHeld.contains(monster) && (player == null
+                || !certain(player, CombatArt.of(player.masteryFamilyOf(weapon, false), Mastery.Rank.ADEPT)))) return;
         CombatArt art = procs(player, weapon, false);
         if (art != CombatArt.HOLD_THE_LINE) return;
         lineHeld.add(monster);
@@ -146,15 +147,13 @@ public final class AdeptPassives {
         if (player == null) return null;
         CombatArt art = CombatArt.of(player.masteryFamilyOf(weapon, thrown), Mastery.Rank.ADEPT);
         if (art == null) return null;
-        if (certainFor(player, weapon, thrown)) return art; // a capstone's window (#248)
+        if (certain(player, art)) return art; // a capstone's window (#248)
         float chance = player.artChance(art);
         return chance > 0f && roll.getAsDouble() < chance ? art : null;
     }
 
-    /** A capstone has made the wielded Family's Adept Passive certain, and the soul knows it. */
-    private static boolean certainFor(Player player, Item weapon, boolean thrown) {
-        if (player == null) return false;
-        CombatArt art = CombatArt.of(player.masteryFamilyOf(weapon, thrown), Mastery.Rank.ADEPT);
+    /** A capstone has made the Adept Passive {@code art} certain, and the soul knows it. */
+    private static boolean certain(Player player, CombatArt art) {
         return art != null && player.knowsArt(art) && player.getArtCooldowns().isCertain(art.family);
     }
 
