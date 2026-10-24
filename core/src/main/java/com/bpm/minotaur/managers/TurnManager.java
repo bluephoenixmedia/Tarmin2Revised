@@ -199,6 +199,9 @@ public class TurnManager {
                 // Act
                 aiManager.updateMonster(monster, maze, player, true, combatManager);
 
+                // A reaction shot can kill it mid-turn (#247): a dead monster spends no more actions.
+                if (monster.getCurrentHP() <= 0) break;
+
                 safetyCounter++;
                 if (safetyCounter > 10)
                     break; // Prevent infinite loops

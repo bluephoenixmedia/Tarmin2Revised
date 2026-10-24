@@ -4031,6 +4031,20 @@ public class Player {
         heldArt = art;
     }
 
+    /** This turn keeps a readied Art drawn: it readied it, or it was a wait (#247). */
+    private transient boolean holdKept;
+
+    public void keepHold() {
+        holdKept = true;
+    }
+
+    /** Whether the turn just passed kept the hold; resets for the next turn. */
+    public boolean takeHoldKept() {
+        boolean kept = holdKept;
+        holdKept = false;
+        return kept;
+    }
+
     /** An Active's or capstone's cooldown for this body: doubled below the rank that taught it. */
     public int artCooldown(com.bpm.minotaur.gamedata.arts.CombatArt art) {
         if (art == null || !knowsArt(art)) return 0;

@@ -787,6 +787,8 @@ public class MonsterAiManager {
         if (!wasBeside && besidePlayer(monster) && turnCombat != null && !monster.isAlly() && !monster.isPeaceful()) {
             turnCombat.onMonsterClosed(monster);
         }
+        // Any step into or along the line is Held Arrow's (#247).
+        if (turnCombat != null) turnCombat.onMonsterMoved(monster);
     }
 
     private boolean besidePlayer(Monster monster) {

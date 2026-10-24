@@ -1844,6 +1844,13 @@ public class Monster implements Renderable {
         return grippedTurns > 0;
     }
 
+    /** Marked Skull's question (#247): an ooze or a ghost has no head to take. */
+    public boolean hasHead() {
+        com.bpm.minotaur.gamedata.gore.GoreProfile body = com.bpm.minotaur.gamedata.gore.GoreProfile.fromMonster(this);
+        return body != com.bpm.minotaur.gamedata.gore.GoreProfile.SLIME
+                && body != com.bpm.minotaur.gamedata.gore.GoreProfile.INCORPOREAL;
+    }
+
     /**
      * How many of the statuses the Arts deal it carries (#246, Gutting Stab): Bleeding, Slowed,
      * Dazed, Pinned and Stunned. A grip pins, so it counts as Pinned.
