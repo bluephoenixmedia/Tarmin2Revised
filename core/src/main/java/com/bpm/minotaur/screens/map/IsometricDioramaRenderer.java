@@ -35,6 +35,8 @@ public final class IsometricDioramaRenderer implements Disposable {
     public static final int FBO_WIDTH = 720;
     public static final int FBO_HEIGHT = 448;
     public static final int CHUNK_GRID_SIZE = 10;
+    public static final int WORLD_RADIUS = 24;
+    public static final int BOARD_RADIUS = 11;
 
     public static final float ZOOM_WORLD = 1.0f;
     public static final float ZOOM_REGION = 2.6f;
@@ -567,8 +569,8 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     private void clampTarget() {
-        tgtX = Math.max(-1f, Math.min(CHUNK_GRID_SIZE + 1f, tgtX));
-        tgtY = Math.max(-1f, Math.min(CHUNK_GRID_SIZE + 1f, tgtY));
+        tgtX = Math.max(-WORLD_RADIUS, Math.min(WORLD_RADIUS, tgtX));
+        tgtY = Math.max(-WORLD_RADIUS, Math.min(WORLD_RADIUS, tgtY));
         tgtZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, tgtZoom));
     }
 
@@ -584,7 +586,7 @@ public final class IsometricDioramaRenderer implements Disposable {
             Vector2 w = unproject(sx, sy, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
             int cx = (int) Math.floor(w.x);
             int cy = (int) Math.floor(w.y);
-            if (cx < 0 || cx >= CHUNK_GRID_SIZE || cy < 0 || cy >= CHUNK_GRID_SIZE) continue;
+            if (Math.abs(cx) > WORLD_RADIUS || Math.abs(cy) > WORLD_RADIUS) continue;
 
             if (cave || z == 0f || heightLookup == null) {
                 return new GridPoint2(cx, cy);
@@ -615,15 +617,23 @@ public final class IsometricDioramaRenderer implements Disposable {
         this.isCave = cave;
     }
 
+    private boolean maskDirty = true;
+
+    public void invalidateKnowledgeMask() {
+        this.maskDirty = true;
+    }
+
     public void setFloor(int floor) {
         this.targetFloorT = (floor != 1) ? 1.0f : 0.0f;
         this.isCave = (floor != 1);
+        invalidateKnowledgeMask();
     }
 
     public void setFloorImmediate(int floor) {
         this.targetFloorT = (floor != 1) ? 1.0f : 0.0f;
         this.floorT = this.targetFloorT;
         this.isCave = (floor != 1);
+        invalidateKnowledgeMask();
     }
 
     public float getFloorT() {
@@ -648,9 +658,11 @@ public final class IsometricDioramaRenderer implements Disposable {
     public void renderFbo(MapKnowledgeMask.KnowledgeProvider provider) {
         if (!initialized) {
             init();
-            if (provider != null && knowledgeMask.getMaskTexture() == null) {
-                knowledgeMask.rebuild(provider);
-            }
+        }
+
+        if (provider != null && (maskDirty || knowledgeMask.getMaskTexture() == null)) {
+            knowledgeMask.rebuild(provider);
+            maskDirty = false;
         }
 
         if (fbo == null) return;
@@ -926,14 +938,15 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     private void drawBoard(ShapeRenderer shapes, boolean cave) {
-        float N = CHUNK_GRID_SIZE;
+        float minC = -BOARD_RADIUS;
+        float maxC = BOARD_RADIUS + 1f;
         float e = 0.4f;
 
         // Under-base quad at z = -5
-        Vector2 b0 = toGdxScreen(project(-1.8f, -1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 b1 = toGdxScreen(project(N + 1.8f, -1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 b2 = toGdxScreen(project(N + 1.8f, N + 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 b3 = toGdxScreen(project(-1.8f, N + 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 b0 = toGdxScreen(project(minC - 1.8f, minC - 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 b1 = toGdxScreen(project(maxC + 1.8f, minC - 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 b2 = toGdxScreen(project(maxC + 1.8f, maxC + 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 b3 = toGdxScreen(project(minC - 1.8f, maxC + 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
 
         shapes.setColor(COLOR_BOARD_UNDER);
         shapes.triangle(b0.x, b0.y, b1.x, b1.y, b2.x, b2.y);
@@ -941,11 +954,12 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         // Board box slab from z = -5 to z = 0
         Color slabTop = cave ? COLOR_BOARD_CAVE_TOP : COLOR_BOARD_SURFACE_TOP;
-        drawBox(shapes, -e, -e, N + e, N + e, -5f, 0f, slabTop, COLOR_BOARD_SIDE_A, COLOR_BOARD_SIDE_B);
+        drawBox(shapes, minC - e, minC - e, maxC + e, maxC + e, -5f, 0f, slabTop, COLOR_BOARD_SIDE_A, COLOR_BOARD_SIDE_B);
     }
 
     private void drawBoardLines(ShapeRenderer shapes) {
-        float N = CHUNK_GRID_SIZE;
+        float minC = -BOARD_RADIUS;
+        float maxC = BOARD_RADIUS + 1f;
         float e = 0.4f;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -954,22 +968,22 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         // Board grid lines at z = 0
         shapes.setColor(COLOR_BOARD_GRID);
-        for (int i = 0; i <= (int) N; i++) {
-            Vector2 a1 = toGdxScreen(project(i, -e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 b1 = toGdxScreen(project(i, N + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        for (int i = (int) minC; i <= (int) maxC; i++) {
+            Vector2 a1 = toGdxScreen(project(i, minC - e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 b1 = toGdxScreen(project(i, maxC + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
             shapes.line(a1.x, a1.y, b1.x, b1.y);
 
-            Vector2 a2 = toGdxScreen(project(-e, i, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 b2 = toGdxScreen(project(N + e, i, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 a2 = toGdxScreen(project(minC - e, i, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 b2 = toGdxScreen(project(maxC + e, i, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
             shapes.line(a2.x, a2.y, b2.x, b2.y);
         }
 
         // Rim border
         shapes.setColor(COLOR_BOARD_RIM);
-        Vector2 r0 = toGdxScreen(project(-e, -e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 r1 = toGdxScreen(project(N + e, -e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 r2 = toGdxScreen(project(N + e, N + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 r3 = toGdxScreen(project(-e, N + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 r0 = toGdxScreen(project(minC - e, minC - e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 r1 = toGdxScreen(project(maxC + e, minC - e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 r2 = toGdxScreen(project(maxC + e, maxC + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 r3 = toGdxScreen(project(minC - e, maxC + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
         shapes.line(r0.x, r0.y, r1.x, r1.y);
         shapes.line(r1.x, r1.y, r2.x, r2.y);
         shapes.line(r2.x, r2.y, r3.x, r3.y);
@@ -986,8 +1000,8 @@ public final class IsometricDioramaRenderer implements Disposable {
         float m = 40f * camZoom + 60f;
 
         sortedChunks.clear();
-        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
+            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
                 MapKnowledgeMask.KnowledgeProvider.State state = (provider != null)
                         ? provider.getChunkState(cx, cy)
                         : MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN;
@@ -1028,8 +1042,8 @@ public final class IsometricDioramaRenderer implements Disposable {
         float m = 40f * camZoom + 60f;
 
         sortedChunks.clear();
-        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
+            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
                 MapKnowledgeMask.KnowledgeProvider.State state = (provider != null)
                         ? provider.getChunkState(cx, cy)
                         : MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN;
@@ -2396,69 +2410,69 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         if (!cave) {
             int litIndex = 0;
-            for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-                for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
-                    MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
-                    if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
-                        float h = getChunkTopZ(provider, cx, cy);
-                        float fl = 0.85f + 0.1f * (float) Math.sin(t * 9f + litIndex * 2f) + 0.05f * (float) Math.sin(t * 23f + litIndex);
-                        Vector2 f = project(cx + 0.68f, cy + 0.66f, h + 1f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawGlow(shapes, f.x, f.y, 15f * s * fl, 240 / 255f, 140 / 255f, 60 / 255f, 0.34f * fl);
+            for (GridPoint2 c : sortedChunks) {
+                int cx = c.x;
+                int cy = c.y;
+                MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
+                if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
+                    float h = getChunkTopZ(provider, cx, cy);
+                    float fl = 0.85f + 0.1f * (float) Math.sin(t * 9f + litIndex * 2f) + 0.05f * (float) Math.sin(t * 23f + litIndex);
+                    Vector2 f = project(cx + 0.68f, cy + 0.66f, h + 1f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    drawGlow(shapes, f.x, f.y, 15f * s * fl, 240 / 255f, 140 / 255f, 60 / 255f, 0.34f * fl);
 
-                        Vector2 b = project(cx + 0.5f, cy + 0.5f, h + 6.6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawBeam(shapes, b.x, b.y, Math.max(1f, s * 1.1f), 22f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.32f * fl);
-                        drawGlow(shapes, b.x, b.y, 5f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.45f * fl);
-                        litIndex++;
+                    Vector2 b = project(cx + 0.5f, cy + 0.5f, h + 6.6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    drawBeam(shapes, b.x, b.y, Math.max(1f, s * 1.1f), 22f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.32f * fl);
+                    drawGlow(shapes, b.x, b.y, 5f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.45f * fl);
+                    litIndex++;
+                }
+
+                if (provider.hasReturnPortal(cx, cy)) {
+                    float ph = getChunkTopZ(provider, cx, cy);
+                    Vector2 pp = project(cx + 0.5f, cy + 0.5f, ph + 2.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    float pu = 0.8f + 0.2f * (float) Math.sin(t * 2f);
+                    drawGlow(shapes, pp.x, pp.y, 9f * s, 201 / 255f, 166 / 255f, 232 / 255f, 0.32f * pu);
+
+                    Color swirlCol = new Color(220 / 255f, 200 / 255f, 255 / 255f, 0.45f);
+                    Vector2 gpp = toGdxScreen(pp);
+                    float rx = 1.4f * s;
+                    float ry = 2.3f * s;
+                    float lw = Math.max(1f, s * 0.35f);
+                    for (int i = 0; i < 3; i++) {
+                        float a0 = t * 2f + i * 2.1f;
+                        drawArc(shapes, gpp.x, gpp.y, rx, ry, a0, a0 + 1.7f, lw, swirlCol);
                     }
+                }
 
-                    if (provider.hasReturnPortal(cx, cy)) {
-                        float ph = getChunkTopZ(provider, cx, cy);
-                        Vector2 pp = project(cx + 0.5f, cy + 0.5f, ph + 2.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        float pu = 0.8f + 0.2f * (float) Math.sin(t * 2f);
-                        drawGlow(shapes, pp.x, pp.y, 9f * s, 201 / 255f, 166 / 255f, 232 / 255f, 0.32f * pu);
+                if (provider.hasSeal(cx, cy)) {
+                    float sh = getChunkTopZ(provider, cx, cy);
+                    Vector2 sp = project(cx + 0.5f, cy + 0.5f, sh + 1.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    drawGlow(shapes, sp.x, sp.y, 10f * s, 208 / 255f, 104 / 255f, 63 / 255f, 0.24f + 0.06f * (float) Math.sin(t * 1.3f));
+                }
 
-                        Color swirlCol = new Color(220 / 255f, 200 / 255f, 255 / 255f, 0.45f);
-                        Vector2 gpp = toGdxScreen(pp);
-                        float rx = 1.4f * s;
-                        float ry = 2.3f * s;
-                        float lw = Math.max(1f, s * 0.35f);
-                        for (int i = 0; i < 3; i++) {
-                            float a0 = t * 2f + i * 2.1f;
-                            drawArc(shapes, gpp.x, gpp.y, rx, ry, a0, a0 + 1.7f, lw, swirlCol);
-                        }
-                    }
-
-                    if (provider.hasSeal(cx, cy)) {
-                        float sh = getChunkTopZ(provider, cx, cy);
-                        Vector2 sp = project(cx + 0.5f, cy + 0.5f, sh + 1.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawGlow(shapes, sp.x, sp.y, 10f * s, 208 / 255f, 104 / 255f, 63 / 255f, 0.24f + 0.06f * (float) Math.sin(t * 1.3f));
-                    }
-
-                    if (provider.getBiome(cx, cy) == Biome.BLIGHT) {
-                        float bh = getChunkTopZ(provider, cx, cy);
-                        Vector2 bp = project(cx + 0.5f, cy + 0.5f, bh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawGlow(shapes, bp.x, bp.y, 22f * s, 170 / 255f, 50 / 255f, 70 / 255f, 0.09f + 0.04f * (float) Math.sin(t * 0.9f));
-                    }
+                if (provider.getBiome(cx, cy) == Biome.BLIGHT) {
+                    float bh = getChunkTopZ(provider, cx, cy);
+                    Vector2 bp = project(cx + 0.5f, cy + 0.5f, bh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    drawGlow(shapes, bp.x, bp.y, 22f * s, 170 / 255f, 50 / 255f, 70 / 255f, 0.09f + 0.04f * (float) Math.sin(t * 0.9f));
                 }
             }
         } else {
-            for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-                for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
-                    if (provider.hasLadder(cx, cy)) {
-                        Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawGlow(shapes, lp.x, lp.y, 12f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.24f);
-                        drawBeam(shapes, lp.x, lp.y, Math.max(2f, s * 1.6f), 14f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.22f);
-                    }
-                    if (provider.hasCave(cx, cy) || provider.getChunkState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
-                        Mulberry32 rng = new Mulberry32(hash(cx, cy) + 111);
-                        for (int i = 0; i < 4; i++) {
-                            float fu = rng.nextFloat();
-                            float fv = rng.nextFloat();
-                            float fph = rng.nextFloat() * 6.28f;
-                            Vector2 fp = project(cx + fu, cy + fv, 5.3f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                            float fa = 0.3f + 0.12f * (float) Math.sin(t * 1.7f + fph);
-                            drawGlow(shapes, fp.x, fp.y, 4.5f * s, 108 / 255f, 207 / 255f, 224 / 255f, fa);
-                        }
+            for (GridPoint2 c : sortedChunks) {
+                int cx = c.x;
+                int cy = c.y;
+                if (provider.hasLadder(cx, cy)) {
+                    Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    drawGlow(shapes, lp.x, lp.y, 12f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.24f);
+                    drawBeam(shapes, lp.x, lp.y, Math.max(2f, s * 1.6f), 14f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.22f);
+                }
+                if (provider.hasCave(cx, cy) || provider.getChunkState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+                    Mulberry32 rng = new Mulberry32(hash(cx, cy) + 111);
+                    for (int i = 0; i < 4; i++) {
+                        float fu = rng.nextFloat();
+                        float fv = rng.nextFloat();
+                        float fph = rng.nextFloat() * 6.28f;
+                        Vector2 fp = project(cx + fu, cy + fv, 5.3f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        float fa = 0.3f + 0.12f * (float) Math.sin(t * 1.7f + fph);
+                        drawGlow(shapes, fp.x, fp.y, 4.5f * s, 108 / 255f, 207 / 255f, 224 / 255f, fa);
                     }
                 }
             }
@@ -2466,20 +2480,20 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         if (!cave) {
             int litIndex = 0;
-            for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-                for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
-                    MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
-                    if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
-                        float h = getChunkTopZ(provider, cx, cy);
-                        Vector2 f0 = project(cx + 0.68f, cy + 0.66f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        float kk = Math.max(1f, s * 0.45f);
-                        float fl = (float) Math.sin(t * 11f + litIndex * 3f);
-                        float hgt = (2.6f + 0.8f * fl) * kk;
+            for (GridPoint2 c : sortedChunks) {
+                int cx = c.x;
+                int cy = c.y;
+                MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
+                if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
+                    float h = getChunkTopZ(provider, cx, cy);
+                    Vector2 f0 = project(cx + 0.68f, cy + 0.66f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    float kk = Math.max(1f, s * 0.45f);
+                    float fl = (float) Math.sin(t * 11f + litIndex * 3f);
+                    float hgt = (2.6f + 0.8f * fl) * kk;
 
-                        drawRectCanvas(shapes, f0.x - kk, f0.y - hgt - kk * 0.5f, 2f * kk, hgt, COLOR_SEAL_AMBER);
-                        drawRectCanvas(shapes, f0.x - kk * 0.5f, f0.y - hgt * 0.7f - kk * 0.5f, kk, hgt * 0.7f, COLOR_BRIGHT_GOLD);
-                        litIndex++;
-                    }
+                    drawRectCanvas(shapes, f0.x - kk, f0.y - hgt - kk * 0.5f, 2f * kk, hgt, COLOR_SEAL_AMBER);
+                    drawRectCanvas(shapes, f0.x - kk * 0.5f, f0.y - hgt * 0.7f - kk * 0.5f, kk, hgt * 0.7f, COLOR_BRIGHT_GOLD);
+                    litIndex++;
                 }
             }
         }
@@ -2731,11 +2745,12 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         List<BadgeEntry> items = new ArrayList<>(6);
 
-        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
-                MapKnowledgeMask.KnowledgeProvider.State state = provider.getChunkState(cx, cy);
-                String pin = provider.getChunkPin(cx, cy);
-                if (state == MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN && pin == null) continue;
+        for (GridPoint2 c : sortedChunks) {
+            int cx = c.x;
+            int cy = c.y;
+            MapKnowledgeMask.KnowledgeProvider.State state = provider.getChunkState(cx, cy);
+            String pin = provider.getChunkPin(cx, cy);
+            if (state == MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN && pin == null) continue;
 
                 items.clear();
                 MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
@@ -2797,7 +2812,6 @@ public final class IsometricDioramaRenderer implements Disposable {
                         drawPlate(shapes, p.x, p.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
                     }
                 }
-            }
         }
 
         shapes.end();
@@ -2816,7 +2830,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         shapes.begin(ShapeRenderer.ShapeType.Filled);
 
         GridPoint2 w = provider.getWaypointChunk();
-        if (w != null && w.x >= 0 && w.x < CHUNK_GRID_SIZE && w.y >= 0 && w.y < CHUNK_GRID_SIZE) {
+        if (w != null && Math.abs(w.x) <= WORLD_RADIUS && Math.abs(w.y) <= WORLD_RADIUS) {
             float wh = getChunkTopZ(provider, w.x, w.y);
             Color tableBg = new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha);
             Color gold = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, COLOR_GOLD.a * alpha);
@@ -2832,7 +2846,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
 
         GridPoint2 sug = provider.getSuggestionChunk();
-        if (sug != null && (w == null || !sug.equals(w)) && sug.x >= 0 && sug.x < CHUNK_GRID_SIZE && sug.y >= 0 && sug.y < CHUNK_GRID_SIZE) {
+        if (sug != null && (w == null || !sug.equals(w)) && Math.abs(sug.x) <= WORLD_RADIUS && Math.abs(sug.y) <= WORLD_RADIUS) {
             float sh = getChunkTopZ(provider, sug.x, sug.y);
             float a = 0.45f + 0.25f * (float) Math.sin(t * 2.4f);
             Color sugCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, a * alpha);
@@ -2855,8 +2869,8 @@ public final class IsometricDioramaRenderer implements Disposable {
         if (provider == null || alpha <= 0.001f) return;
         float t = elapsedTime;
 
-        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
+            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
                 if (provider.hasPlayer(cx, cy)) {
                     float pu = provider.getPlayerU(cx, cy);
                     float pv = provider.getPlayerV(cx, cy);
@@ -2943,29 +2957,29 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         Vector2 ladderScreenPos = null;
 
-        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
-                if (provider.hasLadder(cx, cy) || provider.hasCave(cx, cy)) {
-                    Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f + 11f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    if (ladderScreenPos == null && provider.hasLadder(cx, cy)) {
-                        ladderScreenPos = lp;
-                    }
-                    drawPlate(shapes, lp.x, lp.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
+        for (GridPoint2 c : sortedChunks) {
+            int cx = c.x;
+            int cy = c.y;
+            if (provider.hasLadder(cx, cy) || provider.hasCave(cx, cy)) {
+                Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f + 11f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                if (ladderScreenPos == null && provider.hasLadder(cx, cy)) {
+                    ladderScreenPos = lp;
                 }
+                drawPlate(shapes, lp.x, lp.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
+            }
 
-                if (L >= 1 && provider.hasCave(cx, cy)) {
-                    int chests = provider.getChestCount(cx, cy);
-                    if (chests > 0) {
-                        Vector2 p = project(cx + 0.5f, cy + 0.5f, 9f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
-                    }
+            if (L >= 1 && provider.hasCave(cx, cy)) {
+                int chests = provider.getChestCount(cx, cy);
+                if (chests > 0) {
+                    Vector2 p = project(cx + 0.5f, cy + 0.5f, 9f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
                 }
             }
         }
 
         // Player tether diamond & dashed line
-        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
-            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
+            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
                 if (provider.hasPlayer(cx, cy)) {
                     float pu = provider.getPlayerU(cx, cy);
                     float pv = provider.getPlayerV(cx, cy);
@@ -3002,7 +3016,7 @@ public final class IsometricDioramaRenderer implements Disposable {
     public void drawSelection(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
         if (provider == null) return;
         GridPoint2 sel = provider.getSelectedChunk();
-        if (sel == null || sel.x < 0 || sel.x >= CHUNK_GRID_SIZE || sel.y < 0 || sel.y >= CHUNK_GRID_SIZE) return;
+        if (sel == null || Math.abs(sel.x) > WORLD_RADIUS || Math.abs(sel.y) > WORLD_RADIUS) return;
 
         float z = (floorT > 0.5f) ? 5.0f : getChunkTopZ(provider, sel.x, sel.y);
 

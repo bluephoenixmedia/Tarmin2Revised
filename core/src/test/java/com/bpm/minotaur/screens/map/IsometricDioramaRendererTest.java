@@ -172,9 +172,9 @@ public class IsometricDioramaRendererTest {
     @Test
     public void testCenterOnAndClamping() {
         IsometricDioramaRenderer renderer = new IsometricDioramaRenderer();
-        renderer.centerOn(25f, -15f);
-        assertEquals(IsometricDioramaRenderer.CHUNK_GRID_SIZE + 1f, renderer.getTgtX(), 0.001f);
-        assertEquals(-1f, renderer.getTgtY(), 0.001f);
+        renderer.centerOn(35f, -30f);
+        assertEquals(IsometricDioramaRenderer.WORLD_RADIUS, renderer.getTgtX(), 0.001f);
+        assertEquals(-IsometricDioramaRenderer.WORLD_RADIUS, renderer.getTgtY(), 0.001f);
 
         renderer.setTargetZoom(20f);
         assertEquals(IsometricDioramaRenderer.MAX_ZOOM, renderer.getTgtZoom(), 0.001f);

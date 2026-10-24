@@ -83,9 +83,9 @@ void main() {
     float wx = u_camPos.x + rx * cs + ry * sn;
     float wy = u_camPos.y - rx * sn + ry * cs;
 
-    // Mask UV mapping: PAD = 7, N = 10, total chunks = 24
-    float maskU = (wx + 7.0) / 24.0;
-    float maskV = (wy + 7.0) / 24.0;
+    // Mask UV mapping: 48-chunk mask with origin (0, 0) centered at UV (0.5, 0.5)
+    float maskU = (wx + 24.0) / 48.0;
+    float maskV = (wy + 24.0) / 48.0;
 
     float maskVal = 0.0;
     float frontVal = 0.0;

@@ -212,6 +212,9 @@ final class MapSurface extends Widget implements Disposable {
         this.glimpsed = knowledge.getGlimpsed();
         this.suggestion = model.suggestion();
         this.summaries.clear();
+        if (dioramaRenderer != null) {
+            dioramaRenderer.invalidateKnowledgeMask();
+        }
     }
 
     void setPlayer(PlayerMark player) { this.player = player; }
@@ -222,7 +225,7 @@ final class MapSurface extends Widget implements Disposable {
         if (dioramaEnabled && dioramaRenderer != null) {
             if (zoom == Zoom.WORLD) {
                 dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_WORLD);
-                dioramaRenderer.centerOn(IsometricDioramaRenderer.CHUNK_GRID_SIZE / 2f, IsometricDioramaRenderer.CHUNK_GRID_SIZE / 2f);
+                dioramaRenderer.centerOn(0.5f, 0.5f);
             } else if (zoom == Zoom.REGION) {
                 dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_REGION);
                 dioramaRenderer.centerOn(cursor.x + 0.5f, cursor.y + 0.5f);
@@ -279,6 +282,9 @@ final class MapSurface extends Widget implements Disposable {
             return isOcean ? 2.0f : 6.0f;
         }
         if (glimpsed != null && glimpsed.contains(p)) {
+            return isOcean ? 1.2f : 2.5f;
+        }
+        if (floor == 1 && model != null && model.surveyedChunks() != null && model.surveyedChunks().contains(p)) {
             return isOcean ? 1.2f : 2.5f;
         }
         return 0f;
@@ -354,10 +360,13 @@ final class MapSurface extends Widget implements Disposable {
                 @Override
                 public State getChunkState(int cx, int cy) {
                     GridPoint2 p = new GridPoint2(cx, cy);
-                    if (model.visited(floor) != null && model.visited(floor).contains(p)) {
+                    if (model != null && model.visited(floor) != null && model.visited(floor).contains(p)) {
                         return State.VISITED;
                     }
                     if (glimpsed != null && glimpsed.contains(p)) {
+                        return State.GLIMPSED;
+                    }
+                    if (floor == 1 && model != null && model.surveyedChunks() != null && model.surveyedChunks().contains(p)) {
                         return State.GLIMPSED;
                     }
                     return State.UNKNOWN;

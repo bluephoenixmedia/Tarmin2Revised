@@ -237,6 +237,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         stage.addActor(root);
         surface.addListener(new SurfaceInput());
         stage.setScrollFocus(surface);
+        stage.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         InputMultiplexer input = new InputMultiplexer();
         input.addProcessor(stage);

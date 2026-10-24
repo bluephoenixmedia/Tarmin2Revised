@@ -15,10 +15,12 @@ import com.badlogic.gdx.utils.Disposable;
  */
 public final class MapKnowledgeMask implements Disposable {
 
-    public static final int N = 10;
+    public static final int HALF_CHUNKS = 24;
+    public static final int TOTAL_CHUNKS = 48;
+    public static final int N = TOTAL_CHUNKS;
     public static final int R = 8;
-    public static final int PAD = 7;
-    public static final int M = (N + 2 * PAD) * R; // 192
+    public static final int PAD = HALF_CHUNKS;
+    public static final int M = TOTAL_CHUNKS * R; // 384
 
     public interface KnowledgeProvider {
         enum State { UNKNOWN, GLIMPSED, VISITED }
@@ -160,7 +162,7 @@ public final class MapKnowledgeMask implements Disposable {
                 int lx = localTileX(px);
 
                 float v = 0f;
-                if (cx >= 0 && cx < N && cy >= 0 && cy < N && provider != null) {
+                if (provider != null) {
                     KnowledgeProvider.State state = provider.getChunkState(cx, cy);
                     if (state == KnowledgeProvider.State.VISITED) {
                         v = provider.isTileSeen(cx, cy, lx, ly) ? 1.0f : 0.5f;

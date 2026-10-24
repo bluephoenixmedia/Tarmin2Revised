@@ -8,10 +8,10 @@ public class MapKnowledgeMaskTest {
 
     @Test
     public void testDimensions() {
-        assertEquals(10, MapKnowledgeMask.N);
+        assertEquals(48, MapKnowledgeMask.N);
         assertEquals(8, MapKnowledgeMask.R);
-        assertEquals(7, MapKnowledgeMask.PAD);
-        assertEquals(192, MapKnowledgeMask.M);
+        assertEquals(24, MapKnowledgeMask.PAD);
+        assertEquals(384, MapKnowledgeMask.M);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class MapKnowledgeMaskTest {
 
     @Test
     public void testMaskGridCoordinates() {
-        // Chunk (0, 0) starts at tx=0, ty=0 => px = PAD * R = 56, py = 56
+        // Chunk (0, 0) starts at tx=0, ty=0 => px = PAD * R = 24 * 8 = 192, py = 192
         int px = MapKnowledgeMask.PAD * MapKnowledgeMask.R;
         int py = MapKnowledgeMask.PAD * MapKnowledgeMask.R;
 
@@ -68,5 +68,10 @@ public class MapKnowledgeMaskTest {
         int ly = MapKnowledgeMask.localTileY(py);
         assertEquals(0, lx);
         assertEquals(0, ly);
+
+        // Negative chunk coordinates should work naturally
+        assertEquals(-1, MapKnowledgeMask.chunkX(px - MapKnowledgeMask.R));
+        assertEquals(-2, MapKnowledgeMask.chunkY(py - 2 * MapKnowledgeMask.R));
+        assertEquals(-MapKnowledgeMask.HALF_CHUNKS, MapKnowledgeMask.chunkX(0));
     }
 }
