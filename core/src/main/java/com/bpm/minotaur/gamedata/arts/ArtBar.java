@@ -45,6 +45,11 @@ public final class ArtBar {
     private ArtBar() {
     }
 
+    /** The word a readied slot shows: Marked Skull's readiness is its aim, Held Arrow's the drawn shot. */
+    public static String readiedWord(CombatArt art) {
+        return art == CombatArt.MARKED_SKULL ? "AIM" : "HELD";
+    }
+
     /** The four slots' Arts, null where a slot is empty. */
     public static CombatArt[] contents(Player player) {
         CombatArt[] slots = new CombatArt[SLOTS];

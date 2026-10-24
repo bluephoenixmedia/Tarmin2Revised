@@ -4031,6 +4031,34 @@ public class Player {
         heldArt = art;
     }
 
+    /**
+     * This turn sustains a readied Art: the turn readied it, or was a wait (#247). Any other turn
+     * lets it lapse.
+     */
+    private transient boolean holdKept;
+    /** The foe Marked Skull is sighted on; its shot is for that foe alone. */
+    private transient com.bpm.minotaur.gamedata.monster.Monster markedFoe;
+
+    /** This turn sustains the readied Art: it readied it, or it was a wait. */
+    public void keepHold() {
+        holdKept = true;
+    }
+
+    /** Whether the turn just passed sustained the readied Art; resets for the next turn. */
+    public boolean takeHoldKept() {
+        boolean kept = holdKept;
+        holdKept = false;
+        return kept;
+    }
+
+    public com.bpm.minotaur.gamedata.monster.Monster getMarkedFoe() {
+        return markedFoe;
+    }
+
+    public void setMarkedFoe(com.bpm.minotaur.gamedata.monster.Monster foe) {
+        markedFoe = foe;
+    }
+
     /** An Active's or capstone's cooldown for this body: doubled below the rank that taught it. */
     public int artCooldown(com.bpm.minotaur.gamedata.arts.CombatArt art) {
         if (art == null || !knowsArt(art)) return 0;

@@ -391,7 +391,7 @@ public class Hud implements Disposable {
                 case HELD:
                     artSlots[i].setBackground(hudSkin.getSlotActive());
                     artNameLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
-                    setArtText(artStateLabels[i], "HELD");
+                    setArtText(artStateLabels[i], com.bpm.minotaur.gamedata.arts.ArtBar.readiedWord(s.art));
                     artStateLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
                 case COOLING:

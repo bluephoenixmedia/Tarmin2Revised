@@ -107,6 +107,10 @@ public class CombatManager {
     /** The Adept Passives (#243, #244); their roll is swappable so tests can force a proc. */
     private com.bpm.minotaur.gamedata.arts.AdeptPassives adeptPassives =
             new com.bpm.minotaur.gamedata.arts.AdeptPassives(() -> random.nextFloat());
+    /** The draw the Arts roll: the Passives' chance, and a reaction shot's x0.7 accuracy (#247). */
+    private java.util.function.DoubleSupplier artRoll = () -> random.nextFloat();
+    /** Held Arrow's reaction shot lands this share of the hits an ordinary shot would (spec section 4). */
+    static final float REACTION_ACCURACY = 0.7f;
     private final Tarmin2 game;
     private final AnimationManager animationManager;
     private final GameEventManager eventManager;
@@ -629,6 +633,7 @@ public class CombatManager {
     /** For tests: the draw the Adept Passives roll against their chance. */
     void setArtRoll(java.util.function.DoubleSupplier roll) {
         adeptPassives = new com.bpm.minotaur.gamedata.arts.AdeptPassives(roll);
+        artRoll = roll;
     }
 
     /** A monster just stepped next to the player: Hold the Line may strike it first (#243). */
@@ -646,7 +651,7 @@ public class CombatManager {
         if (player == null || target == null || target.getCurrentHP() <= 0) return;
         Item weapon = freeStrikeWeapon != null ? freeStrikeWeapon : player.getInventory().getRightHand();
         if (weapon != null && weapon.isRanged()) return; // a bow's free shot is freeShot, not a swing
-        landFreeBlow(target, word, weapon, 0, 0);
+        landFreeBlow(target, word, weapon, 0, 0, com.bpm.minotaur.gamedata.arts.ActiveArts.Shot.NORMAL);
     }
 
     /**
@@ -660,22 +665,28 @@ public class CombatManager {
         consumeAmmoFor(weapon);
         GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
         fireRangedEffects(weapon, new HitResult(at, HitResult.HitType.MONSTER, target));
-        landFreeBlow(target, word, weapon, 0, 0);
+        landFreeBlow(target, word, weapon, 0, 0, com.bpm.minotaur.gamedata.arts.ActiveArts.Shot.NORMAL);
         return true;
     }
 
     /**
      * The blow a free swing, a free shot or an Active lands: rolled, shown with {@code word}, counted.
-     * An Active may add {@code toHitBonus} to the roll and {@code extraDamage} to the damage.
+     * An Active may add {@code toHitBonus} to the roll and {@code extraDamage} to the damage; a
+     * headshot always lands as a critical, and a reaction shot lands x0.7 as often and never crits.
      */
-    private boolean landFreeBlow(Monster target, String word, Item weapon, int toHitBonus, int extraDamage) {
+    private boolean landFreeBlow(Monster target, String word, Item weapon, int toHitBonus, int extraDamage,
+            com.bpm.minotaur.gamedata.arts.ActiveArts.Shot kind) {
         GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
         com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
         int d20 = DiceRoller.d20();
         int toHit = (weapon != null && weapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
         toHit += player.masteryToHitBonus(weapon, false) + toHitBonus;
-        boolean crit = d20 == 20;
-        if (!crit && d20 + toHit < target.getArmorClass()) {
+        boolean certain = kind == com.bpm.minotaur.gamedata.arts.ActiveArts.Shot.HEADSHOT;
+        boolean reaction = kind == com.bpm.minotaur.gamedata.arts.ActiveArts.Shot.REACTION;
+        boolean crit = certain || (!reaction && d20 == 20);
+        boolean hits = certain || crit || d20 + toHit >= target.getArmorClass();
+        if (reaction && artRoll.getAsDouble() >= REACTION_ACCURACY) hits = false;
+        if (!hits) {
             telemetry.recordPlayerAttack(target, target.getMonsterType(), target.getLevel(), attackModeOf(weapon),
                     com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
             recordFamilyAttack(target, weapon, false, com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS);
@@ -702,8 +713,8 @@ public class CombatManager {
     }
 
     /**
-     * Uses the Art in Art bar slot {@code slot} (#245). Returns what happened; only
-     * {@link com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome#USED} takes the player's turn.
+     * Uses the Art in Art bar slot {@code slot} (#245). Returns what happened; only an outcome
+     * that {@link com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome#takesTurn() takes the turn} does.
      */
     public com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome useArt(int slot) {
         return com.bpm.minotaur.gamedata.arts.ActiveArts.use(player, slot, artArena);
@@ -717,7 +728,35 @@ public class CombatManager {
     /** Everything a player's turn wears down: the reload under way and the Arts cooling (#245). */
     public void tickPlayerTimers() {
         tickReload();
-        if (player != null) player.getArtCooldowns().tick();
+        if (player == null) return;
+        com.bpm.minotaur.gamedata.arts.ActiveArts.turnPassed(player, artArena);
+        player.getArtCooldowns().tick();
+    }
+
+    /**
+     * A monster moved (#247): a drawn Held Arrow looses at it if it stepped into or along the line.
+     * Called for every step through {@code MonsterAiManager.moveMonsterTo}.
+     */
+    public void onMonsterMoved(Monster monster) {
+        if (player == null || monster == null || monster.isAlly() || monster.isPeaceful()) return;
+        if (monster == this.monster && currentState != CombatState.INACTIVE) return; // the duel's foe (#225)
+        com.bpm.minotaur.gamedata.arts.ActiveArts.answerHeldShot(player, monster, artArena);
+    }
+
+    /**
+     * A monster is about to attack the player, by blow, shot or spell (#247): a drawn Held Arrow
+     * looses first if it attacks from inside the line. True if that shot killed it, and the attack
+     * never comes. The monster in a modal duel with the player is out of the stance's reach (#225).
+     */
+    public boolean diesAnsweringHeldShot(Monster attacker) {
+        if (player == null || attacker == null || attacker.isAlly() || attacker.isPeaceful()) return false;
+        if (attacker == this.monster && currentState != CombatState.INACTIVE) return false;
+        return com.bpm.minotaur.gamedata.arts.ActiveArts.answerHeldShot(player, attacker, artArena) && attacker.getCurrentHP() <= 0;
+    }
+
+    /** The player attacks: a drawn Held Arrow or an aimed Marked Skull is given up, before the blow. */
+    private void playerAttacks() {
+        com.bpm.minotaur.gamedata.arts.ActiveArts.lapse(player, artArena);
     }
 
     /** What an Active acts through: the maze, the foe in front, a blow of the held weapon, the log. */
@@ -765,7 +804,42 @@ public class CombatManager {
 
                 @Override
                 public boolean blow(Monster target, Item weapon, String word, int toHitBonus, int extraDamage) {
-                    return landFreeBlow(target, word, weapon, toHitBonus, extraDamage);
+                    return landFreeBlow(target, word, weapon, toHitBonus, extraDamage, com.bpm.minotaur.gamedata.arts.ActiveArts.Shot.NORMAL);
+                }
+
+                @Override
+                public Monster foeInLine(Item weapon, boolean thrown) {
+                    int range = thrown ? throwRangeOf(weapon) : effectiveRange(weapon);
+                    HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), range, true);
+                    Monster m = hit.type == HitResult.HitType.MONSTER ? hit.hitMonster : null;
+                    return m == null || m.getCurrentHP() <= 0 || m.isAlly() || m.isPeaceful() ? null : m;
+                }
+
+                @Override
+                public boolean loaded(Item weapon) {
+                    if (weapon == null || !weapon.isRanged()) return false;
+                    if (usesShot(weapon) && activeReload != null) return false; // the gun is still being loaded
+                    return weapon.getType() == Item.ItemType.DART || hasAmmoFor(weapon);
+                }
+
+                @Override
+                public boolean shoot(Monster target, Item weapon, String word, com.bpm.minotaur.gamedata.arts.ActiveArts.Shot kind) {
+                    if (!loaded(weapon)) return false;
+                    if (misfired(weapon)) return false; // aim does not dry the powder: the shot and its reload are spent
+                    if (weapon.getType() != Item.ItemType.DART) consumeAmmoFor(weapon);
+                    GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
+                    fireRangedEffects(weapon, new HitResult(at, HitResult.HitType.MONSTER, target));
+                    return landFreeBlow(target, word, weapon, 0, 0, kind);
+                }
+
+                @Override
+                public com.bpm.minotaur.gamedata.arts.ActiveArts.Hurl hurl(Item weapon) {
+                    return throwAndStrike(weapon);
+                }
+
+                @Override
+                public void splash(Monster around, int damage, String word) {
+                    splashAround(around, damage, word);
                 }
 
                 @Override
@@ -798,6 +872,7 @@ public class CombatManager {
 
     public void playerMeleeStrike(Monster target) {
         if (currentState != CombatState.INACTIVE || target == null) return;
+        playerAttacks();
 
         int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
         int mx = (int) target.getPosition().x, my = (int) target.getPosition().y;
@@ -897,6 +972,7 @@ public class CombatManager {
     public void monsterMeleeStrike(Monster attacker) {
         if (player == null || player.getCurrentHP() <= 0) return;
         if (attacker == null || !attacker.isAlive()) return;
+        if (diesAnsweringHeldShot(attacker)) return;
         if (this.monster != attacker && currentState == CombatState.INACTIVE) {
             triggerCombatMusic(attacker);
         }
@@ -1394,6 +1470,7 @@ public class CombatManager {
     }
 
     public void playerAttackInstant() {
+        playerAttacks();
         // INACTIVE is allowed for ranged weapons only. Without it a bow could never
         // open a fight -- firing required combat to already be underway, which is the
         // reverse of what a ranged weapon is for. Melee still needs an engagement.
@@ -1665,6 +1742,15 @@ public class CombatManager {
 
     public boolean throwWeapon(Item weapon) {
         if (weapon == null) return false;
+        playerAttacks();
+        throwAndStrike(weapon);
+        return true;
+    }
+
+    /** Throws {@code weapon} down the player's line; it leaves the pack and lands where it stops. */
+    private com.bpm.minotaur.gamedata.arts.ActiveArts.Hurl throwAndStrike(Item weapon) {
+        Monster struck = null;
+        int struckFor = 0;
         int maxRange = throwRangeOf(weapon);
         HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true, true);
 
@@ -1692,6 +1778,8 @@ public class CombatManager {
                 int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                struck = target;
+                struckFor = actual;
                 target.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
                 alertMonsterToPlayer(target);
                 spawnHitFx(target, GoreProfile.fromMonster(target),
@@ -1745,7 +1833,32 @@ public class CombatManager {
         }
 
         player.getInventory().removeItem(weapon);
-        return true;
+        return new com.bpm.minotaur.gamedata.arts.ActiveArts.Hurl(struck, struckFor);
+    }
+
+    /**
+     * Shattering Throw's burst (#247): {@code damage} to every creature beside {@code around} --
+     * monsters of either side, and the player too, standing close.
+     */
+    private void splashAround(Monster around, int damage, String word) {
+        int cx = (int) around.getPosition().x, cy = (int) around.getPosition().y;
+        int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
+        int[][] beside = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+        for (int[] d : beside) {
+            int x = cx + d[0], y = cy + d[1];
+            if (x == px && y == py) {
+                int taken = player.takeDamage(damage, DamageType.PHYSICAL);
+                eventManager.addEvent(new GameEvent("Shards of your own throw strike you for " + taken + "!", 2f));
+                continue;
+            }
+            Monster m = maze.getMonsters().get(new GridPoint2(x, y));
+            if (m == null || m == around || m.getCurrentHP() <= 0) continue;
+            int actual = m.takeDamage(damage, DamageType.PHYSICAL, false);
+            showDamageText(actual, new GridPoint2(x, y), word + " ", com.badlogic.gdx.graphics.Color.ORANGE);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageDealt(actual);
+            if (m.getCurrentHP() <= 0) handleRemoteKill(m, heldWeaponKillCause());
+            else alertMonsterToPlayer(m);
+        }
     }
 
     /**
@@ -2890,6 +3003,7 @@ public class CombatManager {
     public boolean performMonsterRangedAttack(Monster attacker) {
         if (player == null || player.getCurrentHP() <= 0) return false;
         if (attacker == null || !attacker.isAlive()) return false;
+        if (diesAnsweringHeldShot(attacker)) return true; // its action was spent dying
         int range = attacker.getAttackRange();
         Item weapon = (attacker.getInventory() != null) ? attacker.getInventory().getRightHand() : null;
         boolean hasRangedWeapon = (weapon != null && weapon.isRanged());
@@ -3139,7 +3253,9 @@ public class CombatManager {
                 if (mimic != null) {
                     monsterMeleeStrike(mimic);
 
-                    if (player.getStats().getCurrentHP() > 0) {
+                    if (!mimic.isAlive()) {
+                        // A drawn Held Arrow took it as it lunged (#247): there is no fight to start.
+                    } else if (player.getStats().getCurrentHP() > 0) {
                         startCombat(mimic);
                     } else {
                         // The free blow finished an already-wounded player. Hand off to
@@ -3537,6 +3653,7 @@ public class CombatManager {
      * here with nothing changed between them -- unbounded recursion.
      */
     public boolean performRangedAttack() {
+        playerAttacks();
         Item weapon = player.getInventory().getRightHand();
         if (weapon != null && weapon.isWand()) {
             player.zap(weapon, player.getFacing(), getDiscoveryManager(), eventManager, maze, this);
@@ -3797,6 +3914,7 @@ public class CombatManager {
         if (player == null || player.getCurrentHP() <= 0) return false;
         if (attacker == null || attacker == this.monster || !attacker.isAlive())
             return false; // Can't flank if you are the main duel target
+        if (diesAnsweringHeldShot(attacker)) return true; // its action was spent dying
 
         // Check adjacency
         int dist = (int) (Math.abs(attacker.getPosition().x - player.getPosition().x)

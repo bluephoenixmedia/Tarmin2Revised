@@ -545,6 +545,8 @@ public class MonsterAiManager {
                                 SpellDataManager.getInstance());
                         if (offSpell != null) {
                             GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            // A spell cast from the line draws a held arrow first (#247).
+                            if (combatManager.diesAnsweringHeldShot(monster)) return;
                             if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
                                 return; // Cast spell, turn consumed
                             }
@@ -675,6 +677,7 @@ public class MonsterAiManager {
                                 SpellDataManager.getInstance());
                         if (touchSpell != null) {
                             GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            if (combatManager.diesAnsweringHeldShot(monster)) return; // #247
                             if (MonsterSpellExecutor.castMonsterSpell(monster, touchSpell, player, maze, em, combatManager)) {
                                 return;
                             }
@@ -787,6 +790,8 @@ public class MonsterAiManager {
         if (!wasBeside && besidePlayer(monster) && turnCombat != null && !monster.isAlly() && !monster.isPeaceful()) {
             turnCombat.onMonsterClosed(monster);
         }
+        // Any step into or along the line is Held Arrow's (#247).
+        if (turnCombat != null) turnCombat.onMonsterMoved(monster);
     }
 
     private boolean besidePlayer(Monster monster) {

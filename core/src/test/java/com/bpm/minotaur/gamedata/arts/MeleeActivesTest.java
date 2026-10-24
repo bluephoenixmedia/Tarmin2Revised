@@ -81,6 +81,30 @@ public class MeleeActivesTest {
         public void log(String line) {
             log.add(line);
         }
+
+        @Override
+        public Monster foeInLine(Item weapon, boolean thrown) {
+            return null;
+        }
+
+        @Override
+        public boolean loaded(Item weapon) {
+            return false;
+        }
+
+        @Override
+        public boolean shoot(Monster target, Item weapon, String word, ActiveArts.Shot kind) {
+            return false;
+        }
+
+        @Override
+        public ActiveArts.Hurl hurl(Item weapon) {
+            return ActiveArts.Hurl.MISSED;
+        }
+
+        @Override
+        public void splash(Monster around, int damage, String word) {
+        }
     };
 
     @Before

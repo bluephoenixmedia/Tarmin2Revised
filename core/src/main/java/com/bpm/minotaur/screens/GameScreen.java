@@ -3218,7 +3218,7 @@ public class GameScreen extends BaseScreen {
         CombatManager.CombatState state = combatManager.getCurrentState();
         boolean fighting = state == CombatManager.CombatState.PLAYER_TURN || state == CombatManager.CombatState.PLAYER_MENU;
         if (state != CombatManager.CombatState.INACTIVE && !fighting) return;
-        if (combatManager.useArt(slot) != com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome.USED) return;
+        if (!combatManager.useArt(slot).takesTurn()) return;
         if (fighting) {
             combatManager.passTurnAfterArt();
         } else {
@@ -4299,6 +4299,7 @@ public class GameScreen extends BaseScreen {
 
             if (keycode == Input.Keys.PERIOD) {
                 hud.addMessage("You wait...");
+                player.keepHold(); // waiting keeps a drawn Held Arrow drawn (#247)
                 playerTurnTakesAction();
                 return true;
             }

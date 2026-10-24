@@ -12,11 +12,17 @@ import com.bpm.minotaur.ui.UiNames;
 
 /**
  * Using an Art from the bar (#245; spec section 5): the cooldown rules every Active and capstone
- * share, and the Actives themselves -- Battering Ram (#245) and the other melee Actives (#246).
+ * share, and the Actives themselves -- Battering Ram (#245), the other melee Actives (#246) and the
+ * ranged Actives (#247).
  *
  * <p>An Art that finds nothing to act on is not spent: no turn, no cooldown. One that is used
  * starts its cooldown -- doubled for a kept Art this body has not retrained -- posts a combat log
  * line and counts in {@code artUses}, whether or not its blow lands.
+ *
+ * <p>Two Arts are readied rather than used at once (spec section 4). Held Arrow is drawn and waits
+ * for the first hostile to move into or along the line of fire, or to attack from inside it; Marked
+ * Skull aims for a turn before its shot. Either stays readied while the player waits, and lapses
+ * into its cooldown at any other action. Pressing Held Arrow's key again lowers the bow for free.
  */
 public final class ActiveArts {
 
@@ -47,11 +53,64 @@ public final class ActiveArts {
 
         /** A combat log line. */
         void log(String line);
+
+        // --- The ranged Actives (#247) ---
+
+        /** The first hostile down the player's line within {@code weapon}'s reach (thrown, or shot); or null. */
+        Monster foeInLine(Item weapon, boolean thrown);
+
+        /** Whether {@code weapon} can loose a shot now: ammunition to hand, and no reload under way. */
+        boolean loaded(Item weapon);
+
+        /**
+         * A real shot of {@code weapon} at {@code target}: ammunition spent, flight drawn, and a gun's
+         * damp powder may still misfire. True if it hit.
+         */
+        boolean shoot(Monster target, Item weapon, String word, Shot kind);
+
+        /** Throws {@code weapon} down the line, as the throw key does: it leaves the hand. */
+        Hurl hurl(Item weapon);
+
+        /** {@code damage} to every creature beside {@code around}, the player included. */
+        void splash(Monster around, int damage, String word);
     }
 
-    /** What pressing the key did. Only USED takes the player's turn. */
+    /** How an Active's shot resolves. */
+    public enum Shot {
+        /** Rolled as any shot. */
+        NORMAL,
+        /** Marked Skull: certain to hit, and a critical. */
+        HEADSHOT,
+        /** Held Arrow's reaction: x0.7 accuracy, and no critical. */
+        REACTION
+    }
+
+    /** What a throw struck, and for how much. */
+    public static final class Hurl {
+        public static final Hurl MISSED = new Hurl(null, 0);
+
+        public final Monster struck;
+        public final int damage;
+
+        public Hurl(Monster struck, int damage) {
+            this.struck = struck;
+            this.damage = damage;
+        }
+
+        public boolean hit() {
+            return struck != null;
+        }
+    }
+
+    /** What pressing the key did. Only USED and READIED take the player's turn. */
     public enum Outcome {
         USED,
+        /** Drawn or aimed, waiting (Held Arrow, Marked Skull): the turn passes, the cooldown waits. */
+        READIED,
+        /** Held Arrow lowered without spending the shot. */
+        LOWERED,
+        /** Nothing to loose: no ammunition, or a reload under way. */
+        NOT_LOADED,
         /** Nothing in the slot. */
         EMPTY,
         COOLING,
@@ -60,7 +119,11 @@ public final class ActiveArts {
         /** A foe, but no open floor to close on it. */
         NO_ROOM,
         /** An Art the game cannot use yet. */
-        UNAVAILABLE
+        UNAVAILABLE;
+
+        public boolean takesTurn() {
+            return this == USED || this == READIED;
+        }
     }
 
     /** Battering Ram into a wall: this much more, and a Stun. */
@@ -85,6 +148,7 @@ public final class ActiveArts {
             arena.log(name + " is not ready: " + cooldowns.turnsLeft(art) + " turns.");
             return Outcome.COOLING;
         }
+        if (player.getHeldArt() != art) lapse(player, arena); // using another Art is not waiting
         Item weapon = handOf(player, slot);
         Outcome outcome;
         switch (art) {
@@ -106,6 +170,18 @@ public final class ActiveArts {
             case IRON_GRIP:
                 outcome = ironGrip(arena);
                 break;
+            case HELD_ARROW:
+                outcome = heldArrow(player, weapon, arena);
+                break;
+            case NAIL_IN_PLACE:
+                outcome = nailInPlace(weapon, arena);
+                break;
+            case MARKED_SKULL:
+                outcome = markedSkull(player, weapon, arena);
+                break;
+            case SHATTERING_THROW:
+                outcome = shatteringThrow(weapon, arena);
+                break;
             default:
                 arena.log(name + " cannot be used yet.");
                 return Outcome.UNAVAILABLE;
@@ -114,6 +190,8 @@ public final class ActiveArts {
             arena.log(name + ": no foe in reach.");
         } else if (outcome == Outcome.NO_ROOM) {
             arena.log(name + ": no open floor to close across.");
+        } else if (outcome == Outcome.NOT_LOADED) {
+            arena.log(name + ": nothing loaded to loose.");
         } else if (outcome == Outcome.USED) {
             cooldowns.start(art, player.artCooldown(art));
             TelemetryManager.getInstance().recordArtUse(art.name());
@@ -124,6 +202,59 @@ public final class ActiveArts {
     /** The weapon a slot's Art swings: slots 1-2 belong to the right hand, 3-4 to the left. */
     static Item handOf(Player player, int slot) {
         return slot < 2 ? player.getInventory().getRightHand() : player.getInventory().getLeftHand();
+    }
+
+    /** The weapon that carries {@code art} on the bar now, or null when it is not on the bar. */
+    private static Item handHolding(Player player, CombatArt art) {
+        CombatArt[] slots = ArtBar.contents(player);
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i] == art) return handOf(player, i);
+        }
+        return null;
+    }
+
+    /**
+     * A player's turn passed. A readied Art the turn did not keep -- by readying it, or by
+     * waiting -- lapses, and its cooldown starts.
+     */
+    public static void turnPassed(Player player, Arena arena) {
+        if (player == null) return;
+        if (!player.takeHoldKept()) lapse(player, arena);
+    }
+
+    /**
+     * A readied Art lapses: the player did something other than wait. Its cooldown starts. Called
+     * as the turn passes, and before any attack of the player's, so a foe struck back at by the
+     * player's own swing never draws the shot the swing gave up.
+     */
+    public static void lapse(Player player, Arena arena) {
+        CombatArt held = player == null ? null : player.getHeldArt();
+        if (held == null) return;
+        player.setHeldArt(null);
+        player.setMarkedFoe(null);
+        player.getArtCooldowns().start(held, player.artCooldown(held));
+        arena.log(UiNames.of(held) + " lapses.");
+    }
+
+    /**
+     * {@code foe} moved into or along the player's line, or attacked from inside it (spec section
+     * 4): a drawn Held Arrow looses at it, if it is the first thing the shot would strike. One shot,
+     * at x0.7 accuracy and no critical; the stance is then spent and the cooldown starts.
+     *
+     * @return true if the shot was loosed
+     */
+    public static boolean answerHeldShot(Player player, Monster foe, Arena arena) {
+        if (player == null || foe == null || player.getHeldArt() != CombatArt.HELD_ARROW) return false;
+        Item bow = handHolding(player, CombatArt.HELD_ARROW);
+        if (bow == null || arena.foeInLine(bow, false) != foe || !arena.loaded(bow)) return false;
+        player.setHeldArt(null);
+        String who = AffinityText.nameOf(foe);
+        boolean hit = arena.shoot(foe, bow, "HELD", Shot.REACTION);
+        arena.log(UiNames.of(CombatArt.HELD_ARROW) + ": you loose at " + who
+                + (hit ? (foe.getCurrentHP() <= 0 ? ", and it falls." : ", and the shaft strikes home.") : ", and miss."));
+        player.getArtCooldowns().start(CombatArt.HELD_ARROW, player.artCooldown(CombatArt.HELD_ARROW));
+        TelemetryManager.getInstance().recordArtUse(CombatArt.HELD_ARROW.name());
+        return true;
     }
 
     /**
@@ -253,6 +384,94 @@ public final class ActiveArts {
         if (foe == null) return Outcome.NO_TARGET;
         foe.applyGrip();
         arena.log(UiNames.of(CombatArt.IRON_GRIP) + ": you seize " + AffinityText.nameOf(foe) + " and hold it fast.");
+        return Outcome.USED;
+    }
+
+    /** Held Arrow: draws one arrow and waits (see {@link #answerHeldShot}); pressed again, lowers it. */
+    private static Outcome heldArrow(Player player, Item bow, Arena arena) {
+        String name = UiNames.of(CombatArt.HELD_ARROW);
+        if (player.getHeldArt() == CombatArt.HELD_ARROW) {
+            player.setHeldArt(null);
+            arena.log(name + ": you ease the arrow off the string.");
+            return Outcome.LOWERED;
+        }
+        if (bow == null || !arena.loaded(bow)) return Outcome.NOT_LOADED;
+        player.setHeldArt(CombatArt.HELD_ARROW);
+        player.keepHold();
+        arena.log(name + ": you draw, and wait for the first foe to cross your line.");
+        return Outcome.READIED;
+    }
+
+    /** Nail in Place: a normal shot that, on a hit, pins its target where it stands for 3 turns. */
+    private static Outcome nailInPlace(Item crossbow, Arena arena) {
+        if (crossbow == null || !arena.loaded(crossbow)) return Outcome.NOT_LOADED;
+        Monster foe = arena.foeInLine(crossbow, false);
+        if (foe == null) return Outcome.NO_TARGET;
+        String name = UiNames.of(CombatArt.NAIL_IN_PLACE);
+        String who = AffinityText.nameOf(foe);
+        if (!arena.shoot(foe, crossbow, "NAIL", Shot.NORMAL)) {
+            arena.log(name + ": the bolt misses " + who + ".");
+        } else if (foe.getCurrentHP() <= 0) {
+            arena.log(name + " fells " + who + ".");
+        } else {
+            foe.applyPin();
+            arena.log(name + " nails " + who + " where it stands.");
+        }
+        return Outcome.USED;
+    }
+
+    /**
+     * Marked Skull: the first press aims at the foe in the line, for a turn; the second takes that
+     * foe's head, certain to hit, a critical that Dazes. If another foe now stands first in the
+     * line, the aim moves to it and the turn is spent again. A foe with no head takes a normal shot.
+     */
+    private static Outcome markedSkull(Player player, Item gun, Arena arena) {
+        String name = UiNames.of(CombatArt.MARKED_SKULL);
+        if (gun == null || !arena.loaded(gun)) return Outcome.NOT_LOADED;
+        Monster foe = arena.foeInLine(gun, false);
+        if (foe == null) return Outcome.NO_TARGET;
+        String who = AffinityText.nameOf(foe);
+        if (player.getHeldArt() != CombatArt.MARKED_SKULL || player.getMarkedFoe() != foe) {
+            player.setHeldArt(CombatArt.MARKED_SKULL);
+            player.setMarkedFoe(foe);
+            player.keepHold();
+            arena.log(name + ": you sight on " + who + ".");
+            return Outcome.READIED;
+        }
+        player.setHeldArt(null);
+        player.setMarkedFoe(null);
+        if (!foe.hasHead()) {
+            boolean hit = arena.shoot(foe, gun, "SHOT", Shot.NORMAL);
+            arena.log(name + ": " + who + " has no head to take" + (hit ? ", but the ball strikes it." : ", and the shot is lost."));
+            return Outcome.USED;
+        }
+        if (!arena.shoot(foe, gun, "HEADSHOT", Shot.HEADSHOT)) {
+            arena.log(name + ": the shot is lost.");
+        } else if (foe.getCurrentHP() <= 0) {
+            arena.log(name + " takes the head of " + who + ".");
+        } else {
+            arena.log(name + " strikes " + who + " in the head. It is " + dazeWord(foe) + ".");
+        }
+        return Outcome.USED;
+    }
+
+    /**
+     * Shattering Throw: the held weapon is thrown, and on a hit it bursts, half its damage to
+     * every creature beside the target -- the player too, standing close.
+     */
+    private static Outcome shatteringThrow(Item weapon, Arena arena) {
+        if (weapon == null) return Outcome.NO_TARGET;
+        Monster foe = arena.foeInLine(weapon, true);
+        if (foe == null) return Outcome.NO_TARGET;
+        String name = UiNames.of(CombatArt.SHATTERING_THROW);
+        String who = AffinityText.nameOf(foe);
+        Hurl hurl = arena.hurl(weapon);
+        if (!hurl.hit()) {
+            arena.log(name + ": the throw misses " + who + ".");
+            return Outcome.USED;
+        }
+        arena.splash(hurl.struck, Math.max(1, hurl.damage / 2), "SHATTER");
+        arena.log(name + " bursts on " + who + ", and the shards strike everything beside it.");
         return Outcome.USED;
     }
 
