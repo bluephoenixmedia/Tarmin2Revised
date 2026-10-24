@@ -151,7 +151,9 @@ public final class ActiveArts {
         if (player.getHeldArt() != art) lapse(player, arena); // using another Art is not waiting
         Item weapon = handOf(player, slot);
         Outcome outcome;
-        switch (art) {
+        if (art.kind == CombatArt.Kind.CAPSTONE) {
+            outcome = capstone(player, art, arena);
+        } else switch (art) {
             case BATTERING_RAM:
                 outcome = batteringRam(player, weapon, arena);
                 break;
@@ -472,6 +474,18 @@ public final class ActiveArts {
         }
         arena.splash(hurl.struck, Math.max(1, hurl.damage / 2), "SHATTER");
         arena.log(name + " bursts on " + who + ", and the shards strike everything beside it.");
+        return Outcome.USED;
+    }
+
+    /**
+     * A capstone (#248): for its turns, the Family's Adept Passive is certain; when they end, the
+     * Family's Expert Active goes on its cooldown. The capstone's own cooldown starts now.
+     */
+    private static Outcome capstone(Player player, CombatArt art, Arena arena) {
+        CombatArt expert = CombatArt.of(art.family, com.bpm.minotaur.gamedata.player.Mastery.Rank.EXPERT);
+        player.getArtCooldowns().openWindow(art.family, art.durationTurns, player.artCooldown(expert));
+        String summary = art.summary;
+        arena.log(UiNames.of(art) + ": " + Character.toLowerCase(summary.charAt(0)) + summary.substring(1));
         return Outcome.USED;
     }
 

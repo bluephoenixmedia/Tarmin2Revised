@@ -195,6 +195,26 @@ public class ArtBarCombatTest {
     }
 
     @Test
+    public void tollTheBellMakesARealSwingRingThenHandsBatteringRamItsCooldown() {
+        player.learnArt(CombatArt.RINGING_BLOW, null);
+        player.learnArt(CombatArt.TOLL_THE_BELL, null);
+        player.getStats().getMastery().setRank(CombatArt.TOLL_THE_BELL.family, Rank.MASTER);
+        combat.setArtRoll(() -> 0.999); // by chance alone, Ringing Blow never fires
+        Monster foe = foeAt(4, 3);
+
+        assertEquals(ActiveArts.Outcome.USED, combat.useArt(1));
+        for (int i = 0; i < 20 && !foe.isDazed() && !foe.isStunned(); i++) {
+            combat.setCurrentState(CombatManager.CombatState.INACTIVE);
+            combat.playerMeleeStrike(foe);
+        }
+        assertTrue("the bell rings on a full hit", foe.isDazed() || foe.isStunned());
+
+        for (int turn = 0; turn <= CombatArt.CAPSTONE_TURNS; turn++) combat.tickPlayerTimers();
+        assertFalse(player.getArtCooldowns().isCertain(CombatArt.TOLL_THE_BELL.family));
+        assertTrue("the hand-off", player.getArtCooldowns().isCooling(CombatArt.BATTERING_RAM));
+    }
+
+    @Test
     public void aWallBetweenThePlayerAndTheFoeMeansNoFoeInReach() {
         maze.setTile(3, 3, Direction.EAST.getWallMask());
         foeAt(4, 3);
