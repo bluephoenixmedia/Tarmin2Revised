@@ -199,7 +199,21 @@ final class MapSurface extends Actor implements Disposable {
     void setPlayer(PlayerMark player) { this.player = player; }
     void setTiles(ChunkTiles tiles) { this.tiles = tiles; }
     ChunkTiles getTiles() { return tiles; }
-    void setZoom(Zoom zoom) { this.zoom = zoom; }
+    void setZoom(Zoom zoom) {
+        this.zoom = zoom;
+        if (dioramaEnabled && dioramaRenderer != null) {
+            if (zoom == Zoom.WORLD) {
+                dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_WORLD);
+                dioramaRenderer.centerOn(IsometricDioramaRenderer.CHUNK_GRID_SIZE / 2f, IsometricDioramaRenderer.CHUNK_GRID_SIZE / 2f);
+            } else if (zoom == Zoom.REGION) {
+                dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_REGION);
+                dioramaRenderer.centerOn(cursor.x + 0.5f, cursor.y + 0.5f);
+            } else if (zoom == Zoom.CHUNK) {
+                dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_CHUNK);
+                dioramaRenderer.centerOn(cursor.x + 0.5f, cursor.y + 0.5f);
+            }
+        }
+    }
     void setFloor(int floor) { this.floor = floor; }
     void setCursor(GridPoint2 c) { cursor.set(c); }
     void setTileCursor(GridPoint2 tc) { if (tc != null) tileCursor.set(tc); }
@@ -223,12 +237,28 @@ final class MapSurface extends Actor implements Disposable {
     /** The chunk under a point in this actor's coordinates, or null in the chunk view. */
     GridPoint2 chunkAt(float localX, float localY) {
         if (zoom == Zoom.CHUNK) return null;
+        if (dioramaEnabled && dioramaRenderer != null) {
+            return dioramaRenderer.pickChunk(localX, localY, getWidth(), getHeight(), floor, this::chunkTopZ);
+        }
         int cell = zoom.cell;
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
         int dx = MathUtils.floor((localX - cx) / cell + 0.5f);
         int dy = MathUtils.floor((localY - cy) / cell + 0.5f);
         return new GridPoint2(cursor.x + dx, cursor.y + dy);
+    }
+
+    float chunkTopZ(int cx, int cy) {
+        GridPoint2 p = new GridPoint2(cx, cy);
+        Biome b = biomeOf(p);
+        boolean isOcean = (b == Biome.OCEAN);
+        if (model != null && model.visited(floor) != null && model.visited(floor).contains(p)) {
+            return isOcean ? 2.0f : 6.0f;
+        }
+        if (glimpsed != null && glimpsed.contains(p)) {
+            return isOcean ? 1.2f : 2.5f;
+        }
+        return 0f;
     }
 
     /** The tile under a point in this actor's coordinates in the chunk view, or null if outside. */
@@ -271,6 +301,9 @@ final class MapSurface extends Actor implements Disposable {
     public void act(float delta) {
         super.act(delta);
         time += delta;
+        if (dioramaEnabled && dioramaRenderer != null) {
+            dioramaRenderer.update(delta);
+        }
     }
 
     @Override
@@ -279,10 +312,7 @@ final class MapSurface extends Actor implements Disposable {
         loadsThisFrame = 0;
 
         if (dioramaEnabled && zoom != Zoom.CHUNK && Gdx.gl != null) {
-            dioramaRenderer.update(Gdx.graphics != null ? Gdx.graphics.getDeltaTime() : 0.016f);
             dioramaRenderer.setCave(floor != 1);
-            float currentZoom = (zoom == Zoom.WORLD) ? 1.0f : 2.6f;
-            dioramaRenderer.setCamera(cursor.x + 0.5f, cursor.y + 0.5f, currentZoom, 0f);
 
             MapKnowledgeMask.KnowledgeProvider provider = new MapKnowledgeMask.KnowledgeProvider() {
                 @Override

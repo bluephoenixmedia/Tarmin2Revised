@@ -465,6 +465,11 @@ public class ExpeditionMapScreen extends BaseScreen {
         }
         cursors.putIfAbsent(p.floor, new GridPoint2(p.chunk));
         surface.setCursor(cursorFor(surface.getFloor()));
+        if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+            GridPoint2 c = surface.getCursor();
+            float z = surface.getZoom() == MapSurface.Zoom.WORLD ? IsometricDioramaRenderer.ZOOM_WORLD : IsometricDioramaRenderer.ZOOM_REGION;
+            surface.getDioramaRenderer().setCameraImmediate(c.x + 0.5f, c.y + 0.5f, z, 0f);
+        }
         reopenChunk = rememberedWorld == world && rememberedZoom == MapSurface.Zoom.CHUNK;
     }
 
@@ -602,6 +607,9 @@ public class ExpeditionMapScreen extends BaseScreen {
             surface.setTileCursor(new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
         }
         setCursor(p.chunk);
+        if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+            surface.getDioramaRenderer().centerOn(p.chunk.x + (p.tileX + 0.5f) / 8f, p.chunk.y + (p.tileY + 0.5f) / 8f);
+        }
         say("Centred on you.");
     }
 
@@ -609,6 +617,9 @@ public class ExpeditionMapScreen extends BaseScreen {
         Set<GridPoint2> visited = model.visited(surface.getFloor());
         if (visited.isEmpty()) {
             setCursor(new GridPoint2(0, 0));
+            if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                surface.getDioramaRenderer().centerOn(0.5f, 0.5f);
+            }
             say("Centred on home.");
             return;
         }
@@ -620,7 +631,11 @@ public class ExpeditionMapScreen extends BaseScreen {
             minY = Math.min(minY, c.y);
             maxY = Math.max(maxY, c.y);
         }
-        setCursor(new GridPoint2((minX + maxX) / 2, (minY + maxY) / 2));
+        GridPoint2 mid = new GridPoint2((minX + maxX) / 2, (minY + maxY) / 2);
+        setCursor(mid);
+        if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+            surface.getDioramaRenderer().centerOn(mid.x + 0.5f, mid.y + 0.5f);
+        }
         say("Centred on known area.");
     }
 
@@ -960,6 +975,8 @@ public class ExpeditionMapScreen extends BaseScreen {
     private final class SurfaceInput extends InputListener {
         private float downX;
         private float downY;
+        private float lastX;
+        private float lastY;
         private GridPoint2 downCursor;
         private boolean dragged;
 
@@ -967,6 +984,8 @@ public class ExpeditionMapScreen extends BaseScreen {
         public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
             downX = x;
             downY = y;
+            lastX = x;
+            lastY = y;
             downCursor = surface.getCursor();
             dragged = false;
             return true;
@@ -975,14 +994,22 @@ public class ExpeditionMapScreen extends BaseScreen {
         @Override
         public void touchDragged(InputEvent event, float x, float y, int pointer) {
             if (surface.getZoom() == MapSurface.Zoom.CHUNK) return;
-            float cell = surface.getZoom().cell;
-            int dx = Math.round((downX - x) / cell);
-            int dy = Math.round((downY - y) / cell);
             if (Math.abs(downX - x) > 6 || Math.abs(downY - y) > 6) dragged = true;
             if (dragged) {
-                GridPoint2 next = new GridPoint2(downCursor).add(dx, dy);
-                if (!next.equals(surface.getCursor())) setCursor(next);
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    float dx = x - lastX;
+                    float dy = y - lastY;
+                    surface.getDioramaRenderer().panScreen(-dx, -dy, surface.getWidth(), surface.getHeight());
+                } else {
+                    float cell = surface.getZoom().cell;
+                    int dx = Math.round((downX - x) / cell);
+                    int dy = Math.round((downY - y) / cell);
+                    GridPoint2 next = new GridPoint2(downCursor).add(dx, dy);
+                    if (!next.equals(surface.getCursor())) setCursor(next);
+                }
             }
+            lastX = x;
+            lastY = y;
         }
 
         @Override
@@ -1004,6 +1031,19 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         @Override
         public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+            if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                float factor = (float) Math.exp(-amountY * 0.2f);
+                surface.getDioramaRenderer().zoomAt(x, y, surface.getWidth(), surface.getHeight(), factor);
+                IsometricDioramaRenderer.ZoomLevel zl = surface.getDioramaRenderer().getZoomLevel();
+                MapSurface.Zoom mappedZoom = (zl == IsometricDioramaRenderer.ZoomLevel.WORLD)
+                        ? MapSurface.Zoom.WORLD
+                        : MapSurface.Zoom.REGION;
+                if (mappedZoom != surface.getZoom()) {
+                    surface.setZoom(mappedZoom);
+                    refresh();
+                }
+                return true;
+            }
             if (amountY < 0) zoomIn();
             else if (amountY > 0) zoomOut();
             return true;
@@ -1030,9 +1070,21 @@ public class ExpeditionMapScreen extends BaseScreen {
                 cyclePin();
                 return true;
             }
-            if (keycode == s.getKey("MAP_RECENTER")) {
+            if (keycode == s.getKey("MAP_RECENTER") || keycode == Input.Keys.C) {
                 recenter();
                 return true;
+            }
+            if (keycode == Input.Keys.Q) {
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    surface.getDioramaRenderer().rotate(-1);
+                    return true;
+                }
+            }
+            if (keycode == Input.Keys.E) {
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    surface.getDioramaRenderer().rotate(1);
+                    return true;
+                }
             }
             if (keycode == Input.Keys.TAB) {
                 nextMarker();

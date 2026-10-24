@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
 
@@ -18,8 +19,9 @@ import com.badlogic.gdx.utils.Disposable;
  * <ul>
  *   <li>720x448 low-res internal {@link FrameBuffer} upscaled 2x with nearest filtering.</li>
  *   <li>Isometric projection mathematics matching {@code Main.dc.html}.</li>
- *   <li>Placeholder flat diamond grid (Phase 1).</li>
- *   <li>Full volumetric, scrolling GLSL fog of war shader with knowledge mask holes and frontier wisps.</li>
+ *   <li>Continuous camera pan, zoom toward cursor, and 90° animated rotation easing.</li>
+ *   <li>Placeholder flat diamond grid with mouse picking across z levels (6, 2.5, 2, 1.2, 0).</li>
+ *   <li>Volumetric, scrolling GLSL fog of war shader with knowledge mask holes and frontier wisps.</li>
  * </ul>
  */
 public final class IsometricDioramaRenderer implements Disposable {
@@ -28,10 +30,22 @@ public final class IsometricDioramaRenderer implements Disposable {
     public static final int FBO_HEIGHT = 448;
     public static final int CHUNK_GRID_SIZE = 10;
 
+    public static final float ZOOM_WORLD = 1.0f;
+    public static final float ZOOM_REGION = 2.6f;
+    public static final float ZOOM_CHUNK = 6.4f;
+
+    public static final float MIN_ZOOM = 0.7f;
+    public static final float MAX_ZOOM = 8.5f;
+
     public enum ZoomLevel {
         WORLD,
         REGION,
         CHUNK
+    }
+
+    @FunctionalInterface
+    public interface ChunkHeightLookup {
+        float getTopZ(int cx, int cy);
     }
 
     private FrameBuffer fbo;
@@ -43,10 +57,19 @@ public final class IsometricDioramaRenderer implements Disposable {
     private final MapKnowledgeMask knowledgeMask = new MapKnowledgeMask();
     private MapFogShader fogShader;
 
+    // Current animated camera values
     private float camX = 5.0f;
     private float camY = 5.0f;
     private float camZoom = 1.0f;
     private float camRot = 0.0f; // Radians
+
+    // Target values for continuous easing
+    private float tgtX = 5.0f;
+    private float tgtY = 5.0f;
+    private float tgtZoom = 1.0f;
+    private float tgtRot = 0.0f;
+    private int rotStep = 0; // Steps of 90 degrees
+
     private float fogStrength = 1.0f;
     private boolean isCave = false;
     private float elapsedTime = 0f;
@@ -114,16 +137,148 @@ public final class IsometricDioramaRenderer implements Disposable {
         knowledgeMask.rebuild(provider);
     }
 
+    /**
+     * Updates continuous camera easing toward targets matching prototype formula:
+     * {@code k = 1 - Math.exp(-dt * 9)}.
+     */
     public void update(float delta) {
         elapsedTime += delta;
+
+        float k = 1.0f - (float) Math.exp(-delta * 9.0);
+
+        float dx = tgtX - camX;
+        if (Math.abs(dx) > 0.0005f) camX += dx * k; else camX = tgtX;
+
+        float dy = tgtY - camY;
+        if (Math.abs(dy) > 0.0005f) camY += dy * k; else camY = tgtY;
+
+        float ds = tgtZoom - camZoom;
+        if (Math.abs(ds) > 0.0005f) camZoom += ds * k; else camZoom = tgtZoom;
+
+        float dRot = tgtRot - camRot;
+        if (Math.abs(dRot) > 0.0005f) camRot += dRot * k; else camRot = tgtRot;
+    }
+
+    public void setTarget(float x, float y, float zoom, float rot) {
+        this.tgtX = x;
+        this.tgtY = y;
+        this.tgtZoom = zoom;
+        this.tgtRot = rot;
+        clampTarget();
     }
 
     public void setCamera(float x, float y, float zoom, float rot) {
-        this.camX = x;
-        this.camY = y;
-        this.camZoom = zoom;
-        this.camRot = rot;
+        setTarget(x, y, zoom, rot);
     }
+
+    public void setCameraImmediate(float x, float y, float zoom, float rot) {
+        setTarget(x, y, zoom, rot);
+        this.camX = tgtX;
+        this.camY = tgtY;
+        this.camZoom = tgtZoom;
+        this.camRot = tgtRot;
+    }
+
+    public void panScreen(float screenDx, float screenDy, float actorWidth, float actorHeight) {
+        float scaleX = (float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH);
+        float scaleY = (float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT);
+        float dx = screenDx * scaleX;
+        float dy = -screenDy * scaleY; // Invert for canvas top-down Y vs LibGDX bottom-up Y
+
+        float s = tgtZoom;
+        float cs = (float) Math.cos(tgtRot);
+        float sn = (float) Math.sin(tgtRot);
+        float a = dx / (28f * s);
+        float b = dy / (14f * s);
+        float rx = (a + b) / 2f;
+        float ry = (b - a) / 2f;
+        tgtX += rx * cs + ry * sn;
+        tgtY += -rx * sn + ry * cs;
+        clampTarget();
+    }
+
+    public void zoomAt(float localX, float localY, float actorWidth, float actorHeight, float factor) {
+        float sx = localX * ((float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH));
+        float sy = (actorHeight - localY) * ((float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT));
+
+        Vector2 w = unproject(sx, sy, 4f, tgtX, tgtY, tgtZoom, tgtRot, FBO_WIDTH, FBO_HEIGHT);
+        float ns = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, tgtZoom * factor));
+        float ratio = tgtZoom / ns;
+        tgtX = w.x - (w.x - tgtX) * ratio;
+        tgtY = w.y - (w.y - tgtY) * ratio;
+        tgtZoom = ns;
+        clampTarget();
+    }
+
+    public void zoomBy(float factor) {
+        tgtZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, tgtZoom * factor));
+    }
+
+    public void setTargetZoom(float zoom) {
+        this.tgtZoom = zoom;
+        clampTarget();
+    }
+
+    public ZoomLevel getZoomLevel() {
+        return levelOf(tgtZoom);
+    }
+
+    public void snapCameraPosition() {
+        this.camX = this.tgtX;
+        this.camY = this.tgtY;
+    }
+
+    public void rotate(int dir) {
+        rotStep += dir;
+        tgtRot = rotStep * (float) (Math.PI / 2.0);
+    }
+
+    public void centerOn(float wx, float wy) {
+        tgtX = wx;
+        tgtY = wy;
+        clampTarget();
+    }
+
+    private void clampTarget() {
+        tgtX = Math.max(-1f, Math.min(CHUNK_GRID_SIZE + 1f, tgtX));
+        tgtY = Math.max(-1f, Math.min(CHUNK_GRID_SIZE + 1f, tgtY));
+        tgtZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, tgtZoom));
+    }
+
+    public GridPoint2 pickChunk(float localX, float localY, float actorWidth, float actorHeight,
+                               int floor, ChunkHeightLookup heightLookup) {
+        float sx = localX * ((float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH));
+        float sy = (actorHeight - localY) * ((float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT));
+
+        boolean cave = (floor != 1);
+        float[] zs = cave ? new float[]{5f} : new float[]{6f, 2.5f, 2f, 1.2f, 0f};
+
+        for (float z : zs) {
+            Vector2 w = unproject(sx, sy, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            int cx = (int) Math.floor(w.x);
+            int cy = (int) Math.floor(w.y);
+            if (cx < 0 || cx >= CHUNK_GRID_SIZE || cy < 0 || cy >= CHUNK_GRID_SIZE) continue;
+
+            if (cave || z == 0f || heightLookup == null) {
+                return new GridPoint2(cx, cy);
+            }
+            float expectedZ = heightLookup.getTopZ(cx, cy);
+            if (Math.abs(expectedZ - z) < 0.2f) {
+                return new GridPoint2(cx, cy);
+            }
+        }
+        return null;
+    }
+
+    public float getCamX() { return camX; }
+    public float getCamY() { return camY; }
+    public float getCamZoom() { return camZoom; }
+    public float getCamRot() { return camRot; }
+
+    public float getTgtX() { return tgtX; }
+    public float getTgtY() { return tgtY; }
+    public float getTgtZoom() { return tgtZoom; }
+    public float getTgtRot() { return tgtRot; }
 
     public void setFogStrength(float strength) {
         this.fogStrength = strength;
@@ -194,13 +349,11 @@ public final class IsometricDioramaRenderer implements Disposable {
                 }
                 shapeRenderer.setColor(fillColor);
 
-                // LibGDX shapeRenderer has (0, 0) at bottom-left, while project has (0, 0) top-left
                 Vector2 c0 = toGdxScreen(project(cx, cy, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
                 Vector2 c1 = toGdxScreen(project(cx + 1, cy, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
                 Vector2 c2 = toGdxScreen(project(cx + 1, cy + 1, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
                 Vector2 c3 = toGdxScreen(project(cx, cy + 1, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
 
-                // Quad as two triangles (c0-c1-c2 and c0-c2-c3)
                 shapeRenderer.triangle(c0.x, c0.y, c1.x, c1.y, c2.x, c2.y);
                 shapeRenderer.triangle(c0.x, c0.y, c2.x, c2.y, c3.x, c3.y);
             }
