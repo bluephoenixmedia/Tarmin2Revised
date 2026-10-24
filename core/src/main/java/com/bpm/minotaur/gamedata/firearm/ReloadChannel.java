@@ -24,12 +24,23 @@ public final class ReloadChannel {
     }
 
     private final Item.ItemType weaponType;
-    private final int turnsRequired;
+    private int turnsRequired;
     private int turnsDone;
 
     public ReloadChannel(Item.ItemType weaponType) {
         this.weaponType = weaponType;
         this.turnsRequired = FirearmProfile.reloadTurns(weaponType);
+    }
+
+    /**
+     * Practised Hands (#244): takes a turn off this reload, but never its last turn.
+     *
+     * @return whether the reload was shortened
+     */
+    public boolean cut() {
+        if (getTurnsRemaining() <= 1) return false;
+        turnsRequired--;
+        return true;
     }
 
     public Item.ItemType getWeaponType() {

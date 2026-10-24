@@ -23,8 +23,8 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-/** The melee Passives fire inside real bump combat (#243). */
-public class MeleePassivesCombatTest {
+/** The Adept Passives fire inside real combat: bump melee (#243) and shots (#244). */
+public class AdeptPassivesCombatTest {
 
     private final List<String> damageTexts = new ArrayList<>();
     private Player player;
@@ -155,6 +155,93 @@ public class MeleePassivesCombatTest {
 
         assertEquals("it stepped next to the player", 4, (int) foe.getPosition().x);
         assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(x -> x.startsWith("FIRST STRIKE ")));
+    }
+
+    private static Item shooter(Item.ItemType type, String family) {
+        ItemTemplate t = new ItemTemplate();
+        t.isWeapon = true;
+        t.isRanged = true;
+        t.range = 6;
+        t.weaponFamily = family;
+        t.damageDice = "1d2";
+        return Item.fromTemplate(type, t);
+    }
+
+    /** A sturdy foe two tiles down the player's facing, easy to hit: AC 0. */
+    private Monster foeDownrange() {
+        Monster m = foeBeside();
+        maze.getMonsters().remove(new com.badlogic.gdx.math.GridPoint2(4, 3));
+        m.getPosition().set(5f, 3f);
+        maze.addMonster(m);
+        return m;
+    }
+
+    @Test
+    public void swiftNockLoosesASecondArrowAndSpendsIt() {
+        know(CombatArt.SWIFT_NOCK);
+        player.getInventory().setRightHand(shooter(Item.ItemType.BOW, "BOW"));
+        player.getStats().setArrows(10);
+        foeDownrange();
+
+        combat.playerAttackInstant();
+
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("SECOND ARROW ")));
+        assertEquals("two arrows for two shots", 8, player.getArrows());
+    }
+
+    @Test
+    public void swiftNockWithNoArrowLeftLoosesNothing() {
+        know(CombatArt.SWIFT_NOCK);
+        player.getInventory().setRightHand(shooter(Item.ItemType.BOW, "BOW"));
+        player.getStats().setArrows(1);
+        foeDownrange();
+
+        combat.playerAttackInstant();
+
+        assertEquals(0, player.getArrows());
+        assertTrue(damageTexts.toString(), damageTexts.stream().noneMatch(t -> t.startsWith("SECOND ARROW")));
+    }
+
+    @Test
+    public void practisedHandsShortensTheNextReloadByATurn() {
+        know(CombatArt.PRACTISED_HANDS);
+        player.getInventory().setRightHand(shooter(Item.ItemType.MUSKET, "FIREARM"));
+        player.getStats().setShot(5);
+        foeDownrange();
+        int full = com.bpm.minotaur.gamedata.firearm.FirearmProfile.reloadTurns(Item.ItemType.MUSKET);
+
+        combat.playerAttackInstant();
+
+        assertEquals("the shot's own reload is the one cut", Math.max(1, full - 1),
+                combat.getActiveReload().getTurnsRequired());
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("QUICK LOAD ")));
+    }
+
+    @Test
+    public void staggeringBoltDazesTheTargetOfARealShot() {
+        know(CombatArt.STAGGERING_BOLT);
+        player.getInventory().setRightHand(shooter(Item.ItemType.CROSSBOW, "CROSSBOW"));
+        player.getStats().setArrows(10);
+        Monster foe = foeDownrange();
+
+        combat.playerAttackInstant();
+
+        assertTrue(foe.isDazed() || foe.isStunned());
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("DAZE ")));
+    }
+
+    @Test
+    public void tangleSlowsWhatAThrownWeaponHits() {
+        know(CombatArt.TANGLE);
+        Monster foe = foeDownrange();
+
+        for (int i = 0; i < 30 && !foe.getStatusManager().hasEffect(
+                com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOWED); i++) {
+            combat.throwWeapon(weapon("BLADE"));
+        }
+
+        assertTrue(foe.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOWED));
+        assertTrue(damageTexts.toString(), damageTexts.stream().anyMatch(t -> t.startsWith("TANGLE ")));
     }
 
     private boolean missedOnce() {

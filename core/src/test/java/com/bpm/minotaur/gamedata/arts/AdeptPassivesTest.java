@@ -18,13 +18,13 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-/** The six melee Adept Passives (#243, spec section 2). */
-public class MeleePassivesTest {
+/** The ten Adept Passives: six melee (#243) and four ranged (#244), spec section 2. */
+public class AdeptPassivesTest {
 
     /** Records the free strikes the Passives ask for. */
     private final List<Monster> struck = new ArrayList<>();
     private final List<String> words = new ArrayList<>();
-    private final MeleePassives.FreeStrike strike = (target, word) -> {
+    private final AdeptPassives.FreeStrike strike = (target, word) -> {
         struck.add(target);
         words.add(word);
     };
@@ -46,12 +46,12 @@ public class MeleePassivesTest {
     }
 
     /** Rolls always under the chance: every Passive that can fire, fires. */
-    private static MeleePassives alwaysFires() {
-        return new MeleePassives(() -> 0.0);
+    private static AdeptPassives alwaysFires() {
+        return new AdeptPassives(() -> 0.0);
     }
 
-    private static MeleePassives neverFires() {
-        return new MeleePassives(() -> 0.999);
+    private static AdeptPassives neverFires() {
+        return new AdeptPassives(() -> 0.999);
     }
 
     private static Item weapon(String family) {
@@ -104,7 +104,7 @@ public class MeleePassivesTest {
     public void ringingBlowDazesThenStuns() {
         know(CombatArt.RINGING_BLOW);
         Monster foe = monsterAt(4, 3);
-        MeleePassives passives = alwaysFires();
+        AdeptPassives passives = alwaysFires();
 
         assertEquals("DAZE", passives.onFullHit(player, weapon("BLUNT"), foe, maze, 6, strike));
         assertTrue(foe.isDazed());
@@ -169,7 +169,7 @@ public class MeleePassivesTest {
     public void holdTheLineStrikesFirstOnlyTheFirstTimeAMonsterCloses() {
         know(CombatArt.HOLD_THE_LINE);
         Monster foe = monsterAt(4, 3);
-        MeleePassives passives = alwaysFires();
+        AdeptPassives passives = alwaysFires();
 
         passives.onMonsterStepsAdjacent(player, weapon("POLEARM"), foe, strike);
         passives.onMonsterStepsAdjacent(player, weapon("POLEARM"), foe, strike);
@@ -185,5 +185,134 @@ public class MeleePassivesTest {
         alwaysFires().onFullHit(player, weapon("BLUNT"), foe, maze, 6, strike);
 
         assertTrue(TelemetryManager.getInstance().toJson().contains("\"RINGING_BLOW\": 1"));
+    }
+
+    // --- The ranged Passives (#244) ---
+
+    /** Whether a reload is under way for Practised Hands to cut. */
+    private boolean reloading;
+    /** The combat code's hand: records loosed arrows as strikes, and owns one reload. */
+    private final AdeptPassives.FreeStrike hand = new AdeptPassives.FreeStrike() {
+        @Override
+        public void strike(Monster target, String word) {
+            struck.add(target);
+            words.add(word);
+        }
+
+        @Override
+        public boolean loose(Monster target, String word) {
+            strike(target, word);
+            return true;
+        }
+
+        @Override
+        public boolean cutReload() {
+            boolean cut = reloading;
+            reloading = false;
+            return cut;
+        }
+    };
+
+    @Test
+    public void swiftNockLoosesASecondArrowAtTheSameTarget() {
+        know(CombatArt.SWIFT_NOCK);
+        Monster foe = monsterAt(6, 3);
+
+        String word = alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, hand);
+
+        assertEquals(List.of(foe), struck);
+        assertEquals(List.of(AdeptPassives.SECOND_ARROW), words);
+        assertNull("the second arrow carries the word, not the first", word);
+        assertTrue(TelemetryManager.getInstance().toJson().contains("\"SWIFT_NOCK\": 1"));
+    }
+
+    @Test
+    public void swiftNockThatLoosesNothingIsNotCounted() {
+        know(CombatArt.SWIFT_NOCK);
+        Monster foe = monsterAt(6, 3);
+
+        alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, strike); // a hand with no arrow to loose
+
+        assertTrue(struck.isEmpty());
+        assertFalse(TelemetryManager.getInstance().toJson().contains("SWIFT_NOCK"));
+    }
+
+    @Test
+    public void staggeringBoltDazesAndThenStuns() {
+        know(CombatArt.STAGGERING_BOLT);
+        Monster foe = monsterAt(6, 3);
+        AdeptPassives passives = alwaysFires();
+
+        assertEquals("DAZE", passives.onFullHit(player, weapon("CROSSBOW"), foe, maze, 5, hand));
+        assertEquals("a dazed target is stunned", "STUN", passives.onFullHit(player, weapon("CROSSBOW"), foe, maze, 5, hand));
+        assertTrue(TelemetryManager.getInstance().toJson().contains("\"STAGGERING_BOLT\": 2"));
+    }
+
+    @Test
+    public void practisedHandsCutsTheReloadUnderWayAndOnlyCountsWhenItDoes() {
+        know(CombatArt.PRACTISED_HANDS);
+        Monster foe = monsterAt(6, 3);
+        AdeptPassives passives = alwaysFires();
+        reloading = true;
+
+        assertEquals(AdeptPassives.QUICK_LOAD, passives.onFullHit(player, weapon("FIREARM"), foe, maze, 9, hand));
+        assertFalse("the reload was cut", reloading);
+        assertNull("nothing left to cut, nothing to show", passives.onFullHit(player, weapon("FIREARM"), foe, maze, 9, hand));
+        assertTrue(TelemetryManager.getInstance().toJson().contains("\"PRACTISED_HANDS\": 1"));
+    }
+
+    @Test
+    public void aReloadIsCutByATurnButNeverToNothing() {
+        com.bpm.minotaur.gamedata.firearm.ReloadChannel reload =
+                new com.bpm.minotaur.gamedata.firearm.ReloadChannel(Item.ItemType.MUSKET);
+        int full = reload.getTurnsRequired();
+        int cuts = 0;
+        while (reload.cut()) cuts++;
+        assertEquals(full - 1, cuts);
+        assertEquals(1, reload.getTurnsRemaining());
+    }
+
+    @Test
+    public void tangleSlowsOnAThrownHitWithAnyWeapon() {
+        know(CombatArt.TANGLE);
+        Monster foe = monsterAt(6, 3);
+
+        assertEquals(AdeptPassives.TANGLE, alwaysFires().onThrownHit(player, weapon("BLADE"), foe));
+
+        assertTrue(foe.getStatusManager().hasEffect(StatusEffectType.SLOWED));
+        assertTrue(TelemetryManager.getInstance().toJson().contains("\"TANGLE\": 1"));
+    }
+
+    @Test
+    public void tangleIsAThrowArtNotASwingArt() {
+        know(CombatArt.TANGLE);
+        Monster foe = monsterAt(4, 3);
+
+        assertNull("a dagger in the hand is a Blade", alwaysFires().onFullHit(player, weapon("BLADE"), foe, maze, 5, hand));
+        assertFalse(foe.getStatusManager().hasEffect(StatusEffectType.SLOWED));
+    }
+
+    @Test
+    public void theRangedPassivesRespectTheRoll() {
+        for (CombatArt art : new CombatArt[]{CombatArt.SWIFT_NOCK, CombatArt.STAGGERING_BOLT, CombatArt.PRACTISED_HANDS, CombatArt.TANGLE}) {
+            know(art);
+        }
+        Monster foe = monsterAt(6, 3);
+        AdeptPassives passives = neverFires();
+        reloading = true;
+        for (String family : new String[]{"BOW", "CROSSBOW", "FIREARM"}) {
+            assertNull(family, passives.onFullHit(player, weapon(family), foe, maze, 5, hand));
+        }
+        assertNull(passives.onThrownHit(player, weapon("BLADE"), foe));
+        assertTrue(struck.isEmpty());
+        assertTrue("the reload was not cut", reloading);
+    }
+
+    @Test
+    public void anUnknownRangedArtNeverFires() {
+        Monster foe = monsterAt(6, 3);
+        assertNull(alwaysFires().onFullHit(player, weapon("BOW"), foe, maze, 5, hand));
+        assertNull(alwaysFires().onThrownHit(player, weapon("BLADE"), foe));
+        assertTrue(struck.isEmpty());
     }
 }
