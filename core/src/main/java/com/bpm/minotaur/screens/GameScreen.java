@@ -1473,6 +1473,11 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.managers.WorldLogManager.getInstance().tellLastLife(
                         worldManager.getHistory().world(), worldManager.getHistory().lastLifeDeeds(),
                         DoomManager.getInstance().getDeathCount());
+                // A monster may have slain Tarmin off-screen as this death opened an Era: the Age
+                // ends, and the new Tarmin begins his Bridge from nothing (#292).
+                if (com.bpm.minotaur.managers.WorldLogManager.getInstance().closeAgesEnded(worldManager.getHistory())) {
+                    DoomManager.getInstance().resetDeaths();
+                }
                 if (DoomManager.getInstance().isCrossingPending()) {
                     // A death while the Warden stood: Tarmin crosses (#276, #290).
                     worldManager.getHistory().recordCrossing();
@@ -1979,7 +1984,8 @@ public class GameScreen extends BaseScreen {
         if (nameable) death.figure(m.getFigureId()).nemesis(m.getNemesisId());
         GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
         return death.of(player.getLife() != null ? player.getLife().name : null)
-                .at(level, chunk != null ? chunk.x : 0, chunk != null ? chunk.y : 0);
+                .at(level, chunk != null ? chunk.x : 0, chunk != null ? chunk.y : 0)
+                .hunger(DoomManager.getInstance().getDeathCount());
     }
 
     /** The dying life's gear in hand and equipped goes to the Nemesis that killed it (#284). */
@@ -2005,6 +2011,40 @@ public class GameScreen extends BaseScreen {
         // A monster's kind, not a name: "a Kobold", "an Ogre".
         String kind = com.bpm.minotaur.ui.UiNames.fromConstant(killer);
         return ("AEIOU".indexOf(Character.toUpperCase(kind.charAt(0))) >= 0 ? "an " : "a ") + kind;
+    }
+
+    /**
+     * Tarmin is slain by the Champion (#291). The fight is not built yet; a playtest scenario
+     * fires this until it is. The player chooses what to do with the Treasure and the throne.
+     */
+    public void onTarminSlain() {
+        if (worldManager == null || worldManager.getHistory() == null) return;
+        game.setScreen(new ThroneChoiceScreen(game, this));
+    }
+
+    /**
+     * The Champion chose (#291): the Age ends with its Reckoning, this life ends with it -- given
+     * rest, or given the throne -- and the soul wakes in a new prisoner, the curse being what it is.
+     */
+    public void endAgeByChampion(boolean tookThrone) {
+        String name = player.getLife() != null ? player.getLife().name : null;
+        com.bpm.minotaur.gamedata.history.AgeEnding ending = worldManager.getHistory().recordTarminSlain(tookThrone, name);
+        com.bpm.minotaur.managers.WorldLogManager log = com.bpm.minotaur.managers.WorldLogManager.getInstance();
+        log.die(tookThrone ? "Took Tarmin's throne, and became " + ending.newTitle + "."
+                        : "Returned the Treasure to the Rift, and was allowed to die.",
+                tookThrone ? "the throne" : "rest", "Castle Tarmin",
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().getExpeditionTurns());
+        log.closeAgeByChampion(ending);
+        // The new Tarmin begins his own Bridge, from nothing.
+        DoomManager.getInstance().resetDeaths();
+        // The life is over: what it carried stays with it, as at a death.
+        player.getInventory().setRightHand(null);
+        player.getInventory().setLeftHand(null);
+        if (player.getEquipment() != null) player.getEquipment().stripAllEquipped();
+        player.getInventory().getMainInventory().clear();
+        player.getInventory().clearQuickSlots();
+        respawnInShelter(0, 0, DoomManager.getInstance().getDeathCount(), DoomManager.getInstance().getBridgeIntegrity());
+        SaveManager.getInstance().saveActiveSlot(player, worldManager);
     }
 
     /** The Last Crossing's Reckoning, once no god was left to hold Tarmin; null until then. */

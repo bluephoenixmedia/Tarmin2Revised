@@ -52,7 +52,18 @@ public class WorldLogScreen extends BaseScreen {
     /** How many old gods still keep the soul; -1 when unknown. */
     private final int keepers;
     /** The list entries that stand for a Bridge's Reckoning, and the Bridge each stands for. */
-    private final java.util.Map<LifeRecord, com.bpm.minotaur.gamedata.worldlog.Bridge> reckoningPages = new java.util.HashMap<>();
+    private final java.util.Map<LifeRecord, Ending> reckoningPages = new java.util.HashMap<>();
+
+    /** A page that tells how an Age or a Bridge ended. */
+    private static final class Ending {
+        final String name;
+        final com.bpm.minotaur.gamedata.worldlog.Reckoning reckoning;
+
+        Ending(String name, com.bpm.minotaur.gamedata.worldlog.Reckoning reckoning) {
+            this.name = name;
+            this.reckoning = reckoning;
+        }
+    }
 
     public WorldLogScreen(Tarmin2 game, Screen back, String soulName, int keepers) {
         super(game);
@@ -88,19 +99,23 @@ public class WorldLogScreen extends BaseScreen {
         reckoningPages.clear();
         Table list = new Table();
         list.top().left();
-        // Bridge by Bridge, newest first; an ended Bridge's Reckoning heads its lives (#290).
-        for (com.bpm.minotaur.gamedata.worldlog.Bridge bridge : log.bridges()) {
-            list.add(UiLabels.ellipsized(UiGlyphs.sanitize(bridge.name.toUpperCase()), new Label.LabelStyle(skin.getFontMain(), UiTheme.GOLD)))
-                    .width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_MD).row();
-            if (bridge.reckoning != null) {
-                LifeRecord page = new LifeRecord();
-                reckoningPages.put(page, bridge);
-                list.add(entry(page)).width(UiTheme.LIST_COLUMN_W).row();
-            }
-            for (Era era : bridge.eras) {
-                Label heading = UiLabels.ellipsized(UiGlyphs.sanitize(era.name.toUpperCase()), UiStyles.caption(skin, UiTheme.GOLD));
-                list.add(heading).width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_SM).row();
-                for (LifeRecord life : era.lives) list.add(entry(life)).width(UiTheme.LIST_COLUMN_W).row();
+        // Age by Age, then Bridge by Bridge, newest first; each ended one's Reckoning heads it (#290, #291).
+        for (com.bpm.minotaur.gamedata.worldlog.Age age : log.ages()) {
+            list.add(UiLabels.ellipsized(UiGlyphs.sanitize(age.name.toUpperCase()), new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
+                    .width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_XL).row();
+            if (age.reckoning != null) list.add(endingEntry(new Ending(age.name, age.reckoning))).width(UiTheme.LIST_COLUMN_W).row();
+            for (com.bpm.minotaur.gamedata.worldlog.Bridge bridge : age.bridges) {
+                list.add(UiLabels.ellipsized(UiGlyphs.sanitize(bridge.name.toUpperCase()), new Label.LabelStyle(skin.getFontMain(), UiTheme.GOLD)))
+                        .width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_MD).row();
+                // A Bridge its Age's end closed is told by the Age's page above.
+                if (bridge.reckoning != null && bridge.reckoning.end != com.bpm.minotaur.gamedata.worldlog.Reckoning.End.AGE_ENDED) {
+                    list.add(endingEntry(new Ending(bridge.name, bridge.reckoning))).width(UiTheme.LIST_COLUMN_W).row();
+                }
+                for (Era era : bridge.eras) {
+                    Label heading = UiLabels.ellipsized(UiGlyphs.sanitize(era.name.toUpperCase()), UiStyles.caption(skin, UiTheme.GOLD));
+                    list.add(heading).width(UiTheme.LIST_COLUMN_W).left().padTop(UiTheme.PAD_SM).row();
+                    for (LifeRecord life : era.lives) list.add(entry(life)).width(UiTheme.LIST_COLUMN_W).row();
+                }
             }
         }
         if (log.unremembered() > 0) list.add(entry(null)).width(UiTheme.LIST_COLUMN_W).padTop(UiTheme.PAD_MD).row();
@@ -142,6 +157,12 @@ public class WorldLogScreen extends BaseScreen {
         return bar;
     }
 
+    private TextButton endingEntry(Ending ending) {
+        LifeRecord page = new LifeRecord();
+        reckoningPages.put(page, ending);
+        return entry(page);
+    }
+
     private TextButton entry(final LifeRecord life) {
         final int index = order.size();
         order.add(life);
@@ -174,12 +195,12 @@ public class WorldLogScreen extends BaseScreen {
         }
         LifeRecord life = order.get(selected);
         if (reckoningPages.containsKey(life)) {
-            com.bpm.minotaur.gamedata.worldlog.Bridge bridge = reckoningPages.get(life);
-            page.add(wrap(bridge.name.toUpperCase(), new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
+            Ending ending = reckoningPages.get(life);
+            page.add(wrap(ending.name.toUpperCase(), new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD)))
                     .padBottom(UiTheme.PAD_MD).row();
-            page.add(wrap(bridge.reckoning.plain, UiStyles.body(skin))).padBottom(UiTheme.PAD_MD).row();
+            page.add(wrap(ending.reckoning.plain, UiStyles.body(skin))).padBottom(UiTheme.PAD_MD).row();
             page.add(UiLabels.ellipsized("AS THE KNELL TELLS IT", UiStyles.caption(skin, UiTheme.GOLD))).row();
-            page.add(wrap(bridge.reckoning.mythic, UiStyles.body(skin, UiTheme.TEXT_DIM))).row();
+            page.add(wrap(ending.reckoning.mythic, UiStyles.body(skin, UiTheme.TEXT_DIM))).row();
             return page;
         }
         if (life == LEARNED) {

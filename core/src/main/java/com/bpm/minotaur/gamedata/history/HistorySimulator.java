@@ -907,10 +907,13 @@ public final class HistorySimulator {
             House killer = world.house(deed.target);
             if (killer != null) killer.prestige += 3;
             Nemeses.fell(world, deed);
+            Ages.maybeUsurped(world, deed.hunger);
         } else if (deed.kind == PlayerDeed.Kind.WARDEN_FELL) {
             world.wardensFallen++;
         } else if (deed.kind == PlayerDeed.Kind.TARMIN_CROSSED) {
             world.crossings++;
+        } else if (deed.kind == PlayerDeed.Kind.TARMIN_SLAIN) {
+            Ages.slainByChampion(world, deed.target == 1, deed.victim);
         } else if (deed.kind == PlayerDeed.Kind.HOUSE_ROSE) {
             House rose = world.house(deed.target);
             if (rose != null) rose.prestige += HOUSE_ROSE_PRESTIGE;

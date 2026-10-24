@@ -119,6 +119,24 @@ public final class WorldLogManager implements SlotScopedState {
         save();
     }
 
+    /** The Champion slew Tarmin: the Age ends with its Reckoning (#291). */
+    public void closeAgeByChampion(com.bpm.minotaur.gamedata.history.AgeEnding ending) {
+        log().closeAge(com.bpm.minotaur.gamedata.worldlog.Reckonings.ageEnded(
+                com.bpm.minotaur.gamedata.worldlog.Age.nameOf(log().currentAge()), log().last(), ending));
+        save();
+    }
+
+    /**
+     * A monster slew Tarmin off-screen (#292): the log learns of it at the Shifting and ends the
+     * Age. Returns whether any Age ended, so the caller can begin the new Tarmin's Bridge.
+     */
+    public boolean closeAgesEnded(HistoryManager history) {
+        if (history == null) return false;
+        boolean ended = log().closeAgesEnded(history.world().ageEndings()) > 0;
+        if (ended) save();
+        return ended;
+    }
+
     /** No god was left to hold Tarmin: the world's last Reckoning (#278, #290). */
     public com.bpm.minotaur.gamedata.worldlog.Reckoning lastCrossing(HistoryManager history) {
         com.bpm.minotaur.gamedata.worldlog.Reckoning r = com.bpm.minotaur.gamedata.worldlog.Reckonings.lastCrossing(

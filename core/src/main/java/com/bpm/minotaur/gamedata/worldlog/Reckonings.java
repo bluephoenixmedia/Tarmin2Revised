@@ -39,6 +39,40 @@ public final class Reckonings {
                         + "the world above. The soul has no keeper now.");
     }
 
+    /** Tarmin was slain, by the Champion or by a monster, and {@code ending.newTitle} reigns (#291, #292). */
+    public static Reckoning ageEnded(String age, LifeRecord last, com.bpm.minotaur.gamedata.history.AgeEnding ending) {
+        String who = nameOf(last);
+        String old = ending.oldTitle;
+        switch (ending.kind) {
+            case RETURNED:
+                return new Reckoning(Reckoning.End.AGE_ENDED,
+                        capital(age) + " ended when " + who + " slew " + old + " and sealed the Rift with the Treasure. "
+                                + "The old gods woke, and " + ending.by + " took the empty throne and the name "
+                                + ending.newTitle + ".",
+                        who + " returned the Treasure to the Rift, and was allowed to die. Hell does not keep an "
+                                + "empty throne: " + ending.newTitle + " sits on it now.");
+            case THRONE:
+                return new Reckoning(Reckoning.End.AGE_ENDED,
+                        capital(age) + " ended when " + who + " slew " + old + " and sat down on his throne. "
+                                + who + " is " + ending.newTitle + " now, and the next life of the soul is sent to hunt them.",
+                        "The soul's own hand slew Tarmin, and the soul's own hand wears his crown. "
+                                + ending.newTitle + " begins a new Bridge.");
+            default:
+                return new Reckoning(Reckoning.End.AGE_ENDED,
+                        capital(age) + " ended when " + usurpation(ending) + ", and " + old + " fell. "
+                                + capital(ending.by) + " took the throne and the name: " + ending.fullTitle() + ".",
+                        old + " is dead, and no seeker struck the blow. Long live " + ending.newTitle + ".");
+        }
+    }
+
+    private static String usurpation(com.bpm.minotaur.gamedata.history.AgeEnding ending) {
+        switch (ending.kind) {
+            case NEMESIS: return ending.by + ", grown fat on the soul's lives, challenged Tarmin in his hall";
+            case MEGABEAST: return ending.by + " broke into Castle Tarmin";
+            default: return "the siege of " + ending.by + " broke Castle Tarmin";
+        }
+    }
+
     private static String nameOf(LifeRecord life) {
         return life != null ? life.name : "a nameless prisoner";
     }

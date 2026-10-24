@@ -181,6 +181,17 @@ public final class HistoryManager {
         apply(new PlayerDeed(PlayerDeed.Kind.WARDEN_FELL, -1, world.liveSeasons()));
     }
 
+    /**
+     * The Champion slew Tarmin (#291), and returned the Treasure or took the throne as
+     * {@code lifeName}. Returns how the Age ended.
+     */
+    public com.bpm.minotaur.gamedata.history.AgeEnding recordTarminSlain(boolean tookThrone, String lifeName) {
+        PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.TARMIN_SLAIN, tookThrone ? 1 : 0, world.liveSeasons());
+        deed.victim = lifeName;
+        apply(deed);
+        return world.ageEndings().get(world.ageEndings().size() - 1);
+    }
+
     /** While Tarmin was gone, {@code houseId} took the most of the Maze (#276, #290). */
     public void recordHouseRose(int houseId) {
         apply(new PlayerDeed(PlayerDeed.Kind.HOUSE_ROSE, houseId, world.liveSeasons()));
