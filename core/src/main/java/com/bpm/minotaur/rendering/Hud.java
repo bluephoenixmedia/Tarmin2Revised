@@ -287,23 +287,17 @@ public class Hud implements Disposable {
         artBarTable.setBackground(hudSkin.getPanelBg());
         artBarTable.pad(UiTheme.PAD_XS);
         // Ctrl is said once, in the header, so each slot's badge is just its key.
-        Label header = new Label("ARTS [CTRL]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
-        artBarTable.add(header).colspan(artSlots.length).left().padLeft(UiTheme.PAD_XS).padBottom(UiTheme.PAD_XS / 2f).row();
+        artBarTable.add(artLabel("ARTS [CTRL]", HudSkin.COL_GOLD_BRIGHT)).colspan(artSlots.length).left()
+                .padLeft(UiTheme.PAD_XS).padBottom(UiTheme.PAD_XS / 2f).row();
         for (int i = 0; i < artSlots.length; i++) {
             final int slot = i;
             artSlots[i] = new Table();
             artSlots[i].setBackground(hudSkin.getSlotRecessed());
             artSlots[i].pad(UiTheme.PAD_XS / 2f, UiTheme.PAD_XS, UiTheme.PAD_XS / 2f, UiTheme.PAD_XS);
-            String key = com.badlogic.gdx.Input.Keys.toString(com.bpm.minotaur.managers.SettingsManager.getInstance()
-                    .getKey(com.bpm.minotaur.managers.SettingsManager.artAction(i)));
-            // White styles: a Label's colour multiplies its style's, so each state's colour is set on the actor.
-            artKeyLabels[i] = new Label(UiGlyphs.sanitize("[" + key + "]"),
-                    new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
-            artKeyLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
-            artRankLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
-            artNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
-            artNameLabels[i].setEllipsis(true);
-            artStateLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), Color.WHITE));
+            artKeyLabels[i] = artLabel("", HudSkin.COL_GOLD_MUTED);
+            artRankLabels[i] = artLabel("", HudSkin.COL_GOLD_BRIGHT);
+            artNameLabels[i] = artLabel("---", HudSkin.COL_SPELL_EMPTY);
+            artStateLabels[i] = artLabel("", HudSkin.COL_TEXT_MUTED);
             artSlots[i].add(artKeyLabels[i]).left().padRight(UiTheme.PAD_XS);
             artSlots[i].add(artRankLabels[i]).left().padRight(UiTheme.PAD_XS);
             // minWidth(0) lets the cell shrink so the ellipsis actually engages.
@@ -329,11 +323,8 @@ public class Hud implements Disposable {
                         details += " Ready in " + s.turnsLeft + " turns.";
                     }
                     Vector2 pos = artSlots[slot].localToStageCoordinates(new Vector2(0, 0));
-                    String action = com.bpm.minotaur.managers.SettingsManager.artAction(slot);
                     hudTooltip.showCustomText(UiGlyphs.sanitize(com.bpm.minotaur.ui.UiNames.of(s.art)),
-                            UiGlyphs.sanitize(details), pos.x + UiTheme.PAD_XL, pos.y,
-                            UiGlyphs.sanitize(com.bpm.minotaur.managers.SettingsManager.keyLabel(action,
-                                    com.bpm.minotaur.managers.SettingsManager.getInstance().getKey(action))));
+                            UiGlyphs.sanitize(details), pos.x + UiTheme.PAD_XL, pos.y, UiGlyphs.sanitize(artKeyOf(slot, true)));
                 }
 
                 @Override
@@ -347,6 +338,29 @@ public class Hud implements Disposable {
     }
 
     /**
+     * One of the Art bar's labels: ellipsized, sanitized, and tinted on the actor. A Label's colour
+     * multiplies its style's, so the style stays neutral and each state sets the actor's colour.
+     */
+    private Label artLabel(String text, Color color) {
+        Label label = new Label(UiGlyphs.sanitize(text), new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_STYLE_NEUTRAL));
+        label.setEllipsis(true);
+        label.setColor(color);
+        return label;
+    }
+
+    private void setArtText(Label label, String text) {
+        label.setText(UiGlyphs.sanitize(text));
+    }
+
+    /** Slot {@code slot}'s key as bound now: "1", or "Ctrl+1" with the chord spelled out. */
+    private static String artKeyOf(int slot, boolean withCtrl) {
+        String action = com.bpm.minotaur.managers.SettingsManager.artAction(slot);
+        int key = com.bpm.minotaur.managers.SettingsManager.getInstance().getKey(action);
+        return withCtrl ? com.bpm.minotaur.managers.SettingsManager.keyLabel(action, key)
+                : com.badlogic.gdx.Input.Keys.toString(key);
+    }
+
+    /**
      * Shows each slot's state: ready, cooling (dimmed, turns left), Held, and a hollow rank mark for
      * an Art kept from an earlier life. The strip hides while every slot is empty, and sits just above
      * the spell strip: beside it, five spells and four full Art names do not fit the canvas.
@@ -357,38 +371,39 @@ public class Hud implements Disposable {
         boolean any = false;
         for (int i = 0; i < slots.length; i++) {
             com.bpm.minotaur.gamedata.arts.ArtBar.Slot s = slots[i];
+            setArtText(artKeyLabels[i], "[" + artKeyOf(i, false) + "]"); // follows a rebinding
             if (s.art == null) {
                 artSlots[i].setBackground(hudSkin.getSlotRecessed());
-                artRankLabels[i].setText("");
-                artNameLabels[i].setText("---");
+                setArtText(artRankLabels[i], "");
+                setArtText(artNameLabels[i], "---");
                 artNameLabels[i].setColor(HudSkin.COL_SPELL_EMPTY);
-                artStateLabels[i].setText("");
+                setArtText(artStateLabels[i], "");
                 continue;
             }
             any = true;
-            String rank = s.art.rank == com.bpm.minotaur.gamedata.player.Mastery.Rank.MASTER ? "M" : "E";
+            String rank = com.bpm.minotaur.ui.UiNames.of(s.art.rank).substring(0, 1);
             // A trained Art's rank sits in a frame; a kept one's stands bare and dim: the hollow mark.
             // (Not parentheses: intellivision.ttf draws them as brackets.)
-            artRankLabels[i].setText(s.kept ? " " + rank + " " : "[" + rank + "]");
+            setArtText(artRankLabels[i], s.kept ? " " + rank + " " : "[" + rank + "]");
             artRankLabels[i].setColor(s.kept ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_GOLD_BRIGHT);
-            artNameLabels[i].setText(UiGlyphs.sanitize(com.bpm.minotaur.ui.UiNames.of(s.art)));
+            setArtText(artNameLabels[i], com.bpm.minotaur.ui.UiNames.of(s.art));
             switch (s.state) {
                 case HELD:
                     artSlots[i].setBackground(hudSkin.getSlotActive());
                     artNameLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
-                    artStateLabels[i].setText("HELD");
+                    setArtText(artStateLabels[i], "HELD");
                     artStateLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
                 case COOLING:
                     artSlots[i].setBackground(hudSkin.getSlotRecessed());
                     artNameLabels[i].setColor(HudSkin.COL_SPELL_UNAFFORDABLE);
-                    artStateLabels[i].setText(String.valueOf(s.turnsLeft));
+                    setArtText(artStateLabels[i], String.valueOf(s.turnsLeft));
                     artStateLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
                     break;
                 default:
                     artSlots[i].setBackground(hudSkin.getSlotActive());
                     artNameLabels[i].setColor(HudSkin.COL_TEXT_ON_DARK);
-                    artStateLabels[i].setText("");
+                    setArtText(artStateLabels[i], "");
                     break;
             }
         }

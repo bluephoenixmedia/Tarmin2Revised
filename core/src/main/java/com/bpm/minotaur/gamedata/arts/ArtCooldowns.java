@@ -1,8 +1,10 @@
 package com.bpm.minotaur.gamedata.arts;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The body's Arts on cooldown (#245; spec section 5), counted in the player's turns. The soul keeps
@@ -11,12 +13,18 @@ import java.util.Map;
 public final class ArtCooldowns {
 
     private final Map<CombatArt, Integer> left = new EnumMap<>(CombatArt.class);
+    /** Started this turn: the turn an Art is used in does not count toward its cooldown. */
+    private final Set<CombatArt> fresh = EnumSet.noneOf(CombatArt.class);
 
-    /** {@code art} was used: it cools for {@code turns} of the player's turns. */
+    /** {@code art} was used: it cools for the {@code turns} of the player's turns that follow. */
     public void start(CombatArt art, int turns) {
         if (art == null) return;
-        if (turns > 0) left.put(art, turns);
-        else left.remove(art);
+        if (turns > 0) {
+            left.put(art, turns);
+            fresh.add(art);
+        } else {
+            left.remove(art);
+        }
     }
 
     /** Turns until {@code art} is ready again; 0 when it is ready. */
@@ -31,8 +39,9 @@ public final class ArtCooldowns {
 
     /** One of the player's turns passes. */
     public void tick() {
-        left.replaceAll((art, turns) -> turns - 1);
+        left.replaceAll((art, turns) -> fresh.contains(art) ? turns : turns - 1);
         left.values().removeIf(turns -> turns <= 0);
+        fresh.clear();
     }
 
     /** For the save: turns left by Art name. */

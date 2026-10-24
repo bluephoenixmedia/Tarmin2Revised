@@ -82,6 +82,37 @@ public class ArtBarCombatTest {
     }
 
     @Test
+    public void aLeftHandArtSwingsTheLeftHandWeapon() {
+        ItemTemplate sword = new ItemTemplate();
+        sword.isWeapon = true;
+        sword.weaponFamily = "BLADE";
+        sword.damageDice = "1d2";
+        Item club = player.getInventory().getRightHand();
+        player.getInventory().setRightHand(Item.fromTemplate(Item.ItemType.SWORD, sword));
+        player.getInventory().setLeftHand(club);
+        Monster foe = foeAt(4, 3);
+        int bluntHits = player.getStats().getMastery().toSave().getOrDefault("BLUNT", 0);
+
+        assertEquals("Battering Ram rides in slot 3, the left hand's", ActiveArts.Outcome.USED, combat.useArt(2));
+
+        assertTrue("the club struck", foe.getCurrentHP() < 200);
+        assertEquals("the club's Family trained", bluntHits + 1,
+                (int) player.getStats().getMastery().toSave().getOrDefault("BLUNT", 0));
+        assertFalse(player.getStats().getMastery().toSave().containsKey("BLADE"));
+    }
+
+    @Test
+    public void aCombatTurnCoolsTheArtsToo() {
+        player.getArtCooldowns().start(CombatArt.BATTERING_RAM, 5);
+        combat.tickPlayerTimers(); // the turn of use
+        combat.tickPlayerTimers();
+        assertEquals(4, player.getArtCooldowns().turnsLeft(CombatArt.BATTERING_RAM));
+        combat.setCurrentState(CombatManager.CombatState.PLAYER_TURN);
+        combat.passTurnToMonster();
+        assertEquals(3, player.getArtCooldowns().turnsLeft(CombatArt.BATTERING_RAM));
+    }
+
+    @Test
     public void aWallBetweenThePlayerAndTheFoeMeansNoFoeInReach() {
         maze.setTile(3, 3, Direction.EAST.getWallMask());
         foeAt(4, 3);

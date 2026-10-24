@@ -117,10 +117,11 @@ public class ArtBarTest {
     }
 
     @Test
-    public void cooldownsCountDownInTurnsAndEndAtZero() {
+    public void cooldownsCountTheTurnsAfterTheUseAndEndAtZero() {
         ArtCooldowns cooldowns = new ArtCooldowns();
         cooldowns.start(CombatArt.BATTERING_RAM, 2);
-        assertTrue(cooldowns.isCooling(CombatArt.BATTERING_RAM));
+        cooldowns.tick(); // the turn the Art was used in
+        assertEquals("the turn of use does not count", 2, cooldowns.turnsLeft(CombatArt.BATTERING_RAM));
         cooldowns.tick();
         assertEquals(1, cooldowns.turnsLeft(CombatArt.BATTERING_RAM));
         cooldowns.tick();

@@ -4017,7 +4017,7 @@ public class Player {
     /** This body's Arts on cooldown (#245): they die with it, unlike the soul's Arts. */
     private final com.bpm.minotaur.gamedata.arts.ArtCooldowns artCooldowns = new com.bpm.minotaur.gamedata.arts.ArtCooldowns();
     /** The readied Art drawn and waiting (Held Arrow), shown as Held on the Art bar; null for none. */
-    private transient com.bpm.minotaur.gamedata.arts.CombatArt heldArt;
+    private com.bpm.minotaur.gamedata.arts.CombatArt heldArt;
 
     public com.bpm.minotaur.gamedata.arts.ArtCooldowns getArtCooldowns() {
         return artCooldowns;

@@ -84,6 +84,8 @@ public class HudSkin implements Disposable {
     public static final Color COL_TEXT_ON_DARK     = Color.valueOf("D8CDBA");
     /** De-emphasised text (timestamps, empty states) that must still be legible. */
     public static final Color COL_TEXT_MUTED       = Color.valueOf("9A8F7E");
+    /** A Label style colour that leaves the actor's own tint as drawn: a Label's colour multiplies its style's. */
+    public static final Color COL_STYLE_NEUTRAL    = Color.valueOf("FFFFFF");
 
     // Palette: Parchment/Vellum cards (recipes, instructions, shelter-hub prompts)
     public static final Color COL_PARCHMENT_TOP     = Color.valueOf("E6D3A8");

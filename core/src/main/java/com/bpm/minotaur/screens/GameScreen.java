@@ -3210,9 +3210,18 @@ public class GameScreen extends BaseScreen {
         }
     }
 
-    /** Uses the Art in Art bar slot {@code slot} (#245): from its key or a click on the HUD strip. */
+    /**
+     * Uses the Art in Art bar slot {@code slot} (#245): from its key or a click on the HUD strip.
+     * Only on the player's own turn; in a fight the turn then passes as combat passes it.
+     */
     public void useArt(int slot) {
-        if (combatManager.useArt(slot) == com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome.USED) {
+        CombatManager.CombatState state = combatManager.getCurrentState();
+        boolean fighting = state == CombatManager.CombatState.PLAYER_TURN || state == CombatManager.CombatState.PLAYER_MENU;
+        if (state != CombatManager.CombatState.INACTIVE && !fighting) return;
+        if (combatManager.useArt(slot) != com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome.USED) return;
+        if (fighting) {
+            combatManager.passTurnAfterArt();
+        } else {
             playerTurnTakesAction();
         }
     }
@@ -3225,8 +3234,7 @@ public class GameScreen extends BaseScreen {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         checkForMimicInFront();
-        combatManager.tickReload();
-        player.getArtCooldowns().tick();
+        combatManager.tickPlayerTimers();
         tickPowderDampness();
         tickAreaEffects();
         if (player.getInjuryManager() != null) {

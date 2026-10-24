@@ -42,7 +42,7 @@ public class ActiveArtsTest {
         }
 
         @Override
-        public boolean blow(Monster target, String word) {
+        public boolean blow(Monster target, Item weapon, String word) {
             return blowsLand;
         }
 

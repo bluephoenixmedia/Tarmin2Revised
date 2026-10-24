@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata.arts;
 
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.ForcedMovement;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
@@ -26,8 +27,8 @@ public final class ActiveArts {
         /** The hostile in the tile the player faces, or null. */
         Monster foeInFront();
 
-        /** One blow of the held weapon at {@code target}, shown with {@code word}: true if it hit. */
-        boolean blow(Monster target, String word);
+        /** One blow of {@code weapon} (null for bare hands) at {@code target}, shown with {@code word}: true if it hit. */
+        boolean blow(Monster target, Item weapon, String word);
 
         /** Extra damage on {@code target}, shown with {@code word}. */
         void hurt(Monster target, int damage, String word);
@@ -72,7 +73,7 @@ public final class ActiveArts {
         Outcome outcome;
         switch (art) {
             case BATTERING_RAM:
-                outcome = batteringRam(player, arena);
+                outcome = batteringRam(player, handOf(player, slot), arena);
                 break;
             default:
                 arena.log(name + " cannot be used yet.");
@@ -87,16 +88,21 @@ public final class ActiveArts {
         return outcome;
     }
 
+    /** The weapon a slot's Art swings: slots 1-2 belong to the right hand, 3-4 to the left. */
+    static Item handOf(Player player, int slot) {
+        return slot < 2 ? player.getInventory().getRightHand() : player.getInventory().getLeftHand();
+    }
+
     /**
      * Battering Ram: a blow that knocks the foe back a tile and Dazes it. Driven into a wall it
      * takes 1d6 more and is Stunned. Heavies and bosses hold their ground but still take the Daze.
      */
-    private static Outcome batteringRam(Player player, Arena arena) {
+    private static Outcome batteringRam(Player player, Item weapon, Arena arena) {
         Monster foe = arena.foeInFront();
         if (foe == null) return Outcome.NO_TARGET;
         String name = UiNames.of(CombatArt.BATTERING_RAM);
         String who = AffinityText.nameOf(foe);
-        if (!arena.blow(foe, "RAM")) {
+        if (!arena.blow(foe, weapon, "RAM")) {
             arena.log(name + ": " + who + " slips the blow.");
             return Outcome.USED;
         }

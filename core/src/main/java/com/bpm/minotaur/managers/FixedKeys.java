@@ -58,7 +58,7 @@ public final class FixedKeys {
      * only with Ctrl held, so they never clash.
      */
     public static String clashFor(String action, int keycode) {
-        if (action == null || action.startsWith("MAP_") || action.startsWith("ART_")) return null;
+        if (action == null || action.startsWith("MAP_") || SettingsManager.isArtAction(action)) return null;
         for (Entry e : LEGEND) {
             if (e.covers(keycode)) return e.role;
         }

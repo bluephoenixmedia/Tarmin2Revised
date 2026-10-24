@@ -58,23 +58,25 @@ public class SettingsManager {
         keyBindingDescriptions.put("MAP_SUGGEST", "Map: Take Suggested Step");
         keyBindingDescriptions.put("MAP_PIN", "Map: Pin");
         keyBindingDescriptions.put("MAP_RECENTER", "Map: Centre on You");
-        for (int slot = 0; slot < ART_SLOTS; slot++) {
+        for (int slot = 0; slot < com.bpm.minotaur.gamedata.arts.ArtBar.SLOTS; slot++) {
             keyBindingDescriptions.put(artAction(slot), "Combat Art " + (slot + 1));
         }
     }
 
-    /** The Art bar's four slots (#245): each action's key is pressed with Ctrl. */
-    private static final int ART_SLOTS = 4;
-
-    /** "ART_1" for slot 0. */
+    /** "ART_1" for slot 0: the Art bar's slots (#245), each key pressed with Ctrl. */
     public static String artAction(int slot) {
         return "ART_" + (slot + 1);
+    }
+
+    /** An Art bar action, read only with Ctrl held. */
+    public static boolean isArtAction(String action) {
+        return action != null && action.startsWith("ART_");
     }
 
     /** How a binding reads to the player: "Ctrl+1" for an Art slot, else the key's name. */
     public static String keyLabel(String action, int keycode) {
         String key = Input.Keys.toString(keycode);
-        return action != null && action.startsWith("ART_") ? "Ctrl+" + key : key;
+        return isArtAction(action) ? "Ctrl+" + key : key;
     }
 
     public static SettingsManager getInstance() {

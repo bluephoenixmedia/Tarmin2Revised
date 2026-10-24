@@ -706,6 +706,17 @@ public class CombatManager {
         return com.bpm.minotaur.gamedata.arts.ActiveArts.use(player, slot, artArena);
     }
 
+    /** An Art used on the player's combat turn: the turn passes as a cast spell's does. */
+    public void passTurnAfterArt() {
+        closeMenuOrPassTurn();
+    }
+
+    /** Everything a player's turn wears down: the reload under way and the Arts cooling (#245). */
+    public void tickPlayerTimers() {
+        tickReload();
+        if (player != null) player.getArtCooldowns().tick();
+    }
+
     /** What an Active acts through: the maze, the foe in front, a blow of the held weapon, the log. */
     private final com.bpm.minotaur.gamedata.arts.ActiveArts.Arena artArena =
             new com.bpm.minotaur.gamedata.arts.ActiveArts.Arena() {
@@ -716,18 +727,16 @@ public class CombatManager {
 
                 @Override
                 public Monster foeInFront() {
-                    GridPoint2 front = new GridPoint2(
-                            (int) player.getPosition().x + (int) player.getFacing().getVector().x,
-                            (int) player.getPosition().y + (int) player.getFacing().getVector().y);
-                    Monster m = maze.getMonsters().get(front);
-                    if (m == null || m.getCurrentHP() <= 0 || m.isAlly() || m.isPeaceful()) return null;
                     int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
-                    return maze.isWallBlocking(px, py, player.getFacing()) ? null : m;
+                    if (maze.isWallBlocking(px, py, player.getFacing())) return null;
+                    Monster m = maze.getMonsters().get(new GridPoint2(
+                            px + (int) player.getFacing().getVector().x, py + (int) player.getFacing().getVector().y));
+                    return m == null || m.getCurrentHP() <= 0 || m.isAlly() || m.isPeaceful() ? null : m;
                 }
 
                 @Override
-                public boolean blow(Monster target, String word) {
-                    return landFreeBlow(target, word, player.getInventory().getRightHand());
+                public boolean blow(Monster target, Item weapon, String word) {
+                    return landFreeBlow(target, word, weapon);
                 }
 
                 @Override
@@ -1342,7 +1351,7 @@ public class CombatManager {
             }
         } else {
             // Pass Turn
-            tickReload();
+            tickPlayerTimers();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
 
@@ -3143,7 +3152,7 @@ public class CombatManager {
         if (currentState == CombatState.PLAYER_TURN) {
             // A combat turn is a world turn: the reload has to advance here too, or a
             // gun could only ever be reloaded by backing out of the fight.
-            tickReload();
+            tickPlayerTimers();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
             Gdx.app.log("CombatManager", "Player passed turn. Monster's turn.");
@@ -3154,7 +3163,7 @@ public class CombatManager {
 
     public void consumePlayerTurn() {
         if (currentState == CombatState.PLAYER_MENU || currentState == CombatState.PLAYER_TURN) {
-            tickReload();
+            tickPlayerTimers();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
             Gdx.app.log("CombatManager", "Player turn consumed. Monster's turn.");
