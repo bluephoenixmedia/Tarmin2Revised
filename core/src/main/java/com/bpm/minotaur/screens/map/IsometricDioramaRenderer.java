@@ -548,6 +548,14 @@ public final class IsometricDioramaRenderer implements Disposable {
         tgtRot = rotStep * (float) (Math.PI / 2.0);
     }
 
+    public float getCameraRotation() {
+        return camRot;
+    }
+
+    public float getTargetRotation() {
+        return tgtRot;
+    }
+
     public void centerOn(float wx, float wy) {
         tgtX = wx;
         tgtY = wy;
