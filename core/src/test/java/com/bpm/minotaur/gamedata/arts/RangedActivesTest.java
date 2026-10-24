@@ -77,7 +77,7 @@ public class RangedActivesTest {
 
         @Override
         public ActiveArts.Hurl hurl(Item weapon) {
-            return inLine == null ? new ActiveArts.Hurl(null, 0) : new ActiveArts.Hurl(inLine, 8);
+            return inLine == null ? ActiveArts.Hurl.MISSED : new ActiveArts.Hurl(inLine, 8);
         }
 
         @Override
@@ -331,6 +331,56 @@ public class RangedActivesTest {
         loaded = false;
         assertEquals(ActiveArts.Outcome.NOT_LOADED, ActiveArts.use(player, 0, arena));
         assertNull(player.getHeldArt());
+    }
+
+    @Test
+    public void markedSkullsAimHoldsThroughAWaitAndLapsesOnAnythingElse() {
+        wield("FIREARM", CombatArt.MARKED_SKULL);
+        inLine = foe(6, Monster.MonsterType.GOBLIN);
+        ActiveArts.use(player, 0, arena);
+        ActiveArts.turnPassed(player, arena); // the aiming turn
+        player.keepHold();
+        ActiveArts.turnPassed(player, arena); // a wait
+        assertEquals(CombatArt.MARKED_SKULL, player.getHeldArt());
+
+        ActiveArts.turnPassed(player, arena);
+        assertNull(player.getHeldArt());
+        assertTrue(cooling(CombatArt.MARKED_SKULL));
+    }
+
+    @Test
+    public void markedSkullsShotIsForTheFoeItAimedAt() {
+        wield("FIREARM", CombatArt.MARKED_SKULL);
+        Monster first = foe(6, Monster.MonsterType.GOBLIN);
+        inLine = first;
+        ActiveArts.use(player, 0, arena);
+        Monster second = foe(5, Monster.MonsterType.GOBLIN);
+        inLine = second; // another stepped in front
+
+        assertEquals("the aim moves to the new foe, and the turn is spent again",
+                ActiveArts.Outcome.READIED, ActiveArts.use(player, 0, arena));
+        assertTrue(shots.isEmpty());
+        assertEquals(ActiveArts.Outcome.USED, ActiveArts.use(player, 0, arena));
+        assertEquals(List.of(second), shotAt);
+    }
+
+    @Test
+    public void readyingOneArtWhileAnotherIsDrawnLetsTheFirstLapse() {
+        wield("BOW", CombatArt.HELD_ARROW);
+        ItemTemplate gun = new ItemTemplate();
+        gun.isWeapon = true;
+        gun.isRanged = true;
+        gun.weaponFamily = "FIREARM";
+        player.getInventory().setLeftHand(Item.fromTemplate(Item.ItemType.SWORD, gun));
+        player.learnArt(CombatArt.MARKED_SKULL, null);
+        player.getStats().getMastery().setRank(CombatArt.MARKED_SKULL.family, Rank.EXPERT);
+        inLine = foe(6, Monster.MonsterType.GOBLIN);
+        ActiveArts.use(player, 0, arena); // Held Arrow drawn
+
+        assertEquals(ActiveArts.Outcome.READIED, ActiveArts.use(player, 2, arena)); // Marked Skull, left hand
+
+        assertEquals(CombatArt.MARKED_SKULL, player.getHeldArt());
+        assertTrue("the arrow's stance lapsed into its cooldown", cooling(CombatArt.HELD_ARROW));
     }
 
     // --- Shattering Throw (Thrown) ---

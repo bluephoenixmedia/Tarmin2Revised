@@ -54,31 +54,25 @@ public final class ActiveArts {
         /** A combat log line. */
         void log(String line);
 
-        // --- The ranged Actives (#247); a melee-only stand-in may leave these out ---
+        // --- The ranged Actives (#247) ---
 
         /** The first hostile down the player's line within {@code weapon}'s reach (thrown, or shot); or null. */
-        default Monster foeInLine(Item weapon, boolean thrown) {
-            return null;
-        }
+        Monster foeInLine(Item weapon, boolean thrown);
 
         /** Whether {@code weapon} can loose a shot now: ammunition to hand, and no reload under way. */
-        default boolean loaded(Item weapon) {
-            return false;
-        }
+        boolean loaded(Item weapon);
 
-        /** A real shot of {@code weapon} at {@code target}: ammunition spent, flight drawn. True if it hit. */
-        default boolean shoot(Monster target, Item weapon, String word, Shot kind) {
-            return false;
-        }
+        /**
+         * A real shot of {@code weapon} at {@code target}: ammunition spent, flight drawn, and a gun's
+         * damp powder may still misfire. True if it hit.
+         */
+        boolean shoot(Monster target, Item weapon, String word, Shot kind);
 
         /** Throws {@code weapon} down the line, as the throw key does: it leaves the hand. */
-        default Hurl hurl(Item weapon) {
-            return new Hurl(null, 0);
-        }
+        Hurl hurl(Item weapon);
 
         /** {@code damage} to every creature beside {@code around}, the player included. */
-        default void splash(Monster around, int damage, String word) {
-        }
+        void splash(Monster around, int damage, String word);
     }
 
     /** How an Active's shot resolves. */
@@ -91,14 +85,20 @@ public final class ActiveArts {
         REACTION
     }
 
-    /** What a throw struck, and for how much; {@code struck} is null on a miss. */
+    /** What a throw struck, and for how much. */
     public static final class Hurl {
+        public static final Hurl MISSED = new Hurl(null, 0);
+
         public final Monster struck;
         public final int damage;
 
         public Hurl(Monster struck, int damage) {
             this.struck = struck;
             this.damage = damage;
+        }
+
+        public boolean hit() {
+            return struck != null;
         }
     }
 
@@ -148,6 +148,7 @@ public final class ActiveArts {
             arena.log(name + " is not ready: " + cooldowns.turnsLeft(art) + " turns.");
             return Outcome.COOLING;
         }
+        if (player.getHeldArt() != art) lapse(player, arena); // using another Art is not waiting
         Item weapon = handOf(player, slot);
         Outcome outcome;
         switch (art) {
@@ -218,10 +219,19 @@ public final class ActiveArts {
      */
     public static void turnPassed(Player player, Arena arena) {
         if (player == null) return;
-        boolean kept = player.takeHoldKept();
-        CombatArt held = player.getHeldArt();
-        if (held == null || kept) return;
+        if (!player.takeHoldKept()) lapse(player, arena);
+    }
+
+    /**
+     * A readied Art lapses: the player did something other than wait. Its cooldown starts. Called
+     * as the turn passes, and before any attack of the player's, so a foe struck back at by the
+     * player's own swing never draws the shot the swing gave up.
+     */
+    public static void lapse(Player player, Arena arena) {
+        CombatArt held = player == null ? null : player.getHeldArt();
+        if (held == null) return;
         player.setHeldArt(null);
+        player.setMarkedFoe(null);
         player.getArtCooldowns().start(held, player.artCooldown(held));
         arena.log(UiNames.of(held) + " lapses.");
     }
@@ -411,8 +421,9 @@ public final class ActiveArts {
     }
 
     /**
-     * Marked Skull: the first press aims, for a turn; the second takes a certain headshot, a
-     * critical that Dazes. A foe with no head to take takes a normal shot instead.
+     * Marked Skull: the first press aims at the foe in the line, for a turn; the second takes that
+     * foe's head, certain to hit, a critical that Dazes. If another foe now stands first in the
+     * line, the aim moves to it and the turn is spent again. A foe with no head takes a normal shot.
      */
     private static Outcome markedSkull(Player player, Item gun, Arena arena) {
         String name = UiNames.of(CombatArt.MARKED_SKULL);
@@ -420,20 +431,23 @@ public final class ActiveArts {
         Monster foe = arena.foeInLine(gun, false);
         if (foe == null) return Outcome.NO_TARGET;
         String who = AffinityText.nameOf(foe);
-        if (player.getHeldArt() != CombatArt.MARKED_SKULL) {
+        if (player.getHeldArt() != CombatArt.MARKED_SKULL || player.getMarkedFoe() != foe) {
             player.setHeldArt(CombatArt.MARKED_SKULL);
+            player.setMarkedFoe(foe);
             player.keepHold();
             arena.log(name + ": you sight on " + who + ".");
             return Outcome.READIED;
         }
         player.setHeldArt(null);
+        player.setMarkedFoe(null);
         if (!foe.hasHead()) {
             boolean hit = arena.shoot(foe, gun, "SHOT", Shot.NORMAL);
-            arena.log(name + ": " + who + " has no head to take" + (hit ? ", but the ball strikes it." : ", and the ball goes wide."));
+            arena.log(name + ": " + who + " has no head to take" + (hit ? ", but the ball strikes it." : ", and the shot is lost."));
             return Outcome.USED;
         }
-        arena.shoot(foe, gun, "HEADSHOT", Shot.HEADSHOT);
-        if (foe.getCurrentHP() <= 0) {
+        if (!arena.shoot(foe, gun, "HEADSHOT", Shot.HEADSHOT)) {
+            arena.log(name + ": the shot is lost.");
+        } else if (foe.getCurrentHP() <= 0) {
             arena.log(name + " takes the head of " + who + ".");
         } else {
             arena.log(name + " strikes " + who + " in the head. It is " + dazeWord(foe) + ".");
@@ -452,7 +466,7 @@ public final class ActiveArts {
         String name = UiNames.of(CombatArt.SHATTERING_THROW);
         String who = AffinityText.nameOf(foe);
         Hurl hurl = arena.hurl(weapon);
-        if (hurl.struck == null) {
+        if (!hurl.hit()) {
             arena.log(name + ": the throw misses " + who + ".");
             return Outcome.USED;
         }

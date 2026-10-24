@@ -170,7 +170,91 @@ public class RangedActivesCombatTest {
                 player.getArtCooldowns().turnsLeft(CombatArt.HELD_ARROW));
     }
 
+    @Test
+    public void aReactionShotLandsOnlyItsShare() {
+        arm(Item.ItemType.BOW, "BOW", CombatArt.HELD_ARROW, true);
+        player.getStats().setArrows(10);
+        Monster foe = foeAt(7, 3, 200);
+        hunting(foe);
+        combat.setArtRoll(() -> 0.71); // just past the x0.7
+        combat.useArt(0);
+
+        ai.updateMonster(foe, maze, player, true, combat);
+
+        assertEquals("loosed, and the arrow spent", 9, player.getArrows());
+        assertEquals("but the x0.7 let it miss, though AC -10 never turns an ordinary shot", 200, foe.getCurrentHP());
+    }
+
+    @Test
+    public void beingHitDoesNotBreakTheStance() {
+        arm(Item.ItemType.BOW, "BOW", CombatArt.HELD_ARROW, true);
+        player.getStats().setArrows(10);
+        Monster flanker = foeAt(3, 4, 200); // beside the player, off the line
+        combat.useArt(0);
+
+        for (int i = 0; i < 10; i++) combat.monsterMeleeStrike(flanker);
+
+        assertTrue("it struck at least once", player.getCurrentHP() < 500);
+        assertEquals(CombatArt.HELD_ARROW, player.getHeldArt());
+    }
+
+    @Test
+    public void aFastFoeThatSurvivesTheShotIsShotOnlyOnce() {
+        arm(Item.ItemType.BOW, "BOW", CombatArt.HELD_ARROW, true);
+        player.getStats().setArrows(10);
+        Monster bat = foeAt(8, 3, 200);
+        hunting(bat);
+        bat.setEnergy(TurnManager.BASE_TURN_COST * 4);
+        combat.useArt(0);
+
+        new TurnManager().processTurn(maze, player, ai, combat, null, events);
+
+        assertEquals("one arrow: the stance is spent on the first step", 9, player.getArrows());
+        assertTrue("and the bat kept coming", (int) bat.getPosition().x < 7);
+    }
+
+    @Test
+    public void aSwingGivesUpTheDrawnArrowBeforeTheFoeStrikesBack() {
+        arm(Item.ItemType.BOW, "BOW", CombatArt.HELD_ARROW, true);
+        player.getStats().setArrows(10);
+        combat.useArt(0);
+        ItemTemplate club = new ItemTemplate();
+        club.isWeapon = true;
+        club.weaponFamily = "BLUNT";
+        club.damageDice = "1d2";
+        player.getInventory().setRightHand(Item.fromTemplate(Item.ItemType.CLUB, club));
+        Monster foe = foeAt(4, 3, 200);
+
+        combat.playerMeleeStrike(foe);
+
+        assertNull(player.getHeldArt());
+        assertEquals("no arrow loosed at the foe the swing engaged", 10, player.getArrows());
+    }
+
+    @Test
+    public void aMonsterOutOfMeleeCastingFromTheLineIsShotFirst() {
+        arm(Item.ItemType.BOW, "BOW", CombatArt.HELD_ARROW, true);
+        player.getStats().setArrows(10);
+        Monster caster = foeAt(6, 3, 1);
+        combat.useArt(0);
+
+        assertTrue(combat.diesAnsweringHeldShot(caster));
+    }
+
     // --- Nail in Place ---
+
+    @Test
+    public void aNailedFoeCannotWalkButStillStrikes() {
+        Monster foe = foeAt(4, 3, 200);
+        foe.applyPin();
+        player.getPosition().set(3f, 3f);
+        hunting(foe);
+
+        for (int i = 0; i < 20 && player.getCurrentHP() == 500; i++) ai.updateMonster(foe, maze, player, true, combat);
+
+        assertEquals(new GridPoint2(4, 3), tile(foe));
+        assertTrue("a pinned monster can still attack", player.getCurrentHP() < 500);
+    }
 
     @Test
     public void nailInPlaceSpendsABoltAndPinsTheFoe() {

@@ -713,8 +713,8 @@ public class CombatManager {
     }
 
     /**
-     * Uses the Art in Art bar slot {@code slot} (#245). Returns what happened; only
-     * {@link com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome#USED} takes the player's turn.
+     * Uses the Art in Art bar slot {@code slot} (#245). Returns what happened; only an outcome
+     * that {@link com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome#takesTurn() takes the turn} does.
      */
     public com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome useArt(int slot) {
         return com.bpm.minotaur.gamedata.arts.ActiveArts.use(player, slot, artArena);
@@ -739,16 +739,24 @@ public class CombatManager {
      */
     public void onMonsterMoved(Monster monster) {
         if (player == null || monster == null || monster.isAlly() || monster.isPeaceful()) return;
+        if (monster == this.monster && currentState != CombatState.INACTIVE) return; // the duel's foe (#225)
         com.bpm.minotaur.gamedata.arts.ActiveArts.answerHeldShot(player, monster, artArena);
     }
 
     /**
-     * A monster is about to attack the player (#247): a drawn Held Arrow looses first if it attacks
-     * from inside the line. True if that shot killed it, and the attack never comes.
+     * A monster is about to attack the player, by blow, shot or spell (#247): a drawn Held Arrow
+     * looses first if it attacks from inside the line. True if that shot killed it, and the attack
+     * never comes. The monster in a modal duel with the player is out of the stance's reach (#225).
      */
-    private boolean diesAnsweringHeldShot(Monster attacker) {
+    public boolean diesAnsweringHeldShot(Monster attacker) {
         if (player == null || attacker == null || attacker.isAlly() || attacker.isPeaceful()) return false;
+        if (attacker == this.monster && currentState != CombatState.INACTIVE) return false;
         return com.bpm.minotaur.gamedata.arts.ActiveArts.answerHeldShot(player, attacker, artArena) && attacker.getCurrentHP() <= 0;
+    }
+
+    /** The player attacks: a drawn Held Arrow or an aimed Marked Skull is given up, before the blow. */
+    private void playerAttacks() {
+        com.bpm.minotaur.gamedata.arts.ActiveArts.lapse(player, artArena);
     }
 
     /** What an Active acts through: the maze, the foe in front, a blow of the held weapon, the log. */
@@ -817,6 +825,7 @@ public class CombatManager {
                 @Override
                 public boolean shoot(Monster target, Item weapon, String word, com.bpm.minotaur.gamedata.arts.ActiveArts.Shot kind) {
                     if (!loaded(weapon)) return false;
+                    if (misfired(weapon)) return false; // aim does not dry the powder: the shot and its reload are spent
                     if (weapon.getType() != Item.ItemType.DART) consumeAmmoFor(weapon);
                     GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
                     fireRangedEffects(weapon, new HitResult(at, HitResult.HitType.MONSTER, target));
@@ -863,6 +872,7 @@ public class CombatManager {
 
     public void playerMeleeStrike(Monster target) {
         if (currentState != CombatState.INACTIVE || target == null) return;
+        playerAttacks();
 
         int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
         int mx = (int) target.getPosition().x, my = (int) target.getPosition().y;
@@ -1460,6 +1470,7 @@ public class CombatManager {
     }
 
     public void playerAttackInstant() {
+        playerAttacks();
         // INACTIVE is allowed for ranged weapons only. Without it a bow could never
         // open a fight -- firing required combat to already be underway, which is the
         // reverse of what a ranged weapon is for. Melee still needs an engagement.
@@ -1731,6 +1742,7 @@ public class CombatManager {
 
     public boolean throwWeapon(Item weapon) {
         if (weapon == null) return false;
+        playerAttacks();
         throwAndStrike(weapon);
         return true;
     }
@@ -3241,7 +3253,9 @@ public class CombatManager {
                 if (mimic != null) {
                     monsterMeleeStrike(mimic);
 
-                    if (player.getStats().getCurrentHP() > 0) {
+                    if (!mimic.isAlive()) {
+                        // A drawn Held Arrow took it as it lunged (#247): there is no fight to start.
+                    } else if (player.getStats().getCurrentHP() > 0) {
                         startCombat(mimic);
                     } else {
                         // The free blow finished an already-wounded player. Hand off to
@@ -3639,6 +3653,7 @@ public class CombatManager {
      * here with nothing changed between them -- unbounded recursion.
      */
     public boolean performRangedAttack() {
+        playerAttacks();
         Item weapon = player.getInventory().getRightHand();
         if (weapon != null && weapon.isWand()) {
             player.zap(weapon, player.getFacing(), getDiscoveryManager(), eventManager, maze, this);

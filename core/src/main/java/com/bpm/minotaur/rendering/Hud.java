@@ -391,9 +391,7 @@ public class Hud implements Disposable {
                 case HELD:
                     artSlots[i].setBackground(hudSkin.getSlotActive());
                     artNameLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
-                    // Marked Skull's readied state is its aim; Held Arrow's is the drawn shot.
-                    setArtText(artStateLabels[i],
-                            s.art == com.bpm.minotaur.gamedata.arts.CombatArt.MARKED_SKULL ? "AIM" : "HELD");
+                    setArtText(artStateLabels[i], com.bpm.minotaur.gamedata.arts.ArtBar.readiedWord(s.art));
                     artStateLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
                 case COOLING:
