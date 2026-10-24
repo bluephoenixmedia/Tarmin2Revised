@@ -24,6 +24,12 @@ public final class MapKnowledgeMask implements Disposable {
         enum State { UNKNOWN, GLIMPSED, VISITED }
         State getChunkState(int cx, int cy);
         boolean isTileSeen(int cx, int cy, int lx, int ly);
+        default com.bpm.minotaur.generation.Biome getBiome(int cx, int cy) {
+            return com.bpm.minotaur.generation.Biome.MAZE;
+        }
+        default ChunkTiles getChunkTiles(int cx, int cy) {
+            return null;
+        }
     }
 
     private Texture maskTexture;

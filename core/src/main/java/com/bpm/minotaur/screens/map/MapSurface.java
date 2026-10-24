@@ -145,6 +145,13 @@ final class MapSurface extends Actor implements Disposable {
     private int loadsThisFrame;
     private final IsometricDioramaRenderer dioramaRenderer = new IsometricDioramaRenderer();
     private boolean dioramaEnabled = true;
+    private BiFunction<Integer, GridPoint2, ChunkTiles> tileLoader;
+    private final Map<String, ChunkTiles> tilesCache = new HashMap<>();
+
+    void setTileLoader(BiFunction<Integer, GridPoint2, ChunkTiles> tileLoader) {
+        this.tileLoader = tileLoader;
+        this.tilesCache.clear();
+    }
 
     void setDioramaEnabled(boolean enabled) {
         this.dioramaEnabled = enabled;
@@ -288,6 +295,19 @@ final class MapSurface extends Actor implements Disposable {
         return s;
     }
 
+    ChunkTiles getOrLoadTiles(int onFloor, GridPoint2 c) {
+        if (cursor.equals(c) && tiles != null && floor == onFloor) return tiles;
+        String key = onFloor + ":" + c.x + ":" + c.y;
+        ChunkTiles t = tilesCache.get(key);
+        if (t == null && tileLoader != null) {
+            t = tileLoader.apply(onFloor, c);
+            if (t != null) {
+                tilesCache.put(key, t);
+            }
+        }
+        return t;
+    }
+
     private Biome biomeOf(GridPoint2 c) {
         Biome b = biomeCache.get(c);
         if (b == null && model.getBiomes() != null) {
@@ -329,10 +349,21 @@ final class MapSurface extends Actor implements Disposable {
 
                 @Override
                 public boolean isTileSeen(int cx, int cy, int lx, int ly) {
-                    if (tiles != null && cursor.x == cx && cursor.y == cy) {
-                        return tiles.isSeen(lx, ly);
+                    ChunkTiles t = getChunkTiles(cx, cy);
+                    if (t != null) {
+                        return t.isSeen(lx, ly);
                     }
                     return true;
+                }
+
+                @Override
+                public Biome getBiome(int cx, int cy) {
+                    return biomeOf(new GridPoint2(cx, cy));
+                }
+
+                @Override
+                public ChunkTiles getChunkTiles(int cx, int cy) {
+                    return getOrLoadTiles(floor, new GridPoint2(cx, cy));
                 }
             };
 

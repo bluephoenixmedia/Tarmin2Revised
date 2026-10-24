@@ -173,6 +173,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
         skin = new HudSkin();
         surface = new MapSurface(skin, this::loadSummary);
+        surface.setTileLoader(this::tilesFor);
         model = buildModel();
         surface.setModel(model, knowledge);
         surface.setFronts(frontMarks());

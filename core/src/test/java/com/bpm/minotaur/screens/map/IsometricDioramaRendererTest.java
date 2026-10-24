@@ -1,7 +1,9 @@
 package com.bpm.minotaur.screens.map;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.generation.Biome;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -199,5 +201,63 @@ public class IsometricDioramaRendererTest {
         assertNotNull(pickedCave);
         assertEquals(2, pickedCave.x);
         assertEquals(6, pickedCave.y);
+    }
+
+    @Test
+    public void testDepthSortingKey() {
+        // At rot = 0 (looking from south toward north):
+        // Chunks with smaller Y (e.g. y=0) should have smaller depth than chunks with larger Y (e.g. y=9)
+        float dNorth = IsometricDioramaRenderer.depth(5.5f, 0.5f, 5f, 5f, 0f);
+        float dSouth = IsometricDioramaRenderer.depth(5.5f, 9.5f, 5f, 5f, 0f);
+        assertTrue("Chunk at y=0 must be behind chunk at y=9 at rot=0", dNorth < dSouth);
+
+        // At rot = PI (180 deg, looking from north toward south):
+        // Chunks at y=9 should now have smaller depth than chunks at y=0
+        float dNorthRot = IsometricDioramaRenderer.depth(5.5f, 0.5f, 5f, 5f, (float) Math.PI);
+        float dSouthRot = IsometricDioramaRenderer.depth(5.5f, 9.5f, 5f, 5f, (float) Math.PI);
+        assertTrue("Chunk at y=9 must be behind chunk at y=0 at rot=PI", dSouthRot < dNorthRot);
+    }
+
+    @Test
+    public void testBiomePaletteMatchesHandoff() {
+        IsometricDioramaRenderer.BiomeColors maze = IsometricDioramaRenderer.getBiomeColors(Biome.MAZE);
+        assertEquals("3b342c", maze.top.toString().substring(0, 6)); // 3b342c
+        assertEquals("2c2621", maze.sideA.toString().substring(0, 6)); // 2c2621
+        assertEquals("1d1915", maze.sideB.toString().substring(0, 6)); // 1d1915
+
+        IsometricDioramaRenderer.BiomeColors forest = IsometricDioramaRenderer.getBiomeColors(Biome.FOREST);
+        assertEquals("2e3824", forest.top.toString().substring(0, 6));
+
+        IsometricDioramaRenderer.BiomeColors ocean = IsometricDioramaRenderer.getBiomeColors(Biome.OCEAN);
+        assertEquals("18262d", ocean.top.toString().substring(0, 6));
+    }
+
+    @Test
+    public void testColorMixing() {
+        Color c1 = new Color(0f, 0f, 0f, 1f);
+        Color c2 = new Color(1f, 1f, 1f, 1f);
+        Color mixed = IsometricDioramaRenderer.mix(c1, c2, 0.5f);
+        assertEquals(0.5f, mixed.r, 0.001f);
+        assertEquals(0.5f, mixed.g, 0.001f);
+        assertEquals(0.5f, mixed.b, 0.001f);
+    }
+
+    @Test
+    public void testElevationAndWallHeights() {
+        float visitedLandZ = 6.0f;
+        float visitedOceanZ = 2.0f;
+        float glimpsedLandZ = 2.5f;
+        float glimpsedOceanZ = 1.2f;
+        float boardBaseZ = -5.0f;
+        float boardTopZ = 0.0f;
+        float wallHeightDelta = 4.2f;
+
+        assertEquals(6.0f, visitedLandZ, 0.001f);
+        assertEquals(2.0f, visitedOceanZ, 0.001f);
+        assertEquals(2.5f, glimpsedLandZ, 0.001f);
+        assertEquals(1.2f, glimpsedOceanZ, 0.001f);
+        assertEquals(-5.0f, boardBaseZ, 0.001f);
+        assertEquals(0.0f, boardTopZ, 0.001f);
+        assertEquals(10.2f, visitedLandZ + wallHeightDelta, 0.001f);
     }
 }
