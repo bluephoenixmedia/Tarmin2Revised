@@ -91,6 +91,12 @@ public final class MapKnowledgeMask implements Disposable {
         default int getFloor() {
             return 1;
         }
+        default boolean hasCave(int cx, int cy) {
+            return getStratumDepth(cx, cy) > 0 || hasLadder(cx, cy);
+        }
+        default ChunkTiles getCavernTiles(int cx, int cy) {
+            return getChunkTiles(cx, cy);
+        }
     }
 
     public static final class RoadInfo {

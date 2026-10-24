@@ -221,7 +221,12 @@ final class MapSurface extends Actor implements Disposable {
             }
         }
     }
-    void setFloor(int floor) { this.floor = floor; }
+    void setFloor(int floor) {
+        this.floor = floor;
+        if (dioramaRenderer != null) {
+            dioramaRenderer.setFloor(floor);
+        }
+    }
     void setCursor(GridPoint2 c) { cursor.set(c); }
     void setTileCursor(GridPoint2 tc) { if (tc != null) tileCursor.set(tc); }
     void moveTileCursor(int dx, int dy) {
@@ -332,7 +337,7 @@ final class MapSurface extends Actor implements Disposable {
         loadsThisFrame = 0;
 
         if (dioramaEnabled && zoom != Zoom.CHUNK && Gdx.gl != null) {
-            dioramaRenderer.setCave(floor != 1);
+            dioramaRenderer.setFloor(floor);
 
             MapKnowledgeMask.KnowledgeProvider provider = new MapKnowledgeMask.KnowledgeProvider() {
                 @Override
@@ -521,6 +526,23 @@ final class MapSurface extends Actor implements Disposable {
                 @Override
                 public int getFloor() {
                     return floor;
+                }
+
+                @Override
+                public boolean hasCave(int cx, int cy) {
+                    GridPoint2 p = new GridPoint2(cx, cy);
+                    if (model != null && model.deepestStratumBelow(p) > 0) return true;
+                    if (hasLadder(cx, cy)) return true;
+                    for (int f = 2; f <= 5; f++) {
+                        if (model != null && model.visited(f) != null && model.visited(f).contains(p)) return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public ChunkTiles getCavernTiles(int cx, int cy) {
+                    int targetFloor = floor > 1 ? floor : 2;
+                    return getOrLoadTiles(targetFloor, new GridPoint2(cx, cy));
                 }
             };
 

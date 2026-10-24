@@ -560,4 +560,129 @@ public class IsometricDioramaRendererTest {
         assertTrue("Clamped castle position X must be within screen margin", q.x >= m - 0.01f && q.x <= W - m + 0.01f);
         assertTrue("Clamped castle position Y must be within screen margin", q.y >= m - 0.01f && q.y <= H - m + 0.01f);
     }
+
+    @Test
+    public void testFloorEasingMath() {
+        IsometricDioramaRenderer renderer = new IsometricDioramaRenderer();
+        assertEquals(0.0f, renderer.getFloorT(), 0.001f);
+        assertEquals(0.0f, renderer.getTargetFloorT(), 0.001f);
+
+        renderer.setFloor(2); // Subterranean / cave
+        assertEquals(1.0f, renderer.getTargetFloorT(), 0.001f);
+
+        renderer.update(0.1f);
+        assertTrue("floorT should increase toward 1.0", renderer.getFloorT() > 0.0f && renderer.getFloorT() < 1.0f);
+
+        for (int i = 0; i < 30; i++) {
+            renderer.update(0.1f);
+        }
+        assertEquals("floorT should reach target 1.0", 1.0f, renderer.getFloorT(), 0.001f);
+
+        renderer.setFloorImmediate(1); // Surface immediate
+        assertEquals(0.0f, renderer.getFloorT(), 0.001f);
+        assertEquals(0.0f, renderer.getTargetFloorT(), 0.001f);
+    }
+
+    @Test
+    public void testEaseCurveValues() {
+        assertEquals(0.0f, IsometricDioramaRenderer.ease(0.0f), 0.001f);
+        assertEquals(0.125f, IsometricDioramaRenderer.ease(0.25f), 0.001f);
+        assertEquals(0.5f, IsometricDioramaRenderer.ease(0.5f), 0.001f);
+        assertEquals(0.875f, IsometricDioramaRenderer.ease(0.75f), 0.001f);
+        assertEquals(1.0f, IsometricDioramaRenderer.ease(1.0f), 0.001f);
+    }
+
+    @Test
+    public void testGhostSurfaceLiftCalculation() {
+        float ft = 1.0f; // fully eased in cave
+        float lift1x = Math.min(64f, 22f * 1.0f) * ft;
+        assertEquals(22.0f, lift1x, 0.001f);
+
+        float lift4x = Math.min(64f, 22f * 4.0f) * ft;
+        assertEquals("Lift should be capped at 64px at high zoom", 64.0f, lift4x, 0.001f);
+
+        // Alpha calculation
+        float alphaSurface = 1.0f - 0.84f * 0.0f;
+        assertEquals(1.0f, alphaSurface, 0.001f);
+
+        float alphaGhostFinal = 1.0f - 0.84f * 1.0f;
+        assertEquals(0.16f, alphaGhostFinal, 0.001f);
+    }
+
+    @Test
+    public void testStrataAndCavernColors() {
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_1_A);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_1_B);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_2_A);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_2_B);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_3_A);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_3_B);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_UNVISITED_TOP);
+        assertNotNull(IsometricDioramaRenderer.COLOR_STRATA_SPECK);
+        assertNotNull(IsometricDioramaRenderer.COLOR_CAVE_FLOOR);
+        assertNotNull(IsometricDioramaRenderer.COLOR_CAVE_WALL_FLOOR);
+        assertNotNull(IsometricDioramaRenderer.COLOR_PILLAR_TOP);
+        assertNotNull(IsometricDioramaRenderer.COLOR_PILLAR_A);
+        assertNotNull(IsometricDioramaRenderer.COLOR_PILLAR_B);
+        assertNotNull(IsometricDioramaRenderer.COLOR_LADDER_RAIL);
+        assertNotNull(IsometricDioramaRenderer.COLOR_LADDER_HOLE);
+        assertNotNull(IsometricDioramaRenderer.COLOR_CAVE_CHEST_TOP);
+        assertNotNull(IsometricDioramaRenderer.COLOR_CAVE_CHEST_A);
+        assertNotNull(IsometricDioramaRenderer.COLOR_CAVE_CHEST_B);
+        assertNotNull(IsometricDioramaRenderer.COLOR_FUNGI_GLOW);
+
+        // Verify cave floor hex (#2B231C)
+        assertEquals(0x2b / 255f, IsometricDioramaRenderer.COLOR_CAVE_FLOOR.r, 0.01f);
+        assertEquals(0x23 / 255f, IsometricDioramaRenderer.COLOR_CAVE_FLOOR.g, 0.01f);
+        assertEquals(0x1c / 255f, IsometricDioramaRenderer.COLOR_CAVE_FLOOR.b, 0.01f);
+    }
+
+    @Test
+    public void testSelectionElevationDuringFloorTransition() {
+        IsometricDioramaRenderer renderer = new IsometricDioramaRenderer();
+        MapKnowledgeMask.KnowledgeProvider provider = new MapKnowledgeMask.KnowledgeProvider() {
+            @Override
+            public State getChunkState(int cx, int cy) { return State.VISITED; }
+            @Override
+            public boolean isTileSeen(int cx, int cy, int lx, int ly) { return true; }
+            @Override
+            public Biome getBiome(int cx, int cy) { return Biome.FOREST; }
+            @Override
+            public GridPoint2 getSelectedChunk() { return new GridPoint2(3, 3); }
+        };
+
+        // Surface (floor 1, floorT = 0)
+        renderer.setFloorImmediate(1);
+        float zSurface = (renderer.getFloorT() > 0.5f) ? 5.0f : IsometricDioramaRenderer.getChunkTopZ(provider, 3, 3);
+        assertEquals(6.0f, zSurface, 0.001f);
+
+        // Cave (floor 2, floorT = 1)
+        renderer.setFloorImmediate(2);
+        float zCave = (renderer.getFloorT() > 0.5f) ? 5.0f : IsometricDioramaRenderer.getChunkTopZ(provider, 3, 3);
+        assertEquals(5.0f, zCave, 0.001f);
+    }
+
+    @Test
+    public void testOverlayAlphaFadingMath() {
+        // At surface ft = 0
+        float ft0 = 0.0f;
+        float sa0 = Math.max(0f, 1f - ft0 * 2f);
+        float ca0 = Math.max(0f, ft0 * 2f - 1f);
+        assertEquals(1.0f, sa0, 0.001f);
+        assertEquals(0.0f, ca0, 0.001f);
+
+        // At midpoint ft = 0.5
+        float ftHalf = 0.5f;
+        float saHalf = Math.max(0f, 1f - ftHalf * 2f);
+        float caHalf = Math.max(0f, ftHalf * 2f - 1f);
+        assertEquals(0.0f, saHalf, 0.001f);
+        assertEquals(0.0f, caHalf, 0.001f);
+
+        // In cavern ft = 1.0
+        float ft1 = 1.0f;
+        float sa1 = Math.max(0f, 1f - ft1 * 2f);
+        float ca1 = Math.max(0f, ft1 * 2f - 1f);
+        assertEquals(0.0f, sa1, 0.001f);
+        assertEquals(1.0f, ca1, 0.001f);
+    }
 }

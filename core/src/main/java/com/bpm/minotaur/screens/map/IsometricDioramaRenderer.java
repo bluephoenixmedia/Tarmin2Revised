@@ -77,6 +77,29 @@ public final class IsometricDioramaRenderer implements Disposable {
     public static final Color COLOR_UNKNOWN_DARK = new Color(0x14 / 255f, 0x12 / 255f, 0x10 / 255f, 1.0f); // #141210
     public static final Color COLOR_TABLE_BG = new Color(0x0b / 255f, 0x09 / 255f, 0x07 / 255f, 1.0f); // #0B0907
 
+    // Subterranean strata band colors matching Main.dc.html
+    public static final Color COLOR_STRATA_1_A = new Color(0x2a / 255f, 0x1f / 255f, 0x16 / 255f, 1.0f); // #2a1f16
+    public static final Color COLOR_STRATA_1_B = new Color(0x1c / 255f, 0x14 / 255f, 0x0d / 255f, 1.0f); // #1c140d
+    public static final Color COLOR_STRATA_2_A = new Color(0x3a / 255f, 0x2b / 255f, 0x1d / 255f, 1.0f); // #3a2b1d
+    public static final Color COLOR_STRATA_2_B = new Color(0x27 / 255f, 0x1c / 255f, 0x12 / 255f, 1.0f); // #271c12
+    public static final Color COLOR_STRATA_3_A = new Color(0x30 / 255f, 0x24 / 255f, 0x1a / 255f, 1.0f); // #30241a
+    public static final Color COLOR_STRATA_3_B = new Color(0x21 / 255f, 0x17 / 255f, 0x0f / 255f, 1.0f); // #21170f
+    public static final Color COLOR_STRATA_UNVISITED_TOP = new Color(0x1b / 255f, 0x15 / 255f, 0x11 / 255f, 1.0f); // #1b1511
+    public static final Color COLOR_STRATA_SPECK = new Color(0x2a / 255f, 0x21 / 255f, 0x1a / 255f, 1.0f); // #2a211a
+
+    // Cavern interior colors matching Main.dc.html
+    public static final Color COLOR_CAVE_FLOOR = new Color(0x2b / 255f, 0x23 / 255f, 0x1c / 255f, 1.0f); // #2b231c
+    public static final Color COLOR_CAVE_WALL_FLOOR = new Color(0x1f / 255f, 0x18 / 255f, 0x13 / 255f, 1.0f); // #1f1813
+    public static final Color COLOR_PILLAR_TOP = new Color(0x30 / 255f, 0x26 / 255f, 0x1d / 255f, 1.0f); // #30261d
+    public static final Color COLOR_PILLAR_A = new Color(0x25 / 255f, 0x1d / 255f, 0x16 / 255f, 1.0f); // #251d16
+    public static final Color COLOR_PILLAR_B = new Color(0x18 / 255f, 0x12 / 255f, 0x0d / 255f, 1.0f); // #18120d
+    public static final Color COLOR_LADDER_RAIL = new Color(0x9a / 255f, 0x74 / 255f, 0x42 / 255f, 1.0f); // #9a7442
+    public static final Color COLOR_LADDER_HOLE = new Color(0x0a / 255f, 0x08 / 255f, 0x06 / 255f, 1.0f); // #0a0806
+    public static final Color COLOR_CAVE_CHEST_TOP = new Color(0xa0 / 255f, 0x70 / 255f, 0x2f / 255f, 1.0f); // #a0702f
+    public static final Color COLOR_CAVE_CHEST_A = new Color(0x7a / 255f, 0x4f / 255f, 0x22 / 255f, 1.0f); // #7a4f22
+    public static final Color COLOR_CAVE_CHEST_B = new Color(0x55 / 255f, 0x36 / 255f, 0x14 / 255f, 1.0f); // #553614
+    public static final Color COLOR_FUNGI_GLOW = new Color(108 / 255f, 207 / 255f, 224 / 255f, 1.0f); // #6CCFE0
+
     // Prop and landmark palette matching Main.dc.html
     public static final Color COLOR_SIL_LIT = new Color(0x2d / 255f, 0x34 / 255f, 0x3c / 255f, 1f); // #2d343c
     public static final Color COLOR_SIL_DARK = new Color(0x20 / 255f, 0x26 / 255f, 0x2c / 255f, 1f); // #20262c
@@ -170,7 +193,6 @@ public final class IsometricDioramaRenderer implements Disposable {
     public static final Color COLOR_SEAL_STONE_SHADE = new Color(0x47 / 255f, 0x43 / 255f, 0x3e / 255f, 1f); // #47433e
     public static final Color COLOR_SEAL_ALTAR_TOP = new Color(0x7a / 255f, 0x3a / 255f, 0x22 / 255f, 1f); // #7a3a22
 
-    public static final Color COLOR_LADDER_HOLE = new Color(0x0a / 255f, 0x08 / 255f, 0x06 / 255f, 1f); // #0a0806
     public static final Color COLOR_LADDER_WOOD = new Color(0x9a / 255f, 0x74 / 255f, 0x42 / 255f, 1f); // #9a7442
 
     public static final Color COLOR_CHEST_TOP = new Color(0xa0 / 255f, 0x70 / 255f, 0x2f / 255f, 1f); // #a0702f
@@ -325,8 +347,13 @@ public final class IsometricDioramaRenderer implements Disposable {
 
     private FrameBuffer fbo;
     private TextureRegion fboRegion;
+    private FrameBuffer surfaceFbo;
+    private TextureRegion surfaceRegion;
     private SpriteBatch fboBatch;
     private ShapeRenderer shapeRenderer;
+
+    private float floorT = 0f;
+    private float targetFloorT = 0f;
 
     private final MapNoiseTextures noiseTextures = new MapNoiseTextures();
     private final MapKnowledgeMask knowledgeMask = new MapKnowledgeMask();
@@ -398,6 +425,11 @@ public final class IsometricDioramaRenderer implements Disposable {
         fboRegion = new TextureRegion(fbo.getColorBufferTexture());
         fboRegion.flip(false, true); // OpenGL Y-flip
 
+        surfaceFbo = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_WIDTH, FBO_HEIGHT, false);
+        surfaceFbo.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        surfaceRegion = new TextureRegion(surfaceFbo.getColorBufferTexture());
+        surfaceRegion.flip(false, true);
+
         fboBatch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
 
@@ -432,6 +464,14 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         float dRot = tgtRot - camRot;
         if (Math.abs(dRot) > 0.0005f) camRot += dRot * k; else camRot = tgtRot;
+
+        float ft = targetFloorT;
+        float dF = ft - floorT;
+        if (Math.abs(dF) > 0.003f) {
+            floorT += dF * (1.0f - (float) Math.exp(-delta * 3.2));
+        } else {
+            floorT = ft;
+        }
     }
 
     public void setTarget(float x, float y, float zoom, float rot) {
@@ -525,7 +565,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         float sx = localX * ((float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH));
         float sy = (actorHeight - localY) * ((float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT));
 
-        boolean cave = (floor != 1);
+        boolean cave = (floor != 1 || floorT > 0.5f);
         float[] zs = cave ? new float[]{5f} : new float[]{6f, 2.5f, 2f, 1.2f, 0f};
 
         for (float z : zs) {
@@ -563,6 +603,29 @@ public final class IsometricDioramaRenderer implements Disposable {
         this.isCave = cave;
     }
 
+    public void setFloor(int floor) {
+        this.targetFloorT = (floor != 1) ? 1.0f : 0.0f;
+        this.isCave = (floor != 1);
+    }
+
+    public void setFloorImmediate(int floor) {
+        this.targetFloorT = (floor != 1) ? 1.0f : 0.0f;
+        this.floorT = this.targetFloorT;
+        this.isCave = (floor != 1);
+    }
+
+    public float getFloorT() {
+        return floorT;
+    }
+
+    public float getTargetFloorT() {
+        return targetFloorT;
+    }
+
+    public static float ease(float t) {
+        return t < 0.5f ? 2f * t * t : 1f - (float) Math.pow(-2f * t + 2f, 2) / 2f;
+    }
+
     /**
      * Renders the low-res FBO scene and draws it upscaled into the destination bounds.
      */
@@ -577,39 +640,102 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         if (fbo == null) return;
 
-        // 1. Render scene to 720x448 low-res buffer
-        fbo.begin();
-        Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f); // #0B0907
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        float ft = ease(floorT);
 
-        // 2. Render 3D diorama scene (board, chunk blocks, floor tiles, maze walls, props)
-        renderDioramaScene(provider);
+        if (floorT <= 0.001f) {
+            // Surface only
+            fbo.begin();
+            Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f); // #0B0907
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // 3. Additive lights pass (campfires, beacon beams, portal swirls, seal glows, blight pulses)
-        renderLights(shapeRenderer, provider);
+            renderDioramaScene(provider);
+            renderLights(shapeRenderer, provider, false);
 
-        // 4. Render fog shader pass on top
-        if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
-            Gdx.gl.glEnable(GL20.GL_BLEND);
-            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-            fboBatch.begin();
-            Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-            fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
-                    elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
-                    fogStrength, isCave, FBO_WIDTH, FBO_HEIGHT);
-            fboBatch.end();
+                fboBatch.begin();
+                Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
+                        elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
+                        fogStrength, false, FBO_WIDTH, FBO_HEIGHT);
+                fboBatch.end();
+            }
+
+            renderVignette(shapeRenderer);
+            renderOverlays(shapeRenderer, provider, 0f);
+
+            fbo.end();
+        } else {
+            // Subterranean transition or cave view
+            // 1. Render surface into surfaceFbo
+            if (surfaceFbo != null) {
+                surfaceFbo.begin();
+                Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f);
+                Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+                renderDioramaScene(provider);
+                renderLights(shapeRenderer, provider, false);
+
+                if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
+                    Gdx.gl.glEnable(GL20.GL_BLEND);
+                    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+                    fboBatch.begin();
+                    Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
+                            elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
+                            fogStrength, false, FBO_WIDTH, FBO_HEIGHT);
+                    fboBatch.end();
+                }
+                surfaceFbo.end();
+            }
+
+            // 2. Render cavern into primary fbo
+            fbo.begin();
+            Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+            renderCaveScene(provider);
+            renderLights(shapeRenderer, provider, true);
+
+            if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+                fboBatch.begin();
+                Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
+                        elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
+                        fogStrength, true, FBO_WIDTH, FBO_HEIGHT);
+                fboBatch.end();
+            }
+
+            // 3. Composite ghost surface lifted upwards
+            if (surfaceRegion != null) {
+                float lift = Math.min(64f, 22f * camZoom) * ft;
+                float ghostAlpha = floorT < 0.999f ? (1f - 0.84f * ft) : 0.16f;
+
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                fboBatch.begin();
+                fboBatch.setColor(1f, 1f, 1f, ghostAlpha);
+                fboBatch.draw(surfaceRegion, 0, lift, FBO_WIDTH, FBO_HEIGHT);
+                fboBatch.setColor(Color.WHITE);
+                fboBatch.end();
+            }
+
+            // 4. Perimeter vignette
+            renderVignette(shapeRenderer);
+
+            // 5. Overlays with animated floor blending
+            renderOverlays(shapeRenderer, provider, ft);
+
+            fbo.end();
         }
 
-        // 5. Screen perimeter vignette
-        renderVignette(shapeRenderer);
-
-        // 6. Overlays (ember road, rumour beam, castle mark/arrow, badges, marks, player, selection)
-        renderOverlays(shapeRenderer, provider);
-
-        fbo.end();
-
-        // 2. Draw upscaled FBO to screen stage batch
+        // Draw upscaled FBO to screen stage batch
         batch.draw(fboRegion, targetX, targetY, targetWidth, targetHeight);
     }
 
@@ -671,10 +797,24 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
     }
 
+    static final class CaveRenderItem implements Comparable<CaveRenderItem> {
+        enum Type { PILLAR, CHEST, LADDER }
+        float depth;
+        Type type;
+        float x0, y0, x1, y1;
+        float z0, z1;
+
+        @Override
+        public int compareTo(CaveRenderItem o) {
+            return Float.compare(this.depth, o.depth);
+        }
+    }
+
     private final List<GridPoint2> sortedChunks = new ArrayList<>(CHUNK_GRID_SIZE * CHUNK_GRID_SIZE);
     private final List<WallBox> wallBoxPool = new ArrayList<>(64);
     private final List<Prop> chunkProps = new ArrayList<>(64);
     private final List<RenderItem> renderItems = new ArrayList<>(128);
+    private final List<CaveRenderItem> renderCaveItems = new ArrayList<>(128);
 
     public static float depth(float wx, float wy, float camX, float camY, float rot) {
         float dx = wx - camX;
@@ -851,6 +991,195 @@ public final class IsometricDioramaRenderer implements Disposable {
         shapeRenderer.end();
 
         drawBoardLines(shapeRenderer);
+    }
+
+    public void renderCaveScene(MapKnowledgeMask.KnowledgeProvider provider) {
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        drawBoard(shapeRenderer, true);
+
+        float m = 40f * camZoom + 60f;
+
+        sortedChunks.clear();
+        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                MapKnowledgeMask.KnowledgeProvider.State state = (provider != null)
+                        ? provider.getChunkState(cx, cy)
+                        : MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN;
+                if (state != MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN) {
+                    sortedChunks.add(new GridPoint2(cx, cy));
+                }
+            }
+        }
+        sortedChunks.sort((a, b) -> Float.compare(depth(a.x + 0.5f, a.y + 0.5f), depth(b.x + 0.5f, b.y + 0.5f)));
+
+        for (GridPoint2 c : sortedChunks) {
+            if (!onScreen(c.x + 0.5f, c.y + 0.5f, m)) continue;
+
+            int cx = c.x;
+            int cy = c.y;
+            boolean hasCave = (provider != null) && provider.hasCave(cx, cy);
+
+            // 1. Strata band 1: z=0 to 1.7
+            drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, 1.7f, null, COLOR_STRATA_1_A, COLOR_STRATA_1_B);
+
+            // 2. Strata band 2: z=1.7 to 3.4
+            drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 1.7f, 3.4f, null, COLOR_STRATA_2_A, COLOR_STRATA_2_B);
+
+            // 3. Strata band 3: z=3.4 to 5.0
+            Color top3 = hasCave ? null : COLOR_STRATA_UNVISITED_TOP;
+            drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 3.4f, 5.0f, top3, COLOR_STRATA_3_A, COLOR_STRATA_3_B);
+
+            if (!hasCave) {
+                // If zoom > 1.5, draw bedrock specks
+                if (camZoom > 1.5f) {
+                    shapeRenderer.setColor(COLOR_STRATA_SPECK);
+                    Mulberry32 rng = new Mulberry32(hash(cx, cy) + 11);
+                    for (int i = 0; i < 10; i++) {
+                        float su = 0.08f + 0.84f * rng.nextFloat();
+                        float sv = 0.08f + 0.84f * rng.nextFloat();
+                        Vector2 sp = project(cx + su, cy + sv, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        Vector2 gsp = toGdxScreen(sp);
+                        shapeRenderer.rect(Math.round(gsp.x), Math.round(gsp.y), 1, 1);
+                    }
+                }
+                continue;
+            }
+
+            // Has cavern: draw 8x8 floor tiles and depth-sorted rock pillars / ladder / chests
+            ChunkTiles caveTiles = (provider != null) ? provider.getCavernTiles(cx, cy) : null;
+            Mulberry32 rng = new Mulberry32(hash(cx, cy) + 4242);
+
+            // Draw 8x8 floor quad tiles at z=5
+            for (int ty = 0; ty < 8; ty++) {
+                for (int tx = 0; tx < 8; tx++) {
+                    boolean solid = (caveTiles != null) ? caveTiles.isSolid(tx, ty) : (tx == 0 || tx == 7 || ty == 0 || ty == 7 || (tx == 3 && ty == 3));
+                    Color floorCol = solid ? COLOR_CAVE_WALL_FLOOR : COLOR_CAVE_FLOOR;
+
+                    float x0 = cx + tx / 8.0f;
+                    float y0 = cy + ty / 8.0f;
+                    float x1 = cx + (tx + 1) / 8.0f;
+                    float y1 = cy + (ty + 1) / 8.0f;
+
+                    Vector2 t0 = toGdxScreen(project(x0, y0, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                    Vector2 t1 = toGdxScreen(project(x1, y0, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                    Vector2 t2 = toGdxScreen(project(x1, y1, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                    Vector2 t3 = toGdxScreen(project(x0, y1, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+
+                    shapeRenderer.setColor(floorCol);
+                    shapeRenderer.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
+                    shapeRenderer.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
+                }
+            }
+
+            // Collect depth-sorted cavern items: rock pillars, ladder, chest
+            renderCaveItems.clear();
+            for (int ty = 0; ty < 8; ty++) {
+                for (int tx = 0; tx < 8; tx++) {
+                    boolean solid = (caveTiles != null) ? caveTiles.isSolid(tx, ty) : (tx == 0 || tx == 7 || ty == 0 || ty == 7 || (tx == 3 && ty == 3));
+                    if (solid) {
+                        float x0 = cx + tx / 8.0f;
+                        float y0 = cy + ty / 8.0f;
+                        float hPillar = 2.4f + 1.2f * rng.nextFloat();
+                        CaveRenderItem item = new CaveRenderItem();
+                        item.depth = depth(x0 + 1f / 16f, y0 + 1f / 16f);
+                        item.type = CaveRenderItem.Type.PILLAR;
+                        item.x0 = x0;
+                        item.y0 = y0;
+                        item.x1 = x0 + 1f / 8f;
+                        item.y1 = y0 + 1f / 8f;
+                        item.z0 = 5.0f;
+                        item.z1 = 5.0f + hPillar;
+                        renderCaveItems.add(item);
+                    }
+                }
+            }
+
+            if (provider != null && provider.hasLadder(cx, cy)) {
+                CaveRenderItem lad = new CaveRenderItem();
+                lad.depth = depth(cx + 4.5f / 8f, cy + 4.5f / 8f) - 0.05f;
+                lad.type = CaveRenderItem.Type.LADDER;
+                lad.x0 = cx + 4.5f / 8f;
+                lad.y0 = cy + 4.5f / 8f;
+                lad.z0 = 5.0f;
+                lad.z1 = 15.0f; // up = 10
+                renderCaveItems.add(lad);
+            }
+
+            if (provider != null && provider.getChestCount(cx, cy) > 0) {
+                CaveRenderItem ch = new CaveRenderItem();
+                ch.depth = depth(cx + 0.5f, cy + 0.35f);
+                ch.type = CaveRenderItem.Type.CHEST;
+                ch.x0 = cx + 0.5f - 0.03f;
+                ch.y0 = cy + 0.35f - 0.022f;
+                ch.x1 = cx + 0.5f + 0.03f;
+                ch.y1 = cy + 0.35f + 0.022f;
+                ch.z0 = 5.0f;
+                ch.z1 = 6.6f;
+                renderCaveItems.add(ch);
+            }
+
+            renderCaveItems.sort(null);
+            for (CaveRenderItem item : renderCaveItems) {
+                switch (item.type) {
+                    case PILLAR:
+                        drawBox(shapeRenderer, item.x0, item.y0, item.x1, item.y1, item.z0, item.z1,
+                                COLOR_PILLAR_TOP, COLOR_PILLAR_A, COLOR_PILLAR_B);
+                        break;
+                    case CHEST:
+                        drawBox(shapeRenderer, item.x0, item.y0, item.x1, item.y1, item.z0, item.z1,
+                                COLOR_CAVE_CHEST_TOP, COLOR_CAVE_CHEST_A, COLOR_CAVE_CHEST_B);
+                        break;
+                    case LADDER:
+                        drawLadderShaftProp(shapeRenderer, item.x0, item.y0, item.z0, 10f);
+                        break;
+                }
+            }
+
+            // Bioluminescent fungi dots at z=5
+            for (int i = 0; i < 4; i++) {
+                float fu = 0.2f + 0.6f * rng.nextFloat();
+                float fv = 0.2f + 0.6f * rng.nextFloat();
+                Vector2 fp = project(cx + fu, cy + fv, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                Vector2 gfp = toGdxScreen(fp);
+                int k = Math.max(1, Math.round(camZoom * 0.4f));
+                shapeRenderer.setColor(COLOR_FUNGI_GLOW);
+                shapeRenderer.rect(Math.round(gfp.x), Math.round(gfp.y) - k, k, k);
+            }
+        }
+
+        shapeRenderer.end();
+        drawBoardLines(shapeRenderer);
+    }
+
+    public void drawLadderShaftProp(ShapeRenderer shapes, float x, float y, float h, float up) {
+        float hz = 1.0f / 16.0f;
+        Vector2 p0 = toGdxScreen(project(x - hz, y - hz, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 p1 = toGdxScreen(project(x + hz, y - hz, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 p2 = toGdxScreen(project(x + hz, y + hz, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 p3 = toGdxScreen(project(x - hz, y + hz, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+
+        shapes.setColor(COLOR_LADDER_HOLE);
+        shapes.triangle(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
+        shapes.triangle(p0.x, p0.y, p2.x, p2.y, p3.x, p3.y);
+
+        float ax = x - 0.03f, ay = y + 0.02f;
+        float bx = x + 0.03f, by = y - 0.02f;
+        float lw = Math.max(1f, camZoom * 0.3f);
+
+        Vector2 a0 = toGdxScreen(project(ax, ay, h - 1f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 a1 = toGdxScreen(project(ax, ay, h + up, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        drawThickLine(shapes, a0.x, a0.y, a1.x, a1.y, lw, COLOR_LADDER_RAIL);
+
+        Vector2 b0 = toGdxScreen(project(bx, by, h - 1f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        Vector2 b1 = toGdxScreen(project(bx, by, h + up, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        drawThickLine(shapes, b0.x, b0.y, b1.x, b1.y, lw, COLOR_LADDER_RAIL);
+
+        for (float z = h; z <= h + up; z += 1.2f) {
+            Vector2 r0 = toGdxScreen(project(ax, ay, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 r1 = toGdxScreen(project(bx, by, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            drawThickLine(shapes, r0.x, r0.y, r1.x, r1.y, lw, COLOR_LADDER_RAIL);
+        }
     }
 
     public static void drawScreenTri(ShapeRenderer shapes,
@@ -1947,69 +2276,89 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     public static void drawPlate(ShapeRenderer shapes, float cx, float by, String name, Color bg, Color ink) {
+        drawPlate(shapes, cx, by, name, bg, ink, 1.0f);
+    }
+
+    public static void drawPlate(ShapeRenderer shapes, float cx, float by, String name, Color bg, Color ink, float alpha) {
+        if (shapes == null || alpha <= 0.001f) return;
         int x0 = Math.round(cx) - 5;
         int y0 = Math.round(by) - 14;
         String[] G = GLYPHS.get(name);
         if (G == null) G = GLYPHS.get("unknown");
 
-        Color shadow = new Color(0f, 0f, 0f, 0.5f);
+        Color shadow = new Color(0f, 0f, 0f, 0.5f * alpha);
+        Color aInk = new Color(ink.r, ink.g, ink.b, ink.a * alpha);
+        Color aBg = new Color(bg.r, bg.g, bg.b, bg.a * alpha);
+
         drawRectCanvas(shapes, x0 + 1, y0 + 2, 11, 10, shadow);
 
-        drawRectCanvas(shapes, x0, y0 + 1, 11, 9, ink);
-        drawRectCanvas(shapes, x0 + 1, y0, 9, 11, ink);
+        drawRectCanvas(shapes, x0, y0 + 1, 11, 9, aInk);
+        drawRectCanvas(shapes, x0 + 1, y0, 9, 11, aInk);
 
-        drawRectCanvas(shapes, x0 + 1, y0 + 1, 9, 9, bg);
+        drawRectCanvas(shapes, x0 + 1, y0 + 1, 9, 9, aBg);
 
         for (int j = 0; j < 7; j++) {
             String row = G[j];
             for (int i = 0; i < 7; i++) {
                 if (row.charAt(i) == '#') {
-                    drawRectCanvas(shapes, x0 + 2 + i, y0 + 2 + j, 1, 1, ink);
+                    drawRectCanvas(shapes, x0 + 2 + i, y0 + 2 + j, 1, 1, aInk);
                 }
             }
         }
 
-        drawRectCanvas(shapes, x0 + 3, y0 + 11, 5, 1, ink);
-        drawRectCanvas(shapes, x0 + 4, y0 + 12, 3, 1, ink);
-        drawRectCanvas(shapes, x0 + 5, y0 + 13, 1, 1, ink);
+        drawRectCanvas(shapes, x0 + 3, y0 + 11, 5, 1, aInk);
+        drawRectCanvas(shapes, x0 + 4, y0 + 12, 3, 1, aInk);
+        drawRectCanvas(shapes, x0 + 5, y0 + 13, 1, 1, aInk);
     }
 
     public static void drawDepthBadge(ShapeRenderer shapes, float cx, float by, int n) {
+        drawDepthBadge(shapes, cx, by, n, 1.0f);
+    }
+
+    public static void drawDepthBadge(ShapeRenderer shapes, float cx, float by, int n, float alpha) {
+        if (shapes == null || alpha <= 0.001f) return;
         int x0 = Math.round(cx) - 7;
         int y0 = Math.round(by) - 14;
 
-        Color shadow = new Color(0f, 0f, 0f, 0.5f);
+        Color shadow = new Color(0f, 0f, 0f, 0.5f * alpha);
+        Color aBronze = new Color(COLOR_LADDER_BRONZE.r, COLOR_LADDER_BRONZE.g, COLOR_LADDER_BRONZE.b, COLOR_LADDER_BRONZE.a * alpha);
+        Color aGold = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, COLOR_GOLD.a * alpha);
+        Color aBg = new Color(0x15 / 255f, 0x10 / 255f, 0x0b / 255f, alpha);
+        Color aDigit = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, alpha);
+
         drawRectCanvas(shapes, x0 + 1, y0 + 2, 15, 10, shadow);
 
-        drawRectCanvas(shapes, x0, y0 + 1, 15, 9, COLOR_LADDER_BRONZE);
-        drawRectCanvas(shapes, x0 + 1, y0, 13, 11, COLOR_LADDER_BRONZE);
+        drawRectCanvas(shapes, x0, y0 + 1, 15, 9, aBronze);
+        drawRectCanvas(shapes, x0 + 1, y0, 13, 11, aBronze);
 
-        Color bg = new Color(0x15 / 255f, 0x10 / 255f, 0x0b / 255f, 1f);
-        drawRectCanvas(shapes, x0 + 1, y0 + 1, 13, 9, bg);
+        drawRectCanvas(shapes, x0 + 1, y0 + 1, 13, 9, aBg);
 
-        drawRectCanvas(shapes, x0 + 2, y0 + 3, 5, 1, COLOR_GOLD);
-        drawRectCanvas(shapes, x0 + 3, y0 + 4, 3, 1, COLOR_GOLD);
-        drawRectCanvas(shapes, x0 + 4, y0 + 5, 1, 1, COLOR_GOLD);
-        drawRectCanvas(shapes, x0 + 4, y0 + 6, 1, 2, COLOR_GOLD);
+        drawRectCanvas(shapes, x0 + 2, y0 + 3, 5, 1, aGold);
+        drawRectCanvas(shapes, x0 + 3, y0 + 4, 3, 1, aGold);
+        drawRectCanvas(shapes, x0 + 4, y0 + 5, 1, 1, aGold);
+        drawRectCanvas(shapes, x0 + 4, y0 + 6, 1, 2, aGold);
 
         String[] D = DIGITS.get(n);
         if (D == null) D = DIGITS.get(1);
-        Color digitCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, 1f);
         for (int j = 0; j < 5; j++) {
             String row = D[j];
             for (int i = 0; i < 3; i++) {
                 if (row.charAt(i) == '#') {
-                    drawRectCanvas(shapes, x0 + 9 + i, y0 + 3 + j, 1, 1, digitCol);
+                    drawRectCanvas(shapes, x0 + 9 + i, y0 + 3 + j, 1, 1, aDigit);
                 }
             }
         }
 
-        drawRectCanvas(shapes, x0 + 5, y0 + 11, 5, 1, COLOR_LADDER_BRONZE);
-        drawRectCanvas(shapes, x0 + 6, y0 + 12, 3, 1, COLOR_LADDER_BRONZE);
-        drawRectCanvas(shapes, x0 + 7, y0 + 13, 1, 1, COLOR_LADDER_BRONZE);
+        drawRectCanvas(shapes, x0 + 5, y0 + 11, 5, 1, aBronze);
+        drawRectCanvas(shapes, x0 + 6, y0 + 12, 3, 1, aBronze);
+        drawRectCanvas(shapes, x0 + 7, y0 + 13, 1, 1, aBronze);
     }
 
     public void renderLights(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        renderLights(shapes, provider, this.isCave);
+    }
+
+    public void renderLights(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, boolean cave) {
         if (provider == null) return;
         float t = elapsedTime;
         float s = camZoom;
@@ -2018,7 +2367,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
 
-        if (!isCave) {
+        if (!cave) {
             int litIndex = 0;
             for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
                 for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
@@ -2073,7 +2422,7 @@ public final class IsometricDioramaRenderer implements Disposable {
                         drawGlow(shapes, lp.x, lp.y, 12f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.24f);
                         drawBeam(shapes, lp.x, lp.y, Math.max(2f, s * 1.6f), 14f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.22f);
                     }
-                    if (provider.getChunkState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+                    if (provider.hasCave(cx, cy) || provider.getChunkState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
                         Mulberry32 rng = new Mulberry32(hash(cx, cy) + 111);
                         for (int i = 0; i < 4; i++) {
                             float fu = rng.nextFloat();
@@ -2088,7 +2437,7 @@ public final class IsometricDioramaRenderer implements Disposable {
             }
         }
 
-        if (!isCave) {
+        if (!cave) {
             int litIndex = 0;
             for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
                 for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
@@ -2149,7 +2498,11 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     public void drawRoads(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        if (provider == null) return;
+        drawRoads(shapes, provider, 1.0f);
+    }
+
+    public void drawRoads(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
         List<MapKnowledgeMask.RoadInfo> roads = provider.getRoadSegments();
         if (roads == null || roads.isEmpty()) return;
 
@@ -2163,7 +2516,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        Color darkBacking = new Color(16 / 255f, 10 / 255f, 5 / 255f, 0.75f);
+        Color darkBacking = new Color(16 / 255f, 10 / 255f, 5 / 255f, 0.75f * alpha);
 
         for (MapKnowledgeMask.RoadInfo r : roads) {
             float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
@@ -2179,14 +2532,19 @@ public final class IsometricDioramaRenderer implements Disposable {
             Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
             Vector2 p1 = toGdxScreen(project(r.toX + 0.5f, r.toY + 0.5f, z1, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
 
-            Color col = r.spent ? new Color(208 / 255f, 104 / 255f, 63 / 255f, 0.35f) : r.color;
+            Color baseCol = r.spent ? new Color(208 / 255f, 104 / 255f, 63 / 255f, 0.35f) : r.color;
+            Color col = new Color(baseCol.r, baseCol.g, baseCol.b, baseCol.a * alpha);
             drawDashedThickLine(shapes, p0.x, p0.y, p1.x, p1.y, roadWidth, col, dashLen, gapLen, dashOffset);
         }
         shapes.end();
     }
 
     public void drawRumour(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        if (provider == null) return;
+        drawRumour(shapes, provider, 1.0f);
+    }
+
+    public void drawRumour(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
         GridPoint2 sug = provider.getSuggestionChunk();
         if (sug == null) return;
 
@@ -2212,7 +2570,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         Vector2 t1 = toGdxScreen(new Vector2(b.x + w * 0.5f, topY));
 
         Color col0 = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0f);
-        Color colMid = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0.5f * fl);
+        Color colMid = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0.5f * fl * alpha);
         Color colTop = new Color(255 / 255f, 215 / 255f, 122 / 255f, 0f);
 
         shapes.triangle(b0.x, b0.y, b1.x, b1.y, m1.x, m1.y, col0, col0, colMid);
@@ -2220,17 +2578,21 @@ public final class IsometricDioramaRenderer implements Disposable {
         shapes.triangle(m0.x, m0.y, m1.x, m1.y, t1.x, t1.y, colMid, colMid, colTop);
         shapes.triangle(m0.x, m0.y, t1.x, t1.y, t0.x, t0.y, colMid, colTop, colTop);
 
-        drawGlow(shapes, b.x, midY, 7f + 4f * fl, 255 / 255f, 210 / 255f, 120 / 255f, 0.55f * fl);
+        drawGlow(shapes, b.x, midY, 7f + 4f * fl, 255 / 255f, 210 / 255f, 120 / 255f, 0.55f * fl * alpha);
         shapes.end();
 
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        drawPlate(shapes, b.x, topY - 2f, "shelter", COLOR_RUMOUR_BG, COLOR_GOLD);
+        drawPlate(shapes, b.x, topY - 2f, "shelter", COLOR_RUMOUR_BG, COLOR_GOLD, alpha);
         shapes.end();
     }
 
     public void drawCastleMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        if (provider == null) return;
+        drawCastleMark(shapes, provider, 1.0f);
+    }
+
+    public void drawCastleMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
         Vector2 castleSite = provider.getCastleSite();
         if (castleSite == null) return;
 
@@ -2267,7 +2629,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
 
-        Color castleDark = new Color(COLOR_CASTLE_DARK.r, COLOR_CASTLE_DARK.g, COLOR_CASTLE_DARK.b, 0.42f);
+        Color castleDark = new Color(COLOR_CASTLE_DARK.r, COLOR_CASTLE_DARK.g, COLOR_CASTLE_DARK.b, 0.42f * alpha);
         drawRectCanvas(shapes, sx - 14f * k, sy - 10f * k, 28f * k, 10f * k, castleDark);
         drawRectCanvas(shapes, sx - 7f * k, sy - 46f * k, 14f * k, 40f * k, castleDark);
         drawRectCanvas(shapes, sx - 15f * k, sy - 28f * k, 7f * k, 20f * k, castleDark);
@@ -2276,7 +2638,7 @@ public final class IsometricDioramaRenderer implements Disposable {
             drawRectCanvas(shapes, sx - 7f * k + i * 4f * k, sy - 50f * k, 2f * k, 4f * k, castleDark);
         }
 
-        Color castlePurple = new Color(COLOR_CASTLE_PURPLE.r, COLOR_CASTLE_PURPLE.g, COLOR_CASTLE_PURPLE.b, 0.60f);
+        Color castlePurple = new Color(COLOR_CASTLE_PURPLE.r, COLOR_CASTLE_PURPLE.g, COLOR_CASTLE_PURPLE.b, 0.60f * alpha);
         drawRectCanvas(shapes, sx - 1f * k, sy - 38f * k, 2f * k, 4f * k, castlePurple);
 
         if (!inside) {
@@ -2288,18 +2650,18 @@ public final class IsometricDioramaRenderer implements Disposable {
             Vector2 t0 = toGdxScreen(new Vector2(ax + dx * 8f, ay + dy * 8f));
             Vector2 t1 = toGdxScreen(new Vector2(ax - dx * 4f + nx * 7f, ay - dy * 4f + ny * 7f));
             Vector2 t2 = toGdxScreen(new Vector2(ax - dx * 4f - nx * 7f, ay - dy * 4f - ny * 7f));
-            shapes.setColor(COLOR_TABLE_BG);
+            shapes.setColor(new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha));
             shapes.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
 
             Vector2 it0 = toGdxScreen(new Vector2(ax + dx * 6f, ay + dy * 6f));
             Vector2 it1 = toGdxScreen(new Vector2(ax - dx * 3f + nx * 5f, ay - dy * 3f + ny * 5f));
             Vector2 it2 = toGdxScreen(new Vector2(ax - dx * 3f - nx * 5f, ay - dy * 3f - ny * 5f));
-            shapes.setColor(COLOR_CASTLE_PURPLE);
+            shapes.setColor(new Color(COLOR_CASTLE_PURPLE.r, COLOR_CASTLE_PURPLE.g, COLOR_CASTLE_PURPLE.b, COLOR_CASTLE_PURPLE.a * alpha));
             shapes.triangle(it0.x, it0.y, it1.x, it1.y, it2.x, it2.y);
 
-            drawPlate(shapes, ax - dx * 18f, ay - dy * 18f + 7f, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG);
+            drawPlate(shapes, ax - dx * 18f, ay - dy * 18f + 7f, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG, alpha);
         } else {
-            drawPlate(shapes, sx, sy - 52f * k, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG);
+            drawPlate(shapes, sx, sy - 52f * k, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG, alpha);
         }
 
         shapes.end();
@@ -2327,7 +2689,11 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     public void drawBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        if (provider == null) return;
+        drawBadges(shapes, provider, 1.0f);
+    }
+
+    public void drawBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
         ZoomLevel zoomLvl = levelOf(camZoom);
         int L = (zoomLvl == ZoomLevel.WORLD) ? 0 : ((zoomLvl == ZoomLevel.REGION) ? 1 : 2);
         float m = 30f;
@@ -2385,9 +2751,9 @@ public final class IsometricDioramaRenderer implements Disposable {
                             BadgeEntry it = items.get(i);
                             float x = p.x + (i - (items.size() - 1) / 2f) * 14f;
                             if (it.isDepth) {
-                                drawDepthBadge(shapes, x, p.y, it.depth);
+                                drawDepthBadge(shapes, x, p.y, it.depth, alpha);
                             } else {
-                                drawPlate(shapes, x, p.y, it.name, it.color, COLOR_INK);
+                                drawPlate(shapes, x, p.y, it.name, it.color, COLOR_INK, alpha);
                             }
                         }
                     }
@@ -2397,11 +2763,11 @@ public final class IsometricDioramaRenderer implements Disposable {
                     float h = getChunkTopZ(provider, cx, cy);
                     if (provider.getChestCount(cx, cy) > 0) {
                         Vector2 p = project(cx + 0.5f, cy + 0.5f, h + 4f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK);
+                        drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
                     }
                     if (provider.hasLadder(cx, cy)) {
                         Vector2 p = project(cx + 4.5f / 8f, cy + 4.5f / 8f, h + 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawPlate(shapes, p.x, p.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK);
+                        drawPlate(shapes, p.x, p.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
                     }
                 }
             }
@@ -2411,7 +2777,11 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     public void drawMarks(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        if (provider == null) return;
+        drawMarks(shapes, provider, 1.0f);
+    }
+
+    public void drawMarks(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
         float t = elapsedTime;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -2421,35 +2791,41 @@ public final class IsometricDioramaRenderer implements Disposable {
         GridPoint2 w = provider.getWaypointChunk();
         if (w != null && w.x >= 0 && w.x < CHUNK_GRID_SIZE && w.y >= 0 && w.y < CHUNK_GRID_SIZE) {
             float wh = getChunkTopZ(provider, w.x, w.y);
-            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, COLOR_TABLE_BG, 3f, null, 0f);
-            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, COLOR_GOLD, 1f, new float[]{4f, 3f}, -t * 6f);
+            Color tableBg = new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha);
+            Color gold = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, COLOR_GOLD.a * alpha);
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, tableBg, 3f, null, 0f);
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, gold, 1f, new float[]{4f, 3f}, -t * 6f);
 
             float ph = (t * 0.6f) % 1f;
-            Color pulseCol = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, (1f - ph) * 0.8f);
+            Color pulseCol = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, (1f - ph) * 0.8f * alpha);
             drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f + 0.25f * ph, pulseCol, 1f, null, 0f);
 
             Vector2 wp = project(w.x + 0.5f, w.y + 0.5f, wh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-            drawPlate(shapes, wp.x - 8f, wp.y - 6f, "flag", COLOR_GOLD, COLOR_INK);
+            drawPlate(shapes, wp.x - 8f, wp.y - 6f, "flag", COLOR_GOLD, COLOR_INK, alpha);
         }
 
         GridPoint2 sug = provider.getSuggestionChunk();
         if (sug != null && (w == null || !sug.equals(w)) && sug.x >= 0 && sug.x < CHUNK_GRID_SIZE && sug.y >= 0 && sug.y < CHUNK_GRID_SIZE) {
             float sh = getChunkTopZ(provider, sug.x, sug.y);
             float a = 0.45f + 0.25f * (float) Math.sin(t * 2.4f);
-            Color sugCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, a);
+            Color sugCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, a * alpha);
             drawRing(shapes, sug.x + 0.5f, sug.y + 0.5f, sh, 0.3f, sugCol, 1f, new float[]{2f, 3f}, t * 4f);
 
             Vector2 sp = project(sug.x + 0.5f, sug.y + 0.5f, sh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-            Color flagBg = new Color(COLOR_RUMOUR_BG.r, COLOR_RUMOUR_BG.g, COLOR_RUMOUR_BG.b, a);
-            Color flagInk = new Color(0xb3 / 255f, 0x9c / 255f, 0x78 / 255f, a);
-            drawPlate(shapes, sp.x - 16f, sp.y - 4f, "flag", flagBg, flagInk);
+            Color flagBg = new Color(COLOR_RUMOUR_BG.r, COLOR_RUMOUR_BG.g, COLOR_RUMOUR_BG.b, a * alpha);
+            Color flagInk = new Color(0xb3 / 255f, 0x9c / 255f, 0x78 / 255f, a * alpha);
+            drawPlate(shapes, sp.x - 16f, sp.y - 4f, "flag", flagBg, flagInk, alpha);
         }
 
         shapes.end();
     }
 
     public void drawPlayerMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        if (provider == null) return;
+        drawPlayerMark(shapes, provider, 1.0f);
+    }
+
+    public void drawPlayerMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
         float t = elapsedTime;
 
         for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
@@ -2472,46 +2848,50 @@ public final class IsometricDioramaRenderer implements Disposable {
 
                     float ph = (t * 0.8f) % 1f;
                     float ringR = (isChunk ? 0.04f : 0.08f) + (isChunk ? 0.06f : 0.16f) * ph;
-                    Color pulseCyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, 1f - ph);
+                    Color pulseCyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, (1f - ph) * alpha);
                     drawRing(shapes, wx, wy, h, ringR, pulseCyan, 1f, null, 0f);
 
                     Vector2 p = project(wx, wy, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+
+                    Color tableBg = new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha);
+                    Color cyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, COLOR_CYAN.a * alpha);
 
                     if (isChunk) {
                         float k = camZoom * 0.75f;
                         float yTop = Math.round(p.y - 11f * k);
                         float x = Math.round(p.x);
 
-                        drawRectCanvas(shapes, x - 4, yTop - 4, 9, 3, COLOR_TABLE_BG);
-                        drawRectCanvas(shapes, x - 3, yTop - 1, 7, 2, COLOR_TABLE_BG);
-                        drawRectCanvas(shapes, x - 1, yTop + 1, 3, 2, COLOR_TABLE_BG);
+                        drawRectCanvas(shapes, x - 4, yTop - 4, 9, 3, tableBg);
+                        drawRectCanvas(shapes, x - 3, yTop - 1, 7, 2, tableBg);
+                        drawRectCanvas(shapes, x - 1, yTop + 1, 3, 2, tableBg);
 
-                        drawRectCanvas(shapes, x - 3, yTop - 3, 7, 1, COLOR_CYAN);
-                        drawRectCanvas(shapes, x - 2, yTop - 2, 5, 1, COLOR_CYAN);
-                        drawRectCanvas(shapes, x - 1, yTop - 1, 3, 1, COLOR_CYAN);
-                        drawRectCanvas(shapes, x, yTop, 1, 1, COLOR_CYAN);
+                        drawRectCanvas(shapes, x - 3, yTop - 3, 7, 1, cyan);
+                        drawRectCanvas(shapes, x - 2, yTop - 2, 5, 1, cyan);
+                        drawRectCanvas(shapes, x - 1, yTop - 1, 3, 1, cyan);
+                        drawRectCanvas(shapes, x, yTop, 1, 1, cyan);
                     } else {
                         Vector2 f = project(wx + faceX * 0.3f, wy + faceY * 0.3f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                         Vector2 gp = toGdxScreen(p);
                         Vector2 gf = toGdxScreen(f);
-                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 3f, COLOR_TABLE_BG);
-                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 1f, COLOR_CYAN);
+                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 3f, tableBg);
+                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 1f, cyan);
 
                         float x = Math.round(p.x);
                         float y = Math.round(p.y) - 7;
                         int[] rows = new int[]{1, 3, 5, 7, 5, 3, 1};
                         for (int j = 0; j < rows.length; j++) {
                             int w = rows[j];
-                            drawRectCanvas(shapes, x - (w + 2 - 1) / 2f, y - 4 + j, w + 2, 1, COLOR_TABLE_BG);
+                            drawRectCanvas(shapes, x - (w + 2 - 1) / 2f, y - 4 + j, w + 2, 1, tableBg);
                         }
-                        drawRectCanvas(shapes, x, y - 5, 1, 1, COLOR_TABLE_BG);
-                        drawRectCanvas(shapes, x, y + 3, 1, 1, COLOR_TABLE_BG);
+                        drawRectCanvas(shapes, x, y - 5, 1, 1, tableBg);
+                        drawRectCanvas(shapes, x, y + 3, 1, 1, tableBg);
 
                         for (int j = 0; j < rows.length; j++) {
                             int w = rows[j];
-                            drawRectCanvas(shapes, x - (w - 1) / 2f, y - 4 + j, w, 1, COLOR_CYAN);
+                            drawRectCanvas(shapes, x - (w - 1) / 2f, y - 4 + j, w, 1, cyan);
                         }
-                        drawRectCanvas(shapes, x - 1, y - 2, 1, 1, COLOR_CYAN_HI);
+                        Color cyanHi = new Color(COLOR_CYAN_HI.r, COLOR_CYAN_HI.g, COLOR_CYAN_HI.b, COLOR_CYAN_HI.a * alpha);
+                        drawRectCanvas(shapes, x - 1, y - 2, 1, 1, cyanHi);
                     }
 
                     shapes.end();
@@ -2521,12 +2901,83 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
     }
 
+    public void drawCaveBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        drawCaveBadges(shapes, provider, 1.0f);
+    }
+
+    public void drawCaveBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
+        ZoomLevel zoomLvl = levelOf(camZoom);
+        int L = (zoomLvl == ZoomLevel.WORLD) ? 0 : ((zoomLvl == ZoomLevel.REGION) ? 1 : 2);
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        Vector2 ladderScreenPos = null;
+
+        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                if (provider.hasLadder(cx, cy) || provider.hasCave(cx, cy)) {
+                    Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f + 11f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    if (ladderScreenPos == null && provider.hasLadder(cx, cy)) {
+                        ladderScreenPos = lp;
+                    }
+                    drawPlate(shapes, lp.x, lp.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
+                }
+
+                if (L >= 1 && provider.hasCave(cx, cy)) {
+                    int chests = provider.getChestCount(cx, cy);
+                    if (chests > 0) {
+                        Vector2 p = project(cx + 0.5f, cy + 0.5f, 9f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                        drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
+                    }
+                }
+            }
+        }
+
+        // Player tether diamond & dashed line
+        for (int cy = 0; cy < CHUNK_GRID_SIZE; cy++) {
+            for (int cx = 0; cx < CHUNK_GRID_SIZE; cx++) {
+                if (provider.hasPlayer(cx, cy)) {
+                    float pu = provider.getPlayerU(cx, cy);
+                    float pv = provider.getPlayerV(cx, cy);
+                    Vector2 p = project(cx + pu, cy + pv, 22f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    float x = Math.round(p.x);
+                    float y = Math.round(p.y);
+
+                    // Diamond
+                    Color cyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, 0.75f * alpha);
+                    Vector2 d0 = toGdxScreen(new Vector2(x + 0.5f, y - 4f));
+                    Vector2 d1 = toGdxScreen(new Vector2(x + 4.5f, y));
+                    Vector2 d2 = toGdxScreen(new Vector2(x + 0.5f, y + 4f));
+                    Vector2 d3 = toGdxScreen(new Vector2(x - 3.5f, y));
+
+                    drawThickLine(shapes, d0.x, d0.y, d1.x, d1.y, 1f, cyan);
+                    drawThickLine(shapes, d1.x, d1.y, d2.x, d2.y, 1f, cyan);
+                    drawThickLine(shapes, d2.x, d2.y, d3.x, d3.y, 1f, cyan);
+                    drawThickLine(shapes, d3.x, d3.y, d0.x, d0.y, 1f, cyan);
+
+                    // Dashed line from (x + 0.5, y + 5) to (lp.x + 0.5, lp.y - 16)
+                    if (ladderScreenPos != null) {
+                        Vector2 start = toGdxScreen(new Vector2(x + 0.5f, y + 5f));
+                        Vector2 end = toGdxScreen(new Vector2(ladderScreenPos.x + 0.5f, ladderScreenPos.y - 16f));
+                        drawDashedThickLine(shapes, start.x, start.y, end.x, end.y, 1f, cyan, 2f, 2f, 0f);
+                    }
+                    break;
+                }
+            }
+        }
+
+        shapes.end();
+    }
+
     public void drawSelection(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
         if (provider == null) return;
         GridPoint2 sel = provider.getSelectedChunk();
         if (sel == null || sel.x < 0 || sel.x >= CHUNK_GRID_SIZE || sel.y < 0 || sel.y >= CHUNK_GRID_SIZE) return;
 
-        float z = isCave ? 5f : getChunkTopZ(provider, sel.x, sel.y);
+        float z = (floorT > 0.5f) ? 5.0f : getChunkTopZ(provider, sel.x, sel.y);
 
         Vector2[] pts = new Vector2[]{
             toGdxScreen(project(sel.x, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
@@ -2564,18 +3015,27 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     public void renderOverlays(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
+        renderOverlays(shapes, provider, ease(floorT));
+    }
+
+    public void renderOverlays(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float ft) {
         if (provider == null) return;
-        if (!isCave) {
-            drawRoads(shapes, provider);
-            drawRumour(shapes, provider);
-            drawCastleMark(shapes, provider);
-            drawBadges(shapes, provider);
-            drawMarks(shapes, provider);
-            drawPlayerMark(shapes, provider);
-        } else {
-            drawBadges(shapes, provider);
-            drawPlayerMark(shapes, provider);
+        float sa = Math.max(0f, 1f - ft * 2f);
+        float ca = Math.max(0f, ft * 2f - 1f);
+
+        if (sa > 0.001f) {
+            drawRoads(shapes, provider, sa);
+            drawRumour(shapes, provider, sa);
+            drawCastleMark(shapes, provider, sa);
+            drawBadges(shapes, provider, sa);
+            drawMarks(shapes, provider, sa);
+            drawPlayerMark(shapes, provider, sa);
         }
+
+        if (ca > 0.001f) {
+            drawCaveBadges(shapes, provider, ca);
+        }
+
         drawSelection(shapes, provider);
     }
 
@@ -2585,6 +3045,11 @@ public final class IsometricDioramaRenderer implements Disposable {
 
     @Override
     public void dispose() {
+        if (surfaceFbo != null) {
+            surfaceFbo.dispose();
+            surfaceFbo = null;
+            surfaceRegion = null;
+        }
         if (fbo != null) {
             fbo.dispose();
             fbo = null;
