@@ -1,46 +1,70 @@
 # Combat Arts in the duel simulator (#250)
 
-`./gradlew :lwjgl3:runDuelSimulation -PduelArgs="--trials=200 --chain=0 --report"` (writes `assets/logs/duel-arts-report.md`).
-The Arts are the game's own: `--passive` and `--arts` have the soul learn them, and `CombatManager` fires them.
-Actives and capstones are used by a simple policy: the capstone when ready and the foe is in reach, then the Active;
-Held Arrow is drawn while the foe walks in, Marked Skull aims then fires. Bows, crossbows, guns and darts fight from
-four tiles off while the monster walks in. **Nothing in the game was tuned from these numbers.**
+`./gradlew :lwjgl3:runDuelSimulation -PduelArgs="--trials=100 --chain=0 --report"` (also writes `assets/logs/duel-arts-report.md`).
 
-Notes for reading it:
-- Each Arts column sits beside the same Mastery rank without them; the difference is the Arts alone.
-- Polearm is measured with ASSEGAI: `weapons.json` now marks SPEAR `isRanged: true` (range 1), so a spear cannot
-  bump-attack at all (0% wins). That data change came after #239 and is flagged for the user, not fixed here.
-- The depth-1 band is base level 1 and now has 7 species (it had 10 in #239), and depth 3 reads far higher than #239's
-  83.9% Untrained baseline: develop without this change gives the same (99.2%), so the band and the game moved, not this.
+- **The Arts are the game's own.** `--passive` and `--arts` have the soul learn them, and `CombatManager` fires them.
+- **The policy** is simple: the capstone when it is ready and the foe is in reach, then the Expert Active. Held Arrow is drawn while the foe walks in; Marked Skull aims, then fires.
+- **Depth d** is a level-d body against the monsters of base level 1 to d, scaled to EDL d, with `--approach`.
+- **Each Arts column sits beside the same rank without them,** so the gap between the two is the Arts alone. Untrained is the fresh body the 0.0.2 targets are written for.
+- **Nothing in the game was tuned from these numbers.** Spec section 7 leaves the weak Families to the user.
 
-Combat Arts in the duel simulator (#250): 200 duels x 7 species per cell, band base level 1-1, --approach, seed 42. Win rates.
+## Results
 
-### Depth 1 (level 1, EDL 1)
+### Depth 1 (level 1, EDL 1, monsters of base level 1-1: 7 species)
 
 | Family | Weapon | Untrained | Adept | Adept + Passive | Master | Master + all Arts |
 |---|---|---|---|---|---|---|
-| Blade | Father's Sword | 97.1% | 99.1% | 98.6% | 99.4% | 99.6% |
-| Dagger | DAGGER | 85.9% | 90.1% | 93.6% | 93.4% | 98.0% |
-| Axe | AXE | 94.8% | 96.6% | 96.7% | 98.7% | 98.9% |
-| Blunt | MACE_FOOTMANS | 97.1% | 98.9% | 98.7% | 99.1% | 99.7% |
-| Polearm | ASSEGAI | 95.8% | 96.8% | 98.5% | 98.7% | 98.8% |
-| Unarmed | bare hands | 58.9% | 67.2% | 76.6% | 69.8% | 86.2% |
-| Bow | BOW | 98.3% | 99.9% | 99.9% | 99.8% | 100.0% |
-| Crossbow | CROSSBOW | 97.1% | 98.2% | 99.0% | 99.5% | 99.9% |
-| Firearm | MUSKET | 90.3% | 95.0% | 94.9% | 97.8% | 97.1% |
-| Thrown | DART | 86.6% | 95.4% | 96.9% | 99.0% | 99.6% |
+| Blade | Father's Sword | 96.3% | 98.1% | 98.7% | 99.7% | 100.0% |
+| Dagger | DAGGER | 85.9% | 92.9% | 93.4% | 92.7% | 97.9% |
+| Axe | AXE | 95.0% | 98.0% | 98.0% | 99.3% | 97.4% |
+| Blunt | MACE_FOOTMANS | 96.7% | 99.6% | 99.7% | 99.6% | 99.7% |
+| Polearm | ASSEGAI | 95.4% | 96.9% | 98.3% | 99.4% | 98.6% |
+| Unarmed | bare hands | 56.3% | 66.6% | 77.7% | 69.3% | 86.4% |
+| Bow | BOW | 99.3% | 99.6% | 99.9% | 99.9% | 100.0% |
+| Crossbow | CROSSBOW | 97.4% | 99.0% | 98.6% | 99.1% | 100.0% |
+| Firearm | MUSKET | 91.6% | 95.0% | 94.4% | 97.3% | 97.0% |
+| Thrown | DART | 88.7% | 95.0% | 98.6% | 99.4% | 99.4% |
 
-### Depth 3 (level 3, EDL 3)
+### Depth 3 (level 3, EDL 3, monsters of base level 1-3: 23 species)
 
 | Family | Weapon | Untrained | Adept | Adept + Passive | Master | Master + all Arts |
 |---|---|---|---|---|---|---|
-| Blade | Father's Sword | 99.4% | 99.4% | 100.0% | 99.9% | 99.9% |
-| Dagger | DAGGER | 92.1% | 95.5% | 97.9% | 98.3% | 99.9% |
-| Axe | AXE | 98.1% | 99.7% | 99.6% | 99.9% | 99.6% |
-| Blunt | MACE_FOOTMANS | 99.1% | 99.8% | 99.8% | 99.9% | 100.0% |
-| Polearm | ASSEGAI | 99.3% | 99.8% | 99.9% | 99.7% | 99.6% |
-| Unarmed | bare hands | 65.3% | 72.1% | 85.2% | 79.4% | 91.5% |
-| Bow | BOW | 99.7% | 99.9% | 100.0% | 100.0% | 100.0% |
-| Crossbow | CROSSBOW | 98.2% | 98.6% | 99.5% | 99.1% | 100.0% |
-| Firearm | MUSKET | 94.8% | 96.9% | 97.7% | 98.6% | 98.0% |
-| Thrown | DART | 90.1% | 96.7% | 97.4% | 99.3% | 99.9% |
+| Blade | Father's Sword | 93.6% | 95.5% | 96.0% | 96.0% | 97.7% |
+| Dagger | DAGGER | 73.7% | 78.3% | 86.0% | 82.4% | 91.7% |
+| Axe | AXE | 89.0% | 90.5% | 91.5% | 92.8% | 93.5% |
+| Blunt | MACE_FOOTMANS | 92.0% | 94.9% | 96.8% | 95.8% | 98.8% |
+| Polearm | ASSEGAI | 89.3% | 90.8% | 93.2% | 92.2% | 92.3% |
+| Unarmed | bare hands | 43.4% | 47.5% | 59.1% | 50.2% | 63.3% |
+| Bow | BOW | 93.7% | 95.0% | 97.6% | 95.9% | 99.0% |
+| Crossbow | CROSSBOW | 86.7% | 90.7% | 94.2% | 92.0% | 99.3% |
+| Firearm | MUSKET | 83.3% | 87.0% | 88.2% | 88.3% | 87.8% |
+| Thrown | DART | 70.5% | 85.3% | 91.0% | 92.5% | 98.2% |
+
+## Against the 0.0.2 targets
+
+The target for one on-pace fight is about **95% at depths 1-2 and 90% at depths 3-5** (`docs/balance/0.0.2-targets.md`). Read against the Untrained column:
+
+| Family | Depth 1 | Depth 3 | What the Arts add (Master + all Arts vs Master) |
+|---|---|---|---|
+| Unarmed | 56.3%, far under | 43.4%, far under | +17.1 / +13.1, the most of any Family, still far under |
+| Dagger | 85.9%, under | 73.7%, under | +5.2 / +9.3 |
+| Thrown (dart) | 88.7%, under | 70.5%, under | 0 / +5.7 |
+| Firearm (musket) | 91.6%, under | 83.3%, under | -0.3 / -0.5: nothing |
+| Crossbow | on target | 86.7%, under | +0.9 / +7.3 |
+| Axe, Polearm | on target | 89.0%, 89.3%: at the line | +1 or less |
+| Blade, Blunt, Bow | on target | on target | small |
+
+## Candidates for the user (not applied)
+
+- **Unarmed** misses by 40 points, and its Arts cannot close that. The lever is the fist itself: the bare-hand damage die, or the Unarmed to-hit, not Quick Knuckles' chance.
+- **Dagger** and **darts** gain the most from rank and Arts, but start low. A small damage step on the weapons would bring the fresh body to target. Their Arts already pull their weight.
+- **Firearm Arts do nothing in a duel.** Marked Skull spends a turn aiming that the musket's slow reload makes costly. Practised Hands and Powder Fury cut a reload that one duel rarely reaches twice. Options: let the aim turn also load the gun, or make Practised Hands a two-turn cut.
+- **Polearm Arts** add nothing at Master. Reel In and Thicket of Points want a foe two tiles off or several foes, and a single duel offers neither. This is likely fine in the maze, but the duel cannot show it.
+
+## How to read it
+
+- **Noise.** Each cell is 700 duels (depth 1) or 2,300 (depth 3). Differences under about 1.5 points are noise; that covers the small negative Arts deltas for Axe, Polearm and Firearm.
+- **Shooters get free shots.** A bow, crossbow, gun or dart meets every monster four tiles off and shoots while it walks in, which a melee fighter never gets. Compare ranged Families with each other, not with melee.
+- **Darts never run out.** The thrown dart is restocked into the hand every turn, which flatters Thrown.
+- **Polearm uses the Assegai.** `weapons.json` marks the Spear ranged, so it cannot bump-attack at all (#301).
+- **This depth 3 is not #239's.** #239's level-1 band of 10 species cannot be rebuilt from today's data: the level-1 band is 7 species, and was then too. Depth 3 here meets the 23 species of base level 1-3, the floor a depth-3 level holds. On the old level-1-only band, depth 3 reads about 99% for every Family, which hides the spread.

@@ -128,7 +128,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
         int monsterActions;
         int monsterHits;
         int approachShots;
-        int passiveProcs;
+        int artUses;
         int hpLost;
         int maxHp;
     }
@@ -136,7 +136,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private static final class Tally {
         final String name;
         int n, wins, draws, swingsOnWin, playerTurns, swings, fullHits, glancing, monsterActions, monsterHits,
-                approachShots, passiveProcs;
+                approachShots, artUses;
         final List<Integer> hpLostPctOnWin = new ArrayList<>();
         final List<Integer> swingsToKill = new ArrayList<>();
 
@@ -159,7 +159,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             monsterActions += d.monsterActions;
             monsterHits += d.monsterHits;
             approachShots += d.approachShots;
-            passiveProcs += d.passiveProcs;
+            artUses += d.artUses;
         }
     }
 
@@ -205,7 +205,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
 
     private void run(List<Monster.MonsterType> band) throws IOException {
         if (report) {
-            report(band);
+            report();
             return;
         }
         Player probe = newPlayer();
@@ -222,7 +222,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 shoots(probe));
 
         System.out.printf(Locale.ROOT, "%-18s %3s %4s %6s %9s %9s %7s %7s %8s %7s %6s %6s%n",
-                "monster", "lvl", "spd", "win%", "hpLost%", "swings", "hit%", "glnc%", "mHit%", "mAct/t", "m/p", "procs");
+                "monster", "lvl", "spd", "win%", "hpLost%", "swings", "hit%", "glnc%", "mHit%", "mAct/t", "m/p", "arts");
         Tally all = new Tally("BAND");
         List<Tally> rows = new ArrayList<>();
         for (Monster.MonsterType type : band) {
@@ -309,7 +309,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
 
     private Duel duel(Player player, Monster.MonsterType type) {
         Duel d = new Duel();
-        int[][] walls = new int[10][8];
+        int[][] walls = new int[8][8];
         Maze maze = new Maze(1, walls);
         player.setPosition(new com.badlogic.gdx.math.GridPoint2(PLAYER_X, ROW));
         player.setFacing(Direction.EAST);
@@ -382,7 +382,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             }
             if (player.getCurrentHP() <= 0) break;
         }
-        d.passiveProcs = com.bpm.minotaur.telemetry.TelemetryManager.getInstance().totalArtUses() - procsAtStart;
+        d.artUses = com.bpm.minotaur.telemetry.TelemetryManager.getInstance().totalArtUses() - procsAtStart;
         d.draw = !d.won && player.getCurrentHP() > 0;
         d.hpLost = Math.max(0, hpAtStart - player.getCurrentHP());
         return d;
@@ -463,6 +463,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
         eventManager.glanced = false;
         combat.setCurrentState(CombatManager.CombatState.INACTIVE);
         Item weapon = player.getInventory().getRightHand();
+        if (weapon == null) return; // nothing left to throw: the turn passes
         if (weapon.isRanged()) combat.playerAttackInstant();
         else combat.throwWeapon(weapon);
         d.swings++;
@@ -490,53 +491,91 @@ public class DuelSimulationLauncher implements ApplicationListener {
         return itemDataManager.createItem(like.getType(), 0, 0, ItemColor.GRAY, assetManager);
     }
 
-    /** The weapon each Family is measured with in the report: the ones #239 used, and a staple for the rest. */
-    private static final Object[][] REPORT_FAMILIES = {
-            {"Blade", null}, {"Dagger", Item.ItemType.DAGGER}, {"Axe", Item.ItemType.AXE},
-            {"Blunt", Item.ItemType.MACE_FOOTMANS}, {"Polearm", Item.ItemType.ASSEGAI}, {"Unarmed", "UNARMED"},
-            {"Bow", Item.ItemType.BOW}, {"Crossbow", Item.ItemType.CROSSBOW}, {"Firearm", Item.ItemType.MUSKET},
-            {"Thrown", Item.ItemType.DART}};
+    /** One row of the report: a Family and the weapon it is measured with (null with bare hands false: the Father's Sword). */
+    private static final class ReportFamily {
+        final String name;
+        final Item.ItemType weapon;
+        final boolean bareHands;
 
-    /** The report's columns: a Mastery rank, and which of the Family's Arts the soul knows. */
-    private static final Object[][] REPORT_ARMS = {
-            {"Untrained", Mastery.Rank.UNTRAINED, false, false},
-            {"Adept", Mastery.Rank.ADEPT, false, false},
-            {"Adept + Passive", Mastery.Rank.ADEPT, true, false},
-            {"Master", Mastery.Rank.MASTER, false, false},
-            {"Master + all Arts", Mastery.Rank.MASTER, false, true}};
+        ReportFamily(String name, Item.ItemType weapon, boolean bareHands) {
+            this.name = name;
+            this.weapon = weapon;
+            this.bareHands = bareHands;
+        }
+
+        String weaponName() {
+            return bareHands ? "bare hands" : weapon != null ? weapon.name() : "Father's Sword";
+        }
+    }
+
+    /** One column of the report: a Mastery rank, and which of the Family's Arts the soul knows. */
+    private static final class ReportArm {
+        final String label;
+        final Mastery.Rank rank;
+        final boolean passive;
+        final boolean arts;
+
+        ReportArm(String label, Mastery.Rank rank, boolean passive, boolean arts) {
+            this.label = label;
+            this.rank = rank;
+            this.passive = passive;
+            this.arts = arts;
+        }
+    }
+
+    /**
+     * The weapon each Family is measured with: the ones #239 used, and a staple for the rest. Polearm
+     * uses the Assegai: weapons.json marks the Spear ranged, so it cannot bump-attack at all.
+     */
+    private static final ReportFamily[] REPORT_FAMILIES = {
+            new ReportFamily("Blade", null, false), new ReportFamily("Dagger", Item.ItemType.DAGGER, false),
+            new ReportFamily("Axe", Item.ItemType.AXE, false), new ReportFamily("Blunt", Item.ItemType.MACE_FOOTMANS, false),
+            new ReportFamily("Polearm", Item.ItemType.ASSEGAI, false), new ReportFamily("Unarmed", null, true),
+            new ReportFamily("Bow", Item.ItemType.BOW, false), new ReportFamily("Crossbow", Item.ItemType.CROSSBOW, false),
+            new ReportFamily("Firearm", Item.ItemType.MUSKET, false), new ReportFamily("Thrown", Item.ItemType.DART, false)};
+
+    private static final ReportArm[] REPORT_ARMS = {
+            new ReportArm("Untrained", Mastery.Rank.UNTRAINED, false, false),
+            new ReportArm("Adept", Mastery.Rank.ADEPT, false, false),
+            new ReportArm("Adept + Passive", Mastery.Rank.ADEPT, true, false),
+            new ReportArm("Master", Mastery.Rank.MASTER, false, false),
+            new ReportArm("Master + all Arts", Mastery.Rank.MASTER, false, true)};
 
     /**
      * The #250 report: win rate per Family at depths 1 and 3, without and with its Arts. Depth d is
-     * a level-d body against the band scaled to EDL d, with --approach. Each Arts column sits
-     * beside the same rank without them, so the difference between the two is the Arts alone; the
-     * Untrained column is the fresh body the 0.0.2 targets are written for. Results are reported,
-     * not tuned: the numbers in the game are left as they are.
+     * a level-d body against the monsters of base level 1 to d, scaled to EDL d, with --approach.
+     * Each Arts column sits beside the same rank without them, so the difference between the two
+     * is the Arts alone; the Untrained column is the fresh body the 0.0.2 targets are written for.
+     * Results are reported, not tuned: the numbers in the game are left as they are.
+     *
+     * <p>It sets the run's options for each cell in turn, and the run ends after it.
      */
-    private void report(List<Monster.MonsterType> band) throws IOException {
+    private void report() throws IOException {
         StringBuilder md = new StringBuilder();
-        md.append(String.format(Locale.ROOT, "Combat Arts in the duel simulator (#250): %d duels x %d species per cell,"
-                + " band base level %d-%d, --approach, seed %d. Win rates.%n", trials, band.size(), minLevel, maxLevel, seed));
+        md.append(String.format(Locale.ROOT, "Combat Arts in the duel simulator (#250): %d duels per species per cell,"
+                + " --approach, seed %d. Win rates.%n", trials, seed));
         approach = true;
         for (int depth : new int[]{1, 3}) {
             playerLevel = depth;
             edl = depth;
+            List<Monster.MonsterType> band = bandOf(1, depth);
             StringBuilder head = new StringBuilder("| Family | Weapon |");
             StringBuilder rule = new StringBuilder("|---|---|");
-            for (Object[] arm : REPORT_ARMS) {
-                head.append(' ').append(arm[0]).append(" |");
+            for (ReportArm arm : REPORT_ARMS) {
+                head.append(' ').append(arm.label).append(" |");
                 rule.append("---|");
             }
-            md.append(String.format(Locale.ROOT, "%n### Depth %d (level %d, EDL %d)%n%n%s%n%s%n", depth, depth, depth, head, rule));
-            System.out.println("Depth " + depth);
-            for (Object[] row : REPORT_FAMILIES) {
-                unarmed = "UNARMED".equals(row[1]);
-                weaponOverride = row[1] instanceof Item.ItemType ? (Item.ItemType) row[1] : null;
-                StringBuilder line = new StringBuilder("| " + row[0] + " | "
-                        + (unarmed ? "bare hands" : weaponOverride != null ? weaponOverride.name() : "Father's Sword") + " |");
-                for (Object[] arm : REPORT_ARMS) {
-                    masteryRank = (Mastery.Rank) arm[1];
-                    passive = (Boolean) arm[2];
-                    arts = (Boolean) arm[3];
+            md.append(String.format(Locale.ROOT, "%n### Depth %d (level %d, EDL %d, monsters of base level 1-%d: %d species)%n%n%s%n%s%n",
+                    depth, depth, depth, depth, band.size(), head, rule));
+            System.out.println("Depth " + depth + " (" + band.size() + " species)");
+            for (ReportFamily family : REPORT_FAMILIES) {
+                unarmed = family.bareHands;
+                weaponOverride = family.weapon;
+                StringBuilder line = new StringBuilder("| " + family.name + " | " + family.weaponName() + " |");
+                for (ReportArm arm : REPORT_ARMS) {
+                    masteryRank = arm.rank;
+                    passive = arm.passive;
+                    arts = arm.arts;
                     line.append(String.format(Locale.ROOT, " %.1f%% |", pct(bandTally(band).wins, trials * band.size())));
                 }
                 md.append(line).append(System.lineSeparator());
@@ -548,6 +587,17 @@ public class DuelSimulationLauncher implements ApplicationListener {
             w.print(md);
         }
         System.out.println("Report written to " + reportPath);
+    }
+
+    /** The loaded species of base level {@code lo} to {@code hi}, by name. */
+    private List<Monster.MonsterType> bandOf(int lo, int hi) {
+        List<Monster.MonsterType> band = new ArrayList<>();
+        for (Monster.MonsterType type : monsterDataManager.getLoadedTypes()) {
+            MonsterTemplate t = monsterDataManager.getTemplate(type);
+            if (t != null && t.baseLevel >= lo && t.baseLevel <= hi) band.add(type);
+        }
+        band.sort(java.util.Comparator.comparing(Enum::name));
+        return band;
     }
 
     private Tally bandTally(List<Monster.MonsterType> band) {
@@ -655,7 +705,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 pct(t.fullHits, t.swings), pct(t.glancing, t.swings), pct(t.monsterHits, t.monsterActions),
                 t.monsterActions / (float) Math.max(1, t.playerTurns),
                 // Monster attacks per player attack: live depth-1 telemetry reads 1.83 (#233).
-                t.monsterActions / (float) Math.max(1, t.swings), t.passiveProcs);
+                t.monsterActions / (float) Math.max(1, t.swings), t.artUses);
     }
 
     private static float pct(int a, int b) {
