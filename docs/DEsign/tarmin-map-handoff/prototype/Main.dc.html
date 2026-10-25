@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tarmin expedition map</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1920px; height: 1080px; box-sizing: border-box; padding: 12px 24px; background: #0B0907; color: #EFE3CC; font-family: 'VT323', monospace; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden" onKeyDown="{{onKey}}">
+
+<header style="height: 80px; flex: none; box-sizing: border-box; display: flex; align-items: center; gap: 22px; padding: 0 20px; background: #15100B; border: 2px solid #6E4D25; border-top-color: #B8862F; border-left-color: #B8862F; border-bottom-color: #3A2A18; box-shadow: inset 0 0 0 1px #0B0907, inset 0 0 0 3px #1F170F; position: relative">
+<span aria-hidden="true" style="position: absolute; left: -6px; top: -6px; width: 8px; height: 8px; background: #E9B44C; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<span aria-hidden="true" style="position: absolute; right: -6px; top: -6px; width: 8px; height: 8px; background: #E9B44C; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<span aria-hidden="true" style="position: absolute; left: -6px; bottom: -6px; width: 8px; height: 8px; background: #B8862F; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<span aria-hidden="true" style="position: absolute; right: -6px; bottom: -6px; width: 8px; height: 8px; background: #B8862F; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<div style="display: flex; align-items: center; gap: 14px">
+<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" style="flex: none" shape-rendering="crispEdges"><rect x="1" y="1" width="38" height="38" fill="#0B0907" stroke="#6E4D25" stroke-width="2"></rect><path d="M20 5 L24 20 L20 35 L16 20 Z" fill="#E9B44C"></path><path d="M20 20 L24 20 L20 35 Z" fill="#B8862F"></path><path d="M5 20 L20 16 L35 20 L20 24 Z" fill="none" stroke="#6E4D25" stroke-width="2"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; font-weight: 400; color: #E9B44C">EXPEDITION MAP</h1>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">TARMIN / THE KNOWN WORLD</div>
+</div>
+</div>
+<div aria-hidden="true" style="width: 2px; height: 44px; background: #3A2A18; box-shadow: 1px 0 0 #0B0907"></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">FLOOR</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; color: #EFE3CC">{{floorLabel}}</div>
+</div>
+<div aria-hidden="true" style="width: 2px; height: 44px; background: #3A2A18; box-shadow: 1px 0 0 #0B0907"></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">SEALS WON</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<div aria-hidden="true" style="display: flex; gap: 8px; padding-left: 2px">
+<span style="width: 9px; height: 9px; transform: rotate(45deg); border: 2px solid #6E4D25; background: #0B0907"></span>
+<span style="width: 9px; height: 9px; transform: rotate(45deg); border: 2px solid #6E4D25; background: #0B0907"></span>
+<span style="width: 9px; height: 9px; transform: rotate(45deg); border: 2px solid #6E4D25; background: #0B0907"></span>
+<span style="width: 9px; height: 9px; transform: rotate(45deg); border: 2px solid #6E4D25; background: #0B0907"></span>
+</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px">0/4</div>
+</div>
+</div>
+<div aria-hidden="true" style="width: 2px; height: 44px; background: #3A2A18; box-shadow: 1px 0 0 #0B0907"></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">DOOM</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<div aria-hidden="true" style="display: flex; gap: 3px">
+<span style="width: 8px; height: 16px; background: #C8553D; box-shadow: inset 0 -3px 0 #7A2E1E"></span>
+<span style="width: 8px; height: 16px; background: #C8553D; box-shadow: inset 0 -3px 0 #7A2E1E"></span>
+<span style="width: 8px; height: 16px; background: #1F170F; box-shadow: inset 0 0 0 2px #3A2A18"></span>
+<span style="width: 8px; height: 16px; background: #1F170F; box-shadow: inset 0 0 0 2px #3A2A18"></span>
+<span style="width: 8px; height: 16px; background: #1F170F; box-shadow: inset 0 0 0 2px #3A2A18"></span>
+</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px">STAGE II</div>
+</div>
+</div>
+<div aria-hidden="true" style="width: 2px; height: 44px; background: #3A2A18; box-shadow: 1px 0 0 #0B0907"></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">WAYPOINT / {{wpName}}</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; color: #E9B44C">{{wpText}}</div>
+</div>
+<div aria-hidden="true" style="width: 2px; height: 44px; background: #3A2A18; box-shadow: 1px 0 0 #0B0907"></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">SUGGESTED / {{sugName}}</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; color: #EFE3CC">{{sugText}}</div>
+</div>
+<div style="flex: 1"></div>
+<div role="group" aria-label="Zoom level" style="display: flex">
+<sc-for list="{{zoomBtns}}" as="z" hint-placeholder-count="3">
+<button type="button" onClick="{{z.pick}}" aria-pressed="{{z.pressed}}" style="{{z.style}}">{{z.label}}</button>
+</sc-for>
+</div>
+<div style="display: flex; gap: 6px">
+<button type="button" onClick="{{rotL}}" aria-label="Rotate view left (Q)" style="width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; background: #1F170F; border: 1px solid #6E4D25; color: #EFE3CC; cursor: pointer"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M5 9 A6 6 0 1 1 7 15"></path><path d="M2 6 L5 9 L8 6"></path></svg></button>
+<button type="button" onClick="{{rotR}}" aria-label="Rotate view right (E)" style="width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; background: #1F170F; border: 1px solid #6E4D25; color: #EFE3CC; cursor: pointer"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M15 9 A6 6 0 1 0 13 15"></path><path d="M18 6 L15 9 L12 6"></path></svg></button>
+</div>
+<button type="button" onClick="{{toggleClose}}" style="height: 44px; padding: 0 14px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC; background: #1F170F; border: 1px solid #6E4D25; cursor: pointer">CLOSE  M</button>
+</header>
+
+<div style="display: flex; gap: 16px; height: 912px; flex: none">
+<div style="width: 1456px; height: 912px; flex: none; box-sizing: border-box; padding: 6px; background: #1F170F; border: 2px solid #6E4D25; border-top-color: #B8862F; border-left-color: #B8862F; border-bottom-color: #3A2A18; position: relative">
+<span aria-hidden="true" style="position: absolute; left: -6px; top: -6px; width: 8px; height: 8px; background: #E9B44C; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907; z-index: 2"></span>
+<span aria-hidden="true" style="position: absolute; right: -6px; top: -6px; width: 8px; height: 8px; background: #E9B44C; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907; z-index: 2"></span>
+<span aria-hidden="true" style="position: absolute; left: -6px; bottom: -6px; width: 8px; height: 8px; background: #B8862F; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907; z-index: 2"></span>
+<span aria-hidden="true" style="position: absolute; right: -6px; bottom: -6px; width: 8px; height: 8px; background: #B8862F; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907; z-index: 2"></span>
+<div style="position: relative; width: 1440px; height: 896px; overflow: hidden; background: #0B0907; box-shadow: 0 0 0 1px #B8862F">
+<canvas width="720" height="448" ref="{{canvasRef}}" tabIndex="0" aria-label="Expedition map. Drag or use the arrow keys to pan, mouse wheel or plus and minus to zoom, click a chunk to select it." onPointerDown="{{onDown}}" onPointerMove="{{onMove}}" onPointerUp="{{onUp}}" onPointerCancel="{{onCancel}}" onWheel="{{onWheel}}" style="display: block; width: 1440px; height: 896px; image-rendering: pixelated; cursor: grab; touch-action: none"></canvas>
+
+<div style="position: absolute; left: 16px; top: 16px; padding: 14px 16px; background: rgba(11, 9, 7, 0.86); border: 1px solid #6E4D25; display: flex; flex-direction: column; gap: 10px; pointer-events: none">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">VIEW</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; color: #E9B44C">{{levelLabel}}</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">{{levelHint}}</div>
+</div>
+
+<div style="position: absolute; left: 16px; top: 360px; padding: 14px 12px; background: rgba(11, 9, 7, 0.86); border: 1px solid #6E4D25; display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">FLOOR  ] UP  [ DOWN</div>
+<sc-for list="{{floorBtns}}" as="f" hint-placeholder-count="2">
+<button type="button" onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="{{f.style}}">{{f.label}}</button>
+</sc-for>
+</div>
+
+<div style="position: absolute; right: 16px; top: 16px; width: 104px; height: 104px; box-sizing: border-box; background: rgba(11, 9, 7, 0.86); border: 1px solid #6E4D25; border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none">
+<div style="width: 84px; height: 84px; transform: rotate({{compassDeg}}deg); transition: transform 420ms ease">
+<svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Compass: N marks world north"><circle cx="42" cy="42" r="38" fill="none" stroke="#6E4D25" stroke-width="2"></circle><circle cx="42" cy="42" r="30" fill="none" stroke="#3A2A18" stroke-width="2" stroke-dasharray="2 4"></circle><path d="M42 12 L48 42 L42 46 L36 42 Z" fill="#E9B44C"></path><path d="M42 72 L48 42 L42 38 L36 42 Z" fill="#3A2A18"></path><text x="42" y="10" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="8" fill="#FFD77A">N</text></svg>
+</div>
+</div>
+
+<div style="position: absolute; left: 16px; bottom: 16px; padding: 14px 16px; background: rgba(11, 9, 7, 0.88); border: 1px solid #6E4D25; display: flex; flex-direction: column; gap: 12px; pointer-events: none">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">PINS  (P CYCLES THE SELECTED CHUNK)</div>
+<div style="display: flex; gap: 16px; align-items: center">
+<sc-for list="{{legendPins}}" as="l" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 8px">
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(9, 3px); grid-auto-rows: 3px">
+<sc-for list="{{l.cells}}" as="px" hint-placeholder-count="81"><span style="width: 3px; height: 3px; background: {{px.bg}}"></span></sc-for>
+</div>
+<span style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC">{{l.name}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 16px; align-items: center">
+<sc-for list="{{legendMarks}}" as="l" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; gap: 8px">
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(9, 3px); grid-auto-rows: 3px">
+<sc-for list="{{l.cells}}" as="px" hint-placeholder-count="81"><span style="width: 3px; height: 3px; background: {{px.bg}}"></span></sc-for>
+</div>
+<span style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC">{{l.name}}</span>
+</div>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 8px">
+<span aria-hidden="true" style="width: 9px; height: 9px; transform: rotate(45deg); background: #6CCFE0; box-shadow: 0 0 0 2px #0B0907"></span>
+<span style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC">YOU</span>
+</div>
+</div>
+</div>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: absolute; left: 50%; top: 20px; transform: translateX(-50%); padding: 14px 18px; background: #15100B; border: 2px solid #B8862F; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #FFD77A; pointer-events: none; white-space: nowrap">{{toast}}</div>
+</sc-if>
+
+<sc-if value="{{closed}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: #0B0907; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; color: #E9B44C">THE MAP IS FOLDED AWAY</div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">PRESS M TO SPREAD IT OUT AGAIN</div>
+<button type="button" onClick="{{toggleClose}}" style="height: 44px; padding: 0 18px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #FFD77A; background: #3A2A18; border: 1px solid #E9B44C; cursor: pointer">OPEN MAP  M</button>
+</div>
+</sc-if>
+</div>
+</div>
+
+<aside aria-label="Selected chunk" style="width: 400px; height: 912px; flex: none; box-sizing: border-box; padding: 22px 22px 20px; background: #15100B; border: 2px solid #6E4D25; border-top-color: #B8862F; border-left-color: #B8862F; border-bottom-color: #3A2A18; box-shadow: inset 0 0 0 1px #0B0907, inset 0 0 0 3px #1F170F; display: flex; flex-direction: column; gap: 16px; position: relative">
+<span aria-hidden="true" style="position: absolute; left: -6px; top: -6px; width: 8px; height: 8px; background: #E9B44C; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<span aria-hidden="true" style="position: absolute; right: -6px; top: -6px; width: 8px; height: 8px; background: #E9B44C; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<span aria-hidden="true" style="position: absolute; left: -6px; bottom: -6px; width: 8px; height: 8px; background: #B8862F; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<span aria-hidden="true" style="position: absolute; right: -6px; bottom: -6px; width: 8px; height: 8px; background: #B8862F; transform: rotate(45deg); box-shadow: 0 0 0 2px #0B0907"></span>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">SELECTED CHUNK</div>
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 16px; font-weight: 400; color: #E9B44C">{{selTitle}}</h2>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC">CHUNK {{selCoord}}</div>
+</div>
+<div style="{{chipStyle}}">{{stateLabel}}</div>
+</div>
+<p style="margin: 0; font-size: 24px; line-height: 22px; color: #B39C78">{{selDesc}}</p>
+</div>
+<div aria-hidden="true" style="height: 2px; background: #3A2A18; box-shadow: 0 1px 0 #0B0907; flex: none"></div>
+<dl style="margin: 0; display: grid; grid-template-columns: 128px minmax(0, 1fr); column-gap: 12px; row-gap: 12px; align-items: center">
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">DANGER</dt>
+<dd style="margin: 0; display: flex; align-items: center; gap: 10px">
+<span aria-hidden="true" style="display: flex; gap: 4px">
+<sc-for list="{{dangerPips}}" as="d" hint-placeholder-count="5"><span style="{{d.style}}"></span></sc-for>
+</span>
+<span style="font-size: 24px; line-height: 22px">{{dangerWord}}</span>
+</dd>
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">SHELTER</dt>
+<dd style="margin: 0; font-size: 24px; line-height: 22px">{{shelterText}}</dd>
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">STRATA BELOW</dt>
+<dd style="margin: 0; font-size: 24px; line-height: 22px">{{strataText}}</dd>
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">FROM YOU</dt>
+<dd style="margin: 0; font-size: 24px; line-height: 22px">{{distYou}}</dd>
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">NEAREST FIRE</dt>
+<dd style="margin: 0; font-size: 24px; line-height: 22px">{{distFire}}</dd>
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">FROM HOME</dt>
+<dd style="margin: 0; font-size: 24px; line-height: 22px">{{distHome}}</dd>
+<dt style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78">PIN</dt>
+<dd style="margin: 0; display: flex; align-items: center; gap: 10px">
+<sc-if value="{{hasPin}}" hint-placeholder-val="{{ true }}">
+<span aria-hidden="true" style="display: grid; grid-template-columns: repeat(9, 3px); grid-auto-rows: 3px">
+<sc-for list="{{pinCells}}" as="px" hint-placeholder-count="81"><span style="width: 3px; height: 3px; background: {{px.bg}}"></span></sc-for>
+</span>
+</sc-if>
+<span style="font-size: 24px; line-height: 22px">{{pinLabel}}</span>
+</dd>
+</dl>
+<div aria-hidden="true" style="height: 2px; background: #3A2A18; box-shadow: 0 1px 0 #0B0907; flex: none"></div>
+<section style="flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px">
+<h3 style="margin: 0; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; font-weight: 400; color: #B39C78">LOOT LEFT BEHIND</h3>
+<sc-if value="{{hasLoot}}" hint-placeholder-val="{{ true }}">
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{loot}}" as="it" hint-placeholder-count="2">
+<li style="display: flex; align-items: center; gap: 10px; font-size: 24px; line-height: 22px"><span aria-hidden="true" style="width: 6px; height: 6px; background: #E9B44C; flex: none"></span>{{it.name}}</li>
+</sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{noLoot}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 24px; line-height: 22px; color: #B39C78">{{lootEmpty}}</p>
+</sc-if>
+<h3 style="margin: 6px 0 0; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; font-weight: 400; color: #B39C78">GRAVES OF PAST LIVES</h3>
+<sc-if value="{{hasGraves}}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{graves}}" as="gr" hint-placeholder-count="1">
+<div style="padding: 12px; background: #0B0907; border: 1px solid #3A2A18; display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC">{{gr.title}}</div>
+<div style="font-size: 24px; line-height: 22px">{{gr.cause}}</div>
+<div style="font-size: 24px; line-height: 22px; color: #B39C78">{{gr.left}}</div>
+</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{noGraves}}" hint-placeholder-val="{{ true }}">
+<p style="margin: 0; font-size: 24px; line-height: 22px; color: #B39C78">{{gravesEmpty}}</p>
+</sc-if>
+</section>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; flex: none">
+<button type="button" onClick="{{setWaypoint}}" style="height: 44px; padding: 0 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #FFD77A; background: #3A2A18; border: 1px solid #E9B44C; cursor: pointer">SET WAYPOINT  W</button>
+<button type="button" onClick="{{acceptSuggestion}}" style="height: 44px; padding: 0 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC; background: #1F170F; border: 1px solid #6E4D25; cursor: pointer">TAKE SUGGESTION  G</button>
+<button type="button" onClick="{{zoomInBtn}}" style="height: 44px; padding: 0 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC; background: #1F170F; border: 1px solid #6E4D25; cursor: pointer">ZOOM IN  ENTER</button>
+<button type="button" onClick="{{cyclePin}}" style="height: 44px; padding: 0 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #EFE3CC; background: #1F170F; border: 1px solid #6E4D25; cursor: pointer">CYCLE PIN  P</button>
+</div>
+</aside>
+</div>
+
+<footer style="height: 40px; flex: none; display: flex; align-items: center; gap: 22px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: #B39C78; white-space: nowrap">
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">DRAG</kbd> <kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">ARROWS</kbd> PAN</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">WHEEL</kbd> <kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">+ -</kbd> ZOOM</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">[ ]</kbd> FLOOR</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">Q E</kbd> ROTATE</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">W</kbd> WAYPOINT</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">G</kbd> SUGGESTION</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">P</kbd> PIN</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">C</kbd> CENTRE</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">ENTER</kbd> ZOOM IN</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">ESC</kbd> BACK OUT</span>
+<span><kbd style="font: inherit; color: #EFE3CC; padding: 5px 7px; background: #1F170F; border: 1px solid #6E4D25">M</kbd> CLOSE</span>
+<span style="flex: 1"></span>
+<span>CLICK A CHUNK TO SELECT, AGAIN TO ZOOM</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"fogStrength":{"editor":"range","min":0,"max":1,"step":0.05,"default":1,"section":"Map"},"startZoom":{"editor":"enum","options":["world","region","chunk"],"default":"world","section":"Map"},"startFloor":{"editor":"enum","options":["0","-1"],"default":"0","section":"Map"},"startSelected":{"editor":"text","default":"5,4","section":"Map"},"rotation":{"editor":"enum","options":["0","1","2","3"],"default":"0","section":"Map"},"animate":{"editor":"boolean","default":true,"section":"Map"},"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.W = 720; this.H = 448; this.N = 10; this.R = 8; this.PAD = 7;
+    this.LV = { world: 1.0, region: 2.6, chunk: 6.4 };
+    this.SL = '#2d343c'; this.SD = '#20262c';
+    this.CYAN = '#6CCFE0'; this.INK = '#20150B';
+    this.initGlyphs();
+    this.initWorld();
+    this.time = 0; this.last = 0; this.dirty = true; this.drag = null; this.rotN = 0; this.ready = false;
+    this.cam = { x: 5, y: 5, s: 1, th: 0 }; this.tgt = { x: 5, y: 5, s: 1, th: 0 }; this.floorT = 0;
+    this.state = { sel: '5,4', floor: 0, rot: 0, level: 'world', waypoint: '7,7', pins: Object.assign({}, this.initPins), closed: false, toast: '' };
+    Object.assign(this.state, this.startFrom(props || {}));
+    this.canvasRef = (el) => { this.canvas = el; this.ctx = el ? el.getContext('2d') : null; this.dirty = true; };
+    this.frame = this.frame.bind(this);
+    this.onKey = (e) => this.handleKey(e);
+    this.onDown = (e) => {
+      if (this.canvas && this.canvas.focus) { try { this.canvas.focus({ preventScroll: true }); } catch (err) {} }
+      this.drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false };
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    };
+    this.onMove = (e) => {
+      const d = this.drag; if (!d) return;
+      const sc = this.cssScale();
+      const dx = (e.clientX - d.x) * sc, dy = (e.clientY - d.y) * sc;
+      d.x = e.clientX; d.y = e.clientY;
+      if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 5) d.moved = true;
+      if (d.moved) { this.panScreen(-dx, -dy); this.cam.x = this.tgt.x; this.cam.y = this.tgt.y; this.dirty = true; }
+    };
+    this.onUp = (e) => {
+      const d = this.drag; this.drag = null;
+      if (!d || d.moved) return;
+      const p = this.toLocal(e); this.clickAt(p[0], p[1]);
+    };
+    this.onCancel = () => { this.drag = null; };
+    this.onWheel = (e) => {
+      const p = this.toLocal(e);
+      this.zoomAt(p[0], p[1], Math.exp(-e.deltaY * 0.0015));
+    };
+    this.rotL = () => this.rotate(-1);
+    this.rotR = () => this.rotate(1);
+    this.toggleClose = () => { this.setState({ closed: !this.state.closed }); this.dirty = true; };
+    this.setWaypoint = () => this.doWaypoint();
+    this.acceptSuggestion = () => this.doAccept();
+    this.cyclePin = () => this.doPin();
+    this.zoomInBtn = () => this.zoomIn();
+  }
+
+  /* ---------- lifecycle ---------- */
+  startKeyOf(p) { return [p.startSelected, p.startZoom, p.startFloor, p.rotation].join('|'); }
+  startFrom(p) {
+    let sel = String(p.startSelected == null ? '5,4' : p.startSelected).replace(/\s+/g, '');
+    if (!this.chunks[sel]) sel = '5,4';
+    const lvl = (p.startZoom === 'region' || p.startZoom === 'chunk') ? p.startZoom : 'world';
+    const floor = String(p.startFloor) === '-1' ? -1 : 0;
+    const rot = (((parseInt(p.rotation, 10) || 0) % 4) + 4) % 4;
+    const c = this.chunks[sel];
+    const s = this.LV[lvl];
+    const x = lvl === 'world' ? this.N / 2 : c.x + 0.5;
+    const y = lvl === 'world' ? this.N / 2 : c.y + 0.5;
+    const th = rot * Math.PI / 2;
+    this.rotN = rot;
+    this.cam = { x: x, y: y, s: s, th: th };
+    this.tgt = { x: x, y: y, s: s, th: th };
+    this.floorT = floor === -1 ? 1 : 0;
+    this.dirty = true; this.k0 = null; this.k1 = null;
+    this.startKey = this.startKeyOf(p);
+    return { sel: sel, floor: floor, rot: rot, level: lvl };
+  }
+  componentDidMount() {
+    const p = this.props || {};
+    if (this.startKeyOf(p) !== this.startKey) this.setState(this.startFrom(p));
+    this.setup();
+    this.raf = requestAnimationFrame(this.frame);
+  }
+  componentDidUpdate() {
+    const p = this.props || {};
+    if (this.startKeyOf(p) !== this.startKey) this.setState(this.startFrom(p));
+    this.dirty = true;
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); clearTimeout(this.tt); }
+  animOn() { const a = (this.props || {}).animate; return !(a === false || a === 'false'); }
+  fogStrength() { const f = parseFloat((this.props || {}).fogStrength); return isNaN(f) ? 1 : Math.max(0, Math.min(1, f)); }
+
+  /* ---------- small utils ---------- */
+  rng(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  hash(x, y) { return ((x + 31) * 73856093 ^ (y + 17) * 19349663 ^ 0x9e3779b9) >>> 0; }
+  ss(a, b, v) { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+  ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  hex(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+  mix(a, b, t) { const A = this.hex(a), B = this.hex(b); const c = A.map((v, i) => Math.round(v + (B[i] - v) * t)); return '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); }
+  shade(h, amt) { return amt >= 0 ? this.mix(h, '#ffffff', amt) : this.mix(h, '#000000', -amt); }
+  coord(c) { return 'ABCDEFGHIJ'.charAt(c.x) + (c.y + 1); }
+  levelOf(s) { return s < 1.7 ? 'world' : (s < 4.2 ? 'region' : 'chunk'); }
+  topZ(c) { if (c.state === 'visited') return c.b === 'O' ? 2 : 6; if (c.state === 'glimpsed') return c.b === 'O' ? 1.2 : 2.5; return 0; }
+
+  /* ---------- glyphs ---------- */
+  initGlyphs() {
+    this.G = {
+      danger: ['.#####.', '#######', '#..#..#', '#######', '.##.##.', '.#####.', '.#.#.#.'],
+      loot: ['.......', '.#####.', '#.....#', '###.###', '#..#..#', '#.....#', '#######'],
+      return: ['.#.....', '.####..', '.#####.', '.####..', '.#.....', '.#.....', '###....'],
+      trader: ['...#...', '#######', '#..#..#', '#..#..#', '##.#.##', '...#...', '.#####.'],
+      locked: ['..###..', '.#...#.', '.#...#.', '#######', '###.###', '###.###', '#######'],
+      unknown: ['.#####.', '#.....#', '.....#.', '...##..', '...#...', '.......', '...#...'],
+      grave: ['..###..', '.#####.', '.##.##.', '.#...#.', '.##.##.', '.#####.', '#######'],
+      portal: ['..###..', '.#...#.', '#..#..#', '#.#.#.#', '#..#..#', '.#...#.', '..###..'],
+      ladder: ['#.....#', '#######', '#.....#', '#######', '#.....#', '#######', '#.....#'],
+      shelter: ['...#...', '..###..', '.#####.', '#######', '.#...#.', '.#.#.#.', '.#.#.#.'],
+      home: ['#..#...', '##.#...', '#.###..', '.#####.', '#######', '.#.#.#.', '.#####.'],
+      seal: ['..#.#..', '.#####.', '##...##', '.#.#.#.', '##...##', '.#####.', '..#.#..'],
+      castle: ['#.#.#.#', '#######', '.#####.', '.##.##.', '.#####.', '.##.##.', '#######'],
+      event: ['...#...', '..###..', '..###..', '...#...', '...#...', '.......', '...#...'],
+      flag: ['##.....', '####...', '#####..', '####...', '##.....', '#......', '#......']
+    };
+    this.PIN_ORDER = ['', 'danger', 'loot', 'return', 'trader', 'locked', 'unknown'];
+    this.PIN_NAME = { danger: 'Danger', loot: 'Loot', return: 'Return here', trader: 'Trader', locked: 'Locked', unknown: 'Unknown' };
+    this.PINC = { danger: '#D07A5A', loot: '#E2BE6A', return: '#CDBF9A', trader: '#BFA86C', locked: '#A8977C', unknown: '#B3A58E' };
+    this.DIG = { 1: ['.#.', '##.', '.#.', '.#.', '###'], 2: ['##.', '..#', '.#.', '#..', '###'], 3: ['##.', '..#', '.#.', '..#', '##.'] };
+    this.legendPins = ['danger', 'loot', 'return', 'trader', 'locked', 'unknown'].map(n => ({ name: this.PIN_NAME[n].toUpperCase(), cells: this.cellsFor(n, this.PINC[n], this.INK) }));
+    this.legendMarks = [
+      { name: 'HOME', cells: this.cellsFor('home', '#FFD77A', this.INK) },
+      { name: 'LIT', cells: this.cellsFor('shelter', '#E9B44C', this.INK) },
+      { name: 'COLD', cells: this.cellsFor('shelter', '#857A6C', this.INK) },
+      { name: 'RUMOUR', cells: this.cellsFor('shelter', '#3A2A18', '#E9B44C') },
+      { name: 'SEAL', cells: this.cellsFor('seal', '#D0683F', this.INK) },
+      { name: 'GRAVE', cells: this.cellsFor('grave', '#B9B1A2', this.INK) },
+      { name: 'PORTAL', cells: this.cellsFor('portal', '#C9A6E8', this.INK) },
+      { name: 'LADDER', cells: this.cellsFor('ladder', '#B8862F', this.INK) },
+      { name: 'CASTLE', cells: this.cellsFor('castle', '#8E5BC4', '#0B0907') }
+    ];
+  }
+  cellsFor(name, bg, ink) {
+    const G = this.G[name]; const out = [];
+    for (let j = 0; j < 9; j++) for (let i = 0; i < 9; i++) {
+      const edge = i === 0 || j === 0 || i === 8 || j === 8;
+      const corner = (i === 0 || i === 8) && (j === 0 || j === 8);
+      let col;
+      if (corner) col = 'transparent'; else if (edge) col = ink; else col = G[j - 1].charAt(i - 1) === '#' ? ink : bg;
+      out.push({ bg: col });
+    }
+    return out;
+  }
+
+  /* ---------- world data ---------- */
+  initWorld() {
+    const rows = ['OOTTTKKBOO', 'OTTTKKKBBO', 'OTTKKMKBBO', 'OFFMMMMBDO', 'OFFMMMMBDO', 'OLFFMMDDDO', 'OLLFMDDKDO', 'OLLLFOKKOO', 'OOLLLOOOOO', 'OOOOOOOOOO'];
+    this.BIOME = {
+      M: { name: 'Maze', top: '#3b342c', sideA: '#2c2621', sideB: '#1d1915', danger: 3, desc: 'Dark stone walls and corridors that double back on themselves.' },
+      F: { name: 'Forest', top: '#2e3824', sideA: '#2e2519', sideB: '#1f1910', danger: 2, desc: 'Dense pines. Little light reaches the ground.' },
+      D: { name: 'Desert', top: '#8a6d47', sideA: '#77593a', sideB: '#563f28', danger: 2, desc: 'Dunes, hoodoos, sandstone arches and bleached bones.' },
+      K: { name: 'Mountains', top: '#56524b', sideA: '#46423c', sideB: '#302d29', danger: 3, desc: 'Crags and narrow ledges. Hard going, long views.' },
+      L: { name: 'Lakelands', top: '#3a4630', sideA: '#2f2a1f', sideB: '#201d15', danger: 2, desc: 'Still water and reeds. Something lies wrecked on the shore.' },
+      T: { name: 'Tundra', top: '#aeb3ad', sideA: '#868b88', sideB: '#636866', danger: 3, desc: 'Snow and ice. Tracks fill in fast.' },
+      B: { name: 'Blight', top: '#3b2a2c', sideA: '#3a2427', sideB: '#27181a', danger: 4, desc: 'Corrupted, cracked earth that glows where it splits.' },
+      O: { name: 'Ocean', top: '#18262d', sideA: '#16242a', sideB: '#0f191e', danger: 5, desc: 'Dark water at the edge of the world.' }
+    };
+    this.chunks = {}; this.list = [];
+    for (let y = 0; y < this.N; y++) for (let x = 0; x < this.N; x++) {
+      const b = rows[y].charAt(x);
+      const c = { key: x + ',' + y, x: x, y: y, b: b, state: 'unknown', shelter: null, strata: 0, portal: false, seal: null, graves: [], loot: [], danger: this.BIOME[b].danger, tiles: null, props: [], items: [], sil: [], cave: null };
+      this.chunks[c.key] = c; this.list.push(c);
+    }
+    const C = (k) => this.chunks[k];
+    const visited = ['3,2', '3,3', '4,3', '5,3', '6,4', '3,4', '4,4', '5,4', '4,5', '5,5', '2,4', '2,5', '3,5', '2,6', '6,5', '6,6', '7,4'];
+    visited.forEach(k => { C(k).state = 'visited'; });
+    visited.forEach(k => { const c = C(k); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const n = C((c.x + dx) + ',' + (c.y + dy)); if (n && n.state === 'unknown') n.state = 'glimpsed'; } });
+    C('4,5').shelter = 'home'; C('6,5').shelter = 'lit'; C('2,5').shelter = 'cold'; C('8,2').shelter = 'rumoured';
+    C('4,5').danger = 1; C('6,5').danger = 1; C('7,4').danger = 5;
+    C('5,4').strata = 1; C('5,3').portal = true;
+    C('7,7').seal = { name: 'Seal of Embers' };
+    C('3,3').graves = [{ name: 'Aldric', life: 'II', cause: 'Slain by a minotaur', left: 'Left: war shield, 12 arrows' }];
+    C('2,6').graves = [{ name: 'Wenna', life: 'IV', cause: 'Drowned among the reeds', left: 'Left: crystal flask, 30 gold' }];
+    C('3,4').loot = ['Iron war axe', 'Purse of 40 gold'];
+    C('7,4').loot = ['Dark crystal flask'];
+    C('5,5').loot = ['Blue tome, unread'];
+    this.initPins = { '7,4': 'danger', '3,4': 'loot', '4,3': 'locked', '1,4': 'unknown', '6,6': 'return' };
+    this.lit = ['4,5', '6,5'];
+    this.home = '4,5';
+    this.player = { key: '5,4', tx: 3, ty: 4, face: [1, 0] };
+    this.road = { color: '#D0683F', won: false, pts: ['4,5', '5,5', '6,5', '6,6', '7,7'] };
+    this.castle = { x: 14.5, y: -4.5 };
+    this.suggest = '8,2';
+    this.list.forEach(c => {
+      const r = this.rng(this.hash(c.x, c.y) + 99); c.speck = [];
+      for (let i = 0; i < 14; i++) c.speck.push([r(), r()]);
+      if (c.state === 'visited') this.genChunk(c);
+      else if (c.state === 'glimpsed') this.genGlimpse(c);
+    });
+    this.genCave(C('5,4'));
+  }
+
+  genChunk(c) {
+    const r = this.rng(this.hash(c.x, c.y));
+    const B = this.BIOME[c.b];
+    const id = (x, y) => y * 8 + x;
+    const T = [];
+    for (let i = 0; i < 64; i++) T.push({ t: 'floor', seen: false, v: r() });
+    const feat = !!(c.shelter || c.portal || c.graves.length || c.strata);
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    if (c.b === 'M') {
+      T.forEach(t => { t.t = 'wall'; });
+      const vis = []; for (let i = 0; i < 16; i++) vis.push(false);
+      const stack = [[0, 0]]; vis[0] = true; T[0].t = 'floor';
+      while (stack.length) {
+        const cur = stack[stack.length - 1];
+        const nb = dirs.filter(d => { const nx = cur[0] + d[0], ny = cur[1] + d[1]; return nx >= 0 && ny >= 0 && nx < 4 && ny < 4 && !vis[ny * 4 + nx]; });
+        if (!nb.length) { stack.pop(); continue; }
+        const d = nb[Math.floor(r() * nb.length)]; const nx = cur[0] + d[0], ny = cur[1] + d[1];
+        vis[ny * 4 + nx] = true; T[id(cur[0] * 2 + d[0], cur[1] * 2 + d[1])].t = 'floor'; T[id(nx * 2, ny * 2)].t = 'floor'; stack.push([nx, ny]);
+      }
+      for (let i = 0; i < 3; i++) { const cx = Math.floor(r() * 3), cy = Math.floor(r() * 4); T[id(cx * 2 + 1, cy * 2)].t = 'floor'; }
+      T[id(7, 2 * Math.floor(r() * 4))].t = 'floor'; T[id(2 * Math.floor(r() * 4), 7)].t = 'floor';
+      if (feat) for (let y = 3; y <= 4; y++) for (let x = 3; x <= 4; x++) T[id(x, y)].t = 'floor';
+    } else if (c.b === 'L') {
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { const t = T[id(x, y)]; if (Math.hypot(x - 4.8, y - 4.8) + (t.v - 0.5) * 1.4 < 2.7) t.t = 'water'; }
+    }
+    const pass = (t) => t.t !== 'wall';
+    let start = id(3, 4);
+    if (!pass(T[start])) { start = T.findIndex(pass); }
+    const total = T.filter(pass).length;
+    const limit = c.shelter === 'home' ? 64 : Math.floor(total * (0.62 + 0.3 * r()));
+    const q = [start]; T[start].seen = true; let n = 1;
+    while (q.length && n < limit) {
+      const i = q.shift(); const x = i % 8, y = Math.floor(i / 8);
+      const ds = dirs.slice().sort(() => r() - 0.5);
+      for (const d of ds) {
+        const nx = x + d[0], ny = y + d[1]; if (nx < 0 || ny < 0 || nx > 7 || ny > 7) continue;
+        const t = T[id(nx, ny)]; if (t.seen || !pass(t)) continue;
+        t.seen = true; n++; q.push(id(nx, ny)); if (n >= limit) break;
+      }
+    }
+    if (c.shelter === 'home') T.forEach(t => { t.seen = true; });
+    if (feat) for (let y = 2; y <= 5; y++) for (let x = 2; x <= 5; x++) if (pass(T[id(x, y)])) T[id(x, y)].seen = true;
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+      const t = T[id(x, y)]; if (t.t !== 'wall') continue;
+      for (const d of dirs) { const nx = x + d[0], ny = y + d[1]; if (nx < 0 || ny < 0 || nx > 7 || ny > 7) continue; const o = T[id(nx, ny)]; if (o.seen && pass(o)) { t.seen = true; break; } }
+    }
+    T.forEach(t => {
+      const base = t.t === 'water' ? '#2b4446' : (t.t === 'wall' ? '#2e2923' : B.top);
+      t.col = this.shade(base, (t.v - 0.5) * 0.16);
+      t.ucol = this.mix(t.col, '#141210', 0.45);
+      if (t.t === 'wall') t.wcol = this.shade('#4b443a', (t.v - 0.5) * 0.18);
+    });
+    const P = [];
+    const near = (u, v) => feat && Math.abs(u - 0.5) < 0.2 && Math.abs(v - 0.5) < 0.2;
+    const adjWater = (x, y) => dirs.some(d => { const nx = x + d[0], ny = y + d[1]; return nx >= 0 && ny >= 0 && nx < 8 && ny < 8 && T[id(nx, ny)].t === 'water'; });
+    for (let ty = 0; ty < 8; ty++) for (let tx = 0; tx < 8; tx++) {
+      const t = T[id(tx, ty)]; if (!t.seen || t.t !== 'floor') continue;
+      const spot = () => [(tx + 0.18 + 0.64 * r()) / 8, (ty + 0.18 + 0.64 * r()) / 8];
+      const roll = r(); const s = spot();
+      if (c.b !== 'M' && near(s[0], s[1])) continue;
+      if (c.b === 'F') {
+        P.push({ kind: 'pine', u: s[0], v: s[1], sz: 0.8 + 0.45 * r() });
+        if (roll < 0.55) { const s2 = spot(); if (!near(s2[0], s2[1])) P.push({ kind: 'pine', u: s2[0], v: s2[1], sz: 0.7 + 0.4 * r() }); }
+      } else if (c.b === 'K') {
+        if (roll < 0.72) P.push({ kind: 'crag', u: s[0], v: s[1], sz: 0.7 + 0.5 * r(), va: r() });
+      } else if (c.b === 'D') {
+        if (roll < 0.32) P.push({ kind: 'dune', u: s[0], v: s[1], sz: 0.8 + 0.5 * r() });
+        else if (roll < 0.40) P.push({ kind: 'cactus', u: s[0], v: s[1], sz: 0.8 + 0.3 * r() });
+        else if (roll < 0.46) P.push({ kind: 'hoodoo', u: s[0], v: s[1], sz: 0.8 + 0.4 * r() });
+        else if (roll < 0.51) P.push({ kind: 'bones', u: s[0], v: s[1], sz: 1 });
+      } else if (c.b === 'B') {
+        if (roll < 0.5) P.push({ kind: 'crack', u: s[0], v: s[1], sz: 0.8 + 0.5 * r(), va: r() });
+        else if (roll < 0.66) P.push({ kind: 'deadtree', u: s[0], v: s[1], sz: 0.8 + 0.4 * r() });
+        else if (roll < 0.76) P.push({ kind: 'pustule', u: s[0], v: s[1], sz: 0.8 + 0.4 * r() });
+      } else if (c.b === 'L') {
+        if (adjWater(tx, ty) && roll < 0.8) P.push({ kind: 'reeds', u: s[0], v: s[1], sz: 0.8 + 0.4 * r() });
+        else if (roll < 0.2) P.push({ kind: 'pine', u: s[0], v: s[1], sz: 0.6 + 0.3 * r() });
+        else if (roll < 0.4) P.push({ kind: 'tuft', u: s[0], v: s[1], sz: 1 });
+      } else if (c.b === 'M') {
+        if (roll < 0.06) P.push({ kind: 'rubble', u: s[0], v: s[1], sz: 1 });
+      }
+    }
+    if (c.b === 'D') {
+      const cand = []; T.forEach((t, i) => { const u = (i % 8 + 0.5) / 8, v = (Math.floor(i / 8) + 0.5) / 8; if (t.seen && t.t === 'floor' && !near(u, v) && Math.abs(u - 0.5) + Math.abs(v - 0.5) > 0.25) cand.push([u, v]); });
+      if (cand.length) { const a = cand[Math.floor(r() * cand.length)]; P.push({ kind: 'arch', u: a[0], v: a[1], sz: 1 }); }
+    }
+    if (c.b === 'L') {
+      for (let i = 0; i < 64; i++) { const t = T[i]; const x = i % 8, y = Math.floor(i / 8); if (t.t === 'water' && t.seen && dirs.some(d => { const nx = x + d[0], ny = y + d[1]; return nx >= 0 && ny >= 0 && nx < 8 && ny < 8 && T[id(nx, ny)].t === 'floor'; })) { P.push({ kind: 'boat', u: (x + 0.5) / 8, v: (y + 0.5) / 8, sz: 1 }); break; } }
+    }
+    if (c.shelter) { P.push({ kind: 'shelter', u: 0.5, v: 0.5, type: c.shelter }); if (c.shelter !== 'cold') P.push({ kind: 'fire', u: 0.68, v: 0.66 }); }
+    if (c.portal) P.push({ kind: 'portal', u: 0.5, v: 0.5 });
+    c.graves.forEach((g, i) => { const u = c.b === 'L' ? 0.3 : 0.44, v = c.b === 'L' ? 0.3 : 0.42; P.push({ kind: 'grave', u: u + i * 0.1, v: v }); });
+    if (c.strata) P.push({ kind: 'ladder', u: 4.5 / 8, v: 4.5 / 8 });
+    if (c.key === this.player.key) P.push({ kind: 'player', u: (this.player.tx + 0.5) / 8, v: (this.player.ty + 0.5) / 8 });
+    const items = [];
+    const free = []; T.forEach((t, i) => { const x = i % 8, y = Math.floor(i / 8); if (t.seen && t.t === 'floor' && !(x >= 3 && x <= 4 && y >= 3 && y <= 4)) free.push([x, y]); });
+    if (c.loot.length && free.length) { const f = free[Math.floor(r() * free.length)]; items.push({ tx: f[0], ty: f[1], kind: 'chest' }); P.push({ kind: 'chest', u: (f[0] + 0.5) / 8, v: (f[1] + 0.5) / 8 }); }
+    if ((r() < 0.55 || c.key === '7,4') && free.length) { const f = free[Math.floor(r() * free.length)]; items.push({ tx: f[0], ty: f[1], kind: 'event' }); }
+    c.tiles = T; c.props = P; c.items = items;
+  }
+
+  genGlimpse(c) {
+    const r = this.rng(this.hash(c.x, c.y) + 7); const S = [];
+    const q = () => [0.15 + 0.7 * r(), 0.15 + 0.7 * r()];
+    const add = (kind, n, extra) => { for (let i = 0; i < n; i++) { const p = q(); S.push(Object.assign({ kind: kind, u: p[0], v: p[1], sz: 0.8 + 0.4 * r(), va: r() }, extra || {})); } };
+    if (c.b === 'F') add('pine', 7);
+    else if (c.b === 'K') add('crag', 3);
+    else if (c.b === 'D') { add('dune', 3); add('hoodoo', 1); }
+    else if (c.b === 'L') { S.push({ kind: 'pool', u: 0.55, v: 0.55, sz: 1 }); add('reeds', 3); }
+    else if (c.b === 'T') { add('mound', 3); add('ice', 2); add('pine', 2, { snow: true }); }
+    else if (c.b === 'B') { add('deadtree', 3); add('crack', 2); }
+    else if (c.b === 'M') add('wallstub', 5);
+    if (c.seal) S.push({ kind: 'seal', u: 0.5, v: 0.5 });
+    c.sil = S;
+  }
+
+  genCave(c) {
+    const r = this.rng(4242); const G = []; for (let i = 0; i < 64; i++) G.push(false);
+    let x = 4, y = 4; G[36] = true;
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (let i = 0; i < 70; i++) { const d = dirs[Math.floor(r() * 4)]; x = Math.max(0, Math.min(7, x + d[0])); y = Math.max(0, Math.min(7, y + d[1])); G[y * 8 + x] = true; }
+    const cave = G.map(o => ({ open: o, seen: o, v: r(), near: false }));
+    cave.forEach((t, i) => { const tx = i % 8, ty = Math.floor(i / 8); if (t.open) return; t.near = dirs.some(d => { const nx = tx + d[0], ny = ty + d[1]; return nx >= 0 && ny >= 0 && nx < 8 && ny < 8 && cave[ny * 8 + nx].open; }); });
+    cave.forEach(t => { t.col = this.shade('#3f3228', (t.v - 0.5) * 0.2); t.h = 2.4 + 1.6 * t.v; });
+    c.cave = cave;
+    c.caveGlow = [];
+    cave.forEach((t, i) => { if (t.near && r() < 0.4) { const tx = i % 8, ty = Math.floor(i / 8); c.caveGlow.push({ u: (tx + 0.2 + 0.6 * r()) / 8, v: (ty + 0.2 + 0.6 * r()) / 8, rgb: r() < 0.6 ? '217,160,74' : '166,120,216', ph: r() * 6 }); } });
+    let far = 36, fd = 0;
+    cave.forEach((t, i) => { if (!t.open) return; const d = Math.abs(i % 8 - 4) + Math.abs(Math.floor(i / 8) - 4); if (d > fd) { fd = d; far = i; } });
+    const opens = []; cave.forEach((t, i) => { if (t.open && i !== 36 && i !== far) opens.push(i); });
+    const ev = opens.length ? opens[Math.floor(r() * opens.length)] : far;
+    c.caveItems = [{ tx: far % 8, ty: Math.floor(far / 8), kind: 'chest' }, { tx: ev % 8, ty: Math.floor(ev / 8), kind: 'event' }];
+  }
+
+  /* ---------- buffers, noise, masks ---------- */
+  setup() {
+    const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+    const W = this.W, H = this.H;
+    this.s0 = mk(W, H); this.s0x = this.s0.getContext('2d');
+    this.s1 = mk(W, H); this.s1x = this.s1.getContext('2d');
+    this.buf = mk(W, H); this.bufx = this.buf.getContext('2d');
+    this.fogC = mk(W, H); this.fogX = this.fogC.getContext('2d');
+    this.wispC = mk(W, H); this.wispX = this.wispC.getContext('2d');
+    const nA = this.noise(128, 11, 4), nB = this.noise(128, 23, 4), nC = this.noise(128, 37, 8), nD = this.noise(128, 51, 4);
+    const texBody = this.tex(nA, [86, 98, 112], v => 0.22 + 0.78 * this.ss(0.2, 0.85, v));
+    const texShade = this.tex(nB, [32, 40, 50], v => 0.7 * this.ss(0.45, 0.9, v));
+    const texHi = this.tex(nD, [198, 210, 220], v => 0.7 * this.ss(0.55, 0.93, v));
+    const texWisp = this.tex(nC, [214, 224, 232], v => this.ss(0.56, 0.74, v) * (1 - this.ss(0.86, 0.97, v)));
+    this.patBody = this.fogX.createPattern(texBody, 'repeat');
+    this.patShade = this.fogX.createPattern(texShade, 'repeat');
+    this.patHi = this.fogX.createPattern(texHi, 'repeat');
+    this.patWisp = this.wispX.createPattern(texWisp, 'repeat');
+    this.buildMasks();
+    this.ready = true; this.dirty = true;
+  }
+  noise(size, seed, base) {
+    const r = this.rng(seed); const out = new Float32Array(size * size); let amp = 1;
+    for (let o = 0; o < 5; o++) {
+      const g = base << o; if (g > size) break;
+      const lat = new Float32Array(g * g); for (let i = 0; i < g * g; i++) lat[i] = r();
+      const cell = size / g;
+      for (let y = 0; y < size; y++) {
+        const fy = y / cell, y0 = Math.floor(fy), ty = fy - y0, sy = ty * ty * (3 - 2 * ty), y1 = (y0 + 1) % g;
+        for (let x = 0; x < size; x++) {
+          const fx = x / cell, x0 = Math.floor(fx), tx = fx - x0, sx = tx * tx * (3 - 2 * tx), x1 = (x0 + 1) % g;
+          const a = lat[y0 * g + x0], b = lat[y0 * g + x1], c = lat[y1 * g + x0], d = lat[y1 * g + x1];
+          const top = a + (b - a) * sx, bot = c + (d - c) * sx;
+          out[y * size + x] += amp * (top + (bot - top) * sy);
+        }
+      }
+      amp *= 0.5;
+    }
+    let mn = Infinity, mx = -Infinity; for (let i = 0; i < out.length; i++) { if (out[i] < mn) mn = out[i]; if (out[i] > mx) mx = out[i]; }
+    for (let i = 0; i < out.length; i++) out[i] = (out[i] - mn) / (mx - mn || 1);
+    return out;
+  }
+  tex(n, rgb, fn) {
+    const size = Math.round(Math.sqrt(n.length)); const c = document.createElement('canvas'); c.width = size; c.height = size;
+    const x = c.getContext('2d'); const img = x.createImageData(size, size);
+    for (let i = 0; i < n.length; i++) { img.data[i * 4] = rgb[0]; img.data[i * 4 + 1] = rgb[1]; img.data[i * 4 + 2] = rgb[2]; img.data[i * 4 + 3] = Math.round(255 * Math.max(0, Math.min(1, fn(n[i])))); }
+    x.putImageData(img, 0, 0); return c;
+  }
+  blur(a, M, rad) {
+    const t = new Float32Array(a.length);
+    for (let y = 0; y < M; y++) for (let x = 0; x < M; x++) { let s = 0, n = 0; for (let k = -rad; k <= rad; k++) { const xx = x + k; if (xx < 0 || xx >= M) continue; s += a[y * M + xx]; n++; } t[y * M + x] = s / n; }
+    for (let y = 0; y < M; y++) for (let x = 0; x < M; x++) { let s = 0, n = 0; for (let k = -rad; k <= rad; k++) { const yy = y + k; if (yy < 0 || yy >= M) continue; s += t[yy * M + x]; n++; } a[y * M + x] = s / n; }
+  }
+  maskCanvas(a, M, fn) {
+    const c = document.createElement('canvas'); c.width = M; c.height = M;
+    const x = c.getContext('2d'); const img = x.createImageData(M, M);
+    for (let i = 0; i < a.length; i++) { img.data[i * 4] = 255; img.data[i * 4 + 1] = 255; img.data[i * 4 + 2] = 255; img.data[i * 4 + 3] = Math.round(255 * Math.max(0, Math.min(1, fn(a[i])))); }
+    x.putImageData(img, 0, 0); return c;
+  }
+  buildMasks() {
+    const R = this.R, PAD = this.PAD, M = (this.N + 2 * PAD) * R;
+    const sA = new Float32Array(M * M), cA = new Float32Array(M * M);
+    for (let py = 0; py < M; py++) for (let px = 0; px < M; px++) {
+      const tx = px - PAD * R, ty = py - PAD * R;
+      const cx = Math.floor(tx / R), cy = Math.floor(ty / R);
+      const c = this.chunks[cx + ',' + cy]; if (!c) continue;
+      const lx = tx - cx * R, ly = ty - cy * R;
+      let v = 0, vc = 0;
+      if (c.state === 'visited') { v = c.tiles[ly * 8 + lx].seen ? 1 : 0.5; vc = 0.22; }
+      else if (c.state === 'glimpsed') { v = 0.42; vc = 0.18; }
+      if (c.cave) { const t = c.cave[ly * 8 + lx]; vc = t.seen ? 1 : (t.near ? 0.78 : 0.42); }
+      sA[py * M + px] = v; cA[py * M + px] = vc;
+    }
+    this.blur(sA, M, 2); this.blur(sA, M, 1);
+    this.blur(cA, M, 1); this.blur(cA, M, 1);
+    this.maskSurf = this.maskCanvas(sA, M, v => v);
+    this.frontSurf = this.maskCanvas(sA, M, v => 4.4 * v * (1 - v));
+    this.maskCave = this.maskCanvas(cA, M, v => v);
+    this.frontCave = this.maskCanvas(cA, M, v => 4.4 * v * (1 - v));
+  }
+
+  /* ---------- projection ---------- */
+  setProj() { const c = this.cam; this.hw = 28 * c.s; this.hh = 14 * c.s; this.cs = Math.cos(c.th); this.sn = Math.sin(c.th); this.zs = c.s; }
+  P(wx, wy, z) {
+    const dx = wx - this.cam.x, dy = wy - this.cam.y;
+    const rx = dx * this.cs - dy * this.sn, ry = dx * this.sn + dy * this.cs;
+    return [this.W / 2 + (rx - ry) * this.hw, this.H / 2 + (rx + ry) * this.hh - z * this.zs];
+  }
+  dep(wx, wy) { const dx = wx - this.cam.x, dy = wy - this.cam.y; return (dx * this.cs - dy * this.sn) + (dx * this.sn + dy * this.cs); }
+  unproj(sx, sy, z) {
+    const X = sx - this.W / 2, Y = sy - this.H / 2 + z * this.zs;
+    const a = X / this.hw, b = Y / this.hh; const rx = (a + b) / 2, ry = (b - a) / 2;
+    return { x: this.cam.x + rx * this.cs + ry * this.sn, y: this.cam.y - rx * this.sn + ry * this.cs };
+  }
+  maskTf(ctx, zf) {
+    const R = this.R, PAD = this.PAD, A = this.cs - this.sn, Bq = this.sn + this.cs, hw = this.hw, hh = this.hh;
+    const ox = -PAD - this.cam.x, oy = -PAD - this.cam.y;
+    ctx.setTransform(hw * A / R, hh * Bq / R, -hw * Bq / R, hh * A / R, this.W / 2 + hw * (A * ox - Bq * oy), this.H / 2 + hh * (Bq * ox + A * oy) - zf * this.zs);
+  }
+  onScreen(wx, wy, m) { const p = this.P(wx, wy, 0); return p[0] > -m && p[0] < this.W + m && p[1] > -m && p[1] < this.H + m; }
+
+  /* ---------- primitives ---------- */
+  poly(g, pts, col) { g.fillStyle = col; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); g.fill(); }
+  tri(g, ax, ay, bx, by, cx, cy, col) { g.fillStyle = col; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.lineTo(cx, cy); g.closePath(); g.fill(); }
+  box(g, x0, y0, x1, y1, z0, z1, top, cL, cR) {
+    const pts = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    const nrm = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (let i = 0; i < 4; i++) {
+      const n = nrm[i]; const rx = n[0] * this.cs - n[1] * this.sn, ry = n[0] * this.sn + n[1] * this.cs;
+      if (rx + ry <= 0.001) continue;
+      const a = pts[i], b = pts[(i + 1) % 4];
+      this.poly(g, [this.P(a[0], a[1], z0), this.P(b[0], b[1], z0), this.P(b[0], b[1], z1), this.P(a[0], a[1], z1)], (rx - ry) < 0 ? cL : cR);
+    }
+    if (top) this.poly(g, pts.map(p => this.P(p[0], p[1], z1)), top);
+  }
+  pyramid(g, x0, y0, x1, y1, z0, z1, cL, cR) {
+    const ap = this.P((x0 + x1) / 2, (y0 + y1) / 2, z1);
+    const pts = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]; const nrm = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    const faces = [];
+    for (let i = 0; i < 4; i++) { const n = nrm[i]; const rx = n[0] * this.cs - n[1] * this.sn, ry = n[0] * this.sn + n[1] * this.cs; faces.push({ i: i, f: rx + ry, sh: rx - ry }); }
+    faces.sort((a, b) => a.f - b.f);
+    faces.forEach(fc => {
+      const a = pts[fc.i], b = pts[(fc.i + 1) % 4]; const A = this.P(a[0], a[1], z0), B = this.P(b[0], b[1], z0);
+      this.tri(g, A[0], A[1], B[0], B[1], ap[0], ap[1], fc.f < 0 ? this.shade(cR, -0.25) : (fc.sh < 0 ? cL : cR));
+    });
+  }
+  glow(g, x, y, r, rgb, a) {
+    if (r < 1 || a <= 0) return;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  beam(g, x, y, w, h, rgb, a) {
+    const gr = g.createLinearGradient(0, y, 0, y - h);
+    gr.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+    g.fillStyle = gr; g.fillRect(x - w / 2, y - h, w, h);
+  }
+
+  /* ---------- props ---------- */
+  prop(g, p, c, h, sil) {
+    const wx = c.x + p.u, wy = c.y + p.v;
+    const L = (col) => sil ? this.SL : col; const D = (col) => sil ? this.SD : col;
+    const s = this.cam.s;
+    switch (p.kind) {
+      case 'shelter': return this.shelter(g, c, h, p.type);
+      case 'grave': return this.graveProp(g, wx, wy, h);
+      case 'portal': return this.portalProp(g, wx, wy, h);
+      case 'seal': return this.sealProp(g, wx, wy, h, sil);
+      case 'chest': return this.box(g, wx - 0.03, wy - 0.022, wx + 0.03, wy + 0.022, h, h + 1.6, '#a0702f', '#7a4f22', '#553614');
+      case 'wallstub': return this.box(g, wx - 0.07, wy - 0.025, wx + 0.07, wy + 0.025, h, h + 2.2, this.SL, this.SL, this.SD);
+      case 'ladder': return this.ladderProp(g, wx, wy, h, 3.5);
+      case 'pool': { const q = this.P(wx, wy, h); g.fillStyle = D('#1d2c2e'); g.beginPath(); g.ellipse(q[0], q[1], 0.28 * this.hw * 1.4, 0.28 * this.hh * 1.4, 0, 0, Math.PI * 2); g.fill(); return; }
+    }
+    const q = this.P(wx, wy, h); const x = q[0], y = q[1]; const k = s * 0.8 * (p.sz || 1);
+    if (p.kind === 'pine') {
+      g.fillStyle = D('#2a1d14'); g.fillRect(x - 0.5 * k, y - 2 * k, k, 2 * k);
+      let top = 0;
+      for (let i = 0; i < 3; i++) {
+        const w = (3.4 - i * 0.85) * k, yb = y - 1.6 * k - i * 2.3 * k, ht = 3.6 * k; top = yb - ht;
+        this.tri(g, x - w, yb, x, yb, x, yb - ht, L(p.snow ? '#5e6b62' : '#34472c'));
+        this.tri(g, x, yb, x + w, yb, x, yb - ht, D(p.snow ? '#3d4842' : '#1e2b1b'));
+      }
+      if (p.snow && !sil) this.tri(g, x - 1.1 * k, top + 1.8 * k, x + 1.1 * k, top + 1.8 * k, x, top, '#d6dbd4');
+    } else if (p.kind === 'crag') {
+      const v = p.va || 0.5; const hgt = (8 + 7 * v) * k, w = (4.2 + 3 * v) * k;
+      const ap = [x + 0.1 * w, y - hgt], lf = [x - w, y], fr = [x + 0.15 * w, y + 0.2 * w], rt = [x + w, y - 0.1 * w];
+      this.poly(g, [lf, fr, ap], L('#77726a')); this.poly(g, [fr, rt, ap], D('#45423d'));
+      if (!sil) {
+        const f = 0.32; const lp = (a, b) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+        this.poly(g, [lp(ap, lf), lp(ap, fr), ap], '#d4cfc4'); this.poly(g, [lp(ap, fr), lp(ap, rt), ap], '#a39e94');
+      }
+    } else if (p.kind === 'dune') {
+      g.fillStyle = D('#6f5536'); g.beginPath(); g.ellipse(x + 1.2 * k, y, 5 * k, 2.2 * k, 0, Math.PI, Math.PI * 2); g.fill();
+      g.fillStyle = L('#a2855a'); g.beginPath(); g.ellipse(x - 0.6 * k, y, 4.2 * k, 2 * k, 0, Math.PI, Math.PI * 2); g.fill();
+    } else if (p.kind === 'cactus') {
+      g.fillStyle = L('#4f5e36'); g.fillRect(x - 0.6 * k, y - 6 * k, 1.2 * k, 6 * k); g.fillRect(x - 2.4 * k, y - 4 * k, 1.8 * k, 0.9 * k); g.fillRect(x - 2.4 * k, y - 5.6 * k, 0.9 * k, 2.4 * k);
+      g.fillStyle = D('#34411f'); g.fillRect(x, y - 6 * k, 0.6 * k, 6 * k); g.fillRect(x + 0.6 * k, y - 3.2 * k, 1.6 * k, 0.9 * k); g.fillRect(x + 1.5 * k, y - 4.8 * k, 0.9 * k, 2.4 * k);
+    } else if (p.kind === 'hoodoo') {
+      g.fillStyle = L('#9a5f3c'); g.fillRect(x - 1.6 * k, y - 3 * k, 3.2 * k, 3 * k);
+      g.fillStyle = L('#a86d47'); g.fillRect(x - 1.1 * k, y - 6.4 * k, 2.2 * k, 3.4 * k);
+      g.fillStyle = D('#6e4229'); g.fillRect(x, y - 3 * k, 1.6 * k, 3 * k); g.fillRect(x, y - 6.4 * k, 1.1 * k, 3.4 * k);
+      g.fillStyle = D('#4e3424'); g.fillRect(x - 1.7 * k, y - 7.5 * k, 3.4 * k, 1.2 * k);
+    } else if (p.kind === 'arch') {
+      g.fillStyle = L('#a87048'); g.fillRect(x - 4.5 * k, y - 7 * k, 1.8 * k, 7 * k); g.fillRect(x + 2.7 * k, y - 7 * k, 1.8 * k, 7 * k);
+      g.fillRect(x - 4.5 * k, y - 9 * k, 9 * k, 2.2 * k);
+      g.fillStyle = D('#74482c'); g.fillRect(x - 2.7 * k, y - 7 * k, 0.6 * k, 7 * k); g.fillRect(x + 4.5 * k - 0.6 * k, y - 7 * k, 0.6 * k, 7 * k); g.fillRect(x - 4.5 * k, y - 7 * k, 9 * k, 0.6 * k);
+    } else if (p.kind === 'bones') {
+      const kk = Math.max(1, k * 0.6); g.fillStyle = L('#d9cfb8');
+      g.fillRect(x - 2 * kk, y - kk, 1.6 * kk, 1.4 * kk);
+      for (let i = 0; i < 3; i++) g.fillRect(x + i * 1.2 * kk, y - 1.2 * kk, 0.5 * kk, 1.8 * kk);
+      g.fillRect(x, y - 0.2 * kk, 3.2 * kk, 0.5 * kk);
+    } else if (p.kind === 'reeds') {
+      for (let i = 0; i < 4; i++) { const hh = (3 + (i % 2) * 2) * k; g.fillStyle = L('#8a7a4a'); g.fillRect(x - 1.5 * k + i * k, y - hh, Math.max(1, 0.4 * k), hh); g.fillStyle = D('#5a4a2a'); g.fillRect(x - 1.5 * k + i * k, y - hh, Math.max(1, 0.4 * k), Math.max(1, 0.9 * k)); }
+    } else if (p.kind === 'tuft') {
+      g.fillStyle = L('#55663e'); g.fillRect(x - k, y - 1.4 * k, Math.max(1, 0.4 * k), 1.4 * k); g.fillRect(x, y - 1.9 * k, Math.max(1, 0.4 * k), 1.9 * k); g.fillRect(x + k, y - 1.2 * k, Math.max(1, 0.4 * k), 1.2 * k);
+    } else if (p.kind === 'boat') {
+      this.poly(g, [[x - 5 * k, y - 1.5 * k], [x + 5 * k, y - 2.6 * k], [x + 3.4 * k, y + 0.8 * k], [x - 3.6 * k, y + 1.2 * k]], L('#4e3726'));
+      this.poly(g, [[x - 3.6 * k, y + 1.2 * k], [x + 3.4 * k, y + 0.8 * k], [x + 2.6 * k, y + 1.8 * k], [x - 3 * k, y + 2 * k]], D('#2e2017'));
+      g.fillStyle = D('#3a2a1c'); for (let i = 0; i < 3; i++) g.fillRect(x - 2.4 * k + i * 2.2 * k, y - 2 * k, Math.max(1, 0.4 * k), 2.6 * k);
+      this.poly(g, [[x + 0.6 * k, y - 1.6 * k], [x + 1.4 * k, y - 1.6 * k], [x + 3.4 * k, y - 9 * k], [x + 2.6 * k, y - 9 * k]], L('#5b4330'));
+    } else if (p.kind === 'mound') {
+      g.fillStyle = D('#8e9696'); g.beginPath(); g.ellipse(x + 0.8 * k, y, 4 * k, 1.8 * k, 0, Math.PI, Math.PI * 2); g.fill();
+      g.fillStyle = L('#dfe3de'); g.beginPath(); g.ellipse(x - 0.4 * k, y, 3.4 * k, 1.6 * k, 0, Math.PI, Math.PI * 2); g.fill();
+    } else if (p.kind === 'ice') {
+      this.tri(g, x - 1.6 * k, y, x, y, x + 0.2 * k, y - 6 * k, L('#b4cbd0')); this.tri(g, x, y, x + 1.4 * k, y, x + 0.2 * k, y - 6 * k, D('#7f9ba3'));
+    } else if (p.kind === 'deadtree') {
+      g.fillStyle = D('#241a1c'); g.fillRect(x - 0.5 * k, y - 7 * k, k, 7 * k);
+      g.strokeStyle = D('#241a1c'); g.lineWidth = Math.max(1, 0.5 * k); g.beginPath();
+      g.moveTo(x, y - 5 * k); g.lineTo(x - 2.6 * k, y - 7.6 * k); g.moveTo(x, y - 4 * k); g.lineTo(x + 2.4 * k, y - 6.4 * k); g.moveTo(x, y - 6.5 * k); g.lineTo(x + 1.2 * k, y - 8.6 * k); g.stroke();
+    } else if (p.kind === 'crack') {
+      const v = p.va || 0.5; g.strokeStyle = sil ? this.SD : '#8f2c40'; g.lineWidth = Math.max(1, 0.45 * k); g.beginPath();
+      g.moveTo(x - 3 * k, y - 0.4 * k); g.lineTo(x - 1 * k, y + 0.6 * k * v); g.lineTo(x + 0.8 * k, y - 0.6 * k); g.lineTo(x + 3 * k, y + 0.5 * k); g.moveTo(x - 1 * k, y + 0.6 * k * v); g.lineTo(x - 1.4 * k, y + 1.6 * k); g.stroke();
+    } else if (p.kind === 'pustule') {
+      g.fillStyle = D('#5e2433'); g.beginPath(); g.ellipse(x, y - 0.8 * k, 1.4 * k, 1 * k, 0, 0, Math.PI * 2); g.fill();
+      if (!sil) { g.fillStyle = '#c0566e'; g.fillRect(x - 0.6 * k, y - 1.4 * k, Math.max(1, 0.5 * k), Math.max(1, 0.5 * k)); }
+    } else if (p.kind === 'rubble') {
+      g.fillStyle = '#4f483f'; g.fillRect(x - k, y - 0.8 * k, 1.2 * k, 0.8 * k); g.fillStyle = '#2f2a25'; g.fillRect(x + 0.4 * k, y - 0.6 * k, k, 0.6 * k);
+    } else if (p.kind === 'fire') {
+      const kk = Math.max(1, s * 0.45); g.fillStyle = '#5b5148'; g.fillRect(x - 2 * kk, y - 0.5 * kk, kk, kk); g.fillRect(x + kk, y - 0.5 * kk, kk, kk); g.fillRect(x - 0.5 * kk, y + 0.3 * kk, kk, kk);
+      g.fillStyle = '#3a2416'; g.fillRect(x - 1.5 * kk, y - kk, 3 * kk, 0.7 * kk);
+    } else if (p.kind === 'player') {
+      const kk = s * 0.75;
+      const f = this.P(wx + this.player.face[0] * 0.07, wy + this.player.face[1] * 0.07, h);
+      g.strokeStyle = this.CYAN; g.lineWidth = Math.max(1, kk * 0.4); g.beginPath(); g.moveTo(x, y); g.lineTo(f[0], f[1]); g.stroke();
+      this.tri(g, x - 2.2 * kk, y, x, y, x, y - 6.5 * kk, '#6CCFE0'); this.tri(g, x, y, x + 2.2 * kk, y, x, y - 6.5 * kk, '#3d8a99');
+      g.fillStyle = '#e3cfa6'; g.fillRect(x - kk, y - 8.6 * kk, 2 * kk, 2 * kk);
+    }
+  }
+  shelter(g, c, h, type) {
+    const cx = c.x + 0.5, cy = c.y + 0.5, r = type === 'home' ? 0.13 : 0.11, cold = type === 'cold';
+    this.box(g, cx - r, cy - r, cx + r, cy + r, h, h + 3.4, null, cold ? '#57534c' : '#7a6448', cold ? '#3c3935' : '#4f3f2d');
+    this.pyramid(g, cx - r - 0.025, cy - r - 0.025, cx + r + 0.025, cy + r + 0.025, h + 3.4, h + 6.6, cold ? '#46423d' : '#7a3b26', cold ? '#2e2c29' : '#4c2219');
+    if (!cold) {
+      const nrm = [[0, -1], [1, 0], [0, 1], [-1, 0]]; const kk = Math.max(1, Math.round(this.cam.s * 0.6));
+      nrm.forEach(n => { const rx = n[0] * this.cs - n[1] * this.sn, ry = n[0] * this.sn + n[1] * this.cs; if (rx + ry <= 0.2) return; const p = this.P(cx + n[0] * r, cy + n[1] * r, h + 1.7); g.fillStyle = '#FFCF6A'; g.fillRect(Math.round(p[0] - kk / 2), Math.round(p[1] - kk), kk, Math.max(1, Math.round(kk * 1.4))); });
+    }
+    if (type === 'home') {
+      const a = this.P(cx + r, cy - r, h + 3.4), b = this.P(cx + r, cy - r, h + 12);
+      g.strokeStyle = '#2a1d14'; g.lineWidth = Math.max(1, this.cam.s * 0.35); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+      const k = this.cam.s; this.poly(g, [[b[0], b[1]], [b[0] + 4 * k, b[1] + 1 * k], [b[0], b[1] + 2.4 * k]], '#E9B44C');
+    }
+    if (cold) { const a = this.P(cx - r * 0.5, cy - r * 0.5, h + 6.6); g.fillStyle = '#3a3733'; g.fillRect(a[0] - this.cam.s * 0.4, a[1] - this.cam.s * 2, Math.max(1, this.cam.s * 0.8), this.cam.s * 2); }
+  }
+  graveProp(g, x, y, h) {
+    const m = this.P(x, y + 0.045, h); g.fillStyle = '#3a2c20'; g.beginPath(); g.ellipse(m[0], m[1], 0.06 * this.hw * 1.4, 0.035 * this.hh * 2.4, 0, 0, Math.PI * 2); g.fill();
+    this.box(g, x - 0.03, y - 0.012, x + 0.03, y + 0.012, h, h + 2.8, '#a39d92', '#7d776e', '#55514b');
+    const t = this.P(x, y, h + 2.1); g.fillStyle = '#3c3833'; g.fillRect(Math.round(t[0]) - 0, Math.round(t[1] - this.cam.s * 0.6), Math.max(1, Math.round(this.cam.s * 0.25)), Math.max(1, Math.round(this.cam.s * 1.2)));
+  }
+  portalProp(g, x, y, h) {
+    this.box(g, x - 0.1, y - 0.025, x - 0.055, y + 0.025, h, h + 5.4, '#7c766d', '#5f5a53', '#3f3b36');
+    this.box(g, x + 0.055, y - 0.025, x + 0.1, y + 0.025, h, h + 5.4, '#7c766d', '#5f5a53', '#3f3b36');
+    this.box(g, x - 0.11, y - 0.03, x + 0.11, y + 0.03, h + 5.4, h + 6.6, '#8a847a', '#5f5a53', '#3f3b36');
+  }
+  sealProp(g, x, y, h, sil) {
+    const st = sil ? [this.SL, this.SL, this.SD] : ['#8a847a', '#6c665e', '#47433e'];
+    const stones = [];
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + 0.3; stones.push([x + Math.cos(a) * 0.22, y + Math.sin(a) * 0.22]); }
+    stones.sort((a, b) => this.dep(a[0], a[1]) - this.dep(b[0], b[1]));
+    const back = stones.filter(p => this.dep(p[0], p[1]) < this.dep(x, y)), front = stones.filter(p => this.dep(p[0], p[1]) >= this.dep(x, y));
+    back.forEach(p => this.box(g, p[0] - 0.025, p[1] - 0.025, p[0] + 0.025, p[1] + 0.025, h, h + 3.4, st[0], st[1], st[2]));
+    this.box(g, x - 0.06, y - 0.06, x + 0.06, y + 0.06, h, h + 1.4, sil ? this.SL : '#7a3a22', st[1], st[2]);
+    front.forEach(p => this.box(g, p[0] - 0.025, p[1] - 0.025, p[0] + 0.025, p[1] + 0.025, h, h + 3.4, st[0], st[1], st[2]));
+  }
+  ladderProp(g, x, y, h, up) {
+    const hz = 1 / 16;
+    this.poly(g, [this.P(x - hz, y - hz, h), this.P(x + hz, y - hz, h), this.P(x + hz, y + hz, h), this.P(x - hz, y + hz, h)], '#0a0806');
+    const a = [x - 0.03, y + 0.02], b = [x + 0.03, y - 0.02];
+    g.strokeStyle = '#9a7442'; g.lineWidth = Math.max(1, this.cam.s * 0.3); g.beginPath();
+    [a, b].forEach(q => { const p0 = this.P(q[0], q[1], h - 1), p1 = this.P(q[0], q[1], h + up); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); });
+    for (let z = h; z <= h + up; z += 1.2) { const p0 = this.P(a[0], a[1], z), p1 = this.P(b[0], b[1], z); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); }
+    g.stroke();
+  }
+
+  /* ---------- static scenes ---------- */
+  drawBoard(g, cave) {
+    const N = this.N, e = 0.4;
+    this.poly(g, [this.P(-1.8, -1.8, -5), this.P(N + 1.8, -1.8, -5), this.P(N + 1.8, N + 1.8, -5), this.P(-1.8, N + 1.8, -5)], '#17110c');
+    this.box(g, -e, -e, N + e, N + e, -5, 0, cave ? '#140f0b' : '#211910', '#3b2816', '#24180d');
+    g.strokeStyle = 'rgba(110,77,37,0.22)'; g.lineWidth = 1; g.beginPath();
+    for (let i = 0; i <= N; i++) {
+      let a = this.P(i, -e, 0), b = this.P(i, N + e, 0); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
+      a = this.P(-e, i, 0); b = this.P(N + e, i, 0); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
+    }
+    g.stroke();
+    const rim = [this.P(-e, -e, 0), this.P(N + e, -e, 0), this.P(N + e, N + e, 0), this.P(-e, N + e, 0)];
+    g.strokeStyle = '#6E4D25'; g.beginPath(); g.moveTo(rim[0][0], rim[0][1]); rim.forEach(p => g.lineTo(p[0], p[1])); g.closePath(); g.stroke();
+  }
+  sortedKnown() { return this.list.filter(c => c.state !== 'unknown').sort((a, b) => this.dep(a.x + 0.5, a.y + 0.5) - this.dep(b.x + 0.5, b.y + 0.5)); }
+  renderSurface() {
+    const g = this.s0x; g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, this.W, this.H);
+    this.drawBoard(g, false);
+    const m = 40 * this.cam.s + 60;
+    this.sortedKnown().forEach(c => { if (!this.onScreen(c.x + 0.5, c.y + 0.5, m)) return; if (c.state === 'visited') this.drawVisited(g, c); else this.drawGlimpsed(g, c); });
+  }
+  gridPts(c, z) { const pts = []; for (let j = 0; j <= 8; j++) for (let i = 0; i <= 8; i++) pts.push(this.P(c.x + i / 8, c.y + j / 8, z)); return pts; }
+  drawVisited(g, c) {
+    const B = this.BIOME[c.b], h = this.topZ(c), x = c.x, y = c.y;
+    this.box(g, x, y, x + 1, y + 1, 0, h, null, B.sideA, B.sideB);
+    const G = this.gridPts(c, h);
+    for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) {
+      const t = c.tiles[j * 8 + i];
+      this.poly(g, [G[j * 9 + i], G[j * 9 + i + 1], G[(j + 1) * 9 + i + 1], G[(j + 1) * 9 + i]], t.seen ? t.col : t.ucol);
+    }
+    if (this.cam.s > 2) {
+      g.fillStyle = 'rgba(255,240,210,0.06)';
+      c.speck.forEach(sp => { const p = this.P(x + sp[0], y + sp[1], h); g.fillRect(Math.round(p[0]), Math.round(p[1]), 1, 1); });
+    }
+    const D = [];
+    if (c.b === 'M') {
+      c.tiles.forEach((t, i) => {
+        if (t.t !== 'wall' || !t.seen) return;
+        const tx = i % 8, ty = Math.floor(i / 8); const x0 = x + tx / 8, y0 = y + ty / 8;
+        D.push({ d: this.dep(x0 + 1 / 16, y0 + 1 / 16), f: () => this.box(g, x0, y0, x0 + 1 / 8, y0 + 1 / 8, h, h + 4.2, t.wcol, '#3a342d', '#27231e') });
+      });
+    }
+    c.props.forEach(p => {
+      if ((p.kind === 'chest' || p.kind === 'rubble') && this.cam.s < 1.6) return;
+      D.push({ d: this.dep(x + p.u, y + p.v) + (p.kind === 'ladder' ? -0.05 : 0), f: () => this.prop(g, p, c, h, false) });
+    });
+    D.sort((a, b) => a.d - b.d).forEach(o => o.f());
+  }
+  drawGlimpsed(g, c) {
+    const B = this.BIOME[c.b], h = this.topZ(c);
+    this.box(g, c.x, c.y, c.x + 1, c.y + 1, 0, h, this.mix(B.top, '#56616b', 0.5), this.mix(B.sideA, '#2a3038', 0.5), this.mix(B.sideB, '#1c2127', 0.5));
+    c.sil.slice().sort((a, b) => this.dep(c.x + a.u, c.y + a.v) - this.dep(c.x + b.u, c.y + b.v)).forEach(p => this.prop(g, p, c, h, true));
+  }
+  renderCave() {
+    const g = this.s1x; g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, this.W, this.H);
+    this.drawBoard(g, true);
+    const m = 40 * this.cam.s + 60;
+    this.sortedKnown().forEach(c => {
+      if (!this.onScreen(c.x + 0.5, c.y + 0.5, m)) return;
+      const x = c.x, y = c.y;
+      this.box(g, x, y, x + 1, y + 1, 0, 1.7, null, '#2a1f16', '#1c140d');
+      this.box(g, x, y, x + 1, y + 1, 1.7, 3.4, null, '#3a2b1d', '#271c12');
+      this.box(g, x, y, x + 1, y + 1, 3.4, 5, c.cave ? null : '#1b1511', '#30241a', '#21170f');
+      if (!c.cave) { if (this.cam.s > 1.5) { g.fillStyle = '#2a211a'; c.speck.forEach(sp => { const p = this.P(x + sp[0], y + sp[1], 5); g.fillRect(Math.round(p[0]), Math.round(p[1]), 1, 1); }); } return; }
+      const G = this.gridPts(c, 5);
+      for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) { const t = c.cave[j * 8 + i]; this.poly(g, [G[j * 9 + i], G[j * 9 + i + 1], G[(j + 1) * 9 + i + 1], G[(j + 1) * 9 + i]], t.open ? t.col : '#1f1813'); }
+      const D = [];
+      c.cave.forEach((t, i) => {
+        if (t.open) return; const tx = i % 8, ty = Math.floor(i / 8); const x0 = x + tx / 8, y0 = y + ty / 8;
+        D.push({ d: this.dep(x0 + 1 / 16, y0 + 1 / 16), f: () => this.box(g, x0, y0, x0 + 1 / 8, y0 + 1 / 8, 5, 5 + t.h, this.shade('#30261d', (t.v - 0.5) * 0.2), '#251d16', '#18120d') });
+      });
+      D.push({ d: this.dep(x + 4.5 / 8, y + 4.5 / 8), f: () => this.ladderProp(g, x + 4.5 / 8, y + 4.5 / 8, 5, 10) });
+      const ch = c.caveItems[0]; D.push({ d: this.dep(x + (ch.tx + 0.5) / 8, y + (ch.ty + 0.5) / 8), f: () => this.box(g, x + (ch.tx + 0.5) / 8 - 0.03, y + (ch.ty + 0.5) / 8 - 0.022, x + (ch.tx + 0.5) / 8 + 0.03, y + (ch.ty + 0.5) / 8 + 0.022, 5, 6.6, '#a0702f', '#7a4f22', '#553614') });
+      D.sort((a, b) => a.d - b.d).forEach(o => o.f());
+      c.caveGlow.forEach(f => { const p = this.P(x + f.u, y + f.v, 5); g.fillStyle = 'rgb(' + f.rgb + ')'; const k = Math.max(1, Math.round(this.cam.s * 0.4)); g.fillRect(Math.round(p[0]), Math.round(p[1] - k), k, k); });
+    });
+  }
+
+  /* ---------- per-frame layers ---------- */
+  drawTable(g) {
+    g.fillStyle = '#0B0907'; g.fillRect(0, 0, this.W, this.H);
+    const c = this.P(this.N / 2, this.N / 2, 0); const r = Math.max(this.W, 160 * this.cam.s * 3);
+    const gr = g.createRadialGradient(c[0], c[1], 0, c[0], c[1], r);
+    gr.addColorStop(0, 'rgba(96,64,30,0.34)'); gr.addColorStop(1, 'rgba(11,9,7,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, this.W, this.H);
+  }
+  lights(g, floor) {
+    const t = this.time, s = this.cam.s;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    if (floor === 0) {
+      this.lit.forEach((k, i) => {
+        const c = this.chunks[k]; const h = this.topZ(c);
+        const fl = 0.85 + 0.1 * Math.sin(t * 9 + i * 2) + 0.05 * Math.sin(t * 23 + i);
+        const f = this.P(c.x + 0.68, c.y + 0.66, h + 1);
+        this.glow(g, f[0], f[1], 15 * s * fl, '240,140,60', 0.34 * fl);
+        const b = this.P(c.x + 0.5, c.y + 0.5, h + 6.6);
+        this.beam(g, b[0], b[1], Math.max(1, s * 1.1), 22 * s, '233,180,76', 0.32 * fl);
+        this.glow(g, b[0], b[1], 5 * s, '255,215,122', 0.45 * fl);
+      });
+      const pc = this.chunks['5,3']; const ph = this.topZ(pc); const pp = this.P(pc.x + 0.5, pc.y + 0.5, ph + 2.8);
+      const pu = 0.8 + 0.2 * Math.sin(t * 2);
+      this.glow(g, pp[0], pp[1], 9 * s, '201,166,232', 0.32 * pu);
+      g.strokeStyle = 'rgba(220,200,255,0.45)'; g.lineWidth = Math.max(1, s * 0.35);
+      for (let i = 0; i < 3; i++) { const a0 = t * 2 + i * 2.1; g.beginPath(); g.ellipse(pp[0], pp[1], 1.4 * s, 2.3 * s, 0, a0, a0 + 1.7); g.stroke(); }
+      const sc = this.chunks['7,7']; const sp = this.P(sc.x + 0.5, sc.y + 0.5, this.topZ(sc) + 1.5);
+      this.glow(g, sp[0], sp[1], 10 * s, '208,104,63', 0.24 + 0.06 * Math.sin(t * 1.3));
+      const bc = this.chunks['7,4']; const bp = this.P(bc.x + 0.5, bc.y + 0.5, this.topZ(bc));
+      this.glow(g, bp[0], bp[1], 22 * s, '170,50,70', 0.09 + 0.04 * Math.sin(t * 0.9));
+    } else {
+      const c = this.chunks['5,4'];
+      c.caveGlow.forEach(f => { const p = this.P(c.x + f.u, c.y + f.v, 5.3); this.glow(g, p[0], p[1], 4.5 * s, f.rgb, 0.3 + 0.12 * Math.sin(t * 1.7 + f.ph)); });
+      const lp = this.P(c.x + 4.5 / 8, c.y + 4.5 / 8, 5);
+      this.glow(g, lp[0], lp[1], 12 * s, '233,180,76', 0.24);
+      this.beam(g, lp[0], lp[1], Math.max(2, s * 1.6), 14 * s, '255,215,122', 0.22);
+    }
+    g.restore();
+    if (floor === 0) {
+      this.lit.forEach((k, i) => {
+        const c = this.chunks[k]; const f = this.P(c.x + 0.68, c.y + 0.66, this.topZ(c)); const kk = Math.max(1, s * 0.45);
+        const fl = Math.sin(t * 11 + i * 3); const hgt = (2.6 + 0.8 * fl) * kk;
+        g.fillStyle = '#D0683F'; g.fillRect(f[0] - kk, f[1] - hgt - kk * 0.5, 2 * kk, hgt);
+        g.fillStyle = '#FFD77A'; g.fillRect(f[0] - kk * 0.5, f[1] - hgt * 0.7 - kk * 0.5, kk, hgt * 0.7);
+      });
+    }
+  }
+  pat(ctx, p, k, ox, oy, a) {
+    if (p.setTransform && typeof DOMMatrix !== 'undefined') p.setTransform(new DOMMatrix([k, 0, 0, k, ox, oy]));
+    ctx.globalAlpha = a; ctx.fillStyle = p; ctx.fillRect(0, 0, this.W, this.H); ctx.globalAlpha = 1;
+  }
+  fog(g, cave) {
+    const f = this.fogX, w = this.wispX, W = this.W, H = this.H, t = this.time, s = this.cam.s;
+    const o = this.P(0, 0, 0); const sc = Math.sqrt(s); const zf = 5;
+    f.setTransform(1, 0, 0, 1, 0, 0); f.globalCompositeOperation = 'source-over'; f.globalAlpha = 1; f.clearRect(0, 0, W, H);
+    f.fillStyle = cave ? 'rgba(28,32,38,0.84)' : 'rgba(60,70,82,0.6)'; f.fillRect(0, 0, W, H);
+    this.pat(f, this.patBody, 2.4 * sc, o[0] * 0.85 + t * 7, o[1] * 0.85 + t * 2.5, cave ? 0.6 : 1);
+    this.pat(f, this.patShade, 1.7 * sc, o[0] * 0.9 - t * 4, o[1] * 0.9 + t * 1.5, 0.9);
+    this.pat(f, this.patHi, 1.9 * sc, o[0] * 0.95 + t * 3 + 12 * Math.sin(t * 0.13), o[1] * 0.95 - t * 1.2, cave ? 0.3 : 0.9);
+    f.globalCompositeOperation = 'destination-out'; f.imageSmoothingEnabled = true;
+    this.maskTf(f, zf); f.drawImage(cave ? this.maskCave : this.maskSurf, 0, 0);
+    f.setTransform(1, 0, 0, 1, 0, 0); f.globalCompositeOperation = 'source-over';
+    w.setTransform(1, 0, 0, 1, 0, 0); w.globalCompositeOperation = 'source-over'; w.globalAlpha = 1; w.clearRect(0, 0, W, H);
+    this.pat(w, this.patWisp, 1.3 * sc, o[0] + t * 10 + 18 * Math.cos(t * 0.21), o[1] + 10 * Math.sin(t * 0.17) - t * 2, 1);
+    w.globalCompositeOperation = 'destination-in'; w.imageSmoothingEnabled = true;
+    this.maskTf(w, zf); w.drawImage(cave ? this.frontCave : this.frontSurf, 0, 0);
+    w.setTransform(1, 0, 0, 1, 0, 0); w.globalCompositeOperation = 'source-over';
+    f.globalAlpha = cave ? 0.35 : 0.8; f.drawImage(this.wispC, 0, 0); f.globalAlpha = 1;
+    g.save(); g.globalAlpha = 0.3 + 0.7 * this.fogStrength(); g.drawImage(this.fogC, 0, 0); g.restore();
+  }
+  vignette(g) {
+    const gr = g.createRadialGradient(this.W / 2, this.H / 2, this.H * 0.32, this.W / 2, this.H / 2, this.W * 0.7);
+    gr.addColorStop(0, 'rgba(4,3,2,0)'); gr.addColorStop(1, 'rgba(4,3,2,0.62)');
+    g.fillStyle = gr; g.fillRect(0, 0, this.W, this.H);
+  }
+
+  /* ---------- overlay glyphs ---------- */
+  plate(g, cx, by, name, bg, ink) {
+    const x0 = Math.round(cx) - 5, y0 = Math.round(by) - 14; const G = this.G[name];
+    g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x0 + 1, y0 + 2, 11, 10);
+    g.fillStyle = ink; g.fillRect(x0, y0 + 1, 11, 9); g.fillRect(x0 + 1, y0, 9, 11);
+    g.fillStyle = bg; g.fillRect(x0 + 1, y0 + 1, 9, 9);
+    g.fillStyle = ink;
+    for (let j = 0; j < 7; j++) for (let i = 0; i < 7; i++) if (G[j].charAt(i) === '#') g.fillRect(x0 + 2 + i, y0 + 2 + j, 1, 1);
+    g.fillRect(x0 + 3, y0 + 11, 5, 1); g.fillRect(x0 + 4, y0 + 12, 3, 1); g.fillRect(x0 + 5, y0 + 13, 1, 1);
+  }
+  depthBadge(g, cx, by, n) {
+    const x0 = Math.round(cx) - 7, y0 = Math.round(by) - 14;
+    g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x0 + 1, y0 + 2, 15, 10);
+    g.fillStyle = '#B8862F'; g.fillRect(x0, y0 + 1, 15, 9); g.fillRect(x0 + 1, y0, 13, 11);
+    g.fillStyle = '#15100B'; g.fillRect(x0 + 1, y0 + 1, 13, 9);
+    g.fillStyle = '#E9B44C'; g.fillRect(x0 + 2, y0 + 3, 5, 1); g.fillRect(x0 + 3, y0 + 4, 3, 1); g.fillRect(x0 + 4, y0 + 5, 1, 1); g.fillRect(x0 + 4, y0 + 6, 1, 2);
+    const D = this.DIG[n] || this.DIG[1]; g.fillStyle = '#EFE3CC';
+    for (let j = 0; j < 5; j++) for (let i = 0; i < 3; i++) if (D[j].charAt(i) === '#') g.fillRect(x0 + 9 + i, y0 + 3 + j, 1, 1);
+    g.fillStyle = '#B8862F'; g.fillRect(x0 + 5, y0 + 11, 5, 1); g.fillRect(x0 + 6, y0 + 12, 3, 1); g.fillRect(x0 + 7, y0 + 13, 1, 1);
+  }
+  ring(g, wx, wy, z, r, col, lw, dash, off) {
+    const p = this.P(wx, wy, z); g.save(); g.strokeStyle = col; g.lineWidth = lw; if (dash) { g.setLineDash(dash); g.lineDashOffset = off || 0; }
+    g.beginPath(); g.ellipse(p[0], p[1], r * this.hw * 1.414, r * this.hh * 1.414, 0, 0, Math.PI * 2); g.stroke(); g.restore();
+  }
+  overlay(g, ft) {
+    const L = ['world', 'region', 'chunk'].indexOf(this.levelOf(this.cam.s));
+    const sa = Math.max(0, 1 - ft * 2), ca = Math.max(0, ft * 2 - 1);
+    if (sa > 0) {
+      g.globalAlpha = sa; this.drawRoad(g);
+      g.globalAlpha = sa; this.rumour(g);
+      g.globalAlpha = sa; this.castleMark(g);
+      g.globalAlpha = sa; this.badges(g, L);
+      g.globalAlpha = sa; this.marks(g);
+      g.globalAlpha = sa; this.playerMark(g, L);
+    }
+    if (ca > 0) { g.globalAlpha = ca; this.caveBadges(g, L); }
+    g.globalAlpha = 1; this.selection(g);
+  }
+  drawRoad(g) {
+    const pts = this.road.pts.map(k => { const c = this.chunks[k]; return this.P(c.x + 0.5, c.y + 0.5, this.topZ(c) + 0.4); });
+    const path = () => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length - 1; i++) { const m = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2]; g.quadraticCurveTo(pts[i][0], pts[i][1], m[0], m[1]); } const l = pts[pts.length - 1]; g.lineTo(l[0], l[1]); };
+    const s = this.cam.s; g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+    g.strokeStyle = 'rgba(16,10,5,0.75)'; g.lineWidth = Math.max(3, 1.4 * s); path(); g.stroke();
+    g.strokeStyle = this.road.won ? 'rgba(208,104,63,0.35)' : this.road.color; g.lineWidth = Math.max(1.5, 0.7 * s);
+    g.setLineDash([Math.max(3, 2.2 * s), Math.max(2, 1.4 * s)]); g.lineDashOffset = -this.time * 4; path(); g.stroke();
+    g.restore();
+  }
+  rumour(g) {
+    const c = this.chunks[this.suggest]; const b = this.P(c.x + 0.5, c.y + 0.5, 0); const t = this.time, s = this.cam.s;
+    const hgt = 34 + 16 * Math.min(s, 3); const fl = 0.75 + 0.15 * Math.sin(t * 3.1) + 0.1 * Math.sin(t * 7.3);
+    const a0 = g.globalAlpha;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    const w = 2 + s * 0.6; const gr = g.createLinearGradient(0, b[1], 0, b[1] - hgt);
+    gr.addColorStop(0, 'rgba(233,180,76,0)'); gr.addColorStop(0.55, 'rgba(233,180,76,' + (0.5 * fl) + ')'); gr.addColorStop(1, 'rgba(255,215,122,0)');
+    g.fillStyle = gr; g.fillRect(b[0] - w / 2, b[1] - hgt, w, hgt);
+    this.glow(g, b[0], b[1] - hgt * 0.55, 7 + 4 * fl, '255,210,120', 0.55 * fl);
+    g.restore(); g.globalAlpha = a0;
+    this.plate(g, b[0], b[1] - hgt - 2, 'shelter', '#3A2A18', '#E9B44C');
+  }
+  castleMark(g) {
+    const p = this.P(this.castle.x, this.castle.y, 0); const m = 26, W = this.W, H = this.H;
+    const cx = W / 2, cy = H / 2; let dx = p[0] - cx, dy = p[1] - cy; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+    const inside = p[0] > m && p[0] < W - m && p[1] > m && p[1] < H - m;
+    let q = p;
+    if (!inside) { const tx = dx > 0 ? (W - m - cx) / dx : (dx < 0 ? (m - cx) / dx : Infinity); const ty = dy > 0 ? (H - m - cy) / dy : (dy < 0 ? (m - cy) / dy : Infinity); const tt = Math.min(tx, ty); q = [cx + dx * tt, cy + dy * tt]; }
+    const a0 = g.globalAlpha; const k = inside ? Math.min(2.2, Math.max(1, this.cam.s)) : 1.2;
+    const sx = q[0] - dx * (inside ? 0 : 34), sy = q[1] - dy * (inside ? 0 : 34) + 30 * k;
+    g.globalAlpha = a0 * 0.42; g.fillStyle = '#241430';
+    g.fillRect(sx - 14 * k, sy - 10 * k, 28 * k, 10 * k);
+    g.fillRect(sx - 7 * k, sy - 46 * k, 14 * k, 40 * k);
+    g.fillRect(sx - 15 * k, sy - 28 * k, 7 * k, 20 * k); g.fillRect(sx + 8 * k, sy - 26 * k, 7 * k, 18 * k);
+    for (let i = 0; i < 4; i++) g.fillRect(sx - 7 * k + i * 4 * k, sy - 50 * k, 2 * k, 4 * k);
+    g.globalAlpha = a0 * 0.6; g.fillStyle = '#8E5BC4'; g.fillRect(sx - 1 * k, sy - 38 * k, 2 * k, 4 * k);
+    g.globalAlpha = a0;
+    if (!inside) {
+      const ax = q[0], ay = q[1]; const nx = -dy, ny = dx;
+      this.poly(g, [[ax + dx * 8, ay + dy * 8], [ax - dx * 4 + nx * 7, ay - dy * 4 + ny * 7], [ax - dx * 4 - nx * 7, ay - dy * 4 - ny * 7]], '#0B0907');
+      this.poly(g, [[ax + dx * 6, ay + dy * 6], [ax - dx * 3 + nx * 5, ay - dy * 3 + ny * 5], [ax - dx * 3 - nx * 5, ay - dy * 3 - ny * 5]], '#8E5BC4');
+      this.plate(g, ax - dx * 18, ay - dy * 18 + 7, 'castle', '#8E5BC4', '#0B0907');
+    } else {
+      this.plate(g, sx, sy - 52 * k, 'castle', '#8E5BC4', '#0B0907');
+    }
+  }
+  badges(g, L) {
+    const st = this.state; const m = 30;
+    this.list.forEach(c => {
+      if (c.state === 'unknown' && !st.pins[c.key]) return;
+      const items = [];
+      if (c.shelter && c.shelter !== 'rumoured') items.push(c.shelter === 'home' ? ['home', '#FFD77A'] : (c.shelter === 'lit' ? ['shelter', '#E9B44C'] : ['shelter', '#857A6C']));
+      if (c.seal) items.push(['seal', '#D0683F']);
+      if (L >= 1) {
+        const pin = st.pins[c.key]; if (pin) items.push([pin, this.PINC[pin]]);
+        if (c.graves.length) items.push(['grave', '#B9B1A2']);
+        if (c.portal) items.push(['portal', '#C9A6E8']);
+        if (c.strata) items.push(['depth', null, c.strata]);
+      }
+      if (!items.length) return;
+      const p = this.P(c.x + 0.5, c.y + 0.5, this.topZ(c) + (L === 2 ? 15 : 8));
+      if (p[0] < -m || p[0] > this.W + m || p[1] < -m || p[1] > this.H + m) return;
+      items.forEach((it, i) => { const x = p[0] + (i - (items.length - 1) / 2) * 14; if (it[0] === 'depth') this.depthBadge(g, x, p[1], it[2]); else this.plate(g, x, p[1], it[0], it[1], this.INK); });
+    });
+    if (L === 2) {
+      this.list.forEach(c => {
+        if (c.state !== 'visited' || !c.items.length || !this.onScreen(c.x + 0.5, c.y + 0.5, 200)) return;
+        const h = this.topZ(c);
+        c.items.forEach(it => { const p = this.P(c.x + (it.tx + 0.5) / 8, c.y + (it.ty + 0.5) / 8, h + 4); this.plate(g, p[0], p[1], it.kind === 'chest' ? 'loot' : 'event', it.kind === 'chest' ? '#E2BE6A' : '#D07A5A', this.INK); });
+        if (c.strata) { const p = this.P(c.x + 4.5 / 8, c.y + 4.5 / 8, h + 5); this.plate(g, p[0], p[1], 'ladder', '#B8862F', this.INK); }
+      });
+    }
+  }
+  marks(g) {
+    const st = this.state, t = this.time, a0 = g.globalAlpha;
+    const w = this.chunks[st.waypoint]; const wh = this.topZ(w);
+    this.ring(g, w.x + 0.5, w.y + 0.5, wh, 0.34, '#0B0907', 3);
+    this.ring(g, w.x + 0.5, w.y + 0.5, wh, 0.34, '#E9B44C', 1, [4, 3], -t * 6);
+    const ph = (t * 0.6) % 1; g.globalAlpha = a0 * (1 - ph) * 0.8; this.ring(g, w.x + 0.5, w.y + 0.5, wh, 0.34 + 0.25 * ph, '#E9B44C', 1); g.globalAlpha = a0;
+    const wp = this.P(w.x + 0.5, w.y + 0.5, wh); this.plate(g, wp[0] - 8, wp[1] - 6, 'flag', '#E9B44C', this.INK);
+    if (st.waypoint !== this.suggest) {
+      const c = this.chunks[this.suggest]; const h = this.topZ(c);
+      g.globalAlpha = a0 * (0.45 + 0.25 * Math.sin(t * 2.4));
+      this.ring(g, c.x + 0.5, c.y + 0.5, h, 0.3, '#EFE3CC', 1, [2, 3], t * 4);
+      const p = this.P(c.x + 0.5, c.y + 0.5, h); this.plate(g, p[0] - 16, p[1] - 4, 'flag', '#3A2A18', '#B39C78');
+      g.globalAlpha = a0;
+    }
+  }
+  playerMark(g, L) {
+    const pl = this.player, c = this.chunks[pl.key], h = this.topZ(c), t = this.time, a0 = g.globalAlpha;
+    const wx = c.x + (pl.tx + 0.5) / 8, wy = c.y + (pl.ty + 0.5) / 8;
+    const ph = (t * 0.8) % 1;
+    g.globalAlpha = a0 * (1 - ph); this.ring(g, wx, wy, h, (L === 2 ? 0.04 : 0.08) + (L === 2 ? 0.06 : 0.16) * ph, this.CYAN, 1); g.globalAlpha = a0;
+    const p = this.P(wx, wy, h);
+    if (L === 2) {
+      const k = this.cam.s * 0.75; const yTop = Math.round(p[1] - 11 * k); const x = Math.round(p[0]);
+      g.fillStyle = '#0B0907'; g.fillRect(x - 4, yTop - 4, 9, 3); g.fillRect(x - 3, yTop - 1, 7, 2); g.fillRect(x - 1, yTop + 1, 3, 2);
+      g.fillStyle = this.CYAN; g.fillRect(x - 3, yTop - 3, 7, 1); g.fillRect(x - 2, yTop - 2, 5, 1); g.fillRect(x - 1, yTop - 1, 3, 1); g.fillRect(x, yTop, 1, 1);
+      return;
+    }
+    const f = this.P(wx + pl.face[0] * 0.3, wy + pl.face[1] * 0.3, h);
+    g.strokeStyle = '#0B0907'; g.lineWidth = 3; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(f[0], f[1]); g.stroke();
+    g.strokeStyle = this.CYAN; g.lineWidth = 1; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(f[0], f[1]); g.stroke();
+    const x = Math.round(p[0]), y = Math.round(p[1]) - 7; const rows = [1, 3, 5, 7, 5, 3, 1];
+    g.fillStyle = '#0B0907'; rows.forEach((w, j) => g.fillRect(x - (w + 2 - 1) / 2, y - 4 + j, w + 2, 1)); g.fillRect(x, y - 5, 1, 1); g.fillRect(x, y + 3, 1, 1);
+    g.fillStyle = this.CYAN; rows.forEach((w, j) => g.fillRect(x - (w - 1) / 2, y - 4 + j + 0, w, 1));
+    g.fillStyle = '#d8f6fb'; g.fillRect(x - 1, y - 2, 1, 1);
+  }
+  caveBadges(g, L) {
+    const c = this.chunks['5,4'];
+    const lp = this.P(c.x + 4.5 / 8, c.y + 4.5 / 8, 5 + 11); this.plate(g, lp[0], lp[1], 'ladder', '#B8862F', this.INK);
+    if (L >= 1) c.caveItems.forEach(it => { const p = this.P(c.x + (it.tx + 0.5) / 8, c.y + (it.ty + 0.5) / 8, 9); this.plate(g, p[0], p[1], it.kind === 'chest' ? 'loot' : 'event', it.kind === 'chest' ? '#E2BE6A' : '#D07A5A', this.INK); });
+    const pl = this.player, pc = this.chunks[pl.key];
+    const p = this.P(pc.x + (pl.tx + 0.5) / 8, pc.y + (pl.ty + 0.5) / 8, 22); const x = Math.round(p[0]), y = Math.round(p[1]);
+    const a0 = g.globalAlpha; g.globalAlpha = a0 * 0.75; g.strokeStyle = this.CYAN; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x + 0.5, y - 4); g.lineTo(x + 4.5, y); g.lineTo(x + 0.5, y + 4); g.lineTo(x - 3.5, y); g.closePath(); g.stroke();
+    g.setLineDash([2, 2]); g.beginPath(); g.moveTo(x + 0.5, y + 5); g.lineTo(lp[0] + 0.5, lp[1] - 16); g.stroke(); g.setLineDash([]);
+    g.globalAlpha = a0;
+  }
+  selection(g) {
+    const c = this.chunks[this.state.sel]; const z = this.floorT > 0.5 ? 5 : this.topZ(c);
+    const pts = [[c.x, c.y], [c.x + 1, c.y], [c.x + 1, c.y + 1], [c.x, c.y + 1]].map(q => this.P(q[0], q[1], z));
+    const path = () => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < 4; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); };
+    g.save(); g.lineJoin = 'miter';
+    g.strokeStyle = 'rgba(11,9,7,0.85)'; g.lineWidth = 3; path(); g.stroke();
+    g.globalAlpha = 0.7 + 0.3 * Math.sin(this.time * 3); g.strokeStyle = '#FFD77A'; g.lineWidth = 1; path(); g.stroke();
+    g.globalAlpha = 1; g.fillStyle = '#FFD77A'; pts.forEach(p => g.fillRect(Math.round(p[0]) - 1, Math.round(p[1]) - 1, 3, 3));
+    g.restore();
+  }
+
+  /* ---------- frame ---------- */
+  frame(now) {
+    this.raf = requestAnimationFrame(this.frame);
+    if (!this.ctx || !this.ready) return;
+    const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0.016; this.last = now;
+    const anim = this.animOn(); if (anim) this.time += dt;
+    const k = 1 - Math.exp(-dt * 9); let moving = false;
+    ['x', 'y', 's', 'th'].forEach(f => { const d = this.tgt[f] - this.cam[f]; if (Math.abs(d) > 0.0005) { this.cam[f] += d * k; moving = true; } else this.cam[f] = this.tgt[f]; });
+    const ft = this.state.floor === -1 ? 1 : 0; const dF = ft - this.floorT;
+    if (Math.abs(dF) > 0.003) { this.floorT += dF * (1 - Math.exp(-dt * 3.2)); moving = true; } else this.floorT = ft;
+    if (this.state.closed) return;
+    if (anim || moving || this.dirty) { this.dirty = false; this.draw(); }
+    const lvl = this.levelOf(this.tgt.s); if (lvl !== this.state.level) this.setState({ level: lvl });
+  }
+  draw() {
+    const g = this.ctx, W = this.W, H = this.H;
+    this.setProj();
+    const key = [this.cam.x, this.cam.y, this.cam.s, this.cam.th].map(v => v.toFixed(4)).join(',');
+    if (this.floorT < 0.999 && this.k0 !== key) { this.renderSurface(); this.k0 = key; }
+    if (this.floorT > 0.001 && this.k1 !== key) { this.renderCave(); this.k1 = key; }
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.imageSmoothingEnabled = false;
+    this.drawTable(g);
+    const ft = this.ease(this.floorT);
+    if (this.floorT <= 0.001) {
+      g.drawImage(this.s0, 0, 0); this.lights(g, 0); this.fog(g, false);
+    } else {
+      g.drawImage(this.s1, 0, 0); this.lights(g, -1); this.fog(g, true);
+      const lift = Math.min(64, 22 * this.cam.s) * ft;
+      if (this.floorT < 0.999) {
+        const b = this.bufx; b.setTransform(1, 0, 0, 1, 0, 0); b.globalAlpha = 1; b.globalCompositeOperation = 'source-over'; b.clearRect(0, 0, W, H);
+        b.drawImage(this.s0, 0, 0); this.lights(b, 0); this.fog(b, false);
+        g.globalAlpha = 1 - 0.84 * ft; g.drawImage(this.buf, 0, -lift);
+      } else { g.globalAlpha = 0.16; g.drawImage(this.s0, 0, -lift); }
+      g.globalAlpha = 1;
+    }
+    this.vignette(g);
+    this.overlay(g, ft);
+  }
+
+  /* ---------- interaction ---------- */
+  cssScale() { if (!this.canvas) return 0.5; const r = this.canvas.getBoundingClientRect(); return this.W / (r.width || this.W * 2); }
+  toLocal(e) { const r = this.canvas.getBoundingClientRect(); return [(e.clientX - r.left) * this.W / (r.width || 1), (e.clientY - r.top) * this.H / (r.height || 1)]; }
+  clampTgt() { this.tgt.x = Math.max(-1, Math.min(this.N + 1, this.tgt.x)); this.tgt.y = Math.max(-1, Math.min(this.N + 1, this.tgt.y)); }
+  panScreen(dx, dy) {
+    const s = this.tgt.s, cs = Math.cos(this.tgt.th), sn = Math.sin(this.tgt.th);
+    const a = dx / (28 * s), b = dy / (14 * s); const rx = (a + b) / 2, ry = (b - a) / 2;
+    this.tgt.x += rx * cs + ry * sn; this.tgt.y += -rx * sn + ry * cs; this.clampTgt();
+  }
+  zoomAt(sx, sy, f) {
+    this.setProj(); const w = this.unproj(sx, sy, 4);
+    const ns = Math.max(0.7, Math.min(8.5, this.tgt.s * f)); const ratio = this.tgt.s / ns;
+    this.tgt.x = w.x - (w.x - this.tgt.x) * ratio; this.tgt.y = w.y - (w.y - this.tgt.y) * ratio; this.tgt.s = ns; this.clampTgt();
+  }
+  zoomBy(f) { this.tgt.s = Math.max(0.7, Math.min(8.5, this.tgt.s * f)); }
+  goLevel(l) { const c = this.chunks[this.state.sel]; this.tgt.s = this.LV[l]; if (l === 'world') { this.tgt.x = this.N / 2; this.tgt.y = this.N / 2; } else { this.tgt.x = c.x + 0.5; this.tgt.y = c.y + 0.5; } }
+  zoomIn() { const l = this.levelOf(this.tgt.s); this.goLevel(l === 'world' ? 'region' : 'chunk'); }
+  zoomOut() { const l = this.levelOf(this.tgt.s); if (l === 'chunk') this.tgt.s = this.LV.region; else if (l === 'region') this.goLevel('world'); }
+  pick(sx, sy) {
+    this.setProj();
+    const cave = this.state.floor === -1; const zs = cave ? [5] : [6, 2.5, 2, 1.2, 0];
+    for (const z of zs) {
+      const w = this.unproj(sx, sy, z); const c = this.chunks[Math.floor(w.x) + ',' + Math.floor(w.y)]; if (!c) continue;
+      if (cave || z === 0 || Math.abs(this.topZ(c) - z) < 0.01) return c;
+    }
+    return null;
+  }
+  clickAt(sx, sy) { const c = this.pick(sx, sy); if (!c) return; if (c.key === this.state.sel) this.zoomIn(); else { this.setState({ sel: c.key }); this.dirty = true; } }
+  rotate(d) { this.rotN += d; this.tgt.th = this.rotN * Math.PI / 2; this.setState({ rot: this.rotN }); }
+  setFloor(f) { if (this.state.floor === f) return; this.setState({ floor: f }); this.toast(f === -1 ? 'STRATUM I: ONLY F5 HAS BEEN EXPLORED BELOW' : 'BACK ON THE SURFACE'); }
+  centre() { const pl = this.player, c = this.chunks[pl.key]; this.tgt.x = c.x + (pl.tx + 0.5) / 8; this.tgt.y = c.y + (pl.ty + 0.5) / 8; }
+  doWaypoint() { const c = this.chunks[this.state.sel]; this.setState({ waypoint: c.key }); this.toast('WAYPOINT SET AT ' + this.coord(c)); }
+  doAccept() { if (this.state.waypoint === this.suggest) { this.toast('ALREADY FOLLOWING THE SUGGESTION'); return; } this.setState({ waypoint: this.suggest }); this.toast('SUGGESTION TAKEN: WAYPOINT ' + this.coord(this.chunks[this.suggest])); }
+  doPin() {
+    const k = this.state.sel; const pins = Object.assign({}, this.state.pins); const cur = pins[k] || '';
+    const nx = this.PIN_ORDER[(this.PIN_ORDER.indexOf(cur) + 1) % this.PIN_ORDER.length];
+    if (nx) pins[k] = nx; else delete pins[k];
+    this.setState({ pins: pins }); this.toast(nx ? 'PIN: ' + this.PIN_NAME[nx].toUpperCase() : 'PIN REMOVED');
+  }
+  toast(msg) { clearTimeout(this.tt); this.setState({ toast: msg }); this.tt = setTimeout(() => this.setState({ toast: '' }), 2000); }
+  handleKey(e) {
+    const tag = e.target && e.target.tagName; const k = e.key;
+    if ((k === 'Enter' || k === ' ') && tag === 'BUTTON') return;
+    if (this.state.closed && k !== 'm' && k !== 'M') return;
+    const step = 48; let used = true;
+    switch (k) {
+      case 'ArrowLeft': this.panScreen(-step, 0); break;
+      case 'ArrowRight': this.panScreen(step, 0); break;
+      case 'ArrowUp': this.panScreen(0, -step); break;
+      case 'ArrowDown': this.panScreen(0, step); break;
+      case '+': case '=': this.zoomBy(1.4); break;
+      case '-': case '_': this.zoomBy(1 / 1.4); break;
+      case '[': case 'PageDown': this.setFloor(-1); break;
+      case ']': case 'PageUp': this.setFloor(0); break;
+      case 'w': case 'W': this.doWaypoint(); break;
+      case 'g': case 'G': this.doAccept(); break;
+      case 'p': case 'P': this.doPin(); break;
+      case 'c': case 'C': this.centre(); break;
+      case 'q': case 'Q': this.rotate(-1); break;
+      case 'e': case 'E': this.rotate(1); break;
+      case 'Enter': this.zoomIn(); break;
+      case 'Escape': this.zoomOut(); break;
+      case 'm': case 'M': this.setState({ closed: !this.state.closed }); this.dirty = true; break;
+      default: used = false;
+    }
+    if (used) { e.preventDefault(); e.stopPropagation(); this.dirty = true; }
+  }
+
+  /* ---------- template values ---------- */
+  renderVals() {
+    const st = this.state, C = this.chunks, c = C[st.sel] || C['5,4'], B = this.BIOME[c.b];
+    const vis = c.state === 'visited', gl = c.state === 'glimpsed', known = vis || gl;
+    const pc = C[this.player.key];
+    const base = "height: 44px; padding: 0 14px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; cursor: pointer; ";
+    const btn = (on) => base + (on ? 'color: #FFD77A; background: #3A2A18; border: 1px solid #E9B44C; box-shadow: inset 0 -3px 0 #E9B44C' : 'color: #EFE3CC; background: #1F170F; border: 1px solid #6E4D25');
+    const dist = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+    const dir = (a, b) => { const dx = b.x - a.x, dy = b.y - a.y; const ang = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360; return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(ang / 45) % 8]; };
+    const far = (a, b) => { const d = dist(a, b); return d === 0 ? 'HERE' : d + ' CH ' + dir(a, b); };
+    const place = (x) => x.seal ? x.seal.name.toUpperCase() : (x.shelter === 'rumoured' ? 'RUMOURED SHELTER' : (x.shelter ? 'SHELTER ' + this.coord(x) : (this.BIOME[x.b].name.toUpperCase() + ' ' + this.coord(x))));
+    const wp = C[st.waypoint];
+    const hasSug = st.waypoint !== this.suggest;
+    const rot = (((st.rot % 4) + 4) % 4); const th = rot * Math.PI / 2; const sn = Math.sin(th), cs = Math.cos(th);
+    const compassDeg = Math.round(Math.atan2((sn + cs) * 28, -(sn - cs) * 14) * 180 / Math.PI * 10) / 10 + 360 * Math.floor(st.rot / 4);
+    const d = vis ? c.danger : 0;
+    const dangerPips = [0, 1, 2, 3, 4].map(i => ({ style: 'width: 12px; height: 12px; ' + (i < d ? 'background: #D0683F; box-shadow: inset 0 0 0 2px #6E2A16' : (gl ? 'background: transparent; box-shadow: inset 0 0 0 2px #3A2A18' : 'background: #0B0907; box-shadow: inset 0 0 0 2px #3A2A18')) }));
+    const shelterMap = { home: 'Home shelter, lit', lit: 'Lit, claimed', cold: 'Cold, not yet claimed', rumoured: 'Rumoured, beacon seen' };
+    let nearest = null, nd = 99; this.lit.forEach(k => { const s = C[k]; const dd = dist(s, c); if (dd < nd) { nd = dd; nearest = s; } });
+    const pin = st.pins[c.key];
+    const chip = { visited: ['VISITED', '#E9B44C', '#3A2A18'], glimpsed: ['GLIMPSED', '#B8C4CE', '#1d242b'], unknown: ['UNKNOWN', '#B39C78', '#0B0907'] }[c.state];
+    const lootList = vis ? c.loot.map(n => ({ name: n })) : [];
+    const graves = vis ? c.graves.map(g => ({ title: g.name.toUpperCase() + ', LIFE ' + g.life, cause: g.cause, left: g.left })) : [];
+    return {
+      canvasRef: this.canvasRef, onKey: this.onKey, onDown: this.onDown, onMove: this.onMove, onUp: this.onUp, onCancel: this.onCancel, onWheel: this.onWheel,
+      rotL: this.rotL, rotR: this.rotR, toggleClose: this.toggleClose, setWaypoint: this.setWaypoint, acceptSuggestion: this.acceptSuggestion, cyclePin: this.cyclePin, zoomInBtn: this.zoomInBtn,
+      floorLabel: st.floor === -1 ? 'STRATUM I' : 'SURFACE',
+      wpName: place(wp), wpText: far(pc, wp),
+      sugName: hasSug ? 'RUMOURED SHELTER' : 'IN HAND', sugText: hasSug ? far(pc, C[this.suggest]) + '  G' : 'ON ROUTE',
+      zoomBtns: ['world', 'region', 'chunk'].map(l => ({ label: l.toUpperCase(), pressed: String(st.level === l), style: btn(st.level === l), pick: () => this.goLevel(l) })),
+      floorBtns: [{ label: 'SURFACE', f: 0 }, { label: 'STRATUM I', f: -1 }].map(o => ({ label: o.label, pressed: String(st.floor === o.f), style: btn(st.floor === o.f) + '; width: 160px; text-align: left', pick: () => this.setFloor(o.f) })),
+      compassDeg: compassDeg,
+      levelLabel: st.level.toUpperCase(),
+      levelHint: st.level === 'world' ? 'BIOMES ROADS SHELTERS' : (st.level === 'region' ? '+ PINS GRAVES PORTALS DEPTH' : 'TILES ITEMS EVENTS FACING'),
+      legendPins: this.legendPins, legendMarks: this.legendMarks,
+      hasToast: !!st.toast, toast: st.toast, closed: !!st.closed,
+      selTitle: known ? B.name.toUpperCase() : 'UNCHARTED',
+      selCoord: this.coord(c),
+      stateLabel: chip[0],
+      chipStyle: "flex: none; padding: 8px 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 8px; color: " + chip[1] + '; background: ' + chip[2] + '; border: 1px solid ' + chip[1],
+      selDesc: vis ? B.desc : (gl ? 'Glimpsed from a neighbouring chunk. Only its biome is known, faintly.' : 'Never seen. Still lost in the fog.'),
+      dangerPips: dangerPips,
+      dangerWord: vis ? ['', 'Low', 'Wary', 'Perilous', 'Deadly', 'Lethal'][d] : 'Unknown',
+      shelterText: c.shelter ? shelterMap[c.shelter] : (vis ? 'None' : 'Unknown'),
+      strataText: c.strata ? c.strata + ' stratum, ladder down' : (vis ? 'None found' : 'Unknown'),
+      distYou: far(pc, c),
+      distFire: nearest ? this.coord(nearest) + ', ' + (nd === 0 ? 'here' : nd + ' CH ' + dir(c, nearest)) : 'None lit',
+      distHome: far(C[this.home], c),
+      hasPin: !!pin, pinCells: pin ? this.cellsFor(pin, this.PINC[pin], this.INK) : [], pinLabel: pin ? this.PIN_NAME[pin] : 'None  (P to drop one)',
+      hasLoot: lootList.length > 0, noLoot: lootList.length === 0, loot: lootList,
+      lootEmpty: vis ? 'Nothing left behind here.' : 'Unknown until visited.',
+      hasGraves: graves.length > 0, noGraves: graves.length === 0, graves: graves,
+      gravesEmpty: vis ? 'No past life fell here.' : 'Unknown until visited.'
+    };
+  }
+}
+</script>
+</body>
+</html>

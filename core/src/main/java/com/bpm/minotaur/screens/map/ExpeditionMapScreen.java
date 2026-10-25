@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -66,8 +67,7 @@ import java.util.Set;
  */
 public class ExpeditionMapScreen extends BaseScreen {
 
-    private static final float PANEL_W = 160 * UiTheme.VU;
-    private static final float RAIL_W = 46 * UiTheme.VU;
+    private static final float PANEL_W = 400f;
 
     /** Where the player left the map this session, so reopening it does not lose their place. */
     private static BiomeManager rememberedWorld;
@@ -93,21 +93,38 @@ public class ExpeditionMapScreen extends BaseScreen {
     private TextButton worldZoomBtn;
     private TextButton regionZoomBtn;
     private TextButton chunkZoomBtn;
-    private TextButton zoomInBtn;
-    private TextButton zoomOutBtn;
+    private TextButton rotLBtn;
+    private TextButton rotRBtn;
+    private TextButton closeBtn;
 
     private Label sealsLabel;
     private Label doomLabel;
+    private Label waypointHeaderLabel;
     private Label waypointLabel;
+    private Label suggestedHeaderLabel;
+    private Label suggestedLabel;
 
-    // Left rail & overlay buttons
-    private Table depthRail;
+    // Overlay floating widgets
+    private Table viewIndicatorTable;
+    private Label viewLevelLabel;
+    private Label viewHintLabel;
+    private Table floorStackTable;
+    private Table pinLegendTable;
+    private CompassWidget compassWidget;
+    private Table toastTable;
+    private Label toastLabel;
+    private float toastTimer = 0f;
     private TextButton fitAreaBtn;
     private TextButton centeredOnYouBtn;
 
-    // Side panel & footer
+    // Side panel & action grid
     private Table panel;
-    private Label messageLabel;
+    private TextButton setWpBtn;
+    private TextButton takeSugBtn;
+    private TextButton zoomActionBtn;
+    private TextButton cyclePinBtn;
+    private TextButton.TextButtonStyle compactPrimary;
+    private TextButton.TextButtonStyle compactSecondary;
 
     /** The map was closed in the chunk view; it reopens there once the panels exist. */
     private boolean reopenChunk;
@@ -172,7 +189,9 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
         skin = new HudSkin();
+        initButtonStyles();
         surface = new MapSurface(skin, this::loadSummary);
+        surface.setTileLoader(this::tilesFor);
         model = buildModel();
         surface.setModel(model, knowledge);
         surface.setFronts(frontMarks());
@@ -184,71 +203,41 @@ public class ExpeditionMapScreen extends BaseScreen {
         Table root = new Table();
         root.setFillParent(true);
         root.setBackground(skin.getScreenBackdrop());
-        root.pad(UiTheme.SAFE);
+        root.pad(12f, 24f, 12f, 24f);
 
-        // Header (row 0)
-        root.add(buildHeader()).growX().colspan(3).padBottom(UiTheme.PAD_MD).row();
+        // Header (row 0, height 80)
+        root.add(buildHeader()).height(80f).growX().colspan(2).padBottom(12f).row();
 
-        // Left Depth Rail
-        depthRail = new Table();
-        depthRail.top().setBackground(skin.getPanelBg());
-        depthRail.pad(UiTheme.PAD_SM);
-        root.add(depthRail).width(RAIL_W).growY().padRight(UiTheme.PAD_MD);
-
-        // Center Map Canvas with Overlay Buttons
+        // Main Row: Frame (1456x912) and Side Panel (400x912)
         Table frame = new Table();
         frame.setBackground(skin.getDoubleBorderPanel());
         Stack mapStack = new Stack();
         mapStack.add(surface);
+        mapStack.add(buildOverlay());
+        frame.add(mapStack).grow().pad(6f);
+        root.add(frame).width(1456f).height(912f);
 
-        Table overlay = new Table();
-        overlay.setFillParent(true);
-        overlay.top().left().pad(UiTheme.PAD_SM);
+        Table side = new Table();
+        side.setBackground(skin.getDoubleBorderPanel());
+        side.pad(16f);
 
-        fitAreaBtn = new TextButton(UiGlyphs.sanitize("[ FIT TO KNOWN AREA ]"), UiStyles.secondary(skin));
-        fitAreaBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                fitToKnownArea();
-            }
-        });
-
-        centeredOnYouBtn = new TextButton(UiGlyphs.sanitize("[ CENTRED ON YOU ]"), UiStyles.secondary(skin));
-        centeredOnYouBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                recenter();
-            }
-        });
-
-        overlay.add(fitAreaBtn).left();
-        overlay.add(centeredOnYouBtn).left().padLeft(UiTheme.PAD_SM);
-        mapStack.add(overlay);
-
-        frame.add(mapStack).grow().pad(UiTheme.PAD_SM);
-        root.add(frame).grow();
-
-        // Right Sidebar Panel
         panel = new Table();
         panel.top().left();
         ScrollPane scroll = new ScrollPane(panel, UiStyles.scrollPane(skin));
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
-        Table side = new Table();
-        side.setBackground(skin.getPanelBg());
-        side.add(scroll).grow().pad(UiTheme.PAD_MD);
-        root.add(side).width(PANEL_W).growY().padLeft(UiTheme.PAD_MD).row();
+        side.add(scroll).grow().width(PANEL_W - 32f).padBottom(12f).row();
 
-        // Footer
-        Table footer = new Table();
-        messageLabel = UiLabels.ellipsized("", UiStyles.caption(skin, UiTheme.GOLD));
-        footer.add(messageLabel).left().growX().minWidth(0);
-        footer.add(buildLegend()).right();
-        root.add(footer).growX().colspan(3).padTop(UiTheme.PAD_MD);
+        side.add(buildActionGrid()).growX().height(96f);
+        root.add(side).width(PANEL_W).height(912f).padLeft(16f).row();
+
+        // Footer (row 2, height 40)
+        root.add(buildFooter()).height(40f).growX().colspan(2).padTop(12f);
 
         stage.addActor(root);
         surface.addListener(new SurfaceInput());
         stage.setScrollFocus(surface);
+        stage.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         InputMultiplexer input = new InputMultiplexer();
         input.addProcessor(stage);
@@ -261,17 +250,73 @@ public class ExpeditionMapScreen extends BaseScreen {
 
     private Table buildHeader() {
         Table header = new Table();
+        header.setBackground(skin.getDoubleBorderPanel());
+        header.pad(0, 20f, 0, 20f);
 
-        // Left breadcrumbs cluster
-        Table breadcrumbRow = new Table();
-        breadcrumbRow.add(UiLabels.of("EXPEDITION MAP", UiStyles.display(skin))).left().padRight(UiTheme.PAD_MD);
+        // Title cluster
+        Table titleTable = new Table();
+        titleTable.add(UiLabels.of("EXPEDITION MAP", new Label.LabelStyle(skin.getFontHeader(), UiTheme.GOLD))).left().row();
+        titleTable.add(UiLabels.of("TARMIN / THE KNOWN WORLD", UiStyles.caption(skin, UiTheme.TEXT_DIM))).left().padTop(2f);
+        header.add(titleTable).left().padRight(16f);
 
-        floorBreadcrumbLabel = UiLabels.of("", UiStyles.body(skin, UiTheme.GOLD));
-        breadcrumbRow.add(floorBreadcrumbLabel).left().padRight(UiTheme.PAD_SM);
+        // Divider
+        header.add(createDivider()).padRight(16f);
 
-        breadcrumbRow.add(UiLabels.of(">", UiStyles.caption(skin))).left().padRight(UiTheme.PAD_SM);
+        // Floor cluster
+        Table floorCluster = new Table();
+        floorCluster.add(UiLabels.of("FLOOR", UiStyles.caption(skin, UiTheme.TEXT_DIM))).left().row();
+        floorBreadcrumbLabel = UiLabels.of("SURFACE", UiStyles.body(skin, UiTheme.TEXT));
+        floorCluster.add(floorBreadcrumbLabel).left().padTop(2f);
+        header.add(floorCluster).left().padRight(16f);
 
-        worldZoomBtn = new TextButton("WORLD", UiStyles.secondary(skin));
+        // Divider
+        header.add(createDivider()).padRight(16f);
+
+        // Seals Won cluster
+        Table sealsCluster = new Table();
+        sealsCluster.add(UiLabels.of("SEALS WON", UiStyles.caption(skin, UiTheme.TEXT_DIM))).left().row();
+        sealsLabel = UiLabels.of("0/4", UiStyles.body(skin, UiTheme.TEXT));
+        sealsCluster.add(sealsLabel).left().padTop(2f);
+        header.add(sealsCluster).left().padRight(16f);
+
+        // Divider
+        header.add(createDivider()).padRight(16f);
+
+        // Doom cluster
+        Table doomCluster = new Table();
+        doomCluster.add(UiLabels.of("DOOM", UiStyles.caption(skin, UiTheme.TEXT_DIM))).left().row();
+        doomLabel = UiLabels.of("STAGE I", UiStyles.body(skin, UiTheme.DANGER));
+        doomCluster.add(doomLabel).left().padTop(2f);
+        header.add(doomCluster).left().padRight(16f);
+
+        // Divider
+        header.add(createDivider()).padRight(16f);
+
+        // Waypoint cluster
+        Table wpCluster = new Table();
+        waypointHeaderLabel = UiLabels.of("WAYPOINT", UiStyles.caption(skin, UiTheme.TEXT_DIM));
+        wpCluster.add(waypointHeaderLabel).left().row();
+        waypointLabel = UiLabels.of("NONE", UiStyles.body(skin, UiTheme.GOLD));
+        wpCluster.add(waypointLabel).left().padTop(2f);
+        header.add(wpCluster).left().padRight(16f);
+
+        // Divider
+        header.add(createDivider()).padRight(16f);
+
+        // Suggested cluster
+        Table sugCluster = new Table();
+        suggestedHeaderLabel = UiLabels.of("SUGGESTED", UiStyles.caption(skin, UiTheme.TEXT_DIM));
+        sugCluster.add(suggestedHeaderLabel).left().row();
+        suggestedLabel = UiLabels.of("NONE", UiStyles.body(skin, UiTheme.TEXT));
+        sugCluster.add(suggestedLabel).left().padTop(2f);
+        header.add(sugCluster).left().padRight(16f);
+
+        // Flexible space
+        header.add().growX();
+
+        // Zoom button group
+        Table zoomGroup = new Table();
+        worldZoomBtn = new TextButton("WORLD", compactSecondary);
         worldZoomBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -282,9 +327,9 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        breadcrumbRow.add(worldZoomBtn).left().padRight(UiTheme.PAD_XS);
+        zoomGroup.add(worldZoomBtn).width(76f).height(38f);
 
-        regionZoomBtn = new TextButton("REGION", UiStyles.secondary(skin));
+        regionZoomBtn = new TextButton("REGION", compactSecondary);
         regionZoomBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -295,9 +340,9 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        breadcrumbRow.add(regionZoomBtn).left().padRight(UiTheme.PAD_XS);
+        zoomGroup.add(regionZoomBtn).width(76f).height(38f);
 
-        chunkZoomBtn = new TextButton("CHUNK", UiStyles.secondary(skin));
+        chunkZoomBtn = new TextButton("CHUNK", compactSecondary);
         chunkZoomBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -306,61 +351,169 @@ public class ExpeditionMapScreen extends BaseScreen {
                 }
             }
         });
-        breadcrumbRow.add(chunkZoomBtn).left().padRight(UiTheme.PAD_SM);
+        zoomGroup.add(chunkZoomBtn).width(76f).height(38f);
+        header.add(zoomGroup).padRight(14f);
 
-        zoomInBtn = new TextButton("[+]", UiStyles.secondary(skin));
-        zoomInBtn.addListener(new ChangeListener() {
+        // Rotate buttons
+        Table rotGroup = new Table();
+        rotLBtn = new TextButton("[Q]", compactSecondary);
+        rotLBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                zoomIn();
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    surface.getDioramaRenderer().rotate(-1);
+                }
             }
         });
-        breadcrumbRow.add(zoomInBtn).left().padRight(UiTheme.PAD_XS);
+        rotGroup.add(rotLBtn).width(40f).height(38f).padRight(4f);
 
-        zoomOutBtn = new TextButton("[-]", UiStyles.secondary(skin));
-        zoomOutBtn.addListener(new ChangeListener() {
+        rotRBtn = new TextButton("[E]", compactSecondary);
+        rotRBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                zoomOut();
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    surface.getDioramaRenderer().rotate(1);
+                }
             }
         });
-        breadcrumbRow.add(zoomOutBtn).left();
+        rotGroup.add(rotRBtn).width(40f).height(38f);
+        header.add(rotGroup).padRight(14f);
 
-        header.add(breadcrumbRow).left().growX();
-
-        // Right status badges
-        Table status = new Table();
-        sealsLabel = UiLabels.ellipsized("", UiStyles.body(skin));
-        doomLabel = UiLabels.ellipsized("", UiStyles.body(skin, UiTheme.DANGER));
-        waypointLabel = UiLabels.ellipsized("", UiStyles.body(skin, UiTheme.GOLD));
-
-        status.add(sealsLabel).right().padLeft(UiTheme.PAD_MD);
-        status.add(doomLabel).right().padLeft(UiTheme.PAD_MD);
-        status.add(waypointLabel).right().padLeft(UiTheme.PAD_MD);
-        header.add(status).right().bottom();
+        // Close button
+        closeBtn = new TextButton("CLOSE  M", compactSecondary);
+        closeBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                close();
+            }
+        });
+        header.add(closeBtn).width(96f).height(38f);
 
         return header;
     }
 
-    private void rebuildDepthRail() {
-        depthRail.clearChildren();
-        float btnW = RAIL_W - 2 * UiTheme.PAD_SM;
+    private void initButtonStyles() {
+        compactPrimary = new TextButton.TextButtonStyle();
+        compactPrimary.font = skin.getFontSmall();
+        compactPrimary.up = skin.getTabActive();
+        compactPrimary.down = skin.solid(UiTheme.GOLD);
+        compactPrimary.over = skin.getTabActive();
+        compactPrimary.focused = skin.getTabActive();
+        compactPrimary.fontColor = UiTheme.FOCUS;
+        compactPrimary.downFontColor = UiTheme.ON_GOLD;
+        compactPrimary.overFontColor = UiTheme.FOCUS;
 
-        TextButton upBtn = new TextButton(UiGlyphs.sanitize("[^]"), UiStyles.secondary(skin));
-        upBtn.setDisabled(surface.getFloor() <= 1);
-        upBtn.addListener(new ChangeListener() {
+        compactSecondary = new TextButton.TextButtonStyle();
+        compactSecondary.font = skin.getFontSmall();
+        compactSecondary.up = skin.getCardBg();
+        compactSecondary.down = skin.solid(UiTheme.GOLD);
+        compactSecondary.over = skin.getTabActive();
+        compactSecondary.focused = skin.getTabActive();
+        compactSecondary.fontColor = UiTheme.TEXT;
+        compactSecondary.downFontColor = UiTheme.ON_GOLD;
+        compactSecondary.overFontColor = UiTheme.GOLD;
+    }
+
+    private Actor createDivider() {
+        Table divider = new Table();
+        divider.setBackground(skin.solid(new Color(0x3a / 255f, 0x2a / 255f, 0x18 / 255f, 1f)));
+        divider.setWidth(2f);
+        divider.setHeight(44f);
+        return divider;
+    }
+
+    private Actor createDividerHorizontal(float width) {
+        Table divider = new Table();
+        divider.setBackground(skin.solid(new Color(0x3a / 255f, 0x2a / 255f, 0x18 / 255f, 1f)));
+        divider.setWidth(width);
+        divider.setHeight(2f);
+        return divider;
+    }
+
+    private Table buildOverlay() {
+        Table overlay = new Table();
+        overlay.setFillParent(true);
+        overlay.pad(16f);
+
+        // Top Row: View Indicator (left), Toast Banner (center), Compass (right)
+        Table topRow = new Table();
+
+        viewIndicatorTable = new Table();
+        viewIndicatorTable.setBackground(skin.solid(new Color(0x0b / 255f, 0x09 / 255f, 0x07 / 255f, 0.86f)));
+        viewIndicatorTable.pad(10f, 14f, 10f, 14f);
+        viewIndicatorTable.add(UiLabels.of("VIEW", UiStyles.caption(skin, UiTheme.TEXT_DIM))).left().row();
+        viewLevelLabel = UiLabels.of("REGION", UiStyles.body(skin, UiTheme.GOLD));
+        viewIndicatorTable.add(viewLevelLabel).left().padTop(2f).row();
+        viewHintLabel = UiLabels.of("+ PINS GRAVES PORTALS DEPTH", UiStyles.caption(skin, UiTheme.TEXT_DIM));
+        viewIndicatorTable.add(viewHintLabel).left().padTop(2f);
+        topRow.add(viewIndicatorTable).left().top();
+
+        toastTable = new Table();
+        toastTable.setBackground(skin.solid(new Color(0x15 / 255f, 0x10 / 255f, 0x0b / 255f, 0.95f)));
+        toastLabel = UiLabels.of("", UiStyles.body(skin, UiTheme.FOCUS));
+        toastTable.add(toastLabel).pad(10f, 18f, 10f, 18f);
+        toastTable.setVisible(false);
+        topRow.add(toastTable).growX().top().center();
+
+        compassWidget = new CompassWidget(skin, () -> {
+            if (surface != null && surface.getDioramaRenderer() != null) {
+                return surface.getDioramaRenderer().getCameraRotation();
+            }
+            return 0f;
+        });
+        topRow.add(compassWidget).size(104f).right().top();
+
+        overlay.add(topRow).growX().top().row();
+
+        // Floor stack buttons
+        floorStackTable = new Table();
+        floorStackTable.setBackground(skin.solid(new Color(0x0b / 255f, 0x09 / 255f, 0x07 / 255f, 0.86f)));
+        floorStackTable.pad(10f, 12f, 10f, 12f);
+        overlay.add(floorStackTable).left().padTop(140f).row();
+
+        overlay.add().grow().row();
+
+        // Bottom Row: Pin Legend (left), Area/You buttons (right)
+        Table bottomRow = new Table();
+        pinLegendTable = buildPinLegend();
+        bottomRow.add(pinLegendTable).left().bottom();
+
+        Table overlayBtns = new Table();
+        fitAreaBtn = new TextButton("FIT KNOWN AREA", compactSecondary);
+        fitAreaBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                changeFloor(-1);
+                fitToKnownArea();
             }
         });
-        depthRail.add(upBtn).width(btnW).padBottom(UiTheme.PAD_SM).row();
+
+        centeredOnYouBtn = new TextButton("CENTRE ON YOU", compactSecondary);
+        centeredOnYouBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                recenter();
+            }
+        });
+        overlayBtns.add(fitAreaBtn).height(34f).padRight(8f);
+        overlayBtns.add(centeredOnYouBtn).height(34f);
+        bottomRow.add().growX();
+        bottomRow.add(overlayBtns).right().bottom();
+
+        overlay.add(bottomRow).growX().bottom();
+
+        return overlay;
+    }
+
+    private void rebuildFloorStack() {
+        if (floorStackTable == null) return;
+        floorStackTable.clearChildren();
+        floorStackTable.add(UiLabels.of("FLOOR  ] UP  [ DOWN", UiStyles.caption(skin, UiTheme.TEXT_DIM))).left().padBottom(6f).row();
 
         int maxFloor = Math.max(surface.getFloor(), model.getMaxFloor());
         for (int f = 1; f <= maxFloor; f++) {
             String name;
             if (f == 1) {
-                name = "^ SURFACE";
+                name = "SURFACE";
             } else {
                 boolean visited = !model.visited(f).isEmpty();
                 name = visited ? (f - 1) + " STRATUM" : "? STRATUM";
@@ -368,40 +521,138 @@ public class ExpeditionMapScreen extends BaseScreen {
             final int targetFloor = f;
             boolean isCurrent = (f == surface.getFloor());
             TextButton floorBtn = new TextButton(UiGlyphs.sanitize(name),
-                    isCurrent ? UiStyles.primary(skin) : UiStyles.secondary(skin));
+                    isCurrent ? compactPrimary : compactSecondary);
             floorBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
                     changeFloor(targetFloor - surface.getFloor());
                 }
             });
-            depthRail.add(floorBtn).width(btnW).padBottom(UiTheme.PAD_XS).row();
+            floorStackTable.add(floorBtn).width(160f).height(34f).padBottom(4f).row();
         }
-
-        TextButton downBtn = new TextButton(UiGlyphs.sanitize("[v]"), UiStyles.secondary(skin));
-        downBtn.setDisabled(surface.getFloor() >= model.getMaxFloor());
-        downBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                changeFloor(1);
-            }
-        });
-        depthRail.add(downBtn).width(btnW).padTop(UiTheme.PAD_SM).padBottom(UiTheme.PAD_MD).row();
-
-        depthRail.add(UiLabels.of("DEPTH", UiStyles.caption(skin))).center();
     }
 
-    private KeyHintLegend buildLegend() {
-        return new KeyHintLegend(skin)
-                .hint(KeyHintLegend.ARROWS_ALL, "Move")
-                .hint("+ -", "Zoom")
-                .hint("[ ]", "Floor")
-                .hint("TAB", "Marker")
-                .hint(keyName("MAP_WAYPOINT"), "Waypoint")
-                .hint(keyName("MAP_SUGGEST"), "Suggested")
-                .hint(keyName("MAP_PIN"), "Pin")
-                .hint(keyName("MAP_RECENTER"), "Centre")
-                .escapeHint("Back");
+    private Table buildPinLegend() {
+        Table table = new Table();
+        table.setBackground(skin.solid(new Color(0x0b / 255f, 0x09 / 255f, 0x07 / 255f, 0.88f)));
+        table.pad(10f, 14f, 10f, 14f);
+
+        table.add(UiLabels.of("PINS  (P CYCLES THE SELECTED CHUNK)", UiStyles.caption(skin, UiTheme.TEXT_DIM))).colspan(6).left().padBottom(8f).row();
+
+        // Row 1: Pins
+        String[] pinNames = {"DANGER", "LOOT", "RETURN", "TRADER", "LOCKED", "UNKNOWN"};
+        Color[] pinColors = {
+                new Color(0xd0 / 255f, 0x7a / 255f, 0x5a / 255f, 1f),
+                new Color(0xe2 / 255f, 0xbe / 255f, 0x6a / 255f, 1f),
+                new Color(0xcd / 255f, 0xbf / 255f, 0x9a / 255f, 1f),
+                new Color(0xbf / 255f, 0xa8 / 255f, 0x6c / 255f, 1f),
+                new Color(0xa8 / 255f, 0x97 / 255f, 0x7c / 255f, 1f),
+                new Color(0xb3 / 255f, 0xa5 / 255f, 0x8e / 255f, 1f)
+        };
+        for (int i = 0; i < pinNames.length; i++) {
+            Table item = new Table();
+            Table pip = new Table();
+            pip.setBackground(skin.solid(pinColors[i]));
+            item.add(pip).size(9f).padRight(6f);
+            item.add(UiLabels.of(pinNames[i], UiStyles.caption(skin, UiTheme.TEXT)));
+            table.add(item).left().padRight(12f);
+        }
+        table.row().padTop(6f);
+
+        // Row 2: Landmarks
+        String[] markNames = {"SHELTER", "SEAL", "GRAVE", "PORTAL", "LADDER", "YOU"};
+        Color[] markColors = {
+                new Color(0xe9 / 255f, 0xb4 / 255f, 0x4c / 255f, 1f),
+                new Color(0xd0 / 255f, 0x68 / 255f, 0x3f / 255f, 1f),
+                new Color(0xb9 / 255f, 0xb1 / 255f, 0xa2 / 255f, 1f),
+                new Color(0xc9 / 255f, 0xa6 / 255f, 0xe8 / 255f, 1f),
+                new Color(0xb8 / 255f, 0x86 / 255f, 0x2f / 255f, 1f),
+                new Color(0x6c / 255f, 0xcf / 255f, 0xe0 / 255f, 1f)
+        };
+        for (int i = 0; i < markNames.length; i++) {
+            Table item = new Table();
+            Table pip = new Table();
+            pip.setBackground(skin.solid(markColors[i]));
+            item.add(pip).size(9f).padRight(6f);
+            item.add(UiLabels.of(markNames[i], UiStyles.caption(skin, UiTheme.TEXT)));
+            table.add(item).left().padRight(12f);
+        }
+
+        return table;
+    }
+
+    private Table buildActionGrid() {
+        Table grid = new Table();
+        setWpBtn = new TextButton("SET WAYPOINT  W", compactPrimary);
+        setWpBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                toggleWaypoint();
+            }
+        });
+
+        takeSugBtn = new TextButton("TAKE SUGGESTION  G", compactSecondary);
+        takeSugBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                takeSuggestion();
+            }
+        });
+
+        zoomActionBtn = new TextButton("ZOOM IN  ENTER", compactSecondary);
+        zoomActionBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (surface.getZoom() == MapSurface.Zoom.CHUNK) zoomOut();
+                else zoomIn();
+            }
+        });
+
+        cyclePinBtn = new TextButton("CYCLE PIN  P", compactSecondary);
+        cyclePinBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                cyclePin();
+            }
+        });
+
+        float btnW = (PANEL_W - 32f - 8f) / 2f;
+        grid.add(setWpBtn).width(btnW).height(44f).padRight(8f).padBottom(8f);
+        grid.add(takeSugBtn).width(btnW).height(44f).padBottom(8f).row();
+        grid.add(zoomActionBtn).width(btnW).height(44f).padRight(8f);
+        grid.add(cyclePinBtn).width(btnW).height(44f);
+        return grid;
+    }
+
+    private Table buildFooter() {
+        Table footer = new Table();
+        Table hints = new Table();
+        String[][] keyHints = {
+                {"ARROWS", "PAN"},
+                {"+ -", "ZOOM"},
+                {"[ ]", "FLOOR"},
+                {"Q E", "ROTATE"},
+                {"W", "WAYPOINT"},
+                {"G", "SUGGESTION"},
+                {"P", "PIN"},
+                {"C", "CENTRE"},
+                {"ENTER", "ZOOM IN"},
+                {"ESC", "BACK OUT"},
+                {"M", "CLOSE"}
+        };
+        for (String[] kh : keyHints) {
+            Table badge = new Table();
+            badge.setBackground(skin.getKeycap() != null ? skin.getKeycap() : skin.solid(new Color(0x1f / 255f, 0x17 / 255f, 0x0f / 255f, 1f)));
+            badge.add(UiLabels.of(kh[0], UiStyles.caption(skin, UiTheme.TEXT))).pad(2f, 5f, 2f, 5f);
+            hints.add(badge).padRight(4f);
+            hints.add(UiLabels.of(kh[1], UiStyles.caption(skin, UiTheme.TEXT_DIM))).padRight(14f);
+        }
+        footer.add(hints).left().growX();
+
+        Label clickNote = UiLabels.of("CLICK A CHUNK TO SELECT, AGAIN TO ZOOM", UiStyles.caption(skin, UiTheme.TEXT_DIM));
+        footer.add(clickNote).right();
+
+        return footer;
     }
 
     private static String keyName(String action) {
@@ -465,6 +716,11 @@ public class ExpeditionMapScreen extends BaseScreen {
         }
         cursors.putIfAbsent(p.floor, new GridPoint2(p.chunk));
         surface.setCursor(cursorFor(surface.getFloor()));
+        if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+            GridPoint2 c = surface.getCursor();
+            float z = surface.getZoom() == MapSurface.Zoom.WORLD ? IsometricDioramaRenderer.ZOOM_WORLD : IsometricDioramaRenderer.ZOOM_REGION;
+            surface.getDioramaRenderer().setCameraImmediate(c.x + 0.5f, c.y + 0.5f, z, 0f);
+        }
         reopenChunk = rememberedWorld == world && rememberedZoom == MapSurface.Zoom.CHUNK;
     }
 
@@ -602,6 +858,9 @@ public class ExpeditionMapScreen extends BaseScreen {
             surface.setTileCursor(new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
         }
         setCursor(p.chunk);
+        if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+            surface.getDioramaRenderer().centerOn(p.chunk.x + (p.tileX + 0.5f) / 8f, p.chunk.y + (p.tileY + 0.5f) / 8f);
+        }
         say("Centred on you.");
     }
 
@@ -609,6 +868,9 @@ public class ExpeditionMapScreen extends BaseScreen {
         Set<GridPoint2> visited = model.visited(surface.getFloor());
         if (visited.isEmpty()) {
             setCursor(new GridPoint2(0, 0));
+            if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                surface.getDioramaRenderer().centerOn(0.5f, 0.5f);
+            }
             say("Centred on home.");
             return;
         }
@@ -620,7 +882,11 @@ public class ExpeditionMapScreen extends BaseScreen {
             minY = Math.min(minY, c.y);
             maxY = Math.max(maxY, c.y);
         }
-        setCursor(new GridPoint2((minX + maxX) / 2, (minY + maxY) / 2));
+        GridPoint2 mid = new GridPoint2((minX + maxX) / 2, (minY + maxY) / 2);
+        setCursor(mid);
+        if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+            surface.getDioramaRenderer().centerOn(mid.x + 0.5f, mid.y + 0.5f);
+        }
         say("Centred on known area.");
     }
 
@@ -642,11 +908,17 @@ public class ExpeditionMapScreen extends BaseScreen {
     }
 
     private void say(String message) {
-        show(messageLabel, message);
+        if (toastLabel != null && toastTable != null) {
+            toastLabel.setText(UiGlyphs.sanitize(message));
+            toastTable.setVisible(true);
+            toastTimer = 2.5f;
+        }
     }
 
     private static void show(Label label, String text) {
-        label.setText(UiGlyphs.sanitize(text));
+        if (label != null) {
+            label.setText(UiGlyphs.sanitize(text));
+        }
     }
 
     // ------------------------------------------------------------------
@@ -682,39 +954,197 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         show(floorBreadcrumbLabel, MapNames.floor(floor).toUpperCase(Locale.ROOT));
         MapSurface.Zoom z = surface.getZoom();
-        worldZoomBtn.setStyle(z == MapSurface.Zoom.WORLD ? UiStyles.primary(skin) : UiStyles.secondary(skin));
-        regionZoomBtn.setStyle(z == MapSurface.Zoom.REGION ? UiStyles.primary(skin) : UiStyles.secondary(skin));
-        chunkZoomBtn.setStyle(z == MapSurface.Zoom.CHUNK ? UiStyles.primary(skin) : UiStyles.secondary(skin));
+        worldZoomBtn.setStyle(z == MapSurface.Zoom.WORLD ? compactPrimary : compactSecondary);
+        regionZoomBtn.setStyle(z == MapSurface.Zoom.REGION ? compactPrimary : compactSecondary);
+        chunkZoomBtn.setStyle(z == MapSurface.Zoom.CHUNK ? compactPrimary : compactSecondary);
+
+        if (z == MapSurface.Zoom.WORLD) {
+            show(viewLevelLabel, "WORLD");
+            show(viewHintLabel, "BIOMES ROADS SHELTERS");
+        } else if (z == MapSurface.Zoom.REGION) {
+            show(viewLevelLabel, "REGION");
+            show(viewHintLabel, "+ PINS GRAVES PORTALS DEPTH");
+        } else {
+            show(viewLevelLabel, "CHUNK");
+            show(viewHintLabel, "TILES ITEMS EVENTS FACING");
+        }
 
         fitAreaBtn.setVisible(z == MapSurface.Zoom.WORLD);
         centeredOnYouBtn.setVisible(z == MapSurface.Zoom.CHUNK);
 
         int sealCount = network.getSealCount();
         int totalSeals = ShelterRoads.ROAD_COUNT - 1;
-        String sealsStr = "SEALS: " + "*".repeat(Math.max(0, sealCount)) + "-".repeat(Math.max(0, totalSeals - sealCount));
-        show(sealsLabel, sealsStr);
+        String sealStars = "*".repeat(Math.max(0, sealCount)) + "-".repeat(Math.max(0, totalSeals - sealCount));
+        show(sealsLabel, "[" + sealStars + "] " + sealCount + "/" + totalSeals);
 
         int doomStage = DoomManager.getInstance().getDoomStage();
-        String doomStr = "TARMIN'S HUNGER: [" + "#".repeat(Math.min(6, doomStage)) + ".".repeat(Math.max(0, 6 - doomStage)) + "]";
-        show(doomLabel, doomStr);
+        String romanStage = (doomStage == 1) ? "STAGE I" :
+                (doomStage == 2) ? "STAGE II" :
+                (doomStage == 3) ? "STAGE III" :
+                (doomStage == 4) ? "STAGE IV" :
+                (doomStage == 5) ? "STAGE V" :
+                (doomStage >= 6) ? "STAGE VI" : "DORMANT";
+        String doomBars = "#".repeat(Math.min(6, Math.max(0, doomStage))) + ".".repeat(Math.max(0, 6 - doomStage));
+        show(doomLabel, "[" + doomBars + "] " + romanStage);
 
-        show(waypointLabel, waypointText());
+        MapKnowledge.Spot wp = knowledge.getWaypoint();
+        if (wp == null) {
+            show(waypointHeaderLabel, "WAYPOINT");
+            show(waypointLabel, "NONE");
+        } else {
+            String wpCoord = coord(wp.getChunk());
+            show(waypointHeaderLabel, "WAYPOINT / " + wpCoord);
+            MapSurface.PlayerMark p = playerMark();
+            if (wp.getFloor() != p.floor) {
+                show(waypointLabel, "ON " + MapNames.floor(wp.getFloor()).toUpperCase(Locale.ROOT));
+            } else {
+                int d = MapModel.distance(p.chunk, wp.getChunk());
+                String b = MapModel.bearing(p.chunk, wp.getChunk());
+                show(waypointLabel, d == 0 ? "HERE" : d + " CH " + b);
+            }
+        }
 
-        rebuildDepthRail();
+        GridPoint2 sug = surface.getSuggestion();
+        if (sug == null) {
+            show(suggestedHeaderLabel, "SUGGESTED");
+            show(suggestedLabel, "NONE");
+        } else {
+            boolean following = (wp != null && wp.is(1, sug));
+            show(suggestedHeaderLabel, following ? "SUGGESTED / IN HAND" : "SUGGESTED / ROAD");
+            if (following) {
+                show(suggestedLabel, "ON ROUTE");
+            } else {
+                MapSurface.PlayerMark p = playerMark();
+                int d = MapModel.distance(p.chunk, sug);
+                String b = MapModel.bearing(p.chunk, sug);
+                show(suggestedLabel, d + " CH " + b + "  G");
+            }
+        }
+
+        if (setWpBtn != null) {
+            if (wp != null && wp.is(floor, c)) {
+                setWpBtn.setText("CLEAR WAYPOINT  W");
+            } else {
+                setWpBtn.setText("SET WAYPOINT  W");
+            }
+        }
+
+        if (zoomActionBtn != null) {
+            if (z == MapSurface.Zoom.CHUNK) {
+                zoomActionBtn.setText("ZOOM OUT  ENTER");
+            } else {
+                zoomActionBtn.setText("ZOOM IN  ENTER");
+            }
+        }
+
+        rebuildFloorStack();
         rebuildPanel(floor, c);
     }
 
-    private String waypointText() {
-        MapKnowledge.Spot wp = knowledge.getWaypoint();
-        if (wp == null) return "[W] NONE";
+    public static String coord(GridPoint2 c) {
+        if (c == null) return "??";
+        int x = c.x;
+        int y = c.y;
+        char col = (x >= 0 && x < 26) ? (char) ('A' + x) : '?';
+        return "" + col + (y + 1);
+    }
+
+    static String dangerWord(int d) {
+        switch (d) {
+            case 1: return "Low";
+            case 2: return "Wary";
+            case 3: return "Perilous";
+            case 4: return "Deadly";
+            case 5: return "Lethal";
+            default: return d > 5 ? "Extreme" : "Unknown";
+        }
+    }
+
+    static String dangerPips(int d) {
+        int filled = Math.min(5, Math.max(0, d));
+        return "[" + "#".repeat(filled) + ".".repeat(5 - filled) + "]";
+    }
+
+    private String shelterText(GridPoint2 c) {
+        MapModel.ShelterMark mark = model.shelterAt(c);
+        if (mark == MapModel.ShelterMark.HOME) return "Home shelter, lit";
+        if (mark == MapModel.ShelterMark.LIT) return "Lit, claimed";
+        if (mark == MapModel.ShelterMark.COLD) return "Cold, not yet claimed";
+        if (mark == MapModel.ShelterMark.RUMOURED) return "Rumoured, beacon seen";
+        return "None";
+    }
+
+    static String biomeDescription(Biome b) {
+        if (b == null) return "Explored terrain. Paths and hazards are charted.";
+        switch (b) {
+            case MAZE: return "Dark stone walls and corridors that double back on themselves.";
+            case FOREST: return "Dense pines. Little light reaches the ground.";
+            case DESERT: return "Dunes, hoodoos, sandstone arches and bleached bones.";
+            case MOUNTAINS: return "Crags and narrow ledges. Hard going, long views.";
+            case LAKELANDS: return "Still water and reeds. Something lies wrecked on the shore.";
+            case TUNDRA: return "Snow and ice. Tracks fill in fast.";
+            case BLIGHT: return "Corrupted, cracked earth that glows where it splits.";
+            case OCEAN: return "Dark water at the edge of the world.";
+            default: return "Explored terrain. Paths and hazards are charted.";
+        }
+    }
+
+    private String strataText(GridPoint2 c) {
+        int depth = model.deepestStratumBelow(c);
+        if (depth > 0) return depth + " stratum, ladder down";
+        return "None found";
+    }
+
+    private String fromYouText(GridPoint2 c, int floor) {
         MapSurface.PlayerMark p = playerMark();
-        if (wp.getFloor() != p.floor) return "[W] ON " + MapNames.floor(wp.getFloor()).toUpperCase(Locale.ROOT);
-        return "[W] " + MapNames.chunks(MapModel.distance(p.chunk, wp.getChunk())).toUpperCase(Locale.ROOT);
+        if (p.floor == floor && c.equals(p.chunk)) {
+            return "HERE";
+        } else if (p.floor != floor) {
+            return "ON " + MapNames.floor(p.floor).toUpperCase(Locale.ROOT);
+        } else {
+            int d = MapModel.distance(p.chunk, c);
+            String b = MapModel.bearing(p.chunk, c);
+            return d + " CH " + b;
+        }
+    }
+
+    private String nearestFireText(GridPoint2 c, int floor) {
+        if (floor == 1) {
+            GridPoint2 lit = model.nearestLitShelter(c);
+            if (lit == null) return "None lit";
+            if (lit.equals(c)) return "AT CAMP";
+            int d = MapModel.distance(c, lit);
+            String b = MapModel.bearing(c, lit);
+            return coord(lit) + ", " + d + " CH " + b;
+        }
+        return "None";
+    }
+
+    private String fromHomeText(GridPoint2 c) {
+        GridPoint2 home = new GridPoint2(0, 0);
+        int d = MapModel.distance(home, c);
+        String b = MapModel.bearing(home, c);
+        return d == 0 ? "HERE" : d + " CH " + b;
+    }
+
+    private String pinText(GridPoint2 c, int floor) {
+        MapKnowledge.Pin pin = knowledge.getPin(floor, c);
+        if (pin != null) return MapNames.pin(pin).toUpperCase(Locale.ROOT);
+        MapKnowledge.Pin topTilePin = knowledge.getHighestPriorityTilePin(floor, c);
+        if (topTilePin != null) return "Tile: " + MapNames.pin(topTilePin).toUpperCase(Locale.ROOT);
+        return "None";
+    }
+
+    private void addStatRow(Table table, String label, String value, float totalW, Color valColor) {
+        Label lbl = UiLabels.ellipsized(label, UiStyles.caption(skin, UiTheme.TEXT_DIM));
+        Label val = UiLabels.ellipsized(value, UiStyles.body(skin, valColor));
+        table.add(lbl).width(128f).left().padBottom(4f);
+        table.add(val).width(totalW - 128f).left().padBottom(4f).row();
     }
 
     private void rebuildPanel(int floor, GridPoint2 c) {
         panel.clearChildren();
-        float w = PANEL_W - 2 * UiTheme.PAD_MD - UiTheme.SCROLL_W;
+        float w = PANEL_W - 32f - UiTheme.SCROLL_W;
 
         switch (surface.getZoom()) {
             case WORLD:
@@ -733,6 +1163,9 @@ public class ExpeditionMapScreen extends BaseScreen {
         MapModel.Knowledge known = model.knowledgeOf(floor, c);
         BiomeManager biomes = model.getBiomes();
 
+        // Selected chunk header
+        panel.add(UiLabels.of("SELECTED CHUNK", UiStyles.caption(skin, UiTheme.TEXT_DIM))).width(w).left().row();
+
         String title;
         if (floor == 1) {
             title = (known == MapModel.Knowledge.UNKNOWN && model.shelterAt(c) == null) ? "Unknown Land"
@@ -740,51 +1173,61 @@ public class ExpeditionMapScreen extends BaseScreen {
         } else {
             title = MapNames.floor(floor);
         }
-        panel.add(UiLabels.ellipsized(title.toUpperCase(Locale.ROOT), UiStyles.body(skin, UiTheme.GOLD))).width(w).left().row();
-        panel.add(UiLabels.ellipsized("Chunk " + c.x + ", " + c.y, UiStyles.caption(skin))).width(w).left().padTop(UiTheme.PAD_XS).row();
 
-        Table badgeRow = new Table();
-        String kStr = known == MapModel.Knowledge.VISITED ? "[EXPLORED]" :
-                known == MapModel.Knowledge.GLIMPSED ? "[GLIMPSED]" :
-                known == MapModel.Knowledge.SURVEYED ? "[SURVEYED]" : "[UNEXPLORED]";
-        badgeRow.add(UiLabels.of(kStr, known == MapModel.Knowledge.VISITED ? UiStyles.caption(skin, UiTheme.SUCCESS) :
-                known == MapModel.Knowledge.SURVEYED ? UiStyles.caption(skin, UiTheme.GOLD) : UiStyles.caption(skin))).left();
+        Table titleRow = new Table();
+        Table titleLeft = new Table();
+        titleLeft.add(UiLabels.ellipsized(title.toUpperCase(Locale.ROOT), UiStyles.body(skin, UiTheme.GOLD))).left().row();
+        titleLeft.add(UiLabels.of("CHUNK " + coord(c) + " (" + c.x + ", " + c.y + ")", UiStyles.caption(skin, UiTheme.TEXT))).left().padTop(2f);
+        titleRow.add(titleLeft).left().growX();
 
-        MapSurface.PlayerMark p = playerMark();
-        if (p.floor == floor && c.equals(p.chunk)) {
-            badgeRow.add(UiLabels.of("[YOU ARE HERE]", UiStyles.caption(skin, UiTheme.FOCUS))).left().padLeft(UiTheme.PAD_SM);
-        }
-        panel.add(badgeRow).width(w).left().padTop(UiTheme.PAD_SM).padBottom(UiTheme.PAD_SM).row();
+        String kStr = known == MapModel.Knowledge.VISITED ? "EXPLORED" :
+                known == MapModel.Knowledge.SURVEYED ? "SURVEYED" :
+                known == MapModel.Knowledge.GLIMPSED ? "GLIMPSED" : "UNEXPLORED";
+        Label.LabelStyle chipStyle = known == MapModel.Knowledge.VISITED ? UiStyles.caption(skin, UiTheme.SUCCESS) :
+                known == MapModel.Knowledge.SURVEYED ? UiStyles.caption(skin, UiTheme.GOLD) :
+                known == MapModel.Knowledge.GLIMPSED ? UiStyles.caption(skin, UiTheme.TEXT) : UiStyles.caption(skin, UiTheme.TEXT_DIM);
+        Table chipTable = new Table();
+        chipTable.setBackground(skin.solid(new Color(0x1f / 255f, 0x17 / 255f, 0x0f / 255f, 1f)));
+        chipTable.add(UiLabels.of("[" + kStr + "]", chipStyle)).pad(4f, 8f, 4f, 8f);
+        titleRow.add(chipTable).right();
+        panel.add(titleRow).width(w).left().padTop(6f).row();
 
-        if (known == MapModel.Knowledge.SURVEYED) {
+        String desc;
+        if (known == MapModel.Knowledge.VISITED) {
+            Biome b = biomes != null ? biomes.getBiome(c) : null;
+            desc = biomeDescription(b);
+        } else if (known == MapModel.Knowledge.SURVEYED) {
             int tier = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerDeskTier();
-            panel.add(UiLabels.of("Cartographer Survey (Tier " + tier + ")", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(UiTheme.PAD_XS).row();
+            desc = "Cartographer Survey (Tier " + tier + "). Elevation and contours charted from afar.";
+        } else if (known == MapModel.Knowledge.GLIMPSED) {
+            desc = "Glimpsed from a neighbouring chunk. Only its biome is known, faintly.";
+        } else {
+            desc = "Never seen. Still lost in the fog.";
         }
+        UiLabels.wrapped(panel, desc, UiStyles.caption(skin, UiTheme.TEXT_DIM), w).padTop(8f).padBottom(10f).row();
 
-        if ((known == MapModel.Knowledge.VISITED || (known == MapModel.Knowledge.SURVEYED && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerDeskTier() >= 3))
-                && worldManager != null) {
-            int danger = worldManager.calculateEffectiveDifficulty(c, floor);
-            panel.add(UiLabels.of("Danger Level: " + danger, UiStyles.body(skin, danger >= 4 ? UiTheme.DANGER : UiTheme.TEXT))).width(w).left().padBottom(UiTheme.PAD_SM).row();
-        }
+        panel.add(createDividerHorizontal(w)).padBottom(10f).row();
+
+        Table stats = new Table();
+        stats.left();
+        int danger = (worldManager != null && (known == MapModel.Knowledge.VISITED || (known == MapModel.Knowledge.SURVEYED && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCartographerDeskTier() >= 3)))
+                ? worldManager.calculateEffectiveDifficulty(c, floor) : 0;
+        String dangerStr = (known == MapModel.Knowledge.VISITED || danger > 0)
+                ? dangerPips(danger) + " " + dangerWord(danger) : "Unknown";
+        addStatRow(stats, "DANGER", dangerStr, w, danger >= 4 ? UiTheme.DANGER : UiTheme.TEXT);
+        addStatRow(stats, "SHELTER", shelterText(c), w, UiTheme.TEXT);
+        addStatRow(stats, "STRATA BELOW", strataText(c), w, UiTheme.TEXT);
+        addStatRow(stats, "FROM YOU", fromYouText(c, floor), w, UiTheme.TEXT);
+        addStatRow(stats, "NEAREST FIRE", nearestFireText(c, floor), w, UiTheme.TEXT);
+        addStatRow(stats, "FROM HOME", fromHomeText(c), w, UiTheme.TEXT);
+        addStatRow(stats, "PIN", pinText(c, floor), w, UiTheme.GOLD);
+        panel.add(stats).width(w).left().padBottom(10f).row();
+
+        panel.add(createDividerHorizontal(w)).padBottom(10f).row();
 
         ChunkSummary summary = known == MapModel.Knowledge.VISITED ? surface.summary(floor, c, true) : null;
         List<String> lines = new ArrayList<>();
-
         if (floor == 1) {
-            MapModel.ShelterMark mark = model.shelterAt(c);
-            if (mark != null) {
-                ShelterRoads.Site site = biomes == null ? null : biomes.getShelterSite(c);
-                String where = mark == MapModel.ShelterMark.HOME || site == null ? "" : ", on " + MapNames.road(site.getRoad());
-                lines.add(MapNames.shelter(mark) + where);
-                if (summary != null && !summary.getStations().isEmpty()) {
-                    StringBuilder sb = new StringBuilder("Stations: ");
-                    for (int i = 0; i < summary.getStations().size(); i++) {
-                        if (i > 0) sb.append(", ");
-                        sb.append(MapNames.station(summary.getStations().get(i)));
-                    }
-                    lines.add(sb.toString());
-                }
-            }
             if (biomes != null && biomes.isCastleChunk(c) && model.isCastleKnown()) lines.add("Castle Tarmin");
             int sealRoad = biomes == null ? -1 : biomes.getSealRoad(c);
             if (sealRoad > 0 && model.isSealSiteKnown(sealRoad)) {
@@ -794,56 +1237,40 @@ public class ExpeditionMapScreen extends BaseScreen {
                 lines.add(UiGlyphs.sanitize("Seal site of " + MapNames.road(sealRoad)
                         + (network.hasSeal(sealRoad) ? ", seal won" : "") + (holder.isEmpty() ? "" : ", " + holder)));
             }
-
             for (BiomePortal portal : BiomePortal.values()) {
                 GridPoint2 gate = model.gateChunk(portal);
                 if (gate != null && gate.equals(c)) {
                     lines.add("Ancient Gate: " + portal.getDisplayName());
                 }
             }
-
-            int depth = model.deepestStratumBelow(c);
-            if (depth > 0) lines.add("Explored down to stratum " + depth);
         }
-
         if (summary != null) {
-            if (summary.hasUpLadder()) lines.add("A ladder up");
-            if (summary.hasDownLadder()) lines.add("A ladder down");
-            if (summary.hasReturnPortal()) lines.add("A return portal");
-            if (summary.getLoot() > 0) lines.add(UiNames.plural(summary.getLoot(), "item") + " left here");
+            if (summary.hasUpLadder()) lines.add("Ladder up");
+            if (summary.hasDownLadder()) lines.add("Ladder down");
+            if (summary.hasReturnPortal()) lines.add("Return portal");
         }
-
-        if (p.floor == floor && !c.equals(p.chunk)) {
-            lines.add(MapNames.chunks(MapModel.distance(p.chunk, c)) + " from you");
-        }
-        if (floor == 1) {
-            GridPoint2 lit = model.nearestLitShelter(c);
-            if (!lit.equals(c)) lines.add("Nearest lit shelter " + MapNames.chunks(MapModel.distance(c, lit)) + " away");
-        }
-
-        MapKnowledge.Pin pin = knowledge.getPin(floor, c);
-        if (pin != null) lines.add("Pin: " + MapNames.pin(pin));
-        MapKnowledge.Pin topTilePin = knowledge.getHighestPriorityTilePin(floor, c);
-        if (topTilePin != null) lines.add("Tile Pin: " + MapNames.pin(topTilePin));
-        MapKnowledge.Spot wp = knowledge.getWaypoint();
-        if (wp != null && wp.is(floor, c)) lines.add("Your waypoint");
-        if (floor == 1 && c.equals(surface.getSuggestion())) lines.add("Suggested next step");
-
         for (String line : lines) {
-            UiLabels.wrapped(panel, line, UiStyles.body(skin), w).padBottom(UiTheme.PAD_XS).row();
+            UiLabels.wrapped(panel, "* " + line, UiStyles.body(skin, UiTheme.GOLD), w).padBottom(4f).row();
         }
 
-        if (summary != null) {
+        panel.add(UiLabels.of("LOOT LEFT BEHIND", UiStyles.caption(skin, UiTheme.TEXT_DIM))).width(w).left().padTop(6f).row();
+        if (summary != null && summary.getLoot() > 0) {
+            UiLabels.wrapped(panel, UiNames.plural(summary.getLoot(), "item") + " left here", UiStyles.body(skin, UiTheme.TEXT), w).padBottom(4f).row();
+        } else {
+            UiLabels.wrapped(panel, known == MapModel.Knowledge.VISITED ? "Nothing left behind here." : "Unknown until visited.",
+                    UiStyles.caption(skin, UiTheme.TEXT_DIM), w).padBottom(4f).row();
+        }
+
+        panel.add(UiLabels.of("GRAVES OF PAST LIVES", UiStyles.caption(skin, UiTheme.TEXT_DIM))).width(w).left().padTop(6f).row();
+        if (summary != null && !summary.getGraves().isEmpty()) {
             for (ChunkSummary.Grave g : summary.getGraves()) {
                 String state = g.isDefeated() ? "Laid to rest" : g.isAwakened() ? "Risen" : "Sleeping";
-                UiLabels.wrapped(panel, "Grave of " + g.getName(), UiStyles.body(skin, UiTheme.TEXT), w)
-                        .padTop(UiTheme.PAD_SM).row();
-                UiLabels.wrapped(panel, g.getEpitaph() + " (" + state + ")", UiStyles.caption(skin), w).row();
+                UiLabels.wrapped(panel, "Grave of " + g.getName(), UiStyles.body(skin, UiTheme.TEXT), w).row();
+                UiLabels.wrapped(panel, g.getEpitaph() + " (" + state + ")", UiStyles.caption(skin, UiTheme.TEXT_DIM), w).padBottom(4f).row();
             }
-        }
-
-        if (known == MapModel.Knowledge.VISITED) {
-            panel.add(UiLabels.of("[ENTER / CLICK] Open Chunk", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).row();
+        } else {
+            UiLabels.wrapped(panel, known == MapModel.Knowledge.VISITED ? "No past life fell here." : "Unknown until visited.",
+                    UiStyles.caption(skin, UiTheme.TEXT_DIM), w).padBottom(4f).row();
         }
     }
 
@@ -856,55 +1283,58 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         }
 
-        String headerTitle = markerAtCursor != null ? markerAtCursor.name : "WORLD OVERVIEW";
+        panel.add(UiLabels.of("WORLD OVERVIEW", UiStyles.caption(skin, UiTheme.TEXT_DIM))).width(w).left().row();
+        String headerTitle = markerAtCursor != null ? markerAtCursor.name : "KNOWN REALM";
         panel.add(UiLabels.ellipsized(headerTitle.toUpperCase(Locale.ROOT), UiStyles.body(skin, UiTheme.GOLD))).width(w).left().row();
-        panel.add(UiLabels.ellipsized("Chunk " + c.x + ", " + c.y, UiStyles.caption(skin))).width(w).left().padTop(UiTheme.PAD_XS).padBottom(UiTheme.PAD_SM).row();
+        panel.add(UiLabels.of("CHUNK " + coord(c) + " (" + c.x + ", " + c.y + ")", UiStyles.caption(skin, UiTheme.TEXT))).width(w).left().padTop(2f).padBottom(8f).row();
 
-        panel.add(UiLabels.of("From Home: " + MapModel.bearing(new GridPoint2(0, 0), c)
-                + " (" + MapNames.chunks(MapModel.distance(new GridPoint2(0, 0), c)) + ")", UiStyles.body(skin))).width(w).left().padBottom(UiTheme.PAD_XS).row();
+        panel.add(createDividerHorizontal(w)).padBottom(10f).row();
 
-        MapSurface.PlayerMark p = playerMark();
-        if (p.chunk != null) {
-            panel.add(UiLabels.of("From You: " + MapModel.bearing(p.chunk, c)
-                    + " (" + MapNames.chunks(MapModel.distance(p.chunk, c)) + ")", UiStyles.body(skin))).width(w).left().padBottom(UiTheme.PAD_MD).row();
-        }
+        Table stats = new Table();
+        stats.left();
+        addStatRow(stats, "FROM HOME", fromHomeText(c), w, UiTheme.TEXT);
+        addStatRow(stats, "FROM YOU", fromYouText(c, floor), w, UiTheme.TEXT);
+        panel.add(stats).width(w).left().padBottom(10f).row();
 
         if (floor == 1) {
-            panel.add(UiLabels.of("GATE DESTINATIONS", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(UiTheme.PAD_XS).row();
+            panel.add(createDividerHorizontal(w)).padBottom(10f).row();
+            panel.add(UiLabels.of("GATE DESTINATIONS", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(4f).row();
             for (BiomePortal portal : BiomePortal.values()) {
                 GridPoint2 gate = model.gateChunk(portal);
                 if (gate != null) {
                     String info = portal.getDisplayName() + ": " + MapModel.bearing(new GridPoint2(0, 0), gate)
                             + " " + MapNames.chunks(MapModel.distance(new GridPoint2(0, 0), gate));
-                    UiLabels.wrapped(panel, info, UiStyles.body(skin), w).padBottom(UiTheme.PAD_XS).row();
+                    UiLabels.wrapped(panel, info, UiStyles.body(skin), w).padBottom(4f).row();
                 }
             }
         }
 
-        panel.add(UiLabels.of("ALSO SIGHTED", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_SM).padBottom(UiTheme.PAD_XS).row();
+        panel.add(createDividerHorizontal(w)).padBottom(10f).row();
+        panel.add(UiLabels.of("ALSO SIGHTED", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(4f).row();
         MapModel.ThreatMark tm = surface.getThreat();
         if (tm != null) {
             String tStr = tm.name + " (" + tm.status + ") - " + MapModel.bearing(c, tm.chunk) + " " + MapNames.chunks(MapModel.distance(c, tm.chunk));
-            UiLabels.wrapped(panel, "Threat: " + tStr, UiStyles.body(skin, UiTheme.DANGER), w).padBottom(UiTheme.PAD_XS).row();
+            UiLabels.wrapped(panel, "Threat: " + tStr, UiStyles.body(skin, UiTheme.DANGER), w).padBottom(4f).row();
         } else {
-            UiLabels.wrapped(panel, "No imminent threats nearby", UiStyles.caption(skin), w).padBottom(UiTheme.PAD_XS).row();
+            UiLabels.wrapped(panel, "No imminent threats nearby", UiStyles.caption(skin, UiTheme.TEXT_DIM), w).padBottom(4f).row();
         }
 
         Set<GridPoint2> visited = model.visited(floor);
-        UiLabels.wrapped(panel, "Explored: " + visited.size() + " chunks", UiStyles.body(skin), w).padBottom(UiTheme.PAD_XS).row();
+        UiLabels.wrapped(panel, "Explored: " + visited.size() + " chunks", UiStyles.body(skin), w).padTop(6f).padBottom(4f).row();
         if (floor == 1) {
-            UiLabels.wrapped(panel, "Lit shelters: " + network.getClaimed().size(), UiStyles.body(skin), w).padBottom(UiTheme.PAD_XS).row();
+            UiLabels.wrapped(panel, "Lit shelters: " + network.getClaimed().size(), UiStyles.body(skin), w).padBottom(4f).row();
         }
-
-        panel.add(UiLabels.of("[TAB] Cycle Markers  [+] Region View", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).row();
     }
 
     private void rebuildChunkPanel(int floor, GridPoint2 c, float w) {
-        panel.add(UiLabels.ellipsized(("CHUNK " + c.x + ", " + c.y).toUpperCase(Locale.ROOT), UiStyles.body(skin, UiTheme.GOLD))).width(w).left().row();
-        panel.add(UiLabels.ellipsized(MapNames.floor(floor).toUpperCase(Locale.ROOT), UiStyles.caption(skin))).width(w).left().padTop(UiTheme.PAD_XS).padBottom(UiTheme.PAD_SM).row();
+        panel.add(UiLabels.of("CHUNK VIEW", UiStyles.caption(skin, UiTheme.TEXT_DIM))).width(w).left().row();
+        panel.add(UiLabels.ellipsized(("CHUNK " + coord(c) + " (" + c.x + ", " + c.y + ")").toUpperCase(Locale.ROOT), UiStyles.body(skin, UiTheme.GOLD))).width(w).left().row();
+        panel.add(UiLabels.ellipsized(MapNames.floor(floor).toUpperCase(Locale.ROOT), UiStyles.caption(skin, UiTheme.TEXT))).width(w).left().padTop(2f).padBottom(8f).row();
+
+        panel.add(createDividerHorizontal(w)).padBottom(10f).row();
 
         GridPoint2 tc = surface.getTileCursor();
-        panel.add(UiLabels.of("SELECTED TILE (" + tc.x + ", " + tc.y + ")", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(UiTheme.PAD_XS).row();
+        panel.add(UiLabels.of("SELECTED TILE (" + tc.x + ", " + tc.y + ")", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(4f).row();
 
         ChunkTiles tiles = surface.getTiles();
         if (tiles != null && tiles.isSeen(tc.x, tc.y)) {
@@ -915,15 +1345,16 @@ public class ExpeditionMapScreen extends BaseScreen {
                 UiLabels.wrapped(panel, "Feature: " + UiGlyphs.sanitize(event), UiStyles.body(skin, UiTheme.GOLD), w).row();
             }
         } else {
-            UiLabels.wrapped(panel, "Unexplored tile", UiStyles.caption(skin), w).row();
+            UiLabels.wrapped(panel, "Unexplored tile", UiStyles.caption(skin, UiTheme.TEXT_DIM), w).row();
         }
 
         MapKnowledge.Pin tilePin = knowledge.getTilePin(floor, c, tc);
         if (tilePin != null) {
-            UiLabels.wrapped(panel, "Pin: " + MapNames.pin(tilePin), UiStyles.body(skin, UiTheme.FOCUS), w).padTop(UiTheme.PAD_XS).row();
+            UiLabels.wrapped(panel, "Pin: " + MapNames.pin(tilePin), UiStyles.body(skin, UiTheme.FOCUS), w).padTop(4f).row();
         }
 
-        panel.add(UiLabels.of("IN THIS CHUNK", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_XS).row();
+        panel.add(createDividerHorizontal(w)).padTop(8f).padBottom(10f).row();
+        panel.add(UiLabels.of("IN THIS CHUNK", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(4f).row();
         ChunkSummary summary = surface.summary(floor, c, false);
         if (summary != null) {
             if (summary.getLoot() > 0) UiLabels.wrapped(panel, UiNames.plural(summary.getLoot(), "item") + " left", UiStyles.body(skin), w).row();
@@ -935,21 +1366,20 @@ public class ExpeditionMapScreen extends BaseScreen {
             }
         }
 
-        panel.add(UiLabels.of("OPEN LEADS", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_XS).row();
+        panel.add(createDividerHorizontal(w)).padTop(8f).padBottom(10f).row();
+        panel.add(UiLabels.of("OPEN LEADS", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padBottom(4f).row();
         if (tiles != null) {
             List<String> leads = tiles.describeOpenLeads();
             if (leads.isEmpty()) {
-                UiLabels.wrapped(panel, "No unexplored leads in this chunk", UiStyles.caption(skin), w).row();
+                UiLabels.wrapped(panel, "No unexplored leads in this chunk", UiStyles.caption(skin, UiTheme.TEXT_DIM), w).row();
             } else {
                 for (String lead : leads) {
-                    UiLabels.wrapped(panel, "> " + lead, UiStyles.body(skin, UiTheme.GOLD), w).padBottom(UiTheme.PAD_XS).row();
+                    UiLabels.wrapped(panel, "> " + lead, UiStyles.body(skin, UiTheme.GOLD), w).padBottom(4f).row();
                 }
             }
         } else {
-            UiLabels.wrapped(panel, "No open lead data", UiStyles.caption(skin), w).row();
+            UiLabels.wrapped(panel, "No open lead data", UiStyles.caption(skin, UiTheme.TEXT_DIM), w).row();
         }
-
-        panel.add(UiLabels.of("[ARROWS] Move reticle  [P] Pin tile  [-] Exit", UiStyles.caption(skin, UiTheme.GOLD))).width(w).left().padTop(UiTheme.PAD_MD).row();
     }
 
     // ------------------------------------------------------------------
@@ -960,6 +1390,8 @@ public class ExpeditionMapScreen extends BaseScreen {
     private final class SurfaceInput extends InputListener {
         private float downX;
         private float downY;
+        private float lastX;
+        private float lastY;
         private GridPoint2 downCursor;
         private boolean dragged;
 
@@ -967,6 +1399,8 @@ public class ExpeditionMapScreen extends BaseScreen {
         public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
             downX = x;
             downY = y;
+            lastX = x;
+            lastY = y;
             downCursor = surface.getCursor();
             dragged = false;
             return true;
@@ -975,14 +1409,22 @@ public class ExpeditionMapScreen extends BaseScreen {
         @Override
         public void touchDragged(InputEvent event, float x, float y, int pointer) {
             if (surface.getZoom() == MapSurface.Zoom.CHUNK) return;
-            float cell = surface.getZoom().cell;
-            int dx = Math.round((downX - x) / cell);
-            int dy = Math.round((downY - y) / cell);
             if (Math.abs(downX - x) > 6 || Math.abs(downY - y) > 6) dragged = true;
             if (dragged) {
-                GridPoint2 next = new GridPoint2(downCursor).add(dx, dy);
-                if (!next.equals(surface.getCursor())) setCursor(next);
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    float dx = x - lastX;
+                    float dy = y - lastY;
+                    surface.getDioramaRenderer().panScreen(-dx, -dy, surface.getWidth(), surface.getHeight());
+                } else {
+                    float cell = surface.getZoom().cell;
+                    int dx = Math.round((downX - x) / cell);
+                    int dy = Math.round((downY - y) / cell);
+                    GridPoint2 next = new GridPoint2(downCursor).add(dx, dy);
+                    if (!next.equals(surface.getCursor())) setCursor(next);
+                }
             }
+            lastX = x;
+            lastY = y;
         }
 
         @Override
@@ -1004,6 +1446,19 @@ public class ExpeditionMapScreen extends BaseScreen {
 
         @Override
         public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+            if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                float factor = (float) Math.exp(-amountY * 0.2f);
+                surface.getDioramaRenderer().zoomAt(x, y, surface.getWidth(), surface.getHeight(), factor);
+                IsometricDioramaRenderer.ZoomLevel zl = surface.getDioramaRenderer().getZoomLevel();
+                MapSurface.Zoom mappedZoom = (zl == IsometricDioramaRenderer.ZoomLevel.WORLD)
+                        ? MapSurface.Zoom.WORLD
+                        : MapSurface.Zoom.REGION;
+                if (mappedZoom != surface.getZoom()) {
+                    surface.setZoom(mappedZoom);
+                    refresh();
+                }
+                return true;
+            }
             if (amountY < 0) zoomIn();
             else if (amountY > 0) zoomOut();
             return true;
@@ -1030,9 +1485,21 @@ public class ExpeditionMapScreen extends BaseScreen {
                 cyclePin();
                 return true;
             }
-            if (keycode == s.getKey("MAP_RECENTER")) {
+            if (keycode == s.getKey("MAP_RECENTER") || keycode == Input.Keys.C) {
                 recenter();
                 return true;
+            }
+            if (keycode == Input.Keys.Q) {
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    surface.getDioramaRenderer().rotate(-1);
+                    return true;
+                }
+            }
+            if (keycode == Input.Keys.E) {
+                if (surface.isDioramaEnabled() && surface.getDioramaRenderer() != null) {
+                    surface.getDioramaRenderer().rotate(1);
+                    return true;
+                }
             }
             if (keycode == Input.Keys.TAB) {
                 nextMarker();
@@ -1078,6 +1545,12 @@ public class ExpeditionMapScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        if (toastTimer > 0f) {
+            toastTimer -= delta;
+            if (toastTimer <= 0f && toastTable != null) {
+                toastTable.setVisible(false);
+            }
+        }
         Gdx.gl.glClearColor(UiTheme.BG_VOID.r, UiTheme.BG_VOID.g, UiTheme.BG_VOID.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);
@@ -1096,6 +1569,10 @@ public class ExpeditionMapScreen extends BaseScreen {
 
     @Override
     public void dispose() {
+        if (compassWidget != null) {
+            compassWidget.dispose();
+            compassWidget = null;
+        }
         if (stage != null) {
             stage.dispose();
             stage = null;
