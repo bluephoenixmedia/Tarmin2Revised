@@ -523,14 +523,11 @@ public class DuelSimulationLauncher implements ApplicationListener {
         }
     }
 
-    /**
-     * The weapon each Family is measured with: the ones #239 used, and a staple for the rest. Polearm
-     * uses the Assegai: weapons.json marks the Spear ranged, so it cannot bump-attack at all.
-     */
+    /** The weapon each Family is measured with: the ones #239 used, and a staple for the rest. */
     private static final ReportFamily[] REPORT_FAMILIES = {
             new ReportFamily("Blade", null, false), new ReportFamily("Dagger", Item.ItemType.DAGGER, false),
             new ReportFamily("Axe", Item.ItemType.AXE, false), new ReportFamily("Blunt", Item.ItemType.MACE_FOOTMANS, false),
-            new ReportFamily("Polearm", Item.ItemType.ASSEGAI, false), new ReportFamily("Unarmed", null, true),
+            new ReportFamily("Polearm", Item.ItemType.SPEAR, false), new ReportFamily("Unarmed", null, true),
             new ReportFamily("Bow", Item.ItemType.BOW, false), new ReportFamily("Crossbow", Item.ItemType.CROSSBOW, false),
             new ReportFamily("Firearm", Item.ItemType.MUSKET, false), new ReportFamily("Thrown", Item.ItemType.DART, false)};
 

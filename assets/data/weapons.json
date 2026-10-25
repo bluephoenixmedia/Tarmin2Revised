@@ -16748,7 +16748,7 @@
         "accuracyModifier": 0,
         "range": 1,
         "isWeapon": true,
-        "isRanged": true,
+        "isRanged": false,
         "isArmor": false,
         "isPotion": false,
         "isPotionAppearance": false,
