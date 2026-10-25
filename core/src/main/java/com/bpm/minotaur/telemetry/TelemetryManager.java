@@ -382,6 +382,13 @@ public class TelemetryManager {
     }
 
     /** A Combat Art was used, or a Passive fired. */
+    /** Every Art use and proc this run, all Arts together: the duel simulator counts procs by it (#250). */
+    public synchronized int totalArtUses() {
+        int n = 0;
+        for (int uses : artUses.values()) n += uses;
+        return n;
+    }
+
     public synchronized void recordArtUse(String artName) {
         if (artName != null) artUses.merge(artName, 1, Integer::sum);
     }

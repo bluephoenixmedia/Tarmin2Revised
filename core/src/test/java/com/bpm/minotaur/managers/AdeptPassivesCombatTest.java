@@ -190,6 +190,27 @@ public class AdeptPassivesCombatTest {
     }
 
     @Test
+    public void aSecondArrowThatKillsTheTargetEndsTheShotCleanly() {
+        know(CombatArt.SWIFT_NOCK);
+        player.getInventory().setRightHand(shooter(Item.ItemType.BOW, "BOW"));
+        player.getStats().setArrows(40);
+        // Found by the duel simulator (#250): the second arrow's kill cleared the fight's monster
+        // while the first shot was still being resolved, and the rest of it fell over on null.
+        for (int i = 0; i < 20; i++) {
+            Monster foe = foeDownrange();
+            foe.setCurrentHP(3); // the first 1d2 arrow cannot kill it; the second may
+            combat.setCurrentState(CombatManager.CombatState.INACTIVE);
+            combat.playerAttackInstant();
+            if (foe.getCurrentHP() <= 0) {
+                assertFalse("the dead are cleared once", maze.getMonsters().containsValue(foe));
+                return;
+            }
+            maze.getMonsters().values().remove(foe);
+        }
+        fail("no second arrow ever finished the foe in 20 tries");
+    }
+
+    @Test
     public void swiftNockWithNoArrowLeftLoosesNothing() {
         know(CombatArt.SWIFT_NOCK);
         player.getInventory().setRightHand(shooter(Item.ItemType.BOW, "BOW"));

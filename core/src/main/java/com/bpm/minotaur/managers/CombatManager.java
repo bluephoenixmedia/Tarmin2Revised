@@ -610,6 +610,12 @@ public class CombatManager {
 
     /** The weapon a Passive's free strike swings: the one that fired it, else the main hand. */
     private Item freeStrikeWeapon;
+    /**
+     * The monster a full hit is being resolved against while its Passive fires. A free blow that
+     * kills it leaves the death to that attack's own end, which handles it once; clearing it from
+     * here, mid-attack, left the rest of the attack holding nothing (#250).
+     */
+    private Monster passiveTarget;
 
     /** What the Adept Passives act through: a free swing, Swift Nock's arrow, Practised Hands' cut. */
     private final com.bpm.minotaur.gamedata.arts.AdeptPassives.FreeStrike passiveHand =
@@ -708,7 +714,7 @@ public class CombatManager {
                 com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT, actual);
         recordFamilyAttack(target, weapon, false, com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT);
         player.trainMastery(weapon, false, target, eventManager);
-        if (target.getCurrentHP() <= 0) handleRemoteKill(target, heldWeaponKillCause());
+        if (target.getCurrentHP() <= 0 && target != passiveTarget) handleRemoteKill(target, heldWeaponKillCause());
         return true;
     }
 
@@ -2747,11 +2753,13 @@ public class CombatManager {
             // A full hit may fire the wielded Family's Adept Passive (#243); its word leads the number.
             if (!isGlancing) {
                 freeStrikeWeapon = attackWeapon; // an off-hand axe's Wide Chop cuts with the off-hand axe
+                passiveTarget = monster;
                 try {
                     String artWord = adeptPassives.onFullHit(player, attackWeapon, monster, maze, actualDamage, passiveHand);
                     if (artWord != null) dmgPrefix = artWord + " " + dmgPrefix;
                 } finally {
                     freeStrikeWeapon = null;
+                    passiveTarget = null;
                 }
             }
 
