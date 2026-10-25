@@ -3091,6 +3091,7 @@ public class CombatManager {
             if (isCrit) {
                 dmg += DiceRoller.roll(dice);
             }
+            dmg = attacker.scaledDamage(dmg); // a Guardian's shot is cut as its blow is (#302)
             if (dmg < 1)
                 dmg = 1;
 
@@ -3807,8 +3808,12 @@ public class CombatManager {
             currentState = CombatState.PLAYER_MENU;
             return;
         }
+        if (!reachesPlayer(monster)) {
+            currentState = CombatState.PLAYER_MENU; // as a blow: none from off its ground (#302)
+            return;
+        }
         eventManager.addEvent(new GameEvent(monster.getType() + " casts a dark spell!", 2f));
-        int spellDmg = player.reduceSpellDamage(5 + monster.getIntelligence());
+        int spellDmg = player.reduceSpellDamage(monster.scaledDamage(5 + monster.getIntelligence()));
         player.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
         BalanceLogger.getInstance().logCombatRound("MONSTER", "Spell", -1, spellDmg, player.getWarStrength());
 
@@ -3818,7 +3823,11 @@ public class CombatManager {
     private void performMonsterMeleeAttack() {
         if (player == null || player.getCurrentHP() <= 0) return;
         if (monster == null || !monster.isAlive()) return;
-        if (!reachesPlayer(monster)) return;
+        if (!reachesPlayer(monster)) {
+            // A tethered Guardian cannot answer a seeker off its ground: the turn comes back (#302).
+            currentState = CombatState.PLAYER_MENU;
+            return;
+        }
         triggerAttackIndicator(monster);
         float dist = monster.getPosition().dst(player.getPosition());
         float animDuration = dist / PROJECTILE_SPEED;

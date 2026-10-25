@@ -59,7 +59,7 @@ public class ThemeDefinition {
     /** The Guardian's name as the player reads it, title and all: "the Bringer of Death, Keeper of the Isle". */
     private final String guardianTitle;
     /** The theme's factor on a cut Guardian's ceilings (#302): 1 unless themes.json tunes it. */
-    private float guardianStrength = 1f;
+    private final float guardianStrength;
     private final int objectiveCount;
     private final String runeTexture;
 
@@ -67,7 +67,8 @@ public class ThemeDefinition {
                            ThemeHazardKind hazard, float hazardDensity, Color fogTint,
                            float fogDistance, String stinger, float propDensity, List<PropEntry> props,
                            List<MonsterEntry> monsters, MonsterType championType,
-                           int championHpBonus, String guardianTitle, int objectiveCount, String runeTexture) {
+                           int championHpBonus, String guardianTitle, float guardianStrength,
+                           int objectiveCount, String runeTexture) {
         this.theme = theme;
         this.crestAward = crestAward;
         this.objective = objective;
@@ -82,6 +83,7 @@ public class ThemeDefinition {
         this.championType = championType;
         this.championHpBonus = championHpBonus;
         this.guardianTitle = guardianTitle;
+        this.guardianStrength = guardianStrength > 0f ? guardianStrength : 1f;
         this.objectiveCount = objectiveCount;
         this.runeTexture = runeTexture;
     }
@@ -153,10 +155,6 @@ public class ThemeDefinition {
 
     public float getGuardianStrength() {
         return guardianStrength;
-    }
-
-    void setGuardianStrength(float strength) {
-        guardianStrength = strength > 0f ? strength : 1f;
     }
 
     /** The Guardian's titled name (#302), or null for a theme with no Guardian. */

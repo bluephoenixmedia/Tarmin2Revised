@@ -135,7 +135,7 @@ public class MonsterSpellExecutor {
         int d20 = DiceRoller.d20();
         boolean saveSuccess = (d20 + statBonus) >= spellDC;
 
-        int baseDmg = DiceRoller.roll(spell.getDamageDice() != null && !spell.getDamageDice().equals("0") ? spell.getDamageDice() : "1d8+2");
+        int baseDmg = caster.scaledDamage(DiceRoller.roll(spell.getDamageDice() != null && !spell.getDamageDice().equals("0") ? spell.getDamageDice() : "1d8+2"));
         if (baseDmg < 1) baseDmg = 1;
 
         int finalDmg = saveSuccess ? Math.max(1, baseDmg / 2) : baseDmg;
@@ -203,7 +203,7 @@ public class MonsterSpellExecutor {
         int dexBonus = (player.getStats() != null) ? (player.getStats().getDexterity() - 10) / 2 : 0;
         boolean saveSuccess = (DiceRoller.d20() + dexBonus) >= spellDC;
 
-        int baseDmg = DiceRoller.roll(spell.getDamageDice() != null && !spell.getDamageDice().equals("0") ? spell.getDamageDice() : "3d6");
+        int baseDmg = caster.scaledDamage(DiceRoller.roll(spell.getDamageDice() != null && !spell.getDamageDice().equals("0") ? spell.getDamageDice() : "3d6"));
         int finalDmg = saveSuccess ? Math.max(1, baseDmg / 2) : baseDmg;
 
         DamageType dt = DamageType.MAGICAL;

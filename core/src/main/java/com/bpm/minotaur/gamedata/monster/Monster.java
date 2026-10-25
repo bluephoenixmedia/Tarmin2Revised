@@ -1488,6 +1488,22 @@ public class Monster implements Renderable {
         return tether == null || (x >= tether[0] && y >= tether[1] && x <= tether[2] && y <= tether[3]);
     }
 
+    /** A Guardian's cut to its stratum, for its shots and spells (#302); its blow's dice are rewritten instead. */
+    private float damageScale = 1f;
+
+    public float getDamageScale() {
+        return damageScale;
+    }
+
+    public void setDamageScale(float scale) {
+        damageScale = scale > 0f ? scale : 1f;
+    }
+
+    /** A shot or spell this monster rolled, as it lands after its cut: never under 1. */
+    public int scaledDamage(int rolled) {
+        return damageScale == 1f ? rolled : Math.max(1, Math.round(rolled * damageScale));
+    }
+
     /**
      * Whether this monster may attack someone at (x, y), by blow, shot or spell. A tethered Guardian
      * attacks only what stands on its own ground (#302): the seeker chooses when to cross onto it.

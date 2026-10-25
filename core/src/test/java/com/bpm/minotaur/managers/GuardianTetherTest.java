@@ -93,6 +93,40 @@ public class GuardianTetherTest {
     }
 
     @Test
+    public void aDuelWithAGuardianOffItsGroundNeverStallsOnItsTurn() {
+        // Found in review: its turn returned without ending, and the duel froze on MONSTER_TURN.
+        combat.startCombat(guardian);
+        for (int i = 0; i < 30; i++) {
+            combat.setCurrentState(CombatManager.CombatState.MONSTER_TURN);
+            combat.monsterAttack();
+            assertNotEquals("the turn came back (" + i + ")", CombatManager.CombatState.MONSTER_TURN, combat.getCurrentState());
+        }
+        assertEquals("and nothing reached the player off the isle", 999, player.getCurrentHP());
+    }
+
+    @Test
+    public void aCutGuardiansShotIsCutAsItsBlowIs() {
+        guardian.getTemplate().rangedDamageDice = "10";
+        guardian.setDamageScale(0.3f);
+        player.getPosition().set(5.5f, 3.5f); // on the isle, in his line
+        player.getStats().setMaxHP(5000);
+        player.getStats().setCurrentHP(5000);
+        maze.getMonsters().values().remove(guardian);
+        guardian.getPosition().set(8.5f, 3.5f); // the isle's far side, three tiles off
+        maze.addMonster(guardian);
+        int hits = 0, taken = 0;
+        for (int i = 0; i < 200 && hits < 20; i++) {
+            int before = player.getCurrentHP();
+            if (combat.performMonsterRangedAttack(guardian) && player.getCurrentHP() < before) {
+                hits++;
+                taken += before - player.getCurrentHP();
+            }
+        }
+        assertTrue("some shots landed", hits > 0);
+        assertTrue("about 3 a shot, not 10: " + taken / (float) hits, taken / (float) hits < 7f);
+    }
+
+    @Test
     public void anUntetheredMonsterReachesAnywhere() {
         guardian.setTether(null);
         assertTrue(combat.reachesPlayer(guardian));

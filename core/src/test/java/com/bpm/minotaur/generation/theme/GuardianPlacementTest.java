@@ -103,6 +103,27 @@ public class GuardianPlacementTest {
         assertEquals(before.getDamageDice(), after.getDamageDice());
         assertEquals(before.getMaxHP(), after.getMaxHP());
         assertEquals(before.getName(), after.getName());
+        assertEquals(before.getDamageScale(), after.getDamageScale(), 1e-6f);
+    }
+
+    @Test
+    public void aGuardianSavedBeforeItWasFlaggedIsRecognisedOnLoad() {
+        Maze maze = isleAt(2);
+        ChunkData old = new ChunkData(maze);
+        for (ChunkData.MonsterData m : old.monsters) {
+            if (m.themeChampion) { // as a save from before #302 recorded it: a common monster of its kind
+                m.themeChampion = false;
+                m.level = 0;
+                m.damageDice = null;
+                m.guardianName = null;
+                m.damageScale = 0f;
+                m.maxHP = 0;
+            }
+        }
+        Monster loaded = guardian(old.buildMaze(data, null, assets));
+        assertNotNull("its slay objective can complete again", loaded);
+        assertEquals("the Bringer of Death, Keeper of the Isle", loaded.getName());
+        assertTrue("cut to the chunk's depth: level " + loaded.getLevel(), loaded.getLevel() < 18);
     }
 
     @Test

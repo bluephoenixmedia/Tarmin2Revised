@@ -74,6 +74,51 @@ public class GuardianScalingTest {
     }
 
     @Test
+    public void aCutGuardianCarriesTheFactorItsShotsAndSpellsAreCutBy() {
+        GuardianScaling.Stats cut = GuardianScaling.scale(18, 260, "4d12+10", 2, null);
+        assertEquals(GuardianScaling.averageOf(cut.damageDice) / 36.0, cut.damageScale, 1e-3);
+        assertEquals("uncut, nothing changes", 1f, GuardianScaling.scale(5, 84, "1d10+1", 5, null).damageScale, 0f);
+        Monster m = new Monster(Monster.MonsterType.OGRE, 30, 10, 0, 0);
+        m.setDamageScale(0.25f);
+        assertEquals(5, m.scaledDamage(20));
+        assertEquals("never under one", 1, m.scaledDamage(1));
+    }
+
+    @Test
+    public void theYardstickHeavyIsTheSameWhateverOrderTheMonstersLoaded() {
+        MonsterTemplate owlbear = heavy(5, 32), ogre = heavy(5, 34), alligator = heavy(4, 30);
+        java.util.Map<Monster.MonsterType, MonsterTemplate> t = new java.util.HashMap<>();
+        t.put(Monster.MonsterType.OWLBEAR, owlbear);
+        t.put(Monster.MonsterType.OGRE, ogre);
+        t.put(Monster.MonsterType.ALLIGATOR, alligator);
+        for (java.util.List<Monster.MonsterType> order : java.util.Arrays.asList(
+                java.util.Arrays.asList(Monster.MonsterType.OWLBEAR, Monster.MonsterType.OGRE, Monster.MonsterType.ALLIGATOR),
+                java.util.Arrays.asList(Monster.MonsterType.ALLIGATOR, Monster.MonsterType.OGRE, Monster.MonsterType.OWLBEAR))) {
+            MonsterDataManager data = new MonsterDataManager() {
+                @Override
+                public MonsterTemplate getTemplate(Monster.MonsterType type) {
+                    return t.get(type);
+                }
+
+                @Override
+                public java.util.List<Monster.MonsterType> getLoadedTypes() {
+                    return order;
+                }
+            };
+            assertEquals("the toughest of the highest level: the Ogre", 34, GuardianScaling.heavyOfLevel(5, data).hp);
+        }
+    }
+
+    private static MonsterTemplate heavy(int level, int hp) {
+        MonsterTemplate t = new MonsterTemplate();
+        t.baseLevel = level;
+        t.maxHP = hp;
+        t.damageDice = "1d8+2";
+        t.role = MonsterRole.HEAVY;
+        return t;
+    }
+
+    @Test
     public void diceKeepTheirAverage() {
         assertEquals(36.0, GuardianScaling.averageOf("4d12+10"), 1e-9);
         assertEquals(6.5, GuardianScaling.averageOf("1d10+1"), 1e-9);

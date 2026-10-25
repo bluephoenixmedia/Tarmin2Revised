@@ -187,6 +187,29 @@ public class ChunkData {
         }
     }
 
+    /**
+     * A chunk saved before #302 kept no Guardian flag, so its Guardian loaded as a common monster of
+     * its kind, at its full strength, and its theme's slay objective could never complete. The
+     * first monster of the theme's Guardian kind becomes the Guardian again, titled and cut to the
+     * chunk's depth.
+     */
+    private static void recogniseOldGuardian(Maze maze, MonsterDataManager dataManager) {
+        com.bpm.minotaur.generation.theme.ChunkTheme theme = maze.getChunkTheme();
+        if (theme == null) return;
+        com.bpm.minotaur.generation.theme.ThemeDefinition def =
+                com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(theme);
+        if (def == null || def.getChampionType() == null) return;
+        for (Monster m : maze.getMonsters().values()) if (m.isThemeChampion()) return;
+        for (Monster m : maze.getMonsters().values()) {
+            if (m.getType() != def.getChampionType()) continue;
+            m.setThemeChampion(true);
+            com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(m, Math.max(1, maze.getLevel()), dataManager,
+                    def.getGuardianStrength());
+            if (def.getGuardianTitle() != null) m.setDisplayName(def.getGuardianTitle());
+            return;
+        }
+    }
+
     public Maze buildMaze(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
         Maze maze = new Maze(this.level, this.wallData);
 
@@ -291,10 +314,12 @@ public class ChunkData {
                 if (data.level > 0) monster.setLevel(data.level);
                 if (data.damageDice != null) monster.setDamageDice(data.damageDice);
                 if (data.guardianName != null) monster.setDisplayName(data.guardianName);
+                if (data.damageScale > 0f) monster.setDamageScale(data.damageScale);
             }
             monster.setCarriedGold(data.carriedGold);
             maze.addMonster(monster);
         }
+        recogniseOldGuardian(maze, dataManager);
 
         for (DoorData data : doors) {
             Door door = new Door();
@@ -679,6 +704,7 @@ public class ChunkData {
         public String damageDice;
         public boolean themeChampion;
         public String guardianName;
+        public float damageScale;
         /** Gold the monster carries (#197); 0 on old saves. */
         public int carriedGold;
 
@@ -715,6 +741,7 @@ public class ChunkData {
                 this.level = monster.getLevel();
                 this.damageDice = monster.getDamageDice();
                 this.guardianName = monster.getDisplayName();
+                this.damageScale = monster.getDamageScale();
             }
             this.carriedGold = monster.getCarriedGold();
         }

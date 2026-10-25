@@ -31,11 +31,14 @@ public final class GuardianScaling {
         public final int level;
         public final int maxHp;
         public final String damageDice;
+        /** The factor its blow's damage was cut by: its shots and spells take the same (1 when uncut). */
+        public final float damageScale;
 
-        Stats(int level, int maxHp, String damageDice) {
+        Stats(int level, int maxHp, String damageDice, float damageScale) {
             this.level = level;
             this.maxHp = maxHp;
             this.damageDice = damageDice;
+            this.damageScale = damageScale;
         }
     }
 
@@ -68,16 +71,28 @@ public final class GuardianScaling {
         guardian.setMaxHP(s.maxHp);
         guardian.setCurrentHP(s.maxHp);
         guardian.setDamageDice(s.damageDice);
+        guardian.setDamageScale(s.damageScale);
     }
 
-    /** A Heavy of {@code level}: the loaded Heavy of the highest base level not above it, or null. */
+    /**
+     * A Heavy of {@code level}: the loaded Heavy of the highest base level not above it, the
+     * toughest of those, and the first by name after that, so the yardstick never depends on the
+     * order the monsters were loaded in. Null if there is none.
+     */
     static Heavy heavyOfLevel(int level, MonsterDataManager data) {
         if (data == null || data.getLoadedTypes() == null) return null;
         MonsterTemplate best = null;
+        Monster.MonsterType bestType = null;
         for (Monster.MonsterType type : data.getLoadedTypes()) {
             MonsterTemplate t = data.getTemplate(type);
             if (t == null || t.getRole() != MonsterRole.HEAVY || t.baseLevel > level || t.damageDice == null) continue;
-            if (best == null || t.baseLevel > best.baseLevel) best = t;
+            boolean better = best == null || t.baseLevel > best.baseLevel
+                    || (t.baseLevel == best.baseLevel && (t.maxHP > best.maxHP
+                    || (t.maxHP == best.maxHP && type.name().compareTo(bestType.name()) < 0)));
+            if (better) {
+                best = t;
+                bestType = type;
+            }
         }
         return best == null ? null : new Heavy(best.maxHP, best.damageDice);
     }
@@ -105,7 +120,7 @@ public final class GuardianScaling {
      */
     public static Stats scale(int baseLevel, int maxHp, String damageDice, int edl, Heavy heavy, float strength) {
         int level = cappedLevel(baseLevel, edl);
-        if (level <= edl) return new Stats(baseLevel, maxHp, damageDice); // in its own depth: itself
+        if (level <= edl) return new Stats(baseLevel, maxHp, damageDice, 1f); // in its own depth: itself
         float ratio = level / (float) baseLevel;
         int hp = Math.round(maxHp * ratio);
         double damage = averageOf(damageDice) * ratio;
@@ -114,9 +129,10 @@ public final class GuardianScaling {
             damage = Math.min(Math.max(damage, FLOOR * averageOf(heavy.damageDice)),
                     DAMAGE_CEILING * strength * averageOf(heavy.damageDice));
         }
-        String dice = level < baseLevel ? diceForAverage(damageDice, damage)
-                : damage < averageOf(damageDice) ? diceForAverage(damageDice, damage) : damageDice;
-        return new Stats(level, Math.max(1, hp), dice);
+        double whole = averageOf(damageDice);
+        String dice = Math.abs(damage - whole) < 0.01 ? damageDice : diceForAverage(damageDice, damage);
+        float scale = whole > 0 ? (float) (averageOf(dice) / whole) : 1f;
+        return new Stats(level, Math.max(1, hp), dice, scale);
     }
 
     /** The average roll of a dice expression: "4d12+10" is 36, a bare "5" is 5. */

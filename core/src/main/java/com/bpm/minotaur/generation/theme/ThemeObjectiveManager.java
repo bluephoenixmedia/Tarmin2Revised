@@ -50,7 +50,7 @@ public class ThemeObjectiveManager {
                 && victim != null && victim.isThemeChampion()) {
             state.complete();
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("The champion falls. The seal weakens!", 3.0f));
+                eventManager.addEvent(new GameEvent("The Guardian falls. The seal weakens!", 3.0f));
             }
             routRemainingLegion(maze);
         }
