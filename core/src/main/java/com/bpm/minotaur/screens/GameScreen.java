@@ -3096,10 +3096,13 @@ public class GameScreen extends BaseScreen {
         // --- FIX: Re-initialize Dice UI with new Manager ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
         // ---------------------------------------------------
+        java.util.List<com.bpm.minotaur.gamedata.arts.CombatArt> artCards =
+                hud != null ? hud.takeArtCards() : java.util.Collections.emptyList();
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.setDiscoveryManager(this.discoveryManager);
         hud.setGameScreen(this); // the quick-slot menu and the silhouette widget need it after a chunk swap too
+        for (com.bpm.minotaur.gamedata.arts.CombatArt art : artCards) hud.showArtLearned(art); // #249
         player.setItemPickupListener(this::onItemPickedUp);
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);

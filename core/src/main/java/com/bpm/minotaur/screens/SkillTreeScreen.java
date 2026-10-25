@@ -182,13 +182,13 @@ public class SkillTreeScreen extends BaseScreen {
         panel.top();
 
         Label attrTitle = new Label("ATTRIBUTES", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        panel.add(attrTitle).left().row();
+        panel.add(attrTitle).left().padBottom(UiTheme.PAD_SM).row();
 
-        // Wrapped to the panel: one unbroken line was wider than the 440 column, and the panel
-        // centred its overflow, clipping every attribute off the left edge.
+        // Wrapped to the panel, as the descriptions below are: one unbroken line was wider than the
+        // column, and the panel centred its overflow, clipping every attribute off the left edge.
         Label attrSub = UiLabels.wrapping("Earned points can be assigned anytime (Cap: 20).",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        panel.add(attrSub).width(440 - 32).left().padBottom(16).row();
+        panel.add(attrSub).growX().left().padBottom(16).row();
 
         int availablePts = player.getStats().getUnallocatedAttributePoints();
 
@@ -233,8 +233,9 @@ public class SkillTreeScreen extends BaseScreen {
     /** The two pages of the right side, as tabs: the selected one is primary, the other secondary. */
     private Table buildPageTabs() {
         Table tabs = new Table();
-        tabs.add(pageTab("SKILLS", false)).height(UiTheme.BUTTON_H).padRight(UiTheme.PAD_SM);
-        tabs.add(pageTab("WEAPON MASTERY", true)).height(UiTheme.BUTTON_H);
+        // One width for both, so the selected style's padding cannot make one tab smaller.
+        tabs.add(pageTab("SKILLS", false)).width(UiTheme.MENU_ITEM_W).height(UiTheme.BUTTON_H).padRight(UiTheme.PAD_SM);
+        tabs.add(pageTab("WEAPON MASTERY", true)).width(UiTheme.MENU_ITEM_W).height(UiTheme.BUTTON_H);
         return tabs;
     }
 

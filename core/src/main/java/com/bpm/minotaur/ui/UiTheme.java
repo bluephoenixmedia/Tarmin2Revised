@@ -221,6 +221,10 @@ public final class UiTheme {
     public static final float ART_CARD_W = 150 * VU;
     /** How long the Art-learned card stays before it fades, in seconds; a click dismisses it sooner. */
     public static final float ART_CARD_SECONDS = 5f;
+    public static final float ART_CARD_FADE_IN = 0.3f;
+    public static final float ART_CARD_FADE_OUT = 0.6f;
+    /** The card's bottom edge, as a share of the canvas height: above the play area's centre. */
+    public static final float ART_CARD_Y_SHARE = 0.62f;
     public static final float ICON_XS = 8 * VU;
     public static final float ICON_SM = 16 * VU;
     public static final float ICON_MD = 24 * VU;

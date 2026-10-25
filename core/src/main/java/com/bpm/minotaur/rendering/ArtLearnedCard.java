@@ -18,7 +18,11 @@ import com.bpm.minotaur.ui.UiTheme;
  */
 public class ArtLearnedCard extends Table {
 
+    /** The Art this card announces. */
+    public final CombatArt art;
+
     public ArtLearnedCard(HudSkin skin, CombatArt art) {
+        this.art = art;
         setBackground(skin.getDoubleBorderPanel());
         pad(UiTheme.PAD_MD, UiTheme.PAD_XL, UiTheme.PAD_MD, UiTheme.PAD_XL);
         float inner = UiTheme.ART_CARD_W - 2 * UiTheme.PAD_XL;

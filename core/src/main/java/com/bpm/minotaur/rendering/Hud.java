@@ -3934,6 +3934,22 @@ public class Hud implements Disposable {
         if (artCard == null) showNextArtCard();
     }
 
+    /**
+     * The cards still to show, the one on screen first: a chunk swap builds a new HUD, which takes
+     * them over rather than losing an Art learned on the turn the player crossed.
+     */
+    public java.util.List<com.bpm.minotaur.gamedata.arts.CombatArt> takeArtCards() {
+        java.util.List<com.bpm.minotaur.gamedata.arts.CombatArt> pending = new java.util.ArrayList<>();
+        if (artCard != null) {
+            pending.add(artCard.art);
+            artCard.remove();
+            artCard = null;
+        }
+        pending.addAll(artCardsWaiting);
+        artCardsWaiting.clear();
+        return pending;
+    }
+
     private void showNextArtCard() {
         com.bpm.minotaur.gamedata.arts.CombatArt art = artCardsWaiting.poll();
         if (art == null || stage == null) {
@@ -3943,7 +3959,7 @@ public class Hud implements Disposable {
         final ArtLearnedCard card = new ArtLearnedCard(hudSkin, art);
         artCard = card;
         card.setPosition((stage.getViewport().getWorldWidth() - card.getWidth()) / 2f,
-                stage.getViewport().getWorldHeight() * 0.62f);
+                stage.getViewport().getWorldHeight() * UiTheme.ART_CARD_Y_SHARE);
         card.getColor().a = 0f;
         card.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
         card.addListener(new ClickListener() {
@@ -3953,9 +3969,9 @@ public class Hud implements Disposable {
             }
         });
         card.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence(
-                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn(0.3f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn(UiTheme.ART_CARD_FADE_IN),
                 com.badlogic.gdx.scenes.scene2d.actions.Actions.delay(UiTheme.ART_CARD_SECONDS),
-                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut(0.6f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut(UiTheme.ART_CARD_FADE_OUT),
                 com.badlogic.gdx.scenes.scene2d.actions.Actions.run(() -> dismissArtCard(card))));
         stage.addActor(card);
     }
