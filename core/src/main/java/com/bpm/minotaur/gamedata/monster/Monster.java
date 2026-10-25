@@ -1504,12 +1504,22 @@ public class Monster implements Renderable {
         return damageScale == 1f ? rolled : Math.max(1, Math.round(rolled * damageScale));
     }
 
+    /** How many of its own turns a tethered Guardian answers from its ground once the player attacks it. */
+    public static final int PROVOKED_TURNS = 3;
+    private int provokedTurns = 0;
+
+    /** The player attacked it: a tethered Guardian answers from where it stands, for a while. */
+    public void provoke() {
+        provokedTurns = PROVOKED_TURNS;
+    }
+
     /**
      * Whether this monster may attack someone at (x, y), by blow, shot or spell. A tethered Guardian
      * attacks only what stands on its own ground (#302): the seeker chooses when to cross onto it.
+     * One the seeker struck from off its ground answers all the same, until it is left alone.
      */
     public boolean mayStrikeAt(int x, int y) {
-        return mayStandAt(x, y);
+        return mayStandAt(x, y) || provokedTurns > 0;
     }
 
     public boolean isBridgeBoss() {
@@ -1918,6 +1928,7 @@ public class Monster implements Renderable {
         if (pinnedTurns > 0) pinnedTurns--;
         if (hewnTurns > 0) hewnTurns--;
         if (grippedTurns > 0) grippedTurns--;
+        if (provokedTurns > 0) provokedTurns--;
     }
 
     public int getStunTurns() {
