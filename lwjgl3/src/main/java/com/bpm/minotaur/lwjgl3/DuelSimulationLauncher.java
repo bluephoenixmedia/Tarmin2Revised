@@ -320,9 +320,11 @@ public class DuelSimulationLauncher implements ApplicationListener {
         Monster monster = new Monster(type, PLAYER_X + 1, ROW, colorFor(type), monsterDataManager, assetManager);
         if (type == guardian) {
             // As the theme decorator places it: its theme's HP bonus, then cut to the stratum (#302).
-            monster.setMaxHP(monster.getMaxHP() + guardianHpBonus(type));
+            com.bpm.minotaur.generation.theme.ThemeDefinition theme = guardedTheme(type);
+            monster.setMaxHP(monster.getMaxHP() + (theme != null ? theme.getChampionHpBonus() : 0));
             monster.setThemeChampion(true);
-            com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(monster, edl, monsterDataManager);
+            com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(monster, edl, monsterDataManager,
+                    theme != null ? theme.getGuardianStrength() : 1f);
         } else {
             monster.scaleStats(edl); // MonsterFactory scales every spawn to its chunk's EDL
         }
@@ -622,14 +624,14 @@ public class DuelSimulationLauncher implements ApplicationListener {
         return Math.max(2, Math.min(4, gap));
     }
 
-    /** The HP bonus the theme {@code type} guards gives its Guardian; 0 if no theme names it. */
-    private static int guardianHpBonus(Monster.MonsterType type) {
+    /** The theme whose Guardian {@code type} is, or null if no theme names it. */
+    private static com.bpm.minotaur.generation.theme.ThemeDefinition guardedTheme(Monster.MonsterType type) {
         for (com.bpm.minotaur.generation.theme.ChunkTheme theme : com.bpm.minotaur.generation.theme.ChunkTheme.values()) {
             com.bpm.minotaur.generation.theme.ThemeDefinition def =
                     com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(theme);
-            if (def != null && def.getChampionType() == type) return def.getChampionHpBonus();
+            if (def != null && def.getChampionType() == type) return def;
         }
-        return 0;
+        return null;
     }
 
     /** Sets the monster {@code gap} tiles east of wherever the player now stands. */

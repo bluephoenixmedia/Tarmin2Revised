@@ -165,9 +165,11 @@ public class ThemeDataManager {
             }
         }
 
-        return new ThemeDefinition(theme, crestAward, objective, hazard, hazardDensity,
+        ThemeDefinition def = new ThemeDefinition(theme, crestAward, objective, hazard, hazardDensity,
                 fogTint, fogDistance, stinger, propDensity, props, monsters, championType,
                 championHpBonus, guardianTitle, objectiveCount, runeTexture);
+        def.setGuardianStrength(entry.getFloat("guardianStrength", 1f));
+        return def;
     }
 
     /** Returns null when the theme has no definition on disk. */

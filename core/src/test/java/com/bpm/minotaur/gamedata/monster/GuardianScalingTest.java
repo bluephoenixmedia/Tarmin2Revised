@@ -62,6 +62,18 @@ public class GuardianScalingTest {
     }
 
     @Test
+    public void anUncutGuardianStillOutOfItsDepthIsHeldToTheCeiling() {
+        // The Ogre at EDL 3: level 5 is within EDL+2, so it is not cut, but its Guardian bonus
+        // would still make it a certain death: out of its depth, it is held all the same.
+        GuardianScaling.Heavy heavy = new GuardianScaling.Heavy(34, "1d10+1");
+        GuardianScaling.Stats s = GuardianScaling.scale(5, 84, "1d10+1", 3, heavy, 1.6f);
+        assertEquals(5, s.level);
+        assertEquals(Math.round(1.6f * 34), s.maxHp);
+        GuardianScaling.Stats home = GuardianScaling.scale(5, 84, "1d10+1", 5, heavy, 1.6f);
+        assertEquals("at its own depth, it is itself", 84, home.maxHp);
+    }
+
+    @Test
     public void diceKeepTheirAverage() {
         assertEquals(36.0, GuardianScaling.averageOf("4d12+10"), 1e-9);
         assertEquals(6.5, GuardianScaling.averageOf("1d10+1"), 1e-9);

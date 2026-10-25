@@ -58,6 +58,8 @@ public class ThemeDefinition {
     private final int championHpBonus;
     /** The Guardian's name as the player reads it, title and all: "the Bringer of Death, Keeper of the Isle". */
     private final String guardianTitle;
+    /** The theme's factor on a cut Guardian's ceilings (#302): 1 unless themes.json tunes it. */
+    private float guardianStrength = 1f;
     private final int objectiveCount;
     private final String runeTexture;
 
@@ -147,6 +149,14 @@ public class ThemeDefinition {
 
     public int getChampionHpBonus() {
         return championHpBonus;
+    }
+
+    public float getGuardianStrength() {
+        return guardianStrength;
+    }
+
+    void setGuardianStrength(float strength) {
+        guardianStrength = strength > 0f ? strength : 1f;
     }
 
     /** The Guardian's titled name (#302), or null for a theme with no Guardian. */

@@ -56,13 +56,14 @@ public final class GuardianScaling {
     /**
      * Scales a placed Guardian to a stratum of {@code edl}: its level, its hit points (the Guardian
      * bonus already added) and its damage dice. Its template gives the base level; a Guardian with
-     * none is left as it is.
+     * none is left as it is. {@code strength} is its theme's own factor on the ceilings (1 for none).
      */
-    public static void apply(Monster guardian, int edl, MonsterDataManager data) {
+    public static void apply(Monster guardian, int edl, MonsterDataManager data, float strength) {
         MonsterTemplate t = guardian.getTemplate();
         if (t == null || t.baseLevel <= 0) return;
         int level = cappedLevel(t.baseLevel, edl);
-        Stats s = scale(t.baseLevel, guardian.getMaxHP(), guardian.getDamageDice(), edl, heavyOfLevel(level, data));
+        Stats s = scale(t.baseLevel, guardian.getMaxHP(), guardian.getDamageDice(), edl,
+                heavyOfLevel(level, data), strength);
         guardian.setLevel(s.level);
         guardian.setMaxHP(s.maxHp);
         guardian.setCurrentHP(s.maxHp);
@@ -86,23 +87,36 @@ public final class GuardianScaling {
         return Math.max(1, Math.min(baseLevel, edl + OUT_OF_DEPTH));
     }
 
+    /** {@link #scale(int, int, String, int, Heavy, float)} at a theme strength of 1. */
+    public static Stats scale(int baseLevel, int maxHp, String damageDice, int edl, Heavy heavy) {
+        return scale(baseLevel, maxHp, damageDice, edl, heavy, 1f);
+    }
+
     /**
      * The Guardian's stats in a stratum of {@code edl}: {@code maxHp} (its Guardian bonus included)
-     * and the average of {@code damageDice} are multiplied by capped level / base level, then held
-     * at the {@code heavy} floor (none if null). A Guardian already within the cap is unchanged.
+     * and the average of {@code damageDice} are multiplied by capped level / base level, and while
+     * it is still over the stratum it is held between the {@code heavy} floor and ceilings (none if
+     * null): its Guardian bonus alone could otherwise make an uncut Guardian a certain death. At or
+     * under the stratum's EDL it is itself.
+     *
+     * @param strength the theme's factor on the ceilings: one rule cannot make every Guardian equally
+     *        hard, since one that shoots as the player crosses its ground outdoes one that must close,
+     *        so each theme tunes its own to the same one-in-three fight (#302)
      */
-    public static Stats scale(int baseLevel, int maxHp, String damageDice, int edl, Heavy heavy) {
+    public static Stats scale(int baseLevel, int maxHp, String damageDice, int edl, Heavy heavy, float strength) {
         int level = cappedLevel(baseLevel, edl);
-        if (level >= baseLevel) return new Stats(baseLevel, maxHp, damageDice);
+        if (level <= edl) return new Stats(baseLevel, maxHp, damageDice); // in its own depth: itself
         float ratio = level / (float) baseLevel;
         int hp = Math.round(maxHp * ratio);
         double damage = averageOf(damageDice) * ratio;
         if (heavy != null) {
-            hp = Math.min(Math.max(hp, Math.round(FLOOR * heavy.hp)), Math.round(HP_CEILING * heavy.hp));
+            hp = Math.min(Math.max(hp, Math.round(FLOOR * heavy.hp)), Math.round(HP_CEILING * strength * heavy.hp));
             damage = Math.min(Math.max(damage, FLOOR * averageOf(heavy.damageDice)),
-                    DAMAGE_CEILING * averageOf(heavy.damageDice));
+                    DAMAGE_CEILING * strength * averageOf(heavy.damageDice));
         }
-        return new Stats(level, Math.max(1, hp), diceForAverage(damageDice, damage));
+        String dice = level < baseLevel ? diceForAverage(damageDice, damage)
+                : damage < averageOf(damageDice) ? diceForAverage(damageDice, damage) : damageDice;
+        return new Stats(level, Math.max(1, hp), dice);
     }
 
     /** The average roll of a dice expression: "4d12+10" is 36, a bare "5" is 5. */

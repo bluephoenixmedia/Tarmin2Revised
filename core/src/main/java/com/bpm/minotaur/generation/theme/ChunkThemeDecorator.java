@@ -898,7 +898,8 @@ public class ChunkThemeDecorator {
                 monsterDataManager, assetManager);
         champion.setThemeChampion(true);
         // Met at the stratum it guards: at most EDL+2, its hit points and damage cut to match (#302).
-        com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(champion, edl, monsterDataManager);
+        com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(champion, edl, monsterDataManager,
+                def.getGuardianStrength());
         if (def.getGuardianTitle() != null) champion.setDisplayName(def.getGuardianTitle());
         // The Bringer holds his island: the seeker chooses when to cross onto his ground.
         if (keeper) champion.setTether(room.minX, room.minY, room.maxX, room.maxY);
