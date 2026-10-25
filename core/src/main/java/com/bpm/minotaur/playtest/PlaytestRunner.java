@@ -68,6 +68,7 @@ public final class PlaytestRunner {
                 new EnduringScenario(),
                 new TarminSlainScenario(),
                 new ArtBarScenario(),
+                new MasteryUiScenario(),
                 new LivingWarScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),

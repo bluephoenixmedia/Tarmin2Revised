@@ -46,6 +46,8 @@ public class SkillTreeScreen extends BaseScreen {
 
     private Stage stage;
     private SkillId selectedSkillId = SkillId.DUAL_WIELDER;
+    /** Which page the right side shows: the skill Disciplines, or Weapon Mastery and the Arts (#249). */
+    private boolean showMastery;
     private Label statusLabel;
     private Table rootTable;
 
@@ -138,14 +140,19 @@ public class SkillTreeScreen extends BaseScreen {
         Table attrPanel = buildAttributesPanel();
         body.add(attrPanel).width(440).expandY().fillY().padRight(20);
 
-        // Right Panel: Disciplines + Details
+        // Right Panel: Disciplines + Details, or Weapon Mastery (#249)
         Table rightPanel = new Table();
+        rightPanel.add(buildPageTabs()).left().padBottom(UiTheme.PAD_SM).row();
 
-        Table disciplinesTable = buildDisciplinesTable();
-        rightPanel.add(disciplinesTable).expand().fill().padBottom(14).row();
+        if (showMastery) {
+            rightPanel.add(buildMasteryPanel()).expand().fill();
+        } else {
+            Table disciplinesTable = buildDisciplinesTable();
+            rightPanel.add(disciplinesTable).expand().fill().padBottom(14).row();
 
-        Table detailPanel = buildSkillDetailPanel();
-        rightPanel.add(detailPanel).height(230).fillX();
+            Table detailPanel = buildSkillDetailPanel();
+            rightPanel.add(detailPanel).height(230).fillX();
+        }
 
         body.add(rightPanel).expand().fill();
         rootTable.add(body).expand().fill().padBottom(12).row();
@@ -160,6 +167,7 @@ public class SkillTreeScreen extends BaseScreen {
 
         footer.add(new KeyHintLegend(hudSkin)
                 .hint("CLICK", "Skill details")
+                .hint("M", showMastery ? "Skills" : "Weapon Mastery")
                 .hint("K", "Close")
                 .escapeHint("Return to game")).right();
 
@@ -174,11 +182,13 @@ public class SkillTreeScreen extends BaseScreen {
         panel.top();
 
         Label attrTitle = new Label("ATTRIBUTES", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        panel.add(attrTitle).left().row();
+        panel.add(attrTitle).left().padBottom(UiTheme.PAD_SM).row();
 
-        Label attrSub = new Label("Earned points can be assigned anytime (Cap: 20).",
+        // Wrapped to the panel, as the descriptions below are: one unbroken line was wider than the
+        // column, and the panel centred its overflow, clipping every attribute off the left edge.
+        Label attrSub = UiLabels.wrapping("Earned points can be assigned anytime (Cap: 20).",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        panel.add(attrSub).left().padBottom(16).row();
+        panel.add(attrSub).growX().left().padBottom(16).row();
 
         int availablePts = player.getStats().getUnallocatedAttributePoints();
 
@@ -217,6 +227,88 @@ public class SkillTreeScreen extends BaseScreen {
             panel.add(row).fillX().padBottom(8).row();
         }
 
+        return panel;
+    }
+
+    /** The two pages of the right side, as tabs: the selected one is primary, the other secondary. */
+    private Table buildPageTabs() {
+        Table tabs = new Table();
+        // One width for both, so the selected style's padding cannot make one tab smaller.
+        tabs.add(pageTab("SKILLS", false)).width(UiTheme.MENU_ITEM_W).height(UiTheme.BUTTON_H).padRight(UiTheme.PAD_SM);
+        tabs.add(pageTab("WEAPON MASTERY", true)).width(UiTheme.MENU_ITEM_W).height(UiTheme.BUTTON_H);
+        return tabs;
+    }
+
+    private TextButton pageTab(String text, final boolean mastery) {
+        TextButton tab = new TextButton(text, showMastery == mastery ? UiStyles.primary(hudSkin) : UiStyles.secondary(hudSkin));
+        tab.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                showPage(mastery);
+            }
+        });
+        return tab;
+    }
+
+    private void showPage(boolean mastery) {
+        if (showMastery == mastery) return;
+        showMastery = mastery;
+        buildUI();
+    }
+
+    /**
+     * Weapon Mastery (#249; spec section 6): all ten Families with exact counts, and every Art the
+     * soul has kept, marked "retrain at" a rank where this body has not reached it.
+     */
+    private Table buildMasteryPanel() {
+        Table panel = new Table();
+        panel.setBackground(hudSkin.getDoubleBorderPanel());
+        panel.pad(UiTheme.PAD_XL);
+        panel.top().left();
+        float familyW = UiTheme.MASTERY_FAMILY_W, artsW = UiTheme.MASTERY_ARTS_W;
+
+        // Every cell has a set width: a wrapped Label measures its height against it, and an
+        // ellipsized one needs it to know where to cut (SKILL-1: an unbounded row widens the root).
+        Table families = new Table();
+        families.top().left();
+        families.add(UiLabels.ellipsized("WEAPON MASTERY", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                .width(familyW).left().padBottom(UiTheme.PAD_SM).row();
+        families.add(UiLabels.wrapping("Full hits on anything but the trivial raise a Family's rank. "
+                        + "A new body starts Untrained.", UiStyles.caption(hudSkin, UiTheme.TEXT_DIM)))
+                .width(familyW).left().padBottom(UiTheme.PAD_MD).row();
+        com.bpm.minotaur.gamedata.player.Mastery mastery = player.getStats().getMastery();
+        for (com.bpm.minotaur.gamedata.item.WeaponFamily family : com.bpm.minotaur.ui.MasteryText.families()) {
+            boolean trained = mastery.rankOf(family) != com.bpm.minotaur.gamedata.player.Mastery.Rank.UNTRAINED;
+            families.add(UiLabels.ellipsized(com.bpm.minotaur.ui.MasteryText.familyLine(mastery, family),
+                    UiStyles.caption(hudSkin, trained ? UiTheme.TEXT : UiTheme.TEXT_DIM))).width(familyW).left()
+                    .padBottom(UiTheme.PAD_XS).row();
+        }
+
+        Table arts = new Table();
+        arts.top().left();
+        arts.add(UiLabels.ellipsized("ARTS REMEMBERED", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                .width(artsW).left().padBottom(UiTheme.PAD_SM).row();
+        arts.add(UiLabels.wrapping("The soul keeps every Art it learns. A body below an Art's rank "
+                        + "uses it at a doubled cooldown, and its Passive fires half as often.",
+                UiStyles.caption(hudSkin, UiTheme.TEXT_DIM))).width(artsW).left().padBottom(UiTheme.PAD_MD).row();
+        if (player.getKnownArts().isEmpty()) {
+            arts.add(UiLabels.wrapping("None yet. An Art is learned at Adept, Expert and Master in each Family.",
+                    UiStyles.caption(hudSkin, UiTheme.TEXT_DIM))).width(artsW).left().row();
+        }
+        for (com.bpm.minotaur.gamedata.arts.CombatArt art : player.getKnownArts()) {
+            String retrain = com.bpm.minotaur.ui.MasteryText.retrainNote(player, art);
+            arts.add(UiLabels.ellipsized(com.bpm.minotaur.ui.MasteryText.artLine(art), UiStyles.caption(hudSkin, UiTheme.TEXT)))
+                    .width(artsW).left().row();
+            arts.add(UiLabels.wrapping(art.describe() + (retrain != null ? " (" + retrain + ")" : ""),
+                    UiStyles.caption(hudSkin, retrain != null ? UiTheme.WARNING : UiTheme.TEXT_DIM)))
+                    .width(artsW).left().padTop(UiTheme.PAD_XS).padBottom(UiTheme.PAD_MD).row();
+        }
+        ScrollPane artsScroll = new ScrollPane(arts, UiStyles.scrollPane(hudSkin));
+        artsScroll.setFadeScrollBars(false);
+        artsScroll.setScrollingDisabled(true, false);
+
+        panel.add(families).width(familyW).top().left().padRight(UiTheme.PAD_XL);
+        panel.add(artsScroll).width(artsW + UiTheme.PAD_MD).growY().top().left();
         return panel;
     }
 
@@ -514,6 +606,10 @@ public class SkillTreeScreen extends BaseScreen {
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.K) {
             game.setScreen(parentScreen);
+            return true;
+        }
+        if (keycode == Input.Keys.M) {
+            showPage(!showMastery);
             return true;
         }
         return super.keyDown(keycode);

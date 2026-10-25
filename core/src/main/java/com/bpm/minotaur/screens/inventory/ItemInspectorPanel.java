@@ -262,6 +262,8 @@ public class ItemInspectorPanel extends Table {
     private void buildWeaponInspection(Table table, Item item) {
         String diceFormula = item.getDamageDice() != null ? item.getDamageDice() : "1d6";
         addStatRow(table, "Damage Formula:", diceFormula, COL_INK_DARK);
+        String family = com.bpm.minotaur.ui.MasteryText.inspectorValue(player, item);
+        if (family != null) addStatRow(table, "Weapon Family:", family, COL_INK_DARK); // #249
         addStatRow(table, "Base Value:", item.getBaseValue() + " Gold", COL_INK_DARK);
 
         // Compare against currently equipped Right Hand weapon

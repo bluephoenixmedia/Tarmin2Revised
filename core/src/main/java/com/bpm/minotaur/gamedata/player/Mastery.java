@@ -93,6 +93,16 @@ public final class Mastery {
         });
     }
 
+    /** Full hits counted with {@code family}. */
+    public int hitsOf(WeaponFamily family) {
+        return hits.getOrDefault(family, 0);
+    }
+
+    /** The full hits that reach the rank above {@code rank}; 0 for a Master, who has none above. */
+    public static int hitsForNextRank(Rank rank) {
+        return rank.ordinal() < THRESHOLDS.length ? THRESHOLDS[rank.ordinal()] : 0;
+    }
+
     public Rank rankOf(WeaponFamily family) {
         int n = hits.getOrDefault(family, 0);
         int rank = 0;

@@ -1340,6 +1340,13 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        // A Combat Art learned for the first time gets its card (#249).
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.ART_LEARNED)) != null) {
+            if (hud != null && event.payload instanceof com.bpm.minotaur.gamedata.arts.CombatArt) {
+                hud.showArtLearned((com.bpm.minotaur.gamedata.arts.CombatArt) event.payload);
+            }
+        }
+
         while ((event = eventManager.findAndConsume(GameEvent.EventType.ENCOUNTER_TRIGGERED)) != null) {
             String eventId = (String) event.payload;
             if (game.getEncounterManager() != null) {
@@ -3089,10 +3096,13 @@ public class GameScreen extends BaseScreen {
         // --- FIX: Re-initialize Dice UI with new Manager ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
         // ---------------------------------------------------
+        java.util.List<com.bpm.minotaur.gamedata.arts.CombatArt> artCards =
+                hud != null ? hud.takeArtCards() : java.util.Collections.emptyList();
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.setDiscoveryManager(this.discoveryManager);
         hud.setGameScreen(this); // the quick-slot menu and the silhouette widget need it after a chunk swap too
+        for (com.bpm.minotaur.gamedata.arts.CombatArt art : artCards) hud.showArtLearned(art); // #249
         player.setItemPickupListener(this::onItemPickedUp);
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);

@@ -214,6 +214,17 @@ public final class UiTheme {
     /** One Art bar slot (#245): the spell strip's shape, wide enough for a key, a rank mark and a full name. */
     public static final float ART_SLOT_W = 90 * VU;
     public static final float ART_SLOT_H = 8 * VU;
+    /** The Skill Tree's Weapon Mastery page (#249): the Families column, and the Arts beside it. */
+    public static final float MASTERY_FAMILY_W = 185 * VU;
+    public static final float MASTERY_ARTS_W = 200 * VU;
+    /** The Art-learned card (#249): about the Discovery card's width, wide enough for a capstone's line. */
+    public static final float ART_CARD_W = 150 * VU;
+    /** How long the Art-learned card stays before it fades, in seconds; a click dismisses it sooner. */
+    public static final float ART_CARD_SECONDS = 5f;
+    public static final float ART_CARD_FADE_IN = 0.3f;
+    public static final float ART_CARD_FADE_OUT = 0.6f;
+    /** The card's bottom edge, as a share of the canvas height: above the play area's centre. */
+    public static final float ART_CARD_Y_SHARE = 0.62f;
     public static final float ICON_XS = 8 * VU;
     public static final float ICON_SM = 16 * VU;
     public static final float ICON_MD = 24 * VU;
