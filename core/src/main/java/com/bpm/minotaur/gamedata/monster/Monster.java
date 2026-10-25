@@ -1488,6 +1488,14 @@ public class Monster implements Renderable {
         return tether == null || (x >= tether[0] && y >= tether[1] && x <= tether[2] && y <= tether[3]);
     }
 
+    /**
+     * Whether this monster may attack someone at (x, y), by blow, shot or spell. A tethered Guardian
+     * attacks only what stands on its own ground (#302): the seeker chooses when to cross onto it.
+     */
+    public boolean mayStrikeAt(int x, int y) {
+        return mayStandAt(x, y);
+    }
+
     public boolean isBridgeBoss() {
         return bridgeBoss;
     }

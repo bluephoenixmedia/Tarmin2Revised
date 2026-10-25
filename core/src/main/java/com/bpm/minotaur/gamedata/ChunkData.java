@@ -216,7 +216,7 @@ public class ChunkData {
 
         if (this.chunkTheme != null) {
             try {
-                maze.setChunkTheme(com.bpm.minotaur.generation.theme.ChunkTheme.valueOf(this.chunkTheme));
+                maze.setChunkTheme(com.bpm.minotaur.generation.theme.ChunkTheme.parse(this.chunkTheme));
             } catch (Exception ignored) {
             }
         }
@@ -285,6 +285,13 @@ public class ChunkData {
             monster.setSealRoad(data.sealRoad);
             monster.setSealRole(data.sealRole);
             if (data.sealBearerName != null) monster.setDisplayName(data.sealBearerName);
+            if (data.themeChampion) {
+                // A Guardian loads as it was cut to its stratum, not as its template (#302).
+                monster.setThemeChampion(true);
+                if (data.level > 0) monster.setLevel(data.level);
+                if (data.damageDice != null) monster.setDamageDice(data.damageDice);
+                if (data.guardianName != null) monster.setDisplayName(data.guardianName);
+            }
             monster.setCarriedGold(data.carriedGold);
             maze.addMonster(monster);
         }
@@ -340,7 +347,7 @@ public class ChunkData {
             }
             if (data.theme != null) {
                 try {
-                    gate.setTheme(com.bpm.minotaur.generation.theme.ChunkTheme.valueOf(data.theme));
+                    gate.setTheme(com.bpm.minotaur.generation.theme.ChunkTheme.parse(data.theme));
                 } catch (Exception ignored) {
                 }
             }
@@ -667,6 +674,11 @@ public class ChunkData {
         public int sealRole;
         /** A seal bearer's name ("Grask, bearing the seal of..."): it is no figure to be named again. */
         public String sealBearerName;
+        /** A Guardian's stratum-cut level and damage, its flag, and its titled name (#302); absent in older saves. */
+        public int level;
+        public String damageDice;
+        public boolean themeChampion;
+        public String guardianName;
         /** Gold the monster carries (#197); 0 on old saves. */
         public int carriedGold;
 
@@ -698,6 +710,12 @@ public class ChunkData {
             this.sealRoad = monster.getSealRoad();
             this.sealRole = monster.getSealRole();
             if (this.sealRole == Monster.SEAL_BEARER) this.sealBearerName = monster.getDisplayName();
+            this.themeChampion = monster.isThemeChampion();
+            if (this.themeChampion) {
+                this.level = monster.getLevel();
+                this.damageDice = monster.getDamageDice();
+                this.guardianName = monster.getDisplayName();
+            }
             this.carriedGold = monster.getCarriedGold();
         }
     }

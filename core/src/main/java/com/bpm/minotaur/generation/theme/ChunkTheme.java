@@ -72,10 +72,10 @@ public enum ChunkTheme {
             5,
             java.util.Set.of(com.bpm.minotaur.generation.Biome.LAKELANDS)),
 
-    BRIDGE_OF_SOULS(
-            "Bridge of Souls",
+    BRINGERS_ISLE(
+            "Bringer's Isle",
             "An island in a chasm of molten fire, where the Bringer of Death waits for fallen souls on the far side of every bridge.",
-            "Demonic Scythe Mark (Doom Boss)",
+            "Demonic Scythe Mark",
             "ᛞ",
             new Color(0.85f, 0.05f, 0.05f, 1f),
             1);
@@ -86,6 +86,20 @@ public enum ChunkTheme {
     private final String runeGlyph;
     private final Color runeColor;
     private final int minLevel;
+
+    /**
+     * The theme a save or a data file names, or null. The Bringer's Isle was the "Bridge of Souls"
+     * until #302 gave that name back to Tarmin's bridge alone; older saves still say so.
+     */
+    public static ChunkTheme parse(String name) {
+        if (name == null) return null;
+        if ("BRIDGE_OF_SOULS".equals(name)) return BRINGERS_ISLE;
+        try {
+            return valueOf(name);
+        } catch (IllegalArgumentException unknown) {
+            return null;
+        }
+    }
     private final java.util.Set<com.bpm.minotaur.generation.Biome> allowedBiomes;
 
     ChunkTheme(String displayName, String description, String crypticOmen, String runeGlyph, Color runeColor, int minLevel) {

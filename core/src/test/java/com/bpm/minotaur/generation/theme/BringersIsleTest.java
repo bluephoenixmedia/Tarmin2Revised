@@ -14,15 +14,15 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 /**
- * The Bridge of Souls, as agreed 2026-10-10: an island in a chasm of molten fire, a two-tile bridge
+ * The Bringer's Isle (the "Bridge of Souls" until #302), as agreed 2026-10-10: an island in a chasm of molten fire, a two-tile bridge
  * to it from every gate, the undead holding the bridges and the Bringer of Death alone on his
  * island, which he will not leave.
  */
-public class BridgeOfSoulsTest {
+public class BringersIsleTest {
 
     private static Maze bridge(long seed) {
         Maze maze = CarveGeometryTest.mazeChunk();
-        ChunkThemeDecorator.decorate(maze, ChunkTheme.BRIDGE_OF_SOULS, seed, null, null, null);
+        ChunkThemeDecorator.decorate(maze, ChunkTheme.BRINGERS_ISLE, seed, null, null, null);
         return maze;
     }
 

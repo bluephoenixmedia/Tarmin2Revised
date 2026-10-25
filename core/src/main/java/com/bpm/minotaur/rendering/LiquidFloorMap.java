@@ -11,7 +11,7 @@ import com.bpm.minotaur.gamedata.liquid.LiquidType;
  * The maze's liquids as a texture of one texel a tile, for the first-person floor shaders: the colour
  * of whatever lies on each tile, its alpha how strongly. Molten fire is written at full alpha, which
  * the shaders read as "glows by its own light". Without it the retro and textured floors drew water,
- * blood and the Bridge of Souls' chasm as bare floor -- the chasm an invisible wall.
+ * blood and the Bringer's Isle's chasm as bare floor -- the chasm an invisible wall.
  */
 final class LiquidFloorMap implements Disposable {
 

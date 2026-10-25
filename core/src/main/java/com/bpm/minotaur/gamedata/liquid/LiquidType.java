@@ -13,7 +13,7 @@ public enum LiquidType {
     QUICKSAND((byte) 4, "Sinking Sand", "Collapsing desert dunes that slow movement and drag down heavy armor.", new Color(0.82f, 0.71f, 0.45f, 0.85f)),
     FREEZING_SLUSH((byte) 5, "Freezing Slush", "Partially frozen icy mire that hampers footsteps and rapidly drains body warmth.", new Color(0.60f, 0.78f, 0.85f, 0.88f)),
     PACKED_ICE((byte) 6, "Glacial Ice", "Glassy, low-friction permafrost ice that accelerates sliding and offers no purchase.", new Color(0.40f, 0.70f, 0.90f, 0.75f)),
-    /** The chasm under the Bridge of Souls: nothing living or dead can wade into it. */
+    /** The chasm around the Bringer's Isle: nothing living or dead can wade into it. */
     MOLTEN_FIRE((byte) 7, "Hellfire Chasm", "A gulf of molten fire with no bottom anyone has found.", new Color(1.0f, 0.36f, 0.06f, 0.95f));
 
     private final byte id;

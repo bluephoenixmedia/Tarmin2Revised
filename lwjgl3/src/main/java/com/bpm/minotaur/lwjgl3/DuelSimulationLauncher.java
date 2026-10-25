@@ -93,6 +93,8 @@ public class DuelSimulationLauncher implements ApplicationListener {
     /** Run every Family at depths 1 and 3, with and without Arts, and write the table (#250). */
     private boolean report = false;
     private String reportPath = "logs/duel-arts-report.md";
+    /** --guardian=TYPE: duel that monster as a theme Guardian, cut to the EDL (#302). */
+    private Monster.MonsterType guardian;
     /** --weapon=UNARMED: an empty right hand. */
     private boolean unarmed = false;
     private int chainRuns = 500;
@@ -192,6 +194,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             }
         }
         band.sort(java.util.Comparator.comparing(Enum::name));
+        if (guardian != null) band = java.util.Collections.singletonList(guardian); // the one Guardian (#302)
 
         try {
             run(band);
@@ -315,7 +318,14 @@ public class DuelSimulationLauncher implements ApplicationListener {
         player.setFacing(Direction.EAST);
 
         Monster monster = new Monster(type, PLAYER_X + 1, ROW, colorFor(type), monsterDataManager, assetManager);
-        monster.scaleStats(edl); // MonsterFactory scales every spawn to its chunk's EDL
+        if (type == guardian) {
+            // As the theme decorator places it: its theme's HP bonus, then cut to the stratum (#302).
+            monster.setMaxHP(monster.getMaxHP() + guardianHpBonus(type));
+            monster.setThemeChampion(true);
+            com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(monster, edl, monsterDataManager);
+        } else {
+            monster.scaleStats(edl); // MonsterFactory scales every spawn to its chunk's EDL
+        }
         monster.setCurrentHP(monster.getMaxHP());
         boolean shooter = shoots(player);
         // A ranged monster is met at its preferred distance and shoots while the player closes; a
@@ -612,6 +622,16 @@ public class DuelSimulationLauncher implements ApplicationListener {
         return Math.max(2, Math.min(4, gap));
     }
 
+    /** The HP bonus the theme {@code type} guards gives its Guardian; 0 if no theme names it. */
+    private static int guardianHpBonus(Monster.MonsterType type) {
+        for (com.bpm.minotaur.generation.theme.ChunkTheme theme : com.bpm.minotaur.generation.theme.ChunkTheme.values()) {
+            com.bpm.minotaur.generation.theme.ThemeDefinition def =
+                    com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(theme);
+            if (def != null && def.getChampionType() == type) return def.getChampionHpBonus();
+        }
+        return 0;
+    }
+
     /** Sets the monster {@code gap} tiles east of wherever the player now stands. */
     private static void placeMonster(Maze maze, Player player, Monster monster, int gap) {
         int x = (int) player.getPosition().x + gap;
@@ -753,6 +773,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "arts": arts = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "report": report = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "reportOut": reportPath = v; break;
+                case "guardian": guardian = Monster.MonsterType.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;
                 case "csv": csvPath = v; break;
