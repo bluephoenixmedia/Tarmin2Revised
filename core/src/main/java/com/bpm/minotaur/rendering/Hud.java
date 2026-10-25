@@ -3923,6 +3923,49 @@ public class Hud implements Disposable {
         spriteBatch.end();
     }
 
+    // --- The Art-learned card (#249): one at a time, the rest wait their turn ---
+    private final java.util.ArrayDeque<com.bpm.minotaur.gamedata.arts.CombatArt> artCardsWaiting = new java.util.ArrayDeque<>();
+    private ArtLearnedCard artCard;
+
+    /** The soul learned {@code art}: its card shows above the play area, after any already showing. */
+    public void showArtLearned(com.bpm.minotaur.gamedata.arts.CombatArt art) {
+        if (art == null) return;
+        artCardsWaiting.add(art);
+        if (artCard == null) showNextArtCard();
+    }
+
+    private void showNextArtCard() {
+        com.bpm.minotaur.gamedata.arts.CombatArt art = artCardsWaiting.poll();
+        if (art == null || stage == null) {
+            artCard = null;
+            return;
+        }
+        final ArtLearnedCard card = new ArtLearnedCard(hudSkin, art);
+        artCard = card;
+        card.setPosition((stage.getViewport().getWorldWidth() - card.getWidth()) / 2f,
+                stage.getViewport().getWorldHeight() * 0.62f);
+        card.getColor().a = 0f;
+        card.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
+        card.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                dismissArtCard(card);
+            }
+        });
+        card.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence(
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn(0.3f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.delay(UiTheme.ART_CARD_SECONDS),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut(0.6f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.run(() -> dismissArtCard(card))));
+        stage.addActor(card);
+    }
+
+    private void dismissArtCard(ArtLearnedCard card) {
+        if (artCard != card) return; // already gone
+        card.remove();
+        showNextArtCard();
+    }
+
     public void addMessage(String message) {
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(message, 2f));

@@ -69,7 +69,16 @@ public class PauseScreen extends BaseScreen {
         panel.pad(35, 45, 35, 45);
 
         Label title = new Label("GAME PAUSED", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        panel.add(title).padBottom(30).center().row();
+        if (gameScreen != null && gameScreen.getPlayer() != null) {
+            panel.add(title).padBottom(com.bpm.minotaur.ui.UiTheme.PAD_SM).center().row();
+            // The Incarnation's ledger line (#249): what the soul carries into the next body.
+            panel.add(com.bpm.minotaur.ui.UiLabels.ellipsized(
+                    com.bpm.minotaur.ui.MasteryText.artsRemembered(gameScreen.getPlayer()),
+                    com.bpm.minotaur.ui.UiStyles.caption(hudSkin, com.bpm.minotaur.ui.UiTheme.TEXT_DIM)))
+                    .padBottom(30).center().row();
+        } else {
+            panel.add(title).padBottom(30).center().row();
+        }
 
         // 1. Resume (Primary)
         TextButton.TextButtonStyle resumeStyle = new TextButton.TextButtonStyle();

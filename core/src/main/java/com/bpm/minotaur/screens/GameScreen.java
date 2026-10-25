@@ -1340,6 +1340,13 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        // A Combat Art learned for the first time gets its card (#249).
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.ART_LEARNED)) != null) {
+            if (hud != null && event.payload instanceof com.bpm.minotaur.gamedata.arts.CombatArt) {
+                hud.showArtLearned((com.bpm.minotaur.gamedata.arts.CombatArt) event.payload);
+            }
+        }
+
         while ((event = eventManager.findAndConsume(GameEvent.EventType.ENCOUNTER_TRIGGERED)) != null) {
             String eventId = (String) event.payload;
             if (game.getEncounterManager() != null) {

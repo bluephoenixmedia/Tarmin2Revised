@@ -32,6 +32,7 @@ public final class IncarnationLedger {
         List<Line> lines = new ArrayList<>();
         lines.add(new Line("LEVEL AND XP", "GONE"));
         lines.add(new Line("STATS AND SKILLS", "GONE"));
+        lines.add(new Line("WEAPON MASTERY", "GONE"));
         int items = Math.max(0, carriedItemsLost);
         lines.add(new Line("CARRIED GEAR", items + (items == 1 ? " ITEM" : " ITEMS")));
         lines.add(new Line("YOUR GEAR", "LEFT WITH YOUR REMAINS, SOMEWHERE IN THE MAZE"));
@@ -45,6 +46,7 @@ public final class IncarnationLedger {
     public static List<Line> kept() {
         List<Line> lines = new ArrayList<>();
         lines.add(new Line("KNOWN SPELLS", "SOUL"));
+        lines.add(new Line("COMBAT ARTS", "SOUL"));
         lines.add(new Line("FATHER'S SWORD", "SOUL"));
         lines.add(new Line("UNLOCKS", "WORLD"));
         lines.add(new Line("ALTAR STATIONS", "WORLD"));
