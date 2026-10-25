@@ -117,6 +117,13 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Herald**: A house's courier on the roads between seats, carrying a proclamation.
 - **Siege / Breach**: A house laying siege to Castle Tarmin, and the gap in its wall that stays open while the siege lasts.
 
+### The Laughing Void & Chaos Surges
+See Issue #304.
+- **The Laughing Void**: An unaligned, primordial chaotic god that exists beyond the factions of the Maze and mortal powers. Appears looming on the horizon as a colossal mountain-scale entity fading in and out of existence.
+- **Chaos Surge**: A temporary wild magic reality fracture triggered when the Laughing Void gazes upon the world (15 + 2d12 turns). Inverts or distorts game rules, impacting the player and all creatures with cosmic indifference.
+- **Motley Sovereign**: The archaic epithet by which the Laughing Void is recorded in ancient mortality ledgers and world chronicles.
+- **Motley Reckoning**: An epitaph and World Log event recorded when an Incarnation perishes while a Chaos Surge is active ("Perished under the grinning gaze of the Motley Sovereign during [Surge Name]").
+
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.
 - **Consult Active Architecture Specs**:
