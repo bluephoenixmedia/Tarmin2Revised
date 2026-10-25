@@ -274,6 +274,21 @@ final class MapSurface extends Widget implements Disposable {
         return new GridPoint2(cursor.x + dx, cursor.y + dy);
     }
 
+    private boolean isNeighborVisited(int cx, int cy) {
+        if (model == null) return false;
+        Set<GridPoint2> visited = model.visited(floor);
+        if (visited == null || visited.isEmpty()) return false;
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
+                if (visited.contains(new GridPoint2(cx + dx, cy + dy))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     float chunkTopZ(int cx, int cy) {
         GridPoint2 p = new GridPoint2(cx, cy);
         Biome b = biomeOf(p);
@@ -285,6 +300,9 @@ final class MapSurface extends Widget implements Disposable {
             return isOcean ? 1.2f : 2.5f;
         }
         if (floor == 1 && model != null && model.surveyedChunks() != null && model.surveyedChunks().contains(p)) {
+            return isOcean ? 1.2f : 2.5f;
+        }
+        if (floor == 1 && isNeighborVisited(cx, cy)) {
             return isOcean ? 1.2f : 2.5f;
         }
         return 0f;
@@ -369,6 +387,9 @@ final class MapSurface extends Widget implements Disposable {
                     if (floor == 1 && model != null && model.surveyedChunks() != null && model.surveyedChunks().contains(p)) {
                         return State.GLIMPSED;
                     }
+                    if (floor == 1 && isNeighborVisited(cx, cy)) {
+                        return State.GLIMPSED;
+                    }
                     return State.UNKNOWN;
                 }
 
@@ -376,7 +397,7 @@ final class MapSurface extends Widget implements Disposable {
                 public boolean isTileSeen(int cx, int cy, int lx, int ly) {
                     ChunkTiles t = getChunkTiles(cx, cy);
                     if (t != null) {
-                        return t.isSeen(lx, ly);
+                        return t.isBlockSeen(lx, ly);
                     }
                     return true;
                 }

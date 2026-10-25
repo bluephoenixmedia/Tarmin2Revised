@@ -1090,11 +1090,12 @@ public final class IsometricDioramaRenderer implements Disposable {
             // Has cavern: draw 8x8 floor tiles and depth-sorted rock pillars / ladder / chests
             ChunkTiles caveTiles = (provider != null) ? provider.getCavernTiles(cx, cy) : null;
             Mulberry32 rng = new Mulberry32(hash(cx, cy) + 4242);
+            boolean[][] caveWalls = generateDioramaMaze(cx, cy, provider != null && provider.hasLadder(cx, cy));
 
             // Draw 8x8 floor quad tiles at z=5
             for (int ty = 0; ty < 8; ty++) {
                 for (int tx = 0; tx < 8; tx++) {
-                    boolean solid = (caveTiles != null) ? caveTiles.isSolid(tx, ty) : (tx == 0 || tx == 7 || ty == 0 || ty == 7 || (tx == 3 && ty == 3));
+                    boolean solid = caveWalls[ty][tx];
                     Color floorCol = solid ? COLOR_CAVE_WALL_FLOOR : COLOR_CAVE_FLOOR;
 
                     float x0 = cx + tx / 8.0f;
@@ -1117,8 +1118,7 @@ public final class IsometricDioramaRenderer implements Disposable {
             renderCaveItems.clear();
             for (int ty = 0; ty < 8; ty++) {
                 for (int tx = 0; tx < 8; tx++) {
-                    boolean solid = (caveTiles != null) ? caveTiles.isSolid(tx, ty) : (tx == 0 || tx == 7 || ty == 0 || ty == 7 || (tx == 3 && ty == 3));
-                    if (solid) {
+                    if (caveWalls[ty][tx]) {
                         float x0 = cx + tx / 8.0f;
                         float y0 = cy + ty / 8.0f;
                         float hPillar = 2.4f + 1.2f * rng.nextFloat();
@@ -1841,9 +1841,13 @@ public final class IsometricDioramaRenderer implements Disposable {
         boolean feat = (shelter != null || portal || ladder || graves > 0);
 
         if (tiles != null && tiles.width > 0 && tiles.height > 0) {
+            boolean isMaze = (biome == Biome.MAZE);
+            boolean[][] isWall = isMaze ? generateDioramaMaze(cx, cy, feat) : null;
             for (int ty = 0; ty < 8; ty++) {
                 for (int tx = 0; tx < 8; tx++) {
-                    if (!tiles.isSeen(tx, ty) || tiles.isSolid(tx, ty)) continue;
+                    boolean seen = tiles.isBlockSeen(tx, ty);
+                    boolean solid = isMaze ? isWall[ty][tx] : tiles.isBlockSolid(tx, ty);
+                    if (!seen || solid) continue;
 
                     float u = (tx + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
                     float v = (ty + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
@@ -2045,6 +2049,65 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
     }
 
+    public static boolean[][] generateDioramaMaze(int cx, int cy, boolean feat) {
+        Mulberry32 rng = new Mulberry32(hash(cx, cy));
+        boolean[][] isWall = new boolean[8][8];
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                isWall[y][x] = true;
+            }
+        }
+
+        boolean[] vis = new boolean[16];
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        List<int[]> stack = new ArrayList<>();
+        stack.add(new int[]{0, 0});
+        vis[0] = true;
+        isWall[0][0] = false;
+
+        while (!stack.isEmpty()) {
+            int[] cur = stack.get(stack.size() - 1);
+            List<int[]> nb = new ArrayList<>(4);
+            for (int[] d : dirs) {
+                int nx = cur[0] + d[0];
+                int ny = cur[1] + d[1];
+                if (nx >= 0 && ny >= 0 && nx < 4 && ny < 4 && !vis[ny * 4 + nx]) {
+                    nb.add(d);
+                }
+            }
+            if (nb.isEmpty()) {
+                stack.remove(stack.size() - 1);
+                continue;
+            }
+            int[] d = nb.get((int) (rng.nextFloat() * nb.size()));
+            int nx = cur[0] + d[0];
+            int ny = cur[1] + d[1];
+            vis[ny * 4 + nx] = true;
+            isWall[cur[1] * 2 + d[1]][cur[0] * 2 + d[0]] = false;
+            isWall[ny * 2][nx * 2] = false;
+            stack.add(new int[]{nx, ny});
+        }
+
+        for (int i = 0; i < 3; i++) {
+            int rx = (int) (rng.nextFloat() * 3);
+            int ry = (int) (rng.nextFloat() * 4);
+            isWall[ry * 2][rx * 2 + 1] = false;
+        }
+        int exitY = (int) (rng.nextFloat() * 4) * 2;
+        isWall[exitY][7] = false;
+        int exitX = (int) (rng.nextFloat() * 4) * 2;
+        isWall[7][exitX] = false;
+
+        if (feat) {
+            for (int y = 3; y <= 4; y++) {
+                for (int x = 3; x <= 4; x++) {
+                    isWall[y][x] = false;
+                }
+            }
+        }
+        return isWall;
+    }
+
     private void drawVisitedChunk(int cx, int cy, Biome biome, ChunkTiles tiles, MapKnowledgeMask.KnowledgeProvider provider) {
         BiomeColors B = getBiomeColors(biome);
         float h = (biome == Biome.OCEAN) ? 2.0f : 6.0f;
@@ -2053,54 +2116,77 @@ public final class IsometricDioramaRenderer implements Disposable {
         // Base mesa block from z=0 to h
         drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, h, null, B.sideA, B.sideB);
 
-        // Floor quads on top of mesa
-        if (tiles != null && tiles.width > 0 && tiles.height > 0) {
-            for (int ty = 0; ty < 8; ty++) {
-                for (int tx = 0; tx < 8; tx++) {
-                    boolean seen = tiles.isSeen(tx, ty);
-                    boolean solid = tiles.isSolid(tx, ty);
+        boolean isMaze = (biome == Biome.MAZE || isCave);
+        boolean feat = (provider != null) && (provider.getShelter(cx, cy) != null || provider.hasReturnPortal(cx, cy)
+                || provider.hasLadder(cx, cy) || provider.getGraveCount(cx, cy) > 0);
 
-                    Color tileColor;
-                    if (seen) {
-                        tileColor = solid ? COLOR_WALL_FOOTPRINT : B.top;
-                    } else {
-                        tileColor = mix(B.top, COLOR_UNKNOWN_DARK, 0.45f);
-                    }
+        boolean[][] isWall = isMaze ? generateDioramaMaze(cx, cy, feat) : new boolean[8][8];
+        boolean[][] blockSeen = new boolean[8][8];
 
-                    float x0 = cx + tx / 8.0f;
-                    float y0 = cy + ty / 8.0f;
-                    float x1 = cx + (tx + 1) / 8.0f;
-                    float y1 = cy + (ty + 1) / 8.0f;
-
-                    Vector2 t0 = toGdxScreen(project(x0, y0, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                    Vector2 t1 = toGdxScreen(project(x1, y0, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                    Vector2 t2 = toGdxScreen(project(x1, y1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                    Vector2 t3 = toGdxScreen(project(x0, y1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-
-                    shapeRenderer.setColor(tileColor);
-                    shapeRenderer.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
-                    shapeRenderer.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
+        for (int ty = 0; ty < 8; ty++) {
+            for (int tx = 0; tx < 8; tx++) {
+                if (tiles != null) {
+                    blockSeen[ty][tx] = tiles.isBlockSeen(tx, ty);
+                } else {
+                    blockSeen[ty][tx] = true;
                 }
             }
-        } else {
-            // No per-tile data: draw single top quad
-            Vector2 t0 = toGdxScreen(project(cx, cy, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 t1 = toGdxScreen(project(cx + 1, cy, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 t2 = toGdxScreen(project(cx + 1, cy + 1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 t3 = toGdxScreen(project(cx, cy + 1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        }
 
-            shapeRenderer.setColor(B.top);
-            shapeRenderer.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
-            shapeRenderer.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
+        // Walls adjacent to seen floor tiles are also seen (prototype line 488)
+        if (isMaze) {
+            int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+            for (int ty = 0; ty < 8; ty++) {
+                for (int tx = 0; tx < 8; tx++) {
+                    if (!isWall[ty][tx]) continue;
+                    for (int[] d : dirs) {
+                        int nx = tx + d[0];
+                        int ny = ty + d[1];
+                        if (nx >= 0 && ny >= 0 && nx < 8 && ny < 8 && !isWall[ny][nx] && blockSeen[ny][nx]) {
+                            blockSeen[ty][tx] = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Floor quads on top of mesa
+        for (int ty = 0; ty < 8; ty++) {
+            for (int tx = 0; tx < 8; tx++) {
+                boolean seen = blockSeen[ty][tx];
+                boolean solid = isWall[ty][tx];
+
+                Color tileColor;
+                if (seen) {
+                    tileColor = solid ? COLOR_WALL_FOOTPRINT : B.top;
+                } else {
+                    tileColor = mix(B.top, COLOR_UNKNOWN_DARK, 0.45f);
+                }
+
+                float x0 = cx + tx / 8.0f;
+                float y0 = cy + ty / 8.0f;
+                float x1 = cx + (tx + 1) / 8.0f;
+                float y1 = cy + (ty + 1) / 8.0f;
+
+                Vector2 t0 = toGdxScreen(project(x0, y0, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 t1 = toGdxScreen(project(x1, y0, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 t2 = toGdxScreen(project(x1, y1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 t3 = toGdxScreen(project(x0, y1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+
+                shapeRenderer.setColor(tileColor);
+                shapeRenderer.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
+                shapeRenderer.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
+            }
         }
 
         renderItems.clear();
 
         // Maze wall boxes (+4.2 height)
-        if (tiles != null && (biome == Biome.MAZE || isCave)) {
+        if (isMaze) {
             for (int ty = 0; ty < 8; ty++) {
                 for (int tx = 0; tx < 8; tx++) {
-                    if (tiles.isSolid(tx, ty) && tiles.isSeen(tx, ty)) {
+                    if (isWall[ty][tx] && blockSeen[ty][tx]) {
                         WallBox w = new WallBox();
                         w.x0 = cx + tx / 8.0f;
                         w.y0 = cy + ty / 8.0f;
@@ -2560,6 +2646,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         Color darkBacking = new Color(16 / 255f, 10 / 255f, 5 / 255f, 0.75f * alpha);
 
         for (MapKnowledgeMask.RoadInfo r : roads) {
+            if (Math.abs(r.fromX - r.toX) > 1.5f || Math.abs(r.fromY - r.toY) > 1.5f) continue;
             float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
             float z1 = getChunkTopZ(provider, (int) r.toX, (int) r.toY) + 0.4f;
             Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
@@ -2568,6 +2655,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
 
         for (MapKnowledgeMask.RoadInfo r : roads) {
+            if (Math.abs(r.fromX - r.toX) > 1.5f || Math.abs(r.fromY - r.toY) > 1.5f) continue;
             float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
             float z1 = getChunkTopZ(provider, (int) r.toX, (int) r.toY) + 0.4f;
             Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));

@@ -31,6 +31,42 @@ final class ChunkTiles {
         return explorationState[y][x] == Maze.VISIBILITY_SEEN;
     }
 
+    /**
+     * Checks if a mini-tile/block (0..7) within this chunk has been seen.
+     * Maps an 8x8 block coordinate to the chunk's native tile grid (typically 36x36).
+     */
+    boolean isBlockSeen(int bx, int by) {
+        if (width <= 0 || height <= 0 || explorationState == null) return false;
+        if (width <= 8 && height <= 8) return isSeen(bx, by);
+
+        if (hasAnySeenTile()) {
+            int x0 = (bx * width) / 8;
+            int x1 = Math.max(x0 + 1, ((bx + 1) * width) / 8);
+            int y0 = (by * height) / 8;
+            int y1 = Math.max(y0 + 1, ((by + 1) * height) / 8);
+            for (int y = y0; y < y1 && y < height; y++) {
+                for (int x = x0; x < x1 && x < width; x++) {
+                    if (explorationState[y][x] == Maze.VISIBILITY_SEEN) return true;
+                }
+            }
+            return false;
+        }
+
+        // Visited chunk with no per-tile exploration state (e.g. sanctuary)
+        return true;
+    }
+
+    /** True if any tile in this chunk has VISIBILITY_SEEN. */
+    boolean hasAnySeenTile() {
+        if (explorationState == null || width <= 0 || height <= 0) return false;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (explorationState[y][x] == Maze.VISIBILITY_SEEN) return true;
+            }
+        }
+        return false;
+    }
+
     int wallAt(int x, int y) {
         if (wallData == null || x < 0 || x >= width || y < 0 || y >= height) return 0;
         return wallData[y][x];
@@ -40,6 +76,25 @@ final class ChunkTiles {
     boolean isSolid(int x, int y) {
         int w = wallAt(x, y);
         return w == 1 || (w & 0b1111) == 0b1111 || (w & 0b01010101) == 0b01010101;
+    }
+
+    /** Checks if the majority of tiles in this 8x8 block's footprint are solid. */
+    boolean isBlockSolid(int bx, int by) {
+        if (width <= 0 || height <= 0 || wallData == null) return false;
+        if (width <= 8 && height <= 8) return isSolid(bx, by);
+
+        int x0 = (bx * width) / 8;
+        int x1 = Math.max(x0 + 1, ((bx + 1) * width) / 8);
+        int y0 = (by * height) / 8;
+        int y1 = Math.max(y0 + 1, ((by + 1) * height) / 8);
+        int total = (x1 - x0) * (y1 - y0);
+        int solidCount = 0;
+        for (int y = y0; y < y1 && y < height; y++) {
+            for (int x = x0; x < x1 && x < width; x++) {
+                if (isSolid(x, y)) solidCount++;
+            }
+        }
+        return solidCount * 2 >= total;
     }
 
     /** An unexplored opening or passage exiting from an explored floor tile. */
