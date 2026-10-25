@@ -41,6 +41,8 @@ public final class LifeRecord {
     public String killer;
     public String place;
     public int turn;
+    /** The active surge name if the life ended during a Motley Reckoning (#309). */
+    public String motleyReckoning;
 
     /** For the save reader. */
     public LifeRecord() {
@@ -80,7 +82,7 @@ public final class LifeRecord {
     }
 
     /** Places the line among the others by how notable it is; the least notable falls off past eight. */
-    void note(Fact fact) {
+    public void note(Fact fact) {
         int at = 0;
         while (at < lines.size() && lines.get(at).kind.weight >= fact.kind.weight) at++;
         if (at >= MAX_LINES) return;

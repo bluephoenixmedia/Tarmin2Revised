@@ -14,6 +14,7 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.rendering.DiscoveryCard;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.rendering.ChaosBannerOverlay;
 
 /**
  * Atmospheric transition screen displayed when the player perishes during an expedition.
@@ -129,8 +130,12 @@ public class PlayerDeathScreen extends BaseScreen {
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(14f);
 
-        Label title = new Label("YOU HAVE FALLEN",
-                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
+        boolean isMotley = epitaphCause != null && epitaphCause.contains("Motley Sovereign");
+        String titleText = isMotley ? "MOTLEY RECKONING" : "YOU HAVE FALLEN";
+        Color titleColor = isMotley ? ChaosBannerOverlay.COL_MAGENTA : HudSkin.COL_HP_CRITICAL;
+
+        Label title = new Label(titleText,
+                new Label.LabelStyle(hudSkin.getFontHeader(), titleColor));
         header.add(title).row();
 
         Label cause = new Label(epitaphCause,

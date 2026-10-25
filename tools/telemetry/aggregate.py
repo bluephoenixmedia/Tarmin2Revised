@@ -28,7 +28,7 @@ MODES = ["melee", "ranged", "thrown", "firearm", "spell", "book"]
 EXPEDITION_FIELDS = ["turns", "maxDepth", "kills", "damageDealt", "damageTaken", "hpRegenerated",
                      "mpRegenerated", "xpGained", "goldGained", "goldSpent", "itemsPickedUp",
                      "divinitiesEarned", "divinitiesSpent", "turnsHungry", "turnsThirsty",
-                     "turnsCold", "turnsPoisoned", "hpVengeance", "unlocksEarned"]
+                     "turnsCold", "turnsPoisoned", "hpVengeance", "unlocksEarned", "chaosSurgesTriggered"]
 
 
 def load(directory, difficulty, include_cheats):

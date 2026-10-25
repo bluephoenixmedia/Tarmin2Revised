@@ -181,6 +181,19 @@ public class ChaosManager implements SlotScopedState {
             Gdx.app.log(TAG, "Chaos Surge triggered: " + event.getName() + " for " + remainingTurns + " turns.");
         }
 
+        try {
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordChaosSurge();
+        } catch (Throwable ignored) {}
+
+        try {
+            com.bpm.minotaur.managers.WorldLogManager.getInstance().note(
+                    com.bpm.minotaur.gamedata.worldlog.Fact.of(
+                            com.bpm.minotaur.gamedata.worldlog.Fact.Kind.CHAOS_SURGE_WITNESSED,
+                            event.getName()
+                    )
+            );
+        } catch (Throwable ignored) {}
+
         for (ChaosSurgeListener l : new ArrayList<>(listeners)) {
             try {
                 l.onSurgeTriggered(event, remainingTurns);

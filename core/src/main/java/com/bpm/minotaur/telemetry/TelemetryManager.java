@@ -66,7 +66,7 @@ public class TelemetryManager {
         MP_REGENERATED("mpRegenerated"), GOLD_GAINED("goldGained"), GOLD_SPENT("goldSpent"),
         XP_GAINED("xpGained"), ITEMS_PICKED_UP("itemsPickedUp"), UNLOCKS_EARNED("unlocksEarned"),
         TURNS_HUNGRY("turnsHungry"), TURNS_THIRSTY("turnsThirsty"), TURNS_COLD("turnsCold"),
-        TURNS_POISONED("turnsPoisoned");
+        TURNS_POISONED("turnsPoisoned"), CHAOS_SURGES_TRIGGERED("chaosSurgesTriggered");
 
         final String key;
 
@@ -585,6 +585,19 @@ public class TelemetryManager {
         if (count > 0) {
             life[Counter.UNLOCKS_EARNED.ordinal()] += count;
         }
+    }
+
+    /** The Laughing Void unleashed a Chaos Surge (#309). */
+    public synchronized void recordChaosSurge() {
+        life[Counter.CHAOS_SURGES_TRIGGERED.ordinal()]++;
+    }
+
+    public synchronized int getChaosSurgesTriggered() {
+        return (int) life[Counter.CHAOS_SURGES_TRIGGERED.ordinal()];
+    }
+
+    public synchronized int getExpeditionChaosSurgesTriggered() {
+        return (int) delta(Counter.CHAOS_SURGES_TRIGGERED);
     }
 
     // ---- Life accessors ----
