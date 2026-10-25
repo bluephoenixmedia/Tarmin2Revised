@@ -96,6 +96,8 @@ public class GuardianTetherTest {
     public void aDuelWithAGuardianOffItsGroundNeverStallsOnItsTurn() {
         // Found in review: its turn returned without ending, and the duel froze on MONSTER_TURN.
         combat.startCombat(guardian);
+        // Starting the duel provoked him; left alone a while, he cannot reach the player again.
+        for (int turn = 0; turn < Monster.PROVOKED_TURNS; turn++) guardian.endTurn();
         for (int i = 0; i < 30; i++) {
             combat.setCurrentState(CombatManager.CombatState.MONSTER_TURN);
             combat.monsterAttack();
@@ -124,6 +126,21 @@ public class GuardianTetherTest {
         }
         assertTrue("some shots landed", hits > 0);
         assertTrue("about 3 a shot, not 10: " + taken / (float) hits, taken / (float) hits < 7f);
+    }
+
+    @Test
+    public void struckFromOffHisGroundHeAnswersFromWhereHeStands() {
+        // The gap the #302 review found: one tile off the isle, the player could hit him forever.
+        combat.alertMonsterToPlayer(guardian); // what every attack of the player's on him does
+        assertTrue("provoked, he reaches the seeker who struck him", combat.reachesPlayer(guardian));
+        assertTrue("and his blow lands off the isle", everHurt(() -> combat.monsterMeleeStrike(guardian), 40));
+    }
+
+    @Test
+    public void leftAloneHeSettlesBackToHisGround() {
+        combat.alertMonsterToPlayer(guardian);
+        for (int turn = 0; turn < Monster.PROVOKED_TURNS; turn++) guardian.endTurn();
+        assertFalse("unprovoked, he holds his ground again", combat.reachesPlayer(guardian));
     }
 
     @Test

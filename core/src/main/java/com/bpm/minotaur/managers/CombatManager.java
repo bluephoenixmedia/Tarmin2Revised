@@ -967,6 +967,7 @@ public class CombatManager {
     /** Alerts a monster that the player has attacked it, pointing its pursuit at the player. */
     public void alertMonsterToPlayer(Monster target) {
         if (target != null && target.getCurrentHP() > 0 && player != null) {
+            target.provoke(); // a tethered Guardian struck from off its ground answers (#302)
             target.setState(Monster.MonsterState.HUNTING);
             target.setLastKnownTargetPos(new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
             target.setTurnsSinceLastSeen(0);
