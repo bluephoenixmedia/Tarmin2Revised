@@ -1160,6 +1160,10 @@ public class Hud implements Disposable {
         knellOverlay = new KnellOverlay(hudSkin);
         stage.addActor(knellOverlay);
 
+        // The Laughing Void: Chaos Surge announcement herald & status pill (#308)
+        chaosBannerOverlay = new ChaosBannerOverlay(hudSkin);
+        stage.addActor(chaosBannerOverlay);
+
         // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal / LevelUpModal ---
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
@@ -1185,10 +1189,15 @@ public class Hud implements Disposable {
     }
 
     private KnellOverlay knellOverlay;
+    private ChaosBannerOverlay chaosBannerOverlay;
 
     /** Tarmin's Knell on screen. */
     public KnellOverlay getKnellOverlay() {
         return knellOverlay;
+    }
+
+    public ChaosBannerOverlay getChaosBannerOverlay() {
+        return chaosBannerOverlay;
     }
 
     public LevelUpModal getLevelUpModal() {
@@ -3994,6 +4003,8 @@ public class Hud implements Disposable {
             statusPillBar.dispose();
         if (knellOverlay != null)
             knellOverlay.dispose();
+        if (chaosBannerOverlay != null)
+            chaosBannerOverlay.dispose();
         stage.dispose();
         font.dispose();
         directionFont.dispose();

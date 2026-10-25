@@ -44,6 +44,23 @@ public class ChaosManager implements SlotScopedState {
     private final List<ChaosSurgeEvent> eventList = new ArrayList<>();
     private final Random rng = new Random();
 
+    public interface ChaosSurgeListener {
+        void onSurgeTriggered(ChaosSurgeEvent event, int duration);
+        void onSurgeExpired();
+    }
+
+    private final List<ChaosSurgeListener> listeners = new ArrayList<>();
+
+    public void addListener(ChaosSurgeListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(ChaosSurgeListener listener) {
+        listeners.remove(listener);
+    }
+
     private ChaosManager() {
         SaveManager.register(this);
         ChaosSurgeTable.registerAll(this);
@@ -164,6 +181,14 @@ public class ChaosManager implements SlotScopedState {
             Gdx.app.log(TAG, "Chaos Surge triggered: " + event.getName() + " for " + remainingTurns + " turns.");
         }
 
+        for (ChaosSurgeListener l : new ArrayList<>(listeners)) {
+            try {
+                l.onSurgeTriggered(event, remainingTurns);
+            } catch (Throwable t) {
+                if (Gdx.app != null) Gdx.app.error(TAG, "Error notifying chaos surge listener", t);
+            }
+        }
+
         save();
     }
 
@@ -190,6 +215,14 @@ public class ChaosManager implements SlotScopedState {
 
         if (Gdx.app != null) {
             Gdx.app.log(TAG, "Chaos Surge expired. Cooldown set to " + cooldownRemaining + " turns.");
+        }
+
+        for (ChaosSurgeListener l : new ArrayList<>(listeners)) {
+            try {
+                l.onSurgeExpired();
+            } catch (Throwable t) {
+                if (Gdx.app != null) Gdx.app.error(TAG, "Error notifying chaos surge listener", t);
+            }
         }
 
         save();
