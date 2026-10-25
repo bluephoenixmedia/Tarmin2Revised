@@ -76,7 +76,8 @@ public class ThemeDataManager {
 
         ChunkTheme theme;
         try {
-            theme = ChunkTheme.valueOf(id);
+            theme = ChunkTheme.parse(id);
+            if (theme == null) throw new IllegalArgumentException(id);
         } catch (IllegalArgumentException e) {
             log("themes.json references unknown theme id '" + id + "'.");
             return null;
@@ -135,6 +136,7 @@ public class ThemeDataManager {
             }
         }
         int championHpBonus = entry.getInt("championHpBonus", 40);
+        String guardianTitle = entry.getString("guardianTitle", null);
 
         List<ThemeDefinition.PropEntry> props = new ArrayList<>();
         JsonValue propList = entry.get("props");
@@ -165,7 +167,7 @@ public class ThemeDataManager {
 
         return new ThemeDefinition(theme, crestAward, objective, hazard, hazardDensity,
                 fogTint, fogDistance, stinger, propDensity, props, monsters, championType,
-                championHpBonus, objectiveCount, runeTexture);
+                championHpBonus, guardianTitle, entry.getFloat("guardianStrength", 1f), objectiveCount, runeTexture);
     }
 
     /** Returns null when the theme has no definition on disk. */

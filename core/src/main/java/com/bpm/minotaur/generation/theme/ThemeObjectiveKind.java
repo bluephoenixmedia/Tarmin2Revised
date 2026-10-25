@@ -14,7 +14,7 @@ public enum ThemeObjectiveKind {
     LAST_COMBATANT_STANDING("Slay every combatant in the arena"),
 
     /** Ruined Castle / Wandering Battalion: one designated champion must die. */
-    SLAY_CHAMPION("Slay the champion"),
+    SLAY_CHAMPION("Slay the Guardian"),
 
     /** Makeshift Graveyard: reconsecrate every desecrated grave. */
     RECONSECRATE_GRAVES("Reconsecrate the desecrated graves"),

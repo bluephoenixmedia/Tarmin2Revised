@@ -12,20 +12,20 @@ import com.bpm.minotaur.playtest.PlaytestScenario;
 import com.bpm.minotaur.playtest.PlaytestScript;
 
 /**
- * The Bridge of Souls, rebuilt 2026-10-10: warps into one, stands at a gate looking down the bridge
+ * The Bringer's Isle (the "Bridge of Souls" until #302), rebuilt 2026-10-10: warps into one, stands at a gate looking down the bridge
  * toward the island, and photographs it in each render mode -- the molten chasm must read as a chasm
  * in all of them, not as an invisible wall.
  */
-public final class BridgeOfSoulsScenario implements PlaytestScenario {
+public final class BringersIsleScenario implements PlaytestScenario {
 
     @Override
     public String name() {
-        return "bridge-of-souls";
+        return "bringers-isle";
     }
 
     @Override
     public String description() {
-        return "Warp into a Bridge of Souls, stand at a gate and look down the bridge, in every render mode.";
+        return "Warp into the Bringer's Isle, stand at a gate and look down the bridge, in every render mode.";
     }
 
     @Override
@@ -34,13 +34,13 @@ public final class BridgeOfSoulsScenario implements PlaytestScenario {
         script.once("settle traits", ctx::settleTraits);
         script.wait("traits settle", 15);
         script.once("outfit hero", () -> ctx.outfitHero(10));
-        script.until("warp until the Bridge of Souls", 2000, () -> {
+        script.until("warp until the Bringer's Isle", 2000, () -> {
             // The world's current maze, not only the screen's copy, which can lag a warp.
             Maze here = ctx.getWorldManager().getCurrentMaze();
             Maze shown = ctx.getMaze();
-            if ((here != null && here.getChunkTheme() == ChunkTheme.BRIDGE_OF_SOULS)
+            if ((here != null && here.getChunkTheme() == ChunkTheme.BRINGERS_ISLE)
                     && shown == here) return true;
-            if (here != null && here.getChunkTheme() == ChunkTheme.BRIDGE_OF_SOULS) return false;
+            if (here != null && here.getChunkTheme() == ChunkTheme.BRINGERS_ISLE) return false;
             if (ctx.getFrame() % 30 == 0) ctx.press(Input.Keys.F4);
             return false;
         });
@@ -63,16 +63,16 @@ public final class BridgeOfSoulsScenario implements PlaytestScenario {
             int dy = gate.y == 0 ? 1 : gate.y == maze.getHeight() - 1 ? -1 : 0;
             ctx.getPlayer().setPosition(gate.x + dx * 2 + 0.5f, gate.y + dy * 2 + 0.5f);
             ctx.getPlayer().setFacing(dx > 0 ? Direction.EAST : dx < 0 ? Direction.WEST : dy > 0 ? Direction.NORTH : Direction.SOUTH);
-            ctx.log("Bridge of Souls: " + fire + " tiles of fire; the Bringer (HP " + keeper.getMaxHP()
+            ctx.log("Bringer's Isle: " + fire + " tiles of fire; the Bringer (HP " + keeper.getMaxHP()
                     + ") at " + keeper.getPosition() + "; standing by the gate at " + gate);
         });
         script.wait("look", 20);
-        script.shot("bridge_of_souls_1", ctx);
+        script.shot("bringers_isle_1", ctx);
         script.key("other render engine", Input.Keys.F7, ctx);
         script.wait("redraw", 30);
-        script.shot("bridge_of_souls_2", ctx);
+        script.shot("bringers_isle_2", ctx);
         script.key("retro", Input.Keys.F2, ctx);
         script.wait("shift", 90);
-        script.shot("bridge_of_souls_3", ctx);
+        script.shot("bringers_isle_3", ctx);
     }
 }

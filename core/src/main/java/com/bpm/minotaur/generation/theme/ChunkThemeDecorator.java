@@ -46,6 +46,15 @@ public class ChunkThemeDecorator {
                                 MonsterDataManager monsterDataManager,
                                 ItemDataManager itemDataManager,
                                 AssetManager assetManager) {
+        decorate(maze, theme, seed, Math.max(1, maze == null ? 1 : maze.getLevel()),
+                monsterDataManager, itemDataManager, assetManager);
+    }
+
+    /** @param edl the chunk's Effective Difficulty Level: the theme's Guardian is met at most EDL+2 (#302) */
+    public static void decorate(Maze maze, ChunkTheme theme, long seed, int edl,
+                                MonsterDataManager monsterDataManager,
+                                ItemDataManager itemDataManager,
+                                AssetManager assetManager) {
         if (maze == null || theme == null) return;
         maze.setChunkTheme(theme);
 
@@ -62,7 +71,7 @@ public class ChunkThemeDecorator {
         Rect room = carveForTheme(maze, theme, protectedTiles);
 
         if (theme == ChunkTheme.BLOOD_COLOSSEUM) raisePillars(maze, room, protectedTiles, assetManager);
-        if (theme == ChunkTheme.BRIDGE_OF_SOULS) dressBridge(maze, room, protectedTiles, assetManager);
+        if (theme == ChunkTheme.BRINGERS_ISLE) dressBridge(maze, room, protectedTiles, assetManager);
 
         // (c) Hazard.
         applyHazard(maze, def, rng, room, protectedTiles);
@@ -75,7 +84,7 @@ public class ChunkThemeDecorator {
 
         // (e) Objective, with its per-theme completability guarantee.
         ThemeObjectiveState objective = installObjective(
-                maze, def, theme, rng, room, monsterDataManager, itemDataManager, assetManager);
+                maze, def, theme, rng, room, edl, monsterDataManager, itemDataManager, assetManager);
         maze.setThemeObjective(objective);
 
         // Every themed chunk seals on entry. The destination rune outside is the
@@ -142,7 +151,7 @@ public class ChunkThemeDecorator {
      * Walls are edges, not tiles: each tile's wall data carries a wall bit and a door bit per side
      * (see {@link com.bpm.minotaur.gamedata.Direction#getWallMask()}). A solid block is all four wall
      * bits. A plain {@code 1} -- what these carves once wrote for "solid" -- is a single west wall:
-     * the floating slabs and orphaned doors a play-test found in a Bridge of Souls.
+     * the floating slabs and orphaned doors a play-test found on a Bringer's Isle.
      */
     static final int SOLID = 0b01010101;
     /** Every door bit: a door bit sits one place above its side's wall bit. */
@@ -262,7 +271,7 @@ public class ChunkThemeDecorator {
                 return carveDuneBowl(maze, protectedTiles);
             case DROWNED_CAUSEWAY:
                 return carveCauseway(maze, protectedTiles);
-            case BRIDGE_OF_SOULS:
+            case BRINGERS_ISLE:
                 return carveBridge(maze, protectedTiles);
             case OVERGROWN_THICKET:
             default:
@@ -354,7 +363,7 @@ public class ChunkThemeDecorator {
     }
 
     // ------------------------------------------------------------------
-    // The Bridge of Souls
+    // The Bringer's Isle
     // ------------------------------------------------------------------
 
     /** The island's half-width, as a share of the chunk's smaller side. */
@@ -424,7 +433,7 @@ public class ChunkThemeDecorator {
     }
 
     /**
-     * The Bridge of Souls (agreed 2026-10-10): an island in a chasm of molten fire, with a bridge two
+     * The Bringer's Isle (agreed 2026-10-10): an island in a chasm of molten fire, with a bridge two
      * tiles wide from every gate across to it. The chasm is open to the eye and closed to the foot.
      */
     private static Rect carveBridge(Maze maze, Set<GridPoint2> protectedTiles) {
@@ -689,7 +698,7 @@ public class ChunkThemeDecorator {
 
         // Props scatter across the whole chunk, not just the carved room, so a
         // themed chunk reads as themed from the corridors too.
-        List<GridPoint2> candidates = openTiles(maze, def.getTheme() == ChunkTheme.BRIDGE_OF_SOULS
+        List<GridPoint2> candidates = openTiles(maze, def.getTheme() == ChunkTheme.BRINGERS_ISLE
                 ? room : new Rect(1, 1, maze.getWidth() - 2, maze.getHeight() - 2));
         Collections.shuffle(candidates, rng);
 
@@ -767,7 +776,7 @@ public class ChunkThemeDecorator {
                                         AssetManager assetManager) {
         if (def.getMonsters().isEmpty()) return;
 
-        List<GridPoint2> spawns = def.getTheme() == ChunkTheme.BRIDGE_OF_SOULS ? bridgeTiles(maze, room) : openTiles(maze, room);
+        List<GridPoint2> spawns = def.getTheme() == ChunkTheme.BRINGERS_ISLE ? bridgeTiles(maze, room) : openTiles(maze, room);
         Collections.shuffle(spawns, rng);
 
         int depth = Math.max(1, maze.getLevel());
@@ -796,7 +805,7 @@ public class ChunkThemeDecorator {
             case RUINED_CASTLE:
                 return Faction.TARMIN_LEGION;
             case MAKESHIFT_GRAVEYARD:
-            case BRIDGE_OF_SOULS:
+            case BRINGERS_ISLE:
                 return Faction.UNDEAD;
             case FLOODED_CAVERNS:
             case OVERGROWN_THICKET:
@@ -810,7 +819,7 @@ public class ChunkThemeDecorator {
     // ------------------------------------------------------------------
 
     private static ThemeObjectiveState installObjective(Maze maze, ThemeDefinition def, ChunkTheme theme,
-                                                        Random rng, Rect room,
+                                                        Random rng, Rect room, int edl,
                                                         MonsterDataManager monsterDataManager,
                                                         ItemDataManager itemDataManager,
                                                         AssetManager assetManager) {
@@ -831,7 +840,7 @@ public class ChunkThemeDecorator {
 
             case SLAY_CHAMPION:
                 state.setRequired(1);
-                state.setViable(placeChampion(maze, def, room, monsterDataManager, assetManager));
+                state.setViable(placeChampion(maze, def, room, edl, monsterDataManager, assetManager));
                 break;
 
             case RECONSECRATE_GRAVES:
@@ -857,7 +866,7 @@ public class ChunkThemeDecorator {
 
             case BREACH_SEALED_TOMB:
                 int tombs = placeObjectiveProps(maze, rng, room, "sealed_tomb", 1, assetManager);
-                boolean champPlaced = placeChampion(maze, def, room, monsterDataManager, assetManager);
+                boolean champPlaced = placeChampion(maze, def, room, edl, monsterDataManager, assetManager);
                 state.setRequired(1);
                 state.setViable(tombs > 0 && champPlaced);
                 break;
@@ -873,13 +882,13 @@ public class ChunkThemeDecorator {
     }
 
     /** @return true when the champion was actually placed. */
-    private static boolean placeChampion(Maze maze, ThemeDefinition def, Rect room,
+    private static boolean placeChampion(Maze maze, ThemeDefinition def, Rect room, int edl,
                                          MonsterDataManager monsterDataManager,
                                          AssetManager assetManager) {
         MonsterType type = def.getChampionType();
         if (type == null) type = MonsterType.OGRE;
 
-        boolean keeper = def.getTheme() == ChunkTheme.BRIDGE_OF_SOULS;
+        boolean keeper = def.getTheme() == ChunkTheme.BRINGERS_ISLE;
         GridPoint2 heart = new GridPoint2((room.minX + room.maxX) / 2, (room.minY + room.maxY) / 2);
         GridPoint2 seat = keeper && maze.isPassable(heart.x, heart.y) ? heart : findPlacementTile(maze, room);
         if (seat == null) return false;
@@ -888,6 +897,10 @@ public class ChunkThemeDecorator {
                 factionFor(def.getTheme()), def.getChampionHpBonus(),
                 monsterDataManager, assetManager);
         champion.setThemeChampion(true);
+        // Met at the stratum it guards: at most EDL+2, its hit points and damage cut to match (#302).
+        com.bpm.minotaur.gamedata.monster.GuardianScaling.apply(champion, edl, monsterDataManager,
+                def.getGuardianStrength());
+        if (def.getGuardianTitle() != null) champion.setDisplayName(def.getGuardianTitle());
         // The Bringer holds his island: the seeker chooses when to cross onto his ground.
         if (keeper) champion.setTether(room.minX, room.minY, room.maxX, room.maxY);
         maze.addMonster(champion);

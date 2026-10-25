@@ -56,6 +56,10 @@ public class ThemeDefinition {
     private final List<MonsterEntry> monsters;
     private final MonsterType championType;
     private final int championHpBonus;
+    /** The Guardian's name as the player reads it, title and all: "the Bringer of Death, Keeper of the Isle". */
+    private final String guardianTitle;
+    /** The theme's factor on a cut Guardian's ceilings (#302): 1 unless themes.json tunes it. */
+    private final float guardianStrength;
     private final int objectiveCount;
     private final String runeTexture;
 
@@ -63,7 +67,8 @@ public class ThemeDefinition {
                            ThemeHazardKind hazard, float hazardDensity, Color fogTint,
                            float fogDistance, String stinger, float propDensity, List<PropEntry> props,
                            List<MonsterEntry> monsters, MonsterType championType,
-                           int championHpBonus, int objectiveCount, String runeTexture) {
+                           int championHpBonus, String guardianTitle, float guardianStrength,
+                           int objectiveCount, String runeTexture) {
         this.theme = theme;
         this.crestAward = crestAward;
         this.objective = objective;
@@ -77,6 +82,8 @@ public class ThemeDefinition {
         this.monsters = monsters != null ? monsters : new ArrayList<MonsterEntry>();
         this.championType = championType;
         this.championHpBonus = championHpBonus;
+        this.guardianTitle = guardianTitle;
+        this.guardianStrength = guardianStrength > 0f ? guardianStrength : 1f;
         this.objectiveCount = objectiveCount;
         this.runeTexture = runeTexture;
     }
@@ -144,6 +151,15 @@ public class ThemeDefinition {
 
     public int getChampionHpBonus() {
         return championHpBonus;
+    }
+
+    public float getGuardianStrength() {
+        return guardianStrength;
+    }
+
+    /** The Guardian's titled name (#302), or null for a theme with no Guardian. */
+    public String getGuardianTitle() {
+        return guardianTitle;
     }
 
     /** How many graves to reconsecrate, caches to open, and so on. */

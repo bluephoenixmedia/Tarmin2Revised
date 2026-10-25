@@ -270,7 +270,7 @@ public class CoreLoopExpansionsBatch4Test {
         // player can learn.
         doom.setBridgeBossActive(true);
         assertNotEquals("An active guardian must not theme -- and therefore seal -- any chunk",
-                ChunkTheme.BRIDGE_OF_SOULS, wm.getChunkTheme(new GridPoint2(0, 1), 1));
+                ChunkTheme.BRINGERS_ISLE, wm.getChunkTheme(new GridPoint2(0, 1), 1));
 
         // It stands somewhere on the surface, never in the shelter.
         GridPoint2 seat = com.bpm.minotaur.gamedata.boss.BridgeBoss.chunkFor(12345L, 1);

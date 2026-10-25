@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-/** The Bridge of Souls' chasm: molten fire nothing can cross, and a keeper who will not leave his island. */
+/** The Bringer's Isle's chasm: molten fire nothing can cross, and a keeper who will not leave his island. */
 public class MoltenFireTest {
 
     @Test

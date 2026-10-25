@@ -545,6 +545,8 @@ public class MonsterAiManager {
                                 SpellDataManager.getInstance());
                         if (offSpell != null) {
                             GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            // A tethered Guardian casts only at someone on its ground (#302).
+                            if (!combatManager.reachesPlayer(monster)) return;
                             // A spell cast from the line draws a held arrow first (#247).
                             if (combatManager.diesAnsweringHeldShot(monster)) return;
                             if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
@@ -677,6 +679,7 @@ public class MonsterAiManager {
                                 SpellDataManager.getInstance());
                         if (touchSpell != null) {
                             GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            if (!combatManager.reachesPlayer(monster)) return; // #302
                             if (combatManager.diesAnsweringHeldShot(monster)) return; // #247
                             if (MonsterSpellExecutor.castMonsterSpell(monster, touchSpell, player, maze, em, combatManager)) {
                                 return;

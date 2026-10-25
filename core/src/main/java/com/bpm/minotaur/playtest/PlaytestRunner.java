@@ -63,7 +63,7 @@ public final class PlaytestRunner {
                 new StrataDescentScenario(),
                 new SealLordsScenario(),
                 new SealLordDuelScenario(),
-                new BridgeOfSoulsScenario(),
+                new BringersIsleScenario(),
                 new RespawnScenario(),
                 new EnduringScenario(),
                 new TarminSlainScenario(),

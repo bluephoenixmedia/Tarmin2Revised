@@ -760,6 +760,11 @@ public class CombatManager {
         return com.bpm.minotaur.gamedata.arts.ActiveArts.answerHeldShot(player, attacker, artArena) && attacker.getCurrentHP() <= 0;
     }
 
+    /** Whether {@code attacker} may attack the player where they stand: a tethered Guardian only on its ground (#302). */
+    public boolean reachesPlayer(Monster attacker) {
+        return attacker.mayStrikeAt((int) player.getPosition().x, (int) player.getPosition().y);
+    }
+
     /** The player attacks: a drawn Held Arrow or an aimed Marked Skull is given up, before the blow. */
     private void playerAttacks() {
         com.bpm.minotaur.gamedata.arts.ActiveArts.lapse(player, artArena);
@@ -978,6 +983,7 @@ public class CombatManager {
     public void monsterMeleeStrike(Monster attacker) {
         if (player == null || player.getCurrentHP() <= 0) return;
         if (attacker == null || !attacker.isAlive()) return;
+        if (!reachesPlayer(attacker)) return;
         if (diesAnsweringHeldShot(attacker)) return;
         if (this.monster != attacker && currentState == CombatState.INACTIVE) {
             triggerCombatMusic(attacker);
@@ -1195,6 +1201,10 @@ public class CombatManager {
                 statMod = Math.max(MONSTER_STAT_MOD_FLOOR, (t.dexterity - 10) / 4);
             } else {
                 statMod = Math.max(MONSTER_STAT_MOD_FLOOR, t.maxHP / 14);
+            }
+            // A Guardian cut to a shallow stratum aims as it hits: in the same proportion (#302).
+            if (attacker.isThemeChampion() && t.baseLevel > monsterLevel) {
+                statMod = Math.round(statMod * monsterLevel / (float) t.baseLevel);
             }
         }
         // A Dazed monster swings two worse (#242), and one held in an Iron Grip two worse again (#246).
@@ -3011,6 +3021,7 @@ public class CombatManager {
     public boolean performMonsterRangedAttack(Monster attacker) {
         if (player == null || player.getCurrentHP() <= 0) return false;
         if (attacker == null || !attacker.isAlive()) return false;
+        if (!reachesPlayer(attacker)) return false;
         if (diesAnsweringHeldShot(attacker)) return true; // its action was spent dying
         int range = attacker.getAttackRange();
         Item weapon = (attacker.getInventory() != null) ? attacker.getInventory().getRightHand() : null;
@@ -3080,6 +3091,7 @@ public class CombatManager {
             if (isCrit) {
                 dmg += DiceRoller.roll(dice);
             }
+            dmg = attacker.scaledDamage(dmg); // a Guardian's shot is cut as its blow is (#302)
             if (dmg < 1)
                 dmg = 1;
 
@@ -3796,8 +3808,12 @@ public class CombatManager {
             currentState = CombatState.PLAYER_MENU;
             return;
         }
+        if (!reachesPlayer(monster)) {
+            currentState = CombatState.PLAYER_MENU; // as a blow: none from off its ground (#302)
+            return;
+        }
         eventManager.addEvent(new GameEvent(monster.getType() + " casts a dark spell!", 2f));
-        int spellDmg = player.reduceSpellDamage(5 + monster.getIntelligence());
+        int spellDmg = player.reduceSpellDamage(monster.scaledDamage(5 + monster.getIntelligence()));
         player.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
         BalanceLogger.getInstance().logCombatRound("MONSTER", "Spell", -1, spellDmg, player.getWarStrength());
 
@@ -3807,6 +3823,11 @@ public class CombatManager {
     private void performMonsterMeleeAttack() {
         if (player == null || player.getCurrentHP() <= 0) return;
         if (monster == null || !monster.isAlive()) return;
+        if (!reachesPlayer(monster)) {
+            // A tethered Guardian cannot answer a seeker off its ground: the turn comes back (#302).
+            currentState = CombatState.PLAYER_MENU;
+            return;
+        }
         triggerAttackIndicator(monster);
         float dist = monster.getPosition().dst(player.getPosition());
         float animDuration = dist / PROJECTILE_SPEED;
@@ -3922,6 +3943,7 @@ public class CombatManager {
         if (player == null || player.getCurrentHP() <= 0) return false;
         if (attacker == null || attacker == this.monster || !attacker.isAlive())
             return false; // Can't flank if you are the main duel target
+        if (!reachesPlayer(attacker)) return false;
         if (diesAnsweringHeldShot(attacker)) return true; // its action was spent dying
 
         // Check adjacency

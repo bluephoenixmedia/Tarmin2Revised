@@ -655,7 +655,7 @@ public class WorldManager {
         if (theme != null) {
             newMaze.setChunkTheme(theme);
             com.bpm.minotaur.generation.theme.ChunkThemeDecorator.decorate(
-                    newMaze, theme, chunkSeed, this.dataManager, this.itemDataManager, this.assetManager);
+                    newMaze, theme, chunkSeed, effectiveLevel, this.dataManager, this.itemDataManager, this.assetManager);
         }
 
         // Water: common on the surface, scarce in the strata (#193).
