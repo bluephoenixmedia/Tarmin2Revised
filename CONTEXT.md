@@ -63,6 +63,9 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Mastery**: The protagonist's rank in one Weapon Family (Untrained, Novice, Adept, Expert, Master), raised by landing blows with that Family on anything that is not Trivial. Belongs to the Incarnation: a new body starts Untrained. _Avoid_: "skill", which means a skill-tree node.
 - **Combat Art**: A named attack a Weapon Family teaches, one each at Adept, Expert and Master. Kept by the soul across deaths like Known Spells, but weaker until the new body retrains the Mastery rank that taught it. An **Active Art** is used on purpose from the Art bar and then cools down; a **Passive Art** fires by itself during ordinary attacks. A Family's Adept Art is a Passive, its Expert Art an Active, and its Master Art a **capstone** that makes the Adept Passive certain for a few turns.
 - **Art bar**: The HUD strip of four slots beside the Spell Slots, showing the Active Arts of the Weapon Families in hand. It follows the hands; nothing is assigned to it. _Avoid_: "hotbar", "skill bar". _Avoid_: "skill", "technique", "move".
+- **The Laughing Void**: The cosmic, unaligned primordial deity of pure entropy that looms over the world as a towering mountain-sized entity, heedless of Tarmin, the Old Gods, or the Houses. _Avoid_: "chaos jester", "trickster god".
+- **Chaos Surge**: A temporary distortion of reality invoked when the Laughing Void manifests, imposing a wild magic rule or phenomenon on all entities for a random duration. _Avoid_: "chaos mode", "wild magic event".
+- **Motley Reckoning**: A distinct entry recorded in the World Log when an Incarnation perishes during a Chaos Surge, chronicling the presiding surge and its toll.
 
 ### Houses of the Maze
 See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
