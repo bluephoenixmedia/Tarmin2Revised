@@ -815,6 +815,14 @@ public class World3DRenderer implements Disposable {
             // Clear depth buffer so the skybox & horizon landmarks remain purely background
             // and all maze geometry (walls, floors, ceilings, doors) renders OVER the skybox.
             Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
+        } else if (skybox3DRenderer != null && skybox3DRenderer.isInitialized() && skybox3DRenderer.isVoidActive()) {
+            Color clearCol = isIndoors ? new Color(0.003f, 0.003f, 0.006f, 1f) : fogColor;
+            Gdx.gl.glClearColor(clearCol.r, clearCol.g, clearCol.b, 1f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+            skybox3DRenderer.alignTo(camera.position, camera.direction, camera.up);
+            skybox3DRenderer.renderUndergroundVoid(viewport, worldManager);
+            Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
         } else {
             // In dungeons or indoors without skybox, clear color & depth cleanly
             Color clearCol = isIndoors ? new Color(0.003f, 0.003f, 0.006f, 1f) : fogColor;

@@ -398,6 +398,9 @@ public class FirstPersonRenderer {
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
             skybox3DRenderer.render(spriteBatch, player, viewport, worldManager, debugManager.getRenderMode());
             has3DSky = true;
+        } else if (skybox3DRenderer != null && skybox3DRenderer.isInitialized() && skybox3DRenderer.isVoidActive()) {
+            skybox3DRenderer.renderUndergroundVoid(viewport, worldManager);
+            has3DSky = true;
         }
 
         // 1. RENDER FLOOR & CEILING (Background)
