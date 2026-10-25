@@ -1354,7 +1354,12 @@ public class Skybox3DRenderer {
     }
 
     public boolean isVoidActive() {
-        return voidState != VoidManifestationState.INACTIVE || voidAlpha > 0.001f;
+        boolean chaosSurge = false;
+        try {
+            chaosSurge = com.bpm.minotaur.managers.ChaosManager.getInstance().isSurgeActive();
+        } catch (Throwable ignored) {
+        }
+        return voidState != VoidManifestationState.INACTIVE || voidAlpha > 0.001f || chaosSurge;
     }
 
     public float getVoidAlpha() {

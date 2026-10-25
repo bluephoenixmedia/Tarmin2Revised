@@ -219,6 +219,9 @@ public class TurnManager {
         if (worldManager != null) {
             worldManager.checkThemeObjective(maze, eventManager);
         }
+
+        // 6. The Laughing Void: Chaos Surge cadence & turn lifecycle
+        ChaosManager.getInstance().onPlayerTurn(maze, player, worldManager, eventManager);
     }
 
     /**
