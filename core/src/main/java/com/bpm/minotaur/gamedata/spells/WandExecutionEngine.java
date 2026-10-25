@@ -61,7 +61,15 @@ public class WandExecutionEngine {
         }
 
         // Decrement charge
-        wand.decrementCharges();
+        boolean overcharge = false;
+        try {
+            overcharge = com.bpm.minotaur.managers.ChaosManager.getInstance().isWandOverchargeActive();
+        } catch (Throwable ignored) {}
+        if (!overcharge) {
+            wand.decrementCharges();
+        } else if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("WAND OVERCHARGE! Cast without expending charge!", 1.5f));
+        }
 
         if (dir == null) {
             dir = player.getFacing();

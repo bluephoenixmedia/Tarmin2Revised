@@ -46,7 +46,7 @@ public class ChaosManager implements SlotScopedState {
 
     private ChaosManager() {
         SaveManager.register(this);
-        registerStarterEvent();
+        ChaosSurgeTable.registerAll(this);
     }
 
     public static synchronized ChaosManager getInstance() {
@@ -61,35 +61,8 @@ public class ChaosManager implements SlotScopedState {
         instance = null;
     }
 
-    private void registerStarterEvent() {
-        registerEvent(new ChaosSurgeEvent() {
-            @Override
-            public String getId() {
-                return "starter_cosmic_shimmer";
-            }
-
-            @Override
-            public String getName() {
-                return "Cosmic Shimmer";
-            }
-
-            @Override
-            public String getDescription() {
-                return "Reality ripples as The Laughing Void gazes upon the world.";
-            }
-
-            @Override
-            public void onActivate(ChaosEventContext context) {
-            }
-
-            @Override
-            public void onTurnTick(ChaosEventContext context) {
-            }
-
-            @Override
-            public void onExpire(ChaosEventContext context) {
-            }
-        });
+    public void registerAllSurgeTableEvents() {
+        ChaosSurgeTable.registerAll(this);
     }
 
     public void registerEvent(ChaosSurgeEvent event) {
@@ -159,7 +132,7 @@ public class ChaosManager implements SlotScopedState {
      */
     public ChaosSurgeEvent triggerRandomSurge(Maze maze, Player player, WorldManager worldManager, GameEventManager eventManager) {
         if (eventList.isEmpty()) {
-            registerStarterEvent();
+            ChaosSurgeTable.registerAll(this);
         }
         ChaosSurgeEvent event = eventList.get(rng.nextInt(eventList.size()));
         int duration = rollDuration();
@@ -254,6 +227,52 @@ public class ChaosManager implements SlotScopedState {
 
     public int getTotalSurgesTriggered() {
         return totalSurgesTriggered;
+    }
+
+    // --- Surge Effect Queries ---
+
+    public float getDamageDealtMultiplier() {
+        if (!surgeActive) return 1.0f;
+        if ("glass_cannons".equals(activeSurgeId)) return 4.0f;
+        if ("pacifism_wave".equals(activeSurgeId)) return 0.25f;
+        return 1.0f;
+    }
+
+    public float getDamageTakenMultiplier() {
+        if (!surgeActive) return 1.0f;
+        if ("glass_cannons".equals(activeSurgeId)) return 4.0f;
+        return 1.0f;
+    }
+
+    public float getRecoilFraction() {
+        if (!surgeActive) return 0f;
+        if ("mirror_blood".equals(activeSurgeId)) return 0.5f;
+        return 0f;
+    }
+
+    public boolean isInvertCombatStats() {
+        return surgeActive && "inverted_duality".equals(activeSurgeId);
+    }
+
+    public boolean isJestersFarceActive() {
+        return surgeActive && "jesters_farce".equals(activeSurgeId);
+    }
+
+    public int getVisionCap() {
+        if (surgeActive && "dense_neon_fog".equals(activeSurgeId)) return 2;
+        return -1;
+    }
+
+    public boolean isWandOverchargeActive() {
+        return surgeActive && "wand_overcharge".equals(activeSurgeId);
+    }
+
+    public boolean isSlipstreamActive() {
+        return surgeActive && "slipstream".equals(activeSurgeId);
+    }
+
+    public boolean isGravityInverted() {
+        return surgeActive && "inverted_gravity".equals(activeSurgeId);
     }
 
     // --- Persistence & SlotScopedState ---

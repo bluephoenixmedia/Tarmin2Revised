@@ -295,6 +295,12 @@ public class CombatManager {
      */
     public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
             boolean revealDisguises, boolean stoppedByFog) {
+        try {
+            int visionCap = com.bpm.minotaur.managers.ChaosManager.getInstance().getVisionCap();
+            if (visionCap > 0 && maxRange > visionCap) {
+                maxRange = visionCap;
+            }
+        } catch (Throwable ignored) {}
         int startX = (int) origin.x;
         int startY = (int) origin.y;
 
@@ -2578,6 +2584,11 @@ public class CombatManager {
                     dmgType = DamageType.SPIRITUAL;
                 }
             }
+            try {
+                if (com.bpm.minotaur.managers.ChaosManager.getInstance().isInvertCombatStats()) {
+                    dmgType = (dmgType == DamageType.PHYSICAL) ? DamageType.SPIRITUAL : DamageType.PHYSICAL;
+                }
+            } catch (Throwable ignored) {}
 
             int totalDamage;
             if (isArcaneSpark) {
@@ -2666,6 +2677,15 @@ public class CombatManager {
                 eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
             }
 
+            try {
+                if (com.bpm.minotaur.managers.ChaosManager.getInstance().isSurgeActive()) {
+                    float chaosDealt = com.bpm.minotaur.managers.ChaosManager.getInstance().getDamageDealtMultiplier();
+                    if (chaosDealt != 1.0f) {
+                        totalDamage = Math.max(1, Math.round(totalDamage * chaosDealt));
+                    }
+                }
+            } catch (Throwable ignored) {}
+
             AnimationArchetype attackArch = AnimationArchetype.fromItem(attackWeapon);
             boolean isPiercing = (attackArch == AnimationArchetype.THRUSTING_PIERCE || attackArch == AnimationArchetype.RANGED_BOW || attackArch == AnimationArchetype.RANGED_FIREARM)
                     || (attackWeapon != null && attackWeapon.getDamageType() != null && attackWeapon.getDamageType().equalsIgnoreCase("PIERCING"));
@@ -2673,6 +2693,16 @@ public class CombatManager {
             int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
             monster.markSeekerDrewBlood(); // a seal lord the seeker struck yields its seal to them
             alertMonsterToPlayer(monster);
+            try {
+                if (com.bpm.minotaur.managers.ChaosManager.getInstance().isSurgeActive() && actualDamage > 0) {
+                    float recoil = com.bpm.minotaur.managers.ChaosManager.getInstance().getRecoilFraction();
+                    if (recoil > 0f) {
+                        int recoilDmg = Math.max(1, Math.round(actualDamage * recoil));
+                        player.takeDamage(recoilDmg, DamageType.PHYSICAL);
+                        eventManager.addEvent(new GameEvent("MIRROR BLOOD! Recoil strikes you for " + recoilDmg + " damage!", 1.2f));
+                    }
+                }
+            } catch (Throwable ignored) {}
             // Bloodsoaked Saint: what you cut from them knits you back together.
             float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
             if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
@@ -3868,6 +3898,17 @@ public class CombatManager {
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             applyBlightedTaint(monster, actualDamage);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+
+            try {
+                if (com.bpm.minotaur.managers.ChaosManager.getInstance().isSurgeActive() && actualDamage > 0) {
+                    float monsterRecoil = com.bpm.minotaur.managers.ChaosManager.getInstance().getRecoilFraction();
+                    if (monsterRecoil > 0f && monster != null) {
+                        int recoilDmg = Math.max(1, Math.round(actualDamage * monsterRecoil));
+                        monster.takeDamage(recoilDmg, DamageType.PHYSICAL);
+                        eventManager.addEvent(new GameEvent("MIRROR BLOOD! Recoil strikes " + monster.getName() + " for " + recoilDmg + " damage!", 1.2f));
+                    }
+                }
+            } catch (Throwable ignored) {}
 
             eventManager.addEvent(new GameEvent(monster.getName() + " hits you for " + actualDamage, 1f));
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordMonsterAttack(monster, monster.getMonsterType(), monster.getLevel(), true, actualDamage);

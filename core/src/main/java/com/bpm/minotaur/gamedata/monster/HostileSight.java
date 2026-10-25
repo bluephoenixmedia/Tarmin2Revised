@@ -26,7 +26,12 @@ public final class HostileSight {
                 continue;
             }
             Vector2 at = monster.getPosition();
-            if (from.dst(at) <= SIGHT_RANGE_TILES && LaserBurst.hasLineOfSight(maze, from, at)) {
+            int maxSight = SIGHT_RANGE_TILES;
+            try {
+                int cap = com.bpm.minotaur.managers.ChaosManager.getInstance().getVisionCap();
+                if (cap > 0) maxSight = cap;
+            } catch (Throwable ignored) {}
+            if (from.dst(at) <= maxSight && LaserBurst.hasLineOfSight(maze, from, at)) {
                 return true;
             }
         }
