@@ -17,6 +17,12 @@ public final class GuardianScaling {
     public static final int OUT_OF_DEPTH = 2;
     /** The share of a same-level Heavy a cut Guardian never falls below. */
     public static final float FLOOR = 0.6f;
+    /**
+     * And the most it may be of one: its hit points and its damage. Tuned in the duel simulator to
+     * a fight a fresh body wins about one time in three (#302).
+     */
+    public static final float HP_CEILING = 1.0f;
+    public static final float DAMAGE_CEILING = 0.85f;
 
     private static final Pattern DICE = Pattern.compile("(\\d*)d(\\d+)([+-]\\d+)?");
 
@@ -92,8 +98,9 @@ public final class GuardianScaling {
         int hp = Math.round(maxHp * ratio);
         double damage = averageOf(damageDice) * ratio;
         if (heavy != null) {
-            hp = Math.max(hp, Math.round(FLOOR * heavy.hp));
-            damage = Math.max(damage, FLOOR * averageOf(heavy.damageDice));
+            hp = Math.min(Math.max(hp, Math.round(FLOOR * heavy.hp)), Math.round(HP_CEILING * heavy.hp));
+            damage = Math.min(Math.max(damage, FLOOR * averageOf(heavy.damageDice)),
+                    DAMAGE_CEILING * averageOf(heavy.damageDice));
         }
         return new Stats(level, Math.max(1, hp), diceForAverage(damageDice, damage));
     }

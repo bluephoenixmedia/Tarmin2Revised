@@ -52,6 +52,16 @@ public class GuardianScalingTest {
     }
 
     @Test
+    public void theCeilingHoldsACutGuardianToASameLevelHeavy() {
+        // Cut in proportion the Bringer would keep 58 hit points and 8 a blow: far over a level-4 Heavy.
+        GuardianScaling.Heavy heavy = new GuardianScaling.Heavy(30, "1d8+2");
+        GuardianScaling.Stats s = GuardianScaling.scale(18, 260, "4d12+10", 2, heavy);
+        assertTrue("hp at most the Heavy's: " + s.maxHp, s.maxHp <= Math.round(GuardianScaling.HP_CEILING * 30));
+        assertTrue("damage at most the ceiling: " + s.damageDice, GuardianScaling.averageOf(s.damageDice)
+                <= GuardianScaling.DAMAGE_CEILING * GuardianScaling.averageOf("1d8+2") + 0.6);
+    }
+
+    @Test
     public void diceKeepTheirAverage() {
         assertEquals(36.0, GuardianScaling.averageOf("4d12+10"), 1e-9);
         assertEquals(6.5, GuardianScaling.averageOf("1d10+1"), 1e-9);
