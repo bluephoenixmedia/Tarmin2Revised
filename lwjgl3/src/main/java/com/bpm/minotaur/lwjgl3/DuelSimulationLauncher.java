@@ -56,8 +56,13 @@ import java.util.Random;
  * --edl=E (scale monsters to that Effective Difficulty Level, as a chunk at depth E does),
  * --difficulty=MEDIUM, --hp=N (override max HP), --weapon=ITEM_TYPE, --mastery=RANK (the wielded
  * weapon's Family starts at that Mastery rank, #232), --approach (ranged monsters shoot while the
- * player closes, #239), --passive (model the wielded Family's Adept Passive, #239), --chain=N
- * (back-to-back runs), --seed=S, --csv=path.
+ * player closes, #239), --passive (the soul knows the wielded Family's Adept Art, and the game's own
+ * code fires it, #250), --arts (all three of the Family's Arts, the Active and capstone used by a
+ * simple policy, #250), --chain=N (back-to-back runs), --seed=S, --csv=path, and --report (every
+ * Family at depths 1 and 3, with and without Arts, written as a table to --reportOut=path).
+ *
+ * <p>A bow, crossbow, gun or thrown weapon fights from range: the monster starts four tiles off and
+ * walks in, and the player shoots (or throws) each turn, waiting out a gun's reload.
  */
 public class DuelSimulationLauncher implements ApplicationListener {
 
@@ -81,8 +86,13 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private Mastery.Rank masteryRank = Mastery.Rank.UNTRAINED;
     /** Ranged monsters start at their preferred distance and shoot while the player closes (#239). */
     private boolean approach = false;
-    /** Model the wielded Family's Adept Passive (#227); the game does not have the Arts yet. */
+    /** The soul knows the wielded Family's Adept Art; the game's own code fires it (#250). */
     private boolean passive = false;
+    /** The soul knows all three of the Family's Arts; the Active and capstone are used by policy (#250). */
+    private boolean arts = false;
+    /** Run every Family at depths 1 and 3, with and without Arts, and write the table (#250). */
+    private boolean report = false;
+    private String reportPath = "logs/duel-arts-report.md";
     /** --weapon=UNARMED: an empty right hand. */
     private boolean unarmed = false;
     private int chainRuns = 500;
@@ -118,7 +128,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
         int monsterActions;
         int monsterHits;
         int approachShots;
-        int passiveProcs;
+        int artUses;
         int hpLost;
         int maxHp;
     }
@@ -126,7 +136,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private static final class Tally {
         final String name;
         int n, wins, draws, swingsOnWin, playerTurns, swings, fullHits, glancing, monsterActions, monsterHits,
-                approachShots, passiveProcs;
+                approachShots, artUses;
         final List<Integer> hpLostPctOnWin = new ArrayList<>();
         final List<Integer> swingsToKill = new ArrayList<>();
 
@@ -149,7 +159,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             monsterActions += d.monsterActions;
             monsterHits += d.monsterHits;
             approachShots += d.approachShots;
-            passiveProcs += d.passiveProcs;
+            artUses += d.artUses;
         }
     }
 
@@ -194,6 +204,10 @@ public class DuelSimulationLauncher implements ApplicationListener {
     }
 
     private void run(List<Monster.MonsterType> band) throws IOException {
+        if (report) {
+            report();
+            return;
+        }
         Player probe = newPlayer();
         Item held = probe.getInventory().getRightHand();
         System.out.printf(Locale.ROOT, "DUEL SIMULATION  difficulty=%s playerLevel=%d hp=%d weapon=%s AC=%d toHit=+%d speed=%d%n",
@@ -204,11 +218,11 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 probe.getStats().getMastery().rankOf(family), probe.masteryToHitBonus(held, false));
         System.out.printf(Locale.ROOT, "monster band: base level %d-%d (%d species) scaled to EDL %d, %d duels each, seed %d%n",
                 minLevel, maxLevel, band.size(), edl, trials, seed);
-        System.out.printf(Locale.ROOT, "approach=%s passive=%s%n%n", approach, passive
-                ? AdeptPassive.of(family) + " x" + Mastery.procMultiplier(Mastery.Rank.ADEPT, masteryRank) : "off");
+        System.out.printf(Locale.ROOT, "approach=%s passive=%s arts=%s ranged=%s%n%n", approach, passive, arts,
+                shoots(probe));
 
         System.out.printf(Locale.ROOT, "%-18s %3s %4s %6s %9s %9s %7s %7s %8s %7s %6s %6s%n",
-                "monster", "lvl", "spd", "win%", "hpLost%", "swings", "hit%", "glnc%", "mHit%", "mAct/t", "m/p", "procs");
+                "monster", "lvl", "spd", "win%", "hpLost%", "swings", "hit%", "glnc%", "mHit%", "mAct/t", "m/p", "arts");
         Tally all = new Tally("BAND");
         List<Tally> rows = new ArrayList<>();
         for (Monster.MonsterType type : band) {
@@ -271,55 +285,27 @@ public class DuelSimulationLauncher implements ApplicationListener {
         }
     }
 
-    /**
-     * The Adept Passive of each melee Weapon Family, as #227 designed it. The game has no Combat
-     * Arts yet, so the simulator models them here as a measuring instrument: the chances are the
-     * catalogue's starting values, and each effect is approximated where the game lacks it.
-     */
-    enum AdeptPassive {
-        /** Blade, Answering Steel: a monster's missed melee attack draws a free counter-cut, 30%. */
-        ANSWERING_STEEL(0.30f),
-        /** Dagger, Cut the Sinew: a full hit makes the target bleed and be Slowed for 2 turns, 25%. */
-        CUT_THE_SINEW(0.25f),
-        /** Axe, Wide Chop: strikes the other adjacent hostiles; a duel has none, so it never fires. */
-        WIDE_CHOP(0.30f),
-        /** Blunt, Ringing Blow: a full hit Dazes, and a Dazed target is Stunned instead, 25%. */
-        RINGING_BLOW(0.25f),
-        /** Polearm, Hold the Line: the first time the monster is adjacent, a free strike comes first. */
-        HOLD_THE_LINE(1f),
-        /** Unarmed, Quick Knuckles: a full hit adds a free half-damage strike, 30%. */
-        QUICK_KNUCKLES(0.30f),
-        /** Ranged Families and anything else: the duel swings in melee, so nothing is modelled. */
-        NONE(0f);
+    /** A shooter meets a monster this many tiles off; it walks in while the player shoots. */
+    private static final int RANGED_GAP = 4;
+    /** Arrows, bolts or shot a shooter carries into each duel. */
+    private static final int SHOOTER_AMMO = 40;
 
-        final float baseChance;
+    /** The player stands at the room's west end; the monster stands east of it, along the row. */
+    private static final int PLAYER_X = 1, ROW = 3;
 
-        AdeptPassive(float baseChance) {
-            this.baseChance = baseChance;
-        }
-
-        static AdeptPassive of(com.bpm.minotaur.gamedata.item.WeaponFamily family) {
-            switch (family) {
-                case BLADE: return ANSWERING_STEEL;
-                case DAGGER: return CUT_THE_SINEW;
-                case AXE: return WIDE_CHOP;
-                case BLUNT: return RINGING_BLOW;
-                case POLEARM: return HOLD_THE_LINE;
-                case UNARMED: return QUICK_KNUCKLES;
-                default: return NONE;
-            }
-        }
+    /** Whether {@code player} fights from range: a bow, crossbow, gun or thrown weapon in the right hand. */
+    private static boolean shoots(Player player) {
+        com.bpm.minotaur.gamedata.item.WeaponFamily family = player.masteryFamilyOf(player.getInventory().getRightHand(), false);
+        return family == com.bpm.minotaur.gamedata.item.WeaponFamily.BOW
+                || family == com.bpm.minotaur.gamedata.item.WeaponFamily.CROSSBOW
+                || family == com.bpm.minotaur.gamedata.item.WeaponFamily.FIREARM
+                || family == com.bpm.minotaur.gamedata.item.WeaponFamily.THROWN;
     }
 
-    /**
-     * Dazed (#227) is -2 to-hit, ten points on a d20, which the game has no hook for yet. Monsters
-     * hit about 62% of the time, so the Daze spoils 0.10 / 0.62 of the blows that would have landed.
-     */
-    private static final float DAZED_SPOILS_OF_HITS = 0.10f / 0.62f;
-    private static final int DAZED_ACTIONS = 2;
-
-    /** The player's tile; the monster stands {@code gap} tiles east of it. */
-    private static final int PLAYER_X = 3, ROW = 3;
+    /** Tiles between the player and the monster along the row. */
+    private static int gapOf(Player player, Monster monster) {
+        return (int) monster.getPosition().x - (int) player.getPosition().x;
+    }
 
     private Duel duel(Player player, Monster.MonsterType type) {
         Duel d = new Duel();
@@ -331,19 +317,20 @@ public class DuelSimulationLauncher implements ApplicationListener {
         Monster monster = new Monster(type, PLAYER_X + 1, ROW, colorFor(type), monsterDataManager, assetManager);
         monster.scaleStats(edl); // MonsterFactory scales every spawn to its chunk's EDL
         monster.setCurrentHP(monster.getMaxHP());
-        // A ranged monster is met at its preferred distance and shoots while the player closes.
+        boolean shooter = shoots(player);
+        // A ranged monster is met at its preferred distance and shoots while the player closes; a
+        // shooter meets every monster at range and shoots while it closes.
         int gap = approach && monster.hasRangedAttack() ? approachGap(monster) : 1;
-        placeMonster(maze, monster, gap);
+        if (shooter) gap = Math.max(gap, RANGED_GAP);
+        placeMonster(maze, player, monster, gap);
+        Item thrown = shooter && !player.getInventory().getRightHand().isRanged() ? player.getInventory().getRightHand() : null;
 
         CombatManager combat = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
                 itemDataManager, null, null, null, null);
-
-        AdeptPassive art = passive
-                ? AdeptPassive.of(player.masteryFamilyOf(player.getInventory().getRightHand(), false))
-                : AdeptPassive.NONE;
-        float chance = art.baseChance * Mastery.procMultiplier(Mastery.Rank.ADEPT, masteryRank);
-        int[] dazed = { 0 };
-        boolean lineHeld = false;
+        boolean realistic = approach || passive || arts || shooter;
+        int procsAtStart = com.bpm.minotaur.telemetry.TelemetryManager.getInstance().totalArtUses();
+        // A monster met beside the player is taken to have just stepped in: Hold the Line's moment.
+        if (gap == 1 && (passive || arts)) combat.onMonsterClosed(monster);
 
         d.maxHp = player.getMaxHP();
         int hpAtStart = player.getCurrentHP();
@@ -352,21 +339,15 @@ public class DuelSimulationLauncher implements ApplicationListener {
 
         while (d.playerTurns < MAX_TURNS) {
             d.playerTurns++;
-            if (gap > 1) {
-                gap--; // the player's turn is a step closer
-                placeMonster(maze, monster, gap);
-            } else {
-                if (art == AdeptPassive.HOLD_THE_LINE && !lineHeld) {
-                    lineHeld = true;
-                    d.passiveProcs++;
-                    strike(combat, monster, d, AdeptPassive.NONE, 0f, dazed); // the free strike comes first
-                }
-                if (monster.getCurrentHP() > 0) strike(combat, monster, d, art, chance, dazed);
-                if (monster.getCurrentHP() <= 0) {
-                    d.won = true;
-                    break;
-                }
+            if (thrown != null && player.getInventory().getRightHand() == null) {
+                player.getInventory().setRightHand(restock(thrown)); // the next from the bundle
             }
+            playerTurn(combat, player, monster, maze, d, shooter);
+            if (monster.getCurrentHP() <= 0) {
+                d.won = true;
+                break;
+            }
+            if (realistic) combat.tickPlayerTimers(); // reloads, cooldowns, a readied Art's lapse
 
             energy += TURN_COST / playerSpeed * monster.getEffectiveSpeed();
             while (energy >= TURN_COST && player.getCurrentHP() > 0 && monster.getCurrentHP() > 0) {
@@ -374,48 +355,26 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 // The game ticks these in MonsterAiManager; the duel calls the strikes directly. Only
                 // in the realistic modes: honouring stuns the game already deals lifts the plain duel
                 // that checkCombatBalance guards (95% to 98%), so the guard keeps its old model.
-                if (approach || passive) {
+                if (realistic) {
                     if (monster.getStatusManager() != null) monster.getStatusManager().updateTurn();
                     if (monster.getBleedTurns() > 0) monster.applyBleedTick();
                     if (monster.getCurrentHP() <= 0) break;
                     monster.decrementStunImmunity();
                     if (monster.isStunned()) {
                         monster.decrementStun();
+                        monster.endTurn();
                         continue;
                     }
                 }
                 int hp = player.getCurrentHP();
-                if (gap > 1) {
-                    // The game's own tactics (#255): shoot, then spend the wait closing in.
-                    com.bpm.minotaur.gamedata.monster.MonsterTactics.Move move =
-                            com.bpm.minotaur.gamedata.monster.MonsterTactics.decide(monster, gap, true);
-                    if (move == com.bpm.minotaur.gamedata.monster.MonsterTactics.Move.SHOOT) {
-                        if (combat.performMonsterRangedAttack(monster)) {
-                            d.monsterActions++;
-                            d.approachShots++;
-                            monster.markShot();
-                        }
-                    } else if (move == com.bpm.minotaur.gamedata.monster.MonsterTactics.Move.ADVANCE) {
-                        gap--; // it closes the gap itself
-                        placeMonster(maze, monster, gap);
-                    } // RETREAT: an elite holds its distance; this room has nowhere to back into
-                    monster.endTurn();
+                if (gapOf(player, monster) > 1) {
+                    monsterAtRange(combat, player, monster, maze, d);
                 } else {
                     combat.monsterMeleeStrike(monster);
                     d.monsterActions++;
-                    if (dazed[0] > 0) {
-                        dazed[0]--;
-                        if (player.getCurrentHP() < hp && rng.nextFloat() < DAZED_SPOILS_OF_HITS) {
-                            player.getStats().setCurrentHP(hp); // the Daze spoils a blow that would have landed
-                        }
-                    }
+                    if (realistic) monster.endTurn(); // Daze, Pin, a hewn hide and a grip wear down
                 }
-                if (player.getCurrentHP() < hp) {
-                    d.monsterHits++;
-                } else if (gap <= 1 && art == AdeptPassive.ANSWERING_STEEL && rng.nextFloat() < chance) {
-                    d.passiveProcs++;
-                    strike(combat, monster, d, AdeptPassive.NONE, 0f, dazed); // the counter-cut
-                }
+                if (player.getCurrentHP() < hp) d.monsterHits++;
             }
             if (monster.getCurrentHP() <= 0) {
                 d.won = true;
@@ -423,46 +382,230 @@ public class DuelSimulationLauncher implements ApplicationListener {
             }
             if (player.getCurrentHP() <= 0) break;
         }
+        d.artUses = com.bpm.minotaur.telemetry.TelemetryManager.getInstance().totalArtUses() - procsAtStart;
         d.draw = !d.won && player.getCurrentHP() > 0;
         d.hpLost = Math.max(0, hpAtStart - player.getCurrentHP());
         return d;
     }
 
-    /** One player strike; a full hit may fire {@code art}. Free strikes pass NONE, so procs never chain. */
-    private void strike(CombatManager combat, Monster monster, Duel d, AdeptPassive art, float chance, int[] dazed) {
+    /**
+     * A monster's action while it is not beside the player: the game's own tactics (#255) -- shoot,
+     * then spend the wait closing in. A Pinned or gripped monster stays put. Every step is a move
+     * the game would see, so a drawn Held Arrow may answer it, and the last one is Hold the Line's.
+     */
+    private void monsterAtRange(CombatManager combat, Player player, Monster monster, Maze maze, Duel d) {
+        int gap = gapOf(player, monster);
+        com.bpm.minotaur.gamedata.monster.MonsterTactics.Move move =
+                com.bpm.minotaur.gamedata.monster.MonsterTactics.decide(monster, gap, monster.hasRangedAttack());
+        if (move == com.bpm.minotaur.gamedata.monster.MonsterTactics.Move.SHOOT) {
+            if (combat.performMonsterRangedAttack(monster)) {
+                d.monsterActions++;
+                d.approachShots++;
+                monster.markShot();
+            }
+        } else if (move == com.bpm.minotaur.gamedata.monster.MonsterTactics.Move.ADVANCE && !monster.isPinned()) {
+            placeMonster(maze, player, monster, gap - 1);
+            combat.onMonsterMoved(monster);
+            if (gap - 1 == 1 && monster.getCurrentHP() > 0) combat.onMonsterClosed(monster);
+        } // RETREAT: an elite holds its distance; this room has nowhere to back into
+        monster.endTurn();
+    }
+
+    /** The player's turn: an Art if the policy uses one, else a shot, a step in, or a swing. */
+    private void playerTurn(CombatManager combat, Player player, Monster monster, Maze maze, Duel d, boolean shooter) {
+        if (arts && useArt(combat, player, monster, d, shooter)) return;
+        if (shooter) {
+            if (combat.getActiveReload() != null) return; // the gun is loading: this turn is the reload
+            shoot(combat, player, monster, d);
+        } else if (gapOf(player, monster) > 1) {
+            placeMonster(maze, player, monster, gapOf(player, monster) - 1); // the player's turn is a step closer
+        } else {
+            strike(combat, monster, d);
+        }
+    }
+
+    /**
+     * The simple policy for the Active and capstone (#250): a drawn Held Arrow waits while the
+     * monster is still coming; an aimed Marked Skull fires; otherwise the capstone when it is ready
+     * and the foe is in reach, then the Active. Anything an Art cannot act on falls through to an
+     * ordinary attack.
+     *
+     * @return whether an Art took the turn
+     */
+    private boolean useArt(CombatManager combat, Player player, Monster monster, Duel d, boolean shooter) {
+        com.bpm.minotaur.gamedata.arts.CombatArt[] bar = com.bpm.minotaur.gamedata.arts.ArtBar.contents(player);
+        com.bpm.minotaur.gamedata.arts.ArtCooldowns cooldowns = player.getArtCooldowns();
+        int gap = gapOf(player, monster);
+        if (player.getHeldArt() == com.bpm.minotaur.gamedata.arts.CombatArt.HELD_ARROW) {
+            if (gap <= 1) return false; // it came in without crossing the line: just shoot
+            player.keepHold(); // wait, drawn
+            return true;
+        }
+        boolean inReach = shooter || gap <= 1;
+        com.bpm.minotaur.gamedata.arts.CombatArt capstone = bar[1], active = bar[0];
+        if (capstone != null && inReach && !cooldowns.isCooling(capstone) && used(combat.useArt(1), d)) return true;
+        if (active == null || cooldowns.isCooling(active)) return false;
+        if (active == com.bpm.minotaur.gamedata.arts.CombatArt.HELD_ARROW && gap <= 1) return false;
+        boolean reachable = shooter || gap <= 1
+                || (gap == 2 && (active == com.bpm.minotaur.gamedata.arts.CombatArt.REEL_IN
+                        || active == com.bpm.minotaur.gamedata.arts.CombatArt.CLOSING_THRUST));
+        return reachable && used(combat.useArt(0), d);
+    }
+
+    private static boolean used(com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome outcome, Duel d) {
+        if (outcome == com.bpm.minotaur.gamedata.arts.ActiveArts.Outcome.USED) d.swings++;
+        return outcome.takesTurn();
+    }
+
+    /** One shot, or one throw, down the row through the game's own ranged path. */
+    private void shoot(CombatManager combat, Player player, Monster monster, Duel d) {
+        int before = monster.getCurrentHP();
+        eventManager.glanced = false;
+        combat.setCurrentState(CombatManager.CombatState.INACTIVE);
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null) return; // nothing left to throw: the turn passes
+        if (weapon.isRanged()) combat.playerAttackInstant();
+        else combat.throwWeapon(weapon);
+        d.swings++;
+        countHit(combat, monster, before, d);
+    }
+
+    /** One player swing through the game's bump path; a full hit may fire the soul's Passive. */
+    private void strike(CombatManager combat, Monster monster, Duel d) {
         int before = monster.getCurrentHP();
         eventManager.glanced = false;
         combat.setCurrentState(CombatManager.CombatState.INACTIVE);
         combat.playerMeleeStrike(monster);
         d.swings++;
-        int dealt = before - monster.getCurrentHP();
-        if (dealt <= 0) return;
-        if (wasGlancing(combat)) {
-            d.glancing++;
-            return;
+        countHit(combat, monster, before, d);
+    }
+
+    private void countHit(CombatManager combat, Monster monster, int before, Duel d) {
+        if (before - monster.getCurrentHP() <= 0) return;
+        if (wasGlancing(combat)) d.glancing++;
+        else d.fullHits++;
+    }
+
+    /** Another of a thrown weapon's bundle: a thrown dart is gone from the hand. */
+    private Item restock(Item like) {
+        return itemDataManager.createItem(like.getType(), 0, 0, ItemColor.GRAY, assetManager);
+    }
+
+    /** One row of the report: a Family and the weapon it is measured with (null with bare hands false: the Father's Sword). */
+    private static final class ReportFamily {
+        final String name;
+        final Item.ItemType weapon;
+        final boolean bareHands;
+
+        ReportFamily(String name, Item.ItemType weapon, boolean bareHands) {
+            this.name = name;
+            this.weapon = weapon;
+            this.bareHands = bareHands;
         }
-        d.fullHits++;
-        if (monster.getCurrentHP() <= 0 || art == AdeptPassive.NONE || rng.nextFloat() >= chance) return;
-        switch (art) {
-            case CUT_THE_SINEW:
-                d.passiveProcs++;
-                monster.applyBleed(2, 1);
-                monster.getStatusManager().addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOWED, 2, 1, false);
-                break;
-            case RINGING_BLOW:
-                d.passiveProcs++;
-                if (dazed[0] > 0 && monster.applyStun(1)) dazed[0] = 0;
-                else dazed[0] = DAZED_ACTIONS;
-                break;
-            case QUICK_KNUCKLES:
-                // A second knuckle behind the first, at half its damage. Applied straight, not swung,
-                // so a full-damage free strike can't overkill and then be refunded.
-                d.passiveProcs++;
-                monster.setCurrentHP(Math.max(0, monster.getCurrentHP() - Math.max(1, dealt / 2)));
-                break;
-            default:
-                break;
+
+        String weaponName() {
+            return bareHands ? "bare hands" : weapon != null ? weapon.name() : "Father's Sword";
         }
+    }
+
+    /** One column of the report: a Mastery rank, and which of the Family's Arts the soul knows. */
+    private static final class ReportArm {
+        final String label;
+        final Mastery.Rank rank;
+        final boolean passive;
+        final boolean arts;
+
+        ReportArm(String label, Mastery.Rank rank, boolean passive, boolean arts) {
+            this.label = label;
+            this.rank = rank;
+            this.passive = passive;
+            this.arts = arts;
+        }
+    }
+
+    /**
+     * The weapon each Family is measured with: the ones #239 used, and a staple for the rest. Polearm
+     * uses the Assegai: weapons.json marks the Spear ranged, so it cannot bump-attack at all.
+     */
+    private static final ReportFamily[] REPORT_FAMILIES = {
+            new ReportFamily("Blade", null, false), new ReportFamily("Dagger", Item.ItemType.DAGGER, false),
+            new ReportFamily("Axe", Item.ItemType.AXE, false), new ReportFamily("Blunt", Item.ItemType.MACE_FOOTMANS, false),
+            new ReportFamily("Polearm", Item.ItemType.ASSEGAI, false), new ReportFamily("Unarmed", null, true),
+            new ReportFamily("Bow", Item.ItemType.BOW, false), new ReportFamily("Crossbow", Item.ItemType.CROSSBOW, false),
+            new ReportFamily("Firearm", Item.ItemType.MUSKET, false), new ReportFamily("Thrown", Item.ItemType.DART, false)};
+
+    private static final ReportArm[] REPORT_ARMS = {
+            new ReportArm("Untrained", Mastery.Rank.UNTRAINED, false, false),
+            new ReportArm("Adept", Mastery.Rank.ADEPT, false, false),
+            new ReportArm("Adept + Passive", Mastery.Rank.ADEPT, true, false),
+            new ReportArm("Master", Mastery.Rank.MASTER, false, false),
+            new ReportArm("Master + all Arts", Mastery.Rank.MASTER, false, true)};
+
+    /**
+     * The #250 report: win rate per Family at depths 1 and 3, without and with its Arts. Depth d is
+     * a level-d body against the monsters of base level 1 to d, scaled to EDL d, with --approach.
+     * Each Arts column sits beside the same rank without them, so the difference between the two
+     * is the Arts alone; the Untrained column is the fresh body the 0.0.2 targets are written for.
+     * Results are reported, not tuned: the numbers in the game are left as they are.
+     *
+     * <p>It sets the run's options for each cell in turn, and the run ends after it.
+     */
+    private void report() throws IOException {
+        StringBuilder md = new StringBuilder();
+        md.append(String.format(Locale.ROOT, "Combat Arts in the duel simulator (#250): %d duels per species per cell,"
+                + " --approach, seed %d. Win rates.%n", trials, seed));
+        approach = true;
+        for (int depth : new int[]{1, 3}) {
+            playerLevel = depth;
+            edl = depth;
+            List<Monster.MonsterType> band = bandOf(1, depth);
+            StringBuilder head = new StringBuilder("| Family | Weapon |");
+            StringBuilder rule = new StringBuilder("|---|---|");
+            for (ReportArm arm : REPORT_ARMS) {
+                head.append(' ').append(arm.label).append(" |");
+                rule.append("---|");
+            }
+            md.append(String.format(Locale.ROOT, "%n### Depth %d (level %d, EDL %d, monsters of base level 1-%d: %d species)%n%n%s%n%s%n",
+                    depth, depth, depth, depth, band.size(), head, rule));
+            System.out.println("Depth " + depth + " (" + band.size() + " species)");
+            for (ReportFamily family : REPORT_FAMILIES) {
+                unarmed = family.bareHands;
+                weaponOverride = family.weapon;
+                StringBuilder line = new StringBuilder("| " + family.name + " | " + family.weaponName() + " |");
+                for (ReportArm arm : REPORT_ARMS) {
+                    masteryRank = arm.rank;
+                    passive = arm.passive;
+                    arts = arm.arts;
+                    line.append(String.format(Locale.ROOT, " %.1f%% |", pct(bandTally(band).wins, trials * band.size())));
+                }
+                md.append(line).append(System.lineSeparator());
+                System.out.println(line);
+            }
+        }
+        new java.io.File(reportPath).getAbsoluteFile().getParentFile().mkdirs();
+        try (PrintWriter w = new PrintWriter(new FileWriter(reportPath))) {
+            w.print(md);
+        }
+        System.out.println("Report written to " + reportPath);
+    }
+
+    /** The loaded species of base level {@code lo} to {@code hi}, by name. */
+    private List<Monster.MonsterType> bandOf(int lo, int hi) {
+        List<Monster.MonsterType> band = new ArrayList<>();
+        for (Monster.MonsterType type : monsterDataManager.getLoadedTypes()) {
+            MonsterTemplate t = monsterDataManager.getTemplate(type);
+            if (t != null && t.baseLevel >= lo && t.baseLevel <= hi) band.add(type);
+        }
+        band.sort(java.util.Comparator.comparing(Enum::name));
+        return band;
+    }
+
+    private Tally bandTally(List<Monster.MonsterType> band) {
+        Tally all = new Tally("BAND");
+        for (Monster.MonsterType type : band) {
+            for (int i = 0; i < trials; i++) all.add(duel(newPlayer(), type));
+        }
+        return all;
     }
 
     /** How far out a ranged monster opens fire: its preferred distance, 2 to 4 tiles in this room. */
@@ -472,10 +615,12 @@ public class DuelSimulationLauncher implements ApplicationListener {
         return Math.max(2, Math.min(4, gap));
     }
 
-    private static void placeMonster(Maze maze, Monster monster, int gap) {
+    /** Sets the monster {@code gap} tiles east of wherever the player now stands. */
+    private static void placeMonster(Maze maze, Player player, Monster monster, int gap) {
+        int x = (int) player.getPosition().x + gap;
         maze.getMonsters().values().remove(monster);
-        monster.getPosition().set(PLAYER_X + gap + 0.5f, ROW + 0.5f);
-        maze.getMonsters().put(new com.badlogic.gdx.math.GridPoint2(PLAYER_X + gap, ROW), monster);
+        monster.getPosition().set(x + 0.5f, ROW + 0.5f);
+        maze.getMonsters().put(new com.badlogic.gdx.math.GridPoint2(x, ROW), monster);
     }
 
     /** The game tells a glancing blow apart only by its log line ("Glancing blow on ..."). */
@@ -535,7 +680,19 @@ public class DuelSimulationLauncher implements ApplicationListener {
             if (sword != null) p.getInventory().pickupToBackpack(sword);
             p.getInventory().setRightHand(itemDataManager.createItem(weaponOverride, 0, 0, ItemColor.GRAY, assetManager));
         }
-        p.getStats().getMastery().setRank(p.masteryFamilyOf(p.getInventory().getRightHand(), false), masteryRank);
+        com.bpm.minotaur.gamedata.item.WeaponFamily family = p.masteryFamilyOf(p.getInventory().getRightHand(), false);
+        p.getStats().getMastery().setRank(family, masteryRank);
+        // The soul's Arts (#250): the Adept Passive alone, or all three of the Family's.
+        for (Mastery.Rank rank : new Mastery.Rank[]{Mastery.Rank.ADEPT, Mastery.Rank.EXPERT, Mastery.Rank.MASTER}) {
+            com.bpm.minotaur.gamedata.arts.CombatArt art = com.bpm.minotaur.gamedata.arts.CombatArt.of(family, rank);
+            if (art != null && (arts || (passive && rank == Mastery.Rank.ADEPT))) p.learnArt(art, null);
+        }
+        // A shooter's quiver or pouch: enough for any one fight, and no more -- ammunition has
+        // weight, and a burdened body is a slower one, which would measure the load, not the bow.
+        if (shoots(p)) {
+            p.getStats().setArrows(SHOOTER_AMMO);
+            p.getStats().setShot(SHOOTER_AMMO);
+        }
         return p;
     }
 
@@ -548,7 +705,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 pct(t.fullHits, t.swings), pct(t.glancing, t.swings), pct(t.monsterHits, t.monsterActions),
                 t.monsterActions / (float) Math.max(1, t.playerTurns),
                 // Monster attacks per player attack: live depth-1 telemetry reads 1.83 (#233).
-                t.monsterActions / (float) Math.max(1, t.swings), t.passiveProcs);
+                t.monsterActions / (float) Math.max(1, t.swings), t.artUses);
     }
 
     private static float pct(int a, int b) {
@@ -596,6 +753,9 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "mastery": masteryRank = Mastery.Rank.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "approach": approach = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "passive": passive = v.isEmpty() || Boolean.parseBoolean(v); break;
+                case "arts": arts = v.isEmpty() || Boolean.parseBoolean(v); break;
+                case "report": report = v.isEmpty() || Boolean.parseBoolean(v); break;
+                case "reportOut": reportPath = v; break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;
                 case "csv": csvPath = v; break;
