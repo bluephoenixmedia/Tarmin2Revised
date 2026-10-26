@@ -37,9 +37,9 @@ public class ThirstTest {
     // --- The scale ---------------------------------------------------------------------
 
     @Test
-    public void aFreshStartDrinksRoughlyEverySevenHundredFiftyTurns() {
+    public void aFreshStartIsThirstyWellWithinAnExpedition() {
         PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
-        assertEquals(900f, stats.getHydrationFloat(), 0f);
+        assertEquals(500f, stats.getHydrationFloat(), 0f);
         assertEquals(Thirst.Stage.HYDRATED, stats.getThirstStage());
 
         int turns = 0;
@@ -47,12 +47,12 @@ public class ThirstTest {
             stats.modifyHydration(-Thirst.burn(1f, 1f, 1f));
             turns++;
         }
-        assertEquals("1.0 a turn from 900 reaches Thirsty (below 150) on turn 751 (#235)", 751, turns);
+        assertEquals("1.0 a turn from 500 reaches Thirsty (below 150) on turn 351 (#312)", 351, turns);
         while (!stats.getThirstStage().isDehydrated()) {
             stats.modifyHydration(-Thirst.burn(1f, 1f, 1f));
             turns++;
         }
-        assertEquals("and Dehydrated (below 50) on turn 851", 851, turns);
+        assertEquals("and Dehydrated (below 50) on turn 451", 451, turns);
     }
 
     @Test
@@ -234,10 +234,10 @@ public class ThirstTest {
         Item skin = newSkin();
         assertTrue(Waterskin.fill(skin, LiquidType.BLOOD, true));
         assertEquals("Waterskin (Blood)", skin.getDisplayName());
-        assertEquals(5, skin.getCurrentCharges());
+        assertEquals(Thirst.WATERSKIN_CAPACITY, skin.getCurrentCharges());
         assertFalse("molten fire can't be carried", Waterskin.fill(skin, LiquidType.MOLTEN_FIRE, true));
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < Thirst.WATERSKIN_CAPACITY; i++) {
             Waterskin.Draught d = Waterskin.drinkOne(skin);
             assertEquals(LiquidType.BLOOD, d.liquid);
             assertTrue(d.strata);
@@ -253,7 +253,7 @@ public class ThirstTest {
         player.getStats().setHydration(0f);
         assertTrue(player.drinkFromWaterskin(skin, new GameEventManager()));
         assertEquals(Thirst.DRINK_FULL, player.getStats().getHydrationFloat(), 0.01f);
-        assertEquals(4, skin.getCurrentCharges());
+        assertEquals(Thirst.WATERSKIN_CAPACITY - 1, skin.getCurrentCharges());
     }
 
     @Test
@@ -262,13 +262,13 @@ public class ThirstTest {
         assertFalse("full", Waterskin.catchesRain(skin));
         Waterskin.drinkOne(skin);
         assertTrue(Waterskin.catchRain(skin));
-        assertEquals(5, skin.getCurrentCharges());
+        assertEquals(Thirst.WATERSKIN_CAPACITY, skin.getCurrentCharges());
 
         Waterskin.fill(skin, LiquidType.BLOOD, false);
         Waterskin.drinkOne(skin);
         assertFalse(Waterskin.catchesRain(skin));
 
-        for (int i = 0; i < 4; i++) Waterskin.drinkOne(skin);
+        for (int i = 1; i < Thirst.WATERSKIN_CAPACITY; i++) Waterskin.drinkOne(skin);
         assertTrue(Waterskin.catchRain(skin));
         assertEquals("Waterskin (Water)", skin.getDisplayName());
         assertEquals(1, skin.getCurrentCharges());
@@ -280,9 +280,13 @@ public class ThirstTest {
         Waterskin.fill(skin, LiquidType.WATER, true);
         Waterskin.drinkOne(skin);
         ItemSaveData data = new ItemSaveData(skin);
-        assertEquals(4, data.currentCharges);
+        assertEquals(Thirst.WATERSKIN_CAPACITY - 1, data.currentCharges);
         assertEquals(LiquidType.WATER, data.liquidContent);
         assertTrue(data.strataSource);
+
+        data.currentCharges = 5; // saved under the old five-drink capacity
+        assertEquals("clamped to the skin's capacity (#312)", Thirst.WATERSKIN_CAPACITY,
+                data.toItem(null, null).getCurrentCharges());
 
         ItemSaveData other = new ItemSaveData(Item.fromTemplate(Item.ItemType.FOOD, new ItemTemplate()));
         assertNull("only a waterskin saves contents", other.liquidContent);

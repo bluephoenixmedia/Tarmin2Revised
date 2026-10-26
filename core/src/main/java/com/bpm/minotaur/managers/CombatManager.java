@@ -2151,7 +2151,7 @@ public class CombatManager {
                 }
             } else {
                 player.useItem(itemToUse, eventManager, discoveryManager, maze, this);
-                closeMenuOrPassTurn();
+                if (player.lastUseSpentTurn()) closeMenuOrPassTurn();
             }
         } else {
             eventManager.addEvent(new GameEvent("Quick slot " + (slotIndex + 1) + " is empty!", 1.5f));

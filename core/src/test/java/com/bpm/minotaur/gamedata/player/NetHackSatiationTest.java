@@ -12,7 +12,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Verifies NetHack's nutrition scale (#191): 900 at the start burning 1 a turn, the
+ * Verifies NetHack's nutrition scale (#191): 500 at the start (#312) burning 1 a turn, the
  * Satiated / Hungry / Weak / Fainting / Starved thresholds and their effects, choking,
  * food values, legacy save migration, that food grants zero direct HP, and that eating
  * tainted monster flesh applies poison and carries a chance to grant a
@@ -32,9 +32,9 @@ public class NetHackSatiationTest {
     }
 
     @Test
-    public void aFedStartLastsAboutOneLongExpeditionBeforeHunger() {
+    public void anUnfedStartIsHungryWellWithinAnExpedition() {
         PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
-        assertEquals(900f, stats.getSatietyFloat(), 0f);
+        assertEquals(500f, stats.getSatietyFloat(), 0f);
         assertEquals(Hunger.Stage.NOT_HUNGRY, stats.getHungerStage());
 
         int turns = 0;
@@ -42,7 +42,7 @@ public class NetHackSatiationTest {
             stats.modifySatiety(-Hunger.burn(1f, 1f, 1f));
             turns++;
         }
-        assertEquals("1 nutrition a turn from 900 reaches Hungry (below 150) on turn 751", 751, turns);
+        assertEquals("1 nutrition a turn from 500 reaches Hungry (below 150) on turn 351 (#312)", 351, turns);
     }
 
     @Test
@@ -128,17 +128,18 @@ public class NetHackSatiationTest {
     public void vomitingLosesTheMealAndStoredNutrition() {
         Player player = new Player(2, 2);
         player.getStats().setSatiety(1200f); // Satiated, but not very overfull: never fatal
-        Item ration = Item.fromTemplate(Item.ItemType.FOOD, foodTemplate(Hunger.RATION));
-        player.getInventory().pickupToBackpack(ration);
-        player.useItem(ration, new GameEventManager(), null, null);
+        // A feast big enough to carry 1200 past the choke line.
+        Item feast = Item.fromTemplate(Item.ItemType.FOOD, foodTemplate(1000));
+        player.getInventory().pickupToBackpack(feast);
+        player.useItem(feast, new GameEventManager(), null, null);
         assertEquals(1200f - Hunger.VOMIT_LOSS, player.getStats().getSatietyFloat(), 0.01f);
         assertTrue(player.getCurrentHP() > 0);
     }
 
     @Test
-    public void aRationIsWorthEightHundred() {
+    public void aRationIsWorthTwoHundred() {
         Item ration = Item.fromTemplate(Item.ItemType.FOOD, foodTemplate(0));
-        assertEquals(800, Player.nutritionOf(ration));
+        assertEquals(200, Player.nutritionOf(ration));
     }
 
     @Test

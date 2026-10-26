@@ -19,17 +19,20 @@ public final class Thirst {
 
     // --- The store and its burn ---------------------------------------------------------
 
-    /** Where every expedition, respawn and new game starts. */
-    public static final float START = 900f;
+    /**
+     * Where every expedition, respawn and new game starts. An unfed body is Thirsty by turn
+     * 351, and the starting skin's two draughts carry it to about turn 750 (#312).
+     */
+    public static final float START = 500f;
     /**
      * Burned per standard turn: the same pace as food (#235). At 1.5 a seeker who found no water
-     * was Thirsty by turn 500 and dead by 730; now Thirsty about 750, dead about 1,100.
+     * was Thirsty by turn 500 and dead by 730; at 1.0 a fresh start is Thirsty on turn 351.
      */
     public static final float BURN_PER_TURN = 1.0f;
 
     // --- Stage thresholds (see Stage for what each one does) -----------------------------
 
-    /** Below this, Thirsty: a warning notice. A fresh start reaches it on turn 501. */
+    /** Below this, Thirsty: a warning notice. A fresh start reaches it on turn 351. */
     public static final float THIRSTY_BELOW = 150f;
     /** Below this, Dehydrated: -2 DEX, slower actions. */
     public static final float DEHYDRATED_BELOW = 50f;
@@ -40,7 +43,7 @@ public final class Thirst {
     public static final float DEATH_BASE = 100f;
     public static final float DEATH_PER_CON = 10f;
 
-    /** Store's maximum cap. */
+    /** Store's maximum cap. A body this full refuses a drink, so none is wasted (#312). */
     public static final float MAX_STORE = 1200f;
 
     // --- Collapse ------------------------------------------------------------------------
@@ -54,8 +57,8 @@ public final class Thirst {
     public static final int DRINK_FULL = 200;
     /** Half drink value (blood, black muck). */
     public static final int DRINK_HALF = 100;
-    /** Standard waterskin capacity in drinks. */
-    public static final int WATERSKIN_CAPACITY = 5;
+    /** Standard waterskin capacity in drinks: two, so water must be found within an expedition (#312). */
+    public static final int WATERSKIN_CAPACITY = 2;
     /** Outdoors in rain, the waterskin gains one drink every this many turns. */
     public static final int RAIN_REFILL_TURNS = 20;
     /** A cooked meal that carries no hydration of its own. */

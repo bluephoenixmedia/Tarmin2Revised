@@ -92,7 +92,8 @@ public class ItemSaveData {
         item.setHeraldry(heraldry);
         if (type == Item.ItemType.WATERSKIN) {
             item.setMaxCharges(com.bpm.minotaur.gamedata.player.Thirst.WATERSKIN_CAPACITY);
-            item.setCurrentCharges(currentCharges);
+            // A skin saved under the old five-drink capacity comes back holding at most two (#312).
+            item.setCurrentCharges(Math.min(currentCharges, item.getMaxCharges()));
             if (liquidContent != null) {
                 item.setLiquidContent(liquidContent);
             }
