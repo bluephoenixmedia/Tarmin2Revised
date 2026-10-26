@@ -1934,7 +1934,12 @@ public class GameScreen extends BaseScreen {
                 && player.getInjuryManager() != null
                 && player.getInjuryManager().hasUntreatedInjuries();
         String survival = telemetry.getSurvivalDeath();
-        if ("thirst".equals(survival)) {
+        com.bpm.minotaur.managers.ChaosManager chaos = com.bpm.minotaur.managers.ChaosManager.getInstance();
+        boolean isChaosSurge = chaos != null && chaos.isSurgeActive();
+        if (isChaosSurge) {
+            String surgeName = chaos.getActiveEvent() != null ? chaos.getActiveEvent().getName() : "Chaos Surge";
+            sb.append("Perished under the grinning gaze of the Motley Sovereign during ").append(surgeName);
+        } else if ("thirst".equals(survival)) {
             sb.append("Died of thirst");
         } else if ("starvation".equals(survival)) {
             sb.append("Starved to death");
@@ -1950,7 +1955,7 @@ public class GameScreen extends BaseScreen {
         sb.append(" at Strata Depth ").append(Math.max(1, telemetry.getStrataReached()));
         sb.append(" on turn ").append(telemetry.getTurnsLived());
 
-        if (survival == null && player != null && player.getStats() != null) {
+        if (!isChaosSurge && survival == null && player != null && player.getStats() != null) {
             PlayerStats stats = player.getStats();
             if (stats.getHungerStage().isWeakened()) {
                 sb.append(" while starving");

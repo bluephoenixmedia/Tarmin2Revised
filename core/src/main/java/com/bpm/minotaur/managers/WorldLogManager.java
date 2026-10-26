@@ -170,6 +170,17 @@ public final class WorldLogManager implements SlotScopedState {
     public void die(String epitaph, String killer, String place, int turn) {
         com.bpm.minotaur.gamedata.worldlog.LifeRecord open = log().current();
         justDied = open != null ? open.number : -1;
+        if (open != null) {
+            try {
+                ChaosManager chaos = ChaosManager.getInstance();
+                if (chaos != null && chaos.isSurgeActive()) {
+                    ChaosSurgeEvent active = chaos.getActiveEvent();
+                    String surgeName = active != null ? active.getName() : "Chaos Surge";
+                    open.motleyReckoning = surgeName;
+                    open.note(Fact.of(Fact.Kind.MOTLEY_RECKONING, surgeName));
+                }
+            } catch (Throwable ignored) {}
+        }
         log().die(epitaph, killer, place, turn);
         log().dropUncollectedTellings();
         save();

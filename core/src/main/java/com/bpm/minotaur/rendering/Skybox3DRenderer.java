@@ -80,6 +80,23 @@ public class Skybox3DRenderer {
     private ModelInstance spireInstance;
     private ModelInstance mountainInstance;
 
+    // The Laughing Void: mountain-scale cosmic chaotic entity
+    public enum VoidManifestationState { INACTIVE, FADING_IN, MANIFESTED, FADING_OUT }
+    public static final float VOID_FADE_SECONDS = 3.0f;
+    public static final float VOID_OVERLAND_DIST = 140f;
+    public static final float VOID_UNDERGROUND_DIST = 32f;
+    public static final float VOID_BASE_HEIGHT = 60.0f;
+    public static final float VOID_OVERLAND_SCALE = 2.05f;
+    public static final float VOID_UNDERGROUND_SCALE = 0.95f;
+
+    private Model voidModel;
+    private Texture voidTexture;
+    private ModelInstance voidInstance;
+    private Material voidMaterial;
+    private com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute voidBlending;
+    private VoidManifestationState voidState = VoidManifestationState.INACTIVE;
+    private float voidAlpha = 0f;
+
     // Shelter beacons: one unit column, stood up once per visible beacon at its real bearing.
     private Model beaconModel;
     private final com.badlogic.gdx.utils.Array<ModelInstance> beaconPool = new com.badlogic.gdx.utils.Array<>();
@@ -210,6 +227,48 @@ public class Skybox3DRenderer {
         return mb.end();
     }
 
+    private Model buildVoidBillboardModel(Texture texture) {
+        float aspect = (float) texture.getWidth() / (float) texture.getHeight();
+        float h = VOID_BASE_HEIGHT;
+        float w = h * aspect;
+
+        com.badlogic.gdx.graphics.g3d.utils.ModelBuilder mb = new com.badlogic.gdx.graphics.g3d.utils.ModelBuilder();
+        mb.begin();
+
+        Material material = new Material();
+        material.set(TextureAttribute.createDiffuse(texture));
+        material.set(ColorAttribute.createDiffuse(Color.WHITE));
+        material.set(new com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.0f));
+        material.set(new com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute(com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute.AlphaTest, 0.005f));
+        material.set(new com.badlogic.gdx.graphics.g3d.attributes.IntAttribute(com.badlogic.gdx.graphics.g3d.attributes.IntAttribute.CullFace, 0));
+
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder part = mb.part("void_billboard", GL20.GL_TRIANGLES,
+                com.badlogic.gdx.graphics.VertexAttributes.Usage.Position
+                        | com.badlogic.gdx.graphics.VertexAttributes.Usage.Normal
+                        | com.badlogic.gdx.graphics.VertexAttributes.Usage.TextureCoordinates,
+                material);
+
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v0 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(-w * 0.5f, 0f, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(0f, 1f);
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v1 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(w * 0.5f, 0f, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(1f, 1f);
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v2 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(w * 0.5f, h, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(1f, 0f);
+        com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo v3 = new com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo()
+                .setPos(-w * 0.5f, h, 0f)
+                .setNor(0f, 0f, 1f)
+                .setUV(0f, 0f);
+
+        part.rect(v0, v1, v2, v3);
+        return mb.end();
+    }
+
     private void loadModels() {
         ObjLoader loader = new ObjLoader();
         try {
@@ -269,6 +328,19 @@ public class Skybox3DRenderer {
             }
 
             buildBeaconModel();
+
+            // Load The Laughing Void billboard model if asset exists
+            String voidPath = "images/monsters/jester.png";
+            if (Gdx.files != null && Gdx.files.internal(voidPath).exists()) {
+                voidTexture = new Texture(Gdx.files.internal(voidPath), true);
+                voidTexture.setFilter(Texture.TextureFilter.MipMapLinearLinear, Texture.TextureFilter.Linear);
+                voidModel = buildVoidBillboardModel(voidTexture);
+                voidInstance = new ModelInstance(voidModel);
+                voidMaterial = voidInstance.materials.first();
+                voidBlending = (com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute)
+                        voidMaterial.get(com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute.Type);
+                Gdx.app.log(TAG, "The Laughing Void billboard loaded successfully.");
+            }
 
             isInitialized = (castleInstance != null && spireInstance != null && domeModel != null);
             Gdx.app.log(TAG, "3D Skybox models successfully loaded. Initialized: " + isInitialized);
@@ -963,6 +1035,9 @@ public class Skybox3DRenderer {
         }
         gatherWarSmoke(worldManager, chunk, player);
 
+        worldSkyState.isUnderground = (worldManager != null && worldManager.getCurrentLevel() > 1);
+        worldSkyState.voidActive = isVoidActive();
+
         updateSky(delta, worldSkyState);
     }
 
@@ -1029,6 +1104,12 @@ public class Skybox3DRenderer {
         public int beaconLit;
         /** Shelter and seal-site beacons in range, or null for none. */
         public java.util.List<com.bpm.minotaur.gamedata.shelter.BeaconPlanner.Beacon> beacons;
+        /** Whether The Laughing Void is actively looming or manifesting. */
+        public boolean voidActive;
+        /** Alpha of The Laughing Void (0.0 to 1.0), or NaN to let Skybox3DRenderer animate it. */
+        public float voidAlpha = Float.NaN;
+        /** True when player is in subterranean strata / dungeons (defying reality). */
+        public boolean isUnderground;
         /**
          * Pins animation time instead of accumulating it. NaN (the default) means "run normally".
          * Captures set this so cloud drift, ember flicker and heat-lightning land identically on
@@ -1163,8 +1244,40 @@ public class Skybox3DRenderer {
 
         }
 
+        // Void Manifestation Lifecycle (Fading in / Fading out / State tracking)
+        if (state.voidActive && voidState == VoidManifestationState.INACTIVE) {
+            voidState = VoidManifestationState.FADING_IN;
+        } else if (!state.voidActive && (voidState == VoidManifestationState.MANIFESTED || voidState == VoidManifestationState.FADING_IN)) {
+            voidState = VoidManifestationState.FADING_OUT;
+        }
+
+        if (!Float.isNaN(state.voidAlpha)) {
+            voidAlpha = MathUtils.clamp(state.voidAlpha, 0f, 1f);
+        } else {
+            if (voidState == VoidManifestationState.FADING_IN) {
+                voidAlpha = Math.min(1.0f, voidAlpha + delta / VOID_FADE_SECONDS);
+                if (voidAlpha >= 1.0f) {
+                    voidState = VoidManifestationState.MANIFESTED;
+                }
+            } else if (voidState == VoidManifestationState.FADING_OUT) {
+                voidAlpha = Math.max(0.0f, voidAlpha - delta / VOID_FADE_SECONDS);
+                if (voidAlpha <= 0.0f) {
+                    voidState = VoidManifestationState.INACTIVE;
+                }
+            }
+        }
+
+        // Apply deep violet / magenta cosmic atmospheric wash during Void presence
+        if (voidAlpha > 0.001f) {
+            Color cosmicViolet = new Color(0.48f, 0.06f, 0.68f, 1f);
+            ambientAttr.color.lerp(cosmicViolet, voidAlpha * 0.55f);
+            skyTint.lerp(new Color(0.52f, 0.05f, 0.72f, 1f), voidAlpha * 0.65f);
+            horizonFogColor.lerp(new Color(0.62f, 0.08f, 0.82f, 1f), voidAlpha * 0.70f);
+        }
+
         placeBeacons(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f);
         placeWarSmoke(state, camX, camZ, dayNight != null ? dayNight.getBrightness() : 1f, delta);
+        placeVoidBillboard(state, camX, camZ);
 
         if (isCastleBillboard && castleMaterial != null) {
             ColorAttribute diff = (ColorAttribute) castleMaterial.get(ColorAttribute.Diffuse);
@@ -1196,6 +1309,98 @@ public class Skybox3DRenderer {
                     .setToTranslation(camX * 0.25f + castleX, -6f, camZ * 0.25f - currentDist)
                     .scale(currentScale, currentScale, currentScale);
         }
+    }
+
+    private void placeVoidBillboard(SkyState state, float camX, float camZ) {
+        if (voidInstance == null || voidAlpha <= 0.001f) return;
+
+        float vDirX = state.forwardX;
+        float vDirZ = state.forwardZ;
+        float vLen = (float) Math.sqrt(vDirX * vDirX + vDirZ * vDirZ);
+        if (vLen < 0.01f) {
+            vDirX = 0f;
+            vDirZ = -1f;
+        } else {
+            vDirX /= vLen;
+            vDirZ /= vLen;
+        }
+
+        boolean underground = state.isUnderground;
+        float dist = underground ? VOID_UNDERGROUND_DIST : VOID_OVERLAND_DIST;
+        float scale = underground ? VOID_UNDERGROUND_SCALE : VOID_OVERLAND_SCALE;
+        float baseY = underground ? -2.0f : -8.0f;
+        float hoverY = baseY + MathUtils.sin(totalTime * 1.8f) * (underground ? 1.5f : 3.5f);
+        float wobbleRoll = MathUtils.sin(totalTime * 2.2f) * 1.5f;
+        float yaw = MathUtils.atan2(-vDirX, -vDirZ) * MathUtils.radiansToDegrees;
+
+        voidInstance.transform.idt()
+                .setToTranslation(camX * 0.25f + vDirX * dist, hoverY, camZ * 0.25f + vDirZ * dist)
+                .rotate(0f, 1f, 0f, yaw)
+                .rotate(0f, 0f, 1f, wobbleRoll)
+                .scale(scale, scale, scale);
+
+        float shimmer = 0.94f + 0.06f * MathUtils.sin(totalTime * 4.0f);
+        if (voidBlending != null) {
+            voidBlending.opacity = voidAlpha * shimmer;
+        }
+    }
+
+    public void manifestVoid(boolean active) {
+        if (active) {
+            voidState = VoidManifestationState.FADING_IN;
+        } else {
+            voidState = VoidManifestationState.FADING_OUT;
+        }
+    }
+
+    public boolean isVoidActive() {
+        boolean chaosSurge = false;
+        try {
+            chaosSurge = com.bpm.minotaur.managers.ChaosManager.getInstance().isSurgeActive();
+        } catch (Throwable ignored) {
+        }
+        return voidState != VoidManifestationState.INACTIVE || voidAlpha > 0.001f || chaosSurge;
+    }
+
+    public float getVoidAlpha() {
+        return voidAlpha;
+    }
+
+    public void setVoidAlphaDirect(float alpha) {
+        this.voidAlpha = MathUtils.clamp(alpha, 0f, 1f);
+        if (this.voidAlpha > 0.001f) {
+            this.voidState = VoidManifestationState.MANIFESTED;
+        } else {
+            this.voidState = VoidManifestationState.INACTIVE;
+        }
+    }
+
+    public VoidManifestationState getVoidState() {
+        return voidState;
+    }
+
+    /**
+     * Renders The Laughing Void directly in underground chasms/dungeons, defying reality.
+     */
+    public void renderUndergroundVoid(Viewport viewport, WorldManager worldManager) {
+        if (!isInitialized || voidInstance == null || voidAlpha <= 0.001f) return;
+
+        worldSkyState.isUnderground = true;
+        worldSkyState.voidActive = true;
+        updateSky(Gdx.graphics.getDeltaTime(), worldSkyState);
+
+        Gdx.gl.glViewport(viewport.getScreenX(), viewport.getScreenY(), viewport.getScreenWidth(), viewport.getScreenHeight());
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDepthMask(false);
+
+        modelBatch.begin(camera);
+        modelBatch.render(voidInstance);
+        modelBatch.end();
+
+        Gdx.gl.glDepthMask(true);
+        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     /** Set when the player stands in the castle chunk, where the world billboard takes over. */
@@ -1361,6 +1566,9 @@ public class Skybox3DRenderer {
         for (int i = 0; i < beaconsShown; i++) {
             modelBatch.render(beaconPool.get(i), environment);
         }
+        if (voidInstance != null && voidAlpha > 0.001f) {
+            modelBatch.render(voidInstance);
+        }
 
         modelBatch.end();
 
@@ -1418,6 +1626,8 @@ public class Skybox3DRenderer {
         modelBatch.dispose();
         if (castleModel   != null) castleModel.dispose();
         if (castleTexture != null) castleTexture.dispose();
+        if (voidModel     != null) voidModel.dispose();
+        if (voidTexture   != null) voidTexture.dispose();
         if (spireModel    != null) spireModel.dispose();
         if (mountainModel != null) mountainModel.dispose();
         if (domeModel     != null) domeModel.dispose();

@@ -635,6 +635,12 @@ public class PlayerStats {
     public void heal(int amount) {
         if (amount <= 0)
             return;
+        try {
+            if (com.bpm.minotaur.managers.ChaosManager.getInstance().isJestersFarceActive()) {
+                this.currentHP = Math.max(1, this.currentHP - amount);
+                return;
+            }
+        } catch (Throwable ignored) {}
         this.currentHP += amount;
         if (this.currentHP > getMaxHP()) {
             this.currentHP = getMaxHP();

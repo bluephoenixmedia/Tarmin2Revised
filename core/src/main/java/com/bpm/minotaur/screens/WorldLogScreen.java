@@ -169,7 +169,7 @@ public class WorldLogScreen extends BaseScreen {
         String text = reckoningPages.containsKey(life) ? "HOW IT ENDED"
                 : life == LEARNED ? "WHAT THE SOUL HAS LEARNED"
                 : life == null ? UiNames.plural(log.unremembered(), "LIFE", "LIVES") + " UNREMEMBERED"
-                : life.number + ". " + life.name.toUpperCase();
+                : life.number + ". " + life.name.toUpperCase() + (life.motleyReckoning != null ? " [MOTLEY]" : "");
         TextButton button = new TextButton(UiGlyphs.sanitize(text), UiStyles.menu(skin));
         button.getLabel().setEllipsis(true);
         button.getLabel().setAlignment(com.badlogic.gdx.utils.Align.left);
@@ -233,6 +233,10 @@ public class WorldLogScreen extends BaseScreen {
 
         page.add(UiLabels.ellipsized("DEATH", UiStyles.caption(skin, UiTheme.GOLD))).padTop(UiTheme.PAD_MD).row();
         if (life.isDead()) {
+            if (life.motleyReckoning != null) {
+                page.add(wrap("MOTLEY RECKONING: " + life.motleyReckoning.toUpperCase(),
+                        UiStyles.caption(skin, HudSkin.COL_HP_CRITICAL))).padBottom(UiTheme.PAD_XS).row();
+            }
             page.add(wrap(life.epitaph, UiStyles.body(skin))).row();
             page.add(wrap("Felled by " + life.killer + " on " + life.place + ", turn " + life.turn + ".",
                     UiStyles.body(skin, UiTheme.TEXT_DIM))).row();

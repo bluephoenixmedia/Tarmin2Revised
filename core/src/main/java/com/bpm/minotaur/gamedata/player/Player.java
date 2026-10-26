@@ -3182,7 +3182,11 @@ public class Player {
         // Chip damage: always take at least 1 on a connected, non-dodged hit.
         if (amount < 1) amount = 1;
 
-        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("damageTakenMult")));
+        float chaosDamageTaken = 1.0f;
+        try {
+            chaosDamageTaken = com.bpm.minotaur.managers.ChaosManager.getInstance().getDamageTakenMultiplier();
+        } catch (Throwable ignored) {}
+        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("damageTakenMult") * chaosDamageTaken));
 
         // In another body the form takes the blows; when it gives out you are yourself again, unhurt by it.
         if (form != null) {
@@ -3454,6 +3458,19 @@ public class Player {
 
         position.set(nextX + 0.5f, nextY + 0.5f);
         UnlockManager.getInstance().incrementStat("steps", 1);
+
+        try {
+            if (com.bpm.minotaur.managers.ChaosManager.getInstance().isSlipstreamActive() && direction == facing) {
+                int slideX = nextX + (int) direction.getVector().x;
+                int slideY = nextY + (int) direction.getVector().y;
+                if (maze.isPassable(slideX, slideY) && maze.getMonsters().get(new GridPoint2(slideX, slideY)) == null && !maze.isWallBlocking(nextX, nextY, direction)) {
+                    position.set(slideX + 0.5f, slideY + 0.5f);
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("SLIPSTREAM! You slide an extra stride across the frictionless stone!", 1.2f));
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
 
         // Moving breaks a Rune of Surrender channel.
         com.bpm.minotaur.generation.theme.ThemeObjectiveManager.interruptSurrender(maze, eventManager);

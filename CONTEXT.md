@@ -63,6 +63,9 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Mastery**: The protagonist's rank in one Weapon Family (Untrained, Novice, Adept, Expert, Master), raised by landing blows with that Family on anything that is not Trivial. Belongs to the Incarnation: a new body starts Untrained. Unarmed Mastery also hardens the fist itself: each rank steps up the bare-hand damage die. _Avoid_: "skill", which means a skill-tree node; "martial arts", which is Unarmed Mastery.
 - **Combat Art**: A named attack a Weapon Family teaches, one each at Adept, Expert and Master. Kept by the soul across deaths like Known Spells, but weaker until the new body retrains the Mastery rank that taught it. An **Active Art** is used on purpose from the Art bar and then cools down; a **Passive Art** fires by itself during ordinary attacks. A Family's Adept Art is a Passive, its Expert Art an Active, and its Master Art a **capstone** that makes the Adept Passive certain for a few turns.
 - **Art bar**: The HUD strip of four slots beside the Spell Slots, showing the Active Arts of the Weapon Families in hand. It follows the hands; nothing is assigned to it. _Avoid_: "hotbar", "skill bar". _Avoid_: "skill", "technique", "move".
+- **The Laughing Void**: The cosmic, unaligned primordial deity of pure entropy that looms over the world as a towering mountain-sized entity, heedless of Tarmin, the Old Gods, or the Houses. _Avoid_: "chaos jester", "trickster god".
+- **Chaos Surge**: A temporary distortion of reality invoked when the Laughing Void manifests, imposing a wild magic rule or phenomenon on all entities for a random duration. _Avoid_: "chaos mode", "wild magic event".
+- **Motley Reckoning**: A distinct entry recorded in the World Log when an Incarnation perishes during a Chaos Surge, chronicling the presiding surge and its toll.
 
 ### Houses of the Maze
 See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
@@ -113,6 +116,13 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Contract**: A task a sworn house gives the player: hold a chunk, kill a captain, escort a column, burn a camp.
 - **Herald**: A house's courier on the roads between seats, carrying a proclamation.
 - **Siege / Breach**: A house laying siege to Castle Tarmin, and the gap in its wall that stays open while the siege lasts.
+
+### The Laughing Void & Chaos Surges
+See Issue #304.
+- **The Laughing Void**: An unaligned, primordial chaotic god that exists beyond the factions of the Maze and mortal powers. Appears looming on the horizon as a colossal mountain-scale entity fading in and out of existence.
+- **Chaos Surge**: A temporary wild magic reality fracture triggered when the Laughing Void gazes upon the world (15 + 2d12 turns). Inverts or distorts game rules, impacting the player and all creatures with cosmic indifference.
+- **Motley Sovereign**: The archaic epithet by which the Laughing Void is recorded in ancient mortality ledgers and world chronicles.
+- **Motley Reckoning**: An epitaph and World Log event recorded when an Incarnation perishes while a Chaos Surge is active ("Perished under the grinning gaze of the Motley Sovereign during [Surge Name]").
 
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.
