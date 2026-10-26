@@ -1,5 +1,6 @@
 package com.bpm.minotaur.gamedata.gore;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 
 import java.util.Random;
@@ -16,7 +17,7 @@ import java.util.Random;
 public final class WoundDrip {
 
     /** Wounds shorter than this never drip: a nick has no blood to run (the wall's DRIP_MIN_RADIUS). */
-    public static final float MIN_WOUND_LENGTH = 0.11f;
+    public static final float MIN_WOUND_LENGTH = 0.105f; // a 5-damage wound and up
     /** How far a trickle may run, as a fraction of the sprite's height. */
     static final float MIN_TARGET = 0.12f;
     static final float MAX_TARGET = 0.30f;
@@ -26,23 +27,30 @@ public final class WoundDrip {
     public static final float STEP = 1f / 64f;
 
     private final float target;
+    private final Color color = new Color();
     private float length;
     private int shownSteps;
+    private boolean finishShown;
+    private long lastFrame = -1;
 
-    private WoundDrip(float target) {
+    private WoundDrip(float target, Color blood) {
         this.target = target;
+        this.color.set(blood);
     }
 
     /**
-     * The trickle a fresh wound starts, or null: a bloodless body ({@link GoreProfile#hasBlood})
-     * and a small wound never drip. It never runs past the bottom of the sprite.
+     * The trickle a fresh wound starts, or null: a bloodless body ({@link GoreProfile#hasBlood}),
+     * a small wound, and a gore level without drips ({@link GoreLevel#drips()}) never drip. It
+     * never runs past the bottom of the sprite, and is the colour of the body's blood.
      */
-    public static WoundDrip start(WoundDecal wound, GoreProfile profile, Random random) {
+    public static WoundDrip start(WoundDecal wound, GoreProfile profile, GoreLevel level, Random random) {
         if (wound == null || wound.length < MIN_WOUND_LENGTH) return null;
-        if (profile != null && !profile.hasBlood) return null;
+        if (level == null || !level.drips()) return null;
+        GoreProfile body = profile != null ? profile : GoreProfile.FLESH;
+        if (!body.hasBlood) return null;
         float wanted = MIN_TARGET + random.nextFloat() * (MAX_TARGET - MIN_TARGET);
         float target = Math.min(wanted, wound.v);
-        return target >= STEP ? new WoundDrip(target) : null;
+        return target >= STEP ? new WoundDrip(target, body.primaryColor) : null;
     }
 
     /**
@@ -52,14 +60,28 @@ public final class WoundDrip {
      *         composited sprite should be redrawn
      */
     public boolean update(float delta) {
-        if (!isRunning()) return false;
+        if (finishShown) return false;
         // Runs quickest while fresh, then thickens and slows, as on the wall.
         float slow = 1f - 0.6f * MathUtils.clamp(length / target, 0f, 1f);
         length = Math.min(target, length + SPEED * slow * delta);
-        int steps = length >= target ? Integer.MAX_VALUE : (int) (length / STEP);
+        if (!isRunning()) {
+            finishShown = true; // its last length is drawn once
+            return true;
+        }
+        int steps = (int) (length / STEP);
         if (steps == shownSteps) return false;
         shownSteps = steps;
         return true;
+    }
+
+    /**
+     * {@link #update}, at most once in frame {@code frame}: a sprite drawn twice in a frame
+     * (two passes, or two views) still drips at the pace of time.
+     */
+    public boolean updateOnce(long frame, float delta) {
+        if (frame == lastFrame) return false;
+        lastFrame = frame;
+        return update(delta);
     }
 
     public boolean isRunning() {
@@ -73,5 +95,10 @@ public final class WoundDrip {
 
     public float target() {
         return target;
+    }
+
+    /** The body's blood colour: the trickle is drawn solid, not from the wound's art. */
+    public Color color() {
+        return color;
     }
 }

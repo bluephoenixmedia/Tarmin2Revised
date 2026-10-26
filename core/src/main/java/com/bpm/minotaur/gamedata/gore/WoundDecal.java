@@ -46,6 +46,7 @@ public class WoundDecal {
     public WoundDecal cpy() {
         WoundDecal d = new WoundDecal(type, u, v, angle, length, width, color);
         d.customRegion = this.customRegion;
+        d.drip = this.drip;
         return d;
     }
 }

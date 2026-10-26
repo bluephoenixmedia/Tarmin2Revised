@@ -14,7 +14,7 @@ public class WoundDripTest {
     }
 
     private static WoundDrip drip(float length, float v, GoreProfile profile) {
-        return WoundDrip.start(wound(length, v), profile, new Random(7));
+        return WoundDrip.start(wound(length, v), profile, GoreLevel.NORMAL, new Random(7));
     }
 
     @Test
@@ -65,9 +65,38 @@ public class WoundDripTest {
 
     @Test
     public void itNeverRunsOffTheBottomOfTheSprite() {
-        WoundDrip d = drip(0.2f, 0.12f, GoreProfile.FLESH);
+        WoundDrip d = drip(0.2f, 0.05f, GoreProfile.FLESH);
         assertNotNull(d);
-        assertTrue(d.target() <= 0.12f);
+        assertEquals("clamped to the wound's height above the bottom", 0.05f, d.target(), 1e-6f);
+    }
+
+    @Test
+    public void aGoreLevelWithoutDripsNeverDrips() {
+        for (GoreLevel level : GoreLevel.values()) {
+            WoundDrip d = WoundDrip.start(wound(0.2f, 0.6f), GoreProfile.FLESH, level, new Random(7));
+            assertEquals(level.name(), level.drips(), d != null);
+        }
+    }
+
+    @Test
+    public void aFiveDamageWoundBleeds() {
+        float fiveDamage = Math.min(0.22f, 0.10f + 5 * 0.002f); // CombatManager.applyCombatHitWound
+        assertNotNull(drip(fiveDamage, 0.6f, GoreProfile.FLESH));
+    }
+
+    @Test
+    public void theTrickleIsTheBodysBloodColour() {
+        assertEquals(GoreProfile.SKELETAL.primaryColor, drip(0.2f, 0.6f, GoreProfile.SKELETAL).color());
+    }
+
+    @Test
+    public void aSpriteDrawnTwiceInAFrameDripsOnce() {
+        WoundDrip a = drip(0.2f, 0.9f, GoreProfile.FLESH);
+        WoundDrip b = drip(0.2f, 0.9f, GoreProfile.FLESH);
+        a.updateOnce(1, 0.1f);
+        a.updateOnce(1, 0.1f);
+        b.updateOnce(1, 0.1f);
+        assertEquals(b.length(), a.length(), 0f);
     }
 
     @Test
