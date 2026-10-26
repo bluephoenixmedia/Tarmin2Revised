@@ -186,9 +186,10 @@ public class DeepSystemsBatch3Test {
                 -1, com.bpm.minotaur.ui.UiGlyphs.firstUnsupportedIndex(betterResult.badge));
         assertEquals(GearComparison.COLOR_UPGRADE, betterResult.color);
 
-        // Compare a 1d4 weapon on the ground (Dagger: avg 2.5, worse)
-        Item dagger = new Item(Item.ItemType.DAGGER, 0, 0, ItemColor.GRAY, itemDataManager, null);
-        GearComparison.ComparisonResult worseResult = GearComparison.compare(dagger, player);
+        // Compare a 1d4+1 weapon on the ground (Knife: avg 3.5, worse). The Dagger was the
+        // example once, but it hits as hard as the Longsword since #313.
+        Item knife = new Item(Item.ItemType.KNIFE, 0, 0, ItemColor.GRAY, itemDataManager, null);
+        GearComparison.ComparisonResult worseResult = GearComparison.compare(knife, player);
 
         assertNotNull(worseResult);
         assertFalse(worseResult.isUpgrade);

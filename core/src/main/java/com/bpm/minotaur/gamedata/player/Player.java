@@ -4404,6 +4404,11 @@ public class Player {
         return form != null;
     }
 
+    /** What an empty hand strikes with: a form's own teeth and claws, else the fist Unarmed Mastery has hardened (#313). */
+    public String getUnarmedDice() {
+        return isPolymorphed() ? form.damageDice() : stats.getMastery().fistDice();
+    }
+
     public MonsterDataManager getMonsterDataManager() {
         return monsterDataManager;
     }

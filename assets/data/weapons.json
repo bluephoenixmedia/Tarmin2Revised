@@ -2788,7 +2788,7 @@
             "........................"
         ],
         "baseValue": 10,
-        "damageDice": "1d4+1",
+        "damageDice": "1d6+2",
         "armorClassBonus": 0,
         "accuracyModifier": 0,
         "range": 4,
@@ -2986,7 +2986,7 @@
             "........................"
         ],
         "baseValue": 10,
-        "damageDice": "1d4+1",
+        "damageDice": "1d4+3",
         "armorClassBonus": 0,
         "accuracyModifier": 0,
         "range": 4,
@@ -5857,7 +5857,7 @@
             "........................"
         ],
         "baseValue": 10,
-        "damageDice": "1d12",
+        "damageDice": "1d12+2",
         "armorClassBonus": 0,
         "accuracyModifier": 0,
         "range": 10,
@@ -16743,7 +16743,7 @@
             "........................"
         ],
         "baseValue": 10,
-        "damageDice": "1d6",
+        "damageDice": "1d8+1",
         "armorClassBonus": 0,
         "accuracyModifier": 0,
         "range": 1,
