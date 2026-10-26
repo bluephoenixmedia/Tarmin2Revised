@@ -14,7 +14,7 @@ public class ExpeditionMapScreenTest {
         assertEquals("F5", ExpeditionMapScreen.coord(new GridPoint2(5, 4)));
         assertEquals("Z10", ExpeditionMapScreen.coord(new GridPoint2(25, 9)));
         assertEquals("??", ExpeditionMapScreen.coord(null));
-        assertEquals("?1", ExpeditionMapScreen.coord(new GridPoint2(-1, 0)));
+        assertEquals("(-1, 0)", ExpeditionMapScreen.coord(new GridPoint2(-1, 0)));
     }
 
     @Test
@@ -53,31 +53,20 @@ public class ExpeditionMapScreenTest {
 
     @Test
     public void testCompassNeedleAngleCalculation() {
-        // At rot = 0 (default view facing North-East):
-        // Needle should point along the isometric projection of world North (+Y):
-        // Screen dx = -28, Screen dy = +14.
-        float angle0 = CompassWidget.calculateNeedleAngle(0f);
-        assertFalse(Float.isNaN(angle0));
-        assertFalse(Float.isInfinite(angle0));
+        // World north (+y) draws up-right at rotation 0, as in the handoff's compass.
+        float a0 = CompassWidget.calculateNeedleAngle(0f);
+        assertTrue("points right", Math.cos(a0) > 0);
+        assertTrue("points up", Math.sin(a0) > 0);
 
-        // Screen vector corresponding to angle0
-        float cos0 = (float) Math.cos(angle0);
-        float sin0 = (float) Math.sin(angle0);
-        assertTrue("Cos should be negative (pointing left on screen)", cos0 < 0);
-        assertTrue("Sin should be positive (pointing up on screen)", sin0 > 0);
-
-        // At rot = PI / 2 (rotated 90 deg clockwise):
-        float angle90 = CompassWidget.calculateNeedleAngle((float) (Math.PI / 2.0));
-        float cos90 = (float) Math.cos(angle90);
-        float sin90 = (float) Math.sin(angle90);
-        assertTrue("Cos should be negative", cos90 < 0);
-        assertTrue("Sin should be negative (pointing down on screen)", sin90 < 0);
-
-        // Smooth rotation over 360 degrees
-        for (int deg = 0; deg <= 360; deg += 15) {
-            float rad = (float) Math.toRadians(deg);
-            float a = CompassWidget.calculateNeedleAngle(rad);
-            assertFalse("Angle must not be NaN at " + deg + " deg", Float.isNaN(a));
+        // The needle always agrees with where the renderer actually draws north.
+        for (int step = 0; step < 4; step++) {
+            float rot = (float) (step * Math.PI / 2.0);
+            com.badlogic.gdx.math.Vector2 c = IsometricDioramaRenderer.project(0f, 0f, 0f, 0f, 0f, 1f, rot, 720f, 448f);
+            com.badlogic.gdx.math.Vector2 n = IsometricDioramaRenderer.project(0f, 1f, 0f, 0f, 0f, 1f, rot, 720f, 448f);
+            double drawn = Math.atan2(-(n.y - c.y), n.x - c.x); // top-down y to y-up
+            float needle = CompassWidget.calculateNeedleAngle(rot);
+            assertEquals(Math.cos(drawn), Math.cos(needle), 0.001);
+            assertEquals(Math.sin(drawn), Math.sin(needle), 0.001);
         }
     }
 }

@@ -124,6 +124,9 @@ final class MapSurface extends Widget implements Disposable {
     };
     /** Summaries read from disk per frame at most, so panning into new ground never hitches. */
     private static final int SUMMARY_LOADS_PER_FRAME = 6;
+    /** Stands in for "loaded, and there was nothing" in the tile and summary caches. */
+    private static final ChunkTiles NO_TILES = new ChunkTiles();
+    private static final ChunkSummary NO_SUMMARY = ChunkSummary.of(null);
 
     private final HudSkin skin;
     private final TextureRegion white;
@@ -131,7 +134,7 @@ final class MapSurface extends Widget implements Disposable {
     private final Map<String, Texture> icons = new HashMap<>();
     private final Map<MapKnowledge.Pin, String> pinIcons = new EnumMap<>(MapKnowledge.Pin.class);
     private final BiFunction<Integer, GridPoint2, ChunkSummary> summaryLoader;
-    private final Map<String, ChunkSummary> summaries = new HashMap<>();
+    private final Map<Long, ChunkSummary> summaries = new HashMap<>();
     private final Map<GridPoint2, Biome> biomeCache = new HashMap<>();
     private final Color tint = new Color();
 
@@ -157,11 +160,27 @@ final class MapSurface extends Widget implements Disposable {
     private final IsometricDioramaRenderer dioramaRenderer = new IsometricDioramaRenderer();
     private boolean dioramaEnabled = true;
     private BiFunction<Integer, GridPoint2, ChunkTiles> tileLoader;
-    private final Map<String, ChunkTiles> tilesCache = new HashMap<>();
+    private final Map<Long, ChunkTiles> tilesCache = new HashMap<>();
+    private Runnable zoomListener;
+
+    // What the diorama shows, read once per change of model or floor rather than per frame.
+    private final Map<GridPoint2, MapKnowledgeMask.KnowledgeProvider.State> surfaceStates = new HashMap<>();
+    private final Map<GridPoint2, MapKnowledgeMask.KnowledgeProvider.State> caveStates = new HashMap<>();
+    private final Map<GridPoint2, MapModel.ShelterMark> shelterMarks = new HashMap<>();
+    private final Map<GridPoint2, Boolean> sealSites = new HashMap<>();
+    private final Map<GridPoint2, Integer> strataDepths = new HashMap<>();
+    private final List<MapKnowledgeMask.RoadInfo> roadInfos = new java.util.ArrayList<>();
+    private final List<MapKnowledgeMask.GateInfo> gates = new java.util.ArrayList<>();
+    private List<GridPoint2> suggestedRoute = java.util.Collections.emptyList();
+    private Set<GridPoint2> surveyed = java.util.Collections.emptySet();
+    private boolean snapshotDirty = true;
+    private final GridPoint2 probe = new GridPoint2();
+    private final DioramaKnowledge provider = new DioramaKnowledge();
 
     void setTileLoader(BiFunction<Integer, GridPoint2, ChunkTiles> tileLoader) {
         this.tileLoader = tileLoader;
         this.tilesCache.clear();
+        snapshotDirty = true;
     }
 
     void setDioramaEnabled(boolean enabled) {
@@ -174,6 +193,11 @@ final class MapSurface extends Widget implements Disposable {
 
     IsometricDioramaRenderer getDioramaRenderer() {
         return dioramaRenderer;
+    }
+
+    /** Called when the zoom level changes on its own, by the wheel or a continuous zoom. */
+    void setZoomListener(Runnable listener) {
+        this.zoomListener = listener;
     }
 
     MapSurface(HudSkin skin, BiFunction<Integer, GridPoint2, ChunkSummary> summaryLoader) {
@@ -212,35 +236,45 @@ final class MapSurface extends Widget implements Disposable {
         this.glimpsed = knowledge.getGlimpsed();
         this.suggestion = model.suggestion();
         this.summaries.clear();
-        if (dioramaRenderer != null) {
-            dioramaRenderer.invalidateKnowledgeMask();
+        snapshotDirty = true;
+    }
+
+    void setPlayer(PlayerMark player) {
+        this.player = player;
+        snapshotDirty = true;
+    }
+
+    void setTiles(ChunkTiles tiles) { this.tiles = tiles; }
+    ChunkTiles getTiles() { return tiles; }
+
+    /** Moves to a zoom level: the diorama eases there, centred on the cursor (the known area for WORLD). */
+    void setZoom(Zoom zoom) {
+        this.zoom = zoom;
+        if (!dioramaEnabled) return;
+        if (zoom == Zoom.WORLD) {
+            dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_WORLD);
+            IsometricDioramaRenderer r = dioramaRenderer;
+            r.centerOn((r.getKnownMinX() + r.getKnownMaxX() + 1) / 2f, (r.getKnownMinY() + r.getKnownMaxY() + 1) / 2f);
+        } else {
+            dioramaRenderer.setTargetZoom(zoom == Zoom.REGION ? IsometricDioramaRenderer.ZOOM_REGION : IsometricDioramaRenderer.ZOOM_CHUNK);
+            dioramaRenderer.centerOn(cursor.x + 0.5f, cursor.y + 0.5f);
         }
     }
 
-    void setPlayer(PlayerMark player) { this.player = player; }
-    void setTiles(ChunkTiles tiles) { this.tiles = tiles; }
-    ChunkTiles getTiles() { return tiles; }
-    void setZoom(Zoom zoom) {
-        this.zoom = zoom;
-        if (dioramaEnabled && dioramaRenderer != null) {
-            if (zoom == Zoom.WORLD) {
-                dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_WORLD);
-                dioramaRenderer.centerOn(0.5f, 0.5f);
-            } else if (zoom == Zoom.REGION) {
-                dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_REGION);
-                dioramaRenderer.centerOn(cursor.x + 0.5f, cursor.y + 0.5f);
-            } else if (zoom == Zoom.CHUNK) {
-                dioramaRenderer.setTargetZoom(IsometricDioramaRenderer.ZOOM_CHUNK);
-                dioramaRenderer.centerOn(cursor.x + 0.5f, cursor.y + 0.5f);
-            }
+    static Zoom zoomOf(IsometricDioramaRenderer.ZoomLevel level) {
+        switch (level) {
+            case WORLD: return Zoom.WORLD;
+            case CHUNK: return Zoom.CHUNK;
+            default: return Zoom.REGION;
         }
     }
+
     void setFloor(int floor) {
+        if (this.floor != floor) snapshotDirty = true;
         this.floor = floor;
-        if (dioramaRenderer != null) {
-            dioramaRenderer.setFloor(floor);
-        }
+        dioramaRenderer.setFloor(floor);
     }
+
     void setCursor(GridPoint2 c) { cursor.set(c); }
     void setTileCursor(GridPoint2 tc) { if (tc != null) tileCursor.set(tc); }
     void moveTileCursor(int dx, int dy) {
@@ -251,7 +285,10 @@ final class MapSurface extends Widget implements Disposable {
     }
     void setThreat(MapModel.ThreatMark threat) { this.threat = threat; }
     MapModel.ThreatMark getThreat() { return threat; }
-    void setShowSuggestedRoute(boolean show) { this.showSuggestedRoute = show; }
+    void setShowSuggestedRoute(boolean show) {
+        this.showSuggestedRoute = show;
+        snapshotDirty = true;
+    }
     boolean isShowSuggestedRoute() { return showSuggestedRoute; }
 
     Zoom getZoom() { return zoom; }
@@ -260,12 +297,12 @@ final class MapSurface extends Widget implements Disposable {
     GridPoint2 getTileCursor() { return new GridPoint2(tileCursor); }
     GridPoint2 getSuggestion() { return suggestion == null ? null : new GridPoint2(suggestion); }
 
-    /** The chunk under a point in this actor's coordinates, or null in the chunk view. */
+    /** The chunk under a point in this actor's coordinates. */
     GridPoint2 chunkAt(float localX, float localY) {
-        if (zoom == Zoom.CHUNK) return null;
-        if (dioramaEnabled && dioramaRenderer != null) {
+        if (dioramaEnabled) {
             return dioramaRenderer.pickChunk(localX, localY, getWidth(), getHeight(), floor, this::chunkTopZ);
         }
+        if (zoom == Zoom.CHUNK) return null;
         int cell = zoom.cell;
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
@@ -274,43 +311,28 @@ final class MapSurface extends Widget implements Disposable {
         return new GridPoint2(cursor.x + dx, cursor.y + dy);
     }
 
-    private boolean isNeighborVisited(int cx, int cy) {
-        if (model == null) return false;
-        Set<GridPoint2> visited = model.visited(floor);
-        if (visited == null || visited.isEmpty()) return false;
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                if (dx == 0 && dy == 0) continue;
-                if (visited.contains(new GridPoint2(cx + dx, cy + dy))) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    /** The chunk at the middle of the view, which keyboard panning selects. */
+    GridPoint2 chunkAtCentre() {
+        return chunkAt(getWidth() / 2f, getHeight() / 2f);
     }
 
+    /** Height of a chunk's top in the surface diorama, for picking. */
     float chunkTopZ(int cx, int cy) {
-        GridPoint2 p = new GridPoint2(cx, cy);
-        Biome b = biomeOf(p);
-        boolean isOcean = (b == Biome.OCEAN);
-        if (model != null && model.visited(floor) != null && model.visited(floor).contains(p)) {
-            return isOcean ? 2.0f : 6.0f;
-        }
-        if (glimpsed != null && glimpsed.contains(p)) {
-            return isOcean ? 1.2f : 2.5f;
-        }
-        if (floor == 1 && model != null && model.surveyedChunks() != null && model.surveyedChunks().contains(p)) {
-            return isOcean ? 1.2f : 2.5f;
-        }
-        if (floor == 1 && isNeighborVisited(cx, cy)) {
-            return isOcean ? 1.2f : 2.5f;
-        }
-        return 0f;
+        if (snapshotDirty) rebuildSnapshot();
+        return IsometricDioramaRenderer.getChunkTopZ(provider, cx, cy);
     }
 
-    /** The tile under a point in this actor's coordinates in the chunk view, or null if outside. */
+    /** The tile of the selected chunk under a point, or null if the point is off that chunk. */
     GridPoint2 tileAt(float localX, float localY) {
         if (zoom != Zoom.CHUNK || tiles == null || tiles.width <= 0 || tiles.height <= 0) return null;
+        if (dioramaEnabled) {
+            float z = floor > 1 ? 5f : chunkTopZ(cursor.x, cursor.y);
+            Vector2 w = dioramaRenderer.pickPoint(localX, localY, getWidth(), getHeight(), z);
+            float u = w.x - cursor.x;
+            float v = w.y - cursor.y;
+            if (u < 0f || v < 0f || u >= 1f || v >= 1f) return null;
+            return new GridPoint2((int) (u * tiles.width), (int) (v * tiles.height));
+        }
         int tile = (int) Math.floor(Math.min((getWidth() - 40) / tiles.width, (getHeight() - 40) / tiles.height));
         if (tile <= 0) return null;
         float ox = Math.round((getWidth() - tiles.width * tile) / 2f);
@@ -323,46 +345,375 @@ final class MapSurface extends Widget implements Disposable {
         return null;
     }
 
+    private static long key(int onFloor, int x, int y) {
+        return ((long) onFloor << 48) ^ (((long) x & 0xFFFFFFL) << 24) ^ ((long) y & 0xFFFFFFL);
+    }
+
     /** The summary of a saved chunk, loaded lazily and a few per frame; null until loaded. */
     ChunkSummary summary(int onFloor, GridPoint2 c, boolean loadNow) {
-        String key = onFloor + ":" + c.x + ":" + c.y;
-        ChunkSummary s = summaries.get(key);
+        long k = key(onFloor, c.x, c.y);
+        ChunkSummary s = summaries.get(k);
         if (s == null && (loadNow || loadsThisFrame < SUMMARY_LOADS_PER_FRAME)) {
             loadsThisFrame++;
             s = summaryLoader.apply(onFloor, c);
-            summaries.put(key, s);
+            summaries.put(k, s == null ? NO_SUMMARY : s);
         }
-        return s;
+        return s == NO_SUMMARY ? null : s;
     }
 
+    /** A chunk's tiles, loaded once and kept, absence included. */
     ChunkTiles getOrLoadTiles(int onFloor, GridPoint2 c) {
-        if (cursor.equals(c) && tiles != null && floor == onFloor) return tiles;
-        String key = onFloor + ":" + c.x + ":" + c.y;
-        ChunkTiles t = tilesCache.get(key);
-        if (t == null && tileLoader != null) {
-            t = tileLoader.apply(onFloor, c);
-            if (t != null) {
-                tilesCache.put(key, t);
-            }
+        long k = key(onFloor, c.x, c.y);
+        ChunkTiles t = tilesCache.get(k);
+        if (t == null) {
+            t = tileLoader == null ? null : tileLoader.apply(onFloor, new GridPoint2(c));
+            tilesCache.put(k, t == null ? NO_TILES : t);
         }
-        return t;
+        return t == NO_TILES ? null : t;
     }
 
     private Biome biomeOf(GridPoint2 c) {
         Biome b = biomeCache.get(c);
-        if (b == null && model.getBiomes() != null) {
+        if (b == null && model != null && model.getBiomes() != null) {
             b = model.getBiomes().getBiome(c);
             biomeCache.put(new GridPoint2(c), b);
         }
         return b;
     }
 
+    private boolean isPlayerChunk(int onFloor, GridPoint2 c) {
+        return player != null && player.floor == onFloor && c.equals(player.chunk);
+    }
+
+    /**
+     * Reads what the diorama shows. A chunk with a save file but no tile ever seen -- a seamless
+     * neighbour the game loaded ahead of the player -- is glimpsed, not explored.
+     */
+    private void rebuildSnapshot() {
+        snapshotDirty = false;
+        surfaceStates.clear();
+        caveStates.clear();
+        shelterMarks.clear();
+        sealSites.clear();
+        strataDepths.clear();
+        roadInfos.clear();
+        gates.clear();
+        suggestedRoute = java.util.Collections.emptyList();
+        if (model == null) return;
+
+        surveyed = model.surveyedChunks();
+        for (GridPoint2 c : model.visited(1)) {
+            surfaceStates.put(new GridPoint2(c), explored(1, c)
+                    ? MapKnowledgeMask.KnowledgeProvider.State.VISITED : MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED);
+        }
+        List<GridPoint2> explored = new java.util.ArrayList<>();
+        for (Map.Entry<GridPoint2, MapKnowledgeMask.KnowledgeProvider.State> e : surfaceStates.entrySet()) {
+            if (e.getValue() == MapKnowledgeMask.KnowledgeProvider.State.VISITED) explored.add(e.getKey());
+        }
+        // The prototype glimpses every neighbour of explored ground; the game's own glimpses and surveys join them.
+        for (GridPoint2 c : explored) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    surfaceStates.putIfAbsent(new GridPoint2(c.x + dx, c.y + dy), MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED);
+                }
+            }
+        }
+        if (glimpsed != null) {
+            for (GridPoint2 c : glimpsed) surfaceStates.putIfAbsent(new GridPoint2(c), MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED);
+        }
+        for (GridPoint2 c : surveyed) surfaceStates.putIfAbsent(new GridPoint2(c), MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED);
+
+        if (floor > 1) {
+            for (GridPoint2 c : model.visited(floor)) {
+                caveStates.put(new GridPoint2(c), explored(floor, c)
+                        ? MapKnowledgeMask.KnowledgeProvider.State.VISITED : MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED);
+            }
+        }
+
+        if (shelters != null) {
+            for (MapModel.KnownShelter s : shelters) shelterMarks.put(new GridPoint2(s.getChunk()), s.getMark());
+        }
+        ShelterRoads roadLayout = model.getBiomes() == null ? null : model.getBiomes().getRoads();
+        if (roadLayout != null) {
+            for (ShelterRoads.Road road : roadLayout.getRoads()) {
+                if (road.getKind() != ShelterRoads.Kind.SEAL || !model.isSealSiteKnown(road.getIndex()) || road.getEnd() == null) continue;
+                sealSites.put(new GridPoint2(road.getEnd()), ShelterNetwork.getInstance().hasSeal(road.getIndex()));
+            }
+        }
+        for (GridPoint2 c : explored) {
+            int d = model.deepestStratumBelow(c);
+            if (d > 0) strataDepths.put(c, d);
+            summary(1, c, true); // graves, portals and loot feed the cached scene, so load them now
+        }
+        if (roads != null) {
+            for (MapModel.RoadSegment s : roads) {
+                roadInfos.add(new MapKnowledgeMask.RoadInfo(s.getFrom().x, s.getFrom().y, s.getTo().x, s.getTo().y,
+                        s.isSpent(), BeaconPalette.roadColor(s.getRoad())));
+            }
+        }
+        for (BiomePortal portal : BiomePortal.values()) {
+            GridPoint2 gate = model.gateChunk(portal);
+            if (gate != null) gates.add(new MapKnowledgeMask.GateInfo(new GridPoint2(gate), portal.getTint()));
+        }
+        if (showSuggestedRoute && suggestion != null && player != null && player.chunk != null && player.floor == 1) {
+            suggestedRoute = model.routeToSuggestion(player.chunk);
+        }
+        dioramaRenderer.invalidateKnowledgeMask();
+    }
+
+    /** Whether a saved chunk has had any tile seen; the live chunk always has. */
+    private boolean explored(int onFloor, GridPoint2 c) {
+        if (isPlayerChunk(onFloor, c)) return true;
+        ChunkTiles t = getOrLoadTiles(onFloor, c);
+        return t == null || t.hasAnySeenTile();
+    }
+
     @Override
     public void act(float delta) {
         super.act(delta);
         time += delta;
-        if (dioramaEnabled && dioramaRenderer != null) {
-            dioramaRenderer.update(delta);
+        if (!dioramaEnabled) return;
+        dioramaRenderer.update(delta);
+        Zoom level = zoomOf(dioramaRenderer.getZoomLevel());
+        if (level != zoom) {
+            zoom = level;
+            if (zoomListener != null) zoomListener.run();
+        }
+    }
+
+    /** The map's knowledge as the diorama asks for it; every answer comes from the snapshot or a cache. */
+    private final class DioramaKnowledge implements MapKnowledgeMask.KnowledgeProvider {
+        private GridPoint2 at(int cx, int cy) {
+            return probe.set(cx, cy);
+        }
+
+        @Override
+        public State getChunkState(int cx, int cy) {
+            State s = surfaceStates.get(at(cx, cy));
+            return s == null ? State.UNKNOWN : s;
+        }
+
+        @Override
+        public boolean isTileSeen(int cx, int cy, int lx, int ly) {
+            ChunkTiles t = getChunkTiles(cx, cy);
+            return t == null || t.isBlockSeen(lx, ly);
+        }
+
+        @Override
+        public java.util.Collection<GridPoint2> knownChunks() {
+            return surfaceStates.keySet();
+        }
+
+        @Override
+        public State getCaveState(int cx, int cy) {
+            State s = caveStates.get(at(cx, cy));
+            return s == null ? State.UNKNOWN : s;
+        }
+
+        @Override
+        public java.util.Collection<GridPoint2> caveChunks() {
+            return caveStates.keySet();
+        }
+
+        @Override
+        public Biome getBiome(int cx, int cy) {
+            return biomeOf(at(cx, cy));
+        }
+
+        @Override
+        public ChunkTiles getChunkTiles(int cx, int cy) {
+            return getOrLoadTiles(1, at(cx, cy));
+        }
+
+        @Override
+        public ChunkTiles getCavernTiles(int cx, int cy) {
+            return floor > 1 ? getOrLoadTiles(floor, at(cx, cy)) : null;
+        }
+
+        @Override
+        public MapModel.ShelterMark getShelter(int cx, int cy) {
+            return shelterMarks.get(at(cx, cy));
+        }
+
+        @Override
+        public boolean hasSeal(int cx, int cy) {
+            return sealSites.containsKey(at(cx, cy));
+        }
+
+        @Override
+        public boolean isSealWon(int cx, int cy) {
+            return Boolean.TRUE.equals(sealSites.get(at(cx, cy)));
+        }
+
+        private ChunkSummary visitedSummary(int cx, int cy) {
+            if (getChunkState(cx, cy) != State.VISITED) return null;
+            return summary(1, new GridPoint2(cx, cy), false);
+        }
+
+        @Override
+        public boolean hasReturnPortal(int cx, int cy) {
+            ChunkSummary s = visitedSummary(cx, cy);
+            return s != null && s.hasReturnPortal();
+        }
+
+        @Override
+        public boolean hasLadder(int cx, int cy) {
+            ChunkSummary s = visitedSummary(cx, cy);
+            return s != null && (s.hasUpLadder() || s.hasDownLadder());
+        }
+
+        @Override
+        public int getGraveCount(int cx, int cy) {
+            ChunkSummary s = visitedSummary(cx, cy);
+            return s != null ? s.getGraves().size() : 0;
+        }
+
+        @Override
+        public int getChestCount(int cx, int cy) {
+            ChunkSummary s = visitedSummary(cx, cy);
+            return s != null ? s.getLoot() : 0;
+        }
+
+        @Override
+        public GridPoint2 getPlayerChunk() {
+            return player != null && player.floor == floor && player.chunk != null ? player.chunk : null;
+        }
+
+        @Override
+        public boolean hasPlayer(int cx, int cy) {
+            return player != null && player.floor == 1 && player.chunk != null
+                    && player.chunk.x == cx && player.chunk.y == cy;
+        }
+
+        @Override
+        public float getPlayerU(int cx, int cy) {
+            if (player == null) return 0.5f;
+            return (player.tileX + 0.5f) / Math.max(1, player.chunkWidth);
+        }
+
+        @Override
+        public float getPlayerV(int cx, int cy) {
+            if (player == null) return 0.5f;
+            return (player.tileY + 0.5f) / Math.max(1, player.chunkHeight);
+        }
+
+        @Override
+        public float getPlayerFaceX(int cx, int cy) {
+            if (player == null || player.facing == null) return 0f;
+            return player.facing.getVector().x;
+        }
+
+        @Override
+        public float getPlayerFaceY(int cx, int cy) {
+            if (player == null || player.facing == null) return 1f;
+            return player.facing.getVector().y;
+        }
+
+        @Override
+        public List<MapKnowledgeMask.RoadInfo> getRoadSegments() {
+            return roadInfos;
+        }
+
+        @Override
+        public GridPoint2 getSelectedChunk() {
+            return cursor;
+        }
+
+        @Override
+        public GridPoint2 getWaypointChunk() {
+            MapKnowledge.Spot wp = knowledge == null ? null : knowledge.getWaypoint();
+            return wp != null && wp.getFloor() == 1 ? wp.getChunk() : null;
+        }
+
+        @Override
+        public GridPoint2 getSuggestionChunk() {
+            return suggestion;
+        }
+
+        @Override
+        public Vector2 getCastleSite() {
+            GridPoint2 site = model == null || model.getBiomes() == null ? null : model.getBiomes().getCastleSite();
+            return site == null ? null : new Vector2(site.x + 0.5f, site.y + 0.5f);
+        }
+
+        @Override
+        public boolean isCastleKnown() {
+            return model != null && model.isCastleKnown();
+        }
+
+        @Override
+        public String getChunkPin(int cx, int cy) {
+            if (knowledge == null) return null;
+            MapKnowledge.Pin pin = knowledge.getPins(1).get(at(cx, cy));
+            return pin == null ? null : glyphOf(pin);
+        }
+
+        @Override
+        public java.util.Collection<GridPoint2> pinnedChunks() {
+            return knowledge == null ? java.util.Collections.emptySet() : knowledge.getPins(1).keySet();
+        }
+
+        @Override
+        public int getStratumDepth(int cx, int cy) {
+            Integer d = strataDepths.get(at(cx, cy));
+            return d == null ? 0 : d;
+        }
+
+        @Override
+        public int getFloor() {
+            return floor;
+        }
+
+        @Override
+        public List<FrontMark> getFronts() {
+            return fronts;
+        }
+
+        @Override
+        public List<WarSign> getWarSigns() {
+            return warSigns;
+        }
+
+        @Override
+        public MapModel.ThreatMark getThreat() {
+            return threat != null && threat.floor == 1 ? threat : null;
+        }
+
+        @Override
+        public List<MapKnowledgeMask.GateInfo> getGates() {
+            return gates;
+        }
+
+        @Override
+        public List<GridPoint2> getSuggestedRoute() {
+            return suggestedRoute;
+        }
+
+        @Override
+        public GridPoint2 getTileCursor() {
+            return zoom == Zoom.CHUNK && tiles != null ? tileCursor : null;
+        }
+
+        @Override
+        public Map<GridPoint2, String> getTilePins() {
+            if (knowledge == null || zoom != Zoom.CHUNK) return java.util.Collections.emptyMap();
+            Map<GridPoint2, String> out = new HashMap<>();
+            for (Map.Entry<GridPoint2, MapKnowledge.Pin> e : knowledge.getTilePins(floor, cursor).entrySet()) {
+                out.put(e.getKey(), glyphOf(e.getValue()));
+            }
+            return out;
+        }
+    }
+
+    /** The diorama glyph for a pin: an internal key, never shown as text. */
+    static String glyphOf(MapKnowledge.Pin pin) {
+        switch (pin) {
+            case DANGER: return "danger";
+            case LOOT: return "loot";
+            case RETURN: return "return";
+            case TRADER: return "trader";
+            case LOCKED: return "locked";
+            default: return "unknown";
         }
     }
 
@@ -371,233 +722,16 @@ final class MapSurface extends Widget implements Disposable {
         if (model == null) return;
         loadsThisFrame = 0;
 
-        if (dioramaEnabled && zoom != Zoom.CHUNK && Gdx.gl != null) {
+        if (dioramaEnabled && Gdx.gl != null) {
+            if (snapshotDirty) rebuildSnapshot();
             dioramaRenderer.setFloor(floor);
-
-            MapKnowledgeMask.KnowledgeProvider provider = new MapKnowledgeMask.KnowledgeProvider() {
-                @Override
-                public State getChunkState(int cx, int cy) {
-                    GridPoint2 p = new GridPoint2(cx, cy);
-                    if (model != null && model.visited(floor) != null && model.visited(floor).contains(p)) {
-                        return State.VISITED;
-                    }
-                    if (glimpsed != null && glimpsed.contains(p)) {
-                        return State.GLIMPSED;
-                    }
-                    if (floor == 1 && model != null && model.surveyedChunks() != null && model.surveyedChunks().contains(p)) {
-                        return State.GLIMPSED;
-                    }
-                    if (floor == 1 && isNeighborVisited(cx, cy)) {
-                        return State.GLIMPSED;
-                    }
-                    return State.UNKNOWN;
-                }
-
-                @Override
-                public boolean isTileSeen(int cx, int cy, int lx, int ly) {
-                    ChunkTiles t = getChunkTiles(cx, cy);
-                    if (t != null) {
-                        return t.isBlockSeen(lx, ly);
-                    }
-                    return true;
-                }
-
-                @Override
-                public Biome getBiome(int cx, int cy) {
-                    return biomeOf(new GridPoint2(cx, cy));
-                }
-
-                @Override
-                public ChunkTiles getChunkTiles(int cx, int cy) {
-                    return getOrLoadTiles(floor, new GridPoint2(cx, cy));
-                }
-
-                @Override
-                public MapModel.ShelterMark getShelter(int cx, int cy) {
-                    if (shelters != null) {
-                        for (MapModel.KnownShelter s : shelters) {
-                            if (s.getChunk().x == cx && s.getChunk().y == cy) {
-                                return s.getMark();
-                            }
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                public boolean hasSeal(int cx, int cy) {
-                    ShelterRoads roadLayout = (model == null || model.getBiomes() == null) ? null : model.getBiomes().getRoads();
-                    if (roadLayout != null) {
-                        for (ShelterRoads.Road road : roadLayout.getRoads()) {
-                            if (road.getKind() == ShelterRoads.Kind.SEAL && model.isSealSiteKnown(road.getIndex())) {
-                                GridPoint2 end = road.getEnd();
-                                if (end != null && end.x == cx && end.y == cy) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    return false;
-                }
-
-                @Override
-                public boolean hasReturnPortal(int cx, int cy) {
-                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
-                    return s != null && s.hasReturnPortal();
-                }
-
-                @Override
-                public boolean hasLadder(int cx, int cy) {
-                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
-                    return s != null && (s.hasUpLadder() || s.hasDownLadder());
-                }
-
-                @Override
-                public int getGraveCount(int cx, int cy) {
-                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
-                    return s != null ? s.getGraves().size() : 0;
-                }
-
-                @Override
-                public int getChestCount(int cx, int cy) {
-                    ChunkSummary s = summary(floor, new GridPoint2(cx, cy), false);
-                    return s != null ? s.getLoot() : 0;
-                }
-
-                @Override
-                public boolean hasPlayer(int cx, int cy) {
-                    return player != null && player.floor == floor && player.chunk != null
-                            && player.chunk.x == cx && player.chunk.y == cy;
-                }
-
-                @Override
-                public float getPlayerU(int cx, int cy) {
-                    if (player == null) return 0.5f;
-                    return (player.tileX + 0.5f) / Math.max(1, player.chunkWidth);
-                }
-
-                @Override
-                public float getPlayerV(int cx, int cy) {
-                    if (player == null) return 0.5f;
-                    return (player.tileY + 0.5f) / Math.max(1, player.chunkHeight);
-                }
-
-                @Override
-                public float getPlayerFaceX(int cx, int cy) {
-                    if (player == null || player.facing == null) return 0f;
-                    return player.facing.getVector().x;
-                }
-
-                @Override
-                public float getPlayerFaceY(int cx, int cy) {
-                    if (player == null || player.facing == null) return 1f;
-                    return player.facing.getVector().y;
-                }
-
-                @Override
-                public List<MapKnowledgeMask.RoadInfo> getRoadSegments() {
-                    if (roads == null || roads.isEmpty()) return java.util.Collections.emptyList();
-                    List<MapKnowledgeMask.RoadInfo> list = new java.util.ArrayList<>(roads.size());
-                    for (MapModel.RoadSegment s : roads) {
-                        Color c = BeaconPalette.roadColor(s.getRoad());
-                        list.add(new MapKnowledgeMask.RoadInfo(
-                                s.getFrom().x, s.getFrom().y,
-                                s.getTo().x, s.getTo().y,
-                                s.isSpent(), c));
-                    }
-                    return list;
-                }
-
-                @Override
-                public GridPoint2 getSelectedChunk() {
-                    return getCursor();
-                }
-
-                @Override
-                public GridPoint2 getWaypointChunk() {
-                    if (knowledge != null) {
-                        MapKnowledge.Spot wp = knowledge.getWaypoint();
-                        if (wp != null && wp.getFloor() == floor) {
-                            return wp.getChunk();
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                public GridPoint2 getSuggestionChunk() {
-                    return suggestion == null ? null : new GridPoint2(suggestion);
-                }
-
-                @Override
-                public Vector2 getCastleSite() {
-                    if (model != null && model.getBiomes() != null) {
-                        GridPoint2 site = model.getBiomes().getCastleSite();
-                        if (site != null) {
-                            return new Vector2(site.x + 0.5f, site.y + 0.5f);
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                public boolean isCastleKnown() {
-                    return model != null && model.isCastleKnown();
-                }
-
-                @Override
-                public String getChunkPin(int cx, int cy) {
-                    if (knowledge != null) {
-                        Map<GridPoint2, MapKnowledge.Pin> pins = knowledge.getPins(floor);
-                        if (pins != null) {
-                            MapKnowledge.Pin pin = pins.get(new GridPoint2(cx, cy));
-                            if (pin != null) {
-                                return pin.name().toLowerCase();
-                            }
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                public int getStratumDepth(int cx, int cy) {
-                    return model != null ? model.deepestStratumBelow(new GridPoint2(cx, cy)) : 0;
-                }
-
-                @Override
-                public int getFloor() {
-                    return floor;
-                }
-
-                @Override
-                public boolean hasCave(int cx, int cy) {
-                    GridPoint2 p = new GridPoint2(cx, cy);
-                    if (model != null && model.deepestStratumBelow(p) > 0) return true;
-                    if (hasLadder(cx, cy)) return true;
-                    for (int f = 2; f <= 5; f++) {
-                        if (model != null && model.visited(f) != null && model.visited(f).contains(p)) return true;
-                    }
-                    return false;
-                }
-
-                @Override
-                public ChunkTiles getCavernTiles(int cx, int cy) {
-                    int targetFloor = floor > 1 ? floor : 2;
-                    return getOrLoadTiles(targetFloor, new GridPoint2(cx, cy));
-                }
-            };
-
             batch.end();
             dioramaRenderer.renderFbo(provider);
-            if (getStage() != null) {
-                getStage().getViewport().apply();
-            }
+            if (getStage() != null) getStage().getViewport().apply();
             batch.begin();
             batch.setColor(1f, 1f, 1f, parentAlpha);
             TextureRegion reg = dioramaRenderer.getFboRegion();
-            if (reg != null) {
-                batch.draw(reg, getX(), getY(), getWidth(), getHeight());
-            }
+            if (reg != null) batch.draw(reg, getX(), getY(), getWidth(), getHeight());
             batch.setColor(Color.WHITE);
             return;
         }

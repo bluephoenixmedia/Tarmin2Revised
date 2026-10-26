@@ -69,10 +69,11 @@ public final class MapFogShader implements Disposable {
     /**
      * Renders the fog quad over the low-res buffer (720x448).
      */
-    public void render(SpriteBatch batch, MapNoiseTextures noise, Texture maskTexture,
+    public void render(SpriteBatch batch, MapNoiseTextures noise, MapKnowledgeMask mask,
                        float time, float camX, float camY, float camZoom, float camRot,
                        float origX, float origY, float fogStrength, boolean isCave,
                        float width, float height) {
+        Texture maskTexture = mask == null ? null : mask.getMaskTexture();
         if (!compiled || shader == null || noise == null || maskTexture == null) {
             return;
         }
@@ -103,6 +104,8 @@ public final class MapFogShader implements Disposable {
         shader.setUniformf("u_fogStrength", fogStrength);
         shader.setUniformf("u_isCave", isCave ? 1.0f : 0.0f);
         shader.setUniformf("u_resolution", width, height);
+        shader.setUniformf("u_maskOrigin", mask.getOriginX(), mask.getOriginY());
+        shader.setUniformf("u_maskSpan", (float) mask.getSpan());
 
         batch.draw(dummyWhiteTexture, 0, 0, width, height);
 

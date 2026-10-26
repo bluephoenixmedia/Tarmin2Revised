@@ -76,7 +76,8 @@ public final class PlaytestRunner {
                 new SurfaceWarsMegabeastsScenario(),
                 new CastleTarminScenario(),
                 new DeathAndRemainsScenario(),
-                new StochasticExplorerScenario()
+                new StochasticExplorerScenario(),
+                new ExpeditionMapScenario()
         );
 
         if (target.equals("all")) {

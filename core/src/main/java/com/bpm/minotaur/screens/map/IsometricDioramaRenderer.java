@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -13,30 +12,40 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
+import com.bpm.minotaur.gamedata.Ladder;
 import com.bpm.minotaur.gamedata.map.MapModel;
 import com.bpm.minotaur.generation.Biome;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Renders the isometric diorama expedition map prototype:
+ * The isometric diorama expedition map (docs/DEsign/tarmin-map-handoff).
+ *
  * <ul>
- *   <li>720x448 low-res internal {@link FrameBuffer} upscaled 2x with nearest filtering.</li>
- *   <li>Isometric projection mathematics matching {@code Main.dc.html}.</li>
- *   <li>Continuous camera pan, zoom toward cursor, and 90° animated rotation easing.</li>
- *   <li>Placeholder flat diamond grid with mouse picking across z levels (6, 2.5, 2, 1.2, 0).</li>
- *   <li>Volumetric, scrolling GLSL fog of war shader with knowledge mask holes and frontier wisps.</li>
+ *   <li>Drawn into a 720x448 frame buffer that the map surface shows at 2x, nearest-filtered.</li>
+ *   <li>The prototype's projection, with one difference: the game's chunks grow north (+y) while
+ *       the prototype's world grows down the screen, so every projection negates world y about the
+ *       camera. North draws up-right, as in the handoff, and the map is never a mirror image.</li>
+ *   <li>The static scene (board, chunk blocks, walls, props) is cached per floor and re-rendered
+ *       only when the camera or the knowledge changes; lights, fog and overlays draw every frame.</li>
+ *   <li>Chunks show the game's own tiles: 36x36 floors, thin walls, doors, ladders and items.</li>
  * </ul>
  */
 public final class IsometricDioramaRenderer implements Disposable {
 
     public static final int FBO_WIDTH = 720;
     public static final int FBO_HEIGHT = 448;
-    public static final int CHUNK_GRID_SIZE = 10;
+    /** The camera's reach before any knowledge arrives; afterwards the known area sets it. */
     public static final int WORLD_RADIUS = 24;
-    public static final int BOARD_RADIUS = 11;
+    /** Chunks of open board kept around the known area. */
+    public static final int BOARD_MARGIN = 2;
+    /** How far past the known area the camera may wander, in chunks. */
+    public static final int CAMERA_MARGIN = 6;
 
     public static final float ZOOM_WORLD = 1.0f;
     public static final float ZOOM_REGION = 2.6f;
@@ -44,6 +53,14 @@ public final class IsometricDioramaRenderer implements Disposable {
 
     public static final float MIN_ZOOM = 0.7f;
     public static final float MAX_ZOOM = 8.5f;
+
+    /** Heights in z units (x zoom = FBO pixels). */
+    public static final float WALL_HEIGHT = 1.6f;
+    public static final float DOOR_HEIGHT = 0.7f;
+    /** A thin wall's thickness, as a share of one tile. */
+    public static final float WALL_THICKNESS = 0.24f;
+    /** Longest run of wall merged into one box, in tiles; longer runs sort badly against props. */
+    public static final int WALL_RUN = 6;
 
     public enum ZoomLevel {
         WORLD,
@@ -100,7 +117,9 @@ public final class IsometricDioramaRenderer implements Disposable {
     public static final Color COLOR_CAVE_CHEST_TOP = new Color(0xa0 / 255f, 0x70 / 255f, 0x2f / 255f, 1.0f); // #a0702f
     public static final Color COLOR_CAVE_CHEST_A = new Color(0x7a / 255f, 0x4f / 255f, 0x22 / 255f, 1.0f); // #7a4f22
     public static final Color COLOR_CAVE_CHEST_B = new Color(0x55 / 255f, 0x36 / 255f, 0x14 / 255f, 1.0f); // #553614
-    public static final Color COLOR_FUNGI_GLOW = new Color(108 / 255f, 207 / 255f, 224 / 255f, 1.0f); // #6CCFE0
+    // Cave fungi: amber and violet, as the prototype's caveGlow. Cyan belongs to the player alone.
+    public static final Color COLOR_FUNGI_GLOW = new Color(217 / 255f, 160 / 255f, 74 / 255f, 1.0f); // #D9A04A
+    public static final Color COLOR_FUNGI_GLOW_VIOLET = new Color(166 / 255f, 120 / 255f, 216 / 255f, 1.0f); // #A678D8
 
     // Prop and landmark palette matching Main.dc.html
     public static final Color COLOR_SIL_LIT = new Color(0x2d / 255f, 0x34 / 255f, 0x3c / 255f, 1f); // #2d343c
@@ -347,10 +366,19 @@ public final class IsometricDioramaRenderer implements Disposable {
         return sil ? COLOR_SIL_DARK : c;
     }
 
+    public static final Color COLOR_CAVE_FLOOR_OPEN = new Color(0x3f / 255f, 0x32 / 255f, 0x28 / 255f, 1f); // #3f3228
+    public static final Color COLOR_THREAT = new Color(0xe0 / 255f, 0x53 / 255f, 0x3d / 255f, 1f); // #E0533D
+    public static final Color COLOR_SUGGEST_RING = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, 1f); // #EFE3CC
+    public static final Color COLOR_SUGGEST_INK = new Color(0xb3 / 255f, 0x9c / 255f, 0x78 / 255f, 1f); // #B39C78
+
     private FrameBuffer fbo;
     private TextureRegion fboRegion;
-    private FrameBuffer surfaceFbo;
-    private TextureRegion surfaceRegion;
+    private FrameBuffer surfaceScene;
+    private TextureRegion surfaceSceneRegion;
+    private FrameBuffer caveScene;
+    private TextureRegion caveSceneRegion;
+    private FrameBuffer ghostFbo;
+    private TextureRegion ghostRegion;
     private SpriteBatch fboBatch;
     private ShapeRenderer shapeRenderer;
 
@@ -358,27 +386,48 @@ public final class IsometricDioramaRenderer implements Disposable {
     private float targetFloorT = 0f;
 
     private final MapNoiseTextures noiseTextures = new MapNoiseTextures();
-    private final MapKnowledgeMask knowledgeMask = new MapKnowledgeMask();
+    private final MapKnowledgeMask surfaceMask = new MapKnowledgeMask(false);
+    private final MapKnowledgeMask caveMask = new MapKnowledgeMask(true);
     private MapFogShader fogShader;
 
-    // Current animated camera values
-    private float camX = 5.0f;
-    private float camY = 5.0f;
+    // Current animated camera values; x, y are game world coordinates (chunks, north = +y).
+    private float camX = 0.5f;
+    private float camY = 0.5f;
     private float camZoom = 1.0f;
     private float camRot = 0.0f; // Radians
 
-    // Target values for continuous easing
-    private float tgtX = 5.0f;
-    private float tgtY = 5.0f;
+    private float tgtX = 0.5f;
+    private float tgtY = 0.5f;
     private float tgtZoom = 1.0f;
     private float tgtRot = 0.0f;
-    private int rotStep = 0; // Steps of 90 degrees
+    private int rotStep = 0;
 
     private float fogStrength = 1.0f;
     private boolean isCave = false;
     private float elapsedTime = 0f;
-
     private boolean initialized = false;
+
+    // The known area, in chunks (inclusive), and the lists the scenes draw.
+    private int knownMinX = -WORLD_RADIUS, knownMinY = -WORLD_RADIUS;
+    private int knownMaxX = WORLD_RADIUS, knownMaxY = WORLD_RADIUS;
+    private boolean boundsFromKnowledge = false;
+    private final List<GridPoint2> surfaceChunks = new ArrayList<>();
+    private final List<GridPoint2> caveChunks = new ArrayList<>();
+    private final List<GridPoint2> caveSceneChunks = new ArrayList<>();
+    private boolean knowledgeDirty = true;
+
+    // Scene cache keys: the camera and knowledge each scene was last drawn with.
+    private int sceneVersion = 0;
+    private final float[] surfaceKey = {Float.NaN, 0, 0, 0, -1};
+    private final float[] caveKey = {Float.NaN, 0, 0, 0, -1};
+
+    // The projection of the frame being drawn, cached so the scene projects without allocating.
+    private float vcs = 1f, vsn = 0f, vhw = 28f, vhh = 14f, vs = 1f, vcx = 0.5f, vcy = 0.5f;
+    private final float[] pq = new float[2];
+    private final float[] boxXs = new float[4];
+    private final float[] boxYs = new float[4];
+    private final float[] quad = new float[8];
+    private static final float[][] FACE_NORMALS = {{0f, -1f}, {1f, 0f}, {0f, 1f}, {-1f, 0f}};
 
     public IsometricDioramaRenderer() {
     }
@@ -389,13 +438,17 @@ public final class IsometricDioramaRenderer implements Disposable {
         return ZoomLevel.CHUNK;
     }
 
+    /**
+     * World point to FBO pixels, top-down y as in the prototype's {@code P()}. World y is negated
+     * about the camera so that north (+y) draws up-right at rotation 0.
+     */
     public static Vector2 project(float wx, float wy, float z, float camX, float camY, float zoom, float rot, float W, float H) {
         float hw = 28f * zoom;
         float hh = 14f * zoom;
         float cs = (float) Math.cos(rot);
         float sn = (float) Math.sin(rot);
         float dx = wx - camX;
-        float dy = wy - camY;
+        float dy = camY - wy;
         float rx = dx * cs - dy * sn;
         float ry = dx * sn + dy * cs;
         float sx = W / 2f + (rx - ry) * hw;
@@ -403,39 +456,60 @@ public final class IsometricDioramaRenderer implements Disposable {
         return new Vector2(sx, sy);
     }
 
+    /** The inverse of {@link #project}: FBO pixels (top-down y) at height z to a world point. */
     public static Vector2 unproject(float sx, float sy, float z, float camX, float camY, float zoom, float rot, float W, float H) {
         float hw = 28f * zoom;
         float hh = 14f * zoom;
         float cs = (float) Math.cos(rot);
         float sn = (float) Math.sin(rot);
-        float X = sx - W / 2f;
-        float Y = sy - H / 2f + z * zoom;
-        float a = X / hw;
-        float b = Y / hh;
+        float a = (sx - W / 2f) / hw;
+        float b = (sy - H / 2f + z * zoom) / hh;
         float rx = (a + b) / 2f;
         float ry = (b - a) / 2f;
-        float wx = camX + rx * cs + ry * sn;
-        float wy = camY - rx * sn + ry * cs;
-        return new Vector2(wx, wy);
+        float dx = rx * cs + ry * sn;
+        float dy = -rx * sn + ry * cs;
+        return new Vector2(camX + dx, camY - dy);
+    }
+
+    /** Painter's sort key, the prototype's {@code dep()}: larger is nearer the viewer. */
+    public static float depth(float wx, float wy, float camX, float camY, float rot) {
+        float dx = wx - camX;
+        float dy = camY - wy;
+        float cs = (float) Math.cos(rot);
+        float sn = (float) Math.sin(rot);
+        return (dx * cs - dy * sn) + (dx * sn + dy * cs);
+    }
+
+    public float depth(float wx, float wy) {
+        float dx = wx - vcx;
+        float dy = vcy - wy;
+        return (dx * vcs - dy * vsn) + (dx * vsn + dy * vcs);
+    }
+
+    /** The compass needle's angle (radians, libGDX y-up) for world north at a camera rotation. */
+    public static float northAngle(float rot) {
+        float cs = (float) Math.cos(rot);
+        float sn = (float) Math.sin(rot);
+        // North (0, +1) projects to screen (rx - ry, rx + ry) with rx = sn, ry = -cs.
+        return (float) Math.atan2((cs - sn) * 14f, (sn + cs) * 28f);
     }
 
     public void init() {
         if (initialized || Gdx.gl == null) return;
 
-        fbo = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_WIDTH, FBO_HEIGHT, false);
-        fbo.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        fboRegion = new TextureRegion(fbo.getColorBufferTexture());
-        fboRegion.flip(false, true); // OpenGL Y-flip
-
-        surfaceFbo = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_WIDTH, FBO_HEIGHT, false);
-        surfaceFbo.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        surfaceRegion = new TextureRegion(surfaceFbo.getColorBufferTexture());
-        surfaceRegion.flip(false, true);
+        fbo = newBuffer();
+        fboRegion = regionOf(fbo);
+        surfaceScene = newBuffer();
+        surfaceSceneRegion = regionOf(surfaceScene);
+        caveScene = newBuffer();
+        caveSceneRegion = regionOf(caveScene);
+        ghostFbo = newBuffer();
+        ghostRegion = regionOf(ghostFbo);
 
         fboBatch = new SpriteBatch();
         fboBatch.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
 
-        shapeRenderer = new ShapeRenderer();
+        shapeRenderer = new ShapeRenderer(20000);
         shapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
         shapeRenderer.updateMatrices();
 
@@ -445,15 +519,19 @@ public final class IsometricDioramaRenderer implements Disposable {
         initialized = true;
     }
 
-    public void updateKnowledge(MapKnowledgeMask.KnowledgeProvider provider) {
-        if (!initialized) init();
-        knowledgeMask.rebuild(provider);
+    private static FrameBuffer newBuffer() {
+        FrameBuffer b = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_WIDTH, FBO_HEIGHT, false);
+        b.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        return b;
     }
 
-    /**
-     * Updates continuous camera easing toward targets matching prototype formula:
-     * {@code k = 1 - Math.exp(-dt * 9)}.
-     */
+    private static TextureRegion regionOf(FrameBuffer b) {
+        TextureRegion r = new TextureRegion(b.getColorBufferTexture());
+        r.flip(false, true);
+        return r;
+    }
+
+    /** Eases the camera toward its targets, the prototype's {@code k = 1 - exp(-dt * 9)}. */
     public void update(float delta) {
         elapsedTime += delta;
 
@@ -471,12 +549,11 @@ public final class IsometricDioramaRenderer implements Disposable {
         float dRot = tgtRot - camRot;
         if (Math.abs(dRot) > 0.0005f) camRot += dRot * k; else camRot = tgtRot;
 
-        float ft = targetFloorT;
-        float dF = ft - floorT;
+        float dF = targetFloorT - floorT;
         if (Math.abs(dF) > 0.003f) {
             floorT += dF * (1.0f - (float) Math.exp(-delta * 3.2));
         } else {
-            floorT = ft;
+            floorT = targetFloorT;
         }
     }
 
@@ -500,12 +577,15 @@ public final class IsometricDioramaRenderer implements Disposable {
         this.camRot = tgtRot;
     }
 
+    /** Pans by a drag in actor pixels (libGDX y-up), the prototype's {@code panScreen}. */
     public void panScreen(float screenDx, float screenDy, float actorWidth, float actorHeight) {
         float scaleX = (float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH);
         float scaleY = (float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT);
-        float dx = screenDx * scaleX;
-        float dy = -screenDy * scaleY; // Invert for canvas top-down Y vs LibGDX bottom-up Y
+        panFbo(screenDx * scaleX, -screenDy * scaleY);
+    }
 
+    /** Pans by FBO pixels, top-down y. */
+    public void panFbo(float dx, float dy) {
         float s = tgtZoom;
         float cs = (float) Math.cos(tgtRot);
         float sn = (float) Math.sin(tgtRot);
@@ -514,7 +594,7 @@ public final class IsometricDioramaRenderer implements Disposable {
         float rx = (a + b) / 2f;
         float ry = (b - a) / 2f;
         tgtX += rx * cs + ry * sn;
-        tgtY += -rx * sn + ry * cs;
+        tgtY -= -rx * sn + ry * cs;
         clampTarget();
     }
 
@@ -569,15 +649,32 @@ public final class IsometricDioramaRenderer implements Disposable {
     }
 
     private void clampTarget() {
-        tgtX = Math.max(-WORLD_RADIUS, Math.min(WORLD_RADIUS, tgtX));
-        tgtY = Math.max(-WORLD_RADIUS, Math.min(WORLD_RADIUS, tgtY));
+        if (boundsFromKnowledge) {
+            tgtX = Math.max(knownMinX - CAMERA_MARGIN, Math.min(knownMaxX + 1 + CAMERA_MARGIN, tgtX));
+            tgtY = Math.max(knownMinY - CAMERA_MARGIN, Math.min(knownMaxY + 1 + CAMERA_MARGIN, tgtY));
+        } else {
+            tgtX = Math.max(-WORLD_RADIUS, Math.min(WORLD_RADIUS, tgtX));
+            tgtY = Math.max(-WORLD_RADIUS, Math.min(WORLD_RADIUS, tgtY));
+        }
         tgtZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, tgtZoom));
     }
 
+    private static float toFboX(float localX, float actorWidth) {
+        return localX * ((float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH));
+    }
+
+    private static float toFboY(float localY, float actorHeight) {
+        return (actorHeight - localY) * ((float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT));
+    }
+
+    /**
+     * The chunk under an actor point: the prototype's {@code pick()}, trying the heights a chunk
+     * top can stand at, highest first, and taking the first chunk whose top is at that height.
+     */
     public GridPoint2 pickChunk(float localX, float localY, float actorWidth, float actorHeight,
                                int floor, ChunkHeightLookup heightLookup) {
-        float sx = localX * ((float) FBO_WIDTH / (actorWidth > 0 ? actorWidth : FBO_WIDTH));
-        float sy = (actorHeight - localY) * ((float) FBO_HEIGHT / (actorHeight > 0 ? actorHeight : FBO_HEIGHT));
+        float sx = toFboX(localX, actorWidth);
+        float sy = toFboY(localY, actorHeight);
 
         boolean cave = (floor != 1 || floorT > 0.5f);
         float[] zs = cave ? new float[]{5f} : new float[]{6f, 2.5f, 2f, 1.2f, 0f};
@@ -586,17 +683,43 @@ public final class IsometricDioramaRenderer implements Disposable {
             Vector2 w = unproject(sx, sy, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
             int cx = (int) Math.floor(w.x);
             int cy = (int) Math.floor(w.y);
-            if (Math.abs(cx) > WORLD_RADIUS || Math.abs(cy) > WORLD_RADIUS) continue;
-
             if (cave || z == 0f || heightLookup == null) {
                 return new GridPoint2(cx, cy);
             }
-            float expectedZ = heightLookup.getTopZ(cx, cy);
-            if (Math.abs(expectedZ - z) < 0.2f) {
+            if (Math.abs(heightLookup.getTopZ(cx, cy) - z) < 0.2f) {
                 return new GridPoint2(cx, cy);
             }
         }
         return null;
+    }
+
+    /**
+     * The chunk that will sit at the middle of the view once the camera reaches its target: what
+     * keyboard panning selects, so the selection moves with the view like a crosshair.
+     */
+    public GridPoint2 pickChunkAtTarget(int floor, ChunkHeightLookup heightLookup) {
+        boolean cave = floor != 1;
+        float[] zs = cave ? new float[]{5f} : new float[]{6f, 2.5f, 2f, 1.2f, 0f};
+        for (float z : zs) {
+            Vector2 w = unproject(FBO_WIDTH / 2f, FBO_HEIGHT / 2f, z, tgtX, tgtY, tgtZoom, tgtRot, FBO_WIDTH, FBO_HEIGHT);
+            int cx = (int) Math.floor(w.x);
+            int cy = (int) Math.floor(w.y);
+            if (cave || z == 0f || heightLookup == null || Math.abs(heightLookup.getTopZ(cx, cy) - z) < 0.2f) {
+                return new GridPoint2(cx, cy);
+            }
+        }
+        return null;
+    }
+
+    /** The world point at the middle of the view once the camera reaches its target, on a plane at height z. */
+    public Vector2 targetCentre(float z) {
+        return unproject(FBO_WIDTH / 2f, FBO_HEIGHT / 2f, z, tgtX, tgtY, tgtZoom, tgtRot, FBO_WIDTH, FBO_HEIGHT);
+    }
+
+    /** The world point under an actor point, on a plane at height z. */
+    public Vector2 pickPoint(float localX, float localY, float actorWidth, float actorHeight, float z) {
+        return unproject(toFboX(localX, actorWidth), toFboY(localY, actorHeight), z,
+                camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
     }
 
     public float getCamX() { return camX; }
@@ -617,15 +740,18 @@ public final class IsometricDioramaRenderer implements Disposable {
         this.isCave = cave;
     }
 
-    private boolean maskDirty = true;
-
+    /** Knowledge, shelters, pins or loaded tiles changed: rebuild masks, lists and scenes. */
     public void invalidateKnowledgeMask() {
-        this.maskDirty = true;
+        this.knowledgeDirty = true;
     }
 
+    /** Animates to a floor. A no-op when already there, so callers may repeat it every frame. */
     public void setFloor(int floor) {
-        this.targetFloorT = (floor != 1) ? 1.0f : 0.0f;
-        this.isCave = (floor != 1);
+        float t = (floor != 1) ? 1.0f : 0.0f;
+        boolean cave = floor != 1;
+        if (t == targetFloorT && cave == isCave) return;
+        this.targetFloorT = t;
+        this.isCave = cave;
         invalidateKnowledgeMask();
     }
 
@@ -644,6 +770,11 @@ public final class IsometricDioramaRenderer implements Disposable {
         return targetFloorT;
     }
 
+    /** Whether the mask, lists and scenes are waiting to be rebuilt. */
+    boolean isKnowledgeDirty() {
+        return knowledgeDirty;
+    }
+
     public static float ease(float t) {
         return t < 0.5f ? 2f * t * t : 1f - (float) Math.pow(-2f * t + 2f, 2) / 2f;
     }
@@ -652,130 +783,652 @@ public final class IsometricDioramaRenderer implements Disposable {
         return fboRegion;
     }
 
-    /**
-     * Renders the low-res 2.5D diorama scene into the internal 720x448 FBO.
-     */
+    // ------------------------------------------------------------------
+    // Knowledge
+    // ------------------------------------------------------------------
+
+    /** Reads the known chunks, sets the bounds and rebuilds both fog masks. */
+    void refreshKnowledge(MapKnowledgeMask.KnowledgeProvider provider) {
+        knowledgeDirty = false;
+        sceneVersion++;
+        surfaceChunks.clear();
+        caveChunks.clear();
+        caveSceneChunks.clear();
+        if (provider == null) return;
+
+        surfaceChunks.addAll(provider.knownChunks());
+        caveChunks.addAll(provider.caveChunks());
+        Set<GridPoint2> union = new HashSet<>(surfaceChunks);
+        union.addAll(caveChunks);
+        caveSceneChunks.addAll(union);
+
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+        for (GridPoint2 c : union) {
+            minX = Math.min(minX, c.x);
+            minY = Math.min(minY, c.y);
+            maxX = Math.max(maxX, c.x);
+            maxY = Math.max(maxY, c.y);
+        }
+        GridPoint2 p = provider.getPlayerChunk();
+        if (p != null) {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+        }
+        if (minX == Integer.MAX_VALUE) {
+            minX = minY = -1;
+            maxX = maxY = 1;
+        }
+        knownMinX = minX;
+        knownMinY = minY;
+        knownMaxX = maxX;
+        knownMaxY = maxY;
+        boundsFromKnowledge = true;
+        clampTarget();
+
+        surfaceMask.rebuild(provider, surfaceChunks, minX, minY, maxX, maxY);
+        caveMask.rebuild(provider, caveSceneChunks, minX, minY, maxX, maxY);
+    }
+
+    public int getKnownMinX() { return knownMinX; }
+    public int getKnownMinY() { return knownMinY; }
+    public int getKnownMaxX() { return knownMaxX; }
+    public int getKnownMaxY() { return knownMaxY; }
+
+    MapKnowledgeMask getSurfaceMask() {
+        return surfaceMask;
+    }
+
+    // ------------------------------------------------------------------
+    // Frame
+    // ------------------------------------------------------------------
+
+    private void setProj() {
+        vcs = (float) Math.cos(camRot);
+        vsn = (float) Math.sin(camRot);
+        vs = camZoom;
+        vhw = 28f * camZoom;
+        vhh = 14f * camZoom;
+        vcx = camX;
+        vcy = camY;
+    }
+
+    /** Projects into {@link #pq}, FBO pixels with libGDX's y-up, without allocating. */
+    private void P(float wx, float wy, float z) {
+        float dx = wx - vcx;
+        float dy = vcy - wy;
+        float rx = dx * vcs - dy * vsn;
+        float ry = dx * vsn + dy * vcs;
+        pq[0] = FBO_WIDTH / 2f + (rx - ry) * vhw;
+        pq[1] = FBO_HEIGHT / 2f - (rx + ry) * vhh + z * vs;
+    }
+
+    private boolean sceneStale(float[] key) {
+        return key[0] != camX || key[1] != camY || key[2] != camZoom || key[3] != camRot || key[4] != sceneVersion;
+    }
+
+    private void stamp(float[] key) {
+        key[0] = camX;
+        key[1] = camY;
+        key[2] = camZoom;
+        key[3] = camRot;
+        key[4] = sceneVersion;
+    }
+
+    /** Renders the frame into the 720x448 buffer: cached scene, lights, fog, vignette, overlays. */
     public void renderFbo(MapKnowledgeMask.KnowledgeProvider provider) {
-        if (!initialized) {
-            init();
-        }
-
-        if (provider != null && (maskDirty || knowledgeMask.getMaskTexture() == null)) {
-            knowledgeMask.rebuild(provider);
-            maskDirty = false;
-        }
-
+        if (!initialized) init();
         if (fbo == null) return;
+        if (knowledgeDirty) refreshKnowledge(provider);
 
+        setProj();
         shapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
         shapeRenderer.updateMatrices();
         fboBatch.getProjectionMatrix().setToOrtho2D(0, 0, FBO_WIDTH, FBO_HEIGHT);
 
+        if (floorT < 0.999f && sceneStale(surfaceKey)) {
+            renderScene(surfaceScene, provider, false);
+            stamp(surfaceKey);
+        }
+        if (floorT > 0.001f && sceneStale(caveKey)) {
+            renderScene(caveScene, provider, true);
+            stamp(caveKey);
+        }
+
         float ft = ease(floorT);
-
         if (floorT <= 0.001f) {
-            // Surface only
             fbo.begin();
-            Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f); // #0B0907
-            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-            renderDioramaScene(provider);
+            drawTable();
+            blit(surfaceSceneRegion, 1f, 0f);
             renderLights(shapeRenderer, provider, false);
-
-            if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
-                Gdx.gl.glEnable(GL20.GL_BLEND);
-                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
-                fboBatch.begin();
-                Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
-                        elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
-                        fogStrength, false, FBO_WIDTH, FBO_HEIGHT);
-                fboBatch.end();
-            }
-
+            renderFog(false);
             renderVignette(shapeRenderer);
             renderOverlays(shapeRenderer, provider, 0f);
-
             fbo.end();
-        } else {
-            // Subterranean transition or cave view
-            // 1. Render surface into surfaceFbo
-            if (surfaceFbo != null) {
-                surfaceFbo.begin();
-                Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f);
-                Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            return;
+        }
 
-                renderDioramaScene(provider);
-                renderLights(shapeRenderer, provider, false);
-
-                if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
-                    Gdx.gl.glEnable(GL20.GL_BLEND);
-                    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
-                    fboBatch.begin();
-                    Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
-                            elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
-                            fogStrength, false, FBO_WIDTH, FBO_HEIGHT);
-                    fboBatch.end();
-                }
-                surfaceFbo.end();
-            }
-
-            // 2. Render cavern into primary fbo
-            fbo.begin();
-            Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f);
+        float lift = Math.min(64f, 22f * camZoom) * ft;
+        if (floorT < 0.999f) {
+            ghostFbo.begin();
+            Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            blit(surfaceSceneRegion, 1f, 0f);
+            renderLights(shapeRenderer, provider, false);
+            renderFog(false);
+            ghostFbo.end();
+        }
 
-            renderCaveScene(provider);
-            renderLights(shapeRenderer, provider, true);
+        fbo.begin();
+        drawTable();
+        blit(caveSceneRegion, 1f, 0f);
+        renderLights(shapeRenderer, provider, true);
+        renderFog(true);
+        if (floorT < 0.999f) blit(ghostRegion, 1f - 0.84f * ft, lift);
+        else blit(surfaceSceneRegion, 0.16f, lift);
+        renderVignette(shapeRenderer);
+        renderOverlays(shapeRenderer, provider, ft);
+        fbo.end();
+    }
 
-            if (fogShader != null && fogShader.isCompiled() && knowledgeMask.getMaskTexture() != null) {
-                Gdx.gl.glEnable(GL20.GL_BLEND);
-                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    private void blit(TextureRegion region, float alpha, float lift) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        fboBatch.enableBlending();
+        fboBatch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        fboBatch.begin();
+        fboBatch.setColor(1f, 1f, 1f, alpha);
+        fboBatch.draw(region, 0, lift, FBO_WIDTH, FBO_HEIGHT);
+        fboBatch.setColor(Color.WHITE);
+        fboBatch.end();
+    }
 
-                fboBatch.begin();
-                Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                fogShader.render(fboBatch, noiseTextures, knowledgeMask.getMaskTexture(),
-                        elapsedTime, camX, camY, camZoom, camRot, orig.x, orig.y,
-                        fogStrength, true, FBO_WIDTH, FBO_HEIGHT);
-                fboBatch.end();
+    private void renderFog(boolean cave) {
+        MapKnowledgeMask mask = cave ? caveMask : surfaceMask;
+        if (fogShader == null || !fogShader.isCompiled() || mask.getMaskTexture() == null) return;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        fboBatch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        fboBatch.begin();
+        Vector2 orig = project(0f, 0f, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        fogShader.render(fboBatch, noiseTextures, mask, elapsedTime, camX, camY, camZoom, camRot,
+                orig.x, orig.y, fogStrength, cave, FBO_WIDTH, FBO_HEIGHT);
+        fboBatch.end();
+    }
+
+    /** The table under the board: void, and the prototype's warm glow at the board's centre. */
+    private void drawTable() {
+        Gdx.gl.glClearColor(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        Vector2 c = project((knownMinX + knownMaxX + 1) / 2f, (knownMinY + knownMaxY + 1) / 2f, 0f,
+                camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        float r = Math.max(FBO_WIDTH, 160f * camZoom * 3f);
+        drawGlow(shapeRenderer, c.x, c.y, r, 96 / 255f, 64 / 255f, 30 / 255f, 0.34f);
+        shapeRenderer.end();
+    }
+
+    // ------------------------------------------------------------------
+    // Static scene
+    // ------------------------------------------------------------------
+
+    private void renderScene(FrameBuffer target, MapKnowledgeMask.KnowledgeProvider provider, boolean cave) {
+        target.begin();
+        Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        drawBoard(cave);
+        shapeRenderer.end();
+        drawBoardLines();
+
+        List<GridPoint2> list = cave ? caveSceneChunks : surfaceChunks;
+        list.sort((a, b) -> Float.compare(depth(a.x + 0.5f, a.y + 0.5f), depth(b.x + 0.5f, b.y + 0.5f)));
+        float m = 40f * camZoom + 60f;
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        for (GridPoint2 c : list) {
+            if (!onScreen(c.x + 0.5f, c.y + 0.5f, m)) continue;
+            if (provider == null) continue;
+            if (cave) {
+                drawCaveChunk(c.x, c.y, provider);
+            } else if (provider.getChunkState(c.x, c.y) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+                drawVisitedChunk(c.x, c.y, provider.getBiome(c.x, c.y), provider.getChunkTiles(c.x, c.y), provider);
+            } else {
+                drawGlimpsedChunk(c.x, c.y, provider.getBiome(c.x, c.y), provider);
             }
+        }
+        shapeRenderer.end();
+        target.end();
+    }
 
-            // 3. Composite ghost surface lifted upwards
-            if (surfaceRegion != null) {
-                float lift = Math.min(64f, 22f * camZoom) * ft;
-                float ghostAlpha = floorT < 0.999f ? (1f - 0.84f * ft) : 0.16f;
+    public boolean onScreen(float wx, float wy, float margin) {
+        P(wx, wy, 0f);
+        float sy = FBO_HEIGHT - pq[1];
+        return pq[0] > -margin && pq[0] < FBO_WIDTH + margin && sy > -margin && sy < FBO_HEIGHT + margin;
+    }
 
-                Gdx.gl.glEnable(GL20.GL_BLEND);
-                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-                fboBatch.begin();
-                fboBatch.setColor(1f, 1f, 1f, ghostAlpha);
-                fboBatch.draw(surfaceRegion, 0, lift, FBO_WIDTH, FBO_HEIGHT);
-                fboBatch.setColor(Color.WHITE);
-                fboBatch.end();
-            }
+    /** A filled quad from four world corners at height z. */
+    private void worldQuad(float x0, float y0, float x1, float y1, float z) {
+        P(x0, y0, z);
+        quad[0] = pq[0];
+        quad[1] = pq[1];
+        P(x1, y0, z);
+        quad[2] = pq[0];
+        quad[3] = pq[1];
+        P(x1, y1, z);
+        quad[4] = pq[0];
+        quad[5] = pq[1];
+        P(x0, y1, z);
+        quad[6] = pq[0];
+        quad[7] = pq[1];
+        shapeRenderer.triangle(quad[0], quad[1], quad[2], quad[3], quad[4], quad[5]);
+        shapeRenderer.triangle(quad[0], quad[1], quad[4], quad[5], quad[6], quad[7]);
+    }
 
-            // 4. Perimeter vignette
-            renderVignette(shapeRenderer);
-
-            // 5. Overlays with animated floor blending
-            renderOverlays(shapeRenderer, provider, ft);
-
-            fbo.end();
+    /** The prototype's {@code box()}: visible sides shaded by face normal, then the top. */
+    public void drawBox(ShapeRenderer shapes,
+                        float x0, float y0, float x1, float y1,
+                        float z0, float z1,
+                        Color topCol, Color cL, Color cR) {
+        boxXs[0] = x0; boxYs[0] = y0;
+        boxXs[1] = x1; boxYs[1] = y0;
+        boxXs[2] = x1; boxYs[2] = y1;
+        boxXs[3] = x0; boxYs[3] = y1;
+        for (int i = 0; i < 4; i++) {
+            float nx = FACE_NORMALS[i][0];
+            float ny = -FACE_NORMALS[i][1]; // world y draws flipped
+            float rx = nx * vcs - ny * vsn;
+            float ry = nx * vsn + ny * vcs;
+            if (rx + ry <= 0.001f) continue;
+            Color side = (rx - ry < 0f) ? cL : cR;
+            if (side == null) continue;
+            int j = (i + 1) % 4;
+            P(boxXs[i], boxYs[i], z0);
+            float ax = pq[0], ay = pq[1];
+            P(boxXs[j], boxYs[j], z0);
+            float bx = pq[0], by = pq[1];
+            P(boxXs[j], boxYs[j], z1);
+            float cx = pq[0], cy = pq[1];
+            P(boxXs[i], boxYs[i], z1);
+            shapes.setColor(side);
+            shapes.triangle(ax, ay, bx, by, cx, cy);
+            shapes.triangle(ax, ay, cx, cy, pq[0], pq[1]);
+        }
+        if (topCol != null) {
+            shapes.setColor(topCol);
+            worldQuad(x0, y0, x1, y1, z1);
         }
     }
 
-    /**
-     * Renders the low-res FBO scene and draws it upscaled into the destination bounds.
-     */
-    public void render(Batch batch, float targetX, float targetY, float targetWidth, float targetHeight,
-                       MapKnowledgeMask.KnowledgeProvider provider) {
-        renderFbo(provider);
-        if (batch != null && batch.isDrawing() && fboRegion != null) {
-            batch.draw(fboRegion, targetX, targetY, targetWidth, targetHeight);
+    private float boardMinX() { return knownMinX - BOARD_MARGIN; }
+    private float boardMinY() { return knownMinY - BOARD_MARGIN; }
+    private float boardMaxX() { return knownMaxX + 1 + BOARD_MARGIN; }
+    private float boardMaxY() { return knownMaxY + 1 + BOARD_MARGIN; }
+
+    private void drawBoard(boolean cave) {
+        float e = 0.4f;
+        float x0 = boardMinX(), y0 = boardMinY(), x1 = boardMaxX(), y1 = boardMaxY();
+        shapeRenderer.setColor(COLOR_BOARD_UNDER);
+        worldQuad(x0 - 1.8f, y0 - 1.8f, x1 + 1.8f, y1 + 1.8f, -5f);
+        drawBox(shapeRenderer, x0 - e, y0 - e, x1 + e, y1 + e, -5f, 0f,
+                cave ? COLOR_BOARD_CAVE_TOP : COLOR_BOARD_SURFACE_TOP, COLOR_BOARD_SIDE_A, COLOR_BOARD_SIDE_B);
+    }
+
+    /** The board's chunk grid and rim, under the chunks as in the prototype's {@code drawBoard}. */
+    private void drawBoardLines() {
+        float e = 0.4f;
+        float x0 = boardMinX(), y0 = boardMinY(), x1 = boardMaxX(), y1 = boardMaxY();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(COLOR_BOARD_GRID);
+        for (int i = (int) x0; i <= (int) x1; i++) {
+            P(i, y0 - e, 0f);
+            float ax = pq[0], ay = pq[1];
+            P(i, y1 + e, 0f);
+            shapeRenderer.line(ax, ay, pq[0], pq[1]);
         }
+        for (int j = (int) y0; j <= (int) y1; j++) {
+            P(x0 - e, j, 0f);
+            float ax = pq[0], ay = pq[1];
+            P(x1 + e, j, 0f);
+            shapeRenderer.line(ax, ay, pq[0], pq[1]);
+        }
+        shapeRenderer.setColor(COLOR_BOARD_RIM);
+        float[][] rim = {{x0 - e, y0 - e}, {x1 + e, y0 - e}, {x1 + e, y1 + e}, {x0 - e, y1 + e}};
+        for (int i = 0; i < 4; i++) {
+            P(rim[i][0], rim[i][1], 0f);
+            float ax = pq[0], ay = pq[1];
+            P(rim[(i + 1) % 4][0], rim[(i + 1) % 4][1], 0f);
+            shapeRenderer.line(ax, ay, pq[0], pq[1]);
+        }
+        shapeRenderer.end();
+    }
+
+    /** One wall, door, solid tile or prop of a chunk, depth-sorted with its neighbours. */
+    static final class RenderItem implements Comparable<RenderItem> {
+        float depth;
+        int kind; // 0 box, 1 prop
+        float x0, y0, x1, y1, z0, z1;
+        Color top, lit, shade;
+        Prop prop;
+
+        @Override
+        public int compareTo(RenderItem o) {
+            return Float.compare(this.depth, o.depth);
+        }
+    }
+
+    private final List<RenderItem> itemPool = new ArrayList<>();
+    private final List<RenderItem> renderItems = new ArrayList<>(512);
+    private final List<Prop> chunkProps = new ArrayList<>(64);
+
+    private RenderItem nextItem() {
+        int i = renderItems.size();
+        if (i >= itemPool.size()) itemPool.add(new RenderItem());
+        RenderItem it = itemPool.get(i);
+        it.prop = null;
+        renderItems.add(it);
+        return it;
+    }
+
+    private void addBox(float x0, float y0, float x1, float y1, float z0, float z1, Color top, Color lit, Color shade) {
+        RenderItem it = nextItem();
+        it.kind = 0;
+        it.x0 = x0;
+        it.y0 = y0;
+        it.x1 = x1;
+        it.y1 = y1;
+        it.z0 = z0;
+        it.z1 = z1;
+        it.top = top;
+        it.lit = lit;
+        it.shade = shade;
+        it.depth = depth((x0 + x1) / 2f, (y0 + y1) / 2f);
+    }
+
+    /** Sets the renderer colour to {@code base} lightened or darkened by amt, then mixed toward dark by k. */
+    private void setShaded(Color base, float amt, Color dark, float k) {
+        float r = base.r, g = base.g, b = base.b;
+        if (amt >= 0f) {
+            r += (1f - r) * amt;
+            g += (1f - g) * amt;
+            b += (1f - b) * amt;
+        } else {
+            r *= 1f + amt;
+            g *= 1f + amt;
+            b *= 1f + amt;
+        }
+        if (k > 0f) {
+            r += (dark.r - r) * k;
+            g += (dark.g - g) * k;
+            b += (dark.b - b) * k;
+        }
+        shapeRenderer.setColor(r, g, b, 1f);
+    }
+
+    /** A tile-sized pseudo-random value in [0, 1), stable per chunk and 4x4 tile block. */
+    private static float blockVariation(int cx, int cy, int bx, int by) {
+        int h = hash(cx * 64 + bx, cy * 64 + by);
+        h ^= h >>> 13;
+        h *= 0x5bd1e995;
+        h ^= h >>> 15;
+        return (h & 0xFFFF) / 65536f;
+    }
+
+    /** Floor tiles of a chunk at height h: seen, unseen and solid, merged into runs along each row. */
+    private void drawFloor(int cx, int cy, ChunkTiles t, float h, Color floor, Color solid, Color unseenDark, boolean cave) {
+        int w = t.width, hgt = t.height;
+        for (int ty = 0; ty < hgt; ty++) {
+            int runStart = 0;
+            int runKey = -1;
+            for (int tx = 0; tx <= w; tx++) {
+                int key = -2;
+                if (tx < w) {
+                    boolean seen = t.isSeen(tx, ty);
+                    boolean isSolid = t.isSolid(tx, ty);
+                    int state = !seen ? 0 : (isSolid ? 2 : 1);
+                    key = state * 1024 + (tx * 8 / w) * 32 + (ty * 8 / hgt);
+                }
+                if (key != runKey) {
+                    if (runKey >= 0) {
+                        int state = runKey / 1024;
+                        int bx = (runKey / 32) % 32;
+                        int by = runKey % 32;
+                        float v = blockVariation(cx, cy, bx, by) - 0.5f;
+                        Color base = state == 2 ? solid : floor;
+                        setShaded(base, v * (cave ? 0.2f : 0.16f), unseenDark, state == 0 ? 0.45f : 0f);
+                        worldQuad(cx + runStart / (float) w, cy + ty / (float) hgt,
+                                cx + tx / (float) w, cy + (ty + 1) / (float) hgt, h);
+                    }
+                    runStart = tx;
+                    runKey = key;
+                }
+            }
+        }
+    }
+
+    private static boolean seenNear(ChunkTiles t, int x, int y) {
+        return t.isSeen(x, y) || t.isSeen(x + 1, y) || t.isSeen(x - 1, y) || t.isSeen(x, y + 1) || t.isSeen(x, y - 1);
+    }
+
+    /**
+     * The chunk's real walls as boxes: thin walls on tile edges, doors lower and in wood, solid
+     * tiles whole. Runs along an edge merge into one box, up to {@link #WALL_RUN} tiles. Only what
+     * borders a seen tile is drawn.
+     */
+    private void collectWalls(int cx, int cy, ChunkTiles t, float h, float wallH,
+                              Color top, Color lit, Color shade, Color doorTop, Color doorLit, Color doorShade) {
+        int w = t.width, hgt = t.height;
+        float tw = 1f / w, th = 1f / hgt;
+        float halfX = WALL_THICKNESS * tw / 2f, halfY = WALL_THICKNESS * th / 2f;
+
+        // Edges along x: y = ey, between rows ey - 1 and ey.
+        for (int ey = 0; ey <= hgt; ey++) {
+            int runStart = -1;
+            int runType = ChunkTiles.EDGE_NONE;
+            for (int tx = 0; tx <= w; tx++) {
+                int type = ChunkTiles.EDGE_NONE;
+                if (tx < w) {
+                    boolean southSolid = ey > 0 && t.isSolid(tx, ey - 1);
+                    boolean northSolid = ey < hgt && t.isSolid(tx, ey);
+                    boolean seen = (ey > 0 && t.isSeen(tx, ey - 1)) || (ey < hgt && t.isSeen(tx, ey));
+                    if (seen && !southSolid && !northSolid) type = t.horizontalEdge(tx, ey);
+                }
+                if (type != runType || (runStart >= 0 && tx - runStart >= WALL_RUN)) {
+                    if (runType != ChunkTiles.EDGE_NONE) {
+                        boolean door = runType == ChunkTiles.EDGE_DOOR;
+                        float y = cy + ey * th;
+                        addBox(cx + runStart * tw, y - halfY, cx + tx * tw, y + halfY, h, h + (door ? DOOR_HEIGHT : wallH),
+                                door ? doorTop : top, door ? doorLit : lit, door ? doorShade : shade);
+                    }
+                    runStart = tx;
+                    runType = type;
+                }
+            }
+        }
+        // Edges along y: x = ex, between columns ex - 1 and ex.
+        for (int ex = 0; ex <= w; ex++) {
+            int runStart = -1;
+            int runType = ChunkTiles.EDGE_NONE;
+            for (int ty = 0; ty <= hgt; ty++) {
+                int type = ChunkTiles.EDGE_NONE;
+                if (ty < hgt) {
+                    boolean westSolid = ex > 0 && t.isSolid(ex - 1, ty);
+                    boolean eastSolid = ex < w && t.isSolid(ex, ty);
+                    boolean seen = (ex > 0 && t.isSeen(ex - 1, ty)) || (ex < w && t.isSeen(ex, ty));
+                    if (seen && !westSolid && !eastSolid) type = t.verticalEdge(ex, ty);
+                }
+                if (type != runType || (runStart >= 0 && ty - runStart >= WALL_RUN)) {
+                    if (runType != ChunkTiles.EDGE_NONE) {
+                        boolean door = runType == ChunkTiles.EDGE_DOOR;
+                        float x = cx + ex * tw;
+                        addBox(x - halfX, cy + runStart * th, x + halfX, cy + ty * th, h, h + (door ? DOOR_HEIGHT : wallH),
+                                door ? doorTop : top, door ? doorLit : lit, door ? doorShade : shade);
+                    }
+                    runStart = ty;
+                    runType = type;
+                }
+            }
+        }
+        // Solid tiles, merged along rows.
+        for (int ty = 0; ty < hgt; ty++) {
+            int runStart = -1;
+            for (int tx = 0; tx <= w; tx++) {
+                boolean solid = tx < w && t.isSolid(tx, ty) && seenNear(t, tx, ty);
+                if (solid && runStart < 0) runStart = tx;
+                if ((!solid || tx - runStart >= WALL_RUN) && runStart >= 0) {
+                    addBox(cx + runStart * tw, cy + ty * th, cx + tx * tw, cy + (ty + 1) * th, h, h + wallH, top, lit, shade);
+                    runStart = solid ? tx : -1;
+                }
+            }
+        }
+    }
+
+    private void flushItems(int cx, int cy, float h, boolean sil) {
+        renderItems.sort(null);
+        for (RenderItem it : renderItems) {
+            if (it.kind == 0) drawBox(shapeRenderer, it.x0, it.y0, it.x1, it.y1, it.z0, it.z1, it.top, it.lit, it.shade);
+            else drawProp(shapeRenderer, it.prop, cx, cy, h, sil);
+        }
+        renderItems.clear();
+    }
+
+    private void drawVisitedChunk(int cx, int cy, Biome biome, ChunkTiles tiles, MapKnowledgeMask.KnowledgeProvider provider) {
+        BiomeColors B = getBiomeColors(biome);
+        float h = (biome == Biome.OCEAN) ? 2.0f : 6.0f;
+        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, h, null, B.sideA, B.sideB);
+
+        renderItems.clear();
+        if (tiles == null || tiles.width <= 0 || tiles.height <= 0) {
+            shapeRenderer.setColor(B.top);
+            worldQuad(cx, cy, cx + 1, cy + 1, h);
+        } else {
+            drawFloor(cx, cy, tiles, h, B.top, COLOR_WALL_FOOTPRINT, COLOR_UNKNOWN_DARK, false);
+            boolean maze = biome == null || biome == Biome.MAZE;
+            Color top = maze ? COLOR_WALL_TOP : shade(B.sideA, 0.18f);
+            Color lit = maze ? COLOR_WALL_LIT : B.sideA;
+            Color dark = maze ? COLOR_WALL_SHADE : B.sideB;
+            collectWalls(cx, cy, tiles, h, WALL_HEIGHT, top, lit, dark, COLOR_CHEST_TOP, COLOR_CHEST_LIT, COLOR_CHEST_SHADE);
+        }
+
+        chunkProps.clear();
+        generateVisitedProps(cx, cy, biome, tiles, provider, chunkProps);
+        for (Prop p : chunkProps) {
+            if ((p.kind == Prop.Kind.CHEST || p.kind == Prop.Kind.RUBBLE) && camZoom < 1.6f) continue;
+            RenderItem it = nextItem();
+            it.kind = 1;
+            it.prop = p;
+            it.depth = depth(cx + p.u, cy + p.v) + (p.kind == Prop.Kind.LADDER ? -0.05f : 0f);
+        }
+        flushItems(cx, cy, h, false);
+    }
+
+    private void drawGlimpsedChunk(int cx, int cy, Biome biome, MapKnowledgeMask.KnowledgeProvider provider) {
+        BiomeColors B = getBiomeColors(biome);
+        float h = (biome == Biome.OCEAN) ? 1.2f : 2.5f;
+
+        Color top = mix(B.top, COLOR_GLIMPSED_TOP_TINT, 0.5f);
+        Color sideA = mix(B.sideA, COLOR_GLIMPSED_SIDE_A_TINT, 0.5f);
+        Color sideB = mix(B.sideB, COLOR_GLIMPSED_SIDE_B_TINT, 0.5f);
+        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, h, top, sideA, sideB);
+
+        chunkProps.clear();
+        boolean hasSeal = (provider != null) && provider.hasSeal(cx, cy);
+        generateGlimpsedProps(cx, cy, biome, hasSeal, chunkProps);
+        chunkProps.sort((a, b) -> Float.compare(depth(cx + a.u, cy + a.v), depth(cx + b.u, cy + b.v)));
+        for (Prop p : chunkProps) {
+            drawProp(shapeRenderer, p, cx, cy, h, true);
+        }
+    }
+
+    /** A chunk of the stratum view: three bands of rock, and the explored cave on top when there is one. */
+    private void drawCaveChunk(int cx, int cy, MapKnowledgeMask.KnowledgeProvider provider) {
+        boolean open = provider.getCaveState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED;
+        ChunkTiles t = open ? provider.getCavernTiles(cx, cy) : null;
+        boolean hasCave = t != null && t.width > 0 && t.height > 0;
+
+        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, 1.7f, null, COLOR_STRATA_1_A, COLOR_STRATA_1_B);
+        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 1.7f, 3.4f, null, COLOR_STRATA_2_A, COLOR_STRATA_2_B);
+        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 3.4f, 5.0f, hasCave ? null : COLOR_STRATA_UNVISITED_TOP,
+                COLOR_STRATA_3_A, COLOR_STRATA_3_B);
+
+        if (!hasCave) {
+            if (camZoom > 1.5f) {
+                shapeRenderer.setColor(COLOR_STRATA_SPECK);
+                Mulberry32 rng = new Mulberry32(hash(cx, cy) + 99);
+                for (int i = 0; i < 14; i++) {
+                    P(cx + rng.nextFloat(), cy + rng.nextFloat(), 5f);
+                    shapeRenderer.rect(Math.round(pq[0]), Math.round(pq[1]), 1, 1);
+                }
+            }
+            return;
+        }
+
+        drawFloor(cx, cy, t, 5f, COLOR_CAVE_FLOOR_OPEN, COLOR_CAVE_WALL_FLOOR, COLOR_CAVE_WALL_FLOOR, true);
+        renderItems.clear();
+        collectWalls(cx, cy, t, 5f, 2.4f, COLOR_PILLAR_TOP, COLOR_PILLAR_A, COLOR_PILLAR_B,
+                COLOR_CHEST_TOP, COLOR_CHEST_LIT, COLOR_CHEST_SHADE);
+        for (Map.Entry<GridPoint2, Ladder.LadderType> e : t.ladders.entrySet()) {
+            Prop lad = new Prop();
+            lad.kind = Prop.Kind.LADDER;
+            lad.u = (e.getKey().x + 0.5f) / t.width;
+            lad.v = (e.getKey().y + 0.5f) / t.height;
+            lad.va = e.getValue() == Ladder.LadderType.UP ? 1f : 0f;
+            RenderItem it = nextItem();
+            it.kind = 1;
+            it.prop = lad;
+            it.depth = depth(cx + lad.u, cy + lad.v) - 0.05f;
+        }
+        for (GridPoint2 item : t.itemTiles) {
+            if (!t.isSeen(item.x, item.y)) continue;
+            Prop ch = new Prop();
+            ch.kind = Prop.Kind.CHEST;
+            ch.u = (item.x + 0.5f) / t.width;
+            ch.v = (item.y + 0.5f) / t.height;
+            RenderItem it = nextItem();
+            it.kind = 1;
+            it.prop = ch;
+            it.depth = depth(cx + ch.u, cy + ch.v);
+            break;
+        }
+        renderItems.sort(null);
+        for (RenderItem it : renderItems) {
+            if (it.kind == 0) {
+                drawBox(shapeRenderer, it.x0, it.y0, it.x1, it.y1, it.z0, it.z1, it.top, it.lit, it.shade);
+            } else if (it.prop.kind == Prop.Kind.LADDER) {
+                drawLadderShaftProp(shapeRenderer, cx + it.prop.u, cy + it.prop.v, 5f, it.prop.va > 0.5f ? 10f : 3.5f);
+            } else {
+                drawProp(shapeRenderer, it.prop, cx, cy, 5f, false);
+            }
+        }
+        renderItems.clear();
+
+        // Fungi: amber and violet specks on seen floor beside rock, as the prototype's caveGlow.
+        int k = Math.max(1, Math.round(camZoom * 0.4f));
+        for (float[] f : fungiOf(cx, cy, t)) {
+            P(cx + f[0], cy + f[1], 5f);
+            shapeRenderer.setColor(f[2] > 0.5f ? COLOR_FUNGI_GLOW : COLOR_FUNGI_GLOW_VIOLET);
+            shapeRenderer.rect(Math.round(pq[0]), Math.round(pq[1]), k, k);
+        }
+    }
+
+    /** Up to a dozen glowing fungi per explored cave chunk: {u, v, amber?, phase}. Stable per chunk. */
+    static List<float[]> fungiOf(int cx, int cy, ChunkTiles t) {
+        List<float[]> out = new ArrayList<>();
+        Mulberry32 rng = new Mulberry32(hash(cx, cy) + 4242);
+        for (int i = 0; i < 160 && out.size() < 12; i++) {
+            int tx = (int) (rng.nextFloat() * t.width);
+            int ty = (int) (rng.nextFloat() * t.height);
+            float roll = rng.nextFloat();
+            if (!t.isSeen(tx, ty) || t.isSolid(tx, ty)) continue;
+            boolean nearRock = t.horizontalEdge(tx, ty) != ChunkTiles.EDGE_NONE || t.verticalEdge(tx, ty) != ChunkTiles.EDGE_NONE;
+            if (!nearRock || roll > 0.4f) continue;
+            out.add(new float[]{(tx + 0.5f) / t.width, (ty + 0.5f) / t.height, rng.nextFloat() < 0.6f ? 1f : 0f, rng.nextFloat() * 6f});
+        }
+        return out;
     }
 
     public static int hash(int x, int y) {
@@ -816,381 +1469,6 @@ public final class IsometricDioramaRenderer implements Disposable {
         public MapModel.ShelterMark shelterType = null;
         public float faceX = 0f;
         public float faceY = 1f;
-    }
-
-    static final class WallBox {
-        float x0, y0, x1, y1;
-        float z0, z1;
-        float depth;
-    }
-
-    static final class RenderItem implements Comparable<RenderItem> {
-        float depth;
-        boolean isWall;
-        WallBox wall;
-        Prop prop;
-
-        @Override
-        public int compareTo(RenderItem o) {
-            return Float.compare(this.depth, o.depth);
-        }
-    }
-
-    static final class CaveRenderItem implements Comparable<CaveRenderItem> {
-        enum Type { PILLAR, CHEST, LADDER }
-        float depth;
-        Type type;
-        float x0, y0, x1, y1;
-        float z0, z1;
-
-        @Override
-        public int compareTo(CaveRenderItem o) {
-            return Float.compare(this.depth, o.depth);
-        }
-    }
-
-    private final List<GridPoint2> sortedChunks = new ArrayList<>(CHUNK_GRID_SIZE * CHUNK_GRID_SIZE);
-    private final List<WallBox> wallBoxPool = new ArrayList<>(64);
-    private final List<Prop> chunkProps = new ArrayList<>(64);
-    private final List<RenderItem> renderItems = new ArrayList<>(128);
-    private final List<CaveRenderItem> renderCaveItems = new ArrayList<>(128);
-
-    public static float depth(float wx, float wy, float camX, float camY, float rot) {
-        float dx = wx - camX;
-        float dy = wy - camY;
-        float cs = (float) Math.cos(rot);
-        float sn = (float) Math.sin(rot);
-        return (dx * cs - dy * sn) + (dx * sn + dy * cs);
-    }
-
-    public float depth(float wx, float wy) {
-        return depth(wx, wy, camX, camY, camRot);
-    }
-
-    public boolean onScreen(float wx, float wy, float margin) {
-        Vector2 p = project(wx, wy, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-        return p.x > -margin && p.x < FBO_WIDTH + margin && p.y > -margin && p.y < FBO_HEIGHT + margin;
-    }
-
-    public void drawBox(ShapeRenderer shapes,
-                        float x0, float y0, float x1, float y1,
-                        float z0, float z1,
-                        Color topCol, Color cL, Color cR) {
-        drawBox(shapes, x0, y0, x1, y1, z0, z1, topCol, cL, cR,
-                camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-    }
-
-    public static void drawBox(ShapeRenderer shapes,
-                               float x0, float y0, float x1, float y1,
-                               float z0, float z1,
-                               Color topCol, Color cL, Color cR,
-                               float camX, float camY, float zoom, float rot,
-                               float W, float H) {
-        float cs = (float) Math.cos(rot);
-        float sn = (float) Math.sin(rot);
-
-        float[][] pts = new float[][]{
-            {x0, y0},
-            {x1, y0},
-            {x1, y1},
-            {x0, y1}
-        };
-        float[][] nrm = new float[][]{
-            {0f, -1f},
-            {1f, 0f},
-            {0f, 1f},
-            {-1f, 0f}
-        };
-
-        for (int i = 0; i < 4; i++) {
-            float nx = nrm[i][0];
-            float ny = nrm[i][1];
-            float rx = nx * cs - ny * sn;
-            float ry = nx * sn + ny * cs;
-            if (rx + ry <= 0.001f) continue; // Face culling
-
-            float[] a = pts[i];
-            float[] b = pts[(i + 1) % 4];
-
-            Vector2 g0 = toGdxScreen(project(a[0], a[1], z0, camX, camY, zoom, rot, W, H));
-            Vector2 g1 = toGdxScreen(project(b[0], b[1], z0, camX, camY, zoom, rot, W, H));
-            Vector2 g2 = toGdxScreen(project(b[0], b[1], z1, camX, camY, zoom, rot, W, H));
-            Vector2 g3 = toGdxScreen(project(a[0], a[1], z1, camX, camY, zoom, rot, W, H));
-
-            Color sideColor = (rx - ry < 0f) ? cL : cR;
-            if (sideColor != null) {
-                shapes.setColor(sideColor);
-                shapes.triangle(g0.x, g0.y, g1.x, g1.y, g2.x, g2.y);
-                shapes.triangle(g0.x, g0.y, g2.x, g2.y, g3.x, g3.y);
-            }
-        }
-
-        if (topCol != null) {
-            Vector2 t0 = toGdxScreen(project(pts[0][0], pts[0][1], z1, camX, camY, zoom, rot, W, H));
-            Vector2 t1 = toGdxScreen(project(pts[1][0], pts[1][1], z1, camX, camY, zoom, rot, W, H));
-            Vector2 t2 = toGdxScreen(project(pts[2][0], pts[2][1], z1, camX, camY, zoom, rot, W, H));
-            Vector2 t3 = toGdxScreen(project(pts[3][0], pts[3][1], z1, camX, camY, zoom, rot, W, H));
-
-            shapes.setColor(topCol);
-            shapes.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
-            shapes.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
-        }
-    }
-
-    private void drawBoard(ShapeRenderer shapes, boolean cave) {
-        float minC = -BOARD_RADIUS;
-        float maxC = BOARD_RADIUS + 1f;
-        float e = 0.4f;
-
-        // Under-base quad at z = -5
-        Vector2 b0 = toGdxScreen(project(minC - 1.8f, minC - 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 b1 = toGdxScreen(project(maxC + 1.8f, minC - 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 b2 = toGdxScreen(project(maxC + 1.8f, maxC + 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 b3 = toGdxScreen(project(minC - 1.8f, maxC + 1.8f, -5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-
-        shapes.setColor(COLOR_BOARD_UNDER);
-        shapes.triangle(b0.x, b0.y, b1.x, b1.y, b2.x, b2.y);
-        shapes.triangle(b0.x, b0.y, b2.x, b2.y, b3.x, b3.y);
-
-        // Board box slab from z = -5 to z = 0
-        Color slabTop = cave ? COLOR_BOARD_CAVE_TOP : COLOR_BOARD_SURFACE_TOP;
-        drawBox(shapes, minC - e, minC - e, maxC + e, maxC + e, -5f, 0f, slabTop, COLOR_BOARD_SIDE_A, COLOR_BOARD_SIDE_B);
-    }
-
-    private void drawBoardLines(ShapeRenderer shapes) {
-        float minC = -BOARD_RADIUS;
-        float maxC = BOARD_RADIUS + 1f;
-        float e = 0.4f;
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapes.begin(ShapeRenderer.ShapeType.Line);
-
-        // Board grid lines at z = 0
-        shapes.setColor(COLOR_BOARD_GRID);
-        for (int i = (int) minC; i <= (int) maxC; i++) {
-            Vector2 a1 = toGdxScreen(project(i, minC - e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 b1 = toGdxScreen(project(i, maxC + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            shapes.line(a1.x, a1.y, b1.x, b1.y);
-
-            Vector2 a2 = toGdxScreen(project(minC - e, i, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 b2 = toGdxScreen(project(maxC + e, i, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            shapes.line(a2.x, a2.y, b2.x, b2.y);
-        }
-
-        // Rim border
-        shapes.setColor(COLOR_BOARD_RIM);
-        Vector2 r0 = toGdxScreen(project(minC - e, minC - e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 r1 = toGdxScreen(project(maxC + e, minC - e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 r2 = toGdxScreen(project(maxC + e, maxC + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        Vector2 r3 = toGdxScreen(project(minC - e, maxC + e, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-        shapes.line(r0.x, r0.y, r1.x, r1.y);
-        shapes.line(r1.x, r1.y, r2.x, r2.y);
-        shapes.line(r2.x, r2.y, r3.x, r3.y);
-        shapes.line(r3.x, r3.y, r0.x, r0.y);
-
-        shapes.end();
-    }
-
-    private void renderDioramaScene(MapKnowledgeMask.KnowledgeProvider provider) {
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-
-        drawBoard(shapeRenderer, isCave);
-
-        float m = 40f * camZoom + 60f;
-
-        sortedChunks.clear();
-        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
-            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
-                MapKnowledgeMask.KnowledgeProvider.State state = (provider != null)
-                        ? provider.getChunkState(cx, cy)
-                        : MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN;
-                if (state != MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN) {
-                    sortedChunks.add(new GridPoint2(cx, cy));
-                }
-            }
-        }
-        sortedChunks.sort((a, b) -> Float.compare(depth(a.x + 0.5f, a.y + 0.5f), depth(b.x + 0.5f, b.y + 0.5f)));
-
-        for (GridPoint2 c : sortedChunks) {
-            if (!onScreen(c.x + 0.5f, c.y + 0.5f, m)) continue;
-
-            MapKnowledgeMask.KnowledgeProvider.State state = (provider != null)
-                    ? provider.getChunkState(c.x, c.y)
-                    : MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN;
-
-            Biome biome = (provider != null) ? provider.getBiome(c.x, c.y) : Biome.MAZE;
-            ChunkTiles tiles = (provider != null) ? provider.getChunkTiles(c.x, c.y) : null;
-
-            if (state == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
-                drawVisitedChunk(c.x, c.y, biome, tiles, provider);
-            } else if (state == MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED) {
-                drawGlimpsedChunk(c.x, c.y, biome, provider);
-            }
-        }
-
-        shapeRenderer.end();
-
-        drawBoardLines(shapeRenderer);
-    }
-
-    public void renderCaveScene(MapKnowledgeMask.KnowledgeProvider provider) {
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-
-        drawBoard(shapeRenderer, true);
-
-        float m = 40f * camZoom + 60f;
-
-        sortedChunks.clear();
-        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
-            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
-                MapKnowledgeMask.KnowledgeProvider.State state = (provider != null)
-                        ? provider.getChunkState(cx, cy)
-                        : MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN;
-                if (state != MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN) {
-                    sortedChunks.add(new GridPoint2(cx, cy));
-                }
-            }
-        }
-        sortedChunks.sort((a, b) -> Float.compare(depth(a.x + 0.5f, a.y + 0.5f), depth(b.x + 0.5f, b.y + 0.5f)));
-
-        for (GridPoint2 c : sortedChunks) {
-            if (!onScreen(c.x + 0.5f, c.y + 0.5f, m)) continue;
-
-            int cx = c.x;
-            int cy = c.y;
-            boolean hasCave = (provider != null) && provider.hasCave(cx, cy);
-
-            // 1. Strata band 1: z=0 to 1.7
-            drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, 1.7f, null, COLOR_STRATA_1_A, COLOR_STRATA_1_B);
-
-            // 2. Strata band 2: z=1.7 to 3.4
-            drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 1.7f, 3.4f, null, COLOR_STRATA_2_A, COLOR_STRATA_2_B);
-
-            // 3. Strata band 3: z=3.4 to 5.0
-            Color top3 = hasCave ? null : COLOR_STRATA_UNVISITED_TOP;
-            drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 3.4f, 5.0f, top3, COLOR_STRATA_3_A, COLOR_STRATA_3_B);
-
-            if (!hasCave) {
-                // If zoom > 1.5, draw bedrock specks
-                if (camZoom > 1.5f) {
-                    shapeRenderer.setColor(COLOR_STRATA_SPECK);
-                    Mulberry32 rng = new Mulberry32(hash(cx, cy) + 11);
-                    for (int i = 0; i < 10; i++) {
-                        float su = 0.08f + 0.84f * rng.nextFloat();
-                        float sv = 0.08f + 0.84f * rng.nextFloat();
-                        Vector2 sp = project(cx + su, cy + sv, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        Vector2 gsp = toGdxScreen(sp);
-                        shapeRenderer.rect(Math.round(gsp.x), Math.round(gsp.y), 1, 1);
-                    }
-                }
-                continue;
-            }
-
-            // Has cavern: draw 8x8 floor tiles and depth-sorted rock pillars / ladder / chests
-            ChunkTiles caveTiles = (provider != null) ? provider.getCavernTiles(cx, cy) : null;
-            Mulberry32 rng = new Mulberry32(hash(cx, cy) + 4242);
-            boolean[][] caveWalls = generateDioramaMaze(cx, cy, provider != null && provider.hasLadder(cx, cy));
-
-            // Draw 8x8 floor quad tiles at z=5
-            for (int ty = 0; ty < 8; ty++) {
-                for (int tx = 0; tx < 8; tx++) {
-                    boolean solid = caveWalls[ty][tx];
-                    Color floorCol = solid ? COLOR_CAVE_WALL_FLOOR : COLOR_CAVE_FLOOR;
-
-                    float x0 = cx + tx / 8.0f;
-                    float y0 = cy + ty / 8.0f;
-                    float x1 = cx + (tx + 1) / 8.0f;
-                    float y1 = cy + (ty + 1) / 8.0f;
-
-                    Vector2 t0 = toGdxScreen(project(x0, y0, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                    Vector2 t1 = toGdxScreen(project(x1, y0, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                    Vector2 t2 = toGdxScreen(project(x1, y1, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                    Vector2 t3 = toGdxScreen(project(x0, y1, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-
-                    shapeRenderer.setColor(floorCol);
-                    shapeRenderer.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
-                    shapeRenderer.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
-                }
-            }
-
-            // Collect depth-sorted cavern items: rock pillars, ladder, chest
-            renderCaveItems.clear();
-            for (int ty = 0; ty < 8; ty++) {
-                for (int tx = 0; tx < 8; tx++) {
-                    if (caveWalls[ty][tx]) {
-                        float x0 = cx + tx / 8.0f;
-                        float y0 = cy + ty / 8.0f;
-                        float hPillar = 2.4f + 1.2f * rng.nextFloat();
-                        CaveRenderItem item = new CaveRenderItem();
-                        item.depth = depth(x0 + 1f / 16f, y0 + 1f / 16f);
-                        item.type = CaveRenderItem.Type.PILLAR;
-                        item.x0 = x0;
-                        item.y0 = y0;
-                        item.x1 = x0 + 1f / 8f;
-                        item.y1 = y0 + 1f / 8f;
-                        item.z0 = 5.0f;
-                        item.z1 = 5.0f + hPillar;
-                        renderCaveItems.add(item);
-                    }
-                }
-            }
-
-            if (provider != null && provider.hasLadder(cx, cy)) {
-                CaveRenderItem lad = new CaveRenderItem();
-                lad.depth = depth(cx + 4.5f / 8f, cy + 4.5f / 8f) - 0.05f;
-                lad.type = CaveRenderItem.Type.LADDER;
-                lad.x0 = cx + 4.5f / 8f;
-                lad.y0 = cy + 4.5f / 8f;
-                lad.z0 = 5.0f;
-                lad.z1 = 15.0f; // up = 10
-                renderCaveItems.add(lad);
-            }
-
-            if (provider != null && provider.getChestCount(cx, cy) > 0) {
-                CaveRenderItem ch = new CaveRenderItem();
-                ch.depth = depth(cx + 0.5f, cy + 0.35f);
-                ch.type = CaveRenderItem.Type.CHEST;
-                ch.x0 = cx + 0.5f - 0.03f;
-                ch.y0 = cy + 0.35f - 0.022f;
-                ch.x1 = cx + 0.5f + 0.03f;
-                ch.y1 = cy + 0.35f + 0.022f;
-                ch.z0 = 5.0f;
-                ch.z1 = 6.6f;
-                renderCaveItems.add(ch);
-            }
-
-            renderCaveItems.sort(null);
-            for (CaveRenderItem item : renderCaveItems) {
-                switch (item.type) {
-                    case PILLAR:
-                        drawBox(shapeRenderer, item.x0, item.y0, item.x1, item.y1, item.z0, item.z1,
-                                COLOR_PILLAR_TOP, COLOR_PILLAR_A, COLOR_PILLAR_B);
-                        break;
-                    case CHEST:
-                        drawBox(shapeRenderer, item.x0, item.y0, item.x1, item.y1, item.z0, item.z1,
-                                COLOR_CAVE_CHEST_TOP, COLOR_CAVE_CHEST_A, COLOR_CAVE_CHEST_B);
-                        break;
-                    case LADDER:
-                        drawLadderShaftProp(shapeRenderer, item.x0, item.y0, item.z0, 10f);
-                        break;
-                }
-            }
-
-            // Bioluminescent fungi dots at z=5
-            for (int i = 0; i < 4; i++) {
-                float fu = 0.2f + 0.6f * rng.nextFloat();
-                float fv = 0.2f + 0.6f * rng.nextFloat();
-                Vector2 fp = project(cx + fu, cy + fv, 5.0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                Vector2 gfp = toGdxScreen(fp);
-                int k = Math.max(1, Math.round(camZoom * 0.4f));
-                shapeRenderer.setColor(COLOR_FUNGI_GLOW);
-                shapeRenderer.rect(Math.round(gfp.x), Math.round(gfp.y) - k, k, k);
-            }
-        }
-
-        shapeRenderer.end();
-        drawBoardLines(shapeRenderer);
     }
 
     public void drawLadderShaftProp(ShapeRenderer shapes, float x, float y, float h, float up) {
@@ -1326,7 +1604,7 @@ public final class IsometricDioramaRenderer implements Disposable {
             faces[i] = new Face();
             faces[i].i = i;
             float nx = nrm[i][0];
-            float ny = nrm[i][1];
+            float ny = -nrm[i][1]; // north draws up-screen: the view flips world y
             float rx = nx * cs - ny * sn;
             float ry = nx * sn + ny * cs;
             faces[i].f = rx + ry;
@@ -1368,8 +1646,8 @@ public final class IsometricDioramaRenderer implements Disposable {
             float[][] nrm = new float[][]{{0f, -1f}, {1f, 0f}, {0f, 1f}, {-1f, 0f}};
             float kk = Math.max(1f, Math.round(camZoom * 0.6f));
             for (float[] n : nrm) {
-                float rx = n[0] * cs - n[1] * sn;
-                float ry = n[0] * sn + n[1] * cs;
+                float rx = n[0] * cs + n[1] * sn; // normal with world y flipped, then rotated
+                float ry = n[0] * sn - n[1] * cs;
                 if (rx + ry <= 0.2f) continue;
                 Vector2 p = project(mx + n[0] * r, my + n[1] * r, h + 1.7f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                 drawScreenRect(shapes, p.x - kk / 2f, p.y - kk, kk, Math.max(1f, Math.round(kk * 1.4f)), COLOR_WINDOW_LIT);
@@ -1827,6 +2105,10 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
     }
 
+    /**
+     * Props for an explored chunk: biome dressing on seen, open ground (an 8x8 split of the real
+     * tiles) and landmarks where the game has them -- ladders, items and the player at their tiles.
+     */
     public static void generateVisitedProps(int cx, int cy, Biome biome, ChunkTiles tiles,
                                             MapKnowledgeMask.KnowledgeProvider provider,
                                             List<Prop> out) {
@@ -1835,436 +2117,150 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         MapModel.ShelterMark shelter = (provider != null) ? provider.getShelter(cx, cy) : null;
         boolean portal = (provider != null) && provider.hasReturnPortal(cx, cy);
-        boolean ladder = (provider != null) && provider.hasLadder(cx, cy);
         int graves = (provider != null) ? provider.getGraveCount(cx, cy) : 0;
-        int chests = (provider != null) ? provider.getChestCount(cx, cy) : 0;
-        boolean feat = (shelter != null || portal || ladder || graves > 0);
+        boolean feat = (shelter != null || portal || graves > 0);
+        boolean hasTiles = tiles != null && tiles.width > 0 && tiles.height > 0;
 
-        if (tiles != null && tiles.width > 0 && tiles.height > 0) {
-            boolean isMaze = (biome == Biome.MAZE);
-            boolean[][] isWall = isMaze ? generateDioramaMaze(cx, cy, feat) : null;
-            for (int ty = 0; ty < 8; ty++) {
-                for (int tx = 0; tx < 8; tx++) {
-                    boolean seen = tiles.isBlockSeen(tx, ty);
-                    boolean solid = isMaze ? isWall[ty][tx] : tiles.isBlockSolid(tx, ty);
-                    if (!seen || solid) continue;
+        for (int by = 0; by < 8; by++) {
+            for (int bx = 0; bx < 8; bx++) {
+                if (hasTiles && (!tiles.isBlockSeen(bx, by) || tiles.isBlockSolid(bx, by))) continue;
 
-                    float u = (tx + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
-                    float v = (ty + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
-                    float roll = rng.nextFloat();
+                float u = (bx + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
+                float v = (by + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
+                float roll = rng.nextFloat();
 
-                    boolean nearFeat = feat && Math.abs(u - 0.5f) < 0.2f && Math.abs(v - 0.5f) < 0.2f;
-                    if (biome != Biome.MAZE && nearFeat) continue;
+                boolean nearFeat = feat && Math.abs(u - 0.5f) < 0.2f && Math.abs(v - 0.5f) < 0.2f;
+                if (biome != Biome.MAZE && nearFeat) continue;
 
-                    switch (biome) {
-                        case FOREST: {
-                            Prop p = new Prop();
-                            p.kind = Prop.Kind.PINE;
-                            p.u = u; p.v = v; p.sz = 0.8f + 0.45f * rng.nextFloat();
-                            out.add(p);
-                            if (roll < 0.55f) {
-                                float u2 = (tx + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
-                                float v2 = (ty + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
-                                if (!feat || Math.abs(u2 - 0.5f) >= 0.2f || Math.abs(v2 - 0.5f) >= 0.2f) {
-                                    Prop p2 = new Prop();
-                                    p2.kind = Prop.Kind.PINE;
-                                    p2.u = u2; p2.v = v2; p2.sz = 0.7f + 0.4f * rng.nextFloat();
-                                    out.add(p2);
-                                }
+                switch (biome) {
+                    case FOREST: {
+                        out.add(prop(Prop.Kind.PINE, u, v, 0.8f + 0.45f * rng.nextFloat()));
+                        if (roll < 0.55f) {
+                            float u2 = (bx + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
+                            float v2 = (by + 0.18f + 0.64f * rng.nextFloat()) / 8.0f;
+                            if (!feat || Math.abs(u2 - 0.5f) >= 0.2f || Math.abs(v2 - 0.5f) >= 0.2f) {
+                                out.add(prop(Prop.Kind.PINE, u2, v2, 0.7f + 0.4f * rng.nextFloat()));
                             }
-                            break;
                         }
-                        case MOUNTAINS: {
-                            if (roll < 0.72f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.CRAG;
-                                p.u = u; p.v = v; p.sz = 0.7f + 0.5f * rng.nextFloat(); p.va = rng.nextFloat();
-                                out.add(p);
-                            }
-                            break;
-                        }
-                        case DESERT: {
-                            if (roll < 0.32f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.DUNE;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.5f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.40f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.CACTUS;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.3f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.46f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.HOODOO;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.4f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.51f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.BONES;
-                                p.u = u; p.v = v; p.sz = 1.0f;
-                                out.add(p);
-                            }
-                            break;
-                        }
-                        case BLIGHT: {
-                            if (roll < 0.50f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.CRACK;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.5f * rng.nextFloat(); p.va = rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.66f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.DEADTREE;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.4f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.76f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.PUSTULE;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.4f * rng.nextFloat();
-                                out.add(p);
-                            }
-                            break;
-                        }
-                        case LAKELANDS: {
-                            if (roll < 0.20f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.PINE;
-                                p.u = u; p.v = v; p.sz = 0.6f + 0.3f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.40f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.TUFT;
-                                p.u = u; p.v = v; p.sz = 1.0f;
-                                out.add(p);
-                            } else if (roll < 0.80f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.REEDS;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.4f * rng.nextFloat();
-                                out.add(p);
-                            }
-                            break;
-                        }
-                        case TUNDRA: {
-                            if (roll < 0.35f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.MOUND;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.5f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.60f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.ICE;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.4f * rng.nextFloat();
-                                out.add(p);
-                            } else if (roll < 0.80f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.PINE;
-                                p.u = u; p.v = v; p.sz = 0.8f + 0.4f * rng.nextFloat(); p.snow = true;
-                                out.add(p);
-                            }
-                            break;
-                        }
-                        case MAZE: {
-                            if (roll < 0.06f) {
-                                Prop p = new Prop();
-                                p.kind = Prop.Kind.RUBBLE;
-                                p.u = u; p.v = v; p.sz = 1.0f;
-                                out.add(p);
-                            }
-                            break;
-                        }
-                        case OCEAN:
-                        default:
-                            break;
+                        break;
                     }
+                    case MOUNTAINS:
+                        if (roll < 0.72f) {
+                            Prop p = prop(Prop.Kind.CRAG, u, v, 0.7f + 0.5f * rng.nextFloat());
+                            p.va = rng.nextFloat();
+                            out.add(p);
+                        }
+                        break;
+                    case DESERT:
+                        if (roll < 0.32f) out.add(prop(Prop.Kind.DUNE, u, v, 0.8f + 0.5f * rng.nextFloat()));
+                        else if (roll < 0.40f) out.add(prop(Prop.Kind.CACTUS, u, v, 0.8f + 0.3f * rng.nextFloat()));
+                        else if (roll < 0.46f) out.add(prop(Prop.Kind.HOODOO, u, v, 0.8f + 0.4f * rng.nextFloat()));
+                        else if (roll < 0.51f) out.add(prop(Prop.Kind.BONES, u, v, 1.0f));
+                        break;
+                    case BLIGHT:
+                        if (roll < 0.50f) {
+                            Prop p = prop(Prop.Kind.CRACK, u, v, 0.8f + 0.5f * rng.nextFloat());
+                            p.va = rng.nextFloat();
+                            out.add(p);
+                        } else if (roll < 0.66f) {
+                            out.add(prop(Prop.Kind.DEADTREE, u, v, 0.8f + 0.4f * rng.nextFloat()));
+                        } else if (roll < 0.76f) {
+                            out.add(prop(Prop.Kind.PUSTULE, u, v, 0.8f + 0.4f * rng.nextFloat()));
+                        }
+                        break;
+                    case LAKELANDS:
+                        if (roll < 0.20f) out.add(prop(Prop.Kind.PINE, u, v, 0.6f + 0.3f * rng.nextFloat()));
+                        else if (roll < 0.40f) out.add(prop(Prop.Kind.TUFT, u, v, 1.0f));
+                        else if (roll < 0.80f) out.add(prop(Prop.Kind.REEDS, u, v, 0.8f + 0.4f * rng.nextFloat()));
+                        break;
+                    case TUNDRA:
+                        if (roll < 0.35f) out.add(prop(Prop.Kind.MOUND, u, v, 0.8f + 0.5f * rng.nextFloat()));
+                        else if (roll < 0.60f) out.add(prop(Prop.Kind.ICE, u, v, 0.8f + 0.4f * rng.nextFloat()));
+                        else if (roll < 0.80f) {
+                            Prop p = prop(Prop.Kind.PINE, u, v, 0.8f + 0.4f * rng.nextFloat());
+                            p.snow = true;
+                            out.add(p);
+                        }
+                        break;
+                    case MAZE:
+                        if (roll < 0.06f) out.add(prop(Prop.Kind.RUBBLE, u, v, 1.0f));
+                        break;
+                    case OCEAN:
+                    default:
+                        break;
                 }
             }
         }
 
         if (biome == Biome.DESERT && rng.nextFloat() < 0.7f) {
-            Prop arch = new Prop();
-            arch.kind = Prop.Kind.ARCH;
-            arch.u = 0.25f + 0.5f * rng.nextFloat();
-            arch.v = 0.25f + 0.5f * rng.nextFloat();
-            out.add(arch);
+            out.add(prop(Prop.Kind.ARCH, 0.25f + 0.5f * rng.nextFloat(), 0.25f + 0.5f * rng.nextFloat(), 1f));
         } else if (biome == Biome.LAKELANDS && rng.nextFloat() < 0.7f) {
-            Prop boat = new Prop();
-            boat.kind = Prop.Kind.BOAT;
-            boat.u = 0.25f + 0.5f * rng.nextFloat();
-            boat.v = 0.25f + 0.5f * rng.nextFloat();
-            out.add(boat);
+            out.add(prop(Prop.Kind.BOAT, 0.25f + 0.5f * rng.nextFloat(), 0.25f + 0.5f * rng.nextFloat(), 1f));
         }
 
         if (shelter != null) {
-            Prop s = new Prop();
-            s.kind = Prop.Kind.SHELTER;
-            s.u = 0.5f; s.v = 0.5f;
+            Prop s = prop(Prop.Kind.SHELTER, 0.5f, 0.5f, 1f);
             s.shelterType = shelter;
             out.add(s);
-            if (shelter != MapModel.ShelterMark.COLD) {
-                Prop fire = new Prop();
-                fire.kind = Prop.Kind.FIRE;
-                fire.u = 0.68f; fire.v = 0.66f;
-                out.add(fire);
-            }
+            if (shelter != MapModel.ShelterMark.COLD) out.add(prop(Prop.Kind.FIRE, 0.68f, 0.66f, 1f));
         }
-        if (portal) {
-            Prop port = new Prop();
-            port.kind = Prop.Kind.PORTAL;
-            port.u = 0.5f; port.v = 0.5f;
-            out.add(port);
-        }
+        if (portal) out.add(prop(Prop.Kind.PORTAL, 0.5f, 0.5f, 1f));
         for (int i = 0; i < graves; i++) {
-            Prop g = new Prop();
-            g.kind = Prop.Kind.GRAVE;
             float u0 = (biome == Biome.LAKELANDS) ? 0.3f : 0.44f;
             float v0 = (biome == Biome.LAKELANDS) ? 0.3f : 0.42f;
-            g.u = u0 + i * 0.1f;
-            g.v = v0;
-            out.add(g);
+            out.add(prop(Prop.Kind.GRAVE, u0 + i * 0.1f, v0, 1f));
         }
-        if (ladder) {
-            Prop lad = new Prop();
-            lad.kind = Prop.Kind.LADDER;
-            lad.u = 4.5f / 8.0f;
-            lad.v = 4.5f / 8.0f;
-            out.add(lad);
-        }
-        if (chests > 0) {
-            Prop ch = new Prop();
-            ch.kind = Prop.Kind.CHEST;
-            ch.u = 0.3f + 0.4f * rng.nextFloat();
-            ch.v = 0.3f + 0.4f * rng.nextFloat();
-            out.add(ch);
+
+        if (hasTiles) {
+            for (Map.Entry<GridPoint2, Ladder.LadderType> e : tiles.ladders.entrySet()) {
+                GridPoint2 at = e.getKey();
+                if (!tiles.isSeen(at.x, at.y)) continue;
+                out.add(prop(Prop.Kind.LADDER, (at.x + 0.5f) / tiles.width, (at.y + 0.5f) / tiles.height, 1f));
+            }
+            int chests = 0;
+            for (GridPoint2 at : tiles.itemTiles) {
+                if (!tiles.isSeen(at.x, at.y) || chests++ >= 3) continue;
+                out.add(prop(Prop.Kind.CHEST, (at.x + 0.5f) / tiles.width, (at.y + 0.5f) / tiles.height, 1f));
+            }
+        } else {
+            if (provider != null && provider.hasLadder(cx, cy)) out.add(prop(Prop.Kind.LADDER, 4.5f / 8f, 4.5f / 8f, 1f));
+            if (provider != null && provider.getChestCount(cx, cy) > 0) {
+                out.add(prop(Prop.Kind.CHEST, 0.3f + 0.4f * rng.nextFloat(), 0.3f + 0.4f * rng.nextFloat(), 1f));
+            }
         }
 
         if (provider != null && provider.hasPlayer(cx, cy)) {
-            Prop ply = new Prop();
-            ply.kind = Prop.Kind.PLAYER;
-            ply.u = provider.getPlayerU(cx, cy);
-            ply.v = provider.getPlayerV(cx, cy);
+            Prop ply = prop(Prop.Kind.PLAYER, provider.getPlayerU(cx, cy), provider.getPlayerV(cx, cy), 1f);
             ply.faceX = provider.getPlayerFaceX(cx, cy);
             ply.faceY = provider.getPlayerFaceY(cx, cy);
             out.add(ply);
         }
     }
 
-    public static boolean[][] generateDioramaMaze(int cx, int cy, boolean feat) {
-        Mulberry32 rng = new Mulberry32(hash(cx, cy));
-        boolean[][] isWall = new boolean[8][8];
-        for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
-                isWall[y][x] = true;
-            }
-        }
-
-        boolean[] vis = new boolean[16];
-        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-        List<int[]> stack = new ArrayList<>();
-        stack.add(new int[]{0, 0});
-        vis[0] = true;
-        isWall[0][0] = false;
-
-        while (!stack.isEmpty()) {
-            int[] cur = stack.get(stack.size() - 1);
-            List<int[]> nb = new ArrayList<>(4);
-            for (int[] d : dirs) {
-                int nx = cur[0] + d[0];
-                int ny = cur[1] + d[1];
-                if (nx >= 0 && ny >= 0 && nx < 4 && ny < 4 && !vis[ny * 4 + nx]) {
-                    nb.add(d);
-                }
-            }
-            if (nb.isEmpty()) {
-                stack.remove(stack.size() - 1);
-                continue;
-            }
-            int[] d = nb.get((int) (rng.nextFloat() * nb.size()));
-            int nx = cur[0] + d[0];
-            int ny = cur[1] + d[1];
-            vis[ny * 4 + nx] = true;
-            isWall[cur[1] * 2 + d[1]][cur[0] * 2 + d[0]] = false;
-            isWall[ny * 2][nx * 2] = false;
-            stack.add(new int[]{nx, ny});
-        }
-
-        for (int i = 0; i < 3; i++) {
-            int rx = (int) (rng.nextFloat() * 3);
-            int ry = (int) (rng.nextFloat() * 4);
-            isWall[ry * 2][rx * 2 + 1] = false;
-        }
-        int exitY = (int) (rng.nextFloat() * 4) * 2;
-        isWall[exitY][7] = false;
-        int exitX = (int) (rng.nextFloat() * 4) * 2;
-        isWall[7][exitX] = false;
-
-        if (feat) {
-            for (int y = 3; y <= 4; y++) {
-                for (int x = 3; x <= 4; x++) {
-                    isWall[y][x] = false;
-                }
-            }
-        }
-        return isWall;
-    }
-
-    private void drawVisitedChunk(int cx, int cy, Biome biome, ChunkTiles tiles, MapKnowledgeMask.KnowledgeProvider provider) {
-        BiomeColors B = getBiomeColors(biome);
-        float h = (biome == Biome.OCEAN) ? 2.0f : 6.0f;
-        if (isCave) h = 5.0f;
-
-        // Base mesa block from z=0 to h
-        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, h, null, B.sideA, B.sideB);
-
-        boolean isMaze = (biome == Biome.MAZE || isCave);
-        boolean feat = (provider != null) && (provider.getShelter(cx, cy) != null || provider.hasReturnPortal(cx, cy)
-                || provider.hasLadder(cx, cy) || provider.getGraveCount(cx, cy) > 0);
-
-        boolean[][] isWall = isMaze ? generateDioramaMaze(cx, cy, feat) : new boolean[8][8];
-        boolean[][] blockSeen = new boolean[8][8];
-
-        for (int ty = 0; ty < 8; ty++) {
-            for (int tx = 0; tx < 8; tx++) {
-                if (tiles != null) {
-                    blockSeen[ty][tx] = tiles.isBlockSeen(tx, ty);
-                } else {
-                    blockSeen[ty][tx] = true;
-                }
-            }
-        }
-
-        // Walls adjacent to seen floor tiles are also seen (prototype line 488)
-        if (isMaze) {
-            int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-            for (int ty = 0; ty < 8; ty++) {
-                for (int tx = 0; tx < 8; tx++) {
-                    if (!isWall[ty][tx]) continue;
-                    for (int[] d : dirs) {
-                        int nx = tx + d[0];
-                        int ny = ty + d[1];
-                        if (nx >= 0 && ny >= 0 && nx < 8 && ny < 8 && !isWall[ny][nx] && blockSeen[ny][nx]) {
-                            blockSeen[ty][tx] = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Floor quads on top of mesa
-        for (int ty = 0; ty < 8; ty++) {
-            for (int tx = 0; tx < 8; tx++) {
-                boolean seen = blockSeen[ty][tx];
-                boolean solid = isWall[ty][tx];
-
-                Color tileColor;
-                if (seen) {
-                    tileColor = solid ? COLOR_WALL_FOOTPRINT : B.top;
-                } else {
-                    tileColor = mix(B.top, COLOR_UNKNOWN_DARK, 0.45f);
-                }
-
-                float x0 = cx + tx / 8.0f;
-                float y0 = cy + ty / 8.0f;
-                float x1 = cx + (tx + 1) / 8.0f;
-                float y1 = cy + (ty + 1) / 8.0f;
-
-                Vector2 t0 = toGdxScreen(project(x0, y0, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                Vector2 t1 = toGdxScreen(project(x1, y0, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                Vector2 t2 = toGdxScreen(project(x1, y1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                Vector2 t3 = toGdxScreen(project(x0, y1, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-
-                shapeRenderer.setColor(tileColor);
-                shapeRenderer.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
-                shapeRenderer.triangle(t0.x, t0.y, t2.x, t2.y, t3.x, t3.y);
-            }
-        }
-
-        renderItems.clear();
-
-        // Maze wall boxes (+4.2 height)
-        if (isMaze) {
-            for (int ty = 0; ty < 8; ty++) {
-                for (int tx = 0; tx < 8; tx++) {
-                    if (isWall[ty][tx] && blockSeen[ty][tx]) {
-                        WallBox w = new WallBox();
-                        w.x0 = cx + tx / 8.0f;
-                        w.y0 = cy + ty / 8.0f;
-                        w.x1 = w.x0 + 1.0f / 8.0f;
-                        w.y1 = w.y0 + 1.0f / 8.0f;
-                        w.z0 = h;
-                        w.z1 = h + 4.2f;
-                        w.depth = depth(w.x0 + 1.0f / 16.0f, w.y0 + 1.0f / 16.0f);
-
-                        RenderItem item = new RenderItem();
-                        item.depth = w.depth;
-                        item.isWall = true;
-                        item.wall = w;
-                        renderItems.add(item);
-                    }
-                }
-            }
-        }
-
-        // Visited props and landmarks
-        chunkProps.clear();
-        generateVisitedProps(cx, cy, biome, tiles, provider, chunkProps);
-        for (Prop p : chunkProps) {
-            if ((p.kind == Prop.Kind.CHEST || p.kind == Prop.Kind.RUBBLE) && camZoom < 1.6f) continue;
-            RenderItem item = new RenderItem();
-            item.depth = depth(cx + p.u, cy + p.v) + (p.kind == Prop.Kind.LADDER ? -0.05f : 0f);
-            item.isWall = false;
-            item.prop = p;
-            renderItems.add(item);
-        }
-
-        renderItems.sort(null);
-        for (RenderItem item : renderItems) {
-            if (item.isWall) {
-                drawBox(shapeRenderer, item.wall.x0, item.wall.y0, item.wall.x1, item.wall.y1,
-                        item.wall.z0, item.wall.z1, COLOR_WALL_TOP, COLOR_WALL_LIT, COLOR_WALL_SHADE);
-            } else {
-                drawProp(shapeRenderer, item.prop, cx, cy, h, false);
-            }
-        }
-    }
-
-    private void drawGlimpsedChunk(int cx, int cy, Biome biome, MapKnowledgeMask.KnowledgeProvider provider) {
-        BiomeColors B = getBiomeColors(biome);
-        float h = (biome == Biome.OCEAN) ? 1.2f : 2.5f;
-
-        Color top = mix(B.top, COLOR_GLIMPSED_TOP_TINT, 0.5f);
-        Color sideA = mix(B.sideA, COLOR_GLIMPSED_SIDE_A_TINT, 0.5f);
-        Color sideB = mix(B.sideB, COLOR_GLIMPSED_SIDE_B_TINT, 0.5f);
-
-        drawBox(shapeRenderer, cx, cy, cx + 1, cy + 1, 0f, h, top, sideA, sideB);
-
-        chunkProps.clear();
-        boolean hasSeal = (provider != null) && provider.hasSeal(cx, cy);
-        generateGlimpsedProps(cx, cy, biome, hasSeal, chunkProps);
-
-        chunkProps.sort((a, b) -> Float.compare(depth(cx + a.u, cy + a.v), depth(cx + b.u, cy + b.v)));
-        for (Prop p : chunkProps) {
-            drawProp(shapeRenderer, p, cx, cy, h, true);
-        }
-    }
-
-    public static void drawRectCanvas(ShapeRenderer shapes, float x, float y, float w, float h, Color color) {
-        shapes.setColor(color);
-        shapes.rect(x, FBO_HEIGHT - y - h, w, h);
+    private static Prop prop(Prop.Kind kind, float u, float v, float sz) {
+        Prop p = new Prop();
+        p.kind = kind;
+        p.u = u;
+        p.v = v;
+        p.sz = sz;
+        return p;
     }
 
     public static float getChunkTopZ(MapKnowledgeMask.KnowledgeProvider provider, int cx, int cy) {
         if (provider == null) return 0f;
         MapKnowledgeMask.KnowledgeProvider.State state = provider.getChunkState(cx, cy);
-        Biome b = provider.getBiome(cx, cy);
-        boolean isOcean = (b == Biome.OCEAN);
+        boolean isOcean = provider.getBiome(cx, cy) == Biome.OCEAN;
         if (state == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
             return isOcean ? 2.0f : 6.0f;
         } else if (state == MapKnowledgeMask.KnowledgeProvider.State.GLIMPSED) {
             return isOcean ? 1.2f : 2.5f;
         }
         return 0f;
+    }
+
+    public static void drawRectCanvas(ShapeRenderer shapes, float x, float y, float w, float h, Color color) {
+        shapes.setColor(color);
+        shapes.rect(x, FBO_HEIGHT - y - h, w, h);
     }
 
     public static void drawGlow(ShapeRenderer shapes, float cx, float cy, float r, float red, float green, float blue, float alpha) {
@@ -2481,9 +2477,9 @@ public final class IsometricDioramaRenderer implements Disposable {
         drawRectCanvas(shapes, x0 + 7, y0 + 13, 1, 1, aBronze);
     }
 
-    public void renderLights(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        renderLights(shapes, provider, this.isCave);
-    }
+    // ------------------------------------------------------------------
+    // Per-frame layers
+    // ------------------------------------------------------------------
 
     public void renderLights(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, boolean cave) {
         if (provider == null) return;
@@ -2493,98 +2489,100 @@ public final class IsometricDioramaRenderer implements Disposable {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
+        float m = 40f * camZoom + 60f;
 
         if (!cave) {
             int litIndex = 0;
-            for (GridPoint2 c : sortedChunks) {
+            for (GridPoint2 c : surfaceChunks) {
                 int cx = c.x;
                 int cy = c.y;
+                if (!onScreen(cx + 0.5f, cy + 0.5f, m)) continue;
+                float h = getChunkTopZ(provider, cx, cy);
                 MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
                 if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
-                    float h = getChunkTopZ(provider, cx, cy);
                     float fl = 0.85f + 0.1f * (float) Math.sin(t * 9f + litIndex * 2f) + 0.05f * (float) Math.sin(t * 23f + litIndex);
                     Vector2 f = project(cx + 0.68f, cy + 0.66f, h + 1f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                     drawGlow(shapes, f.x, f.y, 15f * s * fl, 240 / 255f, 140 / 255f, 60 / 255f, 0.34f * fl);
-
                     Vector2 b = project(cx + 0.5f, cy + 0.5f, h + 6.6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                     drawBeam(shapes, b.x, b.y, Math.max(1f, s * 1.1f), 22f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.32f * fl);
                     drawGlow(shapes, b.x, b.y, 5f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.45f * fl);
                     litIndex++;
                 }
-
+                if (provider.getChunkState(cx, cy) != MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
+                    if (provider.hasSeal(cx, cy)) sealGlow(shapes, provider, cx, cy, h, t, s);
+                    continue;
+                }
                 if (provider.hasReturnPortal(cx, cy)) {
-                    float ph = getChunkTopZ(provider, cx, cy);
-                    Vector2 pp = project(cx + 0.5f, cy + 0.5f, ph + 2.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    Vector2 pp = project(cx + 0.5f, cy + 0.5f, h + 2.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                     float pu = 0.8f + 0.2f * (float) Math.sin(t * 2f);
                     drawGlow(shapes, pp.x, pp.y, 9f * s, 201 / 255f, 166 / 255f, 232 / 255f, 0.32f * pu);
-
-                    Color swirlCol = new Color(220 / 255f, 200 / 255f, 255 / 255f, 0.45f);
                     Vector2 gpp = toGdxScreen(pp);
-                    float rx = 1.4f * s;
-                    float ry = 2.3f * s;
                     float lw = Math.max(1f, s * 0.35f);
                     for (int i = 0; i < 3; i++) {
                         float a0 = t * 2f + i * 2.1f;
-                        drawArc(shapes, gpp.x, gpp.y, rx, ry, a0, a0 + 1.7f, lw, swirlCol);
+                        drawArc(shapes, gpp.x, gpp.y, 1.4f * s, 2.3f * s, a0, a0 + 1.7f, lw, COLOR_PORTAL_SWIRL);
                     }
                 }
-
-                if (provider.hasSeal(cx, cy)) {
-                    float sh = getChunkTopZ(provider, cx, cy);
-                    Vector2 sp = project(cx + 0.5f, cy + 0.5f, sh + 1.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    drawGlow(shapes, sp.x, sp.y, 10f * s, 208 / 255f, 104 / 255f, 63 / 255f, 0.24f + 0.06f * (float) Math.sin(t * 1.3f));
-                }
-
+                if (provider.hasSeal(cx, cy)) sealGlow(shapes, provider, cx, cy, h, t, s);
                 if (provider.getBiome(cx, cy) == Biome.BLIGHT) {
-                    float bh = getChunkTopZ(provider, cx, cy);
-                    Vector2 bp = project(cx + 0.5f, cy + 0.5f, bh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    Vector2 bp = project(cx + 0.5f, cy + 0.5f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                     drawGlow(shapes, bp.x, bp.y, 22f * s, 170 / 255f, 50 / 255f, 70 / 255f, 0.09f + 0.04f * (float) Math.sin(t * 0.9f));
                 }
             }
         } else {
-            for (GridPoint2 c : sortedChunks) {
+            for (GridPoint2 c : caveChunks) {
                 int cx = c.x;
                 int cy = c.y;
-                if (provider.hasLadder(cx, cy)) {
-                    Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                if (!onScreen(cx + 0.5f, cy + 0.5f, m)) continue;
+                ChunkTiles ct = provider.getCavernTiles(cx, cy);
+                if (ct == null || ct.width <= 0) continue;
+                for (Map.Entry<GridPoint2, Ladder.LadderType> e : ct.ladders.entrySet()) {
+                    if (e.getValue() != Ladder.LadderType.UP) continue; // only the way out glows; strata hold many ladders down
+                    GridPoint2 at = e.getKey();
+                    Vector2 lp = project(cx + (at.x + 0.5f) / ct.width, cy + (at.y + 0.5f) / ct.height, 5f,
+                            camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
                     drawGlow(shapes, lp.x, lp.y, 12f * s, 233 / 255f, 180 / 255f, 76 / 255f, 0.24f);
                     drawBeam(shapes, lp.x, lp.y, Math.max(2f, s * 1.6f), 14f * s, 255 / 255f, 215 / 255f, 122 / 255f, 0.22f);
                 }
-                if (provider.hasCave(cx, cy) || provider.getChunkState(cx, cy) == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
-                    Mulberry32 rng = new Mulberry32(hash(cx, cy) + 111);
-                    for (int i = 0; i < 4; i++) {
-                        float fu = rng.nextFloat();
-                        float fv = rng.nextFloat();
-                        float fph = rng.nextFloat() * 6.28f;
-                        Vector2 fp = project(cx + fu, cy + fv, 5.3f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        float fa = 0.3f + 0.12f * (float) Math.sin(t * 1.7f + fph);
-                        drawGlow(shapes, fp.x, fp.y, 4.5f * s, 108 / 255f, 207 / 255f, 224 / 255f, fa);
-                    }
+                for (float[] f : fungiOf(cx, cy, ct)) {
+                    Vector2 fp = project(cx + f[0], cy + f[1], 5.3f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                    float fa = 0.3f + 0.12f * (float) Math.sin(t * 1.7f + f[3]);
+                    Color fc = f[2] > 0.5f ? COLOR_FUNGI_GLOW : COLOR_FUNGI_GLOW_VIOLET;
+                    drawGlow(shapes, fp.x, fp.y, 4.5f * s, fc.r, fc.g, fc.b, fa);
                 }
             }
         }
+        shapes.end();
 
         if (!cave) {
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
             int litIndex = 0;
-            for (GridPoint2 c : sortedChunks) {
-                int cx = c.x;
-                int cy = c.y;
-                MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
-                if (shelter == MapModel.ShelterMark.LIT || shelter == MapModel.ShelterMark.HOME) {
-                    float h = getChunkTopZ(provider, cx, cy);
-                    Vector2 f0 = project(cx + 0.68f, cy + 0.66f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    float kk = Math.max(1f, s * 0.45f);
-                    float fl = (float) Math.sin(t * 11f + litIndex * 3f);
-                    float hgt = (2.6f + 0.8f * fl) * kk;
-
-                    drawRectCanvas(shapes, f0.x - kk, f0.y - hgt - kk * 0.5f, 2f * kk, hgt, COLOR_SEAL_AMBER);
-                    drawRectCanvas(shapes, f0.x - kk * 0.5f, f0.y - hgt * 0.7f - kk * 0.5f, kk, hgt * 0.7f, COLOR_BRIGHT_GOLD);
+            for (GridPoint2 c : surfaceChunks) {
+                MapModel.ShelterMark shelter = provider.getShelter(c.x, c.y);
+                if (shelter != MapModel.ShelterMark.LIT && shelter != MapModel.ShelterMark.HOME) continue;
+                if (!onScreen(c.x + 0.5f, c.y + 0.5f, m)) {
                     litIndex++;
+                    continue;
                 }
+                float h = getChunkTopZ(provider, c.x, c.y);
+                Vector2 f0 = project(c.x + 0.68f, c.y + 0.66f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                float kk = Math.max(1f, s * 0.45f);
+                float fl = (float) Math.sin(t * 11f + litIndex * 3f);
+                float hgt = (2.6f + 0.8f * fl) * kk;
+                drawRectCanvas(shapes, f0.x - kk, f0.y - hgt - kk * 0.5f, 2f * kk, hgt, COLOR_SEAL_AMBER);
+                drawRectCanvas(shapes, f0.x - kk * 0.5f, f0.y - hgt * 0.7f - kk * 0.5f, kk, hgt * 0.7f, COLOR_BRIGHT_GOLD);
+                litIndex++;
             }
+            shapes.end();
         }
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    }
 
-        shapes.end();
+    private void sealGlow(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, int cx, int cy, float h, float t, float s) {
+        Vector2 sp = project(cx + 0.5f, cy + 0.5f, h + 1.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        float a = (0.24f + 0.06f * (float) Math.sin(t * 1.3f)) * (provider.isSealWon(cx, cy) ? 0.35f : 1f);
+        drawGlow(shapes, sp.x, sp.y, 10f * s, 208 / 255f, 104 / 255f, 63 / 255f, a);
     }
 
     public void renderVignette(ShapeRenderer shapes) {
@@ -2594,38 +2592,40 @@ public final class IsometricDioramaRenderer implements Disposable {
 
         float cx = FBO_WIDTH / 2f;
         float cy = FBO_HEIGHT / 2f;
-        float rxInner = FBO_HEIGHT * 0.32f;
-        float ryInner = rxInner;
-        float rxOuter = FBO_WIDTH * 0.7f;
-        float ryOuter = rxOuter;
-
-        Color cInner = new Color(4 / 255f, 3 / 255f, 2 / 255f, 0f);
-        Color cOuter = new Color(4 / 255f, 3 / 255f, 2 / 255f, 0.62f);
+        float rInner = FBO_HEIGHT * 0.32f;
+        float rOuter = FBO_WIDTH * 0.7f;
+        Color cInner = VIGNETTE_INNER;
+        Color cOuter = VIGNETTE_OUTER;
 
         int segs = 32;
         for (int i = 0; i < segs; i++) {
             float a0 = (float) (i * 2.0 * Math.PI / segs);
             float a1 = (float) ((i + 1) * 2.0 * Math.PI / segs);
-
-            float inX0 = cx + rxInner * (float) Math.cos(a0);
-            float inY0 = cy + ryInner * (float) Math.sin(a0);
-            float inX1 = cx + rxInner * (float) Math.cos(a1);
-            float inY1 = cy + ryInner * (float) Math.sin(a1);
-
-            float outX0 = cx + rxOuter * (float) Math.cos(a0);
-            float outY0 = cy + ryOuter * (float) Math.sin(a0);
-            float outX1 = cx + rxOuter * (float) Math.cos(a1);
-            float outY1 = cy + ryOuter * (float) Math.sin(a1);
-
+            float inX0 = cx + rInner * (float) Math.cos(a0), inY0 = cy + rInner * (float) Math.sin(a0);
+            float inX1 = cx + rInner * (float) Math.cos(a1), inY1 = cy + rInner * (float) Math.sin(a1);
+            float outX0 = cx + rOuter * (float) Math.cos(a0), outY0 = cy + rOuter * (float) Math.sin(a0);
+            float outX1 = cx + rOuter * (float) Math.cos(a1), outY1 = cy + rOuter * (float) Math.sin(a1);
             shapes.triangle(inX0, inY0, outX0, outY0, outX1, outY1, cInner, cOuter, cOuter);
             shapes.triangle(inX0, inY0, outX1, outY1, inX1, inY1, cInner, cOuter, cInner);
         }
-
         shapes.end();
     }
 
-    public void drawRoads(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawRoads(shapes, provider, 1.0f);
+    private static final Color VIGNETTE_INNER = new Color(4 / 255f, 3 / 255f, 2 / 255f, 0f);
+    private static final Color VIGNETTE_OUTER = new Color(4 / 255f, 3 / 255f, 2 / 255f, 0.62f);
+    private static final Color COLOR_PORTAL_SWIRL = new Color(220 / 255f, 200 / 255f, 1f, 0.45f);
+
+    // ------------------------------------------------------------------
+    // Overlay: drawn over the fog
+    // ------------------------------------------------------------------
+
+    private int levelIndex() {
+        ZoomLevel z = levelOf(camZoom);
+        return z == ZoomLevel.WORLD ? 0 : (z == ZoomLevel.REGION ? 1 : 2);
+    }
+
+    private static Color withAlpha(Color c, float a) {
+        return new Color(c.r, c.g, c.b, c.a * a);
     }
 
     public void drawRoads(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
@@ -2634,42 +2634,47 @@ public final class IsometricDioramaRenderer implements Disposable {
         if (roads == null || roads.isEmpty()) return;
 
         float s = camZoom;
-        float darkWidth = Math.max(3f, 1.4f * s);
-        float roadWidth = Math.max(1.5f, 0.7f * s);
-        float dashLen = Math.max(3f, 2.2f * s);
-        float gapLen = Math.max(2f, 1.4f * s);
         float dashOffset = -elapsedTime * 4f;
-
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        Color darkBacking = new Color(16 / 255f, 10 / 255f, 5 / 255f, 0.75f * alpha);
-
-        for (MapKnowledgeMask.RoadInfo r : roads) {
-            if (Math.abs(r.fromX - r.toX) > 1.5f || Math.abs(r.fromY - r.toY) > 1.5f) continue;
-            float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
-            float z1 = getChunkTopZ(provider, (int) r.toX, (int) r.toY) + 0.4f;
-            Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 p1 = toGdxScreen(project(r.toX + 0.5f, r.toY + 0.5f, z1, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            drawThickLine(shapes, p0.x, p0.y, p1.x, p1.y, darkWidth, darkBacking);
-        }
-
-        for (MapKnowledgeMask.RoadInfo r : roads) {
-            if (Math.abs(r.fromX - r.toX) > 1.5f || Math.abs(r.fromY - r.toY) > 1.5f) continue;
-            float z0 = getChunkTopZ(provider, (int) r.fromX, (int) r.fromY) + 0.4f;
-            float z1 = getChunkTopZ(provider, (int) r.toX, (int) r.toY) + 0.4f;
-            Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-            Vector2 p1 = toGdxScreen(project(r.toX + 0.5f, r.toY + 0.5f, z1, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-
-            Color baseCol = r.spent ? new Color(208 / 255f, 104 / 255f, 63 / 255f, 0.35f) : r.color;
-            Color col = new Color(baseCol.r, baseCol.g, baseCol.b, baseCol.a * alpha);
-            drawDashedThickLine(shapes, p0.x, p0.y, p1.x, p1.y, roadWidth, col, dashLen, gapLen, dashOffset);
+        Color backing = new Color(16 / 255f, 10 / 255f, 5 / 255f, 0.75f * alpha);
+        for (int pass = 0; pass < 2; pass++) {
+            for (MapKnowledgeMask.RoadInfo r : roads) {
+                float z0 = getChunkTopZ(provider, (int) Math.floor(r.fromX), (int) Math.floor(r.fromY)) + 0.4f;
+                float z1 = getChunkTopZ(provider, (int) Math.floor(r.toX), (int) Math.floor(r.toY)) + 0.4f;
+                Vector2 p0 = toGdxScreen(project(r.fromX + 0.5f, r.fromY + 0.5f, z0, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 p1 = toGdxScreen(project(r.toX + 0.5f, r.toY + 0.5f, z1, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                if (pass == 0) {
+                    drawThickLine(shapes, p0.x, p0.y, p1.x, p1.y, Math.max(3f, 1.4f * s), backing);
+                } else {
+                    Color base = r.color == null ? COLOR_SEAL_AMBER : r.color;
+                    Color col = new Color(base.r, base.g, base.b, (r.spent ? 0.35f : 1f) * alpha);
+                    drawDashedThickLine(shapes, p0.x, p0.y, p1.x, p1.y, Math.max(1.5f, 0.7f * s), col,
+                            Math.max(3f, 2.2f * s), Math.max(2f, 1.4f * s), dashOffset);
+                }
+            }
         }
         shapes.end();
     }
 
-    public void drawRumour(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawRumour(shapes, provider, 1.0f);
+    /** The suggested way on: a pulsing gold line along the road from the player's chunk. */
+    private void drawSuggestedRoute(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        List<GridPoint2> route = provider.getSuggestedRoute();
+        if (route == null || route.size() < 2) return;
+        float pulse = 0.6f + 0.3f * (float) Math.sin(elapsedTime * 3f);
+        Color col = new Color(COLOR_BRIGHT_GOLD.r, COLOR_BRIGHT_GOLD.g, COLOR_BRIGHT_GOLD.b, pulse * alpha);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (int i = 0; i + 1 < route.size(); i++) {
+            GridPoint2 a = route.get(i);
+            GridPoint2 b = route.get(i + 1);
+            Vector2 p0 = toGdxScreen(project(a.x + 0.5f, a.y + 0.5f, getChunkTopZ(provider, a.x, a.y) + 0.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 p1 = toGdxScreen(project(b.x + 0.5f, b.y + 0.5f, getChunkTopZ(provider, b.x, b.y) + 0.8f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            drawDashedThickLine(shapes, p0.x, p0.y, p1.x, p1.y, 1f, col, 2f, 2f, elapsedTime * 6f);
+        }
+        shapes.end();
     }
 
     public void drawRumour(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
@@ -2687,26 +2692,21 @@ public final class IsometricDioramaRenderer implements Disposable {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-
         float midY = b.y - hgt * 0.55f;
         float topY = b.y - hgt;
-
         Vector2 b0 = toGdxScreen(new Vector2(b.x - w * 0.5f, b.y));
         Vector2 b1 = toGdxScreen(new Vector2(b.x + w * 0.5f, b.y));
         Vector2 m0 = toGdxScreen(new Vector2(b.x - w * 0.5f, midY));
         Vector2 m1 = toGdxScreen(new Vector2(b.x + w * 0.5f, midY));
         Vector2 t0 = toGdxScreen(new Vector2(b.x - w * 0.5f, topY));
         Vector2 t1 = toGdxScreen(new Vector2(b.x + w * 0.5f, topY));
-
         Color col0 = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0f);
         Color colMid = new Color(233 / 255f, 180 / 255f, 76 / 255f, 0.5f * fl * alpha);
         Color colTop = new Color(255 / 255f, 215 / 255f, 122 / 255f, 0f);
-
         shapes.triangle(b0.x, b0.y, b1.x, b1.y, m1.x, m1.y, col0, col0, colMid);
         shapes.triangle(b0.x, b0.y, m1.x, m1.y, m0.x, m0.y, col0, colMid, colMid);
         shapes.triangle(m0.x, m0.y, m1.x, m1.y, t1.x, t1.y, colMid, colMid, colTop);
         shapes.triangle(m0.x, m0.y, t1.x, t1.y, t0.x, t0.y, colMid, colTop, colTop);
-
         drawGlow(shapes, b.x, midY, 7f + 4f * fl, 255 / 255f, 210 / 255f, 120 / 255f, 0.55f * fl * alpha);
         shapes.end();
 
@@ -2716,83 +2716,83 @@ public final class IsometricDioramaRenderer implements Disposable {
         shapes.end();
     }
 
-    public void drawCastleMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawCastleMark(shapes, provider, 1.0f);
-    }
-
-    public void drawCastleMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
-        if (provider == null || alpha <= 0.001f) return;
-        Vector2 castleSite = provider.getCastleSite();
-        if (castleSite == null) return;
-
-        Vector2 p = project(castleSite.x, castleSite.y, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-        float m = 26f;
-        float W = FBO_WIDTH;
-        float H = FBO_HEIGHT;
-        float cx = W / 2f;
-        float cy = H / 2f;
-
-        float dx = p.x - cx;
-        float dy = p.y - cy;
+    /**
+     * Where a point sits against the view's edge: inside, or clamped to an inset rectangle along
+     * the ray from the centre. Returns {x, y, dx, dy, inside} in top-down FBO pixels.
+     */
+    private static float[] edgeClamp(Vector2 p, float m) {
+        float W = FBO_WIDTH, H = FBO_HEIGHT, cx = W / 2f, cy = H / 2f;
+        float dx = p.x - cx, dy = p.y - cy;
         float len = (float) Math.hypot(dx, dy);
         if (len < 0.001f) len = 1f;
         dx /= len;
         dy /= len;
+        boolean inside = p.x > m && p.x < W - m && p.y > m && p.y < H - m;
+        if (inside) return new float[]{p.x, p.y, dx, dy, 1f};
+        float tx = dx > 0 ? (W - m - cx) / dx : (dx < 0 ? (m - cx) / dx : Float.POSITIVE_INFINITY);
+        float ty = dy > 0 ? (H - m - cy) / dy : (dy < 0 ? (m - cy) / dy : Float.POSITIVE_INFINITY);
+        float tt = Math.min(tx, ty);
+        return new float[]{cx + dx * tt, cy + dy * tt, dx, dy, 0f};
+    }
 
-        boolean inside = (p.x > m && p.x < W - m && p.y > m && p.y < H - m);
-        Vector2 q;
-        if (!inside) {
-            float tx = dx > 0 ? (W - m - cx) / dx : (dx < 0 ? (m - cx) / dx : Float.POSITIVE_INFINITY);
-            float ty = dy > 0 ? (H - m - cy) / dy : (dy < 0 ? (m - cy) / dy : Float.POSITIVE_INFINITY);
-            float tt = Math.min(tx, ty);
-            q = new Vector2(cx + dx * tt, cy + dy * tt);
-        } else {
-            q = new Vector2(p.x, p.y);
-        }
+    /** An arrowhead on the view's edge pointing along (dx, dy), outlined in table black. */
+    private static void edgeArrow(ShapeRenderer shapes, float ax, float ay, float dx, float dy, Color color, float alpha) {
+        float nx = -dy, ny = dx;
+        Vector2 t0 = toGdxScreen(new Vector2(ax + dx * 8f, ay + dy * 8f));
+        Vector2 t1 = toGdxScreen(new Vector2(ax - dx * 4f + nx * 7f, ay - dy * 4f + ny * 7f));
+        Vector2 t2 = toGdxScreen(new Vector2(ax - dx * 4f - nx * 7f, ay - dy * 4f - ny * 7f));
+        shapes.setColor(withAlpha(COLOR_TABLE_BG, alpha));
+        shapes.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
+        Vector2 i0 = toGdxScreen(new Vector2(ax + dx * 6f, ay + dy * 6f));
+        Vector2 i1 = toGdxScreen(new Vector2(ax - dx * 3f + nx * 5f, ay - dy * 3f + ny * 5f));
+        Vector2 i2 = toGdxScreen(new Vector2(ax - dx * 3f - nx * 5f, ay - dy * 3f - ny * 5f));
+        shapes.setColor(withAlpha(color, alpha));
+        shapes.triangle(i0.x, i0.y, i1.x, i1.y, i2.x, i2.y);
+    }
 
+    /**
+     * Castle Tarmin: its bearing is always known, its place only once reached. Known and in view,
+     * its silhouette stands on the board; otherwise an arrow on the edge points the way.
+     */
+    public void drawCastleMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
+        Vector2 site = provider.getCastleSite();
+        if (site == null) return;
+
+        float[] e = edgeClamp(project(site.x, site.y, 0f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT), 26f);
+        boolean inside = e[4] > 0.5f && provider.isCastleKnown();
+        float dx = e[2], dy = e[3];
         float k = inside ? Math.min(2.2f, Math.max(1.0f, camZoom)) : 1.2f;
-        float sx = q.x - dx * (inside ? 0f : 34f);
-        float sy = q.y - dy * (inside ? 0f : 34f) + 30f * k;
+        float sx = e[0] - dx * (inside ? 0f : 34f);
+        float sy = e[1] - dy * (inside ? 0f : 34f) + 30f * k;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-
-        Color castleDark = new Color(COLOR_CASTLE_DARK.r, COLOR_CASTLE_DARK.g, COLOR_CASTLE_DARK.b, 0.42f * alpha);
-        drawRectCanvas(shapes, sx - 14f * k, sy - 10f * k, 28f * k, 10f * k, castleDark);
-        drawRectCanvas(shapes, sx - 7f * k, sy - 46f * k, 14f * k, 40f * k, castleDark);
-        drawRectCanvas(shapes, sx - 15f * k, sy - 28f * k, 7f * k, 20f * k, castleDark);
-        drawRectCanvas(shapes, sx + 8f * k, sy - 26f * k, 7f * k, 18f * k, castleDark);
+        Color dark = withAlpha(COLOR_CASTLE_DARK, 0.42f * alpha);
+        drawRectCanvas(shapes, sx - 14f * k, sy - 10f * k, 28f * k, 10f * k, dark);
+        drawRectCanvas(shapes, sx - 7f * k, sy - 46f * k, 14f * k, 40f * k, dark);
+        drawRectCanvas(shapes, sx - 15f * k, sy - 28f * k, 7f * k, 20f * k, dark);
+        drawRectCanvas(shapes, sx + 8f * k, sy - 26f * k, 7f * k, 18f * k, dark);
         for (int i = 0; i < 4; i++) {
-            drawRectCanvas(shapes, sx - 7f * k + i * 4f * k, sy - 50f * k, 2f * k, 4f * k, castleDark);
+            drawRectCanvas(shapes, sx - 7f * k + i * 4f * k, sy - 50f * k, 2f * k, 4f * k, dark);
         }
-
-        Color castlePurple = new Color(COLOR_CASTLE_PURPLE.r, COLOR_CASTLE_PURPLE.g, COLOR_CASTLE_PURPLE.b, 0.60f * alpha);
-        drawRectCanvas(shapes, sx - 1f * k, sy - 38f * k, 2f * k, 4f * k, castlePurple);
+        drawRectCanvas(shapes, sx - 1f * k, sy - 38f * k, 2f * k, 4f * k, withAlpha(COLOR_CASTLE_PURPLE, 0.6f * alpha));
 
         if (!inside) {
-            float ax = q.x;
-            float ay = q.y;
-            float nx = -dy;
-            float ny = dx;
-
-            Vector2 t0 = toGdxScreen(new Vector2(ax + dx * 8f, ay + dy * 8f));
-            Vector2 t1 = toGdxScreen(new Vector2(ax - dx * 4f + nx * 7f, ay - dy * 4f + ny * 7f));
-            Vector2 t2 = toGdxScreen(new Vector2(ax - dx * 4f - nx * 7f, ay - dy * 4f - ny * 7f));
-            shapes.setColor(new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha));
-            shapes.triangle(t0.x, t0.y, t1.x, t1.y, t2.x, t2.y);
-
-            Vector2 it0 = toGdxScreen(new Vector2(ax + dx * 6f, ay + dy * 6f));
-            Vector2 it1 = toGdxScreen(new Vector2(ax - dx * 3f + nx * 5f, ay - dy * 3f + ny * 5f));
-            Vector2 it2 = toGdxScreen(new Vector2(ax - dx * 3f - nx * 5f, ay - dy * 3f - ny * 5f));
-            shapes.setColor(new Color(COLOR_CASTLE_PURPLE.r, COLOR_CASTLE_PURPLE.g, COLOR_CASTLE_PURPLE.b, COLOR_CASTLE_PURPLE.a * alpha));
-            shapes.triangle(it0.x, it0.y, it1.x, it1.y, it2.x, it2.y);
-
+            float ax = e[4] > 0.5f ? e[0] : e[0];
+            float ay = e[1];
+            if (e[4] > 0.5f) {
+                // In view but not yet known: point toward it from the centre instead of marking the spot.
+                float[] far = edgeClamp(new Vector2(FBO_WIDTH / 2f + dx * 2000f, FBO_HEIGHT / 2f + dy * 2000f), 26f);
+                ax = far[0];
+                ay = far[1];
+            }
+            edgeArrow(shapes, ax, ay, dx, dy, COLOR_CASTLE_PURPLE, alpha);
             drawPlate(shapes, ax - dx * 18f, ay - dy * 18f + 7f, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG, alpha);
         } else {
             drawPlate(shapes, sx, sy - 52f * k, "castle", COLOR_CASTLE_PURPLE, COLOR_TABLE_BG, alpha);
         }
-
         shapes.end();
     }
 
@@ -2817,96 +2817,214 @@ public final class IsometricDioramaRenderer implements Disposable {
         }
     }
 
-    public void drawBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawBadges(shapes, provider, 1.0f);
-    }
-
     public void drawBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
         if (provider == null || alpha <= 0.001f) return;
-        ZoomLevel zoomLvl = levelOf(camZoom);
-        int L = (zoomLvl == ZoomLevel.WORLD) ? 0 : ((zoomLvl == ZoomLevel.REGION) ? 1 : 2);
+        int L = levelIndex();
         float m = 30f;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
 
+        Set<GridPoint2> chunks = new HashSet<>(surfaceChunks);
+        chunks.addAll(provider.pinnedChunks());
         List<BadgeEntry> items = new ArrayList<>(6);
-
-        for (GridPoint2 c : sortedChunks) {
+        for (GridPoint2 c : chunks) {
             int cx = c.x;
             int cy = c.y;
-            MapKnowledgeMask.KnowledgeProvider.State state = provider.getChunkState(cx, cy);
-            String pin = provider.getChunkPin(cx, cy);
-            if (state == MapKnowledgeMask.KnowledgeProvider.State.UNKNOWN && pin == null) continue;
-
-                items.clear();
-                MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
-                if (shelter != null && shelter != MapModel.ShelterMark.RUMOURED) {
-                    if (shelter == MapModel.ShelterMark.HOME) {
-                        items.add(new BadgeEntry("home", COLOR_BRIGHT_GOLD));
-                    } else if (shelter == MapModel.ShelterMark.LIT) {
-                        items.add(new BadgeEntry("shelter", COLOR_GOLD));
-                    } else {
-                        items.add(new BadgeEntry("shelter", COLOR_COLD_SHELTER));
-                    }
-                }
-
-                if (provider.hasSeal(cx, cy)) {
-                    items.add(new BadgeEntry("seal", COLOR_SEAL_AMBER));
-                }
-
-                if (L >= 1) {
-                    if (pin != null) {
-                        Color pinColor = PIN_COLORS.getOrDefault(pin, COLOR_GOLD);
-                        items.add(new BadgeEntry(pin, pinColor));
-                    }
-                    if (provider.getGraveCount(cx, cy) > 0) {
-                        items.add(new BadgeEntry("grave", COLOR_GRAVE_STONE));
-                    }
-                    if (provider.hasReturnPortal(cx, cy)) {
-                        items.add(new BadgeEntry("portal", COLOR_PORTAL_LAVENDER));
-                    }
-                    int depth = provider.getStratumDepth(cx, cy);
-                    if (depth > 0) {
-                        items.add(new BadgeEntry(depth));
-                    }
-                }
-
-                if (!items.isEmpty()) {
-                    float h = getChunkTopZ(provider, cx, cy);
-                    Vector2 p = project(cx + 0.5f, cy + 0.5f, h + (L == 2 ? 15f : 8f), camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    if (p.x >= -m && p.x <= FBO_WIDTH + m && p.y >= -m && p.y <= FBO_HEIGHT + m) {
-                        for (int i = 0; i < items.size(); i++) {
-                            BadgeEntry it = items.get(i);
-                            float x = p.x + (i - (items.size() - 1) / 2f) * 14f;
-                            if (it.isDepth) {
-                                drawDepthBadge(shapes, x, p.y, it.depth, alpha);
-                            } else {
-                                drawPlate(shapes, x, p.y, it.name, it.color, COLOR_INK, alpha);
-                            }
-                        }
-                    }
-                }
-
-                if (L == 2 && state == MapKnowledgeMask.KnowledgeProvider.State.VISITED) {
-                    float h = getChunkTopZ(provider, cx, cy);
-                    if (provider.getChestCount(cx, cy) > 0) {
-                        Vector2 p = project(cx + 0.5f, cy + 0.5f, h + 4f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
-                    }
-                    if (provider.hasLadder(cx, cy)) {
-                        Vector2 p = project(cx + 4.5f / 8f, cy + 4.5f / 8f, h + 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        drawPlate(shapes, p.x, p.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
-                    }
-                }
+            items.clear();
+            MapModel.ShelterMark shelter = provider.getShelter(cx, cy);
+            if (shelter != null && shelter != MapModel.ShelterMark.RUMOURED) {
+                if (shelter == MapModel.ShelterMark.HOME) items.add(new BadgeEntry("home", COLOR_BRIGHT_GOLD));
+                else if (shelter == MapModel.ShelterMark.LIT) items.add(new BadgeEntry("shelter", COLOR_GOLD));
+                else items.add(new BadgeEntry("shelter", COLOR_COLD_SHELTER));
+            }
+            if (provider.hasSeal(cx, cy)) items.add(new BadgeEntry("seal", COLOR_SEAL_AMBER));
+            if (L >= 1) {
+                String pin = provider.getChunkPin(cx, cy);
+                if (pin != null) items.add(new BadgeEntry(pin, PIN_COLORS.getOrDefault(pin, COLOR_GOLD)));
+                if (provider.getGraveCount(cx, cy) > 0) items.add(new BadgeEntry("grave", COLOR_GRAVE_STONE));
+                if (provider.hasReturnPortal(cx, cy)) items.add(new BadgeEntry("portal", COLOR_PORTAL_LAVENDER));
+                int depth = provider.getStratumDepth(cx, cy);
+                if (depth > 0) items.add(new BadgeEntry(depth));
+            }
+            if (items.isEmpty()) continue;
+            float h = getChunkTopZ(provider, cx, cy);
+            Vector2 p = project(cx + 0.5f, cy + 0.5f, h + (L == 2 ? 15f : 8f), camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            if (p.x < -m || p.x > FBO_WIDTH + m || p.y < -m || p.y > FBO_HEIGHT + m) continue;
+            for (int i = 0; i < items.size(); i++) {
+                BadgeEntry it = items.get(i);
+                float x = p.x + (i - (items.size() - 1) / 2f) * 14f;
+                if (it.isDepth) drawDepthBadge(shapes, x, p.y, it.depth, alpha);
+                else drawPlate(shapes, x, p.y, it.name, it.color, COLOR_INK, alpha);
+            }
         }
-
+        if (L == 2) drawChunkDetail(shapes, provider, alpha, false);
         shapes.end();
     }
 
-    public void drawMarks(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawMarks(shapes, provider, 1.0f);
+    /**
+     * The chunk view's detail: loot, events and ladders at their real tiles on every explored
+     * chunk in view, tile pins and the tile cursor in the selected one. Called inside a begun
+     * filled batch.
+     */
+    private void drawChunkDetail(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha, boolean cave) {
+        float m = 80f;
+        for (GridPoint2 c : cave ? caveChunks : surfaceChunks) {
+            if (!onScreen(c.x + 0.5f, c.y + 0.5f, 200f)) continue;
+            boolean visited = cave
+                    ? provider.getCaveState(c.x, c.y) == MapKnowledgeMask.KnowledgeProvider.State.VISITED
+                    : provider.getChunkState(c.x, c.y) == MapKnowledgeMask.KnowledgeProvider.State.VISITED;
+            if (!visited) continue;
+            ChunkTiles t = cave ? provider.getCavernTiles(c.x, c.y) : provider.getChunkTiles(c.x, c.y);
+            if (t == null || t.width <= 0) continue;
+            float h = cave ? 5f : getChunkTopZ(provider, c.x, c.y);
+            int shown = 0;
+            for (GridPoint2 at : t.itemTiles) {
+                if (!t.isSeen(at.x, at.y) || shown++ >= 4) continue;
+                tilePlate(shapes, c, t, at, h + 4f, "loot", PIN_COLORS.get("loot"), alpha, m);
+            }
+            shown = 0;
+            for (GridPoint2 at : t.events.keySet()) {
+                if (!t.isSeen(at.x, at.y) || shown++ >= 3) continue;
+                tilePlate(shapes, c, t, at, h + 4f, "event", PIN_COLORS.get("danger"), alpha, m);
+            }
+            for (GridPoint2 at : t.ladders.keySet()) {
+                if (!t.isSeen(at.x, at.y)) continue;
+                tilePlate(shapes, c, t, at, h + 5f, "ladder", COLOR_LADDER_BRONZE, alpha, m);
+            }
+        }
+
+        GridPoint2 sel = provider.getSelectedChunk();
+        if (sel == null) return;
+        ChunkTiles t = cave ? provider.getCavernTiles(sel.x, sel.y) : provider.getChunkTiles(sel.x, sel.y);
+        if (t == null || t.width <= 0) return;
+        float h = cave ? 5f : getChunkTopZ(provider, sel.x, sel.y);
+        for (Map.Entry<GridPoint2, String> pin : provider.getTilePins().entrySet()) {
+            tilePlate(shapes, sel, t, pin.getKey(), h + 3f, pin.getValue(), PIN_COLORS.getOrDefault(pin.getValue(), COLOR_GOLD), alpha, m);
+        }
+        GridPoint2 tc = provider.getTileCursor();
+        if (tc != null) {
+            float x0 = sel.x + tc.x / (float) t.width, y0 = sel.y + tc.y / (float) t.height;
+            float x1 = sel.x + (tc.x + 1) / (float) t.width, y1 = sel.y + (tc.y + 1) / (float) t.height;
+            float pulse = 0.7f + 0.3f * (float) Math.sin(elapsedTime * 5.0);
+            outlineQuad(shapes, x0, y0, x1, y1, h, 3f, new Color(11 / 255f, 9 / 255f, 7 / 255f, 0.85f * alpha));
+            outlineQuad(shapes, x0, y0, x1, y1, h, 1f, withAlpha(COLOR_BRIGHT_GOLD, pulse * alpha));
+        }
+    }
+
+    private void tilePlate(ShapeRenderer shapes, GridPoint2 c, ChunkTiles t, GridPoint2 at, float z, String glyph, Color bg, float alpha, float m) {
+        Vector2 p = project(c.x + (at.x + 0.5f) / t.width, c.y + (at.y + 0.5f) / t.height, z,
+                camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        if (p.x < -m || p.x > FBO_WIDTH + m || p.y < -m || p.y > FBO_HEIGHT + m) return;
+        drawPlate(shapes, p.x, p.y, glyph, bg, COLOR_INK, alpha);
+    }
+
+    private void outlineQuad(ShapeRenderer shapes, float x0, float y0, float x1, float y1, float z, float width, Color color) {
+        Vector2[] pts = {
+                toGdxScreen(project(x0, y0, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+                toGdxScreen(project(x1, y0, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+                toGdxScreen(project(x1, y1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+                toGdxScreen(project(x0, y1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT))
+        };
+        for (int i = 0; i < 4; i++) {
+            Vector2 a = pts[i];
+            Vector2 b = pts[(i + 1) % 4];
+            drawThickLine(shapes, a.x, a.y, b.x, b.y, width, color);
+        }
+    }
+
+    /** War fronts: the attacker's wash over each chunk, ringed in the defender's colour. */
+    private void drawFronts(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        List<MapSurface.FrontMark> fronts = provider.getFronts();
+        if (fronts.isEmpty()) return;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (MapSurface.FrontMark f : fronts) {
+            Color wash = withAlpha(f.attacker, 0.32f * alpha);
+            Color rim = withAlpha(f.defender, 0.9f * alpha);
+            for (GridPoint2 c : f.chunks) {
+                if (!onScreen(c.x + 0.5f, c.y + 0.5f, 60f)) continue;
+                float z = getChunkTopZ(provider, c.x, c.y) + 0.05f;
+                Vector2 a = toGdxScreen(project(c.x, c.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 b = toGdxScreen(project(c.x + 1, c.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 d = toGdxScreen(project(c.x + 1, c.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                Vector2 e = toGdxScreen(project(c.x, c.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                shapes.setColor(wash);
+                shapes.triangle(a.x, a.y, b.x, b.y, d.x, d.y);
+                shapes.triangle(a.x, a.y, d.x, d.y, e.x, e.y);
+                drawDashedThickLine(shapes, a.x, a.y, b.x, b.y, 1f, rim, 3f, 2f, 0f);
+                drawDashedThickLine(shapes, b.x, b.y, d.x, d.y, 1f, rim, 3f, 2f, 0f);
+                drawDashedThickLine(shapes, d.x, d.y, e.x, e.y, 1f, rim, 3f, 2f, 0f);
+                drawDashedThickLine(shapes, e.x, e.y, a.x, a.y, 1f, rim, 3f, 2f, 0f);
+            }
+        }
+        shapes.end();
+    }
+
+    /** Battlefields, columns on the march and war camps, in their house's colours. */
+    private void drawWarSigns(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        List<MapSurface.WarSign> signs = provider.getWarSigns();
+        if (signs.isEmpty()) return;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        for (MapSurface.WarSign s : signs) {
+            if (s.at == null) continue;
+            float z = getChunkTopZ(provider, s.at.x, s.at.y);
+            Vector2 p = project(s.at.x + 0.5f, s.at.y + 0.5f, z + 6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            if (s.kind == MapSurface.WarSign.Kind.COLUMN && s.toward != null) {
+                Vector2 a = toGdxScreen(project(s.at.x + 0.5f, s.at.y + 0.5f, z + 0.6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                float tz = getChunkTopZ(provider, s.toward.x, s.toward.y) + 0.6f;
+                Vector2 b = toGdxScreen(project(s.toward.x + 0.5f, s.toward.y + 0.5f, tz, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+                drawDashedThickLine(shapes, a.x, a.y, b.x, b.y, 1f, withAlpha(s.color, 0.9f * alpha), 3f, 2f, -elapsedTime * 5f);
+            }
+            String glyph = s.kind == MapSurface.WarSign.Kind.BATTLEFIELD ? "grave"
+                    : s.kind == MapSurface.WarSign.Kind.CAMP ? "danger" : "flag";
+            drawPlate(shapes, p.x, p.y, glyph, s.color, COLOR_INK, alpha);
+        }
+        shapes.end();
+    }
+
+    /** A hunting or roaming megabeast: a pulsing danger plate, or an arrow on the edge when out of view. */
+    private void drawThreat(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        MapModel.ThreatMark threat = provider.getThreat();
+        if (threat == null || threat.chunk == null) return;
+        float z = getChunkTopZ(provider, threat.chunk.x, threat.chunk.y);
+        float[] e = edgeClamp(project(threat.chunk.x + 0.5f, threat.chunk.y + 0.5f, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT), 30f);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        Color red = COLOR_THREAT;
+        if (e[4] > 0.5f) {
+            float ph = (elapsedTime * 0.7f) % 1f;
+            drawRing(shapes, threat.chunk.x + 0.5f, threat.chunk.y + 0.5f, z, 0.3f + 0.2f * ph, withAlpha(red, (1f - ph) * alpha), 1f, null, 0f);
+            drawPlate(shapes, e[0], e[1] - 8f * camZoom, "danger", red, COLOR_INK, alpha);
+        } else {
+            edgeArrow(shapes, e[0], e[1], e[2], e[3], red, alpha);
+            drawPlate(shapes, e[0] - e[2] * 18f, e[1] - e[3] * 18f + 7f, "danger", red, COLOR_INK, alpha);
+        }
+        shapes.end();
+    }
+
+    /** Ancient gates: a dashed ray from home toward each destination, its plate clamped into view. */
+    private void drawGates(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        List<MapKnowledgeMask.GateInfo> gates = provider.getGates();
+        if (gates.isEmpty()) return;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        Vector2 home = toGdxScreen(project(0.5f, 0.5f, getChunkTopZ(provider, 0, 0) + 0.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+        for (MapKnowledgeMask.GateInfo g : gates) {
+            Vector2 target = project(g.chunk.x + 0.5f, g.chunk.y + 0.5f, 0.5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            Vector2 tg = toGdxScreen(target);
+            Color col = withAlpha(g.tint, 0.22f * alpha);
+            drawDashedThickLine(shapes, home.x, home.y, tg.x, tg.y, 1f, col, 2f, 5f, 0f);
+            float[] e = edgeClamp(target, 30f);
+            drawPlate(shapes, e[0], e[1], "portal", g.tint, COLOR_INK, alpha);
+        }
+        shapes.end();
     }
 
     public void drawMarks(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
@@ -2918,233 +3036,166 @@ public final class IsometricDioramaRenderer implements Disposable {
         shapes.begin(ShapeRenderer.ShapeType.Filled);
 
         GridPoint2 w = provider.getWaypointChunk();
-        if (w != null && Math.abs(w.x) <= WORLD_RADIUS && Math.abs(w.y) <= WORLD_RADIUS) {
+        if (w != null) {
             float wh = getChunkTopZ(provider, w.x, w.y);
-            Color tableBg = new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha);
-            Color gold = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, COLOR_GOLD.a * alpha);
-            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, tableBg, 3f, null, 0f);
-            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, gold, 1f, new float[]{4f, 3f}, -t * 6f);
-
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, withAlpha(COLOR_TABLE_BG, alpha), 3f, null, 0f);
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f, withAlpha(COLOR_GOLD, alpha), 1f, new float[]{4f, 3f}, -t * 6f);
             float ph = (t * 0.6f) % 1f;
-            Color pulseCol = new Color(COLOR_GOLD.r, COLOR_GOLD.g, COLOR_GOLD.b, (1f - ph) * 0.8f * alpha);
-            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f + 0.25f * ph, pulseCol, 1f, null, 0f);
-
+            drawRing(shapes, w.x + 0.5f, w.y + 0.5f, wh, 0.34f + 0.25f * ph, withAlpha(COLOR_GOLD, (1f - ph) * 0.8f * alpha), 1f, null, 0f);
             Vector2 wp = project(w.x + 0.5f, w.y + 0.5f, wh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
             drawPlate(shapes, wp.x - 8f, wp.y - 6f, "flag", COLOR_GOLD, COLOR_INK, alpha);
         }
 
         GridPoint2 sug = provider.getSuggestionChunk();
-        if (sug != null && (w == null || !sug.equals(w)) && Math.abs(sug.x) <= WORLD_RADIUS && Math.abs(sug.y) <= WORLD_RADIUS) {
+        if (sug != null && (w == null || !sug.equals(w))) {
             float sh = getChunkTopZ(provider, sug.x, sug.y);
             float a = 0.45f + 0.25f * (float) Math.sin(t * 2.4f);
-            Color sugCol = new Color(0xef / 255f, 0xe3 / 255f, 0xcc / 255f, a * alpha);
-            drawRing(shapes, sug.x + 0.5f, sug.y + 0.5f, sh, 0.3f, sugCol, 1f, new float[]{2f, 3f}, t * 4f);
-
+            drawRing(shapes, sug.x + 0.5f, sug.y + 0.5f, sh, 0.3f, withAlpha(COLOR_SUGGEST_RING, a * alpha), 1f, new float[]{2f, 3f}, t * 4f);
             Vector2 sp = project(sug.x + 0.5f, sug.y + 0.5f, sh, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-            Color flagBg = new Color(COLOR_RUMOUR_BG.r, COLOR_RUMOUR_BG.g, COLOR_RUMOUR_BG.b, a * alpha);
-            Color flagInk = new Color(0xb3 / 255f, 0x9c / 255f, 0x78 / 255f, a * alpha);
-            drawPlate(shapes, sp.x - 16f, sp.y - 4f, "flag", flagBg, flagInk, alpha);
+            drawPlate(shapes, sp.x - 16f, sp.y - 4f, "flag", withAlpha(COLOR_RUMOUR_BG, a), withAlpha(COLOR_SUGGEST_INK, a), alpha);
         }
-
         shapes.end();
-    }
-
-    public void drawPlayerMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawPlayerMark(shapes, provider, 1.0f);
     }
 
     public void drawPlayerMark(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
         if (provider == null || alpha <= 0.001f) return;
-        float t = elapsedTime;
-
-        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
-            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
-                if (provider.hasPlayer(cx, cy)) {
-                    float pu = provider.getPlayerU(cx, cy);
-                    float pv = provider.getPlayerV(cx, cy);
-                    float faceX = provider.getPlayerFaceX(cx, cy);
-                    float faceY = provider.getPlayerFaceY(cx, cy);
-                    float h = getChunkTopZ(provider, cx, cy);
-                    float wx = cx + pu;
-                    float wy = cy + pv;
-
-                    ZoomLevel lvl = levelOf(camZoom);
-                    boolean isChunk = (lvl == ZoomLevel.CHUNK);
-
-                    Gdx.gl.glEnable(GL20.GL_BLEND);
-                    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-                    shapes.begin(ShapeRenderer.ShapeType.Filled);
-
-                    float ph = (t * 0.8f) % 1f;
-                    float ringR = (isChunk ? 0.04f : 0.08f) + (isChunk ? 0.06f : 0.16f) * ph;
-                    Color pulseCyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, (1f - ph) * alpha);
-                    drawRing(shapes, wx, wy, h, ringR, pulseCyan, 1f, null, 0f);
-
-                    Vector2 p = project(wx, wy, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-
-                    Color tableBg = new Color(COLOR_TABLE_BG.r, COLOR_TABLE_BG.g, COLOR_TABLE_BG.b, COLOR_TABLE_BG.a * alpha);
-                    Color cyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, COLOR_CYAN.a * alpha);
-
-                    if (isChunk) {
-                        float k = camZoom * 0.75f;
-                        float yTop = Math.round(p.y - 11f * k);
-                        float x = Math.round(p.x);
-
-                        drawRectCanvas(shapes, x - 4, yTop - 4, 9, 3, tableBg);
-                        drawRectCanvas(shapes, x - 3, yTop - 1, 7, 2, tableBg);
-                        drawRectCanvas(shapes, x - 1, yTop + 1, 3, 2, tableBg);
-
-                        drawRectCanvas(shapes, x - 3, yTop - 3, 7, 1, cyan);
-                        drawRectCanvas(shapes, x - 2, yTop - 2, 5, 1, cyan);
-                        drawRectCanvas(shapes, x - 1, yTop - 1, 3, 1, cyan);
-                        drawRectCanvas(shapes, x, yTop, 1, 1, cyan);
-                    } else {
-                        Vector2 f = project(wx + faceX * 0.3f, wy + faceY * 0.3f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                        Vector2 gp = toGdxScreen(p);
-                        Vector2 gf = toGdxScreen(f);
-                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 3f, tableBg);
-                        drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 1f, cyan);
-
-                        float x = Math.round(p.x);
-                        float y = Math.round(p.y) - 7;
-                        int[] rows = new int[]{1, 3, 5, 7, 5, 3, 1};
-                        for (int j = 0; j < rows.length; j++) {
-                            int w = rows[j];
-                            drawRectCanvas(shapes, x - (w + 2 - 1) / 2f, y - 4 + j, w + 2, 1, tableBg);
-                        }
-                        drawRectCanvas(shapes, x, y - 5, 1, 1, tableBg);
-                        drawRectCanvas(shapes, x, y + 3, 1, 1, tableBg);
-
-                        for (int j = 0; j < rows.length; j++) {
-                            int w = rows[j];
-                            drawRectCanvas(shapes, x - (w - 1) / 2f, y - 4 + j, w, 1, cyan);
-                        }
-                        Color cyanHi = new Color(COLOR_CYAN_HI.r, COLOR_CYAN_HI.g, COLOR_CYAN_HI.b, COLOR_CYAN_HI.a * alpha);
-                        drawRectCanvas(shapes, x - 1, y - 2, 1, 1, cyanHi);
-                    }
-
-                    shapes.end();
-                    return;
-                }
-            }
-        }
-    }
-
-    public void drawCaveBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        drawCaveBadges(shapes, provider, 1.0f);
-    }
-
-    public void drawCaveBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
-        if (provider == null || alpha <= 0.001f) return;
-        ZoomLevel zoomLvl = levelOf(camZoom);
-        int L = (zoomLvl == ZoomLevel.WORLD) ? 0 : ((zoomLvl == ZoomLevel.REGION) ? 1 : 2);
+        GridPoint2 pc = provider.getPlayerChunk();
+        if (pc == null) return;
+        int cx = pc.x, cy = pc.y;
+        float wx = cx + provider.getPlayerU(cx, cy);
+        float wy = cy + provider.getPlayerV(cx, cy);
+        float faceX = provider.getPlayerFaceX(cx, cy);
+        float faceY = provider.getPlayerFaceY(cx, cy);
+        float h = getChunkTopZ(provider, cx, cy);
+        boolean isChunk = levelOf(camZoom) == ZoomLevel.CHUNK;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
 
-        Vector2 ladderScreenPos = null;
+        float ph = (elapsedTime * 0.8f) % 1f;
+        float ringR = (isChunk ? 0.04f : 0.08f) + (isChunk ? 0.06f : 0.16f) * ph;
+        drawRing(shapes, wx, wy, h, ringR, withAlpha(COLOR_CYAN, (1f - ph) * alpha), 1f, null, 0f);
 
-        for (GridPoint2 c : sortedChunks) {
-            int cx = c.x;
-            int cy = c.y;
-            if (provider.hasLadder(cx, cy) || provider.hasCave(cx, cy)) {
-                Vector2 lp = project(cx + 4.5f / 8f, cy + 4.5f / 8f, 5f + 11f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                if (ladderScreenPos == null && provider.hasLadder(cx, cy)) {
-                    ladderScreenPos = lp;
-                }
+        Vector2 p = project(wx, wy, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+        Color tableBg = withAlpha(COLOR_TABLE_BG, alpha);
+        Color cyan = withAlpha(COLOR_CYAN, alpha);
+        if (isChunk) {
+            float k = camZoom * 0.75f;
+            float yTop = Math.round(p.y - 11f * k);
+            float x = Math.round(p.x);
+            drawRectCanvas(shapes, x - 4, yTop - 4, 9, 3, tableBg);
+            drawRectCanvas(shapes, x - 3, yTop - 1, 7, 2, tableBg);
+            drawRectCanvas(shapes, x - 1, yTop + 1, 3, 2, tableBg);
+            drawRectCanvas(shapes, x - 3, yTop - 3, 7, 1, cyan);
+            drawRectCanvas(shapes, x - 2, yTop - 2, 5, 1, cyan);
+            drawRectCanvas(shapes, x - 1, yTop - 1, 3, 1, cyan);
+            drawRectCanvas(shapes, x, yTop, 1, 1, cyan);
+        } else {
+            Vector2 f = project(wx + faceX * 0.3f, wy + faceY * 0.3f, h, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            Vector2 gp = toGdxScreen(p);
+            Vector2 gf = toGdxScreen(f);
+            drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 3f, tableBg);
+            drawThickLine(shapes, gp.x, gp.y, gf.x, gf.y, 1f, cyan);
+            float x = Math.round(p.x);
+            float y = Math.round(p.y) - 7;
+            int[] rows = {1, 3, 5, 7, 5, 3, 1};
+            for (int j = 0; j < rows.length; j++) {
+                drawRectCanvas(shapes, x - (rows[j] + 1) / 2f, y - 4 + j, rows[j] + 2, 1, tableBg);
+            }
+            drawRectCanvas(shapes, x, y - 5, 1, 1, tableBg);
+            drawRectCanvas(shapes, x, y + 3, 1, 1, tableBg);
+            for (int j = 0; j < rows.length; j++) {
+                drawRectCanvas(shapes, x - (rows[j] - 1) / 2f, y - 4 + j, rows[j], 1, cyan);
+            }
+            drawRectCanvas(shapes, x - 1, y - 2, 1, 1, withAlpha(COLOR_CYAN_HI, alpha));
+        }
+        shapes.end();
+    }
+
+    /** The stratum's badges: ladders, loot in explored caves, and the player's tether to the ladder up. */
+    public void drawCaveBadges(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float alpha) {
+        if (provider == null || alpha <= 0.001f) return;
+        int L = levelIndex();
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+        Vector2 ladderPos = null;
+        GridPoint2 pc = provider.getPlayerChunk();
+        for (GridPoint2 c : caveChunks) {
+            ChunkTiles t = provider.getCavernTiles(c.x, c.y);
+            if (t == null || t.width <= 0) continue;
+            for (Map.Entry<GridPoint2, Ladder.LadderType> e : t.ladders.entrySet()) {
+                // One plate per chunk, on its way up where it has one; the chunk detail draws them all at their tiles.
+                if (L == 2 || (e.getValue() != Ladder.LadderType.UP && t.ladders.containsValue(Ladder.LadderType.UP))) continue;
+                GridPoint2 at = e.getKey();
+                Vector2 lp = project(c.x + (at.x + 0.5f) / t.width, c.y + (at.y + 0.5f) / t.height, 16f,
+                        camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                if (ladderPos == null && c.equals(pc) && e.getValue() == Ladder.LadderType.UP) ladderPos = lp;
                 drawPlate(shapes, lp.x, lp.y, "ladder", COLOR_LADDER_BRONZE, COLOR_INK, alpha);
+                break;
             }
-
-            if (L >= 1 && provider.hasCave(cx, cy)) {
-                int chests = provider.getChestCount(cx, cy);
-                if (chests > 0) {
-                    Vector2 p = project(cx + 0.5f, cy + 0.5f, 9f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
-                }
+            if (L == 1 && !t.itemTiles.isEmpty()) {
+                Vector2 p = project(c.x + 0.5f, c.y + 0.5f, 9f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+                drawPlate(shapes, p.x, p.y, "loot", PIN_COLORS.get("loot"), COLOR_INK, alpha);
             }
         }
+        if (L == 2) drawChunkDetail(shapes, provider, alpha, true);
 
-        // Player tether diamond & dashed line
-        for (int cy = -WORLD_RADIUS; cy <= WORLD_RADIUS; cy++) {
-            for (int cx = -WORLD_RADIUS; cx <= WORLD_RADIUS; cx++) {
-                if (provider.hasPlayer(cx, cy)) {
-                    float pu = provider.getPlayerU(cx, cy);
-                    float pv = provider.getPlayerV(cx, cy);
-                    Vector2 p = project(cx + pu, cy + pv, 22f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-                    float x = Math.round(p.x);
-                    float y = Math.round(p.y);
-
-                    // Diamond
-                    Color cyan = new Color(COLOR_CYAN.r, COLOR_CYAN.g, COLOR_CYAN.b, 0.75f * alpha);
-                    Vector2 d0 = toGdxScreen(new Vector2(x + 0.5f, y - 4f));
-                    Vector2 d1 = toGdxScreen(new Vector2(x + 4.5f, y));
-                    Vector2 d2 = toGdxScreen(new Vector2(x + 0.5f, y + 4f));
-                    Vector2 d3 = toGdxScreen(new Vector2(x - 3.5f, y));
-
-                    drawThickLine(shapes, d0.x, d0.y, d1.x, d1.y, 1f, cyan);
-                    drawThickLine(shapes, d1.x, d1.y, d2.x, d2.y, 1f, cyan);
-                    drawThickLine(shapes, d2.x, d2.y, d3.x, d3.y, 1f, cyan);
-                    drawThickLine(shapes, d3.x, d3.y, d0.x, d0.y, 1f, cyan);
-
-                    // Dashed line from (x + 0.5, y + 5) to (lp.x + 0.5, lp.y - 16)
-                    if (ladderScreenPos != null) {
-                        Vector2 start = toGdxScreen(new Vector2(x + 0.5f, y + 5f));
-                        Vector2 end = toGdxScreen(new Vector2(ladderScreenPos.x + 0.5f, ladderScreenPos.y - 16f));
-                        drawDashedThickLine(shapes, start.x, start.y, end.x, end.y, 1f, cyan, 2f, 2f, 0f);
-                    }
-                    break;
-                }
-            }
+        if (pc != null) {
+            float pu = provider.getPlayerU(pc.x, pc.y);
+            float pv = provider.getPlayerV(pc.x, pc.y);
+            Vector2 p = project(pc.x + pu, pc.y + pv, L == 2 ? 12f : 22f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
+            float x = Math.round(p.x);
+            float y = Math.round(p.y);
+            Color cyan = withAlpha(COLOR_CYAN, 0.75f * alpha);
+            Vector2 d0 = toGdxScreen(new Vector2(x + 0.5f, y - 4f));
+            Vector2 d1 = toGdxScreen(new Vector2(x + 4.5f, y));
+            Vector2 d2 = toGdxScreen(new Vector2(x + 0.5f, y + 4f));
+            Vector2 d3 = toGdxScreen(new Vector2(x - 3.5f, y));
+            drawThickLine(shapes, d0.x, d0.y, d1.x, d1.y, 1f, cyan);
+            drawThickLine(shapes, d1.x, d1.y, d2.x, d2.y, 1f, cyan);
+            drawThickLine(shapes, d2.x, d2.y, d3.x, d3.y, 1f, cyan);
+            drawThickLine(shapes, d3.x, d3.y, d0.x, d0.y, 1f, cyan);
+            Vector2 foot = toGdxScreen(project(pc.x + pu, pc.y + pv, 5f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
+            Vector2 start = toGdxScreen(new Vector2(x + 0.5f, y + 5f));
+            drawDashedThickLine(shapes, start.x, start.y, foot.x, foot.y, 1f, cyan, 2f, 2f, 0f);
         }
-
         shapes.end();
     }
 
     public void drawSelection(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
         if (provider == null) return;
         GridPoint2 sel = provider.getSelectedChunk();
-        if (sel == null || Math.abs(sel.x) > WORLD_RADIUS || Math.abs(sel.y) > WORLD_RADIUS) return;
+        if (sel == null) return;
 
         float z = (floorT > 0.5f) ? 5.0f : getChunkTopZ(provider, sel.x, sel.y);
-
-        Vector2[] pts = new Vector2[]{
-            toGdxScreen(project(sel.x, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
-            toGdxScreen(project(sel.x + 1, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
-            toGdxScreen(project(sel.x + 1, sel.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
-            toGdxScreen(project(sel.x, sel.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT))
+        Vector2[] pts = {
+                toGdxScreen(project(sel.x, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+                toGdxScreen(project(sel.x + 1, sel.y, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+                toGdxScreen(project(sel.x + 1, sel.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT)),
+                toGdxScreen(project(sel.x, sel.y + 1, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT))
         };
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-
         Color darkBorder = new Color(11 / 255f, 9 / 255f, 7 / 255f, 0.85f);
         for (int i = 0; i < 4; i++) {
-            Vector2 a = pts[i];
-            Vector2 b = pts[(i + 1) % 4];
-            drawThickLine(shapes, a.x, a.y, b.x, b.y, 3f, darkBorder);
+            drawThickLine(shapes, pts[i].x, pts[i].y, pts[(i + 1) % 4].x, pts[(i + 1) % 4].y, 3f, darkBorder);
         }
-
         float pulse = 0.7f + 0.3f * (float) Math.sin(elapsedTime * 3.0);
         Color goldBorder = new Color(COLOR_BRIGHT_GOLD.r, COLOR_BRIGHT_GOLD.g, COLOR_BRIGHT_GOLD.b, pulse);
         for (int i = 0; i < 4; i++) {
-            Vector2 a = pts[i];
-            Vector2 b = pts[(i + 1) % 4];
-            drawThickLine(shapes, a.x, a.y, b.x, b.y, 1f, goldBorder);
+            drawThickLine(shapes, pts[i].x, pts[i].y, pts[(i + 1) % 4].x, pts[(i + 1) % 4].y, 1f, goldBorder);
         }
-
         shapes.setColor(COLOR_BRIGHT_GOLD);
-        for (int i = 0; i < 4; i++) {
-            Vector2 p = pts[i];
+        for (Vector2 p : pts) {
             shapes.rect(Math.round(p.x) - 1, Math.round(p.y) - 1, 3, 3);
         }
-
         shapes.end();
-    }
-
-    public void renderOverlays(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider) {
-        renderOverlays(shapes, provider, ease(floorT));
     }
 
     public void renderOverlays(ShapeRenderer shapes, MapKnowledgeMask.KnowledgeProvider provider, float ft) {
@@ -3153,18 +3204,21 @@ public final class IsometricDioramaRenderer implements Disposable {
         float ca = Math.max(0f, ft * 2f - 1f);
 
         if (sa > 0.001f) {
+            drawFronts(shapes, provider, sa);
             drawRoads(shapes, provider, sa);
+            drawSuggestedRoute(shapes, provider, sa);
             drawRumour(shapes, provider, sa);
+            if (levelIndex() >= 1) drawGates(shapes, provider, sa);
             drawCastleMark(shapes, provider, sa);
+            drawWarSigns(shapes, provider, sa);
             drawBadges(shapes, provider, sa);
             drawMarks(shapes, provider, sa);
+            drawThreat(shapes, provider, sa);
             drawPlayerMark(shapes, provider, sa);
         }
-
         if (ca > 0.001f) {
             drawCaveBadges(shapes, provider, ca);
         }
-
         drawSelection(shapes, provider);
     }
 
@@ -3174,15 +3228,10 @@ public final class IsometricDioramaRenderer implements Disposable {
 
     @Override
     public void dispose() {
-        if (surfaceFbo != null) {
-            surfaceFbo.dispose();
-            surfaceFbo = null;
-            surfaceRegion = null;
+        for (FrameBuffer b : new FrameBuffer[]{surfaceScene, caveScene, ghostFbo, fbo}) {
+            if (b != null) b.dispose();
         }
-        if (fbo != null) {
-            fbo.dispose();
-            fbo = null;
-        }
+        surfaceScene = caveScene = ghostFbo = fbo = null;
         if (fboBatch != null) {
             fboBatch.dispose();
             fboBatch = null;
@@ -3192,7 +3241,8 @@ public final class IsometricDioramaRenderer implements Disposable {
             shapeRenderer = null;
         }
         noiseTextures.dispose();
-        knowledgeMask.dispose();
+        surfaceMask.dispose();
+        caveMask.dispose();
         if (fogShader != null) {
             fogShader.dispose();
             fogShader = null;

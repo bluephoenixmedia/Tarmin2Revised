@@ -26,15 +26,31 @@ public class IsometricDioramaRendererTest {
         float camZoom = 1f;
         float camRot = 0f;
 
-        // Origin (0, 0, 0)
+        // Origin (0, 0, 0): five chunks west and five south of the camera
         Vector2 p0 = IsometricDioramaRenderer.project(0f, 0f, 0f, camX, camY, camZoom, camRot, W, H);
-        assertEquals(360f, p0.x, 0.001f);
-        assertEquals(84f, p0.y, 0.001f);
+        assertEquals(80f, p0.x, 0.001f);
+        assertEquals(224f, p0.y, 0.001f);
 
         // Center (5, 5, 0) should project to center of screen (360, 224)
         Vector2 pCenter = IsometricDioramaRenderer.project(5f, 5f, 0f, camX, camY, camZoom, camRot, W, H);
         assertEquals(360f, pCenter.x, 0.001f);
         assertEquals(224f, pCenter.y, 0.001f);
+    }
+
+    @Test
+    public void testNorthDrawsUpRightAndTheMapIsNotMirrored() {
+        // The game's north is +y; the prototype draws its north up-right. East must then be
+        // down-right, so turning from north to east turns clockwise on screen, as on any map.
+        Vector2 c = IsometricDioramaRenderer.project(0f, 0f, 0f, 0f, 0f, 1f, 0f, 720f, 448f);
+        Vector2 north = IsometricDioramaRenderer.project(0f, 1f, 0f, 0f, 0f, 1f, 0f, 720f, 448f);
+        Vector2 east = IsometricDioramaRenderer.project(1f, 0f, 0f, 0f, 0f, 1f, 0f, 720f, 448f);
+        assertTrue("north is right", north.x > c.x);
+        assertTrue("north is up (top-down y smaller)", north.y < c.y);
+        assertTrue("east is right", east.x > c.x);
+        assertTrue("east is down", east.y > c.y);
+        // Cross product of (north - c) and (east - c) in y-up screen space is negative: clockwise.
+        float nx = north.x - c.x, ny = c.y - north.y, ex = east.x - c.x, ey = c.y - east.y;
+        assertTrue("north to east turns clockwise", nx * ey - ny * ex < 0f);
     }
 
     @Test
@@ -160,13 +176,13 @@ public class IsometricDioramaRendererTest {
         renderer.panScreen(-28f, 0f, 720f, 448f);
         // At zoom=1, rot=0: dx = -28, a = -1, b = 0 -> rx = -0.5, ry = 0.5
         assertEquals(4.5f, renderer.getTgtX(), 0.001f);
-        assertEquals(5.5f, renderer.getTgtY(), 0.001f);
+        assertEquals(4.5f, renderer.getTgtY(), 0.001f);
 
         // Before snap, camX is still 5
         assertEquals(5f, renderer.getCamX(), 0.001f);
         renderer.snapCameraPosition();
         assertEquals(4.5f, renderer.getCamX(), 0.001f);
-        assertEquals(5.5f, renderer.getCamY(), 0.001f);
+        assertEquals(4.5f, renderer.getCamY(), 0.001f);
     }
 
     @Test
@@ -210,17 +226,15 @@ public class IsometricDioramaRendererTest {
 
     @Test
     public void testDepthSortingKey() {
-        // At rot = 0 (looking from south toward north):
-        // Chunks with smaller Y (e.g. y=0) should have smaller depth than chunks with larger Y (e.g. y=9)
-        float dNorth = IsometricDioramaRenderer.depth(5.5f, 0.5f, 5f, 5f, 0f);
-        float dSouth = IsometricDioramaRenderer.depth(5.5f, 9.5f, 5f, 5f, 0f);
-        assertTrue("Chunk at y=0 must be behind chunk at y=9 at rot=0", dNorth < dSouth);
+        // At rot = 0 north draws up the screen, so northern chunks (larger y) are behind southern ones.
+        float dNorth = IsometricDioramaRenderer.depth(5.5f, 9.5f, 5f, 5f, 0f);
+        float dSouth = IsometricDioramaRenderer.depth(5.5f, 0.5f, 5f, 5f, 0f);
+        assertTrue("Chunk at y=9 must be behind chunk at y=0 at rot=0", dNorth < dSouth);
 
-        // At rot = PI (180 deg, looking from north toward south):
-        // Chunks at y=9 should now have smaller depth than chunks at y=0
-        float dNorthRot = IsometricDioramaRenderer.depth(5.5f, 0.5f, 5f, 5f, (float) Math.PI);
-        float dSouthRot = IsometricDioramaRenderer.depth(5.5f, 9.5f, 5f, 5f, (float) Math.PI);
-        assertTrue("Chunk at y=9 must be behind chunk at y=0 at rot=PI", dSouthRot < dNorthRot);
+        // Turned half way round, the south is at the back.
+        float dNorthRot = IsometricDioramaRenderer.depth(5.5f, 9.5f, 5f, 5f, (float) Math.PI);
+        float dSouthRot = IsometricDioramaRenderer.depth(5.5f, 0.5f, 5f, 5f, (float) Math.PI);
+        assertTrue("Chunk at y=0 must be behind chunk at y=9 at rot=PI", dSouthRot < dNorthRot);
     }
 
     @Test

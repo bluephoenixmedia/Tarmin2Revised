@@ -17,7 +17,22 @@ final class MapNames {
     }
 
     static String floor(int floor) {
-        return floor <= 1 ? "Surface" : "Stratum " + (floor - 1);
+        return floor <= 1 ? "Surface" : "Stratum " + roman(floor - 1);
+    }
+
+    /** Roman numerals for the strata and doom stages, as the handoff prints them. */
+    static String roman(int n) {
+        if (n <= 0) return String.valueOf(n);
+        int[] values = {10, 9, 5, 4, 1};
+        String[] marks = {"X", "IX", "V", "IV", "I"};
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+            while (n >= values[i]) {
+                b.append(marks[i]);
+                n -= values[i];
+            }
+        }
+        return b.toString();
     }
 
     static String zoom(MapSurface.Zoom zoom) {
