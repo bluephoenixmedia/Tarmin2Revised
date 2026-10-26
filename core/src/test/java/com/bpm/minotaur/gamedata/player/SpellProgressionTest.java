@@ -75,8 +75,8 @@ public class SpellProgressionTest {
     public void levelUpUnlocksSlotsAutomatically() {
         assertEquals(1, player.getUnlockedSpellSlots());
 
-        // Level up to 2 (requires 108 XP)
-        player.addExperience(200, eventManager);
+        // Level up to 2 (requires 48 XP since the front-loaded curve, #311)
+        player.addExperience(48, eventManager);
         assertEquals(2, player.getLevel());
         assertEquals("Level 2 grants slot 2", 2, player.getUnlockedSpellSlots());
 

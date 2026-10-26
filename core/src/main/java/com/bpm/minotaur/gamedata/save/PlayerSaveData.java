@@ -393,6 +393,7 @@ public class PlayerSaveData {
             stats.setLevel(level);
             stats.setExperience(experience);
             stats.setExperienceToNextLevel(experienceToNextLevel);
+            stats.recomputeExperienceToNextLevel(); // the curve may have changed since the save (#311)
 
             stats.setSatiety(nutritionScale >= NUTRITION_SCALE_NETHACK
                     ? satiety
