@@ -35,7 +35,7 @@ public class IncarnationLedgerTest {
     public void theSoulAndTheWorldKeepTheirShare() {
         String kept = joined(IncarnationLedger.kept());
         for (String expected : new String[]{"KNOWN SPELLS", "FATHER'S SWORD", "UNLOCKS", "ALTAR",
-                "SHELTER CHEST", "TARMIN'S HUNGER"}) {
+                "SHELTER CHEST", "TARMIN'S HUNGER", "DIVINITY WORLD"}) {
             assertTrue("kept list should name " + expected, kept.contains(expected));
         }
     }

@@ -2247,6 +2247,9 @@ public class GameScreen extends BaseScreen {
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
             HintManager.getInstance().checkDoom(eventManager);
         }
+        // Waking is a new visit: the Altar names what the Divinity kept through the death buys.
+        altarNudge.wake();
+        postAltarNudge();
         soundManager.playDoorOpenSound();
 
         // The death is now fully resolved: clear the pending marker and persist the new run.
@@ -3288,6 +3291,23 @@ public class GameScreen extends BaseScreen {
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
         }
+        postAltarNudge();
+    }
+
+    /** Names what the banked Divinity can buy, once a visit, on shelter ground that holds the Altar (#310). */
+    private final com.bpm.minotaur.gamedata.progression.AltarNudge altarNudge =
+            new com.bpm.minotaur.gamedata.progression.AltarNudge();
+
+    private void postAltarNudge() {
+        if (player == null || maze == null || eventManager == null) return;
+        boolean onShelterGround = maze.isSanctuaryTile((int) player.getPosition().x, (int) player.getPosition().y)
+                && maze.getItems().values().stream()
+                        .anyMatch(i -> i.getType() == Item.ItemType.HOME_ALTAR);
+        com.bpm.minotaur.gamedata.progression.ShelterAltar altar =
+                com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+        String line = altarNudge.step(onShelterGround, com.bpm.minotaur.managers.DivinityManager.getInstance().getDivinities(),
+                altar::hasStation, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station::isRevealed);
+        if (line != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 4f));
     }
 
     /**

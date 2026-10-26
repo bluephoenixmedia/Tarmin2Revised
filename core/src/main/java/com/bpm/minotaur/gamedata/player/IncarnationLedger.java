@@ -48,6 +48,7 @@ public final class IncarnationLedger {
         lines.add(new Line("KNOWN SPELLS", "SOUL"));
         lines.add(new Line("COMBAT ARTS", "SOUL"));
         lines.add(new Line("FATHER'S SWORD", "SOUL"));
+        lines.add(new Line("DIVINITY", "WORLD")); // never lost, not even on death (#310)
         lines.add(new Line("UNLOCKS", "WORLD"));
         lines.add(new Line("ALTAR STATIONS", "WORLD"));
         lines.add(new Line("SHELTER CHEST", "WORLD"));
