@@ -22332,7 +22332,7 @@
                 "weight": 1
             }
         ],
-        "damageType": "SLASHING",
+        "damageType": "PIERCING",
         "isFinesse": false,
         "isThrown": false,
         "isReach": false,
