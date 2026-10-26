@@ -4421,7 +4421,7 @@ public class GameScreen extends BaseScreen {
                 case "USE_ITEM":
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze, combatManager);
                     // A Tome study spends its own turns as it is channelled.
-                    if (player.getActiveTomeStudy() == null) {
+                    if (player.getActiveTomeStudy() == null && player.lastUseSpentTurn()) {
                         playerTurnTakesAction();
                     }
                     return true;
@@ -4864,7 +4864,7 @@ public class GameScreen extends BaseScreen {
                 break;
             case NORMAL:
                 player.useItem(item, eventManager, discoveryManager, maze, combatManager);
-                if (player.getActiveTomeStudy() == null) {
+                if (player.getActiveTomeStudy() == null && player.lastUseSpentTurn()) {
                     playerTurnTakesAction();
                 }
                 break;

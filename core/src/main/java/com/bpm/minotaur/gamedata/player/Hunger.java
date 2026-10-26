@@ -24,8 +24,11 @@ public final class Hunger {
 
     // --- The store and its burn ---------------------------------------------------------
 
-    /** Where every expedition, respawn and new game starts. */
-    public static final float START = 900f;
+    /**
+     * Where every expedition, respawn and new game starts. An unfed body is Hungry by turn
+     * 351, and the two starting rations carry it to about turn 750 (#312).
+     */
+    public static final float START = 500f;
     /** Burned per standard turn; heavy loads and traits scale it in TurnManager. */
     public static final float BURN_PER_TURN = 1f;
 
@@ -33,7 +36,7 @@ public final class Hunger {
 
     /** Above this, Satiated: eating more risks choking. */
     public static final float SATIATED_ABOVE = 1000f;
-    /** Below this, Hungry: a warning, nothing more. A fed start reaches it after 750 turns. */
+    /** Below this, Hungry: a warning, nothing more. A fresh start reaches it on turn 351. */
     public static final float HUNGRY_BELOW = 150f;
     /** Below this, Weak: -2 STR, -1 to-hit. */
     public static final float WEAK_BELOW = 50f;
@@ -61,8 +64,8 @@ public final class Hunger {
 
     // --- Food values ---------------------------------------------------------------------
 
-    /** A travel ration. */
-    public static final int RATION = 800;
+    /** A travel ration: about 200 turns of walking, so the kit runs short within one expedition (#312). */
+    public static final int RATION = 200;
     /** Rations a new character carries; rare afterwards. */
     public static final int STARTING_RATIONS = 2;
     /** A flour sack picked up off the floor is eaten on the spot: a range, rolled per sack. */

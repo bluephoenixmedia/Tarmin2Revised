@@ -320,6 +320,8 @@ public class Player {
     // Arcane/Tarmin progressively unlock slots 2-5 (see Player#useItem).
     private int unlockedSpellSlots = 1;
     private boolean pendingLevelUpModal = false;
+    /** See {@link #lastUseSpentTurn()}. */
+    private boolean lastUseSpentTurn = true;
 
     public boolean hasPendingLevelUpModal() {
         return pendingLevelUpModal;
@@ -1458,7 +1460,7 @@ public class Player {
         }
 
         useItem(item, eventManager, discoveryManager, maze, combatManager);
-        return true;
+        return lastUseSpentTurn;
     }
 
     public boolean quickEquipOrConsumeGroundItem(Maze maze, GameEventManager eventManager, DiscoveryManager discoveryManager, SoundManager soundManager) {
@@ -1734,7 +1736,13 @@ public class Player {
         useItem(item, eventManager, discoveryManager, maze, null);
     }
 
+    /** Whether the last {@link #useItem} spent a turn; a refused or empty drink does not (#312). */
+    public boolean lastUseSpentTurn() {
+        return lastUseSpentTurn;
+    }
+
     public void useItem(Item item, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze, CombatManager combatManager) {
+        lastUseSpentTurn = true;
         if (item == null) {
             eventManager.addEvent(new GameEvent("You have nothing to use.", 2f));
             return;
@@ -1774,7 +1782,7 @@ public class Player {
 
         // --- Waterskin: one drink of whatever it holds (#193) ---
         if (Waterskin.is(item)) {
-            drinkFromWaterskin(item, eventManager);
+            lastUseSpentTurn = drinkFromWaterskin(item, eventManager);
             return;
         }
 
@@ -2194,6 +2202,8 @@ public class Player {
 
     /** One drink from a waterskin, of whatever it was filled with. */
     public boolean drinkFromWaterskin(Item skin, GameEventManager eventManager) {
+        // Asked before the skin is touched, so a refused drink pours nothing out.
+        if (refusesDrink(eventManager)) return false;
         Waterskin.Draught d = Waterskin.drinkOne(skin);
         if (d == null) {
             if (eventManager != null) eventManager.addEvent(new GameEvent("Your waterskin is empty.", 1.5f));
@@ -2212,6 +2222,7 @@ public class Player {
             if (eventManager != null) eventManager.addEvent(new GameEvent("You can't drink that.", 1.5f));
             return false;
         }
+        if (refusesDrink(eventManager)) return false;
         stats.addHydration(Thirst.hydrationGain(liquid));
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
 
@@ -2237,6 +2248,13 @@ public class Player {
         if (Thirst.isChilling(liquid)) {
             chillFromDrink(liquid, eventManager);
         }
+        return true;
+    }
+
+    /** A body at its full store turns a drink away: no turn spent, nothing poured out (#312). */
+    private boolean refusesDrink(GameEventManager eventManager) {
+        if (stats.getHydration() < Thirst.MAX_STORE) return false;
+        if (eventManager != null) eventManager.addEvent(new GameEvent("You are not thirsty.", 1.5f));
         return true;
     }
 
