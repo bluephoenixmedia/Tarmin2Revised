@@ -30,9 +30,16 @@ public class AltarNudgeTest {
     }
 
     @Test
-    public void aNewVisitSpeaksAgain() {
+    public void steppingOutOfTheDoorAndBackIsStillTheSameVisit() {
         step(true, 15);
         step(false, 15);
+        assertNull(step(true, 15));
+    }
+
+    @Test
+    public void aNewVisitSpeaksAgain() {
+        step(true, 15);
+        nudge.wake(); // the player left the shelter's chunk
         assertNotNull(step(true, 15));
     }
 

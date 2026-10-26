@@ -125,6 +125,9 @@ public class GameScreen extends BaseScreen {
     private final com.bpm.minotaur.rendering.AlertOverlay alertOverlay = new com.bpm.minotaur.rendering.AlertOverlay();
     private final com.bpm.minotaur.rendering.ScreenFxOverlay screenFx = new com.bpm.minotaur.rendering.ScreenFxOverlay();
     private final com.bpm.minotaur.rendering.vfx.DamageFlash damageFlash = new com.bpm.minotaur.rendering.vfx.DamageFlash();
+    /** The shelter's word on what Divinity buys (#310), and the chunk its current visit belongs to. */
+    private final com.bpm.minotaur.gamedata.progression.AltarNudge altarNudge = new com.bpm.minotaur.gamedata.progression.AltarNudge();
+    private Maze altarNudgeMaze;
     private int lastPlayerHp = -1;
     private final SpriteBatch postProcessBatch = new SpriteBatch();
     private float time = 0f;
@@ -3294,18 +3297,21 @@ public class GameScreen extends BaseScreen {
         postAltarNudge();
     }
 
-    /** Names what the banked Divinity can buy, once a visit, on shelter ground that holds the Altar (#310). */
-    private final com.bpm.minotaur.gamedata.progression.AltarNudge altarNudge =
-            new com.bpm.minotaur.gamedata.progression.AltarNudge();
-
+    /**
+     * Names what the banked Divinity can buy, on lit shelter ground that holds the Altar (#310).
+     * A visit lasts as long as the shelter's chunk does, so the doorway does not repeat it.
+     */
     private void postAltarNudge() {
         if (player == null || maze == null || eventManager == null) return;
-        boolean onShelterGround = maze.isSanctuaryTile((int) player.getPosition().x, (int) player.getPosition().y)
-                && maze.getItems().values().stream()
-                        .anyMatch(i -> i.getType() == Item.ItemType.HOME_ALTAR);
+        if (maze != altarNudgeMaze) {
+            altarNudgeMaze = maze;
+            altarNudge.wake();
+        }
+        boolean onShelterGround = maze.getAltarTile() != null
+                && maze.isSanctuaryTile((int) player.getPosition().x, (int) player.getPosition().y);
         com.bpm.minotaur.gamedata.progression.ShelterAltar altar =
                 com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
-        String line = altarNudge.step(onShelterGround, com.bpm.minotaur.managers.DivinityManager.getInstance().getDivinities(),
+        String line = altarNudge.step(onShelterGround, DivinityManager.getInstance().getDivinities(),
                 altar::hasStation, com.bpm.minotaur.gamedata.progression.ShelterAltar.Station::isRevealed);
         if (line != null) eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(line), 4f));
     }

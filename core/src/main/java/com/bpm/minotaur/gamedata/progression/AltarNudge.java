@@ -11,7 +11,9 @@ import java.util.function.Predicate;
  * The shelter names what your Divinity can buy (#310). Entering a shelter with its Altar, or
  * waking in one after a death, posts one line naming the best station the banked Divinity
  * affords and the player has not bought. It speaks at most once a visit, and says nothing when
- * nothing on offer is affordable.
+ * nothing on offer is affordable. A visit ends at {@link #wake()}: the caller calls it when the
+ * player leaves the shelter's chunk or wakes there after a death, so stepping in and out of the
+ * door does not repeat it.
  */
 public final class AltarNudge {
 
@@ -20,7 +22,10 @@ public final class AltarNudge {
             Station.BED, Station.LANTERN, Station.CAMPFIRE, Station.STASH_CHEST, Station.TRAINING_DUMMY,
             Station.CRAFTING_BENCH, Station.CARTOGRAPHER_DESK, Station.ARCHIVE_LECTERN);
 
-    private boolean inShelter;
+    /** {@link #PREFERENCE}, then every other station in its own order. */
+    private static final List<Station> ORDER = order();
+
+    private boolean spoken;
 
     /**
      * Called as each turn ends.
@@ -31,29 +36,29 @@ public final class AltarNudge {
      * @return the line to post on entering, or null
      */
     public String step(boolean onShelterGround, int divinity, Predicate<Station> owned, Predicate<Station> offered) {
-        if (!onShelterGround) {
-            inShelter = false;
-            return null;
-        }
-        if (inShelter) return null;
-        inShelter = true;
+        if (!onShelterGround || spoken) return null;
+        spoken = true;
         Station best = bestAffordable(divinity, owned, offered);
         return best != null ? line(best) : null;
     }
 
-    /** Waking in the shelter after a death begins a new visit. */
+    /** A new visit begins: the player came to another chunk, or woke in the shelter after a death. */
     public void wake() {
-        inShelter = false;
+        spoken = false;
     }
 
-    /** The first station in {@link #PREFERENCE} that is offered, not owned and affordable; or null. */
+    /** The first station in {@link #ORDER} that is offered, not owned and affordable; or null. */
     static Station bestAffordable(int divinity, Predicate<Station> owned, Predicate<Station> offered) {
-        List<Station> order = new ArrayList<>(PREFERENCE);
-        for (Station s : Station.values()) if (!order.contains(s)) order.add(s);
-        for (Station s : order) {
+        for (Station s : ORDER) {
             if (s.getCost() <= divinity && !owned.test(s) && offered.test(s)) return s;
         }
         return null;
+    }
+
+    private static List<Station> order() {
+        List<Station> order = new ArrayList<>(PREFERENCE);
+        for (Station s : Station.values()) if (!order.contains(s)) order.add(s);
+        return order;
     }
 
     static String line(Station station) {
