@@ -1,5 +1,7 @@
 package com.bpm.minotaur.gamedata.player;
 
+import com.bpm.minotaur.gamedata.monster.MonsterColor;
+import com.bpm.minotaur.gamedata.monster.MonsterXp;
 import com.bpm.minotaur.gamedata.Difficulty;
 
 import java.util.Random;
@@ -244,9 +246,7 @@ public class PlayerStats {
         if (targetLevel <= 1)
             return 0;
         if (targetLevel - 2 < EARLY_LEVEL_KILLS.length) {
-            int onLevelKill = com.bpm.minotaur.gamedata.monster.MonsterXp.forKill(
-                    com.bpm.minotaur.gamedata.monster.MonsterXp.forLevel(targetLevel - 1),
-                    com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE);
+            int onLevelKill = MonsterXp.forKill(MonsterXp.forLevel(targetLevel - 1), MonsterColor.WHITE);
             return EARLY_LEVEL_KILLS[targetLevel - 2] * onLevelKill;
         }
         // Formula: base * (log_base ^ (level -1))

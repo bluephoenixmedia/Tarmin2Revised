@@ -392,8 +392,8 @@ public class PlayerSaveData {
 
             stats.setLevel(level);
             stats.setExperience(experience);
-            stats.setExperienceToNextLevel(experienceToNextLevel);
-            stats.recomputeExperienceToNextLevel(); // the curve may have changed since the save (#311)
+            // The cost comes from the curve, not the save: the curve may have changed since (#311).
+            stats.recomputeExperienceToNextLevel();
 
             stats.setSatiety(nutritionScale >= NUTRITION_SCALE_NETHACK
                     ? satiety

@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 /** The front-loaded XP curve (#311; the #258 grilling): a typical life levels up. */
 public class XpCurveTest {
 
-    /** On-level kills of a common colour that the level after {@code level} costs. */
+    /** On-level kills of a common colour that the body's next level costs. */
     private static double killsFor(PlayerStats stats) {
         int onLevelKill = MonsterXp.forKill(MonsterXp.forLevel(stats.getLevel()), MonsterColor.WHITE);
         return stats.getExperienceToNextLevel() / (double) onLevelKill;

@@ -84,7 +84,10 @@ public class MonsterXpPacingTest {
             assertEquals(level, stats.getLevel());
             int onLevelKill = MonsterXp.forKill(MonsterXp.forLevel(level), MonsterColor.WHITE);
             double kills = stats.getExperienceToNextLevel() / (double) onLevelKill;
-            if (level >= 3) {
+            if (level >= 4) {
+                assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 8 && kills <= 10);
+            } else if (level == 3) {
+                // about 8 kills; 7.6 after MonsterXp's rounding of a level-3 kill to 16
                 assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 7.5 && kills <= 10);
             } else {
                 assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 3.5 && kills < 8);
