@@ -16,33 +16,33 @@ Measured after [#313](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/
 
 | Family | Weapon | Untrained | Adept | Adept + Passive | Master | Master + all Arts |
 |---|---|---|---|---|---|---|
-| Blade | Father's Sword | 98.3% | 99.1% | 99.4% | 99.3% | 99.3% |
-| Dagger | DAGGER | 94.7% | 96.9% | 98.1% | 98.6% | 99.6% |
-| Axe | AXE | 94.7% | 97.1% | 98.4% | 98.6% | 98.4% |
-| Blunt | MACE_FOOTMANS | 97.9% | 98.6% | 98.7% | 99.6% | 100.0% |
-| Polearm | SPEAR | 97.6% | 98.9% | 99.7% | 99.0% | 99.7% |
-| Unarmed | bare hands | 93.9% | 97.9% | 98.9% | 99.7% | 100.0% |
-| Bow | BOW | 98.7% | 99.7% | 99.9% | 100.0% | 100.0% |
-| Crossbow | CROSSBOW | 96.7% | 98.4% | 98.6% | 99.1% | 100.0% |
-| Firearm | MUSKET | 96.6% | 97.4% | 98.6% | 99.6% | 99.4% |
-| Thrown | DART | 97.4% | 99.6% | 99.6% | 99.9% | 99.9% |
+| Blade | Father's Sword | 97.3% | 98.3% | 98.6% | 99.0% | 100.0% |
+| Dagger | DAGGER | 95.9% | 97.0% | 98.3% | 99.0% | 99.9% |
+| Axe | AXE | 94.4% | 97.1% | 97.1% | 98.6% | 98.4% |
+| Blunt | MACE_FOOTMANS | 95.9% | 98.0% | 99.0% | 99.6% | 99.9% |
+| Polearm | SPEAR | 96.6% | 98.6% | 99.6% | 99.3% | 99.7% |
+| Unarmed | bare hands | 93.7% | 98.1% | 98.4% | 99.9% | 100.0% |
+| Bow | BOW | 98.9% | 99.9% | 99.9% | 99.9% | 100.0% |
+| Crossbow | CROSSBOW | 98.1% | 98.1% | 99.3% | 99.4% | 99.9% |
+| Firearm | MUSKET | 95.6% | 98.4% | 97.6% | 99.4% | 99.9% |
+| Thrown | DART | 97.9% | 99.4% | 99.0% | 100.0% | 100.0% |
 
 ### Depth 3 (level 3, EDL 3, monsters of base level 1-3: 23 species)
 
 | Family | Weapon | Untrained | Adept | Adept + Passive | Master | Master + all Arts |
 |---|---|---|---|---|---|---|
-| Blade | Father's Sword | 93.5% | 94.9% | 96.7% | 96.2% | 97.4% |
-| Dagger | DAGGER | 90.6% | 92.6% | 94.6% | 94.3% | 97.8% |
-| Axe | AXE | 89.7% | 90.4% | 90.1% | 93.1% | 91.6% |
-| Blunt | MACE_FOOTMANS | 92.7% | 94.7% | 96.0% | 96.2% | 98.8% |
-| Polearm | SPEAR | 93.0% | 94.7% | 96.8% | 95.9% | 96.6% |
-| Unarmed | bare hands | 86.0% | 94.3% | 95.7% | 98.6% | 99.0% |
-| Bow | BOW | 93.2% | 95.6% | 98.2% | 96.2% | 99.1% |
-| Crossbow | CROSSBOW | 87.1% | 90.6% | 93.9% | 92.2% | 99.0% |
-| Firearm | MUSKET | 90.7% | 95.0% | 94.9% | 96.5% | 95.0% |
-| Thrown | DART | 93.1% | 97.2% | 98.2% | 99.3% | 99.7% |
+| Blade | Father's Sword | 93.4% | 94.7% | 95.7% | 96.1% | 97.4% |
+| Dagger | DAGGER | 88.9% | 93.0% | 95.7% | 94.7% | 98.0% |
+| Axe | AXE | 89.1% | 91.4% | 91.3% | 93.0% | 93.3% |
+| Blunt | MACE_FOOTMANS | 93.6% | 94.0% | 96.2% | 95.2% | 98.6% |
+| Polearm | SPEAR | 92.6% | 95.0% | 96.8% | 95.3% | 96.6% |
+| Unarmed | bare hands | 85.9% | 94.0% | 96.0% | 98.7% | 99.4% |
+| Bow | BOW | 92.6% | 95.6% | 97.5% | 96.1% | 98.7% |
+| Crossbow | CROSSBOW | 88.7% | 90.8% | 94.3% | 91.3% | 99.0% |
+| Firearm | MUSKET | 92.3% | 95.0% | 95.5% | 96.3% | 95.4% |
+| Thrown | DART | 92.0% | 97.4% | 98.3% | 99.0% | 99.7% |
 
-The Thrown row was measured on its own, after the dart moved from 1d6+2 to 1d4+3 (the same mean) so that its loot tier stays where it was.
+The dart takes its extra damage as a flat bonus (1d4+3), because a larger die would raise its loot tier.
 
 ## The bound ([#303](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/303))
 
@@ -50,8 +50,8 @@ No Family may fall more than **10 points** behind the Father's Sword untrained, 
 
 | | Depth 1 | Depth 3 | Nearest Family |
 |---|---|---|---|
-| Untrained (sword - 10) | 88.3% | 83.5% | Unarmed 86.0% and Crossbow 87.1% at depth 3 |
-| Adept (sword - 5) | 94.1% | 89.9% | Axe 90.4% at depth 3, 0.5 above the floor and inside the noise |
+| Untrained (sword - 10) | 87.3% | 83.4% | Unarmed 93.7% at depth 1 and 85.9% at depth 3 |
+| Adept (sword - 5) | 93.3% | 89.7% | Crossbow 90.8% at depth 3 |
 
 Every Family is inside the bound at both depths, untrained and at Adept.
 
@@ -71,8 +71,8 @@ No Art and no to-hit changed.
 
 ## Still open
 
-- **Firearm Arts still add little in a duel** (Master + all Arts 95.0% vs Master 96.5% at depth 3). Marked Skull spends a turn aiming that the musket's slow reload makes costly; [#314](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/314) lets it aim while reloading.
-- **The Axe** sits closest to the Adept floor at depth 3, and its Arts add little there. It was not one of the weak Families and was not tuned.
+- **Firearm Arts still add little in a duel** (Master + all Arts 95.4% vs Master 96.3% at depth 3). Marked Skull spends a turn aiming that the musket's slow reload makes costly; [#314](https://github.com/bluephoenixmedia/Tarmin2Revised/issues/314) lets it aim while reloading.
+- **The Axe and the Crossbow** sit nearest the Adept floor at depth 3 (91.4% and 90.8%). Neither was one of the weak Families, and neither was tuned.
 - **Polearm Arts** (Reel In, Thicket of Points) want a foe two tiles off or several foes, which a single duel offers neither of.
 
 ## How to read it

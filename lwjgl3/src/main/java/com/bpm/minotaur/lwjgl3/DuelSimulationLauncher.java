@@ -575,7 +575,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             StringBuilder head = new StringBuilder("| Family | Weapon |");
             StringBuilder rule = new StringBuilder("|---|---|");
             for (ReportArm arm : REPORT_ARMS) {
-                if (!reportColumns.isEmpty() && !reportColumns.contains(arm.label.toLowerCase(Locale.ROOT))) continue;
+                if (!wanted(reportColumns, arm.label)) continue;
                 head.append(' ').append(arm.label).append(" |");
                 rule.append("---|");
             }
@@ -583,12 +583,12 @@ public class DuelSimulationLauncher implements ApplicationListener {
                     depth, depth, depth, depth, band.size(), head, rule));
             System.out.println("Depth " + depth + " (" + band.size() + " species)");
             for (ReportFamily family : REPORT_FAMILIES) {
-                if (!reportRows.isEmpty() && !reportRows.contains(family.name.toLowerCase(Locale.ROOT))) continue;
+                if (!wanted(reportRows, family.name)) continue;
                 unarmed = family.bareHands;
                 weaponOverride = family.weapon;
                 StringBuilder line = new StringBuilder("| " + family.name + " | " + family.weaponName() + " |");
                 for (ReportArm arm : REPORT_ARMS) {
-                    if (!reportColumns.isEmpty() && !reportColumns.contains(arm.label.toLowerCase(Locale.ROOT))) continue;
+                    if (!wanted(reportColumns, arm.label)) continue;
                     masteryRank = arm.rank;
                     passive = arm.passive;
                     arts = arm.arts;
@@ -603,6 +603,18 @@ public class DuelSimulationLauncher implements ApplicationListener {
             w.print(md);
         }
         System.out.println("Report written to " + reportPath);
+    }
+
+    /** Whether a report row or column is measured: every one when none were named. */
+    private static boolean wanted(List<String> named, String label) {
+        return named.isEmpty() || named.contains(label.toLowerCase(Locale.ROOT));
+    }
+
+    /** Adds a comma-separated list of row or column labels, ignoring case. */
+    private static void addLabels(List<String> into, String csv) {
+        for (String label : csv.split(",")) {
+            if (!label.trim().isEmpty()) into.add(label.trim().toLowerCase(Locale.ROOT));
+        }
     }
 
     /** The loaded species of base level {@code lo} to {@code hi}, by name. */
@@ -782,12 +794,8 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "arts": arts = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "report": report = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "reportOut": reportPath = v; break;
-                case "columns":
-                    for (String col : v.split(",")) if (!col.isEmpty()) reportColumns.add(col.trim().toLowerCase(Locale.ROOT));
-                    break;
-                case "rows":
-                    for (String row : v.split(",")) if (!row.isEmpty()) reportRows.add(row.trim().toLowerCase(Locale.ROOT));
-                    break;
+                case "columns": addLabels(reportColumns, v); break;
+                case "rows": addLabels(reportRows, v); break;
                 case "guardian": guardian = Monster.MonsterType.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;

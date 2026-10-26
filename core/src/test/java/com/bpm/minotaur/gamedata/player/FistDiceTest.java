@@ -49,6 +49,19 @@ public class FistDiceTest {
     }
 
     @Test
+    public void anEmptyHandIsComparedAgainstTheFist() {
+        player.getStats().getMastery().setRank(WeaponFamily.UNARMED, Mastery.Rank.MASTER);
+        com.bpm.minotaur.gamedata.item.ItemTemplate t = new com.bpm.minotaur.gamedata.item.ItemTemplate();
+        t.isWeapon = true;
+        t.damageDice = "1d4+1";
+        com.bpm.minotaur.gamedata.item.Item knife = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.KNIFE, t);
+
+        assertTrue("a knife is weaker than a Master's 1d12 fist",
+                com.bpm.minotaur.gamedata.item.GearComparison.compare(knife, player).isDowngrade);
+    }
+
+    @Test
     public void aPolymorphedBodyKeepsItsFormsDice() {
         player.getStats().getMastery().setRank(WeaponFamily.UNARMED, Mastery.Rank.MASTER);
         MonsterTemplate t = new MonsterTemplate();

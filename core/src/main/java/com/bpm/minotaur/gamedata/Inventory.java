@@ -266,7 +266,8 @@ public class Inventory {
      * or standard 1H die if wielding a shield or offhand item.
      */
     public String getActiveDamageDice(Item weapon) {
-        if (weapon == null) return "1d2";
+        // The bare hand is the body's, not the pack's: see Player#getUnarmedDice (#313).
+        if (weapon == null) throw new IllegalArgumentException("no weapon: use Player.getUnarmedDice()");
         if (weapon.isVersatile() && leftHand == null && weapon.getVersatileDamageDice() != null) {
             return weapon.getVersatileDamageDice();
         }

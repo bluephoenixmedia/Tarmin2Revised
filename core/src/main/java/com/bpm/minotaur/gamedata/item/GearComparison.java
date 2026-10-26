@@ -57,15 +57,14 @@ public class GearComparison {
         Item equipped = (inv != null) ? inv.getRightHand() : null;
 
         float candAvg = calculateAverageDamage(candidate.getDamageDice()) + candidate.getEnchantment();
-        float eqAvg = (equipped != null && equipped.isWeapon())
-                ? calculateAverageDamage(equipped.getDamageDice()) + equipped.getEnchantment()
+        // An empty hand is measured against the fist, which Unarmed Mastery hardens (#313).
+        float eqAvg = equipped == null ? calculateAverageDamage(player.getUnarmedDice())
+                : equipped.isWeapon() ? calculateAverageDamage(equipped.getDamageDice()) + equipped.getEnchantment()
                 : 0f;
 
         float diff = candAvg - eqAvg;
         if (diff > 0.05f) {
-            String badge = (equipped == null)
-                    ? String.format("UP (+%.1f Dmg)", candAvg)
-                    : String.format("UP (+%.1f Dmg)", diff);
+            String badge = String.format("UP (+%.1f Dmg)", diff);
             return new ComparisonResult(diff, badge, COLOR_UPGRADE, true, false);
         } else if (diff < -0.05f) {
             String badge = String.format("DOWN (%.1f Dmg)", diff);

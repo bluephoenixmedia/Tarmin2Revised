@@ -2561,17 +2561,15 @@ public class CombatManager {
 
         if (isHit || isGlancing) {
             DamageType dmgType = DamageType.PHYSICAL;
+            // Teeth and claws in a form, else the fist; a form ignores the weapon in a hand that is gone.
             String damageDice = player.getUnarmedDice();
             boolean isArcaneSpark = isBookWeapon(attackWeapon) && !player.isPolymorphed();
-            if (player.isPolymorphed()) {
-                // Teeth and claws, not the sword in a hand that is no longer there.
-                damageDice = player.getForm().damageDice();
-            } else if (isArcaneSpark) {
+            if (isArcaneSpark) {
                 // Tome Weapon Attack: a Spiritual Arcane Spark replaces the book's own
                 // damage dice entirely -- see arcaneSparkDamage() for the 1d4+INT roll.
                 dmgType = DamageType.SPIRITUAL;
                 damageDice = ARCANE_SPARK_DICE;
-            } else if (attackWeapon != null) {
+            } else if (attackWeapon != null && !player.isPolymorphed()) {
                 damageDice = player.getInventory().getActiveDamageDice(attackWeapon);
                 if (damageDice == null || damageDice.isEmpty()) damageDice = "1d4";
                 if ("SPIRITUAL".equalsIgnoreCase(attackWeapon.getDamageType()) ||
