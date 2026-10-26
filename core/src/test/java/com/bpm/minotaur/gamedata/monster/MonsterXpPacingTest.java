@@ -77,13 +77,21 @@ public class MonsterXpPacingTest {
     }
 
     @Test
-    public void eightToTenOnLevelKillsEarnEveryLevel() {
+    public void eightToTenOnLevelKillsEarnEveryLevelFromTheFourthOn() {
+        // Levels 2-4 are front-loaded (#311): about 4, 6 and 8 kills, so a typical life levels up.
         PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
         for (int level = 1; level <= 20; level++) {
             assertEquals(level, stats.getLevel());
             int onLevelKill = MonsterXp.forKill(MonsterXp.forLevel(level), MonsterColor.WHITE);
             double kills = stats.getExperienceToNextLevel() / (double) onLevelKill;
-            assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 8 && kills <= 10);
+            if (level >= 4) {
+                assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 8 && kills <= 10);
+            } else if (level == 3) {
+                // about 8 kills; 7.6 after MonsterXp's rounding of a level-3 kill to 16
+                assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 7.5 && kills <= 10);
+            } else {
+                assertTrue("level " + level + " costs " + kills + " on-level kills", kills >= 3.5 && kills < 8);
+            }
             stats.addExperience(stats.getExperienceToNextLevel());
         }
     }
@@ -117,8 +125,8 @@ public class MonsterXpPacingTest {
         report.append("  first level-up on kill ").append(firstLevelUpKill);
         System.out.println(report);
 
-        assertTrue("first level-up after 6-10 depth-1 kills, was " + firstLevelUpKill,
-                firstLevelUpKill >= 6 && firstLevelUpKill <= 10);
+        assertTrue("first level-up after about 4 depth-1 kills (#311), was " + firstLevelUpKill,
+                firstLevelUpKill >= 3 && firstLevelUpKill <= 6);
         for (int depth = 1; depth <= 4; depth++) {
             assertTrue("about one level per depth early on: level " + levelAfterDepth[depth] + " after depth " + depth,
                     levelAfterDepth[depth] >= depth && levelAfterDepth[depth] <= depth + 2);

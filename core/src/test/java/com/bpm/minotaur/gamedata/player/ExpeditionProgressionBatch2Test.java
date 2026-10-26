@@ -111,16 +111,16 @@ public class ExpeditionProgressionBatch2Test {
         assertEquals(1, stats.getLevel());
         assertEquals(0, stats.getExperience());
 
-        // Level 2 threshold with BASE 90, LOG_BASE 1.2: 90 * 1.2^1 = 108
-        assertEquals(108, stats.getExperienceToNextLevel());
+        // Level 2 is front-loaded (#311): 4 common level-1 kills of 12 XP = 48
+        assertEquals(48, stats.getExperienceToNextLevel());
 
-        // Add 108 XP -> should level up to 2
-        boolean leveled = stats.addExperience(108);
-        assertTrue("Player should level up at 108 XP", leveled);
+        // Add 48 XP -> should level up to 2
+        boolean leveled = stats.addExperience(48);
+        assertTrue("Player should level up at 48 XP", leveled);
         assertEquals(2, stats.getLevel());
 
-        // Level 3 threshold: 90 * 1.2^2 = 130
-        assertEquals(130, stats.getExperienceToNextLevel());
+        // Level 3: 6 common level-2 kills of 14 XP = 84
+        assertEquals(84, stats.getExperienceToNextLevel());
 
         // Check attribute points: 2 points awarded per level
         assertEquals(2, stats.getUnallocatedAttributePoints());

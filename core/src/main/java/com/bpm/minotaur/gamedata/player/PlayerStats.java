@@ -1,5 +1,7 @@
 package com.bpm.minotaur.gamedata.player;
 
+import com.bpm.minotaur.gamedata.monster.MonsterColor;
+import com.bpm.minotaur.gamedata.monster.MonsterXp;
 import com.bpm.minotaur.gamedata.Difficulty;
 
 import java.util.Random;
@@ -43,8 +45,12 @@ public class PlayerStats {
 
     // XP curve: BASE * LOG_BASE^(level-1) (#183). It grows at the same rate as monster XP
     // (MonsterXp.GROWTH), so every level costs 9 on-level kills of a common colour
-    // (1.2x): 90 * 1.2 = 108 = 9 * 10 * 1.2. L2 requires 108 XP, L3 130, L4 156.
+    // (1.2x): 90 * 1.2 = 108 = 9 * 10 * 1.2.
+    // Levels 2-4 are front-loaded (#311): a typical life ends after about 3 kills and 49 XP,
+    // so the old 108 for level 2 meant most lives never levelled. They cost EARLY_LEVEL_KILLS
+    // on-level kills of a common colour instead; from level 5 on the curve is as it was.
     private static final int BASE_XP_REQUIRED = 90;
+    private static final int[] EARLY_LEVEL_KILLS = { 4, 6, 8 };
     private static final double LOG_BASE = com.bpm.minotaur.gamedata.monster.MonsterXp.GROWTH;
 
     private int treasureScore = 0;
@@ -239,6 +245,10 @@ public class PlayerStats {
     private int calculateXpForLevel(int targetLevel) {
         if (targetLevel <= 1)
             return 0;
+        if (targetLevel - 2 < EARLY_LEVEL_KILLS.length) {
+            int onLevelKill = MonsterXp.forKill(MonsterXp.forLevel(targetLevel - 1), MonsterColor.WHITE);
+            return EARLY_LEVEL_KILLS[targetLevel - 2] * onLevelKill;
+        }
         // Formula: base * (log_base ^ (level -1))
         return (int) Math.round(BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
     }
@@ -522,6 +532,14 @@ public class PlayerStats {
 
     public void setExperience(int experience) {
         this.experience = experience;
+    }
+
+    /**
+     * The next level's cost from the curve, for this level: a save carries the cost it was made
+     * with, which an older save made before the curve changed (#311) would otherwise keep.
+     */
+    public void recomputeExperienceToNextLevel() {
+        this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
     }
 
     public void setExperienceToNextLevel(int experienceToNextLevel) {
