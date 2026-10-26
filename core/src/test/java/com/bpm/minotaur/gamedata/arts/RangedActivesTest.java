@@ -29,6 +29,7 @@ public class RangedActivesTest {
     /** What the stand-in arena sees down the line, and whether the weapon is loaded. */
     private Monster inLine;
     private boolean loaded = true;
+    private boolean reloading = false;
     private boolean shotsLand = true;
     private final List<ActiveArts.Shot> shots = new ArrayList<>();
     private final List<Monster> shotAt = new ArrayList<>();
@@ -65,6 +66,11 @@ public class RangedActivesTest {
         @Override
         public boolean loaded(Item weapon) {
             return loaded;
+        }
+
+        @Override
+        public boolean reloading(Item weapon) {
+            return reloading;
         }
 
         @Override
@@ -325,12 +331,30 @@ public class RangedActivesTest {
     }
 
     @Test
-    public void anUnloadedGunCannotAim() {
+    public void aGunWithNothingToLoadCannotAim() {
         wield("FIREARM", CombatArt.MARKED_SKULL);
         inLine = foe(6, Monster.MonsterType.GOBLIN);
         loaded = false;
         assertEquals(ActiveArts.Outcome.NOT_LOADED, ActiveArts.use(player, 0, arena));
         assertNull(player.getHeldArt());
+    }
+
+    @Test
+    public void aimingWhileLoadingIsAllowedFiringIsNot() {
+        wield("FIREARM", CombatArt.MARKED_SKULL);
+        inLine = foe(6, Monster.MonsterType.GOBLIN);
+        loaded = false;
+        reloading = true;
+
+        assertEquals(ActiveArts.Outcome.READIED, ActiveArts.use(player, 0, arena));
+        assertEquals(ActiveArts.Outcome.NOT_LOADED, ActiveArts.use(player, 0, arena));
+        assertTrue("no shot", shots.isEmpty());
+        assertEquals("the aim is kept", CombatArt.MARKED_SKULL, player.getHeldArt());
+
+        loaded = true;
+        reloading = false;
+        assertEquals(ActiveArts.Outcome.USED, ActiveArts.use(player, 0, arena));
+        assertEquals(List.of(ActiveArts.Shot.HEADSHOT), shots);
     }
 
     @Test
