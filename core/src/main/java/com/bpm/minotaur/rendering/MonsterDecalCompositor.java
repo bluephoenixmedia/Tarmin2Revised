@@ -39,6 +39,8 @@ public class MonsterDecalCompositor implements Disposable {
         Monster assignedMonster = null;
         boolean dirty = true;
         int lastFrame = -1;
+        /** The frame a wound's trickle last grew on, so a sprite drawn twice in a frame drips once. */
+        long lastDripFrame = -1;
     }
 
     private final List<FboSlot> fboPool = new ArrayList<>(MAX_ACTIVE_FBOS);
@@ -112,6 +114,7 @@ public class MonsterDecalCompositor implements Disposable {
                 slot.dirty = true;
                 slot.lastFrame = monster.getCurrentFrame();
             }
+            if (growDrips(monster, slot)) slot.dirty = true;
             if (slot.dirty) {
                 renderWoundsToFbo(monster, slot);
                 slot.dirty = false;
@@ -119,6 +122,22 @@ public class MonsterDecalCompositor implements Disposable {
         }
 
         return (slot != null) ? slot.fboRegion : monster.getTextureRegion();
+    }
+
+    /**
+     * Grows the trickles from the monster's wounds by this frame's time (#220). True when one has
+     * grown by a visible step, so the sprite is re-composited then and not every frame.
+     */
+    private boolean growDrips(Monster monster, FboSlot slot) {
+        long frame = Gdx.graphics != null ? Gdx.graphics.getFrameId() : 0L;
+        if (frame == slot.lastDripFrame) return false;
+        slot.lastDripFrame = frame;
+        float delta = Gdx.graphics != null ? Gdx.graphics.getDeltaTime() : 0f;
+        boolean grew = false;
+        for (WoundDecal w : monster.getWoundDecals()) {
+            if (w.drip != null && w.drip.update(delta)) grew = true;
+        }
+        return grew;
     }
 
     private FboSlot acquireSlot(Monster monster) {
@@ -205,6 +224,7 @@ public class MonsterDecalCompositor implements Disposable {
                     1f, 1f,
                     w.angle * MathUtils.radiansToDegrees
             );
+            drawDrip(w, brush, cx, cy, dw);
         }
 
         batch.flush();
@@ -216,6 +236,26 @@ public class MonsterDecalCompositor implements Disposable {
         // Restore viewport
         Gdx.gl.glViewport(0, 0, prevVpW, prevVpH);
     }
+
+    /**
+     * The wound's trickle (#220): a thin column of the wound's own centre, stretched down the
+     * sprite from the wound, as the wall drip stretches its splat. The destination-alpha blend
+     * already in force keeps it inside the silhouette.
+     */
+    private void drawDrip(WoundDecal w, TextureRegion brush, float cx, float cy, float dw) {
+        if (w.drip == null || w.drip.length() <= 0f) return;
+        float run = w.drip.length() * FBO_SIZE;
+        float halfW = Math.max(1.5f, dw * 0.06f);
+        float uMid = (brush.getU() + brush.getU2()) * 0.5f;
+        float vMid = (brush.getV() + brush.getV2()) * 0.5f;
+        float uHalf = Math.abs(brush.getU2() - brush.getU()) * 0.06f;
+        float vHalf = Math.abs(brush.getV2() - brush.getV()) * 0.06f;
+        dripRegion.setTexture(brush.getTexture());
+        dripRegion.setRegion(uMid - uHalf, vMid - vHalf, uMid + uHalf, vMid + vHalf);
+        batch.draw(dripRegion, cx - halfW, cy - run, halfW * 2f, run);
+    }
+
+    private final TextureRegion dripRegion = new TextureRegion();
 
     public void releaseMonster(Monster monster, boolean bakeIfAlive) {
         if (monster == null) return;

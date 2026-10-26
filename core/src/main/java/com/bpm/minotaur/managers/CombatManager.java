@@ -4427,6 +4427,7 @@ public class CombatManager {
 
         WoundDecal decal = new WoundDecal(woundType, u, v, angle, length, width, woundCol);
         decal.customRegion = decalRegion;
+        decal.drip = com.bpm.minotaur.gamedata.gore.WoundDrip.start(decal, profile, woundRandom);
         MonsterDecalCompositor.getInstance().addWound(monster, decal);
 
         // Calculate 3D position of the wound site on the monster billboard

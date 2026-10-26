@@ -25,6 +25,8 @@ public class WoundDecal {
     public float width = 0.06f;        // Thickness / width relative to sprite size
     public final Color color = new Color(Color.WHITE);
     public TextureRegion customRegion = null;
+    /** Blood trickling down from this wound, or null if it does not bleed (#220). */
+    public WoundDrip drip = null;
 
     public WoundDecal() {
     }
