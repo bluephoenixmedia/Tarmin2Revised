@@ -347,7 +347,7 @@ public class RangedActivesTest {
         reloading = true;
 
         assertEquals(ActiveArts.Outcome.READIED, ActiveArts.use(player, 0, arena));
-        assertEquals(ActiveArts.Outcome.NOT_LOADED, ActiveArts.use(player, 0, arena));
+        assertEquals(ActiveArts.Outcome.LOADING, ActiveArts.use(player, 0, arena));
         assertTrue("no shot", shots.isEmpty());
         assertEquals("the aim is kept", CombatArt.MARKED_SKULL, player.getHeldArt());
 

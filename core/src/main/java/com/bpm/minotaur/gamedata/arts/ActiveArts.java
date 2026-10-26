@@ -63,7 +63,7 @@ public final class ActiveArts {
         /** Whether {@code weapon} can loose a shot now: ammunition to hand, and no reload under way. */
         boolean loaded(Item weapon);
 
-        /** Whether {@code weapon} is a gun part-way through its reload, with shot to hand: loaded in a turn or two. */
+        /** Whether {@code weapon} is a gun part-way through its reload, with shot to hand to finish it. */
         default boolean reloading(Item weapon) {
             return false;
         }
@@ -117,6 +117,8 @@ public final class ActiveArts {
         LOWERED,
         /** Nothing to loose: no ammunition, or a reload under way. */
         NOT_LOADED,
+        /** Marked Skull aimed, the gun still loading: the aim is kept and no turn is spent (#314). */
+        LOADING,
         /** Nothing in the slot. */
         EMPTY,
         COOLING,
@@ -164,9 +166,9 @@ public final class ActiveArts {
         } else if (outcome == Outcome.NO_ROOM) {
             arena.log(name + ": no open floor to close across.");
         } else if (outcome == Outcome.NOT_LOADED) {
-            // Marked Skull aimed while loading keeps its aim until the gun is ready (#314).
-            arena.log(name + (player.getHeldArt() == art ? ": the gun is not yet loaded. You hold your aim."
-                    : ": nothing loaded to loose."));
+            arena.log(name + ": nothing loaded to loose.");
+        } else if (outcome == Outcome.LOADING) {
+            arena.log(name + ": the gun is not yet loaded. You hold your aim.");
         } else if (outcome == Outcome.USED) {
             cooldowns.start(art, player.artCooldown(art));
             TelemetryManager.getInstance().recordArtUse(art.name());
@@ -447,7 +449,7 @@ public final class ActiveArts {
             arena.log(name + ": you sight on " + who + (loaded ? "." : " as you load."));
             return Outcome.READIED;
         }
-        if (!loaded) return Outcome.NOT_LOADED; // the aim is kept
+        if (!loaded) return Outcome.LOADING;
         player.setHeldArt(null);
         player.setMarkedFoe(null);
         if (!foe.hasHead()) {

@@ -303,11 +303,12 @@ public class RangedActivesCombatTest {
         assertEquals("the aim turn is also a reload turn", left - 1, combat.getActiveReload().getTurnsRemaining());
 
         int hp = foe.getCurrentHP();
-        assertEquals("firing is not", ActiveArts.Outcome.NOT_LOADED, combat.useArt(0));
+        assertEquals("firing is not", ActiveArts.Outcome.LOADING, combat.useArt(0));
         assertEquals("the aim is kept", CombatArt.MARKED_SKULL, player.getHeldArt());
         assertEquals(hp, foe.getCurrentHP());
         assertTrue(events.getMessageHistory().stream().anyMatch(m -> m.contains("not yet loaded")));
         assertFalse("one message, not two", events.getMessageHistory().stream().anyMatch(m -> m.contains("nothing loaded")));
+        assertFalse("no turn is spent", ActiveArts.Outcome.LOADING.takesTurn());
     }
 
     @Test
