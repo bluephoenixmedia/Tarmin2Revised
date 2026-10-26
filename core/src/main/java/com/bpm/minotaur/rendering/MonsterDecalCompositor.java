@@ -45,6 +45,8 @@ public class MonsterDecalCompositor implements Disposable {
     private final Map<Monster, FboSlot> activeAssignments = new HashMap<>();
     private SpriteBatch batch;
     private boolean initialized = false;
+    /** One white texel, tinted to the blood colour for a wound's trickle (#220). */
+    private Texture dripTexel;
 
     public static synchronized MonsterDecalCompositor getInstance() {
         if (instance == null) {
@@ -61,6 +63,11 @@ public class MonsterDecalCompositor implements Disposable {
         if (Gdx.gl == null) return;
         try {
             batch = new SpriteBatch();
+            Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            white.setColor(Color.WHITE);
+            white.fill();
+            dripTexel = new Texture(white);
+            white.dispose();
             for (int i = 0; i < MAX_ACTIVE_FBOS; i++) {
                 FboSlot slot = new FboSlot();
                 slot.fbo = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_SIZE, FBO_SIZE, false);
@@ -112,6 +119,7 @@ public class MonsterDecalCompositor implements Disposable {
                 slot.dirty = true;
                 slot.lastFrame = monster.getCurrentFrame();
             }
+            if (growDrips(monster)) slot.dirty = true;
             if (slot.dirty) {
                 renderWoundsToFbo(monster, slot);
                 slot.dirty = false;
@@ -119,6 +127,20 @@ public class MonsterDecalCompositor implements Disposable {
         }
 
         return (slot != null) ? slot.fboRegion : monster.getTextureRegion();
+    }
+
+    /**
+     * Grows the trickles from the monster's wounds by this frame's time (#220). True when one has
+     * grown by a visible step, so the sprite is re-composited then and not every frame.
+     */
+    private boolean growDrips(Monster monster) {
+        long frame = Gdx.graphics.getFrameId();
+        float delta = Gdx.graphics.getDeltaTime();
+        boolean grew = false;
+        for (WoundDecal w : monster.getWoundDecals()) {
+            if (w.drip != null && w.drip.updateOnce(frame, delta)) grew = true;
+        }
+        return grew;
     }
 
     private FboSlot acquireSlot(Monster monster) {
@@ -205,6 +227,7 @@ public class MonsterDecalCompositor implements Disposable {
                     1f, 1f,
                     w.angle * MathUtils.radiansToDegrees
             );
+            drawDrip(w, cx, cy, dw);
         }
 
         batch.flush();
@@ -215,6 +238,20 @@ public class MonsterDecalCompositor implements Disposable {
 
         // Restore viewport
         Gdx.gl.glViewport(0, 0, prevVpW, prevVpH);
+    }
+
+    /**
+     * The wound's trickle (#220): a thin column of the body's blood running down the sprite from
+     * the wound, as the wall drip runs from its splat. The destination-alpha blend already in
+     * force keeps it inside the silhouette.
+     */
+    private void drawDrip(WoundDecal w, float cx, float cy, float dw) {
+        if (w.drip == null || w.drip.length() <= 0f || dripTexel == null) return;
+        float run = w.drip.length() * FBO_SIZE;
+        float halfW = Math.max(1.5f, dw * 0.06f);
+        Color blood = w.drip.color();
+        batch.setColor(blood.r, blood.g, blood.b, blood.a * 0.9f);
+        batch.draw(dripTexel, cx - halfW, cy - run, halfW * 2f, run);
     }
 
     public void releaseMonster(Monster monster, boolean bakeIfAlive) {
@@ -261,6 +298,10 @@ public class MonsterDecalCompositor implements Disposable {
         fboPool.clear();
         if (batch != null) {
             batch.dispose();
+        }
+        if (dripTexel != null) {
+            dripTexel.dispose();
+            dripTexel = null;
         }
         initialized = false;
     }
