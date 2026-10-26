@@ -734,7 +734,9 @@ public class DesertChunkGenerator implements IChunkGenerator {
             MonsterType.GIANT_SNAKE,
             MonsterType.BASILISK,
             MonsterType.MUMMY,
-            MonsterType.TROGLODYTE
+            MonsterType.TROGLODYTE,
+            MonsterType.GIANT_CENTIPEDE, // #129
+            MonsterType.BEETLESCRATCH
     };
 
     /** The desert creatures whose spawn-table depth window includes {@code level}. */

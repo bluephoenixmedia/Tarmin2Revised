@@ -107,7 +107,8 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
             MonsterType.ALLIGATOR,
             MonsterType.HARPY,
             MonsterType.GELATINOUS_CUBE,
-            MonsterType.PURPLE_WORM
+            MonsterType.PURPLE_WORM,
+            MonsterType.LIZARD_WARRIOR // #129
     };
 
     /** Every baked Lakelands texture, for the asset preload. */
