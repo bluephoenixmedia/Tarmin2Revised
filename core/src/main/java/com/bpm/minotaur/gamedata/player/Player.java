@@ -1261,11 +1261,24 @@ public class Player {
         this.statusManager = new StatusManager();
         this.statusManager.initialize(null, this);
 
-        Item knife = itemDataManager.createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, assetManager);
-        inventory.setRightHand(knife);
-        if (knife.getGrantedDie() != null) {
-            stats.getDicePool().add(knife.getGrantedDie());
-            BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
+        Item.ItemType starterType = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getSelectedStartingWeapon();
+        Item knife = itemDataManager != null
+                ? itemDataManager.createItem(starterType, 0, 0, ItemColor.GRAY, assetManager)
+                : null;
+        if (knife == null && itemDataManager != null) {
+            knife = itemDataManager.createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, assetManager);
+        }
+        if (knife != null) {
+            inventory.setRightHand(knife);
+            if (knife.getGrantedDie() != null) {
+                stats.getDicePool().add(knife.getGrantedDie());
+                BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
+            }
+        }
+        com.bpm.minotaur.gamedata.progression.StartingWeapon sw =
+                com.bpm.minotaur.gamedata.progression.StartingWeapon.fromItemType(starterType);
+        if (sw != null && sw.getStartingAmmo() > 0 && stats != null) {
+            stats.setArrows(Math.max(stats.getArrows(), sw.getStartingAmmo()));
         }
 
         giveStarterLantern(itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, assetManager));
