@@ -130,6 +130,24 @@
     },
     "monsterSpawnTable": [
         {
+            "type": "GIANT_CENTIPEDE",
+            "minLevel": 3,
+            "maxLevel": 25,
+            "weight": 6
+        },
+        {
+            "type": "LIZARD_WARRIOR",
+            "minLevel": 5,
+            "maxLevel": 40,
+            "weight": 4
+        },
+        {
+            "type": "BEETLESCRATCH",
+            "minLevel": 6,
+            "maxLevel": 40,
+            "weight": 3
+        },
+        {
             "type": "KOBOLD",
             "minLevel": 1,
             "maxLevel": 5,
