@@ -289,7 +289,30 @@ public class RangedActivesCombatTest {
     }
 
     @Test
-    public void aGunStillReloadingCannotAim() {
+    public void aGunStillReloadingMayAimButNotFire() {
+        arm(Item.ItemType.MUSKET, "FIREARM", CombatArt.MARKED_SKULL, true);
+        player.getStats().setShot(3);
+        Monster foe = foeAt(6, 3, 200);
+        combat.useArt(0);
+        combat.useArt(0); // fired: now reloading
+        player.getArtCooldowns().start(CombatArt.MARKED_SKULL, 0);
+        int left = combat.getActiveReload().getTurnsRemaining();
+
+        assertEquals("aiming while loading is allowed (#314)", ActiveArts.Outcome.READIED, combat.useArt(0));
+        combat.tickPlayerTimers(); // the aim turn passes
+        assertEquals("the aim turn is also a reload turn", left - 1, combat.getActiveReload().getTurnsRemaining());
+
+        int hp = foe.getCurrentHP();
+        assertEquals("firing is not", ActiveArts.Outcome.LOADING, combat.useArt(0));
+        assertEquals("the aim is kept", CombatArt.MARKED_SKULL, player.getHeldArt());
+        assertEquals(hp, foe.getCurrentHP());
+        assertTrue(events.getMessageHistory().stream().anyMatch(m -> m.contains("not yet loaded")));
+        assertFalse("one message, not two", events.getMessageHistory().stream().anyMatch(m -> m.contains("nothing loaded")));
+        assertFalse("no turn is spent", ActiveArts.Outcome.LOADING.takesTurn());
+    }
+
+    @Test
+    public void theHeadshotFiresAsSoonAsTheGunIsLoaded() {
         arm(Item.ItemType.MUSKET, "FIREARM", CombatArt.MARKED_SKULL, true);
         player.getStats().setShot(3);
         Monster foe = foeAt(6, 3, 200);
@@ -297,7 +320,27 @@ public class RangedActivesCombatTest {
         combat.useArt(0); // fired: now reloading
         player.getArtCooldowns().start(CombatArt.MARKED_SKULL, 0);
 
+        combat.useArt(0); // aim
+        combat.tickPlayerTimers();
+        while (combat.getActiveReload() != null) { // waits hold the aim
+            player.keepHold();
+            combat.tickPlayerTimers();
+        }
+        assertEquals(CombatArt.MARKED_SKULL, player.getHeldArt());
+        int hp = foe.getCurrentHP();
+
+        assertEquals(ActiveArts.Outcome.USED, combat.useArt(0));
+        assertTrue("the headshot lands", foe.getCurrentHP() < hp);
+    }
+
+    @Test
+    public void aGunWithNoShotCannotAim() {
+        arm(Item.ItemType.MUSKET, "FIREARM", CombatArt.MARKED_SKULL, true);
+        player.getStats().setShot(0);
+        foeAt(6, 3, 200);
+
         assertEquals(ActiveArts.Outcome.NOT_LOADED, combat.useArt(0));
+        assertNull(player.getHeldArt());
     }
 
     // --- Shattering Throw ---

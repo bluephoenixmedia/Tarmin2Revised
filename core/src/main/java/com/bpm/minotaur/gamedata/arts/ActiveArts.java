@@ -63,6 +63,11 @@ public final class ActiveArts {
         /** Whether {@code weapon} can loose a shot now: ammunition to hand, and no reload under way. */
         boolean loaded(Item weapon);
 
+        /** Whether {@code weapon} is a gun part-way through its reload, with shot to hand to finish it. */
+        default boolean reloading(Item weapon) {
+            return false;
+        }
+
         /**
          * A real shot of {@code weapon} at {@code target}: ammunition spent, flight drawn, and a gun's
          * damp powder may still misfire. True if it hit.
@@ -112,6 +117,8 @@ public final class ActiveArts {
         LOWERED,
         /** Nothing to loose: no ammunition, or a reload under way. */
         NOT_LOADED,
+        /** Marked Skull aimed, the gun still loading: the aim is kept and no turn is spent (#314). */
+        LOADING,
         /** Nothing in the slot. */
         EMPTY,
         COOLING,
@@ -160,6 +167,8 @@ public final class ActiveArts {
             arena.log(name + ": no open floor to close across.");
         } else if (outcome == Outcome.NOT_LOADED) {
             arena.log(name + ": nothing loaded to loose.");
+        } else if (outcome == Outcome.LOADING) {
+            arena.log(name + ": the gun is not yet loaded. You hold your aim.");
         } else if (outcome == Outcome.USED) {
             cooldowns.start(art, player.artCooldown(art));
             TelemetryManager.getInstance().recordArtUse(art.name());
@@ -421,10 +430,15 @@ public final class ActiveArts {
      * Marked Skull: the first press aims at the foe in the line, for a turn; the second takes that
      * foe's head, certain to hit, a critical that Dazes. If another foe now stands first in the
      * line, the aim moves to it and the turn is spent again. A foe with no head takes a normal shot.
+     *
+     * <p>The aim may be taken while the gun is reloading, and that turn loads it too (#314). The shot
+     * still waits for the gun: pressed early, the aim is kept and no turn is spent.
      */
     private static Outcome markedSkull(Player player, Item gun, Arena arena) {
         String name = UiNames.of(CombatArt.MARKED_SKULL);
-        if (gun == null || !arena.loaded(gun)) return Outcome.NOT_LOADED;
+        if (gun == null) return Outcome.NOT_LOADED;
+        boolean loaded = arena.loaded(gun);
+        if (!loaded && !arena.reloading(gun)) return Outcome.NOT_LOADED;
         Monster foe = arena.foeInLine(gun, false);
         if (foe == null) return Outcome.NO_TARGET;
         String who = AffinityText.nameOf(foe);
@@ -432,9 +446,10 @@ public final class ActiveArts {
             player.setHeldArt(CombatArt.MARKED_SKULL);
             player.setMarkedFoe(foe);
             player.keepHold();
-            arena.log(name + ": you sight on " + who + ".");
+            arena.log(name + ": you sight on " + who + (loaded ? "." : " as you load."));
             return Outcome.READIED;
         }
+        if (!loaded) return Outcome.LOADING;
         player.setHeldArt(null);
         player.setMarkedFoe(null);
         if (!foe.hasHead()) {

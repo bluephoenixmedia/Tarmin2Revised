@@ -431,7 +431,10 @@ public class DuelSimulationLauncher implements ApplicationListener {
     private void playerTurn(CombatManager combat, Player player, Monster monster, Maze maze, Duel d, boolean shooter) {
         if (arts && useArt(combat, player, monster, d, shooter)) return;
         if (shooter) {
-            if (combat.getActiveReload() != null) return; // the gun is loading: this turn is the reload
+            if (combat.getActiveReload() != null) { // the gun is loading: this turn is the reload, a wait
+                player.keepHold(); // so a Marked Skull aimed while loading is held, as the wait key holds it (#314)
+                return;
+            }
             shoot(combat, player, monster, d);
         } else if (gapOf(player, monster) > 1) {
             placeMonster(maze, player, monster, gapOf(player, monster) - 1); // the player's turn is a step closer

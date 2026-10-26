@@ -834,6 +834,11 @@ public class CombatManager {
                 }
 
                 @Override
+                public boolean reloading(Item weapon) {
+                    return weapon != null && usesShot(weapon) && activeReload != null && hasAmmoFor(weapon);
+                }
+
+                @Override
                 public boolean shoot(Monster target, Item weapon, String word, com.bpm.minotaur.gamedata.arts.ActiveArts.Shot kind) {
                     if (!loaded(weapon)) return false;
                     if (misfired(weapon)) return false; // aim does not dry the powder: the shot and its reload are spent
