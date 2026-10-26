@@ -1460,7 +1460,7 @@ public class Player {
         }
 
         useItem(item, eventManager, discoveryManager, maze, combatManager);
-        return true;
+        return lastUseSpentTurn;
     }
 
     public boolean quickEquipOrConsumeGroundItem(Maze maze, GameEventManager eventManager, DiscoveryManager discoveryManager, SoundManager soundManager) {
@@ -2202,6 +2202,7 @@ public class Player {
 
     /** One drink from a waterskin, of whatever it was filled with. */
     public boolean drinkFromWaterskin(Item skin, GameEventManager eventManager) {
+        // Asked before the skin is touched, so a refused drink pours nothing out.
         if (refusesDrink(eventManager)) return false;
         Waterskin.Draught d = Waterskin.drinkOne(skin);
         if (d == null) {

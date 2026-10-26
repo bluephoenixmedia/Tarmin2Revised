@@ -45,9 +45,13 @@ public class SurvivalPaceTest {
 
     /** The turn thirst first warns, drinking the starting skin's draughts each time it does. */
     private static int thirstyWarningTurn(int draughts) {
+        return thirstyWarningTurn(draughts, 1f);
+    }
+
+    private static int thirstyWarningTurn(int draughts, float load) {
         float hydration = Thirst.START;
         for (int turn = 1; turn < 5000; turn++) {
-            hydration -= Thirst.burn(1f, 1f, 1f);
+            hydration -= Thirst.burn(load, 1f, 1f);
             if (Thirst.stageOf(hydration, CON) == Thirst.Stage.THIRSTY) {
                 if (draughts == 0) return turn;
                 draughts--;
@@ -72,6 +76,7 @@ public class SurvivalPaceTest {
     @Test
     public void aStressedLoadBringsTheWarningForwardInProportion() {
         assertEquals(351 / 1.5f, hungryWarningTurn(0, 1.5f), 2);
+        assertEquals(351 / 1.5f, thirstyWarningTurn(0, 1.5f), 2);
     }
 
     @Test
@@ -100,6 +105,29 @@ public class SurvivalPaceTest {
         assertEquals("nothing is consumed", charges, skin.getCurrentCharges());
         assertTrue(events.getMessageHistory().toString(),
                 events.getMessageHistory().stream().anyMatch(m -> m.startsWith("You are not thirsty")));
+    }
+
+    @Test
+    public void aRefusedDrinkFromTheHandOrAQuickslotSpendsNoTurn() {
+        Player player = new Player(3f, 3f);
+        player.getStats().setHydration(Thirst.MAX_STORE);
+        Item skin = fullSkin();
+        player.getInventory().getQuickSlots()[0] = skin;
+
+        player.useItem(skin, new GameEventManager(), null, null);
+        assertFalse(player.lastUseSpentTurn());
+        assertFalse(player.useQuickSlot(0, new GameEventManager(), null, null));
+        assertEquals(Thirst.WATERSKIN_CAPACITY, skin.getCurrentCharges());
+    }
+
+    @Test
+    public void atTheCapATileDrinkIsRefusedToo() {
+        Player player = new Player(3f, 3f);
+        player.getStats().setHydration(Thirst.MAX_STORE);
+        GameEventManager events = new GameEventManager();
+
+        assertFalse(player.drinkLiquid(LiquidType.WATER, false, 1f, events));
+        assertTrue(events.getMessageHistory().stream().anyMatch(m -> m.startsWith("You are not thirsty")));
     }
 
     @Test

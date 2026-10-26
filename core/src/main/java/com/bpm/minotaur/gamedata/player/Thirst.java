@@ -43,7 +43,7 @@ public final class Thirst {
     public static final float DEATH_BASE = 100f;
     public static final float DEATH_PER_CON = 10f;
 
-    /** Store's maximum cap. A body this full refuses a drink, so none is wasted (#312). */
+    /** Store's maximum cap. A body already at it refuses a drink, so no draught is spent for nothing (#312). */
     public static final float MAX_STORE = 1200f;
 
     // --- Collapse ------------------------------------------------------------------------
