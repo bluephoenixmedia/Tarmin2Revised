@@ -93,6 +93,10 @@ public class DuelSimulationLauncher implements ApplicationListener {
     /** Run every Family at depths 1 and 3, with and without Arts, and write the table (#250). */
     private boolean report = false;
     private String reportPath = "logs/duel-arts-report.md";
+    /** --rows=Dagger,Unarmed: only these Families' rows of the report, for tuning (#313). Empty: all. */
+    private final List<String> reportRows = new ArrayList<>();
+    /** --columns=Untrained,Adept: only these columns of the report, by label (#313). Empty: all. */
+    private final List<String> reportColumns = new ArrayList<>();
     /** --guardian=TYPE: duel that monster as a theme Guardian, cut to the EDL (#302). */
     private Monster.MonsterType guardian;
     /** --weapon=UNARMED: an empty right hand. */
@@ -571,6 +575,7 @@ public class DuelSimulationLauncher implements ApplicationListener {
             StringBuilder head = new StringBuilder("| Family | Weapon |");
             StringBuilder rule = new StringBuilder("|---|---|");
             for (ReportArm arm : REPORT_ARMS) {
+                if (!reportColumns.isEmpty() && !reportColumns.contains(arm.label.toLowerCase(Locale.ROOT))) continue;
                 head.append(' ').append(arm.label).append(" |");
                 rule.append("---|");
             }
@@ -578,10 +583,12 @@ public class DuelSimulationLauncher implements ApplicationListener {
                     depth, depth, depth, depth, band.size(), head, rule));
             System.out.println("Depth " + depth + " (" + band.size() + " species)");
             for (ReportFamily family : REPORT_FAMILIES) {
+                if (!reportRows.isEmpty() && !reportRows.contains(family.name.toLowerCase(Locale.ROOT))) continue;
                 unarmed = family.bareHands;
                 weaponOverride = family.weapon;
                 StringBuilder line = new StringBuilder("| " + family.name + " | " + family.weaponName() + " |");
                 for (ReportArm arm : REPORT_ARMS) {
+                    if (!reportColumns.isEmpty() && !reportColumns.contains(arm.label.toLowerCase(Locale.ROOT))) continue;
                     masteryRank = arm.rank;
                     passive = arm.passive;
                     arts = arm.arts;
@@ -775,6 +782,12 @@ public class DuelSimulationLauncher implements ApplicationListener {
                 case "arts": arts = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "report": report = v.isEmpty() || Boolean.parseBoolean(v); break;
                 case "reportOut": reportPath = v; break;
+                case "columns":
+                    for (String col : v.split(",")) if (!col.isEmpty()) reportColumns.add(col.trim().toLowerCase(Locale.ROOT));
+                    break;
+                case "rows":
+                    for (String row : v.split(",")) if (!row.isEmpty()) reportRows.add(row.trim().toLowerCase(Locale.ROOT));
+                    break;
                 case "guardian": guardian = Monster.MonsterType.valueOf(v.toUpperCase(Locale.ROOT)); break;
                 case "chain": chainRuns = Integer.parseInt(v); break;
                 case "seed": seed = Long.parseLong(v); break;

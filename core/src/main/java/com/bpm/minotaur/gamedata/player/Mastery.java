@@ -18,6 +18,9 @@ public final class Mastery {
     /** Full hits needed for Novice, Adept, Expert and Master. */
     static final int[] THRESHOLDS = { 10, 50, 150, 400 };
 
+    /** The bare-hand die at each Unarmed rank, Untrained first: Unarmed Mastery hardens the fist (#313). */
+    static final String[] FIST_DICE = { "1d6", "1d7", "1d8", "1d10", "1d12" };
+
     private final Map<WeaponFamily, Integer> hits = new EnumMap<>(WeaponFamily.class);
 
     /**
@@ -62,6 +65,11 @@ public final class Mastery {
     /** +1 to-hit per rank on attacks with {@code family}. */
     public int toHitBonus(WeaponFamily family) {
         return rankOf(family).ordinal();
+    }
+
+    /** The die an empty hand strikes with, from the body's Unarmed rank. A polymorphed body uses its form's own. */
+    public String fistDice() {
+        return FIST_DICE[rankOf(WeaponFamily.UNARMED).ordinal()];
     }
 
     /** Sets {@code family} to exactly the hits that reach {@code rank}, as the duel simulator needs (#232). */

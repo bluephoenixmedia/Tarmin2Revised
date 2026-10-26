@@ -103,6 +103,7 @@ public class FirearmWeaponDataTest {
         assertEquals("1d4+1", weapons.get("BOW").getString("damageDice"));
         assertEquals("2d8", firearm(Item.ItemType.ARQUEBUS).getString("damageDice"));
         assertEquals("2d8", firearm(Item.ItemType.BLUNDERBUS).getString("damageDice"));
-        assertEquals("1d12", firearm(Item.ItemType.MUSKET).getString("damageDice"));
+        // +2 since the weak Families were brought within the bound (#313); still under the 2d8 guns.
+        assertEquals("1d12+2", firearm(Item.ItemType.MUSKET).getString("damageDice"));
     }
 }
