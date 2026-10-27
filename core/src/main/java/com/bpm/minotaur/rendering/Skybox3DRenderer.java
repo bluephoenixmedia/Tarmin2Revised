@@ -1410,11 +1410,14 @@ public class Skybox3DRenderer {
      * Renders The Laughing Void directly in underground chasms/dungeons, defying reality.
      */
     public void renderUndergroundVoid(Viewport viewport, WorldManager worldManager) {
-        if (!isInitialized || voidInstance == null || voidAlpha <= 0.001f) return;
+        if (!isInitialized || voidInstance == null) return;
 
+        // Advance the lifecycle before asking whether there is anything to draw: checking alpha
+        // first meant a Void that had not yet faded in could never start to, below a roof.
         worldSkyState.isUnderground = true;
         worldSkyState.voidActive = isVoidWanted();
         updateSky(Gdx.graphics.getDeltaTime(), worldSkyState);
+        if (voidAlpha <= 0.001f) return;
 
         Gdx.gl.glViewport(viewport.getScreenX(), viewport.getScreenY(), viewport.getScreenWidth(), viewport.getScreenHeight());
         Gdx.gl.glEnable(GL20.GL_BLEND);
