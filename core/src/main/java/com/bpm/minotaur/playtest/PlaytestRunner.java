@@ -77,7 +77,8 @@ public final class PlaytestRunner {
                 new CastleTarminScenario(),
                 new DeathAndRemainsScenario(),
                 new StochasticExplorerScenario(),
-                new ExpeditionMapScenario()
+                new ExpeditionMapScenario(),
+                new LaughingVoidScenario()
         );
 
         if (target.equals("all")) {

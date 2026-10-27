@@ -1036,7 +1036,7 @@ public class Skybox3DRenderer {
         gatherWarSmoke(worldManager, chunk, player);
 
         worldSkyState.isUnderground = (worldManager != null && worldManager.getCurrentLevel() > 1);
-        worldSkyState.voidActive = isVoidActive();
+        worldSkyState.voidActive = isVoidWanted();
 
         updateSky(delta, worldSkyState);
     }
@@ -1245,11 +1245,7 @@ public class Skybox3DRenderer {
         }
 
         // Void Manifestation Lifecycle (Fading in / Fading out / State tracking)
-        if (state.voidActive && voidState == VoidManifestationState.INACTIVE) {
-            voidState = VoidManifestationState.FADING_IN;
-        } else if (!state.voidActive && (voidState == VoidManifestationState.MANIFESTED || voidState == VoidManifestationState.FADING_IN)) {
-            voidState = VoidManifestationState.FADING_OUT;
-        }
+        voidState = nextVoidState(voidState, state.voidActive);
 
         if (!Float.isNaN(state.voidAlpha)) {
             voidAlpha = MathUtils.clamp(state.voidAlpha, 0f, 1f);
@@ -1346,6 +1342,7 @@ public class Skybox3DRenderer {
     }
 
     public void manifestVoid(boolean active) {
+        manualVoid = active;
         if (active) {
             voidState = VoidManifestationState.FADING_IN;
         } else {
@@ -1353,6 +1350,36 @@ public class Skybox3DRenderer {
         }
     }
 
+    /** Set by {@link #manifestVoid}: the Void called up by hand, not by a surge. */
+    private boolean manualVoid = false;
+
+    /**
+     * Whether the Void should be in the sky: a Chaos Surge is running, or it was called up by hand.
+     * The lifecycle is driven by this alone. Feeding it {@link #isVoidActive()} instead -- which is
+     * also true while the Void is merely visible -- latched it on: once faded in it kept asking
+     * itself to stay, and never left the sky after the surge ended.
+     */
+    public boolean isVoidWanted() {
+        if (manualVoid) return true;
+        try {
+            return com.bpm.minotaur.managers.ChaosManager.getInstance().isSurgeActive();
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    /** The Void's next lifecycle state: fade in when wanted, fade out when not; the fades finish in updateSky. */
+    static VoidManifestationState nextVoidState(VoidManifestationState current, boolean wanted) {
+        if (wanted && (current == VoidManifestationState.INACTIVE || current == VoidManifestationState.FADING_OUT)) {
+            return VoidManifestationState.FADING_IN;
+        }
+        if (!wanted && (current == VoidManifestationState.MANIFESTED || current == VoidManifestationState.FADING_IN)) {
+            return VoidManifestationState.FADING_OUT;
+        }
+        return current;
+    }
+
+    /** Whether the Void is in the sky at all: wanted, or still fading out. Drawing asks this. */
     public boolean isVoidActive() {
         boolean chaosSurge = false;
         try {
@@ -1386,7 +1413,7 @@ public class Skybox3DRenderer {
         if (!isInitialized || voidInstance == null || voidAlpha <= 0.001f) return;
 
         worldSkyState.isUnderground = true;
-        worldSkyState.voidActive = true;
+        worldSkyState.voidActive = isVoidWanted();
         updateSky(Gdx.graphics.getDeltaTime(), worldSkyState);
 
         Gdx.gl.glViewport(viewport.getScreenX(), viewport.getScreenY(), viewport.getScreenWidth(), viewport.getScreenHeight());

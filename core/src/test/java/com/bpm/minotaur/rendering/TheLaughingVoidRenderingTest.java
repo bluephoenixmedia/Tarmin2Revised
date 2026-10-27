@@ -71,4 +71,30 @@ public class TheLaughingVoidRenderingTest {
         assertEquals("Overland landmark distance must match horizon", 140f, Skybox3DRenderer.VOID_OVERLAND_DIST, 0.001f);
         assertEquals("Underground distance must bring apparition within subterranean sightlines", 32f, Skybox3DRenderer.VOID_UNDERGROUND_DIST, 0.001f);
     }
+
+    @Test
+    public void testVoidLeavesTheSkyWhenTheSurgeEnds() {
+        // Regression: the lifecycle was fed "is the Void visible?", so once it had faded in it kept
+        // itself wanted and never faded out. Driven by "is a surge running?" it must leave.
+        Skybox3DRenderer.VoidManifestationState s = Skybox3DRenderer.VoidManifestationState.INACTIVE;
+        s = Skybox3DRenderer.nextVoidState(s, true);
+        assertEquals(Skybox3DRenderer.VoidManifestationState.FADING_IN, s);
+
+        s = Skybox3DRenderer.VoidManifestationState.MANIFESTED; // updateSky finishes the fade
+        assertEquals("stays while the surge runs", s, Skybox3DRenderer.nextVoidState(s, true));
+
+        s = Skybox3DRenderer.nextVoidState(s, false);
+        assertEquals("surge over: fades out", Skybox3DRenderer.VoidManifestationState.FADING_OUT, s);
+        assertEquals("keeps fading", s, Skybox3DRenderer.nextVoidState(s, false));
+    }
+
+    @Test
+    public void testVoidReturnsIfASurgeStartsWhileItFades() {
+        assertEquals(Skybox3DRenderer.VoidManifestationState.FADING_IN,
+                Skybox3DRenderer.nextVoidState(Skybox3DRenderer.VoidManifestationState.FADING_OUT, true));
+        assertEquals(Skybox3DRenderer.VoidManifestationState.FADING_OUT,
+                Skybox3DRenderer.nextVoidState(Skybox3DRenderer.VoidManifestationState.FADING_IN, false));
+        assertEquals(Skybox3DRenderer.VoidManifestationState.INACTIVE,
+                Skybox3DRenderer.nextVoidState(Skybox3DRenderer.VoidManifestationState.INACTIVE, false));
+    }
 }
