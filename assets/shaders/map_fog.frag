@@ -20,6 +20,8 @@ uniform vec2 u_origin;
 uniform float u_fogStrength;
 uniform float u_isCave;
 uniform vec2 u_resolution;
+uniform vec2 u_maskOrigin; // world chunk at the mask's first texel
+uniform float u_maskSpan;  // chunks along each side of the mask
 
 vec4 blendOver(vec4 under, vec4 over) {
     float outA = over.a + under.a * (1.0 - over.a);
@@ -32,7 +34,9 @@ vec4 blendOver(vec4 under, vec4 over) {
 
 void main() {
     float sx = v_texCoords.x * u_resolution.x;
-    float sy = (1.0 - v_texCoords.y) * u_resolution.y;
+    // Top-down pixel row, as the prototype's canvas counts it. SpriteBatch puts v = 1 at the
+    // bottom of the quad, so v itself runs top to bottom.
+    float sy = v_texCoords.y * u_resolution.y;
 
     float s = u_camZoom;
     float sc = sqrt(s);
@@ -80,12 +84,12 @@ void main() {
     float rx = (a + b) * 0.5;
     float ry = (b - a) * 0.5;
 
+    // The view negates world y (north draws up-screen), as the renderer's project() does.
     float wx = u_camPos.x + rx * cs + ry * sn;
-    float wy = u_camPos.y - rx * sn + ry * cs;
+    float wy = u_camPos.y - (-rx * sn + ry * cs);
 
-    // Mask UV mapping: 48-chunk mask with origin (0, 0) centered at UV (0.5, 0.5)
-    float maskU = (wx + 24.0) / 48.0;
-    float maskV = (wy + 24.0) / 48.0;
+    float maskU = (wx - u_maskOrigin.x) / u_maskSpan;
+    float maskV = (wy - u_maskOrigin.y) / u_maskSpan;
 
     float maskVal = 0.0;
     float frontVal = 0.0;

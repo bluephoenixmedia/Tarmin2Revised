@@ -26,45 +26,65 @@ final class ChunkTiles {
     final Map<GridPoint2, String> events = new HashMap<>();
     final Set<GridPoint2> homeTiles = new HashSet<>();
 
+    /** Tiles that hold an item, whether or not its icon could be resolved. */
+    final Set<GridPoint2> itemTiles = new HashSet<>();
+    private Boolean anySeen;
+
     boolean isSeen(int x, int y) {
-        if (explorationState == null || x < 0 || x >= width || y < 0 || y >= height) return false;
+        if (x < 0 || x >= width || y < 0 || y >= height) return false;
+        if (explorationState == null) return true; // a chunk saved without exploration (a sanctuary) is all known
         return explorationState[y][x] == Maze.VISIBILITY_SEEN;
     }
 
-    /**
-     * Checks if a mini-tile/block (0..7) within this chunk has been seen.
-     * Maps an 8x8 block coordinate to the chunk's native tile grid (typically 36x36).
-     */
-    boolean isBlockSeen(int bx, int by) {
-        if (width <= 0 || height <= 0 || explorationState == null) return false;
-        if (width <= 8 && height <= 8) return isSeen(bx, by);
-
-        if (hasAnySeenTile()) {
-            int x0 = (bx * width) / 8;
-            int x1 = Math.max(x0 + 1, ((bx + 1) * width) / 8);
-            int y0 = (by * height) / 8;
-            int y1 = Math.max(y0 + 1, ((by + 1) * height) / 8);
-            for (int y = y0; y < y1 && y < height; y++) {
-                for (int x = x0; x < x1 && x < width; x++) {
-                    if (explorationState[y][x] == Maze.VISIBILITY_SEEN) return true;
-                }
-            }
-            return false;
-        }
-
-        // Visited chunk with no per-tile exploration state (e.g. sanctuary)
-        return true;
+    /** The tiles one block of an n x n split covers along a side: [from, to). */
+    private static int blockFrom(int b, int size, int n) {
+        return (b * size) / n;
     }
 
-    /** True if any tile in this chunk has VISIBILITY_SEEN. */
-    boolean hasAnySeenTile() {
-        if (explorationState == null || width <= 0 || height <= 0) return false;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (explorationState[y][x] == Maze.VISIBILITY_SEEN) return true;
+    private static int blockTo(int b, int size, int n) {
+        return Math.max(blockFrom(b, size, n) + 1, ((b + 1) * size) / n);
+    }
+
+    /** Whether any tile of block (bx, by) of an 8 x 8 split has been seen. */
+    boolean isBlockSeen(int bx, int by) {
+        return blockSeenFraction(bx, by, 8) > 0f;
+    }
+
+    /** The share of block (bx, by) of an n x n split that has been seen, 0..1. */
+    float blockSeenFraction(int bx, int by, int n) {
+        if (width <= 0 || height <= 0) return 0f;
+        if (explorationState == null) return 1f;
+        int x0 = blockFrom(bx, width, n), x1 = Math.min(width, blockTo(bx, width, n));
+        int y0 = blockFrom(by, height, n), y1 = Math.min(height, blockTo(by, height, n));
+        int seen = 0;
+        int total = 0;
+        for (int y = y0; y < y1; y++) {
+            for (int x = x0; x < x1; x++) {
+                total++;
+                if (explorationState[y][x] == Maze.VISIBILITY_SEEN) seen++;
             }
         }
-        return false;
+        return total == 0 ? 0f : seen / (float) total;
+    }
+
+    /** True if any tile has been seen; a chunk with no exploration state counts as seen. */
+    boolean hasAnySeenTile() {
+        if (anySeen == null) {
+            boolean any = explorationState == null && width > 0;
+            if (explorationState != null) {
+                outer:
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        if (explorationState[y][x] == Maze.VISIBILITY_SEEN) {
+                            any = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            anySeen = any;
+        }
+        return anySeen;
     }
 
     int wallAt(int x, int y) {
@@ -77,6 +97,38 @@ final class ChunkTiles {
         int w = wallAt(x, y);
         return w == 1 || (w & 0b1111) == 0b1111 || (w & 0b01010101) == 0b01010101;
     }
+
+    /** No wall on an edge. */
+    static final int EDGE_NONE = 0;
+    static final int EDGE_WALL = 1;
+    static final int EDGE_DOOR = 2;
+
+    /**
+     * The edge along {@code y = ey} under tile column {@code tx}: between tile (tx, ey - 1) to
+     * its south and (tx, ey) to its north. Walls are stored on both tiles of an edge, or on one.
+     */
+    int horizontalEdge(int tx, int ey) {
+        int north = ey < height ? wallAt(tx, ey) : 0;
+        int south = ey > 0 ? wallAt(tx, ey - 1) : 0;
+        if ((north & DOOR_S) != 0 || (south & DOOR_N) != 0) return EDGE_DOOR;
+        if ((north & WALL_S) != 0 || (south & WALL_N) != 0) return EDGE_WALL;
+        return EDGE_NONE;
+    }
+
+    /** The edge along {@code x = ex} beside tile row {@code ty}: between (ex - 1, ty) and (ex, ty). */
+    int verticalEdge(int ex, int ty) {
+        int east = ex < width ? wallAt(ex, ty) : 0;
+        int west = ex > 0 ? wallAt(ex - 1, ty) : 0;
+        if ((east & DOOR_W) != 0 || (west & DOOR_E) != 0) return EDGE_DOOR;
+        if ((east & WALL_W) != 0 || (west & WALL_E) != 0) return EDGE_WALL;
+        return EDGE_NONE;
+    }
+
+    // Bit layout of Direction.getWallMask() and the door bits beside each wall bit.
+    private static final int WALL_N = 0b01000000, DOOR_N = 0b10000000;
+    private static final int WALL_S = 0b00010000, DOOR_S = 0b00100000;
+    private static final int WALL_E = 0b00000100, DOOR_E = 0b00001000;
+    private static final int WALL_W = 0b00000001, DOOR_W = 0b00000010;
 
     /** Checks if the majority of tiles in this 8x8 block's footprint are solid. */
     boolean isBlockSolid(int bx, int by) {
@@ -198,6 +250,7 @@ final class ChunkTiles {
             v.ladders.put(e.getKey(), e.getValue().getType());
         }
         for (Map.Entry<GridPoint2, Item> e : maze.getItems().entrySet()) {
+            v.itemTiles.add(new GridPoint2(e.getKey()));
             TextureRegion region = e.getValue().getTextureRegion();
             if (region != null) v.itemIcons.put(e.getKey(), region);
         }
@@ -219,6 +272,9 @@ final class ChunkTiles {
         }
         if (data.events != null) {
             for (ChunkData.EventData ed : data.events) v.events.put(new GridPoint2(ed.x, ed.y), ed.eventId);
+        }
+        if (data.items != null) {
+            for (ChunkData.ItemData id : data.items) v.itemTiles.add(new GridPoint2(id.x, id.y));
         }
         if (data.items != null && itemDataManager != null && assetManager != null) {
             for (ChunkData.ItemData id : data.items) {

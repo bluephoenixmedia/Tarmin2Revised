@@ -119,10 +119,9 @@ public class CompassWidget extends Actor implements Disposable {
         }
     }
 
+    /** Where world north points on screen at a camera rotation; the renderer's own projection decides. */
     public static float calculateNeedleAngle(float rotRad) {
-        float cs = (float) Math.cos(rotRad);
-        float sn = (float) Math.sin(rotRad);
-        return (float) Math.atan2((cs - sn) * 14f, -(sn + cs) * 28f);
+        return IsometricDioramaRenderer.northAngle(rotRad);
     }
 
     @Override
