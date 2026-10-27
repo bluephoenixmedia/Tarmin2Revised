@@ -75,7 +75,7 @@ public final class LaughingVoidScenario implements PlaytestScenario {
             chaos.triggerSurge(jester, 3, ctx.getMaze(), ctx.getPlayer(), ctx.getWorldManager(), ctx.getEventManager());
             ctx.assertTrue(chaos.isSurgeActive(), "surge is running");
         });
-        script.wait("void fades in", 240);
+        script.until("void fades in", 1200, () -> sky(ctx).getVoidAlpha() > 0.95f);
         script.once("void is up", () -> {
             Skybox3DRenderer s = sky(ctx);
             ctx.log("During surge (each sky): " + describe(ctx));
@@ -91,7 +91,7 @@ public final class LaughingVoidScenario implements PlaytestScenario {
             return !ChaosManager.getInstance().isSurgeActive();
         });
         script.once("surge has ended", () -> ctx.log("Surge ended at state " + sky(ctx).getVoidState()));
-        script.wait("void fades out", 300);
+        script.until("void fades out", 1200, () -> sky(ctx).getVoidAlpha() < 0.01f);
         script.once("void is gone", () -> {
             Skybox3DRenderer s = sky(ctx);
             ctx.log("After surge (each sky): " + describe(ctx));
