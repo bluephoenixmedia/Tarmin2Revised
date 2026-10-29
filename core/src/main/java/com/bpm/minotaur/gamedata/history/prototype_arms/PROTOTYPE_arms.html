@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>PROTOTYPE - Arms of the houses</title>
+<!-- PROTOTYPE (wayfinder "Prototype the Arms generator"): four variants of generated Arms, switchable via ?variant=A..D and the bottom bar.
+     Every variant draws the house's existing sigil ("<charge> on <field>") with stand-in emoji silhouettes for the charges. -->
+<style>
+body{font:14px/1.45 system-ui,Segoe UI,sans-serif;margin:0;background:#15141a;color:#e6e1d6;padding-bottom:70px}
+header{padding:14px 24px;border-bottom:1px solid #333}h1{font-size:19px;margin:0 0 4px}h2{font-size:15px;margin:18px 0 8px;color:#d9a441}
+.wrap{padding:6px 24px}.muted{color:#999;font-size:12.5px}
+.gallery{display:flex;flex-wrap:wrap;gap:14px}.card{width:150px;text-align:center;font-size:12px}.card canvas{display:block;margin:0 auto 4px}
+.small{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:#0e0d12;padding:10px;border:1px solid #2a2a2a}
+#bar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);background:#f2e9d8;color:#111;border-radius:30px;padding:6px 10px;box-shadow:0 4px 18px rgba(0,0,0,.6);display:flex;gap:10px;align-items:center;font-weight:600;z-index:9}
+#bar button{border:0;background:#111;color:#f2e9d8;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer}
+canvas.scene{border:1px solid #333;display:block}
+</style></head><body>
+<header><h1>PROTOTYPE: Arms of the houses</h1>
+<div class="muted">Every house already has a sigil in the history, e.g. "a closed manacle on bile green". Each variant draws it, and ties the house to its doctrine in a different way. Charges are <b>stand-ins</b> (emoji turned into silhouettes) until the real art lands. Flip variants with the bar at the bottom or the arrow keys. Judge readability in the battle line and on the map, not only in the gallery.</div>
+World: <select id="world"></select></header>
+<div class="wrap">
+ <h2 id="vname"></h2><div id="vdesc" class="muted"></div>
+ <h2>The houses of this world (128 px)</h2><div class="gallery" id="gallery"></div>
+ <h2>At icon sizes: 32, 24, 16 and 12 px</h2><div class="small" id="smalls"></div>
+ <h2>A battle line, first person: two houses at war, icons above each soldier, shrinking with distance</h2><canvas class="scene" id="battle" width="1100" height="300"></canvas>
+ <h2>A crowded field: a levy and an ally join, so four houses' soldiers mix</h2><canvas class="scene" id="crowd" width="1100" height="240"></canvas>
+ <h2>Expedition map markers (14 px, over terrain)</h2><canvas class="scene" id="map" width="640" height="320"></canvas>
+</div>
+<div id="bar"><button id="prev">&#8592;</button><span id="label"></span><button id="next">&#8594;</button></div>
+<script>const HOUSES = [
+{seed:1000,id:0,name:"House Vellum",doctrine:"The Flensed Choir",kind:"great",sigil:"an open mouth singing on bone white",primary:"#8E2A2A",secondary:"#D9C7A3",words:"Every Wound A Verse"},
+{seed:1000,id:1,name:"House Thrennic",doctrine:"The Flensed Choir",kind:"great",sigil:"an open mouth singing on ash grey",primary:"#8E2A2A",secondary:"#D9C7A3",words:"Every Wound A Verse"},
+{seed:1000,id:2,name:"House Reliquar",doctrine:"The Ossuary Lords",kind:"great",sigil:"a crossed femur and spade on red",primary:"#C9BFA5",secondary:"#4B2E2E",words:"The Dead Remain"},
+{seed:1000,id:4,name:"House Scourne",doctrine:"The Flensed Choir",kind:"lesser",sigil:"a flayed hand on bruise purple",primary:"#8E2A2A",secondary:"#D9C7A3",words:"Every Wound A Verse"},
+{seed:1000,id:5,name:"House Mutemoor",doctrine:"The Hollow Court",kind:"lesser",sigil:"a white mask on tarnished gold",primary:"#E8E4DA",secondary:"#2B2B2B",words:"Silence Is Owed"},
+{seed:1000,id:7,name:"House Sallow",doctrine:"The Flensed Choir",kind:"lesser",sigil:"an open mouth singing on bile green",primary:"#8E2A2A",secondary:"#D9C7A3",words:"The Choir Is Never Full"},
+{seed:1000,id:9,name:"House Blightgold",doctrine:"The Gilded Rot",kind:"lesser",sigil:"a gilded fly on bile green",primary:"#B8962E",secondary:"#5A6B2E",words:"Sweeter For The Waiting"},
+{seed:1000,id:10,name:"the Antlered Host",doctrine:"The Antlered Host",kind:"castle",sigil:"a black antlered skull on bruise purple",primary:"#5B1A1A",secondary:"#C9A227",words:"The Door Is Ours"},
+{seed:8919,id:3,name:"House Stillwater",doctrine:"The Hollow Court",kind:"lesser",sigil:"a bell without a tongue on red",primary:"#E8E4DA",secondary:"#2B2B2B",words:"Hush"},
+{seed:8919,id:5,name:"House Gullet",doctrine:"The Glass Hunger",kind:"great",sigil:"a starving hound on black",primary:"#7FB7BE",secondary:"#3B1F2B",words:"Still Hungry"},
+{seed:8919,id:7,name:"House Cinderwake",doctrine:"The Ashen Penitents",kind:"lesser",sigil:"a scourge aflame on tarnished gold",primary:"#3A3A3A",secondary:"#E06A1B",words:"Penance Has No End"},
+{seed:8919,id:9,name:"House Glassjaw",doctrine:"The Glass Hunger",kind:"lesser",sigil:"a glass mouth on red",primary:"#7FB7BE",secondary:"#3B1F2B",words:"We See Through"},
+{seed:8919,id:10,name:"House Contrite",doctrine:"The Ashen Penitents",kind:"great",sigil:"ash upon a field of ash on ash grey",primary:"#3A3A3A",secondary:"#E06A1B",words:"We Kneel In Flame"},
+{seed:8919,id:11,name:"House Scourgehall",doctrine:"The Ashen Penitents",kind:"great",sigil:"a burning hand raised on red",primary:"#3A3A3A",secondary:"#E06A1B",words:"Clean In The Fire"},
+{seed:8919,id:12,name:"House Emberlash",doctrine:"The Ashen Penitents",kind:"lesser",sigil:"a scourge aflame on bone white",primary:"#3A3A3A",secondary:"#E06A1B",words:"Clean In The Fire"},
+{seed:8919,id:13,name:"the Antlered Host",doctrine:"The Antlered Host",kind:"castle",sigil:"a horned crown over an open rift on bile green",primary:"#5B1A1A",secondary:"#C9A227",words:"The Door Is Ours"},
+{seed:24757,id:4,name:"House Seep",doctrine:"The Gilded Rot",kind:"great",sigil:"a gilded fly on ash grey",primary:"#B8962E",secondary:"#5A6B2E",words:"Sweeter For The Waiting"},
+{seed:24757,id:5,name:"House Shacklemere",doctrine:"The Chainwrights",kind:"great",sigil:"a closed manacle on black",primary:"#4A4E57",secondary:"#B87333",words:"Bound And Kept"},
+{seed:24757,id:8,name:"House Mouldry",doctrine:"The Gilded Rot",kind:"lesser",sigil:"a rotting crown on black",primary:"#B8962E",secondary:"#5A6B2E",words:"Rich In Ruin"},
+{seed:24757,id:12,name:"House Contrite",doctrine:"The Ashen Penitents",kind:"lesser",sigil:"ash upon a field of ash on bone white",primary:"#3A3A3A",secondary:"#E06A1B",words:"Clean In The Fire"},
+{seed:24757,id:13,name:"the Antlered Host",doctrine:"The Antlered Host",kind:"castle",sigil:"a black antlered skull on bile green",primary:"#5B1A1A",secondary:"#C9A227",words:"The Door Is Ours"},
+{seed:24757,id:14,name:"House Reliquar",doctrine:"The Ossuary Lords",kind:"great",sigil:"a tower of skulls on black",primary:"#C9BFA5",secondary:"#4B2E2E",words:"We Build With Our Fathers"},
+{seed:24757,id:15,name:"House Aurelance",doctrine:"The Gilded Rot",kind:"lesser",sigil:"a rotting crown on bone white",primary:"#B8962E",secondary:"#5A6B2E",words:"Rich In Ruin"},
+{seed:24757,id:16,name:"House Linkhold",doctrine:"The Chainwrights",kind:"lesser",sigil:"a hook through a crown on bruise purple",primary:"#4A4E57",secondary:"#B87333",words:"Bound And Kept"},
+{seed:40595,id:1,name:"House Reliquar",doctrine:"The Ossuary Lords",kind:"great",sigil:"a tower of skulls on bile green",primary:"#C9BFA5",secondary:"#4B2E2E",words:"The Dead Remain"},
+{seed:40595,id:2,name:"House Seep",doctrine:"The Gilded Rot",kind:"great",sigil:"a gold coin weeping on bone white",primary:"#B8962E",secondary:"#5A6B2E",words:"Sweeter For The Waiting"},
+{seed:40595,id:3,name:"House Marrowgate",doctrine:"The Ossuary Lords",kind:"lesser",sigil:"a crossed femur and spade on red",primary:"#C9BFA5",secondary:"#4B2E2E",words:"The Dead Remain"},
+{seed:40595,id:9,name:"House Mouldry",doctrine:"The Gilded Rot",kind:"great",sigil:"a gold coin weeping on red",primary:"#B8962E",secondary:"#5A6B2E",words:"Sweeter For The Waiting"},
+{seed:40595,id:10,name:"the Antlered Host",doctrine:"The Antlered Host",kind:"castle",sigil:"a horned crown over an open rift on ash grey",primary:"#5B1A1A",secondary:"#C9A227",words:"The Door Is Ours"},
+{seed:40595,id:11,name:"House Shacklemere",doctrine:"The Chainwrights",kind:"lesser",sigil:"three chain links on ash grey",primary:"#4A4E57",secondary:"#B87333",words:"Bound And Kept"},
+{seed:40595,id:12,name:"House Aurelance",doctrine:"The Gilded Rot",kind:"lesser",sigil:"a gilded fly on bile green",primary:"#B8962E",secondary:"#5A6B2E",words:"Sweeter For The Waiting"},
+{seed:40595,id:13,name:"House Clearmaw",doctrine:"The Glass Hunger",kind:"lesser",sigil:"a glass mouth on black",primary:"#7FB7BE",secondary:"#3B1F2B",words:"Still Hungry"},
+{seed:135623,id:2,name:"House Emberlash",doctrine:"The Ashen Penitents",kind:"great",sigil:"a scourge aflame on ash grey",primary:"#3A3A3A",secondary:"#E06A1B",words:"We Kneel In Flame"},
+{seed:135623,id:3,name:"House Clearmaw",doctrine:"The Glass Hunger",kind:"lesser",sigil:"a starving hound on ash grey",primary:"#7FB7BE",secondary:"#3B1F2B",words:"Still Hungry"},
+{seed:135623,id:4,name:"House Marrowgate",doctrine:"The Ossuary Lords",kind:"lesser",sigil:"a crowned jawbone on bile green",primary:"#C9BFA5",secondary:"#4B2E2E",words:"We Build With Our Fathers"},
+{seed:135623,id:5,name:"House Ironlace",doctrine:"The Chainwrights",kind:"great",sigil:"three chain links on ash grey",primary:"#4A4E57",secondary:"#B87333",words:"We Hold What Falls"},
+{seed:135623,id:6,name:"House Cairnmoor",doctrine:"The Ossuary Lords",kind:"great",sigil:"a crossed femur and spade on bone white",primary:"#C9BFA5",secondary:"#4B2E2E",words:"Every Bone A Brick"},
+{seed:135623,id:7,name:"House Gibbet",doctrine:"The Chainwrights",kind:"lesser",sigil:"three chain links on black",primary:"#4A4E57",secondary:"#B87333",words:"Bound And Kept"},
+{seed:135623,id:9,name:"House Vellum",doctrine:"The Flensed Choir",kind:"lesser",sigil:"a hymnal bound in skin on tarnished gold",primary:"#8E2A2A",secondary:"#D9C7A3",words:"Every Wound A Verse"},
+{seed:135623,id:10,name:"the Antlered Host",doctrine:"The Antlered Host",kind:"castle",sigil:"a horned crown over an open rift on bruise purple",primary:"#5B1A1A",secondary:"#C9A227",words:"Kneel Or Be The Offering"},
+{seed:151461,id:2,name:"House Quietus",doctrine:"The Hollow Court",kind:"great",sigil:"a lidless eye sewn shut on black",primary:"#E8E4DA",secondary:"#2B2B2B",words:"We Have Already Arrived"},
+{seed:151461,id:3,name:"House Reliquar",doctrine:"The Ossuary Lords",kind:"great",sigil:"a crossed femur and spade on bruise purple",primary:"#C9BFA5",secondary:"#4B2E2E",words:"The Dead Remain"},
+{seed:151461,id:4,name:"House Scourne",doctrine:"The Flensed Choir",kind:"great",sigil:"a flayed hand on red",primary:"#8E2A2A",secondary:"#D9C7A3",words:"We Sing Beneath"},
+{seed:151461,id:7,name:"House Marrowgate",doctrine:"The Ossuary Lords",kind:"lesser",sigil:"a crowned jawbone on ash grey",primary:"#C9BFA5",secondary:"#4B2E2E",words:"We Build With Our Fathers"},
+{seed:151461,id:9,name:"House Pale",doctrine:"The Hollow Court",kind:"lesser",sigil:"a white mask on bile green",primary:"#E8E4DA",secondary:"#2B2B2B",words:"We Have Already Arrived"},
+{seed:151461,id:10,name:"the Antlered Host",doctrine:"The Antlered Host",kind:"castle",sigil:"a black antlered skull on bruise purple",primary:"#5B1A1A",secondary:"#C9A227",words:"The Door Is Ours"},
+{seed:151461,id:11,name:"House Seep",doctrine:"The Gilded Rot",kind:"lesser",sigil:"a gold coin weeping on black",primary:"#B8962E",secondary:"#5A6B2E",words:"Rich In Ruin"},
+{seed:151461,id:12,name:"House Scourgehall",doctrine:"The Ashen Penitents",kind:"lesser",sigil:"a scourge aflame on bone white",primary:"#3A3A3A",secondary:"#E06A1B",words:"Clean In The Fire"},
+];
+</script>
+<script>
+// ---------------- the generator (the part worth keeping) ----------------
+const FIELD = {'black':'#141414','red':'#8b1e1e','bone white':'#e6dcc3','tarnished gold':'#9c7a2b','ash grey':'#7a7a7a','bruise purple':'#4b2a5a','bile green':'#6b7a24'};
+const CHARGE = {
+ 'a flayed hand':['✋'],'an open mouth singing':['👄'],'a hymnal bound in skin':['📖'],
+ 'a hook through a crown':['👑','🪝'],'three chain links':['🔗'],'a closed manacle':['🔒'],
+ 'a lidless eye sewn shut':['👁'],'a white mask':['🎭'],'a bell without a tongue':['🔔'],
+ 'a gilded fly':['🪰'],'a rotting crown':['👑'],'a gold coin weeping':['🪙'],
+ 'a scourge aflame':['🔥'],'a burning hand raised':['✋','🔥'],'ash upon a field of ash':['🌫'],
+ 'a tower of skulls':['💀','💀'],'a crossed femur and spade':['🦴'],'a crowned jawbone':['👑','🦷'],
+ 'a glass mouth':['💎'],'a starving hound':['🐕'],'an empty bowl cracked':['🥣'],
+ 'a black antlered skull':['🦌','💀'],'a horned crown over an open rift':['👑','⚡']};
+function parseSigil(s){const i=s.lastIndexOf(' on ');return {charge:s.slice(0,i),field:s.slice(i+4)};}
+function lum(hex){const n=parseInt(hex.slice(1),16),c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+function contrast(a,b){const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+function inkOn(field,pref){for(const p of pref)if(p&&contrast(p,field)>=3)return p;return lum(field)>.3?'#151515':'#f1e8d2';}
+function hash(s){let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;}
+const glyphCache={};
+function silhouette(emoji,px,color){const k=emoji+px+color;if(glyphCache[k])return glyphCache[k];const c=document.createElement('canvas');c.width=c.height=px;const g=c.getContext('2d');
+ g.font=`${Math.round(px*.82)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(emoji,px/2,px/2+px*.04);
+ g.globalCompositeOperation='source-in';g.fillStyle=color;g.fillRect(0,0,px,px);return glyphCache[k]=c;}
+function drawCharge(g,house,x,y,size,color){const parts=CHARGE[parseSigil(house.sigil).charge]||['?'];
+ if(parts.length===1)g.drawImage(silhouette(parts[0],Math.max(8,Math.round(size)),color),x-size/2,y-size/2,size,size);
+ else{const s2=size*.66;g.drawImage(silhouette(parts[0],Math.max(8,Math.round(s2)),color),x-s2/2,y-size/2,s2,s2);g.drawImage(silhouette(parts[1],Math.max(8,Math.round(s2)),color),x-s2/2,y-size/2+size*.36,s2,s2);}}
+function shieldPath(g,x,y,w,h){g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w,y+h*.55);g.quadraticCurveTo(x+w,y+h*.85,x+w/2,y+h);g.quadraticCurveTo(x,y+h*.85,x,y+h*.55);g.closePath();}
+const VARIANTS={
+ A:{name:'Plain shield, doctrine border',desc:'A heater shield in the sigil\'s field colour, the charge in the doctrine\'s secondary colour where it reads, and a border in the doctrine\'s primary colour. The closest to the sigil as written.',
+  draw(g,h,x,y,s){const f=FIELD[parseSigil(h.sigil).field],b=Math.max(1,s*.08);shieldPath(g,x,y,s,s*1.12);g.fillStyle=h.primary;g.fill();shieldPath(g,x+b,y+b,s-2*b,s*1.12-2*b);g.fillStyle=f;g.fill();
+   drawCharge(g,h,x+s/2,y+s*.5,s*.62,inkOn(f,[h.secondary]));if(s>=20){shieldPath(g,x,y,s,s*1.12);g.strokeStyle='#000';g.lineWidth=Math.max(1,s/40);g.stroke();}}},
+ B:{name:'Divided shield',desc:'The field is divided between the sigil\'s colour and the doctrine\'s primary colour: per pale, per bend, per chevron, quarterly or per fess, chosen from the house\'s name. Two houses with the same charge and field still differ in their division.',
+  draw(g,h,x,y,s){const f=FIELD[parseSigil(h.sigil).field],d=hash(h.name)%5,H=s*1.12;g.save();shieldPath(g,x,y,s,H);g.clip();g.fillStyle=f;g.fillRect(x,y,s,H);g.fillStyle=h.primary;g.beginPath();
+   if(d===0)g.rect(x+s/2,y,s/2,H);else if(d===1){g.moveTo(x,y);g.lineTo(x+s,y);g.lineTo(x+s,y+H);g.closePath();}else if(d===2){g.moveTo(x,y+H);g.lineTo(x+s/2,y+H*.45);g.lineTo(x+s,y+H);g.closePath();}
+   else if(d===3){g.rect(x+s/2,y,s/2,H/2);g.rect(x,y+H/2,s/2,H/2);}else g.rect(x,y+H/2,s,H/2);g.fill();g.restore();
+   const ink=inkOn(f,[h.secondary]),ink2=contrast(ink,h.primary)>=2?ink:inkOn(h.primary,[h.secondary]);
+   g.save();g.shadowColor=lum(ink2)>.3?'#000':'#fff';g.shadowBlur=Math.max(1,s/20);drawCharge(g,h,x+s/2,y+s*.5,s*.6,ink2);g.restore();
+   if(s>=20){shieldPath(g,x,y,s,H);g.strokeStyle='#000';g.lineWidth=Math.max(1,s/40);g.stroke();}}},
+ C:{name:'Hanging banner',desc:'A swallowtail banner instead of a shield: a band at the top in the doctrine\'s colours (the creed), the body in the sigil\'s field colour with the charge. It reads as a standard over a captain.',
+  draw(g,h,x,y,s){const f=FIELD[parseSigil(h.sigil).field],w=s*.8,H=s*1.25,ox=x+(s-w)/2;g.fillStyle=f;g.beginPath();g.moveTo(ox,y);g.lineTo(ox+w,y);g.lineTo(ox+w,y+H);g.lineTo(ox+w/2,y+H*.8);g.lineTo(ox,y+H);g.closePath();g.fill();
+   g.fillStyle=h.primary;g.fillRect(ox,y,w,H*.18);g.fillStyle=h.secondary;g.fillRect(ox,y+H*.18,w,Math.max(1,H*.04));
+   drawCharge(g,h,ox+w/2,y+H*.52,w*.72,inkOn(f,[h.secondary]));if(s>=20){g.strokeStyle='#000';g.lineWidth=Math.max(1,s/40);g.beginPath();g.moveTo(ox,y);g.lineTo(ox+w,y);g.lineTo(ox+w,y+H);g.lineTo(ox+w/2,y+H*.8);g.lineTo(ox,y+H);g.closePath();g.stroke();}
+   g.fillStyle='#5a4a32';g.fillRect(ox-s*.06,y-s*.04,w+s*.12,Math.max(1,s*.05));}},
+ D:{name:'Roundel badge',desc:'A round badge: the sigil\'s field, a thick ring in the doctrine\'s primary colour, the charge large. Built for tiny sizes: the ring colour says the creed at a glance, even at 12 px.',
+  draw(g,h,x,y,s){const f=FIELD[parseSigil(h.sigil).field],r=s/2,cx=x+r,cy=y+r;g.fillStyle='#000';g.beginPath();g.arc(cx,cy,r,0,7);g.fill();g.fillStyle=h.primary;g.beginPath();g.arc(cx,cy,r-Math.max(1,s/30),0,7);g.fill();
+   g.fillStyle=f;g.beginPath();g.arc(cx,cy,r*.74,0,7);g.fill();drawCharge(g,h,cx,cy,s*.58,inkOn(f,[h.secondary]));}},
+ E:{name:'Divided in the house’s own colours, doctrine border',desc:'The doctrine is only the border. The field is divided between the sigil’s colour and a second colour of the house’s own (from the same seven field colours, chosen from its name so it contrasts), with the division also chosen from its name. Two houses of one creed with one charge still differ in two of three things: second colour and division.',
+  draw(g,h,x,y,s){const f=FIELD[parseSigil(h.sigil).field],f2=secondTincture(h),d=hash(h.name+'div')%5,H=s*1.12,b=Math.max(1,s*.08);
+   shieldPath(g,x,y,s,H);g.fillStyle=h.primary;g.fill();g.save();shieldPath(g,x+b,y+b,s-2*b,H-2*b);g.clip();g.fillStyle=f;g.fillRect(x,y,s,H);g.fillStyle=f2;g.beginPath();
+   if(d===0)g.rect(x+s/2,y,s/2,H);else if(d===1){g.moveTo(x,y);g.lineTo(x+s,y);g.lineTo(x+s,y+H);g.closePath();}else if(d===2){g.moveTo(x,y+H);g.lineTo(x+s/2,y+H*.45);g.lineTo(x+s,y+H);g.closePath();}
+   else if(d===3){g.rect(x+s/2,y,s/2,H/2);g.rect(x,y+H/2,s/2,H/2);}else g.rect(x,y+H/2,s,H/2);g.fill();g.restore();
+   const ink=contrast('#151515',f)>=2.2&&contrast('#151515',f2)>=2.2?'#151515':'#f1e8d2';
+   g.save();g.shadowColor=ink==='#151515'?'#fff':'#000';g.shadowBlur=Math.max(1,s/18);drawCharge(g,h,x+s/2,y+s*.52,s*.58,ink);g.restore();
+   if(s>=20){shieldPath(g,x,y,s,H);g.strokeStyle='#000';g.lineWidth=Math.max(1,s/40);g.stroke();}}},
+};
+function secondTincture(h){const f=parseSigil(h.sigil).field,opts=Object.keys(FIELD).filter(k=>k!==f&&contrast(FIELD[k],FIELD[f])>=2);return FIELD[opts[hash(h.name+'t2')%opts.length]]||'#141414';}
+// ---------------- the page (throwaway) ----------------
+const keys=Object.keys(VARIANTS);let V=new URLSearchParams(location.search).get('variant')||'A';if(!VARIANTS[V])V='A';
+const seeds=[...new Set(HOUSES.map(h=>h.seed))];const sel=document.getElementById('world');seeds.forEach(s=>sel.add(new Option('World seed '+s,s)));
+let seed=seeds[0];sel.onchange=()=>{seed=+sel.value;render();};
+function go(d){V=keys[(keys.indexOf(V)+d+keys.length)%keys.length];history.replaceState(null,'','?variant='+V);render();}
+document.getElementById('prev').onclick=()=>go(-1);document.getElementById('next').onclick=()=>go(1);
+addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select,[contenteditable]'))return;if(e.key==='ArrowLeft')go(-1);if(e.key==='ArrowRight')go(1);});
+function canvasOf(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function soldier(g,x,y,sc,col){g.fillStyle=col;g.beginPath();g.arc(x,y-58*sc,9*sc,0,7);g.fill();g.fillRect(x-11*sc,y-48*sc,22*sc,34*sc);g.fillRect(x-10*sc,y-14*sc,8*sc,14*sc);g.fillRect(x+2*sc,y-14*sc,8*sc,14*sc);
+ g.fillStyle='#777';g.fillRect(x+12*sc,y-70*sc,2*sc,50*sc);}
+function render(){
+ const v=VARIANTS[V],hs=HOUSES.filter(h=>h.seed===seed);
+ document.getElementById('label').textContent=V+' ('+v.name+')';document.getElementById('vname').textContent='Variant '+V+': '+v.name;document.getElementById('vdesc').textContent=v.desc;
+ const gal=document.getElementById('gallery');gal.innerHTML='';
+ for(const h of hs){const d=document.createElement('div');d.className='card';const c=canvasOf(150,175);v.draw(c.getContext('2d'),h,11,6,128);d.appendChild(c);
+  d.insertAdjacentHTML('beforeend',`<b>${h.name}</b><br><span class=muted>${h.doctrine}, ${h.kind}<br>"${h.sigil}"</span>`);gal.appendChild(d);}
+ const sm=document.getElementById('smalls');sm.innerHTML='';for(const sz of [32,24,16,12]){const c=canvasOf(hs.length*(sz+8)+10,sz*1.3+10);const g=c.getContext('2d');hs.forEach((h,i)=>v.draw(g,h,5+i*(sz+8),4,sz));sm.appendChild(c);}
+ // battle line
+ const war=hs.length>1?[hs[0],hs[1]]:[hs[0],hs[0]];let c=document.getElementById('battle'),g=c.getContext('2d');
+ const sky=g.createLinearGradient(0,0,0,300);sky.addColorStop(0,'#2b2233');sky.addColorStop(1,'#3a3228');g.fillStyle=sky;g.fillRect(0,0,1100,300);g.fillStyle='#2a2a1e';g.fillRect(0,170,1100,130);
+ const rows=[[0.45,120,190],[0.7,95,230],[1,70,285]];
+ for(const [sc,step,y] of rows)for(let x=40+(1-sc)*80,i=0;x<1080;x+=step,i++){const h=war[(i+Math.floor(x/400))%2];soldier(g,x,y,sc,'#0d0d10');const isz=Math.round(12+12*sc);v.draw(g,h,x-isz/2,y-80*sc-isz*1.3,isz);}
+ // crowd: four houses
+ const four=hs.slice(0,4);c=document.getElementById('crowd');g=c.getContext('2d');g.fillStyle='#2d2b24';g.fillRect(0,0,1100,240);
+ for(let i=0;i<26;i++){const x=30+i*41+(i%2)*10,y=200+(i%3)*12,sc=.55+(i%3)*.12,h=four[(i*7)%four.length];soldier(g,x,y,sc,'#0d0d10');v.draw(g,h,x-9,y-80*sc-22,18);}
+ // map
+ c=document.getElementById('map');g=c.getContext('2d');for(let y=0;y<20;y++)for(let x=0;x<40;x++){const n=(hash(seed+':'+x+':'+y)%100);g.fillStyle=n<20?'#0d1b2e':n<30?'#4a3a2a':['#3b4a35','#6b5d3a','#355057','#5a6670'][n%4];g.fillRect(x*16,y*16,16,16);}
+ g.strokeStyle='rgba(217,164,65,.6)';g.lineWidth=3;g.beginPath();g.moveTo(0,160);g.lineTo(640,120);g.stroke();
+ hs.forEach((h,i)=>{for(let k=0;k<2;k++){const x=40+((hash(h.name+k)%560)),y=20+((hash(k+h.name)%270));v.draw(g,h,x,y,14);}});
+}
+render();
+</script></body></html>
