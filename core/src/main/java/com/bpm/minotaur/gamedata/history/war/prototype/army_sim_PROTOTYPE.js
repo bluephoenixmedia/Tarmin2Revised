@@ -10,7 +10,7 @@ const ArmySim = (() => {
     killRate: 0.012, moraleLoss: 4, captainFall: 0.004, garrisonEdge: 1.1,
     sight: 6, seasonTurns: 500, sleepTurns: 250,
     playerTurns: 45, expeditionTurns: 1500,         // player: war turns per chunk walked; overland turns per expedition
-    declareChance: 0.04, peaceRaidChance: 0.25, strengthPerArmy: 20, wallEdge: 4, warsTarget: 3, seenRadius: 1,
+    declareChance: 0.04, peaceRaidChance: 0.25, strengthPerArmy: 20, wallEdge: 4, warsTarget: 0, minWars: 2, seenRadius: 1, supplyEvery: 60, supplyMin: 3, forageEvery: 80, forageSize: 4, forageTurns: 40, logistics: 1,
   };
   const TRAITS = ['AMBITIOUS', 'WRATHFUL', 'CRAVEN', 'ZEALOT', 'CUNNING', 'HONOURABLE', 'CRUEL', 'PATIENT'];
 
@@ -35,7 +35,7 @@ const ArmySim = (() => {
     for (const h of W.houses) {
       S.houses[h.id] = Object.assign(h, { alive: true, prestige: 0, deadFigures: new Set(), hostages: new Set(), gx: h.seat[0], gy: h.seat[1] });
     }
-    for (const w of W.wars) S.wars.push({ id: S.nextId++, a: w.a, d: w.d, start: -w.age, active: true });
+    for (const w of W.wars) S.wars.push({ id: S.nextId++, a: w.a, d: w.d, start: -w.age, active: true, s0: { [w.a]: S_str(W, w.a), [w.d]: S_str(W, w.d) } });
     S.corridor = new Uint8Array((2 * S.R + 1) ** 2);
     for (let y = -S.R; y <= S.R; y++) for (let x = -S.R; x <= S.R; x++)
       for (const r of W.roads) if (segDist(x, y, r.end[0], r.end[1]) <= 1) S.corridor[ix(S, x, y)] = 1;
@@ -44,6 +44,7 @@ const ArmySim = (() => {
     note(S, 'The live war begins. ' + activeWars(S).map(w => warName(S, w)).join('; '));
     return S;
   }
+  const S_str = (W, id) => (W.houses.find(h => h.id === id) || { strength: 0 }).strength;
   const key = (a, b) => a < b ? a + ':' + b : b + ':' + a;
   function segDist(x, y, ex, ey) {
     const L = ex * ex + ey * ey; if (!L) return Math.hypot(x, y);
@@ -108,7 +109,7 @@ const ArmySim = (() => {
     if (wars.length) {
       for (;;) {
         const avail = garrison(S, h.id) - minG; if (avail < S.P.minArmy) break;
-        const own = S.armies.filter(a => a.house === h.id && !a.raid && a.levyOf == null);
+        const own = S.armies.filter(a => a.house === h.id && !a.raid && !a.supply && !a.forage && a.levyOf == null);
         if (own.length >= Math.max(1, Math.round(h.strength / S.P.strengthPerArmy))) break;
         const w = wars.slice().sort((x, y) => own.filter(a => a.war === x.id).length - own.filter(a => a.war === y.id).length || H(S, enemyIn(y, h.id)).strength - H(S, enemyIn(x, h.id)).strength)[0];
         const A = newArmy(S, h, Math.min(S.P.armySize, avail), { war: w.id });
@@ -140,7 +141,7 @@ const ArmySim = (() => {
   function goTo(S, A, tx, ty) { const p = path(S, A.x, A.y, tx, ty); A.path = p || []; }
   function decide(S, A) {
     const h = H(S, A.house);
-    if (A.raid) return; // raid parties keep their errand
+    if (A.raid || A.supply || A.forage) return; // detachments keep their errand
     const war = S.wars.find(w => w.id === A.war);
     if (A.levyOf != null) {
       if (!war || !war.active) return goHome(S, A, 'disband');
@@ -219,14 +220,53 @@ const ArmySim = (() => {
         if (seen.length) { seen.forEach(E => A.seenIds.add(E.id)); decide(S, A); }
       }
     }
+    if (S.P.logistics) logistics(S);
     contacts(S);
     for (const B of S.battles.slice()) stepBattle(S, B);
     S.armies = S.armies.filter(A => A.soldiers > 0 && !A.gone);
     if (S.clock % S.P.seasonTurns === 0) seasonTick(S);
     playerTick(S);
   }
+  // Logistics (#322, Q1): supply columns from the seat to its hosts, and foragers out and back.
+  function logistics(S) {
+    for (const A of S.armies.slice()) {
+      if (A.raid || A.supply || A.forage || A.battle) continue;
+      const h = H(S, A.house);
+      if ((S.clock + A.id) % S.P.supplyEvery === 0 && A.soldiers < S.P.armySize && !S.armies.some(c => c.supply && c.obj.target === A.id)) {
+        const minG = Math.ceil(h.strength * S.P.garrisonShare), n = Math.min(S.P.armySize - A.soldiers, garrison(S, h.id) - minG);
+        if (n >= S.P.supplyMin && cheb(A.x, A.y, h.gx, h.gy) > 0) {
+          const C = newArmy(S, h, n, { supply: true, war: A.war, levyOf: A.levyOf }); C.captain = null;
+          C.obj = { kind: 'supply', target: A.id, label: 'a supply column for ' + capName(A) }; goTo(S, C, A.x, A.y);
+        }
+      }
+      if ((S.clock + A.id * 7) % S.P.forageEvery === 0 && A.soldiers > S.P.forageSize + S.P.minArmy) {
+        const dx = Math.floor(S.rng() * 5) - 2, dy = Math.floor(S.rng() * 5) - 2;
+        if ((dx || dy) && passable(S, A.x + dx, A.y + dy)) {
+          A.soldiers -= S.P.forageSize;
+          const F = newArmy(S, h, S.P.forageSize, { forage: true, war: A.war, levyOf: A.levyOf, x: A.x, y: A.y, back: A.id, until: S.clock + S.P.forageTurns }); F.captain = null;
+          F.obj = { kind: 'forage', label: 'foragers of ' + capName(A) }; goTo(S, F, A.x + dx, A.y + dy);
+        }
+      }
+    }
+    for (const C of S.armies) {
+      if (C.battle) continue;
+      if (C.supply) {
+        const T = S.armies.find(o => o.id === C.obj.target);
+        if (!T) { C.gone = true; continue; }
+        if (T.x === C.x && T.y === C.y) { T.soldiers += C.soldiers; T.start = Math.max(T.start, T.soldiers); C.soldiers = 0; C.gone = true; }
+        else if ((S.clock + C.id) % 20 === 0) goTo(S, C, T.x, T.y);
+      }
+      if (C.forage && S.clock >= C.until) {
+        const T = S.armies.find(o => o.id === C.back);
+        if (!T) { C.gone = true; continue; }
+        if (T.x === C.x && T.y === C.y) { T.soldiers += C.soldiers; C.soldiers = 0; C.gone = true; }
+        else if ((S.clock + C.id) % 20 === 0) goTo(S, C, T.x, T.y);
+      }
+    }
+  }
   function arrive(S, A) {
     const h = H(S, A.house);
+    if (A.supply || A.forage) return;
     if (A.raid) return; // camp until the season turns
     if (A.obj.kind === 'disband' && A.x === h.gx && A.y === h.gy) { A.gone = true; note(S, `The host of ${capName(A)} returns to ${h.name}'s seat and disbands.`); return; }
     if (A.obj.kind === 'recover' && A.x === h.gx && A.y === h.gy) {
@@ -340,7 +380,8 @@ const ArmySim = (() => {
     for (const A of armies(winK)) { A.battle = null; A.morale = Math.min(100, A.morale + 30); }
     for (const A of armies(loserK)) {
       A.battle = null;
-      if (A.soldiers < S.P.minArmy && !A.raid) { A.gone = true; const wr = S.wars.find(w => w.id === A.war); if (wr) wr.broken = (wr.broken || new Set()).add(A.house); note(S, `The host of ${capName(A)} is broken; its ${A.soldiers} survivors straggle home.`); }
+      if (A.supply || A.forage) { A.gone = true; }
+      else if (A.soldiers < S.P.minArmy && !A.raid) { A.gone = true; const wr = S.wars.find(w => w.id === A.war); if (wr) wr.broken = (wr.broken || new Set()).add(A.house); note(S, `The host of ${capName(A)} is broken; its ${A.soldiers} survivors straggle home.`); }
       else { A.morale = 30; if (A.raid) { A.gone = true; } else goHome(S, A, 'recover'); }
     }
     if (B.seat && loserK === 'b') seize(S, winner, loser);
@@ -368,12 +409,12 @@ const ArmySim = (() => {
     for (const A of S.armies.filter(a => a.raid && S.season >= a.untilSeason)) { A.gone = true; note(S, `Raiders of ${hname(S, A.house)} go home.`); }
     for (const w of activeWars(S)) {
       const a = H(S, w.a), d = H(S, w.d), age = S.season - w.start;
-      const spent = h => !S.armies.some(x => x.house === h.id && !x.raid) && garrison(S, h.id) - Math.ceil(h.strength * S.P.garrisonShare) < S.P.minArmy;
+      const spent = h => !S.armies.some(x => x.house === h.id && !x.raid && !x.supply && !x.forage) && garrison(S, h.id) - Math.ceil(h.strength * S.P.garrisonShare) < S.P.minArmy;
       let why = null;
       if (age > 16 && S.rng() < 0.05) why = 'an old war, ended';
       else if (a.strength < 30 && d.strength < 30 && S.rng() < 0.15) why = 'both houses exhausted';
-      else if (w.broken && w.broken.has(a.id) && spent(a)) why = a.name + ' sues for peace, its hosts spent';
-      else if (w.broken && w.broken.has(d.id) && spent(d)) why = d.name + ' sues for peace, its hosts spent';
+      else if (w.s0 && a.strength < 0.5 * w.s0[a.id] && spent(a)) why = a.name + ' sues for peace, beaten';
+      else if (w.s0 && d.strength < 0.5 * w.s0[d.id] && spent(d)) why = d.name + ' sues for peace, beaten';
       if (why) {
         w.active = false; w.end = S.season;
         deed(S, { kind: 'PEACE', winner: w.a, loser: w.d, why, chronicled: true });
@@ -386,12 +427,22 @@ const ArmySim = (() => {
       if (!h.alive || h.liege >= 0 || h.kind === 'castle' || warsOf(S, h.id).length || h.strength < 40) continue;
       const g = S.grudges.filter(x => x.h === h.id && H(S, x.a) && H(S, x.a).alive && !S.allies.has(key(h.id, x.a))).sort((p, q) => q.w - p.w)[0];
       if (g && g.w > 1 && S.rng() < S.P.declareChance) {
-        S.wars.push({ id: S.nextId++, a: h.id, d: g.a, start: S.season, active: true });
+        S.wars.push({ id: S.nextId++, a: h.id, d: g.a, start: S.season, active: true, s0: { [h.id]: h.strength, [g.a]: H(S, g.a).strength } });
         deed(S, { kind: 'WAR_DECLARED', winner: h.id, loser: g.a, chronicled: true });
         note(S, `${h.name} declares war on ${hname(S, g.a)}.`, true);
       } else if (g && g.w > 1 && S.rng() < S.P.peaceRaidChance && garrison(S, h.id) - Math.ceil(h.strength * S.P.garrisonShare) >= S.P.raidSize) {
         sendRaid(S, null, H(S, g.a), null, { house: h.id });
       }
+    }
+    while (S.P.minWars && activeWars(S).length < S.P.minWars) {
+      const free = Object.values(S.houses).filter(h => h.alive && h.liege < 0 && warsOf(S, h.id).length < 2 && h.kind !== 'castle');
+      const ok = (a, d) => d && d.alive && d.id !== a.id && d.liege !== a.id && !atWar(S, a.id, d.id) && !S.allies.has(key(a.id, d.id));
+      let best = null;
+      for (const a of free) for (const g of S.grudges.filter(g => g.h === a.id)) if (ok(a, H(S, g.a)) && (!best || g.w > best.g.w)) best = { a, d: H(S, g.a), g };
+      if (!best) { const a = free.sort((p, q) => q.strength - p.strength)[0]; const d = a && Object.values(S.houses).filter(h => ok(a, h)).sort((p, q) => p.strength - q.strength)[0]; if (!d) break; best = { a, d }; }
+      S.wars.push({ id: S.nextId++, a: best.a.id, d: best.d.id, start: S.season, active: true, s0: { [best.a.id]: best.a.strength, [best.d.id]: best.d.strength } });
+      note(S, `${best.a.name} declares war on ${best.d.name}${best.g ? ' (an old grudge)' : ''}.`, true);
+      for (const h of [best.a, best.d]) muster(S, h);
     }
     while (S.P.warsTarget && activeWars(S).length < S.P.warsTarget) {
       const free = Object.values(S.houses).filter(h => h.alive && h.liege < 0 && warsOf(S, h.id).length < 2 && h.kind !== 'castle');
@@ -400,7 +451,7 @@ const ArmySim = (() => {
       const t = Object.values(S.houses).filter(h => h.alive && h.id !== a.id && h.liege !== a.id && !atWar(S, a.id, h.id) && !S.allies.has(key(a.id, h.id)));
       if (!t.length) break;
       const d = t[Math.floor(S.rng() * t.length)];
-      S.wars.push({ id: S.nextId++, a: a.id, d: d.id, start: S.season, active: true });
+      S.wars.push({ id: S.nextId++, a: a.id, d: d.id, start: S.season, active: true, s0: { [a.id]: a.strength, [d.id]: d.strength } });
       note(S, `${a.name} declares war on ${d.name}.`, true);
     }
     for (const h of Object.values(S.houses)) muster(S, h);
@@ -440,6 +491,8 @@ const ArmySim = (() => {
   function describe(S, A) {
     if (A.battle) return 'a battle';
     if (A.raid) return 'raiders';
+    if (A.supply) return 'a supply column';
+    if (A.forage) return 'foragers';
     if (A.levyOf != null) return 'a levy on the march';
     return A.path.length ? 'a column on the march' : 'a war camp';
   }
