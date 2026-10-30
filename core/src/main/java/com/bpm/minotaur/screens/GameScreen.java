@@ -2407,10 +2407,11 @@ public class GameScreen extends BaseScreen {
         // whether home tiles, if a chunk has any, are warded -- and reading it as "a shelter" kept
         // every battle and encounter off the overland.
         g.sanctuary = maze != null && !maze.getSanctuaryTiles().isEmpty();
-        g.front = worldManager.frontHere();
-        String carried = worldManager.getHistory().onFront(g.front);
+        String carried = worldManager.getHistory().onFront(worldManager.frontHere());
         if (carried != null) eventManager.addEvent(new GameEvent(carried, 4f));
-        g.seats = g.front != null ? worldManager.houseSeats() : null;
+        g.layer = worldManager.armyLayer();
+        g.battle = g.layer != null && g.chunk != null && g.level == 1 ? g.layer.battleIn(g.chunk.x, g.chunk.y) : null;
+        g.seats = g.battle != null ? worldManager.houseSeats() : null;
         g.maze = maze;
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
         WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
@@ -2433,7 +2434,31 @@ public class GameScreen extends BaseScreen {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
         }
         if (t.winner >= 0 && t.foughtFor == t.winner) foughtFor(t.winner);
+        if (t.offerSides && warManager.active() != null) offerSides(warManager.active());
         tickEncounters(g);
+    }
+
+    /**
+     * Coming upon a battle (Living War A26): help one side, help the other, or keep away. A sworn
+     * player is offered only their liege's side, if it is in this fight; the unsworn stand as the
+     * chosen side's ally until the fight ends.
+     */
+    private void offerSides(com.bpm.minotaur.managers.BattleDirector d) {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b = d.battle;
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = worldManager.getHistory().oath();
+        boolean sworn = oath.sworn();
+        boolean liegeA = sworn && (b.houseA == oath.houseId || d.layer().housesOn(b, true).containsKey(oath.houseId));
+        boolean liegeB = sworn && (b.houseB == oath.houseId || d.layer().housesOn(b, false).containsKey(oath.houseId));
+        boolean either = !liegeA && !liegeB;
+        java.util.Map<String, Runnable> sides = new java.util.LinkedHashMap<>();
+        if (either || liegeA) sides.put("Help " + houseName(b.houseA), () -> d.chooseSide(1));
+        if (either || liegeB) sides.put("Help " + houseName(b.houseB), () -> d.chooseSide(2));
+        String body = (liegeA || liegeB ? "Your oath binds you to " + houseName(oath.houseId) + ". " : "")
+                + (b.garrisonOf >= 0 ? houseName(b.houseA) + " is assaulting the seat of " + houseName(b.houseB) + "."
+                        : "The lines are locked across this ground, and neither has yet given way.");
+        String a = houseName(b.houseA);
+        String header = Character.toUpperCase(a.charAt(0)) + a.substring(1) + " against " + houseName(b.houseB);
+        Gdx.app.postRunnable(() -> game.setScreen(new BattleSideScreen(game, this, header, body, sides, () -> d.chooseSide(0))));
     }
 
     private final com.bpm.minotaur.managers.EncounterDirector encounterDirector =
@@ -2476,6 +2501,7 @@ public class GameScreen extends BaseScreen {
                 || (warManager.active() != null && warManager.active().playerJoined()));
         monsterAiManager.setTakesPlayerForKin(disguise());
         monsterAiManager.setHoldsItsPeace(m -> {
+            if (warManager.alliedWith(m)) return true;
             int house = worldManager.houseOf(m);
             return house >= 0 && history.stanceOf(house).ordinal()
                     >= com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED.ordinal();
@@ -2483,7 +2509,7 @@ public class GameScreen extends BaseScreen {
         tendTheSworn(g, t);
         tendTheSiege(g);
         if (hud != null) {
-            com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally(maze) : null;
+            com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally() : null;
             hud.setWarTally(tally != null ? tally : encounterDirector.tally(maze));
         }
     }
@@ -5784,20 +5810,11 @@ public class GameScreen extends BaseScreen {
                     eventManager.addEvent(new GameEvent("Debug: battles are fought on the surface", 2f));
                     return true;
                 }
-                com.bpm.minotaur.gamedata.history.HistoryWorld hw = worldManager.getHistory().world();
                 GridPoint2 here = worldManager.getCurrentPlayerChunkId();
-                com.bpm.minotaur.gamedata.history.war.Front front;
-                if (!hw.activeWars().isEmpty()) {
-                    com.bpm.minotaur.gamedata.history.War war = hw.activeWars().get(0);
-                    front = new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
-                } else {
-                    // No war under way: the first two houses fight anyway, and the history will not hear of it.
-                    java.util.List<com.bpm.minotaur.gamedata.history.House> living = hw.livingHouses();
-                    front = new com.bpm.minotaur.gamedata.history.war.Front(-1, living.get(0).id, living.get(1).id, here);
-                }
-                String horns = warManager.soundHorns(worldManager.getHistory(), front, here, worldManager.houseSeats());
-                if (soundManager != null) soundManager.playWarCue(WarManager.Cue.HORNS);
-                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(horns), 5f));
+                com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = worldManager.armyLayer();
+                boolean raised = layer != null && here != null && layer.raiseBattleAt(here.x, here.y) != null;
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                        raised ? "Debug: two hosts meet here" : "Debug: no battle can be raised here"), 3f));
                 return true;
             }
             case MEGABEAST_HERE: {

@@ -106,6 +106,9 @@ public class PlayerDeed {
     public int level = -1;
     /** For {@code SEEKER_FELL}: Tarmin's Hunger after the death, which may open a new Era (#292); -1 if unknown. */
     public int hunger = -1;
+    /** For {@code ARMY_BATTLE}: the house the player fought for, or -1, and whether they stood there at the end (A17, A24). */
+    public int foughtFor = -1;
+    public boolean witnessed;
     public int chunkX;
     public int chunkY;
 

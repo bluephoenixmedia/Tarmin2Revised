@@ -281,6 +281,7 @@ public class Monster implements Renderable {
     public static final int SEAL_BEARER = 3;
     /** The seeker has struck this monster at least once; a seal lord's seal is theirs if it falls. */
     private transient boolean seekerDrewBlood;
+    private transient int battleSide;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
 
@@ -1580,6 +1581,10 @@ public class Monster implements Renderable {
     public void setSealCallSpent(boolean spent) { this.sealCallSpent = spent; }
 
     public boolean isWarBand() { return warBand; }
+
+    /** The side of the battle this soldier fights on, 1 or 2, or 0 if none: whatever its house's stance, it fights the other (A21). */
+    public int getBattleSide() { return battleSide; }
+    public void setBattleSide(int side) { this.battleSide = side; }
     public String getTownKey() { return townKey; }
     public void setTownKey(String townKey) { this.townKey = townKey; }
     public boolean isPeaceful() { return peaceful; }

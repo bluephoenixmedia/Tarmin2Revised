@@ -120,6 +120,8 @@ public final class EncounterDirector {
         /** The town whose gate the raid fell on, or null. */
         String town;
         Phase phase;
+        /** The dead of this encounter already taken off its army. */
+        int fallen;
 
         Stage(Encounter e, Phase phase) {
             this.e = e;
@@ -158,10 +160,12 @@ public final class EncounterDirector {
         }
         town = townKey;
         if (chunk == null || sanctuary || maze == null) return t;
+        if (level == 1) layTheFields(history, maze, props, spoils);
         long clock = history.warClock();
         HistoryWorld world = history.world();
         for (Encounter e : encounters) {
-            if (!e.visible() || !e.chunkAt(clock).equals(chunk) || ledger.isSpent(e)) continue;
+            // A battle of the armies is the WarManager's to bring to the field.
+            if (e.underArms || !e.visible() || !e.chunkAt(clock).equals(chunk) || ledger.isSpent(e)) continue;
             String key = e.key() + "@" + chunk.x + "," + chunk.y;
             if (stages.containsKey(key)) continue;
             Stage s = null;
@@ -181,11 +185,43 @@ public final class EncounterDirector {
         }
         for (Iterator<Stage> it = stages.values().iterator(); it.hasNext(); ) {
             Stage s = it.next();
+            tallyTheFallen(s, history);
             tick(s, history, maze, playerTile, clock, props, spoils, t);
             if (s.phase == Phase.DONE) it.remove();
             else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.houseA;
         }
         return t;
+    }
+
+    /** Soldiers of a real army cut down on the road or at a camp come off its number (A22). */
+    private void tallyTheFallen(Stage s, HistoryManager history) {
+        if (chunkLevel != 1 || s.e.slot <= 0 || s.e.kind == Encounter.Kind.SKIRMISH) return;
+        int dead = 0;
+        for (Monster m : s.a) if (!m.isAlive()) dead++;
+        if (dead > s.fallen) {
+            history.roster().slainInTheField((int) s.e.slot, dead - s.fallen);
+            s.fallen = dead;
+        }
+    }
+
+    /**
+     * Every battle leaves a field (A23), and the one left by a battle here is laid now: at once for
+     * one who stood through it, and on arrival for one who comes after, with what is left to find (A24).
+     */
+    private void layTheFields(HistoryManager history, Maze maze, Props props, BattleDirector.Spoils spoils) {
+        EncounterLedger ledger = history.encounterLedger();
+        for (Iterator<EncounterLedger.Field> it = ledger.fields.iterator(); it.hasNext(); ) {
+            EncounterLedger.Field f = it.next();
+            if (f.chunkX != chunk.x || f.chunkY != chunk.y) continue;
+            it.remove();
+            Random r = new Random(history.world().seed ^ (chunk.x * 31L + chunk.y) ^ (f.clearAtSleep * 0x9E3779B97F4A7C15L));
+            GridPoint2 centre = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2, maze.getHeight() / 2);
+            if (centre == null) continue;
+            int kept = ledger.dressings.size();
+            lay(maze, props, ledger, centre, r);
+            if (ledger.dressings.size() > kept) ledger.dressings.get(kept).clearAtSleep = f.clearAtSleep;
+            if (!f.witnessed && spoils != null) spoils.pickedOver(maze, centre, f.loser);
+        }
     }
 
     /**
@@ -257,7 +293,7 @@ public final class EncounterDirector {
         int dy = Integer.signum(e.to.y - e.from.y);
         int w = maze.getWidth();
         int h = maze.getHeight();
-        int n = e.soldiers > 0 ? Math.min(e.soldiers, com.bpm.minotaur.gamedata.history.war.BattleModel.LINE) : COLUMN_MIN + r.nextInt(COLUMN_MAX - COLUMN_MIN + 1);
+        int n = e.soldiers > 0 ? Math.min(e.soldiers, BattleDirector.LINE) : COLUMN_MIN + r.nextInt(COLUMN_MAX - COLUMN_MIN + 1);
         for (int i = 0; i < n; i++) {
             int depth = 1 + i / 2;
             int lateral = (dx != 0 ? h : w) / 2 + (i % 2 == 0 ? 0 : 1);

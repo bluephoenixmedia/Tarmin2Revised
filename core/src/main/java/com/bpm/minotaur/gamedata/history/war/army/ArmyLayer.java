@@ -69,6 +69,9 @@ public final class ArmyLayer {
         refreshSeats();
     }
 
+    /** The battle the player is standing in, whose numbers wait on the map (A22). */
+    private ArmyBattle watched;
+
     public WarRoster roster() {
         return roster;
     }
@@ -112,7 +115,9 @@ public final class ArmyLayer {
         }
         logistics(clock);
         contacts();
-        for (int i = roster.battles.size() - 1; i >= 0; i--) stepBattle(roster.battles.get(i), clock);
+        for (int i = roster.battles.size() - 1; i >= 0; i--) {
+            if (roster.battles.get(i) != watched) stepBattle(roster.battles.get(i), clock);
+        }
         noteThePlayer();
     }
 
@@ -158,6 +163,7 @@ public final class ArmyLayer {
             War w = world.activeWarBetween(b.houseA, b.houseB);
             Encounter e = new Encounter(Encounter.Kind.SKIRMISH, b.id, w == null ? -1 : w.id, b.houseA, b.houseB, 0, Long.MAX_VALUE, at, at);
             e.soldiers = b.startA + b.startB;
+            e.underArms = true;
             out.add(e);
         }
         return out;
@@ -498,6 +504,84 @@ public final class ArmyLayer {
         }
     }
 
+    /** The battle under way in this chunk, or null. */
+    public ArmyBattle battleIn(int x, int y) {
+        return battleAt(x, y);
+    }
+
+    /** While the player stands in a battle the map is its truth, and the numbers wait on it (A22). Null to let go. */
+    public void watchBattle(ArmyBattle b) {
+        watched = b;
+    }
+
+    public ArmyBattle watchedBattle() {
+        return watched;
+    }
+
+    /** Soldiers standing on one side of a battle, reserve and all. */
+    public int aliveOn(ArmyBattle b, boolean sideA) {
+        return alive(b, sideA);
+    }
+
+    /** Who stands on one side of a battle, as house and soldiers, for its line (A21). */
+    public java.util.Map<Integer, Integer> housesOn(ArmyBattle b, boolean sideA) {
+        java.util.Map<Integer, Integer> out = new java.util.LinkedHashMap<>();
+        for (int id : sideA ? b.armiesA : b.armiesB) {
+            Army a = roster.army(id);
+            if (a != null && a.soldiers > 0) out.merge(a.houseId, a.soldiers, Integer::sum);
+        }
+        if (!sideA && b.garrisonOf >= 0) out.merge(b.garrisonOf, roster.garrison(world, b.garrisonOf), Integer::sum);
+        return out;
+    }
+
+    /** One army's captain still fights here, as a figure id; -1 if it has none or they have fallen. */
+    public int captainOf(ArmyBattle b, int armyId) {
+        Army a = roster.army(armyId);
+        return a == null || ArmyBattle.holds(b.captainFell, armyId) ? -1 : a.captainId;
+    }
+
+    /** A soldier of this house is dead on the map: a named number, not a share (A22). */
+    public void soldierFell(ArmyBattle b, boolean sideA, int houseId) {
+        for (int id : sideA ? b.armiesA : b.armiesB) {
+            Army a = roster.army(id);
+            if (a != null && a.houseId == houseId && a.soldiers > 0) {
+                a.soldiers--;
+                b.addDead(houseId, 1);
+                return;
+            }
+        }
+        kill(b, sideA, 1);
+    }
+
+    /** A captain is dead on the map. */
+    public void captainFell(ArmyBattle b, int armyId) {
+        if (!ArmyBattle.holds(b.captainFell, armyId)) b.captainFell = ArmyBattle.append(b.captainFell, armyId);
+    }
+
+    /** A turn of a watched battle: what the map says it cost each side, weighed as any other turn (A20). */
+    public void watchedTurn(ArmyBattle b, int lostA, int lostB, int captainsA, int captainsB, long clock) {
+        b.turn++;
+        settle(b, lostA, lostB, captainsA * ArmyTuning.MORALE_CAPTAIN, captainsB * ArmyTuning.MORALE_CAPTAIN, clock, battleRng(b, clock));
+    }
+
+    /** Debug: a host of each of two warring houses meets at this chunk, now. Null with no war to fight. */
+    public ArmyBattle raiseBattleAt(int x, int y) {
+        List<War> active = world.activeWars();
+        if (seats == null || active.isEmpty() || battleAt(x, y) != null) return null;
+        War w = active.get(0);
+        House h = world.house(w.attackerId), o = world.house(w.defenderId);
+        if (h == null || o == null || !hasSeat(h.id) || !hasSeat(o.id)) return null;
+        Army a = raise(h, ArmyTuning.ARMY_SIZE, Army.Kind.HOST), b = raise(o, ArmyTuning.ARMY_SIZE, Army.Kind.HOST);
+        a.warId = w.id;
+        b.warId = w.id;
+        for (Army e : java.util.Arrays.asList(a, b)) {
+            e.x = x;
+            e.y = y;
+        }
+        start(a, b);
+        return battleAt(x, y);
+    }
+
     private int alive(ArmyBattle b, boolean sideA) {
         int[] ids = sideA ? b.armiesA : b.armiesB;
         int n = 0;
@@ -538,17 +622,24 @@ public final class ArmyLayer {
         return n - left;
     }
 
+    private SplittableRandom battleRng(ArmyBattle b, long clock) {
+        return new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ ((b.x * 31L + b.y) * 0xC2B2AE3D27D4EB4FL));
+    }
+
     private void stepBattle(ArmyBattle b, long clock) {
         b.turn++;
-        SplittableRandom rng = new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ ((b.x * 31L + b.y) * 0xC2B2AE3D27D4EB4FL));
+        SplittableRandom rng = battleRng(b, clock);
         int aliveA = alive(b, true), aliveB = alive(b, false);
         float edgeB = b.garrisonOf >= 0 ? ArmyTuning.WALL_EDGE : 1f;
         int lostB = kill(b, false, Math.min(aliveB, hits(aliveA, 1f, rng)));
         int lostA = kill(b, true, Math.min(aliveA, hits(aliveB, edgeB, rng)));
-        b.moraleA = moraleAfter(b.moraleA, lostA, b.startA);
-        b.moraleB = moraleAfter(b.moraleB, lostB, b.startB);
-        b.moraleA -= captainsFall(b, b.armiesA, rng);
-        b.moraleB -= captainsFall(b, b.armiesB, rng);
+        settle(b, lostA, lostB, captainsFall(b, b.armiesA, rng), captainsFall(b, b.armiesB, rng), clock, rng);
+    }
+
+    /** What a turn cost each side, watched or not: morale, and whether either has broken. */
+    private void settle(ArmyBattle b, int lostA, int lostB, int captainCostA, int captainCostB, long clock, SplittableRandom rng) {
+        b.moraleA = moraleAfter(b.moraleA, lostA, b.startA) - captainCostA;
+        b.moraleB = moraleAfter(b.moraleB, lostB, b.startB) - captainCostB;
         boolean aBroke = b.moraleA <= 0 || alive(b, true) <= 0;
         boolean bBroke = b.moraleB <= 0 || alive(b, false) <= 0;
         if (aBroke || bBroke) {
@@ -578,6 +669,8 @@ public final class ArmyLayer {
     private void endBattle(ArmyBattle b, boolean aLost, long clock, SplittableRandom rng) {
         roster.battles.remove(b);
         battlesEnded++;
+        b.witnessed = b == watched;
+        if (b == watched) watched = null;
         int[] won = aLost ? b.armiesB : b.armiesA, lost = aLost ? b.armiesA : b.armiesB;
         int winner = aLost ? b.houseB : b.houseA, loser = aLost ? b.houseA : b.houseB;
         PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.ARMY_BATTLE, winner, world.liveSeasons());
@@ -608,6 +701,15 @@ public final class ArmyLayer {
         }
         deed.captainsSlain = slain;
         deed.captainsTaken = taken;
+        deed.foughtFor = b.foughtFor();
+        deed.witnessed = b.witnessed;
+        b.winner = winner;
+        b.loser = loser;
+        for (int id : slain) {
+            Figure f = world.figure(id);
+            House h = f == null ? null : world.house(f.houseId);
+            b.lordFell |= h != null && h.lordId == id;
+        }
         deeds.accept(deed);
         if (deed.seatFell) refreshSeats();
 
@@ -640,6 +742,7 @@ public final class ArmyLayer {
 
     /** Every battle under way ends now, by the numbers: the world is being reborn (A14). */
     public void resolveBattles(long clock) {
+        watched = null;
         long turn = clock;
         while (!roster.battles.isEmpty()) {
             for (int i = roster.battles.size() - 1; i >= 0; i--) stepBattle(roster.battles.get(i), ++turn);

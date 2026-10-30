@@ -268,16 +268,6 @@ public final class HistoryManager {
         return highest;
     }
 
-    /**
-     * A battle the player stood in has broken: {@code winner} held the field and {@code loser}
-     * routed. It enters the history like any battle of the war (plan T2.6).
-     */
-    public void recordBattle(int winner, int loser) {
-        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.BATTLE_WITNESSED, winner, world.liveSeasons());
-        d.other = loser;
-        apply(d);
-    }
-
     /** The player bought a beast's peace: it hunts them no more, and the history says so. */
     public void recordMegabeastPacified(int beastId) {
         apply(new PlayerDeed(PlayerDeed.Kind.PACIFIED_MEGABEAST, beastId, world.liveSeasons()));
@@ -495,6 +485,9 @@ public final class HistoryManager {
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();
         apply(deed);
+        if (deed.kind == PlayerDeed.Kind.ARMY_BATTLE) {
+            encounterLedger().battleFought(deed.chunkX, deed.chunkY, deed.other, deed.witnessed, EncounterDirector.AFTERMATH_SLEEPS);
+        }
     }
 
     /** One turn of a sleep, for the war simulation: the clock moves and no waking Season passes. */

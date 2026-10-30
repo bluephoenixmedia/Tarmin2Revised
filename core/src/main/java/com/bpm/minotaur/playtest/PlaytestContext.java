@@ -308,6 +308,12 @@ public final class PlaytestContext {
         return d == null ? "no battle" : d.phase().name();
     }
 
+    /** Answers the side prompt if it is up (A26); false if it is not, or the option is not on offer. */
+    public boolean chooseSide(String label) {
+        return game.getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen
+                && ((com.bpm.minotaur.screens.BattleSideScreen) game.getScreen()).perform(label);
+    }
+
     public int countWarBand() {
         int n = 0;
         for (Monster m : screen.getMaze().getMonsters().values()) {

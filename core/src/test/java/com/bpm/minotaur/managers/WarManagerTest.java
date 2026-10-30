@@ -4,13 +4,8 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.history.DoctrineCatalog;
 import com.bpm.minotaur.gamedata.history.DoctrineCatalogTest;
-import com.bpm.minotaur.gamedata.history.EventType;
-import com.bpm.minotaur.gamedata.history.HistoryEvent;
-import com.bpm.minotaur.gamedata.history.War;
-import com.bpm.minotaur.gamedata.history.war.Front;
-import com.bpm.minotaur.gamedata.history.war.SeatMap;
+import com.bpm.minotaur.gamedata.history.war.army.ArmyBattle;
 import com.bpm.minotaur.gamedata.monster.Monster;
-import com.bpm.minotaur.generation.ShelterRoads;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,20 +16,14 @@ import java.util.Random;
 
 import static org.junit.Assert.*;
 
-/** Plan T2.3: the horns, and the choice to stay or go. */
+/** Plan T2.3, Living War A21, A26: the horns, or none, and what going away means. */
 public class WarManagerTest {
 
     private static DoctrineCatalog catalog;
+    private BattleFixture fixture;
     private HistoryManager history;
-    private War war;
     private WarManager wars;
     private WarManager.Ground ground;
-
-    private final BattleDirector.Recruiter recruiter = (type, x, y) -> {
-        Monster m = new Monster(Monster.MonsterType.valueOf(type), 20, 12);
-        m.getPosition().set(x, y);
-        return m;
-    };
     private final BattleDirector.Spoils spoils = (maze, near, loser, lordFell) -> { };
 
     @BeforeClass
@@ -44,56 +33,72 @@ public class WarManagerTest {
 
     @Before
     public void atWar() {
-        for (long seed = 50; war == null; seed++) {
-            history = HistoryManager.create(seed, catalog);
-            if (!history.world().activeWars().isEmpty()) war = history.world().activeWars().get(0);
-        }
+        fixture = new BattleFixture(50L, catalog, 30);
+        history = fixture.history;
         wars = new WarManager(catalog);
         ground = new WarManager.Ground();
-        ground.chunk = new GridPoint2(5, 5);
+        ground.chunk = new GridPoint2(BattleFixture.X, BattleFixture.Y);
         ground.level = 1;
-        ground.front = new Front(war.id, war.attackerId, war.defenderId, ground.chunk);
-        ground.seats = SeatMap.of(history.world(), new ShelterRoads(1L, new GridPoint2(0, 50)), new GridPoint2(0, 50), 1L, c -> true);
+        ground.layer = fixture.layer;
+        ground.battle = fixture.battle;
         ground.maze = new Maze(1, new int[36][36]);
         ground.playerTile = new GridPoint2(18, 18);
     }
 
     private WarManager.Turn turn() {
         history.tickWarClock();
-        return wars.onTurn(history, ground, recruiter, spoils);
+        return wars.onTurn(history, ground, BattleFixture::soldier, spoils);
     }
 
     @Test
-    public void aFrontReachingThePlayerSoundsTheHorns() {
+    public void aBattleBeginningAroundThePlayerSoundsTheHorns() {
         WarManager.Turn t = turn();
         assertNotNull(wars.active());
         assertTrue(t.messages.get(0).startsWith("War-horns"));
         assertTrue("and the horns are heard (plan T2.9)", t.cues.contains(WarManager.Cue.HORNS));
+        assertFalse("nothing to choose yet", t.offerSides);
     }
 
     @Test
-    public void leavingBeforeTheLinesCloseMeansNoBattle() {
+    public void walkingIntoOneUnderWayGivesNoWarningAndAsksWhereYouStand() {
+        fixture.battle.turn = 20;
+        WarManager.Turn t = turn();
+        assertFalse(t.cues.contains(WarManager.Cue.HORNS));
+        assertTrue(t.offerSides);
+        assertEquals(BattleDirector.Phase.BATTLE, wars.active().phase());
+        assertTrue("the lines are there at once", !ground.maze.getMonsters().isEmpty());
+    }
+
+    @Test
+    public void thePromptComesAsTheLinesCloseAndOnlyOnce() {
+        int offers = 0;
+        for (int i = 0; i < BattleDirector.WARNING_TURNS + 5; i++) {
+            if (turn().offerSides) offers++;
+        }
+        assertEquals(1, offers);
+    }
+
+    @Test
+    public void leavingOnlyStopsTheWatching() {
         turn();
         for (int i = 0; i < 5; i++) turn();
         ground.chunk = new GridPoint2(6, 5);
-        ground.front = null;
+        ground.battle = null;
         WarManager.Turn t = turn();
         assertNull(wars.active());
         assertTrue(t.messages.get(0).contains("slip away"));
         assertTrue(ground.maze.getMonsters().isEmpty());
-
-        ground.chunk = new GridPoint2(5, 5);
-        ground.front = new Front(war.id, war.attackerId, war.defenderId, ground.chunk);
-        turn();
-        assertNull("the same ground stays quiet for a while", wars.active());
+        assertNull("the numbers go on alone", fixture.layer.watchedBattle());
+        assertTrue(history.roster().battles.contains(fixture.battle));
     }
 
     @Test
-    public void goingBelowDeclinesItToo() {
+    public void goingBelowLetsItGoToo() {
         turn();
         ground.level = 2;
         turn();
         assertNull(wars.active());
+        assertNull(fixture.layer.watchedBattle());
     }
 
     @Test
@@ -104,12 +109,24 @@ public class WarManagerTest {
     }
 
     @Test
-    public void stayingFightsItAndTheOutcomeEntersTheHistory() {
+    public void aSleepEndsTheWatchingAndTheNextTurnFindsWhatIsLeft() {
+        fixture.battle.turn = 20;
+        turn();
+        turn();
+        fixture.layer.watchBattle(null);
+        fixture.armyA().soldiers = 12;
+        turn();
+        assertEquals("raised again from the numbers", fixture.battle, wars.active().battle);
+        assertEquals(12, wars.active().side(true).size());
+    }
+
+    @Test
+    public void stayingFightsItAndItsOutcomeEntersTheHistoryOnce() {
         turn();
         Random rng = new Random(5);
-        int before = history.world().events().size();
         java.util.List<WarManager.Cue> heard = new ArrayList<>();
-        for (int i = 0; i < 400 && wars.active() != null; i++) {
+        ArmyBattle b = fixture.battle;
+        for (int i = 0; i < 600 && wars.active() != null; i++) {
             heard.addAll(turn().cues);
             for (Monster m : new ArrayList<>(ground.maze.getMonsters().values())) {
                 if (m.isWarBand() && rng.nextInt(10) == 0) {
@@ -119,12 +136,9 @@ public class WarManagerTest {
             }
         }
         assertNull("the battle is over", wars.active());
-        boolean recorded = false;
-        for (HistoryEvent e : history.world().events().subList(before, history.world().events().size())) {
-            if (e.type == EventType.BATTLE && e.detail == 1) recorded = true;
-        }
-        assertTrue(recorded);
+        assertFalse(history.roster().battles.contains(b));
         assertEquals("the drums once as the lines close, and the rout once (plan T2.9)",
                 java.util.Arrays.asList(WarManager.Cue.JOINED, WarManager.Cue.ROUT), heard);
+        assertEquals(1, fixture.layer.battlesEnded());
     }
 }

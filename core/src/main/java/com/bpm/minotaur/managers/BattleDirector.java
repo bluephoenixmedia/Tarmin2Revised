@@ -8,24 +8,28 @@ import com.bpm.minotaur.gamedata.history.DoctrineCatalog;
 import com.bpm.minotaur.gamedata.history.Figure;
 import com.bpm.minotaur.gamedata.history.HistoryWorld;
 import com.bpm.minotaur.gamedata.history.House;
-import com.bpm.minotaur.gamedata.history.war.BattleModel;
-import com.bpm.minotaur.gamedata.history.war.Front;
+import com.bpm.minotaur.gamedata.history.war.army.ArmyBattle;
+import com.bpm.minotaur.gamedata.history.war.army.ArmyLayer;
 import com.bpm.minotaur.gamedata.monster.Faction;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.lighting.LightSource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
- * One battle, fought in the chunk the player chose to stay in (plan D14-D18, D31, T2.3-T2.7).
+ * One battle of the armies, on the ground the player stands on (Living War A20-A24). There is one
+ * state, the {@link ArmyBattle}: while the player is here the map is its truth, so every soldier
+ * who dies on the field comes off its number that turn, and on leaving the soldiers simply go,
+ * since what they stood for is already counted. Coming back raises the line again from the numbers.
  *
- * <p>It starts as a warning: horns, drums, and a count of turns in which the player can leave.
- * If they stay, the lines close: the chunk's gates are held by soldiers of both houses, and each
- * house marches its line in from its own edge. Every turn the {@link BattleModel} is told who
- * still stands and answers with reinforcements; volleys fall on telegraphed ground; when one
- * side routs it flees the field, the winners march on, and the field is left to the player.
+ * <p>A battle that begins with the player present starts as a warning: horns, drums, and a count of
+ * turns in which to leave. One walked into under way gives none. Only the lines appear, up to
+ * {@link #LINE} a side, and the rest march in from their edge; volleys fall on telegraphed ground;
+ * when one side breaks it flees the field, the winners march on, and the field is left to the player.
  *
  * <p>Monsters and loot come through {@link Recruiter} and {@link Spoils}, so the whole arc runs
  * headless in tests.
@@ -42,12 +46,25 @@ public final class BattleDirector {
     /** Leaves what a broken army leaves behind. */
     public interface Spoils {
         void drop(Maze maze, GridPoint2 near, int loserHouseId, boolean lordFell);
+
+        /** What is left for one who comes after the crows (A24). */
+        default void pickedOver(Maze maze, GridPoint2 near, int loserHouseId) {
+        }
     }
 
     /** Turns from the horns to the lines closing (plan T2.3; a tuning knob). */
     public static final int WARNING_TURNS = 12;
     /** Soldiers holding each gate once the lines close (plan D16, T2.5). */
     public static final int GATE_GUARD = 2;
+    /** Soldiers of a side on the field at once, not counting those at the gates (A21). */
+    public static final int LINE = 16;
+    /** Soldiers of the reserve who reach the field in a turn (A21). */
+    public static final int MARCH_PER_TURN = 3;
+    /** Share of the blows between soldiers of a battle that land: tuned against BattleEquivalenceTest (A22). */
+    public static final float BLOWS_LAND = 0.40f;
+    /** How deep from its edge a line is found: fresh from the march, or already at it. */
+    private static final int DEPTH_FRESH = 4;
+    private static final int DEPTH_UNDER_WAY = 9;
     /** A volley is loosed every this many battle turns, and lands the turn after. */
     static final int VOLLEY_EVERY = 7;
     static final int VOLLEY_RADIUS = 1;
@@ -56,8 +73,6 @@ public final class BattleDirector {
     static final int CHARGE_HALF_WIDTH = 1;
     /** Turns the victors linger on the field before marching on. */
     static final int AFTERMATH_TURNS = 3;
-    /** How often a war-captain is the house's own lord rather than a sworn sword. */
-    static final float LORD_LEADS = 0.15f;
 
     /** What a turn of the battle had to say. */
     public static final class Report {
@@ -69,38 +84,45 @@ public final class BattleDirector {
         public int volleyDamage;
     }
 
-    public final Front front;
+    public final ArmyBattle battle;
     public final GridPoint2 chunk;
+    private final ArmyLayer layer;
     private final HistoryWorld world;
     private final DoctrineCatalog catalog;
     private final Random rng;
     private final int edgeA;
+    private final int depth;
 
-    private Phase phase = Phase.WARNING;
+    private Phase phase;
+    private boolean lined;
     private int warningLeft = WARNING_TURNS;
     private int aftermathLeft = AFTERMATH_TURNS;
-    private BattleModel model;
+    private Maze maze;
     private final List<Monster> sideA = new ArrayList<>();
     private final List<Monster> sideB = new ArrayList<>();
-    private Monster captainA;
-    private Monster captainB;
-    private boolean captainAFell;
-    private boolean captainBFell;
-    private boolean lordFell;
+    /** The army each captain on the field leads. */
+    private final Map<Monster, Integer> captains = new HashMap<>();
     private final List<GridPoint2> volley = new ArrayList<>();
     private int volleyCount;
+    private int battleTurns;
 
     /**
-     * @param edgeA the edge the attacker marches in from: 0 west, 1 east, 2 south, 3 north.
-     *              The defender takes the opposite edge.
+     * @param edgeA   the edge side A marches in from: 0 west, 1 east, 2 south, 3 north. Side B takes
+     *                the opposite edge.
+     * @param underWay the player walked into it, so it starts at once, without the horns.
      */
-    public BattleDirector(Front front, GridPoint2 chunk, int edgeA, HistoryWorld world, DoctrineCatalog catalog, long seed) {
-        this.front = front;
+    public BattleDirector(ArmyBattle battle, ArmyLayer layer, GridPoint2 chunk, int edgeA, HistoryWorld world,
+            DoctrineCatalog catalog, long seed, boolean underWay) {
+        this.battle = battle;
+        this.layer = layer;
         this.chunk = new GridPoint2(chunk);
         this.edgeA = edgeA;
         this.world = world;
         this.catalog = catalog;
         this.rng = new Random(seed);
+        this.phase = underWay ? Phase.BATTLE : Phase.WARNING;
+        this.depth = underWay ? DEPTH_UNDER_WAY : DEPTH_FRESH;
+        layer.watchBattle(battle);
     }
 
     /** The edge facing a seat, seen from a chunk: 0 west, 1 east, 2 south, 3 north. */
@@ -116,34 +138,41 @@ public final class BattleDirector {
         return phase;
     }
 
-    /** The horns: what the player hears the turn a front reaches them. */
-    public String warning() {
-        return "War-horns! " + name(front.attackerId) + " marches on " + name(front.defenderId)
-                + ". The lines close here in " + WARNING_TURNS + " turns: leave by any edge, or go below.";
+    public ArmyLayer layer() {
+        return layer;
     }
 
-    /** The player left before the battle broke. */
+    /** The horns: what the player hears the turn a battle begins around them. */
+    public String warning() {
+        return "War-horns! " + name(battle.houseA) + " and " + name(battle.houseB)
+                + " have met on this ground. The lines close here in " + WARNING_TURNS
+                + " turns: leave by any edge, or go below.";
+    }
+
+    /** The player left it. */
     public String abandoned() {
         return phase == Phase.WARNING ? "You slip away before the lines close." : "You leave the battle behind you.";
     }
 
-    public Report tick(Maze maze, GridPoint2 playerTile, Recruiter recruiter, Spoils spoils) {
+    public Report tick(Maze maze, GridPoint2 playerTile, Recruiter recruiter, Spoils spoils, long clock) {
+        this.maze = maze;
         Report r = new Report();
         switch (phase) {
             case WARNING:
                 warningLeft--;
-                if (warningLeft == 6) r.messages.add("War-drums, close now. Scouts of " + name(front.attackerId) + " run past.");
+                if (warningLeft == 6) r.messages.add("War-drums, close now. Scouts of " + name(battle.houseA) + " run past.");
                 if (warningLeft == 2) r.messages.add("You can see the banners. The lines are almost on you.");
-                if (warningLeft <= 0) begin(maze, recruiter, r);
+                if (warningLeft <= 0) begin(recruiter, r);
                 break;
             case BATTLE:
-                fight(maze, playerTile, recruiter, spoils, r);
+                if (!lined) begin(recruiter, r);
+                else fight(playerTile, recruiter, spoils, clock, r);
                 break;
             case AFTERMATH:
                 if (--aftermathLeft <= 0) {
-                    marchOn(maze, playerTile);
+                    marchOn(playerTile);
                     phase = Phase.DONE;
-                    r.messages.add(name(model.winner()) + " marches on. The field is yours.");
+                    r.messages.add(name(battle.winner) + " marches on. The field is yours.");
                 }
                 break;
             default:
@@ -152,93 +181,125 @@ public final class BattleDirector {
         return r;
     }
 
+    /**
+     * The player has gone (A23). What has died so far is counted, the soldiers are gone with no
+     * more said, wounds and all, and the number carries on by itself.
+     */
+    public void collapse(long clock) {
+        if (lined && layer.watchedBattle() == battle && layer.roster().battles.contains(battle)) {
+            int[] lost = countTheFallen(null);
+            if (lost[0] + lost[1] > 0) layer.watchedTurn(battle, lost[0], lost[1], lost[2], lost[3], clock);
+        }
+        if (layer.watchedBattle() == battle) layer.watchBattle(null);
+        if (maze != null) {
+            maze.removeLight(volleyLight());
+            for (Monster m : sideA) maze.removeMonster(m);
+            for (Monster m : sideB) maze.removeMonster(m);
+        }
+        sideA.clear();
+        sideB.clear();
+        captains.clear();
+        volley.clear();
+    }
+
     // ------------------------------------------------------------------ the lines close
 
-    private void begin(Maze maze, Recruiter recruiter, Report r) {
+    private void begin(Recruiter recruiter, Report r) {
+        boolean underWay = phase == Phase.BATTLE;
         phase = Phase.BATTLE;
-        model = new BattleModel(front.attackerId, BattleModel.reserveFor(strength(front.attackerId)),
-                front.defenderId, BattleModel.reserveFor(strength(front.defenderId)));
+        lined = true;
         // The gates are held first: leaving now means cutting through.
         boolean toA = true;
         for (GridPoint2 gate : new ArrayList<>(maze.getGates().keySet())) {
             for (int i = 0; i < GATE_GUARD; i++) {
                 GridPoint2 at = WorldManager.findSafeArrivalTile(maze, gate.x, gate.y);
-                if (at == null || at.equals(gate)) continue;
-                Monster guard = enlist(maze, recruiter, toA, at.x, at.y);
-                if (guard != null) guard.setGateGuard(true);
+                if (at == null || at.equals(gate) || reserve(toA) <= 0) continue;
+                Monster guard = enlist(recruiter, toA, at.x, at.y);
+                if (guard != null) {
+                    guard.setGateGuard(true);
+                    guard.setMarchTarget(null);
+                    guard.setState(Monster.MonsterState.HUNTING);
+                }
                 toA = !toA;
             }
         }
-        captainA = captain(maze, recruiter, true);
-        captainB = captain(maze, recruiter, false);
-        BattleModel.Orders o = model.muster(alive(sideA), alive(sideB));
-        march(maze, recruiter, true, o.sendA);
-        march(maze, recruiter, false, o.sendB);
-        r.messages.add("The lines close. " + name(front.attackerId) + " and " + name(front.defenderId)
-                + " meet on this ground, and you are standing on it.");
+        captains(recruiter, true);
+        captains(recruiter, false);
+        march(recruiter, true, LINE);
+        march(recruiter, false, LINE);
+        r.messages.add(underWay
+                ? "Steel and screaming: " + name(battle.houseA) + " and " + name(battle.houseB) + " are at each other's throats here."
+                : "The lines close. " + name(battle.houseA) + " and " + name(battle.houseB)
+                        + " meet on this ground, and you are standing on it.");
     }
 
-    private Monster captain(Maze maze, Recruiter recruiter, boolean a) {
-        int houseId = a ? front.attackerId : front.defenderId;
-        House house = world.house(houseId);
-        Figure leader = null;
-        Figure lord = world.lordOf(house);
-        if (lord != null && lord.isAlive() && !lord.ageless && rng.nextFloat() < LORD_LEADS) {
-            leader = lord;
-        } else {
-            for (Figure f : world.swornSwords(house)) {
-                if (f.hostageOf < 0) {
-                    leader = f;
-                    break;
-                }
-            }
+    /** One captain for each army whose captain still stands (A21). */
+    private void captains(Recruiter recruiter, boolean a) {
+        for (int armyId : a ? battle.armiesA : battle.armiesB) {
+            int figureId = layer.captainOf(battle, armyId);
+            if (figureId < 0 || reserve(a) <= 0) continue;
+            Figure leader = world.figure(figureId);
+            House house = leader == null ? null : world.house(leader.houseId);
+            GridPoint2 at = edgeTile(a ? edgeA : opposite(edgeA));
+            Monster m = at == null || house == null ? null : enlist(recruiter, a, house.id, at.x, at.y);
+            if (m == null) continue;
+            m.setFigureId(figureId);
+            m.setDisplayName(house.lordId == figureId ? leader.name + ", Lord of " + house.name : "Captain " + leader.name + " of " + house.name);
+            m.setMaxHP(m.getMaxHP() * 2);
+            m.setCurrentHP(m.getMaxHP());
+            captains.put(m, armyId);
         }
-        GridPoint2 at = edgeTile(maze, a ? edgeA : opposite(edgeA));
-        Monster m = at == null ? null : enlist(maze, recruiter, a, at.x, at.y);
-        if (m == null) return null;
-        if (leader != null) {
-            m.setFigureId(leader.id);
-            m.setDisplayName((leader == lord ? leader.name + ", Lord of " : "Captain " + leader.name + " of ") + house.name);
-        } else {
-            m.setDisplayName("A captain of " + house.name);
-        }
-        m.setMaxHP(m.getMaxHP() * 2);
-        m.setCurrentHP(m.getMaxHP());
-        return m;
     }
 
     // ------------------------------------------------------------------ the fighting
 
-    private void fight(Maze maze, GridPoint2 playerTile, Recruiter recruiter, Spoils spoils, Report r) {
-        land(maze, playerTile, r);
-        boolean aFell = captainA != null && !captainAFell && !standing(maze, captainA);
-        boolean bFell = captainB != null && !captainBFell && !standing(maze, captainB);
-        if (aFell) {
-            captainAFell = true;
-            lordFell |= captainA.getFigureId() >= 0 && isLord(captainA.getFigureId());
-            r.messages.add(captainA.getDisplayName() + " is down! The line of " + name(front.attackerId) + " wavers.");
-        }
-        if (bFell) {
-            captainBFell = true;
-            lordFell |= captainB.getFigureId() >= 0 && isLord(captainB.getFigureId());
-            r.messages.add(captainB.getDisplayName() + " is down! The line of " + name(front.defenderId) + " wavers.");
-        }
-        BattleModel.Orders o = model.step(alive(sideA), alive(sideB), aFell, bFell);
-        if (o.outcome != BattleModel.Outcome.ONGOING) {
-            rout(maze, playerTile, spoils, r);
+    private void fight(GridPoint2 playerTile, Recruiter recruiter, Spoils spoils, long clock, Report r) {
+        battleTurns++;
+        land(playerTile, r);
+        int[] lost = countTheFallen(r);
+        layer.watchedTurn(battle, lost[0], lost[1], lost[2], lost[3], clock);
+        if (battle.winner >= 0) {
+            rout(playerTile, spoils, r);
             return;
         }
-        march(maze, recruiter, true, o.sendA);
-        march(maze, recruiter, false, o.sendB);
-        if (model.turn() % VOLLEY_EVERY == 0 && playerTile != null) loose(maze, playerTile, r);
-        else if (model.turn() % CHARGE_EVERY == 0 && playerTile != null) charge(maze, playerTile, r);
+        march(recruiter, true, MARCH_PER_TURN);
+        march(recruiter, false, MARCH_PER_TURN);
+        if (battleTurns % VOLLEY_EVERY == 0 && playerTile != null) loose(playerTile, r);
+        else if (battleTurns % CHARGE_EVERY == 0 && playerTile != null) charge(playerTile, r);
+    }
+
+    /** Takes the dead off the field and off the numbers: lost on A, on B, captains of A, of B. */
+    private int[] countTheFallen(Report r) {
+        int[] lost = new int[4];
+        for (int side = 0; side < 2; side++) {
+            boolean a = side == 0;
+            List<Monster> line = a ? sideA : sideB;
+            for (int i = line.size() - 1; i >= 0; i--) {
+                Monster m = line.get(i);
+                if (m.seekerDrewBlood()) battle.playerStruck |= a ? 1 : 2;
+                if (standing(m)) continue;
+                line.remove(i);
+                layer.soldierFell(battle, a, m.getHouseId());
+                lost[side]++;
+                Integer army = captains.remove(m);
+                if (army == null) continue;
+                layer.captainFell(battle, army);
+                lost[side + 2]++;
+                if (r != null) r.messages.add(m.getDisplayName() + " is down! The line of " + name(a ? battle.houseA : battle.houseB) + " wavers.");
+            }
+        }
+        // Whoever strikes their own side has left it.
+        if ((battle.playerSide == 1 && (battle.playerStruck & 1) != 0) || (battle.playerSide == 2 && (battle.playerStruck & 2) != 0)) {
+            battle.playerSide = 0;
+        }
+        return lost;
     }
 
     /**
      * A charge: a band of ground across the field, along the line the armies face each other on,
      * marked a turn before the riders come through it.
      */
-    private void charge(Maze maze, GridPoint2 playerTile, Report r) {
+    private void charge(GridPoint2 playerTile, Report r) {
         boolean acrossX = edgeA < 2; // armies west and east charge along rows
         for (int i = 1; i < (acrossX ? maze.getWidth() : maze.getHeight()) - 1; i++) {
             for (int band = -CHARGE_HALF_WIDTH; band <= CHARGE_HALF_WIDTH; band++) {
@@ -251,7 +312,7 @@ public final class BattleDirector {
     }
 
     /** A volley is marked on the ground the turn before it lands, so the player can step out. */
-    private void loose(Maze maze, GridPoint2 playerTile, Report r) {
+    private void loose(GridPoint2 playerTile, Report r) {
         int cx = playerTile.x + rng.nextInt(3) - 1;
         int cy = playerTile.y + rng.nextInt(3) - 1;
         for (int dy = -VOLLEY_RADIUS; dy <= VOLLEY_RADIUS; dy++) {
@@ -262,7 +323,7 @@ public final class BattleDirector {
         r.messages.add("Bowstrings, all at once. The sky darkens over you: move!");
     }
 
-    private void land(Maze maze, GridPoint2 playerTile, Report r) {
+    private void land(GridPoint2 playerTile, Report r) {
         if (volley.isEmpty()) return;
         maze.removeLight(volleyLight());
         volleyCount++;
@@ -281,68 +342,132 @@ public final class BattleDirector {
     }
 
     private String volleyLight() {
-        return "volley_" + front.warId + "_" + volleyCount;
+        return "volley_" + battle.id + "_" + volleyCount;
     }
 
-    private void rout(Maze maze, GridPoint2 playerTile, Spoils spoils, Report r) {
+    private void rout(GridPoint2 playerTile, Spoils spoils, Report r) {
         phase = Phase.AFTERMATH;
-        r.winner = model.winner();
-        r.loser = model.loser();
+        r.winner = battle.winner;
+        r.loser = battle.loser;
         maze.removeLight(volleyLight());
         volley.clear();
-        List<Monster> broken = r.loser == front.attackerId ? sideA : sideB;
-        for (Monster m : broken) maze.removeMonster(m);
+        boolean aLost = battle.loser == battle.houseA;
+        for (Monster m : aLost ? sideA : sideB) maze.removeMonster(m);
         r.messages.add(name(r.loser) + " breaks and flees the field. " + name(r.winner) + " holds it.");
         GridPoint2 field = playerTile != null ? playerTile : new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2);
-        spoils.drop(maze, field, r.loser, lordFell);
+        spoils.drop(maze, field, r.loser, battle.lordFell);
     }
 
     /** The victors leave, all but any still locked in a fight with the player. */
-    private void marchOn(Maze maze, GridPoint2 playerTile) {
-        List<Monster> victors = model.winner() == front.attackerId ? sideA : sideB;
-        for (Monster m : victors) {
-            if (playerTile != null && Math.abs(m.getPosition().x - playerTile.x) + Math.abs(m.getPosition().y - playerTile.y) <= 1) continue;
+    private void marchOn(GridPoint2 playerTile) {
+        boolean aWon = battle.winner == battle.houseA;
+        boolean friends = battle.playerSide == (aWon ? 1 : 2);
+        for (Monster m : aWon ? sideA : sideB) {
+            boolean locked = playerTile != null && Math.abs(m.getPosition().x - playerTile.x) + Math.abs(m.getPosition().y - playerTile.y) <= 1;
+            if (locked && !friends) continue;
             maze.removeMonster(m);
         }
     }
 
+    // ------------------------------------------------------------------ choosing a side (A26)
+
+    /** The player stands with a side from here until the fight ends: 1 for A, 2 for B, 0 to keep away. */
+    public void chooseSide(int side) {
+        battle.playerSide = side;
+    }
+
+    /** Whether this soldier fights on the side the player has chosen. */
+    public boolean alliedWith(Monster m) {
+        if (phase == Phase.DONE || battle.playerSide == 0) return false;
+        return (battle.playerSide == 1 ? sideA : sideB).contains(m);
+    }
+
+    /** Whether the player stands on either side or has drawn the blood of any soldier on this field (W15). */
+    public boolean playerJoined() {
+        if (battle.playerSide != 0 || battle.playerStruck != 0) return true;
+        for (Monster m : sideA) if (m.seekerDrewBlood()) return true;
+        for (Monster m : sideB) if (m.seekerDrewBlood()) return true;
+        return false;
+    }
+
+    /** The house the player fought for: the one whose enemies alone they struck; -1 if both or neither (W19). */
+    public int playerFoughtFor() {
+        return battle.foughtFor();
+    }
+
     // ------------------------------------------------------------------ soldiers
 
-    private void march(Maze maze, Recruiter recruiter, boolean a, int count) {
-        for (int i = 0; i < count; i++) {
-            GridPoint2 at = edgeTile(maze, a ? edgeA : opposite(edgeA));
-            if (at == null) return;
-            enlist(maze, recruiter, a, at.x, at.y);
+    /** The soldiers of a side who have not reached the field. */
+    private int reserve(boolean a) {
+        return layer.aliveOn(battle, a) - (a ? sideA : sideB).size();
+    }
+
+    /** Fills a side's line, by no more than {@code count} this turn. */
+    private void march(Recruiter recruiter, boolean a, int count) {
+        for (int i = 0; i < count && reserve(a) > 0 && lineOf(a) < LINE; i++) {
+            GridPoint2 at = edgeTile(a ? edgeA : opposite(edgeA));
+            if (at == null || enlist(recruiter, a, at.x, at.y) == null) return;
         }
     }
 
-    private Monster enlist(Maze maze, Recruiter recruiter, boolean a, int x, int y) {
-        int houseId = a ? front.attackerId : front.defenderId;
-        Doctrine d = catalog.get(world.house(houseId).doctrineId);
+    /** Soldiers of a side in the line, leaving out the gate guards. */
+    private int lineOf(boolean a) {
+        int n = 0;
+        for (Monster m : a ? sideA : sideB) if (!m.isGateGuard()) n++;
+        return n;
+    }
+
+    /** With several houses on a side, the line is in proportion to who has not yet reached it (A21). */
+    private int nextHouse(boolean a) {
+        Map<Integer, Integer> left = layer.housesOn(battle, a);
+        for (Monster m : a ? sideA : sideB) left.computeIfPresent(m.getHouseId(), (h, n) -> n - 1);
+        int total = 0;
+        for (int n : left.values()) total += Math.max(0, n);
+        if (total > 0) {
+            int roll = rng.nextInt(total);
+            for (Map.Entry<Integer, Integer> e : left.entrySet()) {
+                roll -= Math.max(0, e.getValue());
+                if (roll < 0) return e.getKey();
+            }
+        }
+        return a ? battle.houseA : battle.houseB;
+    }
+
+    private Monster enlist(Recruiter recruiter, boolean a, int x, int y) {
+        return enlist(recruiter, a, nextHouse(a), x, y);
+    }
+
+    private Monster enlist(Recruiter recruiter, boolean a, int houseId, int x, int y) {
+        House house = world.house(houseId);
+        Doctrine d = house == null ? null : catalog.get(house.doctrineId);
+        if (d == null || d.roster.isEmpty()) return null;
         Monster m = recruiter.recruit(d.roster.get(rng.nextInt(d.roster.size())), x, y);
         if (m == null) return null;
         m.setFaction(Faction.MAZE_HOUSE);
         m.setHouseId(houseId);
         m.setWarBand(true);
-        m.setState(Monster.MonsterState.HUNTING);
+        m.setBattleSide(a ? 1 : 2);
+        // The line advances on the middle of the field until it sees someone to fight.
+        m.setMarchTarget(new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2));
+        m.setState(Monster.MonsterState.WANDERING);
         maze.addMonster(m);
         (a ? sideA : sideB).add(m);
         return m;
     }
 
-    /** A free tile near the given edge, four tiles deep. */
-    private GridPoint2 edgeTile(Maze maze, int edge) {
+    /** A free tile near the given edge, as deep as this battle has come. */
+    private GridPoint2 edgeTile(int edge) {
         int w = maze.getWidth();
         int h = maze.getHeight();
         for (int attempt = 0; attempt < 12; attempt++) {
-            int depth = 1 + rng.nextInt(4);
+            int deep = 1 + rng.nextInt(battleTurns > 0 ? DEPTH_FRESH : depth);
             int along = 2 + rng.nextInt(Math.max(1, (edge < 2 ? h : w) - 4));
             int x, y;
             switch (edge) {
-                case 0: x = depth; y = along; break;
-                case 1: x = w - 1 - depth; y = along; break;
-                case 2: x = along; y = depth; break;
-                default: x = along; y = h - 1 - depth; break;
+                case 0: x = deep; y = along; break;
+                case 1: x = w - 1 - deep; y = along; break;
+                case 2: x = along; y = deep; break;
+                default: x = along; y = h - 1 - deep; break;
             }
             GridPoint2 at = WorldManager.findSafeArrivalTile(maze, x, y);
             if (at != null) return at;
@@ -354,25 +479,8 @@ public final class BattleDirector {
         return edge ^ 1;
     }
 
-    private int alive(List<Monster> side) {
-        int n = 0;
-        for (Monster m : side) if (m.isAlive()) n++;
-        return n;
-    }
-
-    private static boolean standing(Maze maze, Monster m) {
+    private boolean standing(Monster m) {
         return m.isAlive() && maze.getMonsters().containsValue(m);
-    }
-
-    private boolean isLord(int figureId) {
-        Figure f = world.figure(figureId);
-        House h = f == null ? null : world.house(f.houseId);
-        return h != null && h.lordId == figureId;
-    }
-
-    private float strength(int houseId) {
-        House h = world.house(houseId);
-        return h == null ? 10f : h.strength;
     }
 
     private String name(int houseId) {
@@ -380,30 +488,11 @@ public final class BattleDirector {
         return h == null ? "a house of the Maze" : h.name;
     }
 
-    /** How the battle stands, for the HUD (W30); null before the lines close or after it breaks. */
-    public com.bpm.minotaur.gamedata.history.war.WarTally tally(Maze maze) {
+    /** How the battle stands, line and reserve, for the HUD (W30); null before the lines close or after it breaks. */
+    public com.bpm.minotaur.gamedata.history.war.WarTally tally() {
         if (phase != Phase.BATTLE) return null;
-        int a = 0, b = 0;
-        for (Monster m : sideA) if (standing(maze, m)) a++;
-        for (Monster m : sideB) if (standing(maze, m)) b++;
-        return new com.bpm.minotaur.gamedata.history.war.WarTally(front.attackerId, front.defenderId,
-                a + (model != null ? model.a.reserve : 0), b + (model != null ? model.b.reserve : 0));
-    }
-
-    /** The house the player fought for: the one whose enemies alone they struck; -1 if both or neither (W19). */
-    public int playerFoughtFor() {
-        boolean struckA = false, struckB = false;
-        for (Monster m : sideA) struckA |= m.seekerDrewBlood();
-        for (Monster m : sideB) struckB |= m.seekerDrewBlood();
-        if (struckA == struckB) return -1;
-        return struckB ? front.attackerId : front.defenderId;
-    }
-
-    /** Whether the player has drawn the blood of any soldier on this field (Living War W15). */
-    public boolean playerJoined() {
-        for (Monster m : sideA) if (m.seekerDrewBlood()) return true;
-        for (Monster m : sideB) if (m.seekerDrewBlood()) return true;
-        return false;
+        return new com.bpm.minotaur.gamedata.history.war.WarTally(battle.houseA, battle.houseB,
+                layer.aliveOn(battle, true), layer.aliveOn(battle, false));
     }
 
     // ------------------------------------------------------------------ for tests
@@ -412,11 +501,7 @@ public final class BattleDirector {
         return a ? sideA : sideB;
     }
 
-    Monster captainOf(boolean a) {
-        return a ? captainA : captainB;
-    }
-
-    BattleModel model() {
-        return model;
+    Map<Monster, Integer> captainsOnField() {
+        return captains;
     }
 }

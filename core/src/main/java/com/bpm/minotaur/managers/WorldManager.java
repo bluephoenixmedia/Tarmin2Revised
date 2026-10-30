@@ -1509,6 +1509,11 @@ public class WorldManager {
     private BiomeManager armyLayerBiomes;
     private HistoryManager armyLayerHistory;
 
+    /** The armies of this world, or null in a world with no roads to march. */
+    public com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armyLayer() {
+        return armies();
+    }
+
     /** One war turn for the armies, wherever the player is. */
     public void marchArmies() {
         com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
@@ -1518,6 +1523,7 @@ public class WorldManager {
     /** The war goes on while the seeker sleeps (Living War A58): every turn at full detail. */
     public void sleepThroughWar() {
         com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.watchBattle(null);
         getHistory().sleepThroughWar(clock -> {
             if (layer != null) layer.tick(clock);
         });

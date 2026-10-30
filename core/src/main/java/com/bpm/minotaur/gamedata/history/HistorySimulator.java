@@ -1045,6 +1045,7 @@ public final class HistorySimulator {
         e.houseA = winner.id;
         e.houseB = loser.id;
         e.place = NameForge.place(rng);
+        e.detail = deed.witnessed ? 1 : e.detail;
         War w = world.activeWarBetween(winner.id, loser.id);
         if (w != null) e.causeEventId = w.declaredEventId;
         for (int id : slain) {

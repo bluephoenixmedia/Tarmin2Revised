@@ -30,6 +30,20 @@ public class EncounterLedger {
         public List<String> props = new ArrayList<>();
     }
 
+    /** A battle's field, not yet laid on its chunk: every battle leaves one, watched or not (A23, A24). */
+    public static class Field {
+        public int chunkX;
+        public int chunkY;
+        public int loser = -1;
+        /** The sleep count it is gone by. */
+        public int clearAtSleep;
+        /** The player stood there to the end, and has had the spoils; anyone later finds what is left. */
+        public boolean witnessed;
+    }
+
+    /** Battlefields waiting for someone to come and see them. */
+    public List<Field> fields = new ArrayList<>();
+
     /** {@link Encounter#key()}s the player has broken up or watched to the end. */
     public List<String> spent = new ArrayList<>();
     /** Chunks whose natives have already paid for a host passing, as "x,y,season" (A29). */
@@ -52,5 +66,18 @@ public class EncounterLedger {
     /** A shelter sleep, or a death: a new expedition begins. */
     public void newExpedition(boolean slept) {
         if (slept) sleeps++;
+        fields.removeIf(f -> sleeps >= f.clearAtSleep);
+    }
+
+    /** A battle has ended here. {@code afterSleeps} is how long its field lasts. */
+    public void battleFought(int chunkX, int chunkY, int loser, boolean witnessed, int afterSleeps) {
+        Field f = new Field();
+        f.chunkX = chunkX;
+        f.chunkY = chunkY;
+        f.loser = loser;
+        f.witnessed = witnessed;
+        f.clearAtSleep = sleeps + afterSleeps;
+        fields.add(f);
+        while (fields.size() > 64) fields.remove(0);
     }
 }

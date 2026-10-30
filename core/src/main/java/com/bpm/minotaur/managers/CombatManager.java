@@ -1140,6 +1140,8 @@ public class CombatManager {
         int attackBonus = calculateMonsterAttackBonus(attacker);
         int d20Roll = DiceRoller.d20();
         boolean isHit = (d20Roll + attackBonus) >= defender.getArmorClass();
+        // In the press of a battle most blows find a shield: it kills as fast watched as not (A22).
+        if (attacker.getBattleSide() != 0 && defender.getBattleSide() != 0 && Math.random() >= BattleDirector.BLOWS_LAND) isHit = false;
 
         if (isHit) {
             int baseDmg = DiceRoller.roll(attacker.getDamageDice());

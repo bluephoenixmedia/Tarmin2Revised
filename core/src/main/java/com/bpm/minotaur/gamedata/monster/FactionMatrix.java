@@ -126,6 +126,7 @@ public class FactionMatrix {
     }
 
     public boolean isHostile(Monster a, Monster b) {
+        if (a.getBattleSide() != 0 && b.getBattleSide() != 0) return a.getBattleSide() != b.getBattleSide();
         return isHostile(a.getFaction(), a.getHouseId(), b.getFaction(), b.getHouseId());
     }
 

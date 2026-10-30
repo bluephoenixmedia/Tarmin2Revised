@@ -24,6 +24,8 @@ public final class BattleSpoils implements BattleDirector.Spoils {
     /** Gear a common soldier might carry; anything pricier is a lord's. */
     static final int FIELD_VALUE_MAX = 300;
     static final int LORD_ENCHANTMENT = 3;
+    /** The most a picked-over field still holds. */
+    static final int PICKED_OVER = 2;
 
     private final ItemDataManager items;
     private final AssetManager assets;
@@ -67,6 +69,18 @@ public final class BattleSpoils implements BattleDirector.Spoils {
             Item blade = place(maze, near, fine.get(rng.nextInt(fine.size())), ItemColor.PURPLE);
             if (blade != null) blade.setEnchantment(blade.getEnchantment() + LORD_ENCHANTMENT);
         }
+    }
+
+    /** After the crows and the strippers of the dead: a piece or two, and no one's signet (A24). */
+    @Override
+    public void pickedOver(Maze maze, GridPoint2 near, int loserHouseId) {
+        List<Item.ItemType> field = new ArrayList<>();
+        for (Item.ItemType t : Item.ItemType.values()) {
+            ItemTemplate tpl = items.getTemplate(t);
+            if (tpl != null && (tpl.isWeapon || tpl.isArmor) && tpl.baseValue > 0 && tpl.baseValue <= FIELD_VALUE_MAX) field.add(t);
+        }
+        int count = 1 + rng.nextInt(PICKED_OVER);
+        for (int i = 0; i < count && !field.isEmpty(); i++) place(maze, near, field.get(rng.nextInt(field.size())), ItemColor.TAN);
     }
 
     private static void trophy(Item item, int houseId, String name) {

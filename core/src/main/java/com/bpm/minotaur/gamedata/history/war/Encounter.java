@@ -44,6 +44,8 @@ public final class Encounter {
     public final GridPoint2 to;
     /** The soldiers behind it, from the roster; 0 where it has no army, as below ground. */
     public int soldiers;
+    /** A battle of the armies, which comes to the field by way of the WarManager. */
+    public boolean underArms;
 
     /** Chebyshev distance in chunks: how far off a fight is heard from (W9). */
     public static int distance(GridPoint2 a, GridPoint2 b) {

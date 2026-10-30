@@ -27,7 +27,7 @@ public final class LivingWarScenario implements PlaytestScenario {
 
     @Override
     public String description() {
-        return "Reads the War Table, then finds a real army on the roster and walks into it.";
+        return "Reads the War Table, finds real armies on the roster, walks into them, and chooses a side in a battle under way.";
     }
 
     private static boolean shown(PlaytestContext ctx) {
@@ -167,5 +167,70 @@ public final class LivingWarScenario implements PlaytestScenario {
             ctx.assertTrue(ctx.getMaze().getShopkeeper() != null, "its quartermaster trades with a friend");
         });
         script.shot("lw07_sworn", ctx);
+
+        // A battle under way (A21, A26): find one on the roster, walk in, choose a side and fight.
+        com.bpm.minotaur.gamedata.history.war.army.ArmyBattle[] battle = {null};
+        script.until("wait for a battle", 8000, () -> {
+            if (ctx.getFrame() % 2 != 0) return false;
+            for (com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b : ctx.getWorldManager().getHistory().roster().battles) {
+                if (b.turn > 1 && b.turn < 60 && b.startA + b.startB >= 20) battle[0] = b;
+            }
+            if (battle[0] != null) return true;
+            ctx.press(Input.Keys.PERIOD);
+            return false;
+        });
+        script.once("walk into it", () -> {
+            ctx.log("Battle at " + battle[0].x + "," + battle[0].y + ": " + battle[0].startA + " against " + battle[0].startB
+                    + ", turn " + battle[0].turn);
+            ctx.getGameScreen().travelToChunk(new GridPoint2(battle[0].x, battle[0].y), new GridPoint2(16, 16));
+        });
+        script.until("arrive at the battle", 300, () -> shown(ctx));
+        script.key("a turn passes", Input.Keys.PERIOD, ctx);
+        script.until("the side prompt comes up", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen);
+        script.shot("lw08_choose_a_side", ctx);
+        String[] chosen = {null};
+        script.once("choose a side", () -> {
+            java.util.Set<String> labels = ((com.bpm.minotaur.screens.BattleSideScreen) ctx.getGame().getScreen()).labels();
+            ctx.log("On offer: " + labels);
+            ctx.assertTrue(labels.contains("Keep away"), "keeping away is always on offer");
+            chosen[0] = labels.iterator().next();
+            ctx.assertTrue(ctx.chooseSide(chosen[0]), "the side is taken");
+        });
+        script.wait("back on the field", 10);
+        script.once("the lines stand from the numbers, and the side stands by you", () -> {
+            int field = ctx.countWarBand();
+            ctx.log("Soldiers on the field: " + field + ", chose " + chosen[0] + ", side " + battle[0].playerSide);
+            ctx.assertTrue(field >= 2, "the lines are on the field");
+            ctx.assertTrue(battle[0].playerSide != 0, "the player stands with a side");
+            ctx.assertTrue(ctx.getWorldManager().armyLayer().watchedBattle() == battle[0], "the map is the truth while watched");
+        });
+        script.shot("lw09_in_the_battle", ctx);
+        int[] alive = {0};
+        script.once("note the numbers", () -> alive[0] = ctx.getWorldManager().armyLayer().aliveOn(battle[0], battle[0].playerSide != 1));
+        script.until("cut down an enemy soldier", 1500, () -> {
+            if (ctx.getFrame() % 2 != 0) return false;
+            if (ctx.getWarManager().active() == null || !ctx.getWarManager().active().battle.equals(battle[0])) return true;
+            if (battle[0].playerStruck != 0 && ctx.getWorldManager().armyLayer().aliveOn(battle[0], battle[0].playerSide != 1) < alive[0]) return true;
+            Monster foe = null;
+            float best = Float.MAX_VALUE;
+            for (Monster m : ctx.getMaze().getMonsters().values()) {
+                if (m == null || !m.isAlive() || !m.isWarBand() || m.isGateGuard() || m.getBattleSide() == battle[0].playerSide) continue;
+                float d = m.getPosition().dst(ctx.getPlayer().getPosition());
+                if (d < best) {
+                    best = d;
+                    foe = m;
+                }
+            }
+            ctx.press(Input.Keys.END);
+            if (foe != null) ctx.steerToward(new GridPoint2((int) foe.getPosition().x, (int) foe.getPosition().y));
+            return false;
+        });
+        script.once("the blow counted", () -> {
+            ctx.log("Struck " + battle[0].playerStruck + ", fought for " + battle[0].foughtFor() + ", battle "
+                    + ctx.battlePhase() + ", enemy numbers " + alive[0] + " to "
+                    + ctx.getWorldManager().armyLayer().aliveOn(battle[0], battle[0].playerSide != 1));
+            ctx.assertTrue(battle[0].playerStruck != 0 || ctx.getWarManager().active() == null, "the player drew blood, or the battle broke first");
+        });
+        script.shot("lw10_fighting", ctx);
     }
 }

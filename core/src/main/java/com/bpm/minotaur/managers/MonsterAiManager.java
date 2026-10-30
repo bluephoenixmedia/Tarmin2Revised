@@ -248,6 +248,35 @@ public class MonsterAiManager {
         moveMonsterTo(ally, maze, step.x, step.y);
     }
 
+    /**
+     * A step toward a rival. The pathfinder takes a tile with a creature on it as blocked, so it can
+     * never find its way to one: straight on where the ground is clear, else round to whichever
+     * tile beside the rival is open and nearest.
+     */
+    private void closeOn(Monster monster, GridPoint2 rival, Maze maze, Player player) {
+        GridPoint2 step = closerOpenNeighbour(maze, rival);
+        if (step != null) {
+            tempPos.set(step.x, step.y);
+            if (maze.isSanctuaryTile(tempPos) || (step.x == playerGridPos.x && step.y == playerGridPos.y)) return;
+            moveMonsterTo(monster, maze, step.x, step.y);
+            return;
+        }
+        GridPoint2 beside = null;
+        int nearest = Integer.MAX_VALUE;
+        for (Direction dir : Direction.values()) {
+            if (maze.isWallBlocking(rival.x, rival.y, dir)) continue;
+            int x = rival.x + (int) dir.getVector().x;
+            int y = rival.y + (int) dir.getVector().y;
+            if (!maze.isPassable(x, y)) continue;
+            int d = Math.abs(x - monsterGridPos.x) + Math.abs(y - monsterGridPos.y);
+            if (d < nearest) {
+                nearest = d;
+                beside = new GridPoint2(x, y);
+            }
+        }
+        if (beside != null) allyStepToward(monster, beside, maze, player);
+    }
+
     private GridPoint2 closerOpenNeighbour(Maze maze, GridPoint2 goal) {
         int here = Math.abs(monsterGridPos.x - goal.x) + Math.abs(monsterGridPos.y - goal.y);
         GridPoint2 best = null;
@@ -478,7 +507,7 @@ public class MonsterAiManager {
                 }
                 return;
             }
-            performSeekingMove(monster, rivalPos, maze, player, combatManager);
+            closeOn(monster, rivalPos, maze, player);
             return;
         }
 

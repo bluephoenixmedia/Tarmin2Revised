@@ -27,9 +27,26 @@ public class ArmyBattle {
     public int[] deadCounts = new int[0];
     /** Armies whose captains have already fallen. */
     public int[] captainFell = new int[0];
+    /** The side the player chose to stand with (A26): 0 for neither, 1 for A, 2 for B. */
+    public int playerSide;
+    /** Sides the player has drawn blood from, as bits: 1 for A, 2 for B. */
+    public int playerStruck;
+    /** Whether the player was on the ground when it broke, for its deed (A24). */
+    public transient boolean witnessed;
+    /** Once it has broken: who held the field, who routed, and whether a house's lord fell. */
+    public transient int winner = -1;
+    public transient int loser = -1;
+    public transient boolean lordFell;
 
     /** For the save reader. */
     public ArmyBattle() {
+    }
+
+    /** The house the player fought for: the side whose enemies alone they struck; -1 if both or neither (W19). */
+    public int foughtFor() {
+        if (playerStruck == 1) return houseB;
+        if (playerStruck == 2) return houseA;
+        return -1;
     }
 
     int deadOf(int houseId) {
