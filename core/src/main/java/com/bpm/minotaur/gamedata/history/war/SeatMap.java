@@ -56,7 +56,7 @@ public final class SeatMap {
      * The open chunk nearest {@code from}, walking outward ring by ring in one fixed order, so the
      * seat follows from the seed alone. {@code from} itself if there is none in reach.
      */
-    static GridPoint2 nearestOpen(GridPoint2 from, Predicate<GridPoint2> openLand) {
+    public static GridPoint2 nearestOpen(GridPoint2 from, Predicate<GridPoint2> openLand) {
         if (openLand.test(from)) return from;
         GridPoint2 at = new GridPoint2();
         for (int ring = 1; ring <= OPEN_LAND_REACH; ring++) {

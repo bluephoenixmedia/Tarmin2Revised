@@ -54,6 +54,8 @@ public class Army {
     public int marchFromX;
     public int marchFromY;
     public int marchStep;
+    /** Fighting: it holds its ground until the battle in its chunk ends. */
+    public boolean battle;
     /** The enemy armies it has already seen: a new one makes it think again. */
     public int[] seen = new int[0];
 

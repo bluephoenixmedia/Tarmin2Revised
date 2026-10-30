@@ -46,6 +46,7 @@ public final class HistoryManager {
     /** A new world's history: prehistory only. */
     public static HistoryManager create(long worldSeed, DoctrineCatalog catalog) {
         HistoryManager m = past(worldSeed, catalog);
+        m.world.armiesFromLiveSeason(0);
         // A new game opens on a war, so there is one to hear from the first step (Living War W6).
         PlayerDeed opening = HistorySimulator.openingWar(m.world);
         if (opening != null) m.apply(opening);
@@ -64,6 +65,8 @@ public final class HistoryManager {
     public static HistoryManager fromSave(long fallbackSeed, HistorySaveData save, DoctrineCatalog catalog) {
         if (save == null) return create(fallbackSeed, catalog);
         HistoryManager m = past(save.seed != null ? save.seed : fallbackSeed, catalog);
+        // A save from before armies keeps the past it had; armies take over from its next Season.
+        m.world.armiesFromLiveSeason(save.armiesFromLiveSeason != null ? save.armiesFromLiveSeason : save.liveSeasons);
         for (int season = 0; season <= save.liveSeasons; season++) {
             for (PlayerDeed d : save.deeds) {
                 if (d.liveSeason == season) m.replay(d);
@@ -491,6 +494,12 @@ public final class HistoryManager {
         }
     }
 
+    /** Something the armies did to the history (ADR 0006): written now, replayed from the log. */
+    public void recordArmyDeed(PlayerDeed deed) {
+        deed.liveSeason = world.liveSeasons();
+        apply(deed);
+    }
+
     /** Every army in the field. */
     public com.bpm.minotaur.gamedata.history.war.army.WarRoster roster() {
         return roster;
@@ -636,6 +645,7 @@ public final class HistoryManager {
         save.hunt = hunt;
         save.encounters = encounters;
         save.roster = roster;
+        save.armiesFromLiveSeason = world.armiesFromLiveSeason();
         for (java.util.Map.Entry<Integer, Integer> e : favour.all().entrySet()) {
             save.favourHouses.add(e.getKey());
             save.favourValues.add(e.getValue());

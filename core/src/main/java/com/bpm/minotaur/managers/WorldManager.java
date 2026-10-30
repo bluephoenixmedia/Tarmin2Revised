@@ -1482,8 +1482,12 @@ public class WorldManager {
     private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armies() {
         if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
         if (armyLayer == null || armyLayerBiomes != biomeManager || armyLayerHistory != getHistory()) {
+            com.bpm.minotaur.gamedata.history.war.army.ArmyLayer old = armyLayerHistory == getHistory() ? armyLayer : null;
+            if (old != null) old.resolveBattles(getHistory().warClock());
             armyLayer = new com.bpm.minotaur.gamedata.history.war.army.ArmyLayer(getHistory().world(),
-                    com.bpm.minotaur.gamedata.history.war.army.Terrain.of(biomeManager), this::houseSeats, getHistory().roster());
+                    com.bpm.minotaur.gamedata.history.war.army.Terrain.of(biomeManager), this::houseSeats, getHistory().roster(),
+                    getHistory()::recordArmyDeed);
+            if (old != null) armyLayer.shiftFrom(old.seats());
             armyLayerBiomes = biomeManager;
             armyLayerHistory = getHistory();
         }

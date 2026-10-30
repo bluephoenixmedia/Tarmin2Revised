@@ -45,7 +45,7 @@ public class ArmyLayerTest {
         }
 
         ArmyLayer layer(WarRoster roster) {
-            return new ArmyLayer(history.world(), terrain, this::seats, roster);
+            return new ArmyLayer(history.world(), terrain, this::seats, roster, history::recordArmyDeed);
         }
 
         SeatMap seats() {
@@ -213,12 +213,16 @@ public class ArmyLayerTest {
         com.sun.management.ThreadMXBean mx = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
         long me = Thread.currentThread().getId();
         World w = new World(8919L);
-        w.run(2000);
+        w.run(12000);
         long calls = w.layer.pathCalls();
-        long before = mx.getThreadAllocatedBytes(me);
-        int turns = 3000;
-        for (int i = 0; i < turns; i++) w.layer.tick(w.history.warClock() + i + 1);
-        long allocated = mx.getThreadAllocatedBytes(me) - before;
+        long allocated = 0;
+        int turns = 4000;
+        for (int i = 0; i < turns; i++) {
+            w.history.tickWarClock();
+            long before = mx.getThreadAllocatedBytes(me);
+            w.layer.tick(w.history.warClock());
+            allocated += mx.getThreadAllocatedBytes(me) - before;
+        }
         long searched = w.layer.pathCalls() - calls;
         int units = Math.max(1, w.layer.roster().armies.size());
         assertTrue("allocated " + allocated / turns + " bytes a turn", allocated / turns < 1024);

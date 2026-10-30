@@ -18,6 +18,9 @@ public class WarRoster {
 
     public List<Army> armies = new ArrayList<>();
     public int nextArmyId = 1;
+    public List<ArmyBattle> battles = new ArrayList<>();
+    /** What each war's houses stood at when it began, as warId, attacker's and defender's strength. */
+    public List<float[]> warStarts = new ArrayList<>();
 
     /** Soldiers house {@code houseId} has in the field. */
     public int fielded(int houseId) {
@@ -27,6 +30,27 @@ public class WarRoster {
             if (a.houseId == houseId) n += a.soldiers;
         }
         return n;
+    }
+
+    /** Soldiers at home: its strength, less those in the field and those dead in battles not yet over. */
+    public int garrison(HistoryWorld world, int houseId) {
+        House h = world.house(houseId);
+        if (h == null) return 0;
+        int dead = 0;
+        for (int i = 0; i < battles.size(); i++) dead += battles.get(i).deadOf(houseId);
+        return Math.max(0, (int) Math.floor(h.strength) - fielded(houseId) - dead);
+    }
+
+    /** What house {@code houseId} stood at when war {@code warId} began; records it if new. */
+    float strengthAtWarStart(War w, int houseId, HistoryWorld world) {
+        for (int i = 0; i < warStarts.size(); i++) {
+            float[] s = warStarts.get(i);
+            if ((int) s[0] == w.id) return houseId == w.attackerId ? s[1] : s[2];
+        }
+        House a = world.house(w.attackerId), d = world.house(w.defenderId);
+        float[] s = {w.id, a == null ? 0f : a.strength, d == null ? 0f : d.strength};
+        warStarts.add(s);
+        return houseId == w.attackerId ? s[1] : s[2];
     }
 
     /** The army with this id, or null. */
@@ -50,6 +74,7 @@ public class WarRoster {
                 it.remove();
                 continue;
             }
+            if (a.battle) continue;
             if (a.objective != Army.Objective.DISBAND && !warStands(world, a)) {
                 a.objective = Army.Objective.DISBAND;
                 a.path = null;

@@ -35,14 +35,15 @@ public final class WarSimulation {
         long[] turn = new long[(turnsEach - warm) * seeds.length];
         int n = 0;
         List<Double> jumps = new ArrayList<>();
-        double coldJump = -1, allocated = 0, units = 0, wars = 0;
+        double coldJump = -1, allocated = 0, units = 0, wars = 0, battles = 0;
+        int warsEnded = 0, warsBoth = 0, warSeasons = 0, battlesFought = 0;
         int unitsMax = 0;
         long paths = 0;
         for (long seed : seeds) {
             HistoryManager history = HistoryManager.create(seed, catalog);
             BiomeManager biomes = new BiomeManager(seed);
             ArmyLayer layer = new ArmyLayer(history.world(), Terrain.of(biomes),
-                    () -> SeatMap.of(history.world(), biomes.getRoads(), biomes.getCastleSite(), seed, biomes::isOpenLand), history.roster());
+                    () -> SeatMap.of(history.world(), biomes.getRoads(), biomes.getCastleSite(), seed, biomes::isOpenLand), history.roster(), history::recordArmyDeed);
             if (coldJump < 0) {
                 long start = System.nanoTime();
                 for (int i = 0; i < HistoryManager.SLEEP_TURNS; i++) {
@@ -70,11 +71,19 @@ public final class WarSimulation {
                 ring[i % ring.length] = d;
                 if (i >= ring.length - 1 && i % 25 == 0) jumps.add(window / 1e6);
                 units += layer.roster().armies.size();
+                battles += layer.roster().battles.size();
                 unitsMax = Math.max(unitsMax, layer.roster().armies.size());
                 if (i % 25 == 0) wars += history.world().activeWars().size() * 25;
             }
             allocated += mx.getThreadAllocatedBytes(me) - allocStart - allocInSeasons;
             paths += layer.pathCalls() - pathStart;
+            battlesFought += layer.battlesEnded();
+            for (com.bpm.minotaur.gamedata.history.War w : history.world().wars()) {
+                if (w.isActive() || w.endSeason < history.world().season() - history.world().liveSeasons()) continue;
+                warsEnded++;
+                warSeasons += w.endSeason - Math.max(w.startSeason, history.world().season() - history.world().liveSeasons());
+                if (!history.world().house(w.attackerId).isExtinct() && !history.world().house(w.defenderId).isExtinct()) warsBoth++;
+            }
         }
         Arrays.sort(turn);
         Collections.sort(jumps);
@@ -88,6 +97,8 @@ public final class WarSimulation {
         List<String> out = new ArrayList<>();
         out.add(line("Worlds %d, %d Seasons each, %d turns timed", seeds.length, seasons, turn.length));
         out.add(line("Units mean %.1f, max %d; wars mean %.2f; searches per turn %.2f", units / turn.length, unitsMax, wars / turn.length, (double) paths / turn.length));
+        out.add(line("Battles: %.1f a Season, one under way %.0f%% of the time; wars ended %d, mean %.1f Seasons, both houses standing %d",
+                (double) battlesFought / (seasons * seeds.length), 100 * battles / turn.length, warsEnded, warsEnded == 0 ? 0.0 : (double) warSeasons / warsEnded, warsBoth));
         out.add(line("War turn: mean %.3f ms (budget %.2f) %s", mean, BUDGET_TURN_MEAN_MS, verdict(mean, BUDGET_TURN_MEAN_MS)));
         out.add(line("War turn: p50 %.3f ms, p99 %.3f ms (budget %.0f) %s, max %.2f ms", turn[turn.length / 2] / 1e6, p99, BUDGET_TURN_P99_MS, verdict(p99, BUDGET_TURN_P99_MS), turn[turn.length - 1] / 1e6));
         out.add(line("Sleep jump: p50 %.1f ms, worst %.1f ms, first in a fresh JVM %.1f ms (budget %.0f) %s", jumps.get(jumps.size() / 2), jumps.get(jumps.size() - 1), coldJump, BUDGET_JUMP_MS, verdict(jumpWorst, BUDGET_JUMP_MS)));

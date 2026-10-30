@@ -40,6 +40,8 @@ public class HistorySaveData {
     public List<com.bpm.minotaur.gamedata.history.town.Quest> quests = new ArrayList<>();
     /** What of the surface war is not scheduled afresh (Living War W3); null in an older save. */
     public com.bpm.minotaur.gamedata.history.war.EncounterLedger encounters;
+    /** The live Season armies took over the war (A1); null in a save from before them. */
+    public Integer armiesFromLiveSeason;
     /** Every army in the field (ADR 0006); null in a save from before armies, which musters fresh. */
     public com.bpm.minotaur.gamedata.history.war.army.WarRoster roster;
     /** Each house's regard for the player (Living War W18), as parallel lists. */
