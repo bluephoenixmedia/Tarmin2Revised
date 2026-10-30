@@ -1,0 +1,176 @@
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+
+/**
+ * Load sketch of the army layer's hot paths, on the six real worlds' terrain. Not a port of the
+ * decisions: it reproduces the prototype's measured load (units, about 0.05 replans per unit per
+ * turn, sight checks every 10 turns, contacts each turn, battles with lines of 16), pessimistically
+ * (half the replans cross the map; the battles never stop).
+ *
+ * usage: java Sketch <worlds.txt> <units> <battles> <naive|pooled> [turnsPerWorld]
+ */
+public class Sketch {
+    static final int ROAD = 15, OFF = 20, ROUGH = 26, SIGHT = 6;
+    static final double REPLAN = 0.05;
+
+    static final class World { int seed, R, N; byte[] grid, corridor; int[] open; }
+    static final class Unit {
+        int id, house, x, y, prog, soldiers = 15;
+        int[] path = new int[0]; int pos;
+        boolean inBattle;
+        final HashSet<Integer> seen = new HashSet<>();
+    }
+    static final class Battle { int[] a = new int[4], b = new int[4]; int na = 2, nb = 2, moraleA = 100, moraleB = 100, aliveA = 30, aliveB = 30, turn; }
+
+    final World w; final boolean pooled; final List<Unit> units = new ArrayList<>(); final List<Battle> battles = new ArrayList<>();
+    final int[][] wars = {{0, 1}, {2, 3}, {4, 5}}; final long seed; long clock; int paths; final SplittableRandom load;
+    // pooled scratch
+    final double[] g; final int[] from, stamp, heapI; final double[] heapF; int gen, heapN;
+
+    Sketch(World w, int nUnits, int nBattles, boolean pooled) {
+        this.w = w; this.pooled = pooled; this.seed = w.seed; load = new SplittableRandom(w.seed);
+        int n = w.N * w.N; g = new double[n]; from = new int[n]; stamp = new int[n]; heapI = new int[n * 8]; heapF = new double[n * 8];
+        for (int i = 0; i < nUnits; i++) {
+            Unit u = new Unit(); u.id = i + 1; u.house = i % 6; int c = w.open[load.nextInt(w.open.length)]; u.x = c % w.N - w.R; u.y = c / w.N - w.R; units.add(u);
+        }
+        for (int i = 0; i < nBattles; i++) { Battle b = new Battle(); for (int k = 0; k < 4; k++) { b.a[k] = k; b.b[k] = k + 4; } battles.add(b); }
+    }
+
+    int ix(int x, int y) { return (y + w.R) * w.N + (x + w.R); }
+    boolean passable(int x, int y) { if (Math.abs(x) > w.R || Math.abs(y) > w.R) return false; byte b = w.grid[ix(x, y)]; return b != 'O' && b != 'M' && b != 'Z'; }
+    int cost(int i) { if (w.corridor[i] != 0) return ROAD; byte b = w.grid[i]; return b == 'T' || b == 'B' ? ROUGH : OFF; }
+    static int cheb(int a, int b, int c, int d) { return Math.max(Math.abs(a - c), Math.abs(b - d)); }
+
+    int[] pathNaive(int sx, int sy, int tx, int ty) {
+        paths++;
+        int n = w.N * w.N; double[] gg = new double[n]; Arrays.fill(gg, Double.POSITIVE_INFINITY); int[] fr = new int[n]; Arrays.fill(fr, -1);
+        PriorityQueue<double[]> q = new PriorityQueue<>(Comparator.comparingDouble(e -> e[0]));
+        int s = ix(sx, sy), t = ix(tx, ty); gg[s] = 0; q.add(new double[] {0, s});
+        while (!q.isEmpty()) {
+            int i = (int) q.poll()[1]; if (i == t) break;
+            int x = i % w.N - w.R, y = i / w.N - w.R;
+            for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue; int nx = x + dx, ny = y + dy;
+                if (Math.abs(nx) > w.R || Math.abs(ny) > w.R) continue; int j = ix(nx, ny);
+                if (j != t && !passable(nx, ny)) continue;
+                double ng = gg[i] + cost(j);
+                if (ng < gg[j]) { gg[j] = ng; fr[j] = i; q.add(new double[] {ng + cheb(nx, ny, tx, ty) * ROAD, j}); }
+            }
+        }
+        if (fr[t] < 0) return new int[0];
+        ArrayList<Integer> out = new ArrayList<>(); for (int i = t; i != s; i = fr[i]) out.add(i);
+        int[] r = new int[out.size()]; for (int k = 0; k < r.length; k++) r[k] = out.get(r.length - 1 - k); return r;
+    }
+    void hpush(double f, int i) { int c = heapN++; heapF[c] = f; heapI[c] = i; while (c > 0) { int p = (c - 1) >> 1; if (heapF[p] <= heapF[c]) break; double tf = heapF[p]; heapF[p] = heapF[c]; heapF[c] = tf; int ti = heapI[p]; heapI[p] = heapI[c]; heapI[c] = ti; c = p; } }
+    int hpop() { int top = heapI[0]; heapN--; heapF[0] = heapF[heapN]; heapI[0] = heapI[heapN]; int c = 0; for (;;) { int l = 2 * c + 1, r = l + 1, m = c; if (l < heapN && heapF[l] < heapF[m]) m = l; if (r < heapN && heapF[r] < heapF[m]) m = r; if (m == c) break; double tf = heapF[m]; heapF[m] = heapF[c]; heapF[c] = tf; int ti = heapI[m]; heapI[m] = heapI[c]; heapI[c] = ti; c = m; } return top; }
+    int[] pathPooled(int sx, int sy, int tx, int ty) {
+        paths++; gen++; heapN = 0;
+        int s = ix(sx, sy), t = ix(tx, ty); g[s] = 0; stamp[s] = gen; from[s] = -1; hpush(0, s); boolean found = false;
+        while (heapN > 0) {
+            int i = hpop(); if (i == t) { found = true; break; }
+            int x = i % w.N - w.R, y = i / w.N - w.R;
+            for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue; int nx = x + dx, ny = y + dy;
+                if (Math.abs(nx) > w.R || Math.abs(ny) > w.R) continue; int j = ix(nx, ny);
+                if (j != t && !passable(nx, ny)) continue;
+                double ng = g[i] + cost(j);
+                if (stamp[j] != gen || ng < g[j]) { stamp[j] = gen; g[j] = ng; from[j] = i; hpush(ng + cheb(nx, ny, tx, ty) * ROAD, j); }
+            }
+        }
+        if (!found) return new int[0];
+        int len = 0; for (int i = t; i != s; i = from[i]) len++;
+        int[] r = new int[len]; for (int i = t, k = len - 1; i != s; i = from[i], k--) r[k] = i; return r;
+    }
+    int[] path(int sx, int sy, int tx, int ty) { return pooled ? pathPooled(sx, sy, tx, ty) : pathNaive(sx, sy, tx, ty); }
+
+    boolean hostile(int a, int b) { if (a == b) return false; for (int[] war : wars) if ((war[0] == a && war[1] == b) || (war[0] == b && war[1] == a)) return true; return false; }
+    int sightCheck(Unit u) {
+        int found = 0;
+        if (pooled) {
+            for (Unit e : units) { if (!hostile(u.house, e.house)) continue; for (Unit o : units) if (o.house == u.house && cheb(o.x, o.y, e.x, e.y) <= SIGHT) { if (u.seen.add(e.id)) found++; break; } }
+        } else {
+            ArrayList<Unit> eyes = new ArrayList<>(); for (Unit o : units) if (o.house == u.house) eyes.add(o);
+            ArrayList<Unit> out = new ArrayList<>();
+            for (Unit e : units) { if (!hostile(u.house, e.house)) continue; for (Unit o : eyes) if (cheb(o.x, o.y, e.x, e.y) <= SIGHT) { out.add(e); break; } }
+            for (Unit e : out) if (u.seen.add(e.id)) found++;
+        }
+        return found;
+    }
+    void decide(Unit u) {
+        // the army layer's rule (ADR 0006): randomness from seed, clock and army id, never a saved generator
+        SplittableRandom r = new SplittableRandom(seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (u.id * 0xC2B2AE3D27D4EB4FL));
+        int c;
+        if (r.nextBoolean()) c = w.open[r.nextInt(w.open.length)];
+        else { int tries = 0; do { int tx = u.x + r.nextInt(41) - 20, ty = u.y + r.nextInt(41) - 20; c = (Math.abs(tx) <= w.R && Math.abs(ty) <= w.R && passable(tx, ty)) ? ix(tx, ty) : -1; } while (c < 0 && ++tries < 8); if (c < 0) return; }
+        u.path = path(u.x, u.y, c % w.N - w.R, c / w.N - w.R); u.pos = 0; u.prog = 0;
+    }
+    int contacts() {
+        int hits = 0;
+        if (pooled) {
+            for (int i = 0; i < units.size(); i++) { Unit a = units.get(i); for (int j = i + 1; j < units.size(); j++) { Unit b = units.get(j); if (a.x == b.x && a.y == b.y && hostile(a.house, b.house)) hits++; } }
+        } else {
+            HashMap<Long, List<Unit>> by = new HashMap<>();
+            for (Unit u : units) by.computeIfAbsent(((long) u.x << 32) ^ (u.y & 0xffffffffL), k -> new ArrayList<>()).add(u);
+            for (List<Unit> l : by.values()) for (int i = 0; i < l.size(); i++) for (int j = i + 1; j < l.size(); j++) if (hostile(l.get(i).house, l.get(j).house)) hits++;
+        }
+        return hits;
+    }
+    void stepBattle(Battle b) {
+        b.turn++;
+        SplittableRandom r = new SplittableRandom(seed ^ (clock * 0x9E3779B97F4A7C15L) ^ b.turn);
+        int ha = 0, hb = 0; for (int i = 0; i < 16; i++) { if (r.nextDouble() < 0.012) ha++; if (r.nextDouble() < 0.012) hb++; }
+        b.aliveB -= ha; b.aliveA -= hb; b.moraleB -= ha * 4; b.moraleA -= hb * 4;
+        for (int k = 0; k < 8; k++) { for (Unit u : units) if (u.id == k + 1) { if (r.nextDouble() < 0.004) b.moraleA -= 10; break; } }
+        if (b.moraleA <= 0 || b.moraleB <= 0 || b.aliveA <= 0 || b.aliveB <= 0 || b.turn >= 200) { b.moraleA = b.moraleB = 100; b.aliveA = b.aliveB = 30; b.turn = 0; }
+    }
+    int tick() {
+        clock++; int sink = 0;
+        for (Unit u : units) {
+            if (u.pos < u.path.length) {
+                u.prog++; int nxt = u.path[u.pos];
+                if (u.prog >= cost(nxt)) { u.prog = 0; u.x = nxt % w.N - w.R; u.y = nxt / w.N - w.R; u.pos++; }
+            }
+            if (load.nextDouble() < REPLAN) decide(u);
+            if ((clock + u.id) % 10 == 0) { sink += sightCheck(u); if (u.seen.size() > 64) u.seen.clear(); }
+        }
+        sink += contacts();
+        for (Battle b : battles) stepBattle(b);
+        return sink;
+    }
+
+    static List<World> load(String file) throws IOException {
+        List<World> out = new ArrayList<>();
+        for (String line : Files.readAllLines(Paths.get(file))) {
+            String[] p = line.split(" "); if (p.length < 4) continue;
+            World w = new World(); w.seed = Integer.parseInt(p[0]); w.R = Integer.parseInt(p[1]); w.N = 2 * w.R + 1; w.grid = p[2].getBytes("ISO-8859-1"); w.corridor = new byte[w.N * w.N]; for (int i = 0; i < w.corridor.length; i++) w.corridor[i] = (byte) (p[3].charAt(i) - '0');
+            int cnt = 0; int[] o = new int[w.N * w.N]; for (int i = 0; i < w.grid.length; i++) { byte b = w.grid[i]; if (b != 'O' && b != 'M' && b != 'Z') o[cnt++] = i; } w.open = Arrays.copyOf(o, cnt); out.add(w);
+        }
+        return out;
+    }
+    static double q(long[] a, double p) { return a[Math.min(a.length - 1, (int) (a.length * p))] / 1000.0; }
+
+    public static void main(String[] args) throws Exception {
+        List<World> ws = load(args[0]); int units = Integer.parseInt(args[1]), bat = Integer.parseInt(args[2]); boolean pooled = args[3].equals("pooled"); int perWorld = args.length > 4 ? Integer.parseInt(args[4]) : 20000;
+        com.sun.management.ThreadMXBean mx = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean(); long me = Thread.currentThread().getId(); int sink = 0;
+        // cold: the first jump a fresh JVM ever does
+        Sketch cold = new Sketch(ws.get(0), units, bat, pooled); long c0 = System.nanoTime(); for (int i = 0; i < 250; i++) sink += cold.tick(); double coldMs = (System.nanoTime() - c0) / 1e6;
+        int warm = 5000; long[] t = new long[(perWorld - warm) * ws.size()]; int n = 0; ArrayList<Double> jumps = new ArrayList<>(); long allocStart = 0, paths = 0; long allocTotal = 0;
+        for (World w : ws) {
+            Sketch s = new Sketch(w, units, bat, pooled);
+            for (int i = 0; i < warm; i++) sink += s.tick();
+            long a0 = mx.getThreadAllocatedBytes(me), p0 = s.paths; long win = 0; long[] ring = new long[250];
+            for (int i = 0; i < perWorld - warm; i++) {
+                long b = System.nanoTime(); sink += s.tick(); long d = System.nanoTime() - b; t[n++] = d;
+                win += d - ring[i % 250]; ring[i % 250] = d; if (i >= 249 && i % 25 == 0) jumps.add(win / 1e6);
+            }
+            allocTotal += mx.getThreadAllocatedBytes(me) - a0; paths += s.paths - p0;
+        }
+        Arrays.sort(t); Collections.sort(jumps); double mean = 0; for (long x : t) mean += x; mean /= t.length * 1000.0;
+        // worst single path: corner to corner, warm
+        double worstPath = 0; for (World w : ws) { Sketch s = new Sketch(w, 1, 0, pooled); int a = w.open[0], b = w.open[w.open.length - 1]; for (int i = 0; i < 200; i++) { long x = System.nanoTime(); sink += s.path(a % w.N - w.R, a / w.N - w.R, b % w.N - w.R, b / w.N - w.R).length; worstPath = Math.max(worstPath, i > 100 ? (System.nanoTime() - x) / 1000.0 : 0); } }
+        System.out.printf("%s units %d battles %d (paths/turn %.2f) | turn us mean %.1f p50 %.1f p99 %.1f p99.9 %.0f max %.0f | jump ms p50 %.2f p99 %.2f max %.2f | cold first jump ms %.1f | alloc KB/turn %.1f | worst path us %.0f [%d]%n",
+            pooled ? "pooled" : "naive ", units, bat, paths / (double) t.length, mean, q(t, .5), q(t, .99), q(t, .999), t[t.length - 1] / 1000.0,
+            jumps.get(jumps.size() / 2), jumps.get((int) (jumps.size() * .99)), jumps.get(jumps.size() - 1), coldMs, allocTotal / 1024.0 / t.length, worstPath, sink & 1);
+    }
+}
