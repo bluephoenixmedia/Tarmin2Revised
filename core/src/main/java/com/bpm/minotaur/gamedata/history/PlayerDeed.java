@@ -80,7 +80,9 @@ public class PlayerDeed {
          */
         ARMY_BATTLE,
         /** House {@link #target} has lost half its strength and can raise no host: it sues {@link #other} for peace (A25). */
-        SUED_FOR_PEACE
+        SUED_FOR_PEACE,
+        /** The land's toll on house {@link #target}'s armies this Season (A27): {@link #deadCounts}, never chronicled. */
+        ARMY_ATTRITION
     }
 
     public Kind kind;

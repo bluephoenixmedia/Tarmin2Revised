@@ -1487,6 +1487,17 @@ public class WorldManager {
             armyLayer = new com.bpm.minotaur.gamedata.history.war.army.ArmyLayer(getHistory().world(),
                     com.bpm.minotaur.gamedata.history.war.army.Terrain.of(biomeManager), this::houseSeats, getHistory().roster(),
                     getHistory()::recordArmyDeed);
+            armyLayer.watch(new com.bpm.minotaur.gamedata.history.war.army.ArmyLayer.PlayerWatch() {
+                @Override
+                public GridPoint2 surfaceChunk() {
+                    return currentLevel == 1 ? currentPlayerChunkId : null;
+                }
+
+                @Override
+                public boolean countsPlayerAnEnemy(int houseId) {
+                    return getHistory().stanceOf(houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY;
+                }
+            });
             if (old != null) armyLayer.shiftFrom(old.seats());
             armyLayerBiomes = biomeManager;
             armyLayerHistory = getHistory();

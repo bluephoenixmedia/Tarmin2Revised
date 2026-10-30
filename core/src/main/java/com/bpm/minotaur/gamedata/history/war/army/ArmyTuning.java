@@ -14,6 +14,8 @@ final class ArmyTuning {
     static final float LEVY_SHARE = 1f / 3f;
     /** What walls are worth when weighing a march on a seat (Living War A30). */
     static final float WALL_EDGE = 4f;
+    /** How much distance puts a host off marching on a seat: the farther, the more it takes (tuned against A8). */
+    static final float SEAT_DISTANCE = 120f;
     /** Chunks an army, or a seat, can see enemy armies from. */
     static final int SIGHT = 6;
     /** War turns between looks around for a new enemy. */
@@ -44,6 +46,29 @@ final class ArmyTuning {
     static final int SKIRMISH_UNDER = 20;
     /** A beaten house sues once its strength falls below this share of what it began the war with. */
     static final float SUE_BELOW = 0.5f;
+
+    /** Soldiers a raid or a Hunting Party takes (A11, A12). */
+    static final int RAID_SIZE = 8;
+    /** War turns between a host's looks at its numbers, and the least worth sending (A10). */
+    static final int SUPPLY_EVERY = 60;
+    static final int SUPPLY_MIN = 3;
+    /** War turns between foraging parties, their size, and how long they stay out (A10). */
+    static final int FORAGE_EVERY = 80;
+    static final int FORAGE_SIZE = 4;
+    static final int FORAGE_TURNS = 40;
+    /** Fewer wars than this and another is declared (A9). */
+    static final int WAR_FLOOR = 2;
+    /** Each Season, a free house's chance of raiding one it bears a grudge against, and the grudge it takes (A9). */
+    static final float PEACE_RAID_CHANCE = 0.25f;
+    static final float PEACE_RAID_GRUDGE = 1f;
+    /** Chance per chunk crossed of losing a soldier to the land: near the maze, and in the far bands (A27). */
+    static final float ATTRITION_NEAR = 0.10f;
+    static final float ATTRITION_FAR = 0.33f;
+    static final int ATTRITION_NEAR_DISTANCE = 11;
+    static final int ATTRITION_FAR_DISTANCE = 60;
+    static final float BLIGHT_ATTRITION = 3f;
+    /** Seasons a Hunting Party stays out. */
+    static final int HUNT_SEASONS = 2;
 
     private ArmyTuning() {
     }

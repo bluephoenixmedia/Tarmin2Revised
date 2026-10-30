@@ -488,16 +488,18 @@ public final class HistoryManager {
      * Season falls inside it; the armies march every turn of it, by {@code eachTurn}.
      */
     public void sleepThroughWar(java.util.function.LongConsumer eachTurn) {
-        for (int i = 0; i < SLEEP_TURNS; i++) {
-            warClock++;
-            eachTurn.accept(warClock);
-        }
+        for (int i = 0; i < SLEEP_TURNS; i++) eachTurn.accept(++warClock);
     }
 
     /** Something the armies did to the history (ADR 0006): written now, replayed from the log. */
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();
         apply(deed);
+    }
+
+    /** One turn of a sleep, for the war simulation: the clock moves and no waking Season passes. */
+    public void sleepTurn() {
+        warClock++;
     }
 
     /** Every army in the field. */

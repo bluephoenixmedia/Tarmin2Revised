@@ -75,11 +75,23 @@ public final class HistorySimulator {
      */
     public static PlayerDeed openingWar(HistoryWorld world) {
         if (!world.activeWars().isEmpty()) return null;
+        return declaration(world);
+    }
+
+    /**
+     * War pressure (Living War A9): with fewer than {@code floor} wars under way, the same choice as
+     * the opening war brings another, in the same deed. Null when the floor is met or no one can.
+     */
+    public static PlayerDeed warPressure(HistoryWorld world, int floor) {
+        return world.activeWars().size() >= floor ? null : declaration(world);
+    }
+
+    private static PlayerDeed declaration(HistoryWorld world) {
         House attacker = null;
         House defender = null;
         float worst = 0f;
         for (House h : world.livingHouses()) {
-            if (h.liegeId >= 0) continue;
+            if (h.liegeId >= 0 || world.activeWarCount(h.id) >= MAX_WARS) continue;
             for (House t : world.livingHouses()) {
                 if (t == h || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
                 float g = world.grudgeWeight(h.id, t.id);
@@ -94,7 +106,7 @@ public final class HistorySimulator {
             // No grudge to settle: the strongest free house comes for a seat it does not hold -- a
             // gash or the castle -- and, failing that, for anyone it is not bound to.
             for (House h : world.livingHouses()) {
-                if (h.liegeId >= 0) continue;
+                if (h.liegeId >= 0 || world.activeWarCount(h.id) >= MAX_WARS) continue;
                 House prey = null;
                 for (House t : world.livingHouses()) {
                     if (t == h || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
@@ -113,6 +125,9 @@ public final class HistorySimulator {
         d.other = defender.id;
         return d;
     }
+
+    /** War pressure never pushes a house into a third war at once. */
+    private static final int MAX_WARS = 2;
 
     /** A house this strong, at war with the Antlered Host, may besiege Castle Tarmin (W33). */
     static final float SIEGE_STRENGTH = 70f;
@@ -992,6 +1007,11 @@ public final class HistorySimulator {
             armyBattle(deed);
         } else if (deed.kind == PlayerDeed.Kind.SUED_FOR_PEACE) {
             suedForPeace(deed);
+        } else if (deed.kind == PlayerDeed.Kind.ARMY_ATTRITION) {
+            House h = world.house(deed.target);
+            if (h != null && !h.isExtinct() && deed.deadCounts != null && deed.deadCounts.length > 0) {
+                h.strength = Math.max(5f, h.strength - deed.deadCounts[0]);
+            }
         } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
             House winner = world.house(deed.target);
             House loser = world.house(deed.other);

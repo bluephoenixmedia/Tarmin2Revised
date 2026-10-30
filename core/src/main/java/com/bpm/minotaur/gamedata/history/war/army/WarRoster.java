@@ -22,6 +22,55 @@ public class WarRoster {
     /** What each war's houses stood at when it began, as warId, attacker's and defender's strength. */
     public List<float[]> warStarts = new ArrayList<>();
 
+    /** Soldiers each house has lost to the land this Season, as parallel lists, not yet in a deed (A27). */
+    public int[] attritionHouses = new int[0];
+    public int[] attritionDead = new int[0];
+    /** Where each house's armies last saw the player, as house, x, y (A12). */
+    public List<int[]> playerLastSeen = new ArrayList<>();
+
+    static int packed(int x, int y) {
+        return (x + 4096) << 13 | (y + 4096);
+    }
+
+    /** Whether any army crossed this chunk this Season or last (A29). */
+    public boolean onTrail(int x, int y) {
+        int p = packed(x, y);
+        for (int i = 0; i < armies.size(); i++) {
+            Army a = armies.get(i);
+            if (ArmyBattle.holds(a.trail, p) || ArmyBattle.holds(a.trailLast, p)) return true;
+        }
+        return false;
+    }
+
+    void addAttrition(int houseId, int dead) {
+        for (int i = 0; i < attritionHouses.length; i++) {
+            if (attritionHouses[i] == houseId) {
+                attritionDead[i] += dead;
+                return;
+            }
+        }
+        attritionHouses = ArmyBattle.append(attritionHouses, houseId);
+        attritionDead = ArmyBattle.append(attritionDead, dead);
+    }
+
+    /** Where house {@code houseId}'s armies last saw the player, or null. */
+    int[] playerSeenBy(int houseId) {
+        for (int i = 0; i < playerLastSeen.size(); i++) {
+            if (playerLastSeen.get(i)[0] == houseId) return playerLastSeen.get(i);
+        }
+        return null;
+    }
+
+    void notePlayerSeen(int houseId, int x, int y) {
+        int[] s = playerSeenBy(houseId);
+        if (s == null) {
+            playerLastSeen.add(new int[] {houseId, x, y});
+        } else {
+            s[1] = x;
+            s[2] = y;
+        }
+    }
+
     /** Soldiers house {@code houseId} has in the field. */
     public int fielded(int houseId) {
         int n = 0;
@@ -38,6 +87,9 @@ public class WarRoster {
         if (h == null) return 0;
         int dead = 0;
         for (int i = 0; i < battles.size(); i++) dead += battles.get(i).deadOf(houseId);
+        for (int i = 0; i < attritionHouses.length; i++) {
+            if (attritionHouses[i] == houseId) dead += attritionDead[i];
+        }
         return Math.max(0, (int) Math.floor(h.strength) - fielded(houseId) - dead);
     }
 
@@ -75,7 +127,8 @@ public class WarRoster {
                 continue;
             }
             if (a.battle) continue;
-            if (a.objective != Army.Objective.DISBAND && !warStands(world, a)) {
+            boolean host = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
+            if (host && a.objective != Army.Objective.DISBAND && !warStands(world, a)) {
                 a.objective = Army.Objective.DISBAND;
                 a.path = null;
                 a.targetArmy = -1;

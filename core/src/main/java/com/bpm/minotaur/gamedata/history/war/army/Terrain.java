@@ -25,12 +25,16 @@ public final class Terrain {
     public final int size;
     /** War turns to cross each chunk, by {@link #index}; 0 where no army can go. */
     private final byte[] turns;
+    /** The Blight, by {@link #index}: it triples the land's toll (A27). */
+    private final boolean[] blighted;
+    private ShelterRoads roads;
 
     /** @param turnsAt war turns to cross chunk (x, y), or 0 where no army can go */
     public Terrain(int radius, ToIntBiFunction<Integer, Integer> turnsAt) {
         this.radius = radius;
         this.size = 2 * radius + 1;
         this.turns = new byte[size * size];
+        this.blighted = new boolean[size * size];
         for (int y = -radius; y <= radius; y++) {
             for (int x = -radius; x <= radius; x++) {
                 turns[index(x, y)] = (byte) turnsAt.applyAsInt(x, y);
@@ -42,13 +46,21 @@ public final class Terrain {
     public static Terrain of(BiomeManager biomes) {
         ShelterRoads roads = biomes.getRoads();
         GridPoint2 at = new GridPoint2();
-        return new Terrain(RADIUS, (x, y) -> {
+        Terrain t = new Terrain(RADIUS, (x, y) -> {
             at.set(x, y);
             if (!biomes.isOpenLand(at)) return 0;
             if (roads != null && onRoad(roads, x, y)) return ROAD_TURNS;
             Biome b = biomes.getBiome(at);
             return b == Biome.TUNDRA || b == Biome.BLIGHT ? ROUGH_TURNS : OFF_ROAD_TURNS;
         });
+        t.roads = roads;
+        for (int y = -RADIUS; y <= RADIUS; y++) {
+            for (int x = -RADIUS; x <= RADIUS; x++) {
+                at.set(x, y);
+                t.blighted[t.index(x, y)] = biomes.getBiome(at) == Biome.BLIGHT;
+            }
+        }
+        return t;
     }
 
     /** Roads are straight spokes from the maze, so a chunk is on one if it lies beside that line. */
@@ -62,6 +74,25 @@ public final class Terrain {
             if (dx * dx + dy * dy <= CORRIDOR * CORRIDOR) return true;
         }
         return false;
+    }
+
+    /** The shelter nearest (x, y) on the road ending at a seat, or null if no road ends there (A11). */
+    public GridPoint2 shelterOnRoadTo(int seatX, int seatY, int x, int y) {
+        if (roads == null) return null;
+        GridPoint2 best = null;
+        for (ShelterRoads.Road r : roads.getRoads()) {
+            GridPoint2 end = r.getEnd();
+            if (end.x != seatX || end.y != seatY) continue;
+            for (GridPoint2 s : r.getShelters()) {
+                if (!passable(s.x, s.y)) continue;
+                if (best == null || Math.max(Math.abs(s.x - x), Math.abs(s.y - y)) < Math.max(Math.abs(best.x - x), Math.abs(best.y - y))) best = s;
+            }
+        }
+        return best;
+    }
+
+    public boolean blightedAt(int index) {
+        return blighted[index];
     }
 
     public boolean contains(int x, int y) {

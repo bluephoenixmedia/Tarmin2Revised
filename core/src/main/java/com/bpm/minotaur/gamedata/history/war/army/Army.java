@@ -54,6 +54,18 @@ public class Army {
     public int marchFromX;
     public int marchFromY;
     public int marchStep;
+    /** A party sent in peacetime: it burns and goes home, and no one's armies are at war with it. */
+    public boolean peaceRaid;
+    /** The Season a raid or Hunting Party goes home, or -1. */
+    public int homeBySeason = -1;
+    /** A host sends one raid until it next goes home. */
+    public boolean raidSent;
+    /** Foragers: the host they return to, and the war turn they turn back; -1 otherwise. */
+    public int backTo = -1;
+    public long turnBackAt = -1;
+    /** Chunks crossed this Season and last, packed by {@link WarRoster#packed}, for those who read the land (A29). */
+    public int[] trail = new int[0];
+    public int[] trailLast = new int[0];
     /** Fighting: it holds its ground until the battle in its chunk ends. */
     public boolean battle;
     /** The enemy armies it has already seen: a new one makes it think again. */

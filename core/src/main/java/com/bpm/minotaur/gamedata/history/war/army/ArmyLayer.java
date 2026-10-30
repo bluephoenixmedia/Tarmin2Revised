@@ -34,6 +34,18 @@ public final class ArmyLayer {
     private final Pathfinder paths;
     private final Consumer<PlayerDeed> deeds;
     private long battlesEnded;
+    private PlayerWatch watch;
+
+    /**
+     * What the one part of the war that aims at the player needs to know (A12): nothing else in
+     * this layer reads the player, and a world with nobody watching runs the same without it.
+     */
+    public interface PlayerWatch {
+        /** The chunk the player stands in on the surface, or null if they are below. */
+        GridPoint2 surfaceChunk();
+
+        boolean countsPlayerAnEnemy(int houseId);
+    }
     private SeatMap seats;
     /** Where each house sits, by id, so that asking every turn makes no garbage; {@link #NO_SEAT} if nowhere. */
     private int[] seatXs = new int[0];
@@ -59,6 +71,10 @@ public final class ArmyLayer {
         return roster;
     }
 
+    public void watch(PlayerWatch watch) {
+        this.watch = watch;
+    }
+
     /** Battles ended so far, for the war simulation's report. */
     public long battlesEnded() {
         return battlesEnded;
@@ -82,7 +98,7 @@ public final class ArmyLayer {
             roster.reconcile(world);
         }
         if (seats == null) return;
-        if (newSeason) sueForPeace();
+        if (newSeason) newSeason(clock);
         if (newSeason || clock % ArmyTuning.MUSTER_EVERY == 0 || roster.nextArmyId == 1) muster(clock);
         List<Army> armies = roster.armies;
         for (int i = 0; i < armies.size(); i++) {
@@ -92,8 +108,230 @@ public final class ArmyLayer {
             march(a, clock);
             if (armies.size() <= i || armies.get(i) != a) i--; // it disbanded
         }
+        logistics(clock);
         contacts();
         for (int i = roster.battles.size() - 1; i >= 0; i--) stepBattle(roster.battles.get(i), clock);
+        noteThePlayer();
+    }
+
+    private void newSeason(long clock) {
+        settleAttrition();
+        sueForPeace();
+        for (int guard = 0; guard < ArmyTuning.WAR_FLOOR; guard++) {
+            PlayerDeed declared = com.bpm.minotaur.gamedata.history.HistorySimulator.warPressure(world, ArmyTuning.WAR_FLOOR);
+            if (declared == null) break;
+            deeds.accept(declared);
+        }
+        for (int i = roster.armies.size() - 1; i >= 0; i--) {
+            Army a = roster.armies.get(i);
+            if (a.homeBySeason >= 0 && season >= a.homeBySeason && !a.battle) roster.armies.remove(i);
+            else {
+                a.trailLast = a.trail;
+                a.trail = new int[0];
+            }
+        }
+        peaceRaids(clock);
+        sendHunters();
+    }
+
+    // ---------- the land's toll (A27) ----------
+
+    private void settleAttrition() {
+        for (int i = 0; i < roster.attritionHouses.length; i++) {
+            PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.ARMY_ATTRITION, roster.attritionHouses[i], world.liveSeasons());
+            deed.deadCounts = new int[] {roster.attritionDead[i]};
+            deeds.accept(deed);
+        }
+        roster.attritionHouses = new int[0];
+        roster.attritionDead = new int[0];
+    }
+
+    /** The chance per chunk rises with distance from the centre; the Blight triples it, but not for the Host that made it. */
+    private void payTheLand(Army a, long clock, int chunk) {
+        House h = world.house(a.houseId);
+        boolean blight = terrain.blightedAt(chunk);
+        if (blight && h != null && h.holdsCastle) return;
+        int d = Math.max(Math.abs(a.x), Math.abs(a.y));
+        float t = Math.max(0f, Math.min(1f, (d - ArmyTuning.ATTRITION_NEAR_DISTANCE) / (float) (ArmyTuning.ATTRITION_FAR_DISTANCE - ArmyTuning.ATTRITION_NEAR_DISTANCE)));
+        float chance = ArmyTuning.ATTRITION_NEAR + (ArmyTuning.ATTRITION_FAR - ArmyTuning.ATTRITION_NEAR) * t;
+        if (blight) chance *= ArmyTuning.BLIGHT_ATTRITION;
+        if (new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (a.id * 0xD6E8FEB86659FD93L)).nextDouble() < chance) {
+            a.soldiers--;
+            roster.addAttrition(a.houseId, 1);
+        }
+    }
+
+    // ---------- raids and hunters (A9, A11, A12) ----------
+
+    /** A party detached from a host, or raised at home. */
+    private Army party(House h, Army.Kind kind, int soldiers, int fromX, int fromY) {
+        Army p = raise(h, soldiers, kind);
+        p.captainId = -1;
+        p.x = fromX;
+        p.y = fromY;
+        p.marchFromX = fromX;
+        p.marchFromY = fromY;
+        return p;
+    }
+
+    private void sendRaid(Army host, House enemy, War war) {
+        House h = world.house(host.houseId);
+        boolean detached = host.soldiers >= ArmyTuning.MIN_ARMY + ArmyTuning.RAID_SIZE;
+        if (detached) host.soldiers -= ArmyTuning.RAID_SIZE;
+        host.raidSent = true;
+        Army r = party(h, Army.Kind.RAID, ArmyTuning.RAID_SIZE, detached ? host.x : seatXs[h.id], detached ? host.y : seatYs[h.id]);
+        r.warId = war.id;
+        r.levyOf = host.levyOf;
+        r.homeBySeason = season + 1;
+        marchOnLands(r, enemy, host.x, host.y);
+    }
+
+    private void marchOnLands(Army r, House enemy, int fromX, int fromY) {
+        r.objective = Army.Objective.RAID;
+        if (!hasSeat(enemy.id)) return;
+        int ex = seatXs[enemy.id], ey = seatYs[enemy.id];
+        GridPoint2 shelter = enemy.isGreat() ? terrain.shelterOnRoadTo(ex, ey, fromX, fromY) : null;
+        if (shelter != null) {
+            goTo(r, shelter.x, shelter.y);
+            return;
+        }
+        for (int ring = 1; ring < 4; ring++) {
+            for (int dy = -ring; dy <= ring; dy++) {
+                for (int dx = -ring; dx <= ring; dx++) {
+                    if ((dx != 0 || dy != 0) && terrain.passable(ex + dx, ey + dy)) {
+                        goTo(r, ex + dx, ey + dy);
+                        return;
+                    }
+                }
+            }
+        }
+        goTo(r, ex, ey);
+    }
+
+    /** Peace is never total silence: a free house may burn the lands of one it hates (W7, A9). */
+    private void peaceRaids(long clock) {
+        for (int i = 0; i < houses.size(); i++) {
+            House h = houses.get(i);
+            if (h.isExtinct() || h.liegeId >= 0 || h.holdsCastle || !hasSeat(h.id) || world.activeWarCount(h.id) > 0) continue;
+            if (spare(h) < ArmyTuning.RAID_SIZE) continue;
+            House target = null;
+            float worst = ArmyTuning.PEACE_RAID_GRUDGE;
+            for (int j = 0; j < houses.size(); j++) {
+                House t = houses.get(j);
+                if (t == h || t.isExtinct() || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
+                float g = world.grudgeWeight(h.id, t.id);
+                if (g > worst) {
+                    worst = g;
+                    target = t;
+                }
+            }
+            if (target == null) continue;
+            SplittableRandom rng = new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (h.id * 0xA0761D6478BD642FL));
+            if (rng.nextDouble() >= ArmyTuning.PEACE_RAID_CHANCE) continue;
+            Army r = party(h, Army.Kind.RAID, ArmyTuning.RAID_SIZE, seatXs[h.id], seatYs[h.id]);
+            r.peaceRaid = true;
+            r.homeBySeason = season + 1;
+            marchOnLands(r, target, r.x, r.y);
+        }
+    }
+
+    /** The one place the player is read, beside {@link #noteThePlayer}: an Enemy's armies report where they saw them. */
+    private void sendHunters() {
+        if (watch == null) return;
+        for (int i = 0; i < houses.size(); i++) {
+            House h = houses.get(i);
+            if (h.isExtinct() || !hasSeat(h.id) || !watch.countsPlayerAnEnemy(h.id)) continue;
+            sendHuntersOf(h);
+        }
+    }
+
+    /** A party from house {@code h}, toward where its armies last saw the player; none if they never have. */
+    private void sendHuntersOf(House h) {
+        int[] seen = roster.playerSeenBy(h.id);
+        if (seen == null || spare(h) < ArmyTuning.RAID_SIZE) return;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army o = roster.armies.get(i);
+            if (o.houseId == h.id && o.kind == Army.Kind.HUNTING_PARTY) return;
+        }
+        Army p = party(h, Army.Kind.HUNTING_PARTY, ArmyTuning.RAID_SIZE, seatXs[h.id], seatYs[h.id]);
+        p.homeBySeason = season + ArmyTuning.HUNT_SEASONS;
+        p.objective = Army.Objective.HUNT;
+        goTo(p, seen[1], seen[2]);
+    }
+
+    private void noteThePlayer() {
+        if (watch == null) return;
+        GridPoint2 at = watch.surfaceChunk();
+        if (at == null) return;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            if (cheb(a.x, a.y, at.x, at.y) <= ArmyTuning.SIGHT) roster.notePlayerSeen(a.side(), at.x, at.y);
+        }
+    }
+
+    // ---------- supply and forage (A10) ----------
+
+    private void logistics(long clock) {
+        int count = roster.armies.size();
+        for (int i = 0; i < count && i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            if (a.battle) continue;
+            if (a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY) {
+                if ((clock + a.id) % ArmyTuning.SUPPLY_EVERY == 0) sendSupply(a);
+                if ((clock + a.id * 7L) % ArmyTuning.FORAGE_EVERY == 0) sendForagers(a, clock);
+            }
+        }
+        for (int i = roster.armies.size() - 1; i >= 0; i--) {
+            Army c = roster.armies.get(i);
+            if (c.battle) continue;
+            if (c.kind == Army.Kind.SUPPLY) {
+                Army t = roster.army(c.targetArmy);
+                if (t == null) roster.armies.remove(i);
+                else if (t.x == c.x && t.y == c.y) mergeInto(c, t, i);
+                else if ((clock + c.id) % ArmyTuning.RETARGET_EVERY == 0 && (t.x != c.targetX || t.y != c.targetY)) goTo(c, t.x, t.y);
+            } else if (c.kind == Army.Kind.FORAGERS && clock >= c.turnBackAt) {
+                Army t = roster.army(c.backTo);
+                if (t == null) roster.armies.remove(i);
+                else if (t.x == c.x && t.y == c.y) mergeInto(c, t, i);
+                else if ((clock + c.id) % ArmyTuning.RETARGET_EVERY == 0 && (t.x != c.targetX || t.y != c.targetY)) goTo(c, t.x, t.y);
+            }
+        }
+    }
+
+    private void mergeInto(Army party, Army host, int index) {
+        host.soldiers += party.soldiers;
+        host.startSoldiers = Math.max(host.startSoldiers, host.soldiers);
+        roster.armies.remove(index);
+    }
+
+    private void sendSupply(Army a) {
+        if (a.soldiers >= ArmyTuning.ARMY_SIZE || atSeat(a) || !hasSeat(a.houseId)) return;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army o = roster.armies.get(i);
+            if (o.kind == Army.Kind.SUPPLY && o.targetArmy == a.id) return;
+        }
+        House h = world.house(a.houseId);
+        int n = Math.min(ArmyTuning.ARMY_SIZE - a.soldiers, spare(h));
+        if (n < ArmyTuning.SUPPLY_MIN) return;
+        Army c = party(h, Army.Kind.SUPPLY, n, seatXs[h.id], seatYs[h.id]);
+        c.warId = a.warId;
+        c.levyOf = a.levyOf;
+        c.targetArmy = a.id;
+        goTo(c, a.x, a.y);
+    }
+
+    private void sendForagers(Army a, long clock) {
+        if (a.soldiers <= ArmyTuning.FORAGE_SIZE + ArmyTuning.MIN_ARMY) return;
+        SplittableRandom rng = new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (a.id * 0xE7037ED1A0B428DBL));
+        int dx = rng.nextInt(5) - 2, dy = rng.nextInt(5) - 2;
+        if ((dx == 0 && dy == 0) || !terrain.passable(a.x + dx, a.y + dy)) return;
+        a.soldiers -= ArmyTuning.FORAGE_SIZE;
+        Army f = party(world.house(a.houseId), Army.Kind.FORAGERS, ArmyTuning.FORAGE_SIZE, a.x, a.y);
+        f.warId = a.warId;
+        f.levyOf = a.levyOf;
+        f.backTo = a.id;
+        f.turnBackAt = clock + ArmyTuning.FORAGE_TURNS;
+        goTo(f, a.x + dx, a.y + dy);
     }
 
     // ---------- battles: one state, watched or not (A20) ----------
@@ -307,9 +545,11 @@ public final class ArmyLayer {
             Army a = roster.army(id);
             if (a == null) continue;
             a.battle = false;
-            if (a.soldiers < ArmyTuning.MIN_ARMY) {
+            boolean host = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
+            if (!host || a.soldiers < ArmyTuning.MIN_ARMY) {
                 roster.armies.remove(a);
             } else {
+                a.raidSent = false;
                 a.morale = 30;
                 goHome(a, Army.Objective.RECOVER);
             }
@@ -407,6 +647,12 @@ public final class ArmyLayer {
                 a.x = terrain.xOf(next);
                 a.y = terrain.yOf(next);
                 a.marchStep++;
+                a.trail = ArmyBattle.append(a.trail, WarRoster.packed(a.x, a.y));
+                payTheLand(a, clock, next);
+                if (a.soldiers <= 0) {
+                    roster.armies.remove(a);
+                    return;
+                }
                 if (a.marchStep == a.path.length) arrive(a, clock);
             }
         } else if ((clock + a.id) % ArmyTuning.IDLE_EVERY == 0) {
@@ -481,6 +727,12 @@ public final class ArmyLayer {
     }
 
     private void arrive(Army a, long clock) {
+        if (a.kind == Army.Kind.HUNTING_PARTY) {
+            int[] seen = roster.playerSeenBy(a.houseId);
+            if (seen != null && (seen[1] != a.x || seen[2] != a.y)) goTo(a, seen[1], seen[2]);
+            return;
+        }
+        if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return;
         if (a.objective == Army.Objective.SEAT) {
             House holder = holderOfSeatAt(a);
             if (holder != null) {
@@ -637,6 +889,7 @@ public final class ArmyLayer {
 
     /** Thinks again: only ever on an event, never on a timer of its own. */
     void decide(Army a, long clock) {
+        if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return; // a party keeps its errand
         House h = world.house(a.houseId);
         if (h == null) return;
         War war = war(a);
@@ -670,7 +923,7 @@ public final class ArmyLayer {
             float garrison = roster.garrison(world, enemyId);
             float ratio = a.soldiers / (garrison * ArmyTuning.WALL_EDGE + 1f);
             int d = cheb(a.x, a.y, enemySeat.x, enemySeat.y);
-            float score = 0.6f + (has(a, Trait.AMBITIOUS) ? 0.5f : 0f) + 0.4f * Math.min(ratio, 2f) - d / 80f
+            float score = 0.6f + (has(a, Trait.AMBITIOUS) ? 0.5f : 0f) + 0.4f * Math.min(ratio, 2f) - d / ArmyTuning.SEAT_DISTANCE
                     - (has(a, Trait.PATIENT) && ratio < 1.5f ? 0.8f : 0f) + (has(a, Trait.ZEALOT) ? 0.2f : 0f)
                     + (float) rng.nextDouble() * 0.15f;
             if (score > bestScore) {
@@ -679,6 +932,12 @@ public final class ArmyLayer {
                 tx = enemySeat.x;
                 ty = enemySeat.y;
             }
+        }
+        // A host of the usual size has none to spare, so its party comes up from the garrison.
+        boolean canRaid = a.soldiers >= ArmyTuning.MIN_ARMY + ArmyTuning.RAID_SIZE || spare(h) >= ArmyTuning.RAID_SIZE;
+        if (!has(a, Trait.HONOURABLE) && !a.raidSent && canRaid && enemy != null && !enemy.isExtinct()) {
+            float raid = 0.3f + (has(a, Trait.CUNNING) ? 0.5f : 0f) + (has(a, Trait.CRUEL) ? 0.4f : 0f) + (float) rng.nextDouble() * 0.35f;
+            if (raid > bestScore || has(a, Trait.CUNNING) || has(a, Trait.CRUEL)) sendRaid(a, enemy, war);
         }
         Army nearest = nearestKnownEnemy(a);
         if (nearest != null) {
@@ -745,6 +1004,7 @@ public final class ArmyLayer {
     // ---------- what an army knows (A5) ----------
 
     private boolean hostile(Army a, Army e) {
+        if (a.peaceRaid || e.peaceRaid) return false;
         int x = a.side(), y = e.side();
         if (x == y) return false;
         for (int i = 0; i < wars.size(); i++) {
