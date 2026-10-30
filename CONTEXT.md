@@ -6,7 +6,7 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 **The story is revenge.** Each Incarnation is a condemned prisoner, taken in a raid by Tarmin's Antlered Host or tithed to the maze by a mortal kingdom, in whom the soul of an **Eternal Champion** wakes, in Michael Moorcock's sense. Tarmin is building the **Bridge of Souls** out of those who die in the maze, to cross into the mortal world. The **old gods** keep the Champion's soul whole and send it back into a new prisoner after every death, against him, yet every death still pays his Bridge. Unarmoured and carrying only the Father's Sword, the soul wants Tarmin and his maze dead, at any cost.
 
 ## High-Level Game Loop: The Expedition Loop
-1. **The Shelter (Camp)**: A safe 4x4 sanctuary where the player rests, cooks monster parts, crafts and repairs gear, identifies unknown items, and spends XP/Divinity to level up stats and skills.
+1. **The Shelter**: A safe 4x4 sanctuary where the player rests, cooks monster parts, crafts and repairs gear, identifies unknown items, and spends XP/Divinity to level up stats and skills.
 2. **The Expedition**: The player ventures into overland biomes (Forest, Plains, Ruins) or descends vertically into underground strata (Caves of Qud / Dwarf Fortress vertical strata descent available on any chunk).
 3. **Tactical Combat**: Fast turn-based grid combat (bump-to-attack, archery/thrown weapons, tactical spells). Underlying damage calculation honors the classic War vs Spiritual duality.
 4. **Death & Stakes**: Death is permanent for the Incarnation, as in NetHack: its level, stats and carried gear are lost, and the gear and bones stay at the death tile. The Eternal Champion is reborn at the Shelter as a new Incarnation, keeping only what the soul and the world remember. Every death feeds Tarmin's Hunger.
@@ -77,11 +77,20 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Court**: A seal lord and its **retainers** (the house's sworn swords) in the strata beneath a seal site. A court never leaves its gash.
 - **Epithet**: A name the chronicle gives a figure, which depends on who tells it ("the Steadfast" to their own house, "the Usurper" to others). The player earns one too.
 - **Doctrine**: A house's authored creed. It sets the house's soldiers, palette, gash interior and chronicler voice.
+- **Sigil**: A house's blazon in words: a charge from its doctrine, on its field colour, then a second colour of its own and how the field is divided ("an open mouth singing on bone white and tarnished gold, per pale"). Chronicles quote it.
+- **Arms**: A house's sigil drawn as a shield, its border in the doctrine's colour. Every house has its own, great or lesser; a gash has none. Shown over each of the house's soldiers and as its armies' mark on the map; an army's captain carries it as a banner.
+- **Army**: A house's host in the field, with a place on the overland map, a strength and an objective. It marches, camps, raids and fights other armies whether or not the player is near, and what it wins or loses is history. _Avoid_: "war band" for a whole army; a war band is the part of an army fighting in one chunk.
+- **Strength**: A house's whole force, counted in soldiers: its armies in the field plus its garrison at home. Only the dead lower it; mustering and disbanding only move soldiers between field and home.
+- **Siege**: An army camped around an enemy seat: the garrison starves, the walls wear down and the besiegers build their works (ladders, a ram) until they assault, a relief drives them off, or they leave. Castle Tarmin can be besieged but never falls to a house.
+- **Sally**: A garrison striking out from a besieged seat against the camp around it.
+- **Garrison**: The part of a house's strength left at its seat. It defends the seat against an army that marches on it, and refills the house's armies.
+- **Captain**: The named figure leading an army: the lord, the heir or a sworn sword. When an army routs, its captain is slain, taken hostage or escapes.
+- **Levy**: The army a vassal musters for its liege's war. It follows the liege's army under the vassal's own arms, and the liege's enemy is its enemy.
 - **Casus Belli**: The recorded reason a house declared war.
-- **Season**: One political tick of the history, which happens once per shelter sleep.
-- **War Clock**: The turn-based clock that moves fronts and resolves battles. It is separate from the Doom Clock.
-- **Front**: A moving zone of war on the overland map, between two warring houses.
-- **Battle**: A front engaging the player's current chunk.
+- **Season**: One political tick of the history. It passes with every sleep, at the Shelter or a Bivouac, and every so often while the seeker is still awake in the field.
+- **War Clock**: The turn-based clock that moves armies and resolves battles. It runs whether or not the player is near, and a sleep advances it. It is separate from the Doom Clock.
+- **Front**: Where two warring houses' armies are meeting on the overland map.
+- **Battle**: Armies fighting in one chunk. It goes on whether or not the player is there; one who walks in finds it as far along as it got.
 - **Rout**: The end of a battle, when one side's reserve and morale both collapse.
 - **Melee Spill**: A soldier breaking off from the battle to attack the player.
 - **Fragment**: A found piece of history (tome, banner, proclamation, rumour, trophy) that unlocks chronicle entries at the Archive Lectern.
@@ -89,8 +98,8 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 - **Megabeast**: A named, unique creature of the history, with a lair in the strata.
 - **Town**: A persistent underground settlement owing allegiance to a mortal power.
 - **Suborned**: Said of a town secretly serving a Maze house.
-- **Seat**: Where a house sits on the overland map: a great house at its gash's seal site, Tarmin-Zul at the castle, a lesser house at a holdfast placed from the world seed. Fronts run between seats.
-- **War Band**: The soldiers of a battle. They march on when it ends, or when the player leaves; they are never saved with a chunk.
+- **Seat**: Where a house sits on the overland map: a great house at its gash's seal site, Tarmin-Zul at the castle, a lesser house at a holdfast placed from the world seed, always on open land. Armies march on seats, and fronts run between them.
+- **War Band**: The soldiers of a battle the player can see: each side's line, refilled from its reserve. When the player leaves, the battle goes on as numbers; a war band is never saved with a chunk.
 - **Volley / Charge**: A battle's hazards, marked on the ground a turn before they land.
 - **Spoils**: What a broken army leaves for a player who stayed: arms of the fallen, a signet ring (a trophy, kept and sold), a torn banner, and a fallen lord's own blade.
 - **Lair / Hunt**: A megabeast's home chunk and level, and its pursuit of the player through gates and ladders. A megabeast is never saved with a chunk; only its wounds and its hunt are kept.
@@ -104,16 +113,21 @@ See `docs/DEsign/Implementation Plan_ The Houses of the Maze.md`.
 
 ### The Living War
 
-- **Encounter**: A scheduled piece of the surface war: a skirmish, a marching column, a raiding party, a war camp, an aftermath field or a siege. Scheduled from the seed, the war clock and the chunk, never saved; not history unless the player takes part.
+- **Encounter**: What the player meets of the surface war: an army marching (a column), halted (a war camp), raiding, fighting (a skirmish or battle), besieging, or the aftermath it left. Never placed for the player's sake; it is wherever the armies are.
 - **Skirmish**: Two war-bands of 6-10 meeting in a chunk and fighting until one routs. Smaller than a battle, and far more common.
 - **Column**: Soldiers of one house marching in file between its seat and a front, crossing chunks.
-- **Raid**: A small party of one house burning another's ground; in peacetime too, between houses that bear a grudge.
+- **Supply Column**: Soldiers marching from a house's seat to refill one of its armies in the field. Foragers are the reverse: a few of an army's soldiers sent a chunk or two out and back for food. Both are real, and can be met, fought or cut off.
+- **Raid**: A small party detached from an army to burn an enemy holdfast's lands or waylay the enemy's road, taking nothing; in peacetime too, between houses that bear a grudge. Raiders may camp outside a road shelter, never inside it.
+- **Hunting Party**: A raid sent after the player by a house that counts them an Enemy, toward where its armies last saw them. The only part of the war that aims at the player.
 - **War Camp**: A house's tents, fires and sentries near a front, for as long as its war lasts.
-- **Aftermath**: A battlefield left behind: the dead, crows, burnt ground and broken banners, for three sleeps.
+- **Aftermath**: A battlefield left behind, watched or not: the dead, crows, burnt ground and broken banners, for three sleeps.
+- **Bivouac**: A portable camp the player pitches outside the Shelter to sleep in the field. The world moves as far as it does for a Shelter sleep, but none of the Shelter's services or safety come with it: armies and roaming monsters can find a sleeper, and strike before they wake. _Avoid_: "camp", which is ambiguous with the War Camp.
+- **Ward**: A protection laid over a Bivouac for one night, crafted or cast: a Shield soaks the first blows, an Alarm wakes the sleeper before anything is close, and Concealment hides them from all but clever or magical eyes. Wards stack.
 - **Earshot**: How many chunks off a fight is heard: steel and screams next door, horns and drums two or three chunks off, a lone horn out to six. Underground it is a rumble through the stone.
 - **Favour**: A house's regard for the player, from Enemy to Friend.
 - **Sworn**: Bound to a house by its oath: its colours, its contracts, its enemies.
-- **Contract**: A task a sworn house gives the player: hold a chunk, kill a captain, escort a column, burn a camp.
+- **Following**: The player marching with a host of their liege, at its pace and in its line, never steering it. _Avoid_: "joining", which is joining a battle.
+- **Contract**: A task a sworn house sets against a named thing of the war: a host, a captain, a column, a camp or a seat. Void if the thing is gone before the player gets to it.
 - **Herald**: A house's courier on the roads between seats, carrying a proclamation.
 - **Siege / Breach**: A house laying siege to Castle Tarmin, and the gap in its wall that stays open while the siege lasts.
 
