@@ -2718,6 +2718,7 @@ public class GameScreen extends BaseScreen {
         DoomManager.getInstance().resetExpeditionTurns();
 
         java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
+        worldManager.sleepThroughWar();
         if (worldManager != null && worldManager.getDayNightManager() != null) {
             com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
             if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
@@ -3280,6 +3281,7 @@ public class GameScreen extends BaseScreen {
         worldManager.processTurn(player, turnCount);
         // The wars go on, on the surface and in the strata alike, and may reach the player.
         worldManager.getHistory().tickWarClock();
+        worldManager.marchArmies();
         tickWar();
         tollKnell();
         com.bpm.minotaur.gamedata.history.town.Town town = worldManager.townHere();
@@ -5253,6 +5255,7 @@ public class GameScreen extends BaseScreen {
             DoomManager.getInstance().resetExpeditionTurns();
             // A season passes in the Maze while the player sleeps; they wake to its news.
             java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = worldManager.getHistory().onSleep();
+            worldManager.sleepThroughWar();
             // This shelter is now the one the player wakes in.
             if (currentLevel() == 1) {
                 com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()

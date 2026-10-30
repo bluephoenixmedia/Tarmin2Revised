@@ -1478,6 +1478,36 @@ public class WorldManager {
         return -1;
     }
 
+    /** The armies on this world's overland (Living War A1), rebuilt when the world is reborn. Null without roads. */
+    private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armies() {
+        if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
+        if (armyLayer == null || armyLayerBiomes != biomeManager || armyLayerHistory != getHistory()) {
+            armyLayer = new com.bpm.minotaur.gamedata.history.war.army.ArmyLayer(getHistory().world(),
+                    com.bpm.minotaur.gamedata.history.war.army.Terrain.of(biomeManager), this::houseSeats, getHistory().roster());
+            armyLayerBiomes = biomeManager;
+            armyLayerHistory = getHistory();
+        }
+        return armyLayer;
+    }
+
+    private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armyLayer;
+    private BiomeManager armyLayerBiomes;
+    private HistoryManager armyLayerHistory;
+
+    /** One war turn for the armies, wherever the player is. */
+    public void marchArmies() {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.tick(getHistory().warClock());
+    }
+
+    /** The war goes on while the seeker sleeps (Living War A58): every turn at full detail. */
+    public void sleepThroughWar() {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        getHistory().sleepThroughWar(clock -> {
+            if (layer != null) layer.tick(clock);
+        });
+    }
+
     /**
      * Where the houses sit in this world, or null in a world laid out before the shelter roads,
      * which has no seal sites to seat them at.

@@ -24,6 +24,7 @@ public final class HistoryManager {
     private final List<PlayerDeed> deeds = new ArrayList<>();
     private final Set<Integer> unlocked = new LinkedHashSet<>();
     private long warClock;
+    private com.bpm.minotaur.gamedata.history.war.army.WarRoster roster = new com.bpm.minotaur.gamedata.history.war.army.WarRoster();
     private final java.util.Map<Integer, Integer> beastHp = new java.util.HashMap<>();
     private com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
     private final java.util.Set<String> townsFound = new java.util.LinkedHashSet<>();
@@ -78,6 +79,10 @@ public final class HistoryManager {
         }
         m.hunt = save.hunt;
         if (save.encounters != null) m.encounters = save.encounters;
+        if (save.roster != null) {
+            m.roster = save.roster;
+            m.roster.reconcile(m.world);
+        }
         if (save.favourHouses != null && save.favourValues != null) {
             for (int i = 0; i < Math.min(save.favourHouses.size(), save.favourValues.size()); i++) {
                 m.favour.set(save.favourHouses.get(i), save.favourValues.get(i));
@@ -472,6 +477,25 @@ public final class HistoryManager {
         if (warClock % SEASON_TURNS == 0) HistorySimulator.tickSeason(world, catalog);
     }
 
+    /** War turns a sleep passes (Living War A58), half a waking Season. */
+    public static final int SLEEP_TURNS = 250;
+
+    /**
+     * The war clock runs on through a sleep. The sleep's own Season has already passed, so no waking
+     * Season falls inside it; the armies march every turn of it, by {@code eachTurn}.
+     */
+    public void sleepThroughWar(java.util.function.LongConsumer eachTurn) {
+        for (int i = 0; i < SLEEP_TURNS; i++) {
+            warClock++;
+            eachTurn.accept(warClock);
+        }
+    }
+
+    /** Every army in the field. */
+    public com.bpm.minotaur.gamedata.history.war.army.WarRoster roster() {
+        return roster;
+    }
+
     /** Turns of the war clock to a season of the Maze, when the seeker does not sleep. */
     public static final int SEASON_TURNS = 500;
 
@@ -611,6 +635,7 @@ public final class HistoryManager {
         }
         save.hunt = hunt;
         save.encounters = encounters;
+        save.roster = roster;
         for (java.util.Map.Entry<Integer, Integer> e : favour.all().entrySet()) {
             save.favourHouses.add(e.getKey());
             save.favourValues.add(e.getValue());
