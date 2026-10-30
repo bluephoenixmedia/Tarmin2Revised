@@ -161,7 +161,7 @@ public class EncounterSchedulerTest {
         HistoryManager h = HistoryManager.create(21L, catalog);
         HistoryWorld w = h.world();
         GridPoint2 castle = new GridPoint2(0, 30);
-        SeatMap seats = SeatMap.of(w, new com.bpm.minotaur.generation.ShelterRoads(21L, castle), castle, 21L);
+        SeatMap seats = SeatMap.of(w, new com.bpm.minotaur.generation.ShelterRoads(21L, castle), castle, 21L, c -> true);
         EncounterLedger ledger = new EncounterLedger();
         int checked = 0;
         for (long t = 0; t < 8000 && checked < 5; t++) {
@@ -259,7 +259,7 @@ public class EncounterSchedulerTest {
         HistoryManager h = HistoryManager.create(19L, catalog);
         HistoryWorld w = h.world();
         SeatMap seats = SeatMap.of(w, new com.bpm.minotaur.generation.ShelterRoads(19L, new GridPoint2(0, 30)),
-                new GridPoint2(0, 30), 19L);
+                new GridPoint2(0, 30), 19L, c -> true);
         List<Encounter> camps = EncounterScheduler.camps(w, seats);
         assertFalse(camps.isEmpty());
         for (Encounter c : camps) {

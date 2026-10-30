@@ -53,7 +53,7 @@ public class WarManagerTest {
         ground.chunk = new GridPoint2(5, 5);
         ground.level = 1;
         ground.front = new Front(war.id, war.attackerId, war.defenderId, ground.chunk);
-        ground.seats = SeatMap.of(history.world(), new ShelterRoads(1L, new GridPoint2(0, 50)), new GridPoint2(0, 50), 1L);
+        ground.seats = SeatMap.of(history.world(), new ShelterRoads(1L, new GridPoint2(0, 50)), new GridPoint2(0, 50), 1L, c -> true);
         ground.maze = new Maze(1, new int[36][36]);
         ground.playerTile = new GridPoint2(18, 18);
     }

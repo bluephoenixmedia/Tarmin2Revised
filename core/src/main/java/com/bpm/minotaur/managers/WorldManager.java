@@ -1485,7 +1485,7 @@ public class WorldManager {
     public com.bpm.minotaur.gamedata.history.war.SeatMap houseSeats() {
         if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
         return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
-                biomeManager.getCastleSite(), worldSeed);
+                biomeManager.getCastleSite(), worldSeed, biomeManager::isOpenLand);
     }
 
     /**
