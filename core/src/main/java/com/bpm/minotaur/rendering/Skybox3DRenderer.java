@@ -461,7 +461,7 @@ public class Skybox3DRenderer {
         com.badlogic.gdx.math.GridPoint2 me = new com.badlogic.gdx.math.GridPoint2(chunk);
         for (com.bpm.minotaur.gamedata.history.war.Front f : worldManager.currentFronts()) {
             addSmoke(f.center, px, py, WAR_SMOKE_RANGE);
-            int distToFront = Math.max(0, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, f.center)
+            int distToFront = Math.max(0, com.bpm.minotaur.gamedata.history.war.Encounter.distance(me, f.center)
                     - com.bpm.minotaur.gamedata.history.war.Front.RADIUS);
             if (distToFront <= 1) addVolley(f.center, px, py);
             if (distToFront <= 2) {
@@ -472,8 +472,8 @@ public class Skybox3DRenderer {
         for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
             if (!e.fighting()) continue;
             com.badlogic.gdx.math.GridPoint2 at = e.chunkAt(clock);
-            addSmoke(at, px, py, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.EARSHOT);
-            int dist = com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, at);
+            addSmoke(at, px, py, com.bpm.minotaur.gamedata.history.war.WarSoundscape.EARSHOT);
+            int dist = com.bpm.minotaur.gamedata.history.war.Encounter.distance(me, at);
             if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT && dist <= 1) {
                 addVolley(at, px, py);
             }

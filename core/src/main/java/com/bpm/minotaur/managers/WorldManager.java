@@ -1877,20 +1877,12 @@ public class WorldManager {
     }
 
     /**
-     * Every war's front right now, and the pitched battle an expedition brings to the player (Living
-     * War W4); empty in a world with no seats.
+     * Every war's front right now; empty in a world with no seats.
      */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
         com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
         if (seats == null) return java.util.Collections.emptyList();
-        java.util.List<com.bpm.minotaur.gamedata.history.war.Front> fronts = new java.util.ArrayList<>(getHistory().fronts(seats));
-        long clock = getHistory().warClock();
-        for (com.bpm.minotaur.gamedata.history.war.Encounter e : currentEncounters()) {
-            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) {
-                fronts.add(new com.bpm.minotaur.gamedata.history.war.Front(e.warId, e.houseA, e.houseB, e.chunkAt(clock)));
-            }
-        }
-        return fronts;
+        return getHistory().fronts(seats);
     }
 
     private java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> encountersNow = java.util.Collections.emptyList();
@@ -1907,7 +1899,8 @@ public class WorldManager {
         long clock = history.warClock();
         if (clock != encountersAt || currentLevel != encountersLevel
                 || (currentPlayerChunkId != null && !currentPlayerChunkId.equals(encountersFor))) {
-            encountersNow = new java.util.ArrayList<>(history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats()));
+            com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+            encountersNow = layer == null ? new java.util.ArrayList<>() : layer.encounters();
             // The siege of the castle, heard and seen across the overland (W34).
             encountersNow.addAll(com.bpm.minotaur.gamedata.history.war.Siege.at(history.world(), castleSite()));
             encountersAt = clock;
@@ -1917,12 +1910,11 @@ public class WorldManager {
         return encountersNow;
     }
 
-    /** Every war's camps, one each side of its front (Living War W2); empty in a world with no seats. */
+    /** Every host that has halted, and the camps around a besieged castle; empty in a world with no seats. */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentCamps() {
-        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
-        if (seats == null) return java.util.Collections.emptyList();
-        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> camps = new java.util.ArrayList<>(
-                com.bpm.minotaur.gamedata.history.war.EncounterScheduler.camps(getHistory().world(), seats));
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer == null) return java.util.Collections.emptyList();
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> camps = layer.camps();
         camps.addAll(com.bpm.minotaur.gamedata.history.war.Siege.camps(getHistory().world(), castleSite()));
         return camps;
     }

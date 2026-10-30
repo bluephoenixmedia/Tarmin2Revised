@@ -151,7 +151,10 @@ public final class EncounterDirector {
             leave(ledger);
             chunk = here != null ? new GridPoint2(here) : null;
             chunkLevel = level;
-            if (chunk != null && maze != null && level == 1) reconcile(history, maze, camps);
+            if (chunk != null && maze != null && level == 1) {
+                reconcile(history, maze, camps);
+                readTheTrail(history, maze, props);
+            }
         }
         town = townKey;
         if (chunk == null || sanctuary || maze == null) return t;
@@ -183,6 +186,35 @@ public final class EncounterDirector {
             else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.houseA;
         }
         return t;
+    }
+
+    /**
+     * A host crossed this chunk (Living War A29): about half its natives are gone, and the same half
+     * however the chunk came to be, with their dead where they fell. Once for each Season's passing.
+     */
+    private void readTheTrail(HistoryManager history, Maze maze, Props props) {
+        if (!history.roster().onTrail(chunk.x, chunk.y)) return;
+        int season = history.world().liveSeasons();
+        String key = chunk.x + "," + chunk.y + "," + season;
+        EncounterLedger ledger = history.encounterLedger();
+        if (ledger.thinned.contains(key)) return;
+        ledger.thinned.add(key);
+        while (ledger.thinned.size() > 64) ledger.thinned.remove(0);
+        List<Monster> natives = new ArrayList<>();
+        for (Monster m : maze.getMonsters().values()) {
+            if (m != null && m.isAlive() && m.getHouseId() < 0 && m.getMegabeastId() < 0 && !m.isWarBand()) natives.add(m);
+        }
+        natives.sort(java.util.Comparator.<Monster>comparingInt(m -> (int) m.getPosition().y).thenComparingInt(m -> (int) m.getPosition().x));
+        EncounterLedger.Dressing field = dressing(AFTERMATH, ledger);
+        field.clearAtSleep = ledger.sleeps + AFTERMATH_SLEEPS;
+        for (int i = 0; i < natives.size(); i++) {
+            Monster m = natives.get(i);
+            if (!com.bpm.minotaur.gamedata.history.war.army.TrailThinning.fell(history.world().seed, chunk.x, chunk.y, season, i)) continue;
+            GridPoint2 at = new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y);
+            maze.removeMonster(m);
+            place(maze, props, "corpse_pile", at, field);
+        }
+        keep(ledger, field);
     }
 
     /** The player left the chunk: a fight under way goes on without them, and is not seen again. */
@@ -225,7 +257,7 @@ public final class EncounterDirector {
         int dy = Integer.signum(e.to.y - e.from.y);
         int w = maze.getWidth();
         int h = maze.getHeight();
-        int n = COLUMN_MIN + r.nextInt(COLUMN_MAX - COLUMN_MIN + 1);
+        int n = e.soldiers > 0 ? Math.min(e.soldiers, com.bpm.minotaur.gamedata.history.war.BattleModel.LINE) : COLUMN_MIN + r.nextInt(COLUMN_MAX - COLUMN_MIN + 1);
         for (int i = 0; i < n; i++) {
             int depth = 1 + i / 2;
             int lateral = (dx != 0 ? h : w) / 2 + (i % 2 == 0 ? 0 : 1);
@@ -526,28 +558,6 @@ public final class EncounterDirector {
         for (Monster m : s.b) struckB |= m.seekerDrewBlood();
         if (struckA == struckB) return -1;
         return struckB ? s.e.houseA : s.e.houseB;
-    }
-
-    /**
-     * A house that counts the player its enemy sends hunters after them (W18): a few of its soldiers
-     * come in at an edge of the player's chunk, already on the trail.
-     */
-    public void hunt(HistoryManager history, Maze maze, int houseId, GridPoint2 player, BattleDirector.Recruiter recruiter,
-            Turn t) {
-        if (maze == null || player == null) return;
-        HistoryWorld world = history.world();
-        Random r = new Random(world.seed ^ (history.warClock() * 0x9E3779B97F4A7C15L) ^ (houseId * 0x632BE59BD9B4E019L));
-        int edge = r.nextInt(4);
-        List<Monster> band = new ArrayList<>();
-        int n = HUNTERS_MIN + r.nextInt(HUNTERS_MAX - HUNTERS_MIN + 1);
-        for (int i = 0; i < n; i++) {
-            Monster m = enlist(band, maze, recruiter, world, houseId, edgeTile(maze, edge, r), r);
-            if (m != null) m.setLastKnownTargetPos(new GridPoint2(player));
-        }
-        if (band.isEmpty()) return;
-        band.get(0).setDisplayName("Huntmaster of " + name(world, houseId));
-        t.messages.add("Hunters of " + name(world, houseId) + " have found your trail. They mean to collect.");
-        t.cues.add(Cue.CLASH);
     }
 
     /** Whether the player drew blood in the fight: then it is theirs, and the history hears of it (W12). */

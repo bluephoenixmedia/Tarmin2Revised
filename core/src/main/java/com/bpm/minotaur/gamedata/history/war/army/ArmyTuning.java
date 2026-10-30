@@ -70,6 +70,10 @@ final class ArmyTuning {
     /** Seasons a Hunting Party stays out. */
     static final int HUNT_SEASONS = 2;
 
+    /** Seasons a herald has to reach the seat it walks to, and the most a Season's news sends. */
+    static final int HERALD_SEASONS = 2;
+    static final int HERALDS_A_SEASON = 2;
+
     private ArmyTuning() {
     }
 }

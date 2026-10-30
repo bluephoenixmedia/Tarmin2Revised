@@ -42,6 +42,13 @@ public final class Encounter {
     /** Where it begins, and where it ends; the same chunk for all but a column. */
     public final GridPoint2 from;
     public final GridPoint2 to;
+    /** The soldiers behind it, from the roster; 0 where it has no army, as below ground. */
+    public int soldiers;
+
+    /** Chebyshev distance in chunks: how far off a fight is heard from (W9). */
+    public static int distance(GridPoint2 a, GridPoint2 b) {
+        return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+    }
 
     public Encounter(Kind kind, long slot, int warId, int houseA, int houseB, long start, long end,
             GridPoint2 from, GridPoint2 to) {

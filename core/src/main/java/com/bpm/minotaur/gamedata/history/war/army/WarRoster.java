@@ -18,6 +18,8 @@ public class WarRoster {
 
     public List<Army> armies = new ArrayList<>();
     public int nextArmyId = 1;
+    /** History events already cried by heralds; -1 until armies first march (A15). */
+    public int eventsHeard = -1;
     public List<ArmyBattle> battles = new ArrayList<>();
     /** What each war's houses stood at when it began, as warId, attacker's and defender's strength. */
     public List<float[]> warStarts = new ArrayList<>();

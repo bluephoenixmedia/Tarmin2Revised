@@ -7,8 +7,10 @@ import com.bpm.minotaur.gamedata.history.House;
 import com.bpm.minotaur.gamedata.history.PlayerDeed;
 import com.bpm.minotaur.gamedata.history.Trait;
 import com.bpm.minotaur.gamedata.history.War;
+import com.bpm.minotaur.gamedata.history.war.Encounter;
 import com.bpm.minotaur.gamedata.history.war.SeatMap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.SplittableRandom;
 import java.util.function.Consumer;
@@ -132,6 +134,79 @@ public final class ArmyLayer {
         }
         peaceRaids(clock);
         sendHunters();
+        sendHeralds(clock);
+    }
+
+    // ---------- what the player can meet of it (A1, A2) ----------
+
+    /** Everything under way that is not a halted host, as it stands now. Nothing here looks at the player. */
+    public List<Encounter> encounters() {
+        List<Encounter> out = new ArrayList<>();
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            if (a.battle) continue;
+            boolean halted = a.path == null || a.marchStep >= a.path.length;
+            boolean main = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
+            if (main && halted) continue;
+            Encounter.Kind kind = a.kind == Army.Kind.HERALD ? Encounter.Kind.HERALD
+                    : a.kind == Army.Kind.RAID && halted ? Encounter.Kind.RAID : Encounter.Kind.COLUMN;
+            out.add(encounter(kind, a));
+        }
+        for (int i = 0; i < roster.battles.size(); i++) {
+            ArmyBattle b = roster.battles.get(i);
+            GridPoint2 at = new GridPoint2(b.x, b.y);
+            War w = world.activeWarBetween(b.houseA, b.houseB);
+            Encounter e = new Encounter(Encounter.Kind.SKIRMISH, b.id, w == null ? -1 : w.id, b.houseA, b.houseB, 0, Long.MAX_VALUE, at, at);
+            e.soldiers = b.startA + b.startB;
+            out.add(e);
+        }
+        return out;
+    }
+
+    /** Every host that has halted, its tents pitched where it stands. */
+    public List<Encounter> camps() {
+        List<Encounter> out = new ArrayList<>();
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            boolean main = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
+            if (main && !a.battle && (a.path == null || a.marchStep >= a.path.length)) out.add(encounter(Encounter.Kind.CAMP, a));
+        }
+        return out;
+    }
+
+    private Encounter encounter(Encounter.Kind kind, Army a) {
+        GridPoint2 at = new GridPoint2(a.x, a.y);
+        GridPoint2 next = at;
+        if (a.path != null && a.marchStep < a.path.length) {
+            next = new GridPoint2(terrain.xOf(a.path[a.marchStep]), terrain.yOf(a.path[a.marchStep]));
+        }
+        Encounter e = new Encounter(kind, a.id, a.warId, a.houseId, -1, 0, Long.MAX_VALUE, at, next);
+        e.soldiers = a.soldiers;
+        return e;
+    }
+
+    // ---------- heralds (A15) ----------
+
+    /** A house with news sends a herald along the roads to another seat. */
+    private void sendHeralds(long clock) {
+        List<com.bpm.minotaur.gamedata.history.HistoryEvent> events = world.events();
+        if (roster.eventsHeard < 0) roster.eventsHeard = events.size();
+        int sent = 0;
+        for (int i = roster.eventsHeard; i < events.size() && sent < ArmyTuning.HERALDS_A_SEASON; i++) {
+            com.bpm.minotaur.gamedata.history.HistoryEvent e = events.get(i);
+            if (e.type != com.bpm.minotaur.gamedata.history.EventType.WAR_DECLARED && e.type != com.bpm.minotaur.gamedata.history.EventType.PEACE
+                    && e.type != com.bpm.minotaur.gamedata.history.EventType.SEAT_SEIZED) continue;
+            House h = world.house(e.houseA);
+            if (h == null || h.isExtinct() || !hasSeat(h.id)) continue;
+            SplittableRandom rng = new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (e.id * 0xA0761D6478BD642FL));
+            House to = houses.get(rng.nextInt(houses.size()));
+            if (to == h || to.isExtinct() || !hasSeat(to.id)) continue;
+            Army herald = party(h, Army.Kind.HERALD, 1, seatXs[h.id], seatYs[h.id]);
+            herald.homeBySeason = season + ArmyTuning.HERALD_SEASONS;
+            goTo(herald, seatXs[to.id], seatYs[to.id]);
+            sent++;
+        }
+        roster.eventsHeard = events.size();
     }
 
     // ---------- the land's toll (A27) ----------
@@ -150,7 +225,7 @@ public final class ArmyLayer {
     private void payTheLand(Army a, long clock, int chunk) {
         House h = world.house(a.houseId);
         boolean blight = terrain.blightedAt(chunk);
-        if (blight && h != null && h.holdsCastle) return;
+        if (a.kind == Army.Kind.HERALD || (blight && h != null && h.holdsCastle)) return;
         int d = Math.max(Math.abs(a.x), Math.abs(a.y));
         float t = Math.max(0f, Math.min(1f, (d - ArmyTuning.ATTRITION_NEAR_DISTANCE) / (float) (ArmyTuning.ATTRITION_FAR_DISTANCE - ArmyTuning.ATTRITION_NEAR_DISTANCE)));
         float chance = ArmyTuning.ATTRITION_NEAR + (ArmyTuning.ATTRITION_FAR - ArmyTuning.ATTRITION_NEAR) * t;
@@ -341,7 +416,7 @@ public final class ArmyLayer {
         List<Army> armies = roster.armies;
         for (int i = 0; i < armies.size(); i++) {
             Army a = armies.get(i);
-            if (a.battle) continue;
+            if (a.battle || a.kind == Army.Kind.HERALD) continue;
             ArmyBattle here = battleAt(a.x, a.y);
             if (here != null) {
                 join(here, a);
@@ -349,7 +424,7 @@ public final class ArmyLayer {
             }
             for (int j = i + 1; j < armies.size(); j++) {
                 Army b = armies.get(j);
-                if (!b.battle && b.x == a.x && b.y == a.y && hostile(a, b)) {
+                if (!b.battle && b.kind != Army.Kind.HERALD && b.x == a.x && b.y == a.y && hostile(a, b)) {
                     start(a, b);
                     break;
                 }
@@ -367,6 +442,7 @@ public final class ArmyLayer {
 
     private void start(Army a, Army b) {
         ArmyBattle battle = new ArmyBattle();
+        battle.id = roster.nextArmyId++;
         battle.x = a.x;
         battle.y = a.y;
         battle.houseA = a.side();
@@ -380,6 +456,7 @@ public final class ArmyLayer {
     /** An army reaches an enemy seat: its garrison comes out to meet it, behind its walls (A21). */
     private void assault(Army a, House holder) {
         ArmyBattle battle = new ArmyBattle();
+        battle.id = roster.nextArmyId++;
         battle.x = a.x;
         battle.y = a.y;
         battle.houseA = a.side();
@@ -408,7 +485,7 @@ public final class ArmyLayer {
     private void alliesMarchIn(ArmyBattle battle) {
         for (int i = 0; i < roster.armies.size(); i++) {
             Army o = roster.armies.get(i);
-            if (!o.battle && cheb(o.x, o.y, battle.x, battle.y) <= 1) join(battle, o);
+            if (!o.battle && o.kind != Army.Kind.HERALD && cheb(o.x, o.y, battle.x, battle.y) <= 1) join(battle, o);
         }
     }
 
@@ -727,6 +804,10 @@ public final class ArmyLayer {
     }
 
     private void arrive(Army a, long clock) {
+        if (a.kind == Army.Kind.HERALD) {
+            roster.armies.remove(a);
+            return;
+        }
         if (a.kind == Army.Kind.HUNTING_PARTY) {
             int[] seen = roster.playerSeenBy(a.houseId);
             if (seen != null && (seen[1] != a.x || seen[2] != a.y)) goTo(a, seen[1], seen[2]);

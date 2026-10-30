@@ -591,21 +591,6 @@ public final class HistoryManager {
     }
 
     /**
-     * The surface war's encounters under way now (Living War W2): the ones the player can walk into
-     * and the fights out of sight. {@code surface}: the player is on the overland.
-     */
-    public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
-            boolean surface) {
-        return encounters(playerChunk, surface, null);
-    }
-
-    /** As {@link #encounters(com.badlogic.gdx.math.GridPoint2, boolean)}; {@code seats} send columns toward their fronts. */
-    public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
-            boolean surface, com.bpm.minotaur.gamedata.history.war.SeatMap seats) {
-        return com.bpm.minotaur.gamedata.history.war.EncounterScheduler.at(world, warClock, encounters, playerChunk, surface, seats);
-    }
-
-    /**
      * The player fought in a skirmish until it broke (Living War W12): {@code winner} held the ground,
      * {@code loser} routed; {@code captainFell} is a named captain who died in it, or -1.
      */

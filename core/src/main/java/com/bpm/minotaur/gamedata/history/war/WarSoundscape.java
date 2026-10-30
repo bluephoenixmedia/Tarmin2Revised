@@ -19,6 +19,9 @@ import java.util.Map;
  */
 public final class WarSoundscape {
 
+    /** Chunks a fight is heard across (W9). */
+    public static final int EARSHOT = 6;
+
     /** The looping beds, each a file under {@code sounds/war/}. */
     public enum Bed {
         NEAR("battle_near_loop"),
@@ -119,7 +122,7 @@ public final class WarSoundscape {
         if (encounters != null) {
             for (Encounter e : encounters) {
                 GridPoint2 at = e.chunkAt(clock);
-                int d = EncounterScheduler.distance(player, at);
+                int d = Encounter.distance(player, at);
                 float pan = pan(player, at, facing);
                 if (e.kind == Encounter.Kind.CAMP) {
                     if (surface) {
@@ -146,7 +149,7 @@ public final class WarSoundscape {
         }
         if (fronts != null) {
             for (Front f : fronts) {
-                int d = Math.max(0, EncounterScheduler.distance(player, f.center) - Front.RADIUS);
+                int d = Math.max(0, Encounter.distance(player, f.center) - Front.RADIUS);
                 if (surface) fight(m, d, pan(player, f.center, facing));
                 else under(m, d);
             }
@@ -180,7 +183,7 @@ public final class WarSoundscape {
             shot(m, "horn_battle", 0.04f, d == 2 ? 0.4f : 0.3f, pan);
             shot(m, "siege_bursts", 0.03f, d == 2 ? 0.28f : 0.18f, pan);
             shot(m, "thud_distant_2", 0.03f, d == 2 ? 0.25f : 0.15f, pan);
-        } else if (d <= EncounterScheduler.EARSHOT) {
+        } else if (d <= EARSHOT) {
             m.raise(Bed.FAR, FAR_EDGE, pan);
             m.raise(Bed.DRUMS, DRUMS_EDGE, pan);
             shot(m, "horn_battle", 0.015f, 0.18f, pan);
@@ -189,8 +192,8 @@ public final class WarSoundscape {
 
     /** The siege of the castle (W34): its engines' barrage and fire, and the Legion's great horn. */
     private static void siege(Mix m, int d, float pan) {
-        if (d > EncounterScheduler.EARSHOT) return;
-        float near = 1f - d / (float) (EncounterScheduler.EARSHOT + 1);
+        if (d > EARSHOT) return;
+        float near = 1f - d / (float) (EARSHOT + 1);
         shot(m, "siege_barrage", 0.05f, 0.25f + 0.4f * near, pan);
         shot(m, "siege_bursts", 0.04f, 0.2f + 0.35f * near, pan);
         shot(m, "horn_great", 0.02f, 0.2f + 0.4f * near, pan);

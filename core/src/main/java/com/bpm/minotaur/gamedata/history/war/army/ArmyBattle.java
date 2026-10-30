@@ -7,6 +7,7 @@ package com.bpm.minotaur.gamedata.history.war.army;
  */
 public class ArmyBattle {
 
+    public int id;
     public int x;
     public int y;
     public int turn;

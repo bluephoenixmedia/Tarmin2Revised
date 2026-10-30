@@ -2495,13 +2495,13 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
         if (g.chunk == null) return out;
         if (town != null) {
-            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.RaidsBelow
                     .townRaid(history.world(), history.warClock(), town.key, g.chunk);
             if (e != null) out.add(e);
         }
         com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
         if (holder != null) {
-            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.RaidsBelow
                     .gashRaid(history.world(), history.warClock(), g.chunk, g.level, holder.id);
             if (e != null) out.add(e);
         }
@@ -2592,24 +2592,7 @@ public class GameScreen extends BaseScreen {
                 say("A contract kept. Return to a war camp of " + houseName(oath.houseId) + " to be paid.", 5f);
             }
         }
-
-        // Hunters: once a slot, a house that counts the player its enemy may send them (W18).
-        long clock = history.warClock();
-        if (g.level == 1 && !g.sanctuary && clock % com.bpm.minotaur.gamedata.history.war.EncounterScheduler.SLOT == 0) {
-            for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
-                if (history.stanceOf(h.id) != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY) continue;
-                java.util.Random r = new java.util.Random(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (h.id * 31L));
-                if (r.nextFloat() >= HUNT_CHANCE) continue;
-                com.bpm.minotaur.managers.EncounterDirector.Turn hunted = new com.bpm.minotaur.managers.EncounterDirector.Turn();
-                encounterDirector.hunt(history, maze, h.id, g.playerTile, worldManager::recruit, hunted);
-                for (String line : hunted.messages) say(line, 5f);
-                break;
-            }
-        }
     }
-
-    /** Chance a slot brings hunters from a house that counts the player its enemy (W18). */
-    private static final float HUNT_CHANCE = 0.3f;
 
     /** Standing in a house's war camp: its signets returned, its sentries' greeting, its quartermaster (W18-W20). */
     private void atCamp(int houseId, WarManager.Ground g) {
@@ -2884,7 +2867,7 @@ public class GameScreen extends BaseScreen {
         if (g.chunk.equals(castle) && maze != null) keepTheBreach(siege != null);
         if (siege == null) return;
         long clock = history.warClock();
-        if (com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(g.chunk, castle) <= RED_LIGHTNING_REACH
+        if (com.bpm.minotaur.gamedata.history.war.Encounter.distance(g.chunk, castle) <= RED_LIGHTNING_REACH
                 && clock % RED_LIGHTNING_EVERY == 0) {
             if (worldManager.getWeatherManager() != null) worldManager.getWeatherManager().knellFlash(0.5f);
             if (soundManager != null) soundManager.playSound("lightning_crash_2", 0.7f);

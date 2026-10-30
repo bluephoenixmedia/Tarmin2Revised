@@ -60,11 +60,8 @@ public class SkirmishHistoryTest {
     @Test
     public void theLedgerAndTheSkirmishSurviveTheSaveFile() {
         HistoryManager live = HistoryManager.create(35L, catalog);
-        for (int i = 0; i < 400; i++) {
-            live.tickWarClock();
-            List<Encounter> now = live.encounters(new GridPoint2(i / 40, 0), true);
-            for (Encounter e : now) if (e.visible() && i == 300) live.encounterLedger().spend(e);
-        }
+        for (int i = 0; i < 400; i++) live.tickWarClock();
+        live.encounterLedger().spend(new Encounter(Encounter.Kind.COLUMN, 3, -1, 0, -1, 0, 100, new GridPoint2(1, 1), new GridPoint2(1, 1)));
         War w = live.world().activeWars().get(0);
         live.recordSkirmish(w.defenderId, w.attackerId, -1);
 
@@ -77,10 +74,7 @@ public class SkirmishHistoryTest {
         HistoryManager restored = HistoryManager.fromSave(-1L, reloaded.history, catalog);
 
         assertEquals(live.world().fingerprint(), restored.world().fingerprint());
-        assertEquals(live.encounterLedger().firstAt, restored.encounterLedger().firstAt);
         assertEquals(live.encounterLedger().spent, restored.encounterLedger().spent);
-        assertEquals(live.encounters(new GridPoint2(9, 0), true).toString(),
-                restored.encounters(new GridPoint2(9, 0), true).toString());
     }
 
     @Test
@@ -90,6 +84,6 @@ public class SkirmishHistoryTest {
         save.encounters = null;
         HistoryManager restored = HistoryManager.fromSave(-1L, save, catalog);
         assertNotNull(restored.encounterLedger());
-        assertFalse(restored.encounterLedger().firstDone);
+        assertTrue(restored.encounterLedger().spent.isEmpty());
     }
 }
