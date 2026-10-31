@@ -304,6 +304,7 @@ public class ChunkData {
             }
             monster.setHouseId(data.houseId);
             monster.setFigureId(data.figureId);
+            monster.setStandardBearer(data.standardBearer);
             monster.setNemesisId(data.nemesisId);
             monster.setSealRoad(data.sealRoad);
             monster.setSealRole(data.sealRole);
@@ -702,6 +703,7 @@ public class ChunkData {
         public int houseId = -1;
         /** Named-figure identity (Houses of the Maze T1.12); stats are rebuilt from the history. */
         public int figureId = -1;
+        public boolean standardBearer;
         /** The Nemesis this monster is (#283), so a reloaded chunk does not raise it twice. */
         public int nemesisId = -1;
         public int sealRoad = -1;
@@ -741,6 +743,7 @@ public class ChunkData {
             this.faction = monster.getFaction() != null ? monster.getFaction().name() : null;
             this.houseId = monster.getHouseId();
             this.figureId = monster.getFigureId();
+            this.standardBearer = monster.isStandardBearer();
             this.nemesisId = monster.getNemesisId();
             this.sealRoad = monster.getSealRoad();
             this.sealRole = monster.getSealRole();

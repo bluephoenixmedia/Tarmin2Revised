@@ -232,6 +232,7 @@ public class Monster implements Renderable {
     private int houseId = -1;
     /** The named figure of the Maze's history this monster is, or -1 (Houses of the Maze T1.12). */
     private int figureId = -1;
+    private boolean standardBearer;
     /** The seal road whose gash this monster guards, or -1. */
     private int sealRoad = -1;
     /** {@link #SEAL_LORD}, {@link #SEAL_RETAINER}, or 0 for neither. */
@@ -1560,6 +1561,9 @@ public class Monster implements Renderable {
     }
 
     public int getFigureId() { return figureId; }
+    /** A captain, who carries the army's banner (Living War A45). */
+    public boolean isStandardBearer() { return standardBearer; }
+    public void setStandardBearer(boolean standardBearer) { this.standardBearer = standardBearer; }
     public int getNemesisId() { return nemesisId; }
     public void setNemesisId(int nemesisId) { this.nemesisId = nemesisId; }
     public void setFigureId(int figureId) { this.figureId = figureId; }

@@ -28,6 +28,20 @@ public final class UiNames {
     private UiNames() {
     }
 
+    /**
+     * A house's name for a narrow place: "House" goes first, then whole words from the end until it
+     * fits. A word that cannot fit is not shown at all, rather than cut (Living War A46).
+     */
+    public static String shortHouse(String name, double width, java.util.function.ToDoubleFunction<String> measure) {
+        String shortened = name.startsWith("House ") ? name.substring("House ".length()) : name;
+        while (measure.applyAsDouble(shortened) > width) {
+            int space = shortened.lastIndexOf(' ');
+            if (space < 0) return "";
+            shortened = shortened.substring(0, space);
+        }
+        return shortened;
+    }
+
     /** Words that stay lowercase inside a name, but not at the start of one. */
     private static final String[] SMALL_WORDS = {
             "of", "the", "and", "a", "an", "to", "in", "on", "for", "with", "at", "by", "or", "from"

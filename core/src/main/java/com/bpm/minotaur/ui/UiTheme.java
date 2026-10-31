@@ -167,6 +167,14 @@ public final class UiTheme {
     /** The HUD's war tally under the minimap (Living War W30): its gap below the map, and its bar's height. */
     public static final float WAR_TALLY_GAP = 4 * 3f;
     public static final float WAR_TALLY_H = 4 * 3f;
+    /** The shield at each end of the war tally (Living War A46). */
+    public static final float WAR_TALLY_ARMS = 30f;
+    /** A soldier's shield at one, two and three tiles or more (Living War A45). */
+    public static final float ARMS_SHIELD_NEAR = 32f;
+    public static final float ARMS_SHIELD_MID = 24f;
+    public static final float ARMS_SHIELD_FAR = 17f;
+    /** A captain's banner, the same at every distance. */
+    public static final float ARMS_BANNER = 40f;
 
     // --- Spacing (SPEC section 3, in canvas units) ------------------------
 

@@ -182,7 +182,11 @@ public final class EncounterDirector {
             switch (e.kind) {
                 case SKIRMISH: s = skirmish(e, world, maze, recruiter, t); break;
                 case COLUMN: s = column(e, world, maze, recruiter, t); break;
-                case RAID: s = raid(e, world, maze, recruiter, props, ledger, t); break;
+                case RAID:
+                    s = raid(e, world, maze, recruiter, props, ledger, t);
+                    // Sent by a host in the field, and carrying its standard.
+                    if (s != null && behind != null && !s.a.isEmpty()) s.a.get(0).setStandardBearer(true);
+                    break;
                 case HERALD: s = herald(e, world, maze, recruiter, t); break;
                 default: break;
             }
@@ -339,6 +343,7 @@ public final class EncounterDirector {
         }
         if (s.a.isEmpty()) return null;
         s.a.get(0).setDisplayName("Standard-bearer of " + name(world, e.houseA));
+        s.a.get(0).setStandardBearer(true);
         s.startA = s.a.size();
         t.messages.add("Drums. A column of " + name(world, e.houseA) + " marches through, banners high.");
         t.cues.add(Cue.DRUMS);
@@ -837,6 +842,7 @@ public final class EncounterDirector {
         } else {
             m.setDisplayName("A captain of " + name(world, houseId));
         }
+        m.setStandardBearer(true);
         m.setMaxHP(m.getMaxHP() * 2);
         m.setCurrentHP(m.getMaxHP());
         return m;

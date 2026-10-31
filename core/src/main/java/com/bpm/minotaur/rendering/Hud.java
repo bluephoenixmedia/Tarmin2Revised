@@ -3564,8 +3564,17 @@ public class Hud implements Disposable {
                 float mx = startX + (mPos.x * cellSize);
                 float my = startY + (mPos.y * cellSize);
                 // Draw slightly larger than walls? Or same size.
-                // "Red square".
-                shapeRenderer.rect(mx, my, cellSize, cellSize);
+                // "Red square"; a monster with a house, the house's two colours (Living War A46).
+                Color[] colours = arms != null && com.bpm.minotaur.ui.ArmsInField.bearsArms(monster) ? arms.colours(monster.getHouseId()) : null;
+                if (colours != null) {
+                    shapeRenderer.setColor(colours[0]);
+                    shapeRenderer.rect(mx, my, cellSize / 2f, cellSize);
+                    shapeRenderer.setColor(colours[1]);
+                    shapeRenderer.rect(mx + cellSize / 2f, my, cellSize / 2f, cellSize);
+                    shapeRenderer.setColor(Color.RED);
+                } else {
+                    shapeRenderer.rect(mx, my, cellSize, cellSize);
+                }
             }
         }
         shapeRenderer.end();
@@ -3896,40 +3905,71 @@ public class Hud implements Disposable {
         this.warTally = tally;
     }
 
+    private com.bpm.minotaur.ui.ArmsAtlas arms;
+
+    /** Each house's Arms, for the minimap's dots and the war tally. */
+    public void setArms(com.bpm.minotaur.ui.ArmsAtlas arms) {
+        this.arms = arms;
+    }
+
     /**
-     * Under the minimap while a battle or skirmish is fought in the chunk: each house's colour at its
-     * end of a bar, the bar split by the ground each still holds.
+     * Under the minimap while a battle or skirmish is fought in the chunk: each house's Arms at an end
+     * of a bar split by the ground each still holds, and their names, whole, beneath it. On one row
+     * if both fit, one to a row if not (Living War A46).
      */
     private void drawWarTally(float x, float top, float width) {
         if (warTally == null || worldManager == null) return;
         com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
         com.bpm.minotaur.gamedata.history.DoctrineCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance();
         float h = com.bpm.minotaur.ui.UiTheme.WAR_TALLY_H;
+        float shield = com.bpm.minotaur.ui.UiTheme.WAR_TALLY_ARMS;
+        float pad = com.bpm.minotaur.ui.UiTheme.PAD_XS;
+        float barX = x + shield + pad;
+        float barW = width - 2f * (shield + pad);
         float y = top - h;
-        float split = width * warTally.shareA();
+        float split = barW * warTally.shareA();
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
-        shapeRenderer.rect(x - 2f, y - 2f, width + 4f, h + 4f);
+        shapeRenderer.rect(barX - 2f, y - 2f, barW + 4f, h + 4f);
         shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, warTally.houseA, catalog));
-        shapeRenderer.rect(x, y, split, h);
+        shapeRenderer.rect(barX, y, split, h);
         shapeRenderer.setColor(com.bpm.minotaur.ui.HouseHeraldry.primary(world, warTally.houseB, catalog));
-        shapeRenderer.rect(x + split, y, width - split, h);
+        shapeRenderer.rect(barX + split, y, barW - split, h);
         shapeRenderer.end();
         BitmapFont font = hudSkin.getFontSmall();
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
+        spriteBatch.setColor(1f, 1f, 1f, globalAlpha);
+        if (arms != null) {
+            drawTallyShield(arms.shield(warTally.houseA, (int) shield), x, top);
+            drawTallyShield(arms.shield(warTally.houseB, (int) shield), x + width - shield, top);
+        }
         font.setColor(HudSkin.COL_GOLD_BRIGHT);
-        com.bpm.minotaur.gamedata.history.House a = world.house(warTally.houseA);
-        com.bpm.minotaur.gamedata.history.House b = world.house(warTally.houseB);
+        String nameA = shortHouseName(world, warTally.houseA, font, barW);
+        String nameB = shortHouseName(world, warTally.houseB, font, barW);
+        glyphLayout.setText(font, nameA);
+        float widthA = glyphLayout.width;
+        glyphLayout.setText(font, nameB);
+        boolean oneRow = widthA + glyphLayout.width + 2f * pad <= barW;
         float ty = y - com.bpm.minotaur.ui.UiTheme.PAD_SM;
-        // Each name in its own half, cut short with dots rather than running into the other.
-        String nameA = com.bpm.minotaur.ui.UiGlyphs.sanitize(a != null ? a.name : "");
-        String nameB = com.bpm.minotaur.ui.UiGlyphs.sanitize(b != null ? b.name : "");
-        font.draw(spriteBatch, nameA, x, ty, 0, nameA.length(), width / 2f - 4f, com.badlogic.gdx.utils.Align.left, false, "..");
-        font.draw(spriteBatch, nameB, x + width / 2f + 4f, ty, 0, nameB.length(), width / 2f - 4f,
-                com.badlogic.gdx.utils.Align.right, false, "..");
+        font.draw(spriteBatch, nameA, barX, ty);
+        if (!oneRow) ty -= font.getLineHeight();
+        font.draw(spriteBatch, nameB, barX, ty, barW, com.badlogic.gdx.utils.Align.right, false);
         spriteBatch.end();
+    }
+
+    private void drawTallyShield(com.badlogic.gdx.graphics.g2d.TextureRegion shield, float x, float top) {
+        if (shield != null) spriteBatch.draw(shield, x, top - shield.getRegionHeight());
+    }
+
+    private String shortHouseName(com.bpm.minotaur.gamedata.history.HistoryWorld world, int houseId, BitmapFont font, float width) {
+        com.bpm.minotaur.gamedata.history.House house = world.house(houseId);
+        if (house == null) return "";
+        return com.bpm.minotaur.ui.UiNames.shortHouse(com.bpm.minotaur.ui.UiGlyphs.sanitize(house.name), width, words -> {
+            glyphLayout.setText(font, words);
+            return glyphLayout.width;
+        });
     }
 
     // --- The Art-learned card (#249): one at a time, the rest wait their turn ---

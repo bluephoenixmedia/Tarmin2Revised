@@ -27,6 +27,7 @@ public final class ArmsAtlas implements Disposable {
     private final DoctrineCatalog catalog;
     private final Map<Long, TextureRegion> drawn = new HashMap<>();
     private final Map<String, ArmsRaster.Mask> masks = new HashMap<>();
+    private final Map<Integer, Color[]> colours = new HashMap<>();
 
     public ArmsAtlas(HistoryWorld world, DoctrineCatalog catalog) {
         this.world = world;
@@ -41,6 +42,23 @@ public final class ArmsAtlas implements Disposable {
     /** The house's banner, for its captains; null for no such house. */
     public TextureRegion banner(int houseId, int size) {
         return region(houseId, size, true);
+    }
+
+    /** The house's two field colours, for its minimap dots; null for no such house. */
+    public Color[] colours(int houseId) {
+        Color[] c = colours.get(houseId);
+        if (c != null || colours.containsKey(houseId)) return c;
+        HouseArms arms = HouseArms.of(world, houseId);
+        if (arms != null) c = new Color[]{colour(arms.field), colour(arms.secondField)};
+        colours.put(houseId, c);
+        return c;
+    }
+
+    private static Color colour(String field) {
+        Color c = new Color();
+        Color.rgb888ToColor(c, HouseArms.rgb(field));
+        c.a = 1f;
+        return c;
     }
 
     private TextureRegion region(int houseId, int size, boolean banner) {
