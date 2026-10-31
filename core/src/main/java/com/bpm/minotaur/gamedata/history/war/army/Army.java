@@ -83,6 +83,11 @@ public class Army {
     public Army() {
     }
 
+    /** A house's fighting host or a vassal's levy, not a party sent on an errand. */
+    public boolean isHost() {
+        return kind == Kind.HOST || kind == Kind.LEVY;
+    }
+
     /** Not on the march. */
     public boolean halted() {
         return path == null || marchStep >= path.length;

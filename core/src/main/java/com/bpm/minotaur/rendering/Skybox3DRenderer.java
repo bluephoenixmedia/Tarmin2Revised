@@ -433,12 +433,12 @@ public class Skybox3DRenderer {
     }
 
     /** Fronts this far off still raise smoke over the horizon (W10). */
-    private static final int WAR_SMOKE_RANGE = 24;
-    private static final int WAR_SMOKE_MAX = 12;
+    private static final int WAR_SMOKE_RANGE = com.bpm.minotaur.gamedata.history.war.WarSources.SMOKE_RANGE;
+    private static final int WAR_SMOKE_MAX = com.bpm.minotaur.gamedata.history.war.WarSources.SMOKE_MAX;
     private static final float WAR_SMOKE_ELEVATION = 30f;
     private float smokeTime;
 
-    /** Every fight under way that the player could see the smoke of: fronts, skirmishes, raids, far battles. */
+    /** Everything the war has burning that the player could see from here (Living War A54), and the volleys and beacons with it. */
     private void gatherWarSmoke(com.bpm.minotaur.managers.WorldManager worldManager, com.badlogic.gdx.math.GridPoint2 chunk,
             com.bpm.minotaur.gamedata.player.Player player) {
         worldSkyState.warSmokeCount = 0;
@@ -449,7 +449,6 @@ public class Skybox3DRenderer {
         float h = (here != null && here.getHeight() > 0) ? here.getHeight() : 1f;
         float px = chunk.x + player.getPosition().x / w - 0.5f;
         float py = chunk.y + player.getPosition().y / h - 0.5f;
-        long clock = worldManager.getHistory().warClock();
         worldSkyState.volleyCount = 0;
         worldSkyState.beaconLit = 0;
         worldSkyState.siegeFireCount = 0;
@@ -623,7 +622,7 @@ public class Skybox3DRenderer {
                     ? com.bpm.minotaur.gamedata.history.war.WarSources.Plume.BATTLE
                     : com.bpm.minotaur.gamedata.history.war.WarSources.Plume.values()[state.warSmokePlumes[k]];
             float strength = state.warSmokeStrength == null ? 1f : state.warSmokeStrength[k];
-            boolean fed = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.BATTLE;
+            boolean battle = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.BATTLE;
             boolean wisp = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.WISP;
             boolean medium = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.MEDIUM;
             // Each fire at its own size (A54): a battle's and a siege's tall, burnt ground's less so, a cookfire's a thread.
@@ -658,7 +657,7 @@ public class Skybox3DRenderer {
                 }
                 d.lookAt(camera.position, camera.up);
             }
-            if (night && fed) {
+            if (night && battle) {
                 // The fire under the smoke lights the horizon (W10.2).
                 com.badlogic.gdx.graphics.g3d.decals.Decal glow = smokePuff(smokeShown++);
                 glow.setDimensions(base * 5f, base * 1.4f);

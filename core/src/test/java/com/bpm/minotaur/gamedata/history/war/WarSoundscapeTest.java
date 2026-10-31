@@ -42,11 +42,12 @@ public class WarSoundscapeTest {
         for (int d = 0; d <= 1; d++) {
             WarSoundscape.Mix m = hear(Kind.BATTLE, d);
             assertTrue(m.volume(Bed.NEAR) > 0f);
+            assertTrue(shot(m, "clash_sword"));
+            assertTrue(shot(m, "volley_archers"));
+            assertTrue(shot(m, "monster_grunt_light"));
+            assertEquals("no drums in it", 0f, m.volume(Bed.DRUMS), 0f);
+            assertFalse(shot(m, "horn_battle"));
         }
-        WarSoundscape.Mix next = hear(Kind.BATTLE, 1);
-        assertTrue(shot(next, "clash_sword"));
-        assertTrue(shot(next, "volley_archers"));
-        assertTrue(shot(next, "monster_grunt_light"));
     }
 
     @Test
@@ -66,6 +67,7 @@ public class WarSoundscapeTest {
         for (int d = 4; d <= 6; d++) {
             WarSoundscape.Mix m = hear(Kind.BATTLE, d);
             assertEquals(WarSoundscape.FAR_EDGE, m.volume(Bed.FAR), 0f);
+            assertEquals("no drums at this range", 0f, m.volume(Bed.DRUMS), 0f);
             assertTrue(shot(m, "horn_battle"));
         }
     }
@@ -176,7 +178,7 @@ public class WarSoundscapeTest {
     // ---- One-shots at a battle's start and rout ----
 
     private static List<WarSoundscape.Shot> news(WarSoundscape.BattleWatch w, WarSources s, long clock) {
-        return w.onTurn(s, clock, ME, 1, Direction.NORTH);
+        return w.onTurn(s, clock, ME, 1, Direction.NORTH, -1);
     }
 
     @Test
@@ -193,6 +195,42 @@ public class WarSoundscapeTest {
         List<WarSoundscape.Shot> routed = news(watch, one, 13);
         assertEquals(1, routed.size());
         assertEquals("war_horn", routed.get(0).key);
+    }
+
+    /** Walked into, its own director sounds the warning and the rout: not twice. */
+    @Test
+    public void aBattleThePlayerIsInBlowsNoSecondHorn() {
+        WarSoundscape.BattleWatch watch = new WarSoundscape.BattleWatch();
+        watch.onTurn(WarSources.none(), 10, ME, 1, Direction.NORTH, -1);
+        WarSources battle = WarSources.none().add(Kind.BATTLE, 1, 0);
+        assertTrue(watch.onTurn(battle, 11, ME, 1, Direction.NORTH, 0).isEmpty());
+        assertTrue("and none at its rout", watch.onTurn(WarSources.none(), 12, ME, 1, Direction.NORTH, -1).isEmpty());
+    }
+
+    @Test
+    public void crowsDoNotCircleWhatHasGone() {
+        EncounterLedger ledger = new EncounterLedger();
+        EncounterLedger.Dressing old = new EncounterLedger.Dressing();
+        old.kind = "AFTERMATH";
+        old.chunkX = 1;
+        old.clearAtSleep = 2;
+        ledger.dressings.add(old);
+        ledger.sleeps = 3;
+        WarSources sources = WarSources.of(java.util.Collections.emptyList(), java.util.Collections.emptyList(), null, java.util.Collections.emptyList(), ledger, null, 0);
+        assertTrue(WarSoundscape.mix(sources, ME, 1, Direction.NORTH, false).silent());
+    }
+
+    @Test
+    public void theDeadAlongAHostsRoadRaiseNoSmokeAndDrawNoCrows() {
+        EncounterLedger ledger = new EncounterLedger();
+        EncounterLedger.Dressing road = new EncounterLedger.Dressing();
+        road.kind = "AFTERMATH";
+        road.trail = true;
+        road.chunkX = 1;
+        road.clearAtSleep = 3;
+        ledger.dressings.add(road);
+        WarSources sources = WarSources.of(java.util.Collections.emptyList(), java.util.Collections.emptyList(), null, java.util.Collections.emptyList(), ledger, null, 0);
+        assertTrue(sources.all().isEmpty());
     }
 
     @Test
@@ -213,7 +251,7 @@ public class WarSoundscapeTest {
     @Test
     public void belowGroundNoHornIsHeard() {
         WarSoundscape.BattleWatch watch = new WarSoundscape.BattleWatch();
-        watch.onTurn(WarSources.none(), 10, ME, 2, Direction.NORTH);
-        assertTrue(watch.onTurn(WarSources.none().add(Kind.BATTLE, 3, 0), 11, ME, 2, Direction.NORTH).isEmpty());
+        watch.onTurn(WarSources.none(), 10, ME, 2, Direction.NORTH, -1);
+        assertTrue(watch.onTurn(WarSources.none().add(Kind.BATTLE, 3, 0), 11, ME, 2, Direction.NORTH, -1).isEmpty());
     }
 }

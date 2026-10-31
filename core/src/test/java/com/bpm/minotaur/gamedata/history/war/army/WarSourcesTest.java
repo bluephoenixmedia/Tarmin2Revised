@@ -167,6 +167,21 @@ public class WarSourcesTest {
     }
 
     @Test
+    public void aHostGuardingItsOwnSeatLightsNothing() {
+        GridPoint2 seat = new GridPoint2(10, 10);
+        army(1, 3, 10, 10, 15, false).musteredAt = 95;
+        assertTrue(WarSources.of(armies, battles, null, Collections.emptyList(), null, h -> seat, 100).beacons().isEmpty());
+    }
+
+    @Test
+    public void reliefIsCalledFromAHostNotAPartySentOnAnErrand() {
+        GridPoint2 seat = new GridPoint2(10, 10);
+        army(1, 3, 10, 10, 15, false).objective = Army.Objective.SEAT;
+        army(2, 4, 11, 10, 5, true).kind = Army.Kind.FORAGERS;
+        assertTrue(WarSources.of(armies, battles, null, Collections.emptyList(), null, h -> h == 4 ? seat : new GridPoint2(90, 90), 100).beacons().isEmpty());
+    }
+
+    @Test
     public void anOldArmyLightsNothing() {
         army(1, 3, 10, 10, 15, true);
         assertTrue(WarSources.of(armies, battles, null, Collections.emptyList(), null, h -> new GridPoint2(10, 10), 100).beacons().isEmpty());

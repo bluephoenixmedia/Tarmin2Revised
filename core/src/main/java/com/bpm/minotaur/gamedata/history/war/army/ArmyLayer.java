@@ -150,8 +150,8 @@ public final class ArmyLayer {
         for (int i = 0; i < roster.armies.size(); i++) {
             Army a = roster.armies.get(i);
             if (a.battle) continue;
-            boolean halted = a.path == null || a.marchStep >= a.path.length;
-            boolean main = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
+            boolean halted = a.halted();
+            boolean main = a.isHost();
             if (main && halted) continue;
             Encounter.Kind kind = a.kind == Army.Kind.HERALD ? Encounter.Kind.HERALD
                     : a.kind == Army.Kind.RAID && halted ? Encounter.Kind.RAID : Encounter.Kind.COLUMN;

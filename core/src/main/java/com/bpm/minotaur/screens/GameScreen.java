@@ -3280,7 +3280,8 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.gamedata.Direction facing = player != null ? player.getFacing() : null;
         com.bpm.minotaur.gamedata.history.war.WarSoundscape.Mix mix = com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(
                 sources, g.chunk, g.level, facing, gashShakes);
-        mix.shots.addAll(battleWatch.onTurn(sources, history.warClock(), g.chunk, g.level, facing));
+        com.bpm.minotaur.gamedata.history.war.army.ArmyBattle watched = warManager.active() != null ? warManager.active().battle : null;
+        mix.shots.addAll(battleWatch.onTurn(sources, history.warClock(), g.chunk, g.level, facing, watched != null ? watched.id : -1));
         // The din of a fight here or next door covers the player's footsteps (W13).
         monsterAiManager.setHearingMuffle(g.level == 1 && mix.volume(com.bpm.minotaur.gamedata.history.war.WarSoundscape.Bed.NEAR) > 0f
                 ? com.bpm.minotaur.managers.MonsterAiManager.BATTLE_DIN : 1f);

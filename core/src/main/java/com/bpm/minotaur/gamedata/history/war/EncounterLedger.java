@@ -22,6 +22,8 @@ public class EncounterLedger {
         public String kind;
         /** The level it stands on: the surface, unless a Bivouac was pitched below. */
         public int level = 1;
+        /** AFTERMATH: only the dead a host left along its road, which raise no smoke and draw no notice of a fire. */
+        public boolean trail;
         /** AFTERMATH: the sleep count it is cleared at. */
         public int clearAtSleep;
         /** CAMP: the war it stands for, and the house that pitched it. */

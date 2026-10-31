@@ -110,6 +110,8 @@ public final class WarSources {
 
     private final List<Source> sources = new ArrayList<>();
     private final List<Beacons> beacons = new ArrayList<>();
+    private GridPoint2 smokeFrom;
+    private List<Smoke> smokeSeen;
 
     /** Nothing at all: no war heard, no smoke seen. */
     public static WarSources none() {
@@ -141,7 +143,7 @@ public final class WarSources {
                 out.sources.add(new Source(Kind.BURNING, a.id, a.x, a.y, house, -1, 1f));
             } else if (a.objective == Army.Objective.SEAT && a.x == a.targetX && a.y == a.targetY) {
                 out.sources.add(new Source(Kind.INVESTED, a.id, a.x, a.y, house, -1, 1f));
-            } else if (a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY) {
+            } else if (a.isHost()) {
                 out.sources.add(new Source(Kind.CAMP, a.id, a.x, a.y, house, -1, 1f));
             }
         }
@@ -154,7 +156,7 @@ public final class WarSources {
                 out.sources.add(new Source(Kind.AFTERMATH, -1, f.chunkX, f.chunkY, -1, -1, left(f.clearAtSleep, ledger.sleeps)));
             }
             for (EncounterLedger.Dressing d : ledger.dressings) {
-                if ("AFTERMATH".equals(d.kind) && d.level == 1) {
+                if ("AFTERMATH".equals(d.kind) && d.level == 1 && !d.trail) {
                     out.sources.add(new Source(Kind.AFTERMATH, -1, d.chunkX, d.chunkY, -1, -1, left(d.clearAtSleep, ledger.sleeps)));
                 }
             }
@@ -172,9 +174,10 @@ public final class WarSources {
         for (int i = 0; i < armies.size(); i++) {
             Army a = armies.get(i);
             if (a.soldiers <= 0) continue;
-            if (a.musteredAt >= 0 && clock - a.musteredAt <= MUSTER_BEACON_TURNS && (a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY)) {
+            if (a.musteredAt >= 0 && clock - a.musteredAt <= MUSTER_BEACON_TURNS && a.isHost()) {
                 GridPoint2 seat = seatOf.apply(a.houseId);
-                if (seat != null) {
+                // A host raised to guard its own seat has nowhere to send word.
+                if (seat != null && (a.targetX != seat.x || a.targetY != seat.y)) {
                     int lit = (int) Math.min(BEACON_CHAIN, (clock - a.musteredAt) / BEACON_TURNS + 1);
                     beacons.add(new Beacons(seat, new GridPoint2(a.targetX, a.targetY), lit));
                 }
@@ -191,7 +194,7 @@ public final class WarSources {
         int best = Integer.MAX_VALUE;
         for (int i = 0; i < armies.size(); i++) {
             Army o = armies.get(i);
-            if (o.soldiers <= 0 || o.houseId == besieger.houseId || !seat.equals(seatOf.apply(o.houseId))) continue;
+            if (o.soldiers <= 0 || !o.isHost() || o.houseId == besieger.houseId || !seat.equals(seatOf.apply(o.houseId))) continue;
             int d = Encounter.distance(seat, new GridPoint2(o.x, o.y));
             if (d > 0 && d < best) {
                 best = d;
@@ -211,6 +214,7 @@ public final class WarSources {
 
     /** For a staged reading, and for tests. */
     public WarSources add(Kind kind, int x, int y) {
+        smokeFrom = null;
         sources.add(new Source(kind, sources.size(), x, y, -1, -1, 1f));
         return this;
     }
@@ -221,6 +225,8 @@ public final class WarSources {
      * the tallest and nearest are kept.
      */
     public List<Smoke> smoke(GridPoint2 player) {
+        // The sky asks every frame; the answer holds until the player or the turn moves on.
+        if (player.equals(smokeFrom)) return smokeSeen;
         List<Smoke> out = new ArrayList<>();
         for (int i = 0; i < sources.size(); i++) {
             Source s = sources.get(i);
@@ -232,7 +238,9 @@ public final class WarSources {
         }
         out.sort(Comparator.<Smoke>comparingInt(m -> m.plume.ordinal() >= Plume.MEDIUM.ordinal() ? m.plume.ordinal() : 0)
                 .thenComparingInt(m -> Encounter.distance(player, new GridPoint2(m.x, m.y))));
-        return out.size() > SMOKE_MAX ? new ArrayList<>(out.subList(0, SMOKE_MAX)) : out;
+        smokeFrom = new GridPoint2(player);
+        smokeSeen = out.size() > SMOKE_MAX ? new ArrayList<>(out.subList(0, SMOKE_MAX)) : out;
+        return smokeSeen;
     }
 
     private static Plume plumeOf(Kind kind) {

@@ -98,8 +98,7 @@ public final class WarSoundscape {
     static final float FAR_EDGE = 0.10f;
     static final float DRUMS_2 = 0.25f;
     static final float DRUMS_3 = 0.15f;
-    static final float DRUMS_EDGE = 0.06f;
-    static final float COLUMN_NEAR = 0.45f;
+    static final float MARCH_NEAR = 0.45f;
     static final float DRUMS_FAINT = 0.15f;
     static final float PARTY_NEAR = 0.3f;
     static final float CAMP_HERE = 0.40f;
@@ -138,8 +137,8 @@ public final class WarSoundscape {
                     break;
                 case MARCH:
                     if (d <= 1) {
-                        m.raise(Bed.DRUMS, COLUMN_NEAR, pan);
-                        m.raise(Bed.MARCH, COLUMN_NEAR, pan);
+                        m.raise(Bed.DRUMS, MARCH_NEAR, pan);
+                        m.raise(Bed.MARCH, MARCH_NEAR, pan);
                     } else if (d <= 3) {
                         m.raise(Bed.DRUMS, DRUMS_FAINT, pan);
                     }
@@ -158,7 +157,7 @@ public final class WarSoundscape {
                     siege(m, d, pan);
                     break;
                 case AFTERMATH:
-                    if (d <= 1) m.raise(Bed.CROWS, CROWS_NEAR, pan);
+                    if (d <= 1 && src.strength > 0f) m.raise(Bed.CROWS, CROWS_NEAR, pan);
                     break;
                 default:
                     break;
@@ -187,31 +186,21 @@ public final class WarSoundscape {
         }
     }
 
+    /** A55's first row: steel, screams and volleys; then roar, drums and a horn; then a faint roar and a lone horn. */
     private static void fight(Mix m, int d, float pan) {
-        if (d <= 0) {
-            m.raise(Bed.NEAR, NEAR_HERE, 0f);
-            m.raise(Bed.DRUMS, DRUMS_3, 0f);
-        } else if (d == 1) {
-            m.raise(Bed.NEAR, NEAR_NEXT, pan);
-            m.raise(Bed.FAR, FAR_3, pan);
+        if (d <= 1) {
+            m.raise(Bed.NEAR, d == 0 ? NEAR_HERE : NEAR_NEXT, d == 0 ? 0f : pan);
             shot(m, "clash_sword", 0.15f, 0.5f, pan);
             shot(m, "volley_archers", 0.06f, 0.5f, pan);
-            // Men crying out, and the beasts of the roster, from the fight next door.
+            // Men crying out, and the beasts of the roster.
             shot(m, "monster_grunt_light", 0.08f, 0.45f, pan);
             shot(m, "monster_roar", 0.04f, 0.4f, pan);
-            shot(m, "horn_battle", 0.03f, 0.45f, pan);
-            // Distant spell detonations and fireball impact thuds on the horizon.
-            shot(m, "siege_bursts", 0.05f, 0.42f, pan);
-            shot(m, "thud_distant_1", 0.04f, 0.38f, pan);
         } else if (d <= 3) {
             m.raise(Bed.FAR, d == 2 ? FAR_2 : FAR_3, pan);
             m.raise(Bed.DRUMS, d == 2 ? DRUMS_2 : DRUMS_3, pan);
             shot(m, "horn_battle", 0.04f, d == 2 ? 0.4f : 0.3f, pan);
-            shot(m, "siege_bursts", 0.03f, d == 2 ? 0.28f : 0.18f, pan);
-            shot(m, "thud_distant_2", 0.03f, d == 2 ? 0.25f : 0.15f, pan);
         } else if (d <= EARSHOT) {
             m.raise(Bed.FAR, FAR_EDGE, pan);
-            m.raise(Bed.DRUMS, DRUMS_EDGE, pan);
             shot(m, "horn_battle", 0.015f, 0.18f, pan);
         }
     }
@@ -242,8 +231,11 @@ public final class WarSoundscape {
 
         private final java.util.Map<Integer, GridPoint2> going = new java.util.HashMap<>();
         private long lastClock = Long.MIN_VALUE;
+        private final java.util.Set<Integer> watched = new java.util.HashSet<>();
 
-        public List<Shot> onTurn(WarSources sources, long clock, GridPoint2 player, int level, Direction facing) {
+        /** @param watchedBattle the battle the player is in, or -1: its own director blows its horns */
+        public List<Shot> onTurn(WarSources sources, long clock, GridPoint2 player, int level, Direction facing, int watchedBattle) {
+            if (watchedBattle >= 0) watched.add(watchedBattle);
             java.util.Map<Integer, GridPoint2> now = new java.util.HashMap<>();
             List<WarSources.Source> all = sources.all();
             for (int i = 0; i < all.size(); i++) {
@@ -253,10 +245,10 @@ public final class WarSoundscape {
             List<Shot> out = new ArrayList<>();
             if (lastClock != Long.MIN_VALUE && clock - lastClock <= AWAKE_TURNS && level == 1 && player != null) {
                 for (java.util.Map.Entry<Integer, GridPoint2> e : now.entrySet()) {
-                    if (!going.containsKey(e.getKey())) horn(out, "horn_battle", e.getValue(), player, facing);
+                    if (!going.containsKey(e.getKey()) && !watched.contains(e.getKey())) horn(out, "horn_battle", e.getValue(), player, facing);
                 }
                 for (java.util.Map.Entry<Integer, GridPoint2> e : going.entrySet()) {
-                    if (!now.containsKey(e.getKey())) horn(out, "war_horn", e.getValue(), player, facing);
+                    if (!now.containsKey(e.getKey()) && !watched.remove(e.getKey())) horn(out, "war_horn", e.getValue(), player, facing);
                 }
             }
             going.clear();
