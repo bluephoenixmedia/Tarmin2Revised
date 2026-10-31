@@ -81,6 +81,15 @@ public class BivouacTest {
         assertTrue("the last night wears it through", Bivouac.wear(kit));
     }
 
+    @Test
+    public void aDroppedKitKeepsItsWearThroughAChunkSave() {
+        Item kit = new Item(Item.ItemType.BIVOUAC_KIT, 0, 0, com.bpm.minotaur.gamedata.item.ItemColor.TAN, null, null);
+        kit.setMaxCharges(Bivouac.KIT_NIGHTS);
+        kit.setCurrentCharges(4);
+        com.bpm.minotaur.gamedata.ChunkData.ItemData saved = new com.bpm.minotaur.gamedata.ChunkData.ItemData(kit);
+        assertEquals(4, saved.kitNights);
+    }
+
     /** A61: the same war-clock jump and Season tick as a Shelter sleep. */
     @Test
     public void aBivouacSleepAdvancesTheWorldExactlyAsAShelterSleepDoes() throws IOException {

@@ -2377,8 +2377,10 @@ public class GameScreen extends BaseScreen {
 
     /** How close a hostile may be for anyone to lie down. */
     private static final int BIVOUAC_CLEAR_TILES = 5;
-    /** How long the camp stands, in sleeps, once struck. */
-    private static final int BIVOUAC_CAMP_SLEEPS = 1;
+    /** Sleeps the tent stands for, after the night it was pitched for. */
+    private static final int BIVOUAC_STANDS_SLEEPS = 1;
+    /** Minutes of the day a whole night in the field is worth, when something cuts it short. */
+    private static final float BIVOUAC_NIGHT_MINUTES = 480f;
     /** What the coming night holds, if a play-test has decided it. */
     private com.bpm.minotaur.gamedata.shelter.Bivouac.Night nextNight;
 
@@ -2390,7 +2392,7 @@ public class GameScreen extends BaseScreen {
     private String bivouacRefused() {
         if (maze == null || player == null) return "There is no ground here to pitch on.";
         if (!maze.getSanctuaryTiles().isEmpty()) return "This is warded ground: sleep in the shelter's own bed.";
-        if (worldManager.townHere() != null) return "The town will not have a camp pitched in its streets.";
+        if (worldManager.townHere() != null) return "The town will not have a bivouac in its streets.";
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) return "Not in the middle of a fight.";
         if (worldManager.armiesThreatenHere() || warManager.active() != null) return "Not with soldiers on this ground.";
         for (Monster m : maze.getMonsters().values()) {
@@ -2414,17 +2416,22 @@ public class GameScreen extends BaseScreen {
         final Item fuel = tinder;
         java.util.Map<String, Runnable> nights = new java.util.LinkedHashMap<>();
         nights.put("Sleep", () -> sleepInBivouac(kit, null));
-        if (fuel != null) nights.put("Sleep by a fire (burns a Tinder Bundle)", () -> sleepInBivouac(kit, fuel));
+        if (fuel != null && !fireHere()) nights.put("Sleep by a fire (burns a Tinder Bundle)", () -> sleepInBivouac(kit, fuel));
         String body = "A night here gives back half your strength and clears no ailment, and the world moves on as it would for any sleep. "
                 + "Something may find you. A fire keeps off the cold, and draws the eye. The kit has "
                 + com.bpm.minotaur.ui.UiNames.plural(com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit), "night", "nights") + " left.";
-        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, "Pitch camp", body, nights, "Not here", () -> { })));
+        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, "Bivouac", body, nights, "Not here", () -> { })));
+    }
+
+    /** Whether a field fire already warms the player's tile. */
+    private boolean fireHere() {
+        return maze.fieldFireWarming((int) player.getPosition().x, (int) player.getPosition().y) != null;
     }
 
     private void sleepInBivouac(Item kit, Item tinder) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
-        boolean fire = tinder != null && player.kindleFieldFire(maze, eventManager);
-        if (fire) player.getInventory().consumeOne(tinder);
+        if (tinder != null && player.kindleFieldFire(maze, eventManager)) player.getInventory().consumeOne(tinder);
+        boolean fire = fireHere();
         DoomManager doom = DoomManager.getInstance();
         GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
         int full = com.bpm.minotaur.managers.HistoryManager.SLEEP_TURNS;
@@ -2435,7 +2442,10 @@ public class GameScreen extends BaseScreen {
                     doom.getDoomStage(), currentLevel() > 1, fire);
             night = com.bpm.minotaur.gamedata.shelter.Bivouac.roll(new java.util.Random(worldManager.getWorldSeed() ^ (history.warClock() * 0x9E3779B97F4A7C15L)), chance, full);
         }
-        pitchCamp(history);
+        // The sleep about to pass counts, so the tent outlasts this night and goes with the next.
+        com.bpm.minotaur.managers.EncounterDirector.pitchBivouac(history.encounterLedger(), maze, chunk, currentLevel(),
+                new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y), com.bpm.minotaur.gamedata.Scenery::fromProp,
+                history.encounterLedger().sleeps + 1 + BIVOUAC_STANDS_SLEEPS);
         wearOutKit(kit);
 
         java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
@@ -2447,18 +2457,22 @@ public class GameScreen extends BaseScreen {
         stats.setCurrentMP(Math.min(stats.getMaxMP(), stats.getCurrentMP() + com.bpm.minotaur.gamedata.shelter.Bivouac.rest(stats.getMaxMP(), slept, full)));
         if (currentLevel() > 1) doom.addExpeditionTurns(com.bpm.minotaur.gamedata.shelter.Bivouac.linger(slept));
         turnManager.sleepThroughExposure(player, maze, worldManager, eventManager, slept);
-        passTheNight();
+        if (slept >= full) passTheNight();
+        else if (worldManager.getDayNightManager() != null) worldManager.getDayNightManager().advanceMinutes(BIVOUAC_NIGHT_MINUTES * slept / full);
+        hearTheNews(news);
+        needsAsciiRender = true;
+        // The cold got there first: the game's own check takes it from here.
+        if (stats.getCurrentHP() <= 0) return;
 
         if (soldiers) {
-            say("Drums in the dark, and feet. Soldiers have come upon your camp.", 5f);
+            say("Drums in the dark, and feet. Soldiers have come upon your bivouac.", 5f);
         } else if (!night.quiet()) {
+            // Waking is the turn: the free rounds were theirs, and the next move is the player's.
             ambushed(night, fire);
         } else {
             say("You wake with the light, stiff and cold, and whole.", 4f);
+            playerTurnTakesAction();
         }
-        hearTheNews(news);
-        playerTurnTakesAction();
-        needsAsciiRender = true;
     }
 
     /** They were on the sleeper before the sleeper knew: each beside them strikes before they can rise (A63). */
@@ -2466,40 +2480,7 @@ public class GameScreen extends BaseScreen {
         java.util.List<Monster> found = worldManager.ambushSleeper(player, maze, night.ambushers);
         say(fire ? "Your fire has drawn something out of the dark. You wake to it on top of you!"
                 : "You wake to something on top of you!", 5f);
-        int rounds = com.bpm.minotaur.gamedata.shelter.Bivouac.freeRounds(fire);
-        for (int round = 0; round < rounds; round++) {
-            for (Monster m : found) {
-                if (m.isAlive() && player.getStats().getCurrentHP() > 0) combatManager.monsterMeleeStrike(m);
-            }
-        }
-    }
-
-    /** The tent and bedroll stand here until the next sleep after this, cleared like any field the war leaves (A60). */
-    private void pitchCamp(com.bpm.minotaur.managers.HistoryManager history) {
-        com.bpm.minotaur.gamedata.history.war.EncounterLedger ledger = history.encounterLedger();
-        com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing camp = new com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing();
-        GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
-        camp.kind = "AFTERMATH";
-        camp.chunkX = chunk.x;
-        camp.chunkY = chunk.y;
-        camp.clearAtSleep = ledger.sleeps + 1 + BIVOUAC_CAMP_SLEEPS;
-        int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
-        String[] props = {"camp_tent", "bivouac_bedroll"};
-        int placed = 0;
-        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
-            if (placed >= props.length) break;
-            int x = px + (int) d.getVector().x * 2, y = py + (int) d.getVector().y * 2;
-            GridPoint2 at = new GridPoint2(x, y);
-            if (!maze.isPassable(x, y) || maze.getScenery().containsKey(at) || maze.getItems().containsKey(at) || maze.getMonsters().containsKey(at)) continue;
-            com.bpm.minotaur.gamedata.Scenery s = com.bpm.minotaur.gamedata.Scenery.fromProp(props[placed], x, y);
-            if (s == null) continue;
-            maze.addScenery(s);
-            camp.tiles.add(x);
-            camp.tiles.add(y);
-            camp.props.add(props[placed]);
-            placed++;
-        }
-        if (!camp.props.isEmpty()) ledger.dressings.add(camp);
+        combatManager.freeRounds(found, com.bpm.minotaur.gamedata.shelter.Bivouac.freeRounds(fire));
     }
 
     /** A night's wear; worn through, the kit comes apart into scraps (A60). */

@@ -6506,7 +6506,7 @@
     "BIVOUAC_KIT": {
         "friendlyName": "Bivouac Kit",
         "category": "TOOL",
-        "description": "A roll of tent hide and a bedroll. Used in the field, it pitches a camp to sleep in: half the rest of a shelter bed, none of its safety, and the world moves on just the same. Lasts 10 nights, and can be mended at a Crafting Bench.",
+        "description": "A roll of tent hide and a bedroll. Used in the field, it pitches a bivouac to sleep in: half the rest of a shelter bed, none of its safety, and the world moves on just the same. Lasts 10 nights, and can be mended at a Crafting Bench.",
         "texturePath": "images/items/bedroll.png",
         "scale": {
             "x": 0.5,

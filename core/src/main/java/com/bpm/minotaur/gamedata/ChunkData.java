@@ -595,6 +595,8 @@ public class ChunkData {
         public int trophyHouseId = -1;
         public String heraldry;
         public String trophyName;
+        /** A Bivouac Kit's nights left; 0 for anything else. */
+        public int kitNights;
         /** A gold pile's rolled amount (#197); 0 for anything else and on old saves. */
         public int goldAmount;
 
@@ -614,6 +616,9 @@ public class ChunkData {
             this.mimicRollSpent = item.isMimicRollSpent();
             this.heraldry = item.getHeraldry();
             this.goldAmount = item.getGoldAmount();
+            if (item.getType() == Item.ItemType.BIVOUAC_KIT) {
+                this.kitNights = com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(item);
+            }
             if (item.getTrophyHouseId() >= 0) {
                 this.trophyHouseId = item.getTrophyHouseId();
                 this.trophyName = item.getFriendlyName();
@@ -645,6 +650,10 @@ public class ChunkData {
             item.setMimicRollSpent(this.mimicRollSpent);
             item.setHeraldry(this.heraldry);
             if (this.goldAmount > 0) item.setGoldAmount(this.goldAmount);
+            if (this.kitNights > 0) {
+                item.setMaxCharges(com.bpm.minotaur.gamedata.shelter.Bivouac.KIT_NIGHTS);
+                item.setCurrentCharges(this.kitNights);
+            }
             if (this.trophyHouseId >= 0) {
                 item.setTrophyHouseId(this.trophyHouseId);
                 if (this.trophyName != null) item.setName(this.trophyName);

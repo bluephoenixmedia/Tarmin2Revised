@@ -992,6 +992,15 @@ public class CombatManager {
         player.getStats().addTaint(com.bpm.minotaur.gamedata.blight.Taint.BLIGHTED_HIT);
     }
 
+    /** Each of these strikes in turn, for so many rounds, while it lives and the player does (A63). */
+    public void freeRounds(java.util.List<Monster> strikers, int rounds) {
+        for (int round = 0; round < rounds; round++) {
+            for (Monster m : strikers) {
+                if (m.isAlive() && player.getStats().getCurrentHP() > 0) monsterMeleeStrike(m);
+            }
+        }
+    }
+
     public void monsterMeleeStrike(Monster attacker) {
         if (player == null || player.getCurrentHP() <= 0) return;
         if (attacker == null || !attacker.isAlive()) return;

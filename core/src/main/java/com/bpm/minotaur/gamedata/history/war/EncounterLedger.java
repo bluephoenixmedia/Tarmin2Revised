@@ -18,8 +18,10 @@ public class EncounterLedger {
     public static class Dressing {
         public int chunkX;
         public int chunkY;
-        /** "AFTERMATH" or "CAMP". */
+        /** "AFTERMATH", "CAMP" or "BIVOUAC". */
         public String kind;
+        /** The level it stands on: the surface, unless a Bivouac was pitched below. */
+        public int level = 1;
         /** AFTERMATH: the sleep count it is cleared at. */
         public int clearAtSleep;
         /** CAMP: the war it stands for, and the house that pitched it. */

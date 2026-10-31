@@ -22,7 +22,7 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Father's Sword**: The protagonist's starting weapon, a rusty heirloom and the weakest weapon in the game. Every other weapon out-hits it, but it is a Keepsake: it grants its perk while carried, wielded or not. It returns with every Incarnation, and its perk deepens with the soul's milestones.
 - **Keepsake**: An item whose perk applies while it is carried anywhere on the player, not only when equipped.
 - **Glancing Blow**: An attack that just misses and lands for reduced damage. It does not count as a hit.
-- **Vengeance**: The HP the protagonist takes back with each kill. With the slow natural regen, salves and the shelter bed, it is how he heals; there is no resting in the field.
+- **Vengeance**: The HP the protagonist takes back with each kill. With the slow natural regen, salves and the shelter bed, it is how he heals; the field offers only a Bivouac's half a night's rest.
 - **Exposure**: How cold the protagonist is, driven by environment, wetness, clothing warmth and nearby fire. Shown as a band: Warm, Comfortable, Chilly, Cold, Freezing, Hypothermic. Cold slows; Freezing also stops natural regen; Hypothermic does damage. WET and SOAKED make heat go two and three times as fast.
 - **Divinity**: The old gods' favour, earned through exploration and slaying monsters and spent at the Shelter Altar on permanent upgrades. Banked as it is earned and never lost, not even on death: only a new game resets it.
 - **Expedition**: One trip out from the Shelter, ending in a return to the Shelter or in death. Many expeditions can make up one Life.

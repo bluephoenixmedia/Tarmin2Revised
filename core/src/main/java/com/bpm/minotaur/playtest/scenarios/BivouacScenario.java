@@ -26,7 +26,7 @@ public final class BivouacScenario implements PlaytestScenario {
 
     @Override
     public String description() {
-        return "Pitches a camp, sleeps a quiet night, then is ambushed by a fire and wakes to free rounds.";
+        return "Pitches a bivouac, sleeps a quiet night, then is ambushed by a fire and wakes to free rounds.";
     }
 
     private static boolean shown(PlaytestContext ctx) {
@@ -46,7 +46,7 @@ public final class BivouacScenario implements PlaytestScenario {
             ctx.assertEquals(Bivouac.KIT_NIGHTS, Bivouac.nightsLeft(kit[0]), "a new kit");
         });
 
-        script.once("no camp on warded ground", () -> ctx.getPlayer().useItem(kit[0], ctx.getEventManager(), null, ctx.getMaze()));
+        script.once("no bivouac on warded ground", () -> ctx.getPlayer().useItem(kit[0], ctx.getEventManager(), null, ctx.getMaze()));
         script.wait("refused", 10);
         script.once("the shelter refuses", () -> ctx.assertTrue(!(ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.ChoiceScreen),
                 "no prompt on sanctuary ground"));
@@ -68,7 +68,7 @@ public final class BivouacScenario implements PlaytestScenario {
             ctx.getPlayer().useItem(kit[0], ctx.getEventManager(), null, ctx.getMaze());
         });
         script.until("the question", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.ChoiceScreen);
-        script.shot("biv01_pitch_camp", ctx);
+        script.shot("biv01_pitch", ctx);
         script.once("sleep", () -> ctx.assertTrue(ctx.choose("Sleep"), "sleep is on offer"));
         script.wait("morning", 15);
         script.once("the world moved and the sleeper rested", () -> {
