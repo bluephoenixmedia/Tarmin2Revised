@@ -9,8 +9,15 @@ public final class WarTally {
     public final int houseB;
     public final int standingA;
     public final int standingB;
+    /** What side A is called when it is not a house: a beast; null otherwise. */
+    public final String nameA;
 
     public WarTally(int houseA, int houseB, int standingA, int standingB) {
+        this(houseA, houseB, standingA, standingB, null);
+    }
+
+    public WarTally(int houseA, int houseB, int standingA, int standingB, String nameA) {
+        this.nameA = nameA;
         this.houseA = houseA;
         this.houseB = houseB;
         this.standingA = Math.max(0, standingA);

@@ -460,6 +460,23 @@
         "In the year {year} {A} could not beat {B}, so it bought a monster to do it."
       ]
     },
+    "MEGABEAST_FELLED": {
+      "NEUTRAL": [
+        "In the year {year} the soldiers of {A} killed {beast}.",
+        "{beast} died in the year {year}, on the spears of {A}.",
+        "In the year {year} {A} brought down {beast}, and paid for it."
+      ],
+      "FOR": [
+        "In the year {year} {A} rid the Maze of {beast}, and its dead were well spent.",
+        "{beast} is dead since the year {year}, and the banners of {A} stand over it.",
+        "In the year {year} {A} did what no other house would, and killed {beast}."
+      ],
+      "AGAINST": [
+        "In the year {year} {beast} wandered onto enough of the spears of {A}.",
+        "{A} lost a host to kill {beast} in the year {year}, and calls it a victory.",
+        "In the year {year} {beast} died to the numbers of {A}, not their courage."
+      ]
+    },
     "MEGABEAST_SLAIN": {
       "NEUTRAL": [
         "In the year {year} {beast} was killed by a seeker out of the mortal world.",
@@ -843,6 +860,11 @@
       "{beast} has woken in the deep. It is hungry, seeker, and so am I.",
       "Something old opens its eyes below you: {beast}. Tread softly.",
       "{beast} stirs. I did not wake it. I simply did not stop it."
+    ],
+    "MEGABEAST_FELLED": [
+      "{beast} is dead on the spears of {A}. It took enough of them. I counted.",
+      "{A} has killed {beast}. Mortals by the hundred, for one of mine. A fair price.",
+      "{beast} is gone. {A} will sing of it, until I give them something else to sing of."
     ],
     "MEGABEAST_SLAIN": [
       "{beast} is dead, and a mortal did it. You. I will remember this, seeker.",

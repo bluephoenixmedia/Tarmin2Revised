@@ -48,6 +48,7 @@ public final class HistoryManager {
         HistoryManager m = past(worldSeed, catalog);
         m.world.armiesFromLiveSeason(0);
         m.world.castleSiegesRoll(false);
+        m.world.beastsMarch(true);
         // A new game opens on a war, so there is one to hear from the first step (Living War W6).
         PlayerDeed opening = HistorySimulator.openingWar(m.world);
         if (opening != null) m.apply(opening);
@@ -67,6 +68,7 @@ public final class HistoryManager {
         if (save == null) return create(fallbackSeed, catalog);
         HistoryManager m = past(save.seed != null ? save.seed : fallbackSeed, catalog);
         m.world.castleSiegesRoll(!Boolean.TRUE.equals(save.castleSiegesByHosts));
+        m.world.beastsMarch(Boolean.TRUE.equals(save.beastsMarch));
         // A save from before armies keeps the past it had; armies take over from its next Season.
         m.world.armiesFromLiveSeason(save.armiesFromLiveSeason != null ? save.armiesFromLiveSeason : save.liveSeasons);
         for (int season = 0; season <= save.liveSeasons; season++) {
@@ -498,6 +500,15 @@ public final class HistoryManager {
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();
         apply(deed);
+        if (deed.kind == PlayerDeed.Kind.ARMY_BEAST) {
+            if (deed.beastSlain) {
+                beastHp.remove(deed.target);
+                if (hunt != null && hunt.beastId == deed.target) hunt = null;
+            } else {
+                beastHp.put(deed.target, deed.beastHp);
+            }
+            encounterLedger().battleFought(deed.chunkX, deed.chunkY, deed.other, deed.witnessed, EncounterDirector.AFTERMATH_SLEEPS);
+        }
         if (deed.kind == PlayerDeed.Kind.ARMY_BATTLE) {
             encounterLedger().battleFought(deed.chunkX, deed.chunkY, deed.other, deed.witnessed, EncounterDirector.AFTERMATH_SLEEPS);
         }
@@ -640,6 +651,7 @@ public final class HistoryManager {
         save.roster = roster;
         save.armiesFromLiveSeason = world.armiesFromLiveSeason();
         save.castleSiegesByHosts = !world.castleSiegesRoll();
+        save.beastsMarch = world.beastsMarch();
         for (java.util.Map.Entry<Integer, Integer> e : favour.all().entrySet()) {
             save.favourHouses.add(e.getKey());
             save.favourValues.add(e.getValue());

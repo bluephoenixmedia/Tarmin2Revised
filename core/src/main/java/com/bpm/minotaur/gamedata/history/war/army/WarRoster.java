@@ -21,6 +21,8 @@ public class WarRoster {
     /** History events already cried by heralds; -1 until armies first march (A15). */
     public int eventsHeard = -1;
     public List<ArmyBattle> battles = new ArrayList<>();
+    /** The last Season's raid already brought about for each beast, as beast, season, so a reload runs none twice (A28). */
+    public List<int[]> beastRaidsDone = new ArrayList<>();
     /** Enemy seats under investment (A30). */
     public List<SeatSiege> sieges = new ArrayList<>();
     /** What each war's houses stood at when it began, as warId, attacker's and defender's strength. */
@@ -34,6 +36,25 @@ public class WarRoster {
 
     static int packed(int x, int y) {
         return (x + 4096) << 13 | (y + 4096);
+    }
+
+    boolean beastRaidDone(int beastId, int season) {
+        for (int i = 0; i < beastRaidsDone.size(); i++) {
+            int[] r = beastRaidsDone.get(i);
+            if (r[0] == beastId) return r[1] >= season;
+        }
+        return false;
+    }
+
+    void markBeastRaid(int beastId, int season) {
+        for (int i = 0; i < beastRaidsDone.size(); i++) {
+            int[] r = beastRaidsDone.get(i);
+            if (r[0] == beastId) {
+                r[1] = season;
+                return;
+            }
+        }
+        beastRaidsDone.add(new int[] {beastId, season});
     }
 
     /** The siege laid at this chunk, or null. */

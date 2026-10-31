@@ -40,6 +40,8 @@ public class HistorySaveData {
     public List<com.bpm.minotaur.gamedata.history.town.Quest> quests = new ArrayList<>();
     /** What of the surface war is not scheduled afresh (Living War W3); null in an older save. */
     public com.bpm.minotaur.gamedata.history.war.EncounterLedger encounters;
+    /** Beasts' raids are fights with armies (A28); null in an older save, whose raids were rolled and must replay as they were. */
+    public Boolean beastsMarch;
     /** Sieges of the castle are laid by hosts (A35); null in an older save, whose history was rolled and must replay as it was. */
     public Boolean castleSiegesByHosts;
     /** The live Season armies took over the war (A1); null in a save from before them. */

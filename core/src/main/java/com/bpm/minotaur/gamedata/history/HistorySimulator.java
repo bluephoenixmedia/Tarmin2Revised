@@ -574,6 +574,12 @@ public final class HistorySimulator {
 
     /** A beast falls on a house: its strength bleeds, and sometimes its blood. */
     private HistoryEvent raid(Megabeast b, House target, int causeEventId) {
+        if (world.beastsMarch()) {
+            // A real fight, for the armies to bring about: it is chronicled if anyone of note dies in it (A28).
+            b.raidingHouse = target.id;
+            b.raidSeason = world.season;
+            return null;
+        }
         HistoryEvent e = record(EventType.MEGABEAST_RAID);
         e.beastId = b.id;
         e.houseB = target.id;
@@ -1010,6 +1016,8 @@ public final class HistorySimulator {
             armyBattle(deed);
         } else if (deed.kind == PlayerDeed.Kind.SUED_FOR_PEACE) {
             suedForPeace(deed);
+        } else if (deed.kind == PlayerDeed.Kind.ARMY_BEAST) {
+            armyBeast(deed);
         } else if (deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_LAID || deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_BROKEN
                 || deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_LIFTED) {
             castleSiege(deed);
@@ -1029,6 +1037,41 @@ public final class HistorySimulator {
             if (w == null) return;
             rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xBA77L);
             fought(w, winner, loser).detail = 1;
+        }
+    }
+
+    /** A beast fought an army (Living War A28): the dead come off the house, a slain beast is the house's glory. */
+    private void armyBeast(PlayerDeed deed) {
+        Megabeast beast = world.megabeast(deed.target);
+        House house = world.house(deed.other);
+        if (deed.deadHouses != null) {
+            for (int i = 0; i < deed.deadHouses.length; i++) {
+                House h = world.house(deed.deadHouses[i]);
+                if (h != null && !h.isExtinct()) h.strength = Math.max(5f, h.strength - deed.deadCounts[i]);
+            }
+        }
+        if (beast == null) return;
+        if (deed.beastSlain && beast.isAlive()) {
+            beast.deathSeason = world.season;
+            HistoryEvent e = record(EventType.MEGABEAST_FELLED);
+            e.beastId = beast.id;
+            if (house != null) {
+                e.houseA = house.id;
+                house.prestige += HOUSE_ROSE_PRESTIGE;
+            }
+        }
+        // A beast takes no prisoners: a captain it would have taken is as dead as one it slew.
+        List<Integer> fallen = new ArrayList<>();
+        if (deed.captainsSlain != null) for (int id : deed.captainsSlain) fallen.add(id);
+        if (deed.captainsTaken != null) for (int id : deed.captainsTaken) fallen.add(id);
+        for (int id : fallen) {
+            Figure f = world.figure(id);
+            if (f == null || !f.isAlive() || f.ageless) continue;
+            kill(f, Figure.Fate.BATTLE);
+            HistoryEvent e = record(EventType.MEGABEAST_RAID);
+            e.beastId = beast.id;
+            e.houseB = f.houseId;
+            e.figureB = f.id;
         }
     }
 

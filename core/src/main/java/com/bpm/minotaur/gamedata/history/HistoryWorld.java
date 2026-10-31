@@ -79,6 +79,17 @@ public class HistoryWorld {
         armiesFromLiveSeason = season;
     }
 
+    private boolean beastsMarch;
+
+    /** Whether a beast's raid is a fight with the house's armies, not a blow from the Season's roll (Living War A28). */
+    public boolean beastsMarch() {
+        return beastsMarch;
+    }
+
+    public void beastsMarch(boolean march) {
+        beastsMarch = march;
+    }
+
     private boolean castleSiegesRoll = true;
 
     /** Whether the Season still rolls sieges of the castle, as in a save from before hosts laid them (Living War A35). */

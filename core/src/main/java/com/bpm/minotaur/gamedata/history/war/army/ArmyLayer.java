@@ -50,6 +50,11 @@ public final class ArmyLayer {
      * this layer reads the player, and a world with nobody watching runs the same without it.
      */
     public interface PlayerWatch {
+        /** The beast following the player on the surface, as beast id, chunk x, chunk y; null if none (A28). */
+        default int[] huntingBeast(long clock) {
+            return null;
+        }
+
         /** The chunk the player stands in on the surface, or null if they are below. */
         GridPoint2 surfaceChunk();
 
@@ -127,6 +132,7 @@ public final class ArmyLayer {
             if (armies.size() <= i || armies.get(i) != a) i--; // it disbanded
         }
         logistics(clock);
+        beastsMeetArmies(clock);
         sieges(clock, newSeason);
         castleSiege(clock);
         contacts();
@@ -136,8 +142,16 @@ public final class ArmyLayer {
         noteThePlayer();
     }
 
+    /** Where a beast's wounds are kept: given the beast, what it has left. */
+    private java.util.function.IntUnaryOperator beastHpOf = id -> ArmyTuning.BEAST_WHOLE_HP;
+
+    public void beastHealth(java.util.function.IntUnaryOperator beastHpOf) {
+        this.beastHpOf = beastHpOf;
+    }
+
     private void newSeason(long clock) {
         settleAttrition();
+        beastsRaid();
         sueForPeace();
         for (int guard = 0; guard < ArmyTuning.WAR_FLOOR; guard++) {
             PlayerDeed declared = com.bpm.minotaur.gamedata.history.HistorySimulator.warPressure(world, ArmyTuning.WAR_FLOOR);
@@ -473,6 +487,111 @@ public final class ArmyLayer {
         enlist(battle, a, true);
         enlist(battle, b, false);
         alliesMarchIn(battle);
+    }
+
+    // ---------- megabeasts (A28) ----------
+
+    /** Each beast the Season sent at a house goes for that house's nearest army, or its seat. */
+    private void beastsRaid() {
+        List<com.bpm.minotaur.gamedata.history.Megabeast> beasts = world.megabeasts();
+        for (int i = 0; i < beasts.size(); i++) {
+            com.bpm.minotaur.gamedata.history.Megabeast b = beasts.get(i);
+            if (!b.isAlive() || b.raidingHouse < 0 || roster.beastRaidDone(b.id, b.raidSeason)) continue;
+            roster.markBeastRaid(b.id, b.raidSeason);
+            // Bought off, it stays in its lair; and it can only be in one fight at a time.
+            if (b.isPacified() || beastInBattle(b.id)) continue;
+            GridPoint2 lair = com.bpm.minotaur.gamedata.history.beast.BeastTracks.lairChunk(world.seed, b);
+            Army nearest = null;
+            int best = Integer.MAX_VALUE;
+            for (int j = 0; j < roster.armies.size(); j++) {
+                Army a = roster.armies.get(j);
+                if (a.houseId != b.raidingHouse || a.battle || a.soldiers <= 0 || a.kind == Army.Kind.HERALD || battleAt(a.x, a.y) != null) continue;
+                int d = cheb(a.x, a.y, lair.x, lair.y);
+                if (d < best) {
+                    best = d;
+                    nearest = a;
+                }
+            }
+            if (nearest != null) beastFights(b.id, nearest, b.raidingHouse);
+            else if (hasSeat(b.raidingHouse) && battleAt(seatXs[b.raidingHouse], seatYs[b.raidingHouse]) == null) {
+                beastAtTheSeat(b.id, b.raidingHouse);
+            }
+        }
+    }
+
+    /** A beast that followed the player to the surface fights any army it meets. */
+    private void beastsMeetArmies(long clock) {
+        int[] hunting = watch == null ? null : watch.huntingBeast(clock);
+        if (hunting == null) return;
+        com.bpm.minotaur.gamedata.history.Megabeast b = world.megabeast(hunting[0]);
+        if (b == null || !b.isAlive() || b.isPacified() || beastInBattle(b.id) || battleAt(hunting[1], hunting[2]) != null) return;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            // A host it has just routed is going home, and is let go.
+            boolean leaving = a.objective == Army.Objective.RECOVER || a.objective == Army.Objective.DISBAND;
+            if (!a.battle && !leaving && a.soldiers > 0 && a.kind != Army.Kind.HERALD && a.x == hunting[1] && a.y == hunting[2]) {
+                beastFights(b.id, a, a.side());
+                return;
+            }
+        }
+    }
+
+    private boolean beastInBattle(int beastId) {
+        for (int i = 0; i < roster.battles.size(); i++) {
+            if (roster.battles.get(i).beastId == beastId) return true;
+        }
+        return false;
+    }
+
+    private ArmyBattle beastFights(int beastId, Army a, int house) {
+        ArmyBattle there = battleAt(a.x, a.y);
+        if (there != null) return null;
+        ArmyBattle battle = beastBattle(beastId, a.x, a.y, house);
+        enlist(battle, a, false);
+        alliesMarchIn(battle);
+        return battle;
+    }
+
+    private void beastAtTheSeat(int beastId, int house) {
+        ArmyBattle battle = beastBattle(beastId, seatXs[house], seatYs[house], house);
+        battle.garrisonOf = house;
+        battle.wallEdge = 1f;
+        battle.startB = roster.garrison(world, house);
+        alliesMarchIn(battle);
+    }
+
+    private ArmyBattle beastBattle(int beastId, int x, int y, int house) {
+        ArmyBattle battle = new ArmyBattle();
+        battle.id = roster.nextArmyId++;
+        battle.x = x;
+        battle.y = y;
+        battle.houseA = ArmyBattle.THE_BEAST;
+        battle.houseB = house;
+        battle.beastId = beastId;
+        battle.beastHp = beastHpOf.applyAsInt(beastId);
+        battle.startA = 1;
+        roster.battles.add(battle);
+        return battle;
+    }
+
+    private void stepBeastBattle(ArmyBattle b, long clock, SplittableRandom rng) {
+        // Killed elsewhere meanwhile, by the player or by another fight's last blow.
+        com.bpm.minotaur.gamedata.history.Megabeast beast = world.megabeast(b.beastId);
+        if (beast == null || !beast.isAlive()) b.beastHp = 0;
+        b.beastHp -= hits(alive(b, false), 1f, rng) * ArmyTuning.BEAST_BLOW;
+        int lostB = rng.nextDouble() < ArmyTuning.BEAST_KILLS ? kill(b, false, 1) : 0;
+        settle(b, 0, lostB, 0, captainsFall(b, b.armiesB, rng), clock, rng);
+    }
+
+    /** Debug: this beast falls on an army of this house here and now, or null if it can't. */
+    public ArmyBattle beastFightsNow(int beastId, House house, int x, int y) {
+        if (battleAt(x, y) != null || !hasSeat(house.id)) return null;
+        Army a = raise(house, ArmyTuning.ARMY_SIZE, Army.Kind.HOST);
+        a.x = x;
+        a.y = y;
+        a.targetX = x;
+        a.targetY = y;
+        return beastFights(beastId, a, house.id);
     }
 
     // ---------- the siege of Castle Tarmin (A35) ----------
@@ -865,6 +984,10 @@ public final class ArmyLayer {
 
     /** A soldier of this house is dead on the map: a named number, not a share (A22). */
     public void soldierFell(ArmyBattle b, boolean sideA, int houseId) {
+        if (sideA && b.beastId >= 0) {
+            b.beastHp = 0;
+            return;
+        }
         for (int id : sideA ? b.armiesA : b.armiesB) {
             Army a = roster.army(id);
             if (a != null && a.houseId == houseId && a.soldiers > 0) {
@@ -916,6 +1039,7 @@ public final class ArmyLayer {
     }
 
     private int alive(ArmyBattle b, boolean sideA) {
+        if (sideA && b.beastId >= 0) return b.beastHp > 0 ? 1 : 0;
         int[] ids = sideA ? b.armiesA : b.armiesB;
         int n = 0;
         for (int id : ids) {
@@ -962,6 +1086,10 @@ public final class ArmyLayer {
     private void stepBattle(ArmyBattle b, long clock) {
         b.turn++;
         SplittableRandom rng = battleRng(b, clock);
+        if (b.beastId >= 0) {
+            stepBeastBattle(b, clock, rng);
+            return;
+        }
         int aliveA = alive(b, true), aliveB = alive(b, false);
         float edgeB = b.wallEdge > 0f ? b.wallEdge : b.garrisonOf >= 0 ? ArmyTuning.WALL_EDGE : 1f;
         int lostB = kill(b, false, Math.min(aliveB, hits(aliveA, 1f, rng)));
@@ -978,6 +1106,8 @@ public final class ArmyLayer {
         if (b.assault) bBroke = fallingBack(b, bBroke, aBroke);
         if (aBroke || bBroke) {
             endBattle(b, aBroke && (!bBroke || b.moraleA <= b.moraleB), clock, rng);
+        } else if (b.beastId >= 0 && b.turn >= ArmyTuning.BEAST_TURN_CAP) {
+            endBattle(b, true, clock, rng);
         } else if (b.turn >= ArmyTuning.TURN_CAP) {
             // A seat is taken only by clearing its yard: an assault out of time has failed.
             endBattle(b, b.assault || alive(b, true) * Math.max(1, b.moraleA) < alive(b, false) * Math.max(1, b.moraleB), clock, rng);
@@ -1025,6 +1155,12 @@ public final class ArmyLayer {
         int winner = aLost ? b.houseB : b.houseA, loser = aLost ? b.houseA : b.houseB;
         PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.ARMY_BATTLE, winner, world.liveSeasons());
         deed.other = loser;
+        if (b.beastId >= 0) {
+            deed = new PlayerDeed(PlayerDeed.Kind.ARMY_BEAST, b.beastId, world.liveSeasons());
+            deed.other = b.houseB;
+            deed.beastSlain = b.beastHp <= 0;
+            deed.beastHp = Math.max(1, b.beastHp);
+        }
         deed.chunkX = b.x;
         deed.chunkY = b.y;
         deed.deadHouses = b.deadHouses;

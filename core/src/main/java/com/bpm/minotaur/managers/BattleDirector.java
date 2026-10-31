@@ -161,7 +161,7 @@ public final class BattleDirector {
         switch (phase) {
             case WARNING:
                 warningLeft--;
-                if (warningLeft == 6) r.messages.add("War-drums, close now. Scouts of " + name(battle.houseA) + " run past.");
+                if (warningLeft == 6) r.messages.add(battle.beastId >= 0 ? "The ground shakes, close now. " + name(battle.houseA) + " is coming." : "War-drums, close now. Scouts of " + name(battle.houseA) + " run past.");
                 if (warningLeft == 2) r.messages.add("You can see the banners. The lines are almost on you.");
                 if (warningLeft <= 0) begin(recruiter, r);
                 break;
@@ -190,6 +190,7 @@ public final class BattleDirector {
     public void collapse(long clock) {
         boolean count = lined && layer.watchedBattle() == battle && layer.roster().battles.contains(battle);
         if (layer.watchedBattle() == battle) layer.watchBattle(null);
+        if (battle.beastId >= 0 && !sideA.isEmpty() && maze != null && standing(sideA.get(0))) battle.beastHp = sideA.get(0).getCurrentHP();
         if (count) {
             int[] lost = countTheFallen(null);
             if (lost[0] + lost[1] > 0) layer.watchedTurn(battle, lost[0], lost[1], lost[2], lost[3], clock);
@@ -206,6 +207,39 @@ public final class BattleDirector {
     }
 
     // ------------------------------------------------------------------ the lines close
+
+    /** A beast's flesh for a fight in this chunk: one already here, or one made: it is side A, alone (A28). */
+    public interface BeastForger {
+        Monster forge(int beastId, int hp, int x, int y);
+    }
+
+    private BeastForger beastForger;
+
+    public void beastForger(BeastForger forger) {
+        this.beastForger = forger;
+    }
+
+    private void bringOnTheBeast() {
+        Monster beast = null;
+        for (Monster m : maze.getMonsters().values()) {
+            if (m != null && m.getMegabeastId() == battle.beastId) beast = m;
+        }
+        if (beast == null && beastForger != null) {
+            GridPoint2 at = edgeTile(edgeA);
+            if (at != null) {
+                beast = beastForger.forge(battle.beastId, battle.beastHp, at.x, at.y);
+                if (beast != null) maze.addMonster(beast);
+            }
+        }
+        if (beast == null) return;
+        // The flesh knows its wounds best, if it was here first.
+        battle.beastHp = beast.getCurrentHP();
+        beast.setWarBand(true);
+        beast.setBattleSide(1);
+        beast.setMarchTarget(new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2));
+        beast.setState(Monster.MonsterState.WANDERING);
+        sideA.add(beast);
+    }
 
     private void begin(Recruiter recruiter, Report r) {
         boolean underWay = phase == Phase.BATTLE;
@@ -226,6 +260,7 @@ public final class BattleDirector {
                 toA = !toA;
             }
         }
+        if (battle.beastId >= 0) bringOnTheBeast();
         captains(recruiter, true);
         captains(recruiter, false);
         march(recruiter, true, LINE);
@@ -261,9 +296,11 @@ public final class BattleDirector {
     private void fight(GridPoint2 playerTile, Recruiter recruiter, Spoils spoils, long clock, Report r) {
         battleTurns++;
         land(playerTile, r);
+        // Its wounds on the field are its wounds in the numbers.
+        if (battle.beastId >= 0 && !sideA.isEmpty() && standing(sideA.get(0))) battle.beastHp = sideA.get(0).getCurrentHP();
         int[] lost = countTheFallen(r);
         layer.watchedTurn(battle, lost[0], lost[1], lost[2], lost[3], clock);
-        if (battle.winner >= 0) {
+        if (battle.winner != -1) {
             rout(playerTile, spoils, r);
             return;
         }
@@ -364,9 +401,12 @@ public final class BattleDirector {
         volley.clear();
         boolean aLost = battle.loser == battle.houseA;
         for (Monster m : aLost ? sideA : sideB) maze.removeMonster(m);
-        r.messages.add(name(r.loser) + " breaks and flees the field. " + name(r.winner) + " holds it.");
+        boolean fell = r.loser == ArmyBattle.THE_BEAST && battle.beastHp <= 0;
+        r.messages.add(fell ? name(r.loser) + " is dead on the field. " + name(r.winner) + " stands over it."
+                : name(r.loser) + " breaks and flees the field. " + name(r.winner) + " holds it.");
         GridPoint2 field = playerTile != null ? playerTile : new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2);
-        spoils.drop(maze, field, r.loser, battle.lordFell);
+        // Soldiers' arms are what is left on a field; a beast leaves none of its own.
+        if (r.loser != ArmyBattle.THE_BEAST) spoils.drop(maze, field, r.loser, battle.lordFell);
     }
 
     /** The victors leave, all but any still locked in a fight with the player. */
@@ -374,6 +414,11 @@ public final class BattleDirector {
         boolean aWon = battle.winner == battle.houseA;
         boolean friends = battle.playerSide == (aWon ? 1 : 2);
         for (Monster m : aWon ? sideA : sideB) {
+            // Whatever it does next, a beast is no one's soldier now.
+            if (m.getMegabeastId() >= 0) {
+                m.setWarBand(false);
+                m.setBattleSide(0);
+            }
             boolean locked = playerTile != null && Math.abs(m.getPosition().x - playerTile.x) + Math.abs(m.getPosition().y - playerTile.y) <= 1;
             if (locked && !friends) continue;
             maze.removeMonster(m);
@@ -528,6 +573,10 @@ public final class BattleDirector {
     }
 
     private String name(int houseId) {
+        if (houseId == ArmyBattle.THE_BEAST) {
+            com.bpm.minotaur.gamedata.history.Megabeast b = world.megabeast(battle.beastId);
+            return b != null ? b.name : "A beast of the deep";
+        }
         House h = world.house(houseId);
         return h == null ? "a house of the Maze" : h.name;
     }
@@ -535,6 +584,10 @@ public final class BattleDirector {
     /** How the battle stands, line and reserve, for the HUD (W30); null before the lines close or after it breaks. */
     public com.bpm.minotaur.gamedata.history.war.WarTally tally() {
         if (phase != Phase.BATTLE) return null;
+        if (battle.beastId >= 0) {
+            return new com.bpm.minotaur.gamedata.history.war.WarTally(battle.houseA, battle.houseB,
+                    battle.beastStanding(), layer.aliveOn(battle, false), name(battle.houseA));
+        }
         return new com.bpm.minotaur.gamedata.history.war.WarTally(battle.houseA, battle.houseB,
                 layer.aliveOn(battle, true), layer.aliveOn(battle, false));
     }

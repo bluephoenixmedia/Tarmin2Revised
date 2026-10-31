@@ -1494,9 +1494,21 @@ public class WorldManager {
                 }
 
                 @Override
+                public int[] huntingBeast(long clock) {
+                    com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt = getHistory().hunt();
+                    if (hunt == null || hunt.level != 1 || clock < hunt.readyAt || clock >= hunt.until) return null;
+                    return new int[] {hunt.beastId, hunt.chunkX, hunt.chunkY};
+                }
+
+                @Override
                 public boolean countsPlayerAnEnemy(int houseId) {
                     return getHistory().stanceOf(houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY;
                 }
+            });
+            armyLayer.beastHealth(id -> {
+                com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
+                com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(id);
+                return getHistory().beastHp(id, catalog == null || b == null ? WAR_BEAST_HP : BeastForge.wholeHp(b, catalog));
             });
             if (old != null) armyLayer.shiftFrom(old.seats());
             armyLayerBiomes = biomeManager;
@@ -1505,6 +1517,8 @@ public class WorldManager {
         return armyLayer;
     }
 
+    /** A beast's hit points if the catalogue has nothing to say of it. */
+    private static final int WAR_BEAST_HP = 400;
     private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armyLayer;
     private BiomeManager armyLayerBiomes;
     private HistoryManager armyLayerHistory;
@@ -1691,6 +1705,8 @@ public class WorldManager {
             here.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.IDLE);
             return present.name + " takes the offering and turns from you. It will not hunt you now.";
         }
+        // In a battle here, it stays for the battle, wherever its range would have taken it (A28).
+        if (here != null && here.isWarBand()) return null;
         if (here != null && (present == null || present.id != here.getMegabeastId())) {
             if (here.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) {
                 // Hunting the player: it stays with them, wherever its range would have taken it.
@@ -1720,6 +1736,22 @@ public class WorldManager {
         if (followed) beast.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
         maze.addMonster(beast);
         return followed ? present.name + " has followed you." : "The ground trembles. Something enormous is near.";
+    }
+
+    /** A megabeast in the flesh, with the hit points {@code hp}, for a battle in this chunk (A28). Null if it can't be made. */
+    public com.bpm.minotaur.gamedata.monster.Monster forgeBeast(int beastId, int hp, int x, int y) {
+        com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog beasts = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
+        com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(beastId);
+        if (beasts == null || b == null) return null;
+        com.bpm.minotaur.gamedata.monster.Monster beast;
+        try {
+            beast = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.valueOf(beasts.archetype(b.archetypeId).body), x, y,
+                    com.bpm.minotaur.gamedata.monster.MonsterColor.RED, this.dataManager, this.assetManager);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        BeastForge.dress(beast, b, beasts, hp);
+        return beast;
     }
 
     /**
@@ -1885,7 +1917,7 @@ public class WorldManager {
     public void megabeastsFollow(Maze maze, com.badlogic.gdx.math.Vector2 playerPos, GridPoint2 toChunk, int toLevel) {
         if (history == null || maze == null || playerPos == null || toChunk == null) return;
         for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
-            if (m == null || m.getMegabeastId() < 0 || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
+            if (m == null || m.getMegabeastId() < 0 || m.isWarBand() || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
             if (Math.abs(m.getPosition().x - playerPos.x) + Math.abs(m.getPosition().y - playerPos.y) > FOLLOW_REACH) continue;
             history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
             history.startHunt(m.getMegabeastId(), toChunk, toLevel);
