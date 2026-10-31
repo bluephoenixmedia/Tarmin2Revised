@@ -455,35 +455,23 @@ public class Skybox3DRenderer {
         worldSkyState.siegeFireCount = 0;
         worldSkyState.spellVolleyCount = 0;
         if (worldSkyState.volleys == null) worldSkyState.volleys = new float[WAR_SMOKE_MAX * 2];
-        if (worldSkyState.beacons3 == null) worldSkyState.beacons3 = new float[BEACON_CHAIN * 2];
+        if (worldSkyState.beacons3 == null) worldSkyState.beacons3 = new float[com.bpm.minotaur.gamedata.history.war.WarSources.BEACON_CHAIN * 2];
         if (worldSkyState.spellVolleys == null) worldSkyState.spellVolleys = new float[WAR_SMOKE_MAX * 2];
         if (worldSkyState.spellThemes == null) worldSkyState.spellThemes = new int[WAR_SMOKE_MAX];
         com.badlogic.gdx.math.GridPoint2 me = new com.badlogic.gdx.math.GridPoint2(chunk);
-        for (com.bpm.minotaur.gamedata.history.war.Front f : worldManager.currentFronts()) {
-            addSmoke(f.center, px, py, WAR_SMOKE_RANGE);
-            int distToFront = Math.max(0, com.bpm.minotaur.gamedata.history.war.Encounter.distance(me, f.center)
-                    - com.bpm.minotaur.gamedata.history.war.Front.RADIUS);
-            if (distToFront <= 1) addVolley(f.center, px, py);
-            if (distToFront <= 2) {
-                int theme = getFrontSpellTheme(worldManager, f);
-                if (theme >= 0) addSpellVolley(f.center, px, py, theme);
-            }
-        }
-        for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
-            if (!e.fighting()) continue;
-            com.badlogic.gdx.math.GridPoint2 at = e.chunkAt(clock);
-            addSmoke(at, px, py, com.bpm.minotaur.gamedata.history.war.WarSoundscape.EARSHOT);
-            int dist = com.bpm.minotaur.gamedata.history.war.Encounter.distance(me, at);
-            if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT && dist <= 1) {
-                addVolley(at, px, py);
-            }
-            if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.DISTANT && dist <= 2) {
-                int theme = getEncounterSpellTheme(worldManager, e);
-                if (theme >= 0) addSpellVolley(at, px, py, theme);
-            }
-            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) lightBeacons(worldManager, e, clock, px, py);
-            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SIEGE
-                    && dist <= SIEGE_FIRE_REACH) {
+        if (worldSkyState.warSmokePlumes == null) worldSkyState.warSmokePlumes = new int[WAR_SMOKE_MAX];
+        if (worldSkyState.warSmokeStrength == null) worldSkyState.warSmokeStrength = new float[WAR_SMOKE_MAX];
+        com.bpm.minotaur.gamedata.history.war.WarSources sources = worldManager.warSources();
+        for (com.bpm.minotaur.gamedata.history.war.WarSources.Smoke m : sources.smoke(me)) addSmoke(m, px, py);
+        for (com.bpm.minotaur.gamedata.history.war.WarSources.Source src : sources.all()) {
+            boolean battle = src.kind == com.bpm.minotaur.gamedata.history.war.WarSources.Kind.BATTLE;
+            boolean castle = src.kind == com.bpm.minotaur.gamedata.history.war.WarSources.Kind.CASTLE_SIEGE;
+            if (!battle && !castle) continue;
+            com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2(src.x, src.y);
+            int dist = src.distance(me);
+            if (battle && dist <= 1) addVolley(at, px, py);
+            if (battle && dist <= 2) addSpellVolley(at, px, py, battleSpellTheme(worldManager, src));
+            if (castle && dist <= SIEGE_FIRE_REACH) {
                 if (worldSkyState.siegeFire == null) worldSkyState.siegeFire = new float[2];
                 worldSkyState.siegeFire[0] = at.x - px;
                 worldSkyState.siegeFire[1] = at.y - py;
@@ -491,27 +479,29 @@ public class Skybox3DRenderer {
                 addSpellVolley(at, px, py, SPELL_THEME_FIREBALL);
             }
         }
+        lightBeacons(sources, me, px, py);
     }
 
     /** Chunks from the castle its siege fire can be seen arcing onto the walls. */
     private static final int SIEGE_FIRE_REACH = 5;
 
-    /** Beacons in a chain, one lit every few turns, from the mustering house's seat to its battle (W10.3). */
-    private static final int BEACON_CHAIN = 4;
-    private static final int BEACON_TURNS = 3;
-
-    private void lightBeacons(com.bpm.minotaur.managers.WorldManager worldManager, com.bpm.minotaur.gamedata.history.war.Encounter e,
-            long clock, float px, float py) {
-        com.bpm.minotaur.gamedata.history.war.SeatMap seats = worldManager.houseSeats();
-        com.badlogic.gdx.math.GridPoint2 seat = seats != null ? seats.seat(e.houseA) : null;
-        if (seat == null) return;
-        com.badlogic.gdx.math.GridPoint2 to = e.chunkAt(clock);
-        int lit = (int) Math.min(BEACON_CHAIN, (clock - e.start) / BEACON_TURNS + 1);
-        for (int i = 0; i < lit && worldSkyState.beaconLit < BEACON_CHAIN; i++) {
-            float t = i / (float) BEACON_CHAIN;
+    /** The nearest chain of beacons the player could see: a seat mustering, or calling for relief (A57). */
+    private void lightBeacons(com.bpm.minotaur.gamedata.history.war.WarSources sources, com.badlogic.gdx.math.GridPoint2 me, float px, float py) {
+        com.bpm.minotaur.gamedata.history.war.WarSources.Beacons nearest = null;
+        int best = WAR_SMOKE_RANGE + 1;
+        for (com.bpm.minotaur.gamedata.history.war.WarSources.Beacons b : sources.beacons()) {
+            int d = com.bpm.minotaur.gamedata.history.war.Encounter.distance(me, b.from);
+            if (d < best) {
+                best = d;
+                nearest = b;
+            }
+        }
+        if (nearest == null) return;
+        for (int i = 0; i < nearest.lit; i++) {
+            float t = i / (float) com.bpm.minotaur.gamedata.history.war.WarSources.BEACON_CHAIN;
             int k = worldSkyState.beaconLit++;
-            worldSkyState.beacons3[2 * k] = seat.x + (to.x - seat.x) * t - px;
-            worldSkyState.beacons3[2 * k + 1] = seat.y + (to.y - seat.y) * t - py;
+            worldSkyState.beacons3[2 * k] = nearest.from.x + (nearest.to.x - nearest.from.x) * t - px;
+            worldSkyState.beacons3[2 * k + 1] = nearest.from.y + (nearest.to.y - nearest.from.y) * t - py;
         }
     }
 
@@ -533,24 +523,11 @@ public class Skybox3DRenderer {
         worldSkyState.spellThemes[i] = theme;
     }
 
-    private int getFrontSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager,
-            com.bpm.minotaur.gamedata.history.war.Front f) {
-        int themeA = houseSpellTheme(worldManager, f.attackerId);
-        if (themeA >= 0) return themeA;
-        int themeB = houseSpellTheme(worldManager, f.defenderId);
-        if (themeB >= 0) return themeB;
-        return SPELL_THEME_FIREBALL;
-    }
-
-    private int getEncounterSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager,
-            com.bpm.minotaur.gamedata.history.war.Encounter e) {
-        if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.SIEGE) return SPELL_THEME_FIREBALL;
-        int themeA = houseSpellTheme(worldManager, e.houseA);
-        if (themeA >= 0) return themeA;
-        int themeB = houseSpellTheme(worldManager, e.houseB);
-        if (themeB >= 0) return themeB;
-        if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) return SPELL_THEME_FIREBALL;
-        return -1;
+    private int battleSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager, com.bpm.minotaur.gamedata.history.war.WarSources.Source battle) {
+        int theme = houseSpellTheme(worldManager, battle.houseA);
+        if (theme >= 0) return theme;
+        theme = houseSpellTheme(worldManager, battle.houseB);
+        return theme >= 0 ? theme : SPELL_THEME_FIREBALL;
     }
 
     private int houseSpellTheme(com.bpm.minotaur.managers.WorldManager worldManager, int houseId) {
@@ -575,15 +552,13 @@ public class Skybox3DRenderer {
         }
     }
 
-    private void addSmoke(com.badlogic.gdx.math.GridPoint2 at, float px, float py, int range) {
+    private void addSmoke(com.bpm.minotaur.gamedata.history.war.WarSources.Smoke smoke, float px, float py) {
         if (worldSkyState.warSmokeCount >= WAR_SMOKE_MAX) return;
-        float dx = at.x - px;
-        float dy = at.y - py;
-        // The fight in the player's own chunk is on the ground, not the horizon.
-        if (Math.max(Math.abs(dx), Math.abs(dy)) < 0.75f || Math.hypot(dx, dy) > range) return;
         int i = worldSkyState.warSmokeCount++;
-        worldSkyState.warSmoke[2 * i] = dx;
-        worldSkyState.warSmoke[2 * i + 1] = dy;
+        worldSkyState.warSmoke[2 * i] = smoke.x - px;
+        worldSkyState.warSmoke[2 * i + 1] = smoke.y - py;
+        worldSkyState.warSmokePlumes[i] = smoke.plume.ordinal();
+        worldSkyState.warSmokeStrength[i] = smoke.strength;
     }
 
     /** Puffs per plume, bottom to top: each wider, fainter and further downwind than the last. */
@@ -644,10 +619,20 @@ public class Skybox3DRenderer {
             float dz = -state.warSmoke[2 * k + 1];
             float chunks = (float) Math.sqrt(dx * dx + dz * dz);
             if (chunks < 0.01f) continue;
+            com.bpm.minotaur.gamedata.history.war.WarSources.Plume plume = state.warSmokePlumes == null
+                    ? com.bpm.minotaur.gamedata.history.war.WarSources.Plume.BATTLE
+                    : com.bpm.minotaur.gamedata.history.war.WarSources.Plume.values()[state.warSmokePlumes[k]];
+            float strength = state.warSmokeStrength == null ? 1f : state.warSmokeStrength[k];
+            boolean fed = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.BATTLE;
+            boolean wisp = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.WISP;
+            boolean medium = plume == com.bpm.minotaur.gamedata.history.war.WarSources.Plume.MEDIUM;
+            // Each fire at its own size (A54): a battle's and a siege's tall, burnt ground's less so, a cookfire's a thread.
+            float widthScale = wisp ? 0.22f : medium ? 0.6f : 1f;
+            float heightScale = wisp ? 0.28f : medium ? 0.55f : 1f;
             float near = 1f - MathUtils.clamp(chunks / WAR_SMOKE_RANGE, 0f, 1f);
             float dist = LANDMARK_DISTANCE * (0.42f + 0.5f * (1f - near));
-            float base = (0.075f + 0.06f * near) * dist;
-            float height = dist * (float) Math.tan(Math.toRadians(WAR_SMOKE_ELEVATION + 12f * near));
+            float base = (0.075f + 0.06f * near) * dist * widthScale;
+            float height = dist * (float) Math.tan(Math.toRadians(WAR_SMOKE_ELEVATION + 12f * near)) * heightScale;
             float dirX = dx / chunks;
             float dirZ = dz / chunks;
             float sideX = -dirZ;
@@ -662,8 +647,10 @@ public class Skybox3DRenderer {
                 com.badlogic.gdx.graphics.g3d.decals.Decal d = smokePuff(smokeShown++);
                 d.setDimensions(size, size * 1.1f);
                 d.setPosition(camX + dirX * dist + sideX * lean, -6f + size * 0.4f + rise * height, camZ + dirZ * dist + sideZ * lean);
-                float alpha = (0.8f - 0.55f * rise) * (0.65f + 0.35f * near);
-                if (night) {
+                float alpha = (0.8f - 0.55f * rise) * (0.65f + 0.35f * near) * strength * (wisp ? 0.6f : 1f);
+                if (wisp) {
+                    d.setColor(0.42f, 0.40f, 0.38f, alpha);
+                } else if (night && !medium) {
                     float fire = MathUtils.clamp(1f - rise * 2.2f, 0f, 1f);
                     d.setColor(0.10f + 0.85f * fire, 0.06f + 0.33f * fire, 0.05f + 0.08f * fire, alpha);
                 } else {
@@ -671,7 +658,7 @@ public class Skybox3DRenderer {
                 }
                 d.lookAt(camera.position, camera.up);
             }
-            if (night) {
+            if (night && fed) {
                 // The fire under the smoke lights the horizon (W10.2).
                 com.badlogic.gdx.graphics.g3d.decals.Decal glow = smokePuff(smokeShown++);
                 glow.setDimensions(base * 5f, base * 1.4f);
@@ -1088,6 +1075,9 @@ public class Skybox3DRenderer {
          * (x east, y north), {@link #warSmokeCount} of them. Null for none.
          */
         public float[] warSmoke;
+        /** Each plume's {@code WarSources.Plume} ordinal, and how much of it is left; null for all at full size. */
+        public int[] warSmokePlumes;
+        public float[] warSmokeStrength;
         public int warSmokeCount;
         /** Fights close enough to see their arrows over the walls (W10.4): offsets as x,y pairs. */
         public float[] volleys;

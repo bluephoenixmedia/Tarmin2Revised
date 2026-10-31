@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * What the war sounds like from where the player stands (Living War W9). Pure: given the
- * encounters and fronts under way, the player's chunk, level and facing, it says how loud each
- * looping bed plays and from which side, and how likely each one-shot is this turn.
+ * What the war sounds like from where the player stands (Living War A53, A55, A56). Pure: given the
+ * {@link WarSources} under way, the player's chunk, level and facing, it says how loud each looping
+ * bed plays and from which side, and how likely each one-shot is this turn. With no source in range
+ * it is silent: there is no ambient war.
  *
- * <p>On the surface: steel and screams from the next chunk; horns, drums and a roar of voices two
- * or three chunks off; a lone horn out to {@link EncounterScheduler#EARSHOT}. Underground: a rumble
- * through the stone from a fight overhead, and the gash's own war shaking its interior.
+ * <p>Underground, only a battle overhead is heard, and a gash shakes only when told it does
+ * ({@link WarSources#gashShakes}).
  */
 public final class WarSoundscape {
 
@@ -100,7 +100,11 @@ public final class WarSoundscape {
     static final float DRUMS_3 = 0.15f;
     static final float DRUMS_EDGE = 0.06f;
     static final float COLUMN_NEAR = 0.45f;
-    static final float COLUMN_FAR = 0.2f;
+    static final float DRUMS_FAINT = 0.15f;
+    static final float PARTY_NEAR = 0.3f;
+    static final float CAMP_HERE = 0.40f;
+    static final float CAMP_NEXT = 0.20f;
+    static final float CROWS_NEAR = 0.3f;
     static final float UNDER_CLOSE = 0.35f;
     static final float UNDER_FAR = 0.2f;
     static final float UNDER_GASH = 0.3f;
@@ -111,54 +115,76 @@ public final class WarSoundscape {
     }
 
     /**
-     * @param gashAtWar the player is in a gash's interior and its holding house is at war: the
-     *                  gash shakes whatever the distance (W9)
+     * @param gashShakes the player is in a gash's interior and its seat is invested or assaulted, or a
+     *                   battle is fought over it (A56)
      */
-    public static Mix mix(List<Encounter> encounters, List<Front> fronts, long clock, GridPoint2 player, int level,
-            Direction facing, boolean gashAtWar) {
+    public static Mix mix(WarSources sources, GridPoint2 player, int level, Direction facing, boolean gashShakes) {
         Mix m = new Mix();
         if (player == null) return m;
         boolean surface = level == 1;
-        if (encounters != null) {
-            for (Encounter e : encounters) {
-                GridPoint2 at = e.chunkAt(clock);
-                int d = Encounter.distance(player, at);
-                float pan = pan(player, at, facing);
-                if (e.kind == Encounter.Kind.CAMP) {
-                    if (surface) {
-                        if (d == 0) m.raise(Bed.CAMP, 0.40f, 0f);
-                        else if (d == 1) m.raise(Bed.CAMP, 0.20f, pan);
-                    }
-                    continue;
-                }
-                if (!surface) {
-                    if (e.fighting()) under(m, d);
-                } else if (e.fighting()) {
+        List<WarSources.Source> all = sources.all();
+        for (int i = 0; i < all.size(); i++) {
+            WarSources.Source src = all.get(i);
+            int d = src.distance(player);
+            if (!surface) {
+                if (src.kind == WarSources.Kind.BATTLE) under(m, d);
+                continue;
+            }
+            GridPoint2 at = new GridPoint2(src.x, src.y);
+            float pan = pan(player, at, facing);
+            switch (src.kind) {
+                case BATTLE:
                     fight(m, d, pan);
-                    if (e.kind == Encounter.Kind.SIEGE) siege(m, d, pan);
-                } else if (e.kind == Encounter.Kind.COLUMN) {
+                    break;
+                case MARCH:
                     if (d <= 1) {
                         m.raise(Bed.DRUMS, COLUMN_NEAR, pan);
                         m.raise(Bed.MARCH, COLUMN_NEAR, pan);
                     } else if (d <= 3) {
-                        m.raise(Bed.DRUMS, COLUMN_FAR, pan);
-                        m.raise(Bed.MARCH, COLUMN_FAR, pan);
+                        m.raise(Bed.DRUMS, DRUMS_FAINT, pan);
                     }
-                }
+                    break;
+                case PARTY:
+                case BURNING:
+                    if (d <= 1) m.raise(Bed.MARCH, PARTY_NEAR, pan);
+                    break;
+                case CAMP:
+                    camp(m, d, pan);
+                    break;
+                case INVESTED:
+                    invested(m, d, pan);
+                    break;
+                case CASTLE_SIEGE:
+                    siege(m, d, pan);
+                    break;
+                case AFTERMATH:
+                    if (d <= 1) m.raise(Bed.CROWS, CROWS_NEAR, pan);
+                    break;
+                default:
+                    break;
             }
         }
-        if (fronts != null) {
-            for (Front f : fronts) {
-                int d = Math.max(0, Encounter.distance(player, f.center) - Front.RADIUS);
-                if (surface) fight(m, d, pan(player, f.center, facing));
-                else under(m, d);
-            }
-        }
-        if (!surface && gashAtWar) {
+        if (!surface && gashShakes) {
             m.raise(Bed.UNDER, UNDER_GASH, 0f);
             tremor(m, "thud_distant_1", 0.05f, 0.5f);
         }
         return m;
+    }
+
+    private static void camp(Mix m, int d, float pan) {
+        if (d == 0) m.raise(Bed.CAMP, CAMP_HERE, 0f);
+        else if (d == 1) m.raise(Bed.CAMP, CAMP_NEXT, pan);
+    }
+
+    /** Camp noise and the works going up; farther off, the occasional thud and a horn. */
+    private static void invested(Mix m, int d, float pan) {
+        if (d <= 1) {
+            camp(m, d, pan);
+            shot(m, "thud_distant_1", 0.08f, 0.4f, pan);
+        } else if (d <= 3) {
+            shot(m, "thud_distant_2", 0.05f, 0.25f, pan);
+            shot(m, "horn_battle", 0.02f, 0.2f, pan);
+        }
     }
 
     private static void fight(Mix m, int d, float pan) {
@@ -204,6 +230,46 @@ public final class WarSoundscape {
         m.raise(Bed.UNDER, d <= 1 ? UNDER_CLOSE : UNDER_FAR, 0f);
         if (d <= 1) tremor(m, "thud_distant_1", 0.04f, 0.5f);
         else shot(m, "thud_distant_2", 0.04f, 0.3f, 0f);
+    }
+
+    /**
+     * The horns at a battle's start and at its rout (A55): certain, out to earshot, on the surface.
+     * Only what changes between one waking turn and the next: what changed in a sleep is news, not a sound.
+     */
+    public static final class BattleWatch {
+        /** A longer jump than this was a sleep or a wait. */
+        static final int AWAKE_TURNS = 5;
+
+        private final java.util.Map<Integer, GridPoint2> going = new java.util.HashMap<>();
+        private long lastClock = Long.MIN_VALUE;
+
+        public List<Shot> onTurn(WarSources sources, long clock, GridPoint2 player, int level, Direction facing) {
+            java.util.Map<Integer, GridPoint2> now = new java.util.HashMap<>();
+            List<WarSources.Source> all = sources.all();
+            for (int i = 0; i < all.size(); i++) {
+                WarSources.Source s = all.get(i);
+                if (s.kind == WarSources.Kind.BATTLE) now.put(s.id, new GridPoint2(s.x, s.y));
+            }
+            List<Shot> out = new ArrayList<>();
+            if (lastClock != Long.MIN_VALUE && clock - lastClock <= AWAKE_TURNS && level == 1 && player != null) {
+                for (java.util.Map.Entry<Integer, GridPoint2> e : now.entrySet()) {
+                    if (!going.containsKey(e.getKey())) horn(out, "horn_battle", e.getValue(), player, facing);
+                }
+                for (java.util.Map.Entry<Integer, GridPoint2> e : going.entrySet()) {
+                    if (!now.containsKey(e.getKey())) horn(out, "war_horn", e.getValue(), player, facing);
+                }
+            }
+            going.clear();
+            going.putAll(now);
+            lastClock = clock;
+            return out;
+        }
+
+        private static void horn(List<Shot> out, String key, GridPoint2 at, GridPoint2 player, Direction facing) {
+            int d = Encounter.distance(player, at);
+            if (d > EARSHOT) return;
+            out.add(new Shot(key, 1f, 0.2f + 0.4f * (1f - d / (float) (EARSHOT + 1)), pan(player, at, facing)));
+        }
     }
 
     /** A thud close enough overhead to shake the stone. */

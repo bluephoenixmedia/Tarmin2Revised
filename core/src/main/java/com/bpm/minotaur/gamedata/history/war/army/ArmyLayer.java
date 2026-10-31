@@ -979,6 +979,7 @@ public final class ArmyLayer {
             int avail = spare(h);
             if (avail < ArmyTuning.MIN_ARMY || hostsOf(h.id) >= wanted) return;
             Army a = raise(h, Math.min(ArmyTuning.ARMY_SIZE, avail), Army.Kind.HOST);
+            a.musteredAt = clock;
             a.warId = warFor(h, a).id;
             decide(a, clock);
         }
@@ -994,6 +995,7 @@ public final class ArmyLayer {
         int n = Math.round(h.strength * ArmyTuning.LEVY_SHARE);
         if (n < ArmyTuning.MIN_ARMY || spare(h) < n) return;
         Army a = raise(h, n, Army.Kind.LEVY);
+        a.musteredAt = clock;
         a.levyOf = liege.id;
         for (War w : wars) {
             if (w.isActive() && w.involves(liege.id)) {

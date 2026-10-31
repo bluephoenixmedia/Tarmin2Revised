@@ -3268,14 +3268,19 @@ public class GameScreen extends BaseScreen {
         return armsAtlas;
     }
 
+    private final com.bpm.minotaur.gamedata.history.war.WarSoundscape.BattleWatch battleWatch = new com.bpm.minotaur.gamedata.history.war.WarSoundscape.BattleWatch();
+
     /** The war heard from where the player stands, this turn (Living War W9). */
     private void hearTheWar(WarManager.Ground g) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
         com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
-        boolean gashAtWar = holder != null && history.world().activeWarCount(holder.id) > 0;
+        com.bpm.minotaur.gamedata.history.war.WarSources sources = worldManager.warSources();
+        com.bpm.minotaur.gamedata.history.war.SeatMap seats = worldManager.houseSeats();
+        boolean gashShakes = holder != null && sources.gashShakes(seats != null ? seats.seat(holder.id) : null, g.chunk);
+        com.bpm.minotaur.gamedata.Direction facing = player != null ? player.getFacing() : null;
         com.bpm.minotaur.gamedata.history.war.WarSoundscape.Mix mix = com.bpm.minotaur.gamedata.history.war.WarSoundscape.mix(
-                worldManager.currentEncounters(), worldManager.currentFronts(), history.warClock(), g.chunk, g.level,
-                player != null ? player.getFacing() : null, gashAtWar);
+                sources, g.chunk, g.level, facing, gashShakes);
+        mix.shots.addAll(battleWatch.onTurn(sources, history.warClock(), g.chunk, g.level, facing));
         // The din of a fight here or next door covers the player's footsteps (W13).
         monsterAiManager.setHearingMuffle(g.level == 1 && mix.volume(com.bpm.minotaur.gamedata.history.war.WarSoundscape.Bed.NEAR) > 0f
                 ? com.bpm.minotaur.managers.MonsterAiManager.BATTLE_DIN : 1f);

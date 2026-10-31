@@ -125,6 +125,11 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             // Arrows over the fight next door, and a house's beacons lit toward its battle (W10.3-4).
             new Shot("25_noon_war_volleys", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
             new Shot("26_night_war_signals", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            // Each real fire at its own size (A54), and the sky at its cap of twelve.
+            new Shot("27_noon_plume_sizes", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("28_night_plume_sizes", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("29_noon_plume_cap", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("30_night_plume_cap", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
     };
 
     private static Shot knell(Shot shot, float age) {
@@ -254,7 +259,20 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         state.chunkX = 0;
         state.timeOverride = CAPTURE_TIME;
         state.beacons = shot.name.contains("beacons") ? sampleBeacons() : null;
-        if (shot.name.contains("war_smoke")) {
+        state.warSmokePlumes = null;
+        state.warSmokeStrength = null;
+        if (shot.name.contains("plume_sizes")) {
+            // Left to right: a battle, burnt ground fresh and thinned, two cookfires, a siege.
+            state.warSmoke = new float[]{-6f, 9f, -2.5f, 8f, -1f, 9f, 0.6f, 5f, 2f, 5f, 5f, 8f};
+            state.warSmokePlumes = new int[]{0, 2, 2, 3, 3, 1};
+            state.warSmokeStrength = new float[]{1f, 1f, 0.33f, 1f, 1f, 1f};
+            state.warSmokeCount = 6;
+        } else if (shot.name.contains("plume_cap")) {
+            state.warSmoke = new float[]{-9f, 12f, -7f, 9f, -5f, 14f, -3f, 8f, -2f, 11f, -1f, 6f, 0.5f, 9f, 2f, 5f, 3f, 12f, 5f, 8f, 7f, 13f, 9f, 9f};
+            state.warSmokePlumes = new int[]{0, 2, 1, 2, 0, 3, 2, 3, 0, 2, 1, 2};
+            state.warSmokeStrength = new float[]{1f, 1f, 1f, 0.66f, 1f, 1f, 0.33f, 1f, 1f, 1f, 1f, 0.66f};
+            state.warSmokeCount = 12;
+        } else if (shot.name.contains("war_smoke")) {
             state.warSmoke = new float[]{-1f, 2f, 2f, 4.5f, 0.5f, 9f, -6f, 14f};
             state.warSmokeCount = 4;
         } else {
