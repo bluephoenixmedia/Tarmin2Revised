@@ -244,19 +244,27 @@
       "passable": false
     },
     {
-      "id": "siege_ladders",
-      "asset": "images/forest/log_pile_01.png",
+      "id": "siege_gate",
+      "asset": "images/props/siege_gate.png",
       "renderMode": "SPRITE",
-      "scaleX": 0.8,
-      "scaleY": 0.8,
+      "scaleX": 3.0,
+      "scaleY": 2.2,
+      "passable": true
+    },
+    {
+      "id": "siege_ladders",
+      "asset": "images/props/siege_ladders.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.4,
       "passable": false
     },
     {
       "id": "siege_ram",
-      "asset": "images/forest/log_fallen_01.png",
+      "asset": "images/props/siege_ram.png",
       "renderMode": "SPRITE",
-      "scaleX": 1.0,
-      "scaleY": 0.7,
+      "scaleX": 1.6,
+      "scaleY": 1.2,
       "passable": false
     },
     {
