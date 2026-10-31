@@ -82,6 +82,8 @@ public final class BattleDirector {
         public int loser = -1;
         /** Damage the player takes this turn from a landed volley. */
         public int volleyDamage;
+        /** Where the player takes their place in the line, if they marched in with one of its hosts (A36). */
+        public GridPoint2 standAt;
     }
 
     public final ArmyBattle battle;
@@ -270,6 +272,22 @@ public final class BattleDirector {
                 ? "Steel and screaming: " + name(battle.houseA) + " and " + name(battle.houseB) + " are at each other's throats here."
                 : "The lines close. " + name(battle.houseA) + " and " + name(battle.houseB)
                         + " meet on this ground, and you are standing on it.");
+        if (standsInLine) {
+            standsInLine = false;
+            List<Monster> ours = side(battle.playerSide == 1);
+            GridPoint2 near = ours.isEmpty() ? lineEdge(battle.playerSide == 1)
+                    : new GridPoint2((int) ours.get(ours.size() - 1).getPosition().x, (int) ours.get(ours.size() - 1).getPosition().y); // the gate guards come first, the line last
+            r.standAt = WorldManager.findSafeArrivalTile(maze, near.x, near.y);
+            r.messages.add("You take your place in the line of " + name(battle.playerSide == 1 ? battle.houseA : battle.houseB) + ".");
+        }
+    }
+
+    private boolean standsInLine;
+
+    /** The player marched in with a host of this battle: they stand in its line from the start (A36). */
+    public void standInLine(int side) {
+        battle.playerSide = side;
+        standsInLine = true;
     }
 
     /** One captain for each army whose captain still stands (A21). */
@@ -596,6 +614,10 @@ public final class BattleDirector {
     }
 
     // ------------------------------------------------------------------ for tests
+
+    private GridPoint2 lineEdge(boolean a) {
+        return edgeTile(a ? edgeA : opposite(edgeA));
+    }
 
     List<Monster> side(boolean a) {
         return a ? sideA : sideB;

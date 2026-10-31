@@ -25,6 +25,8 @@ public class Oath {
     public boolean sealGranted;
     /** The live Season until which a turncoat's Favour with this house is held at Tolerated, or -1 (A41). */
     public int heldUntil = -1;
+    /** The host of this house the player marches with, by its army id, or -1 (A36). */
+    public int following = -1;
 
     public boolean sworn() {
         return houseId >= 0;
@@ -38,6 +40,7 @@ public class Oath {
         hardDone = 0;
         sealGranted = false;
         heldUntil = -1;
+        following = -1;
     }
 
     public void forsake() {

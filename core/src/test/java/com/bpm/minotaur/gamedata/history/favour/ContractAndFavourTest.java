@@ -382,7 +382,7 @@ public class ContractAndFavourTest {
     @Test
     public void breakingTheOathCallsForHunters() {
         int[] betrayed = {-1};
-        history.onOathBroken(h -> betrayed[0] = h);
+        history.onOathBroken((h, followed) -> betrayed[0] = h);
         history.favour().set(liege, 70);
         history.swear(liege);
         history.breakOath();

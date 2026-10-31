@@ -1507,7 +1507,10 @@ public class WorldManager {
                 }
             });
             final com.bpm.minotaur.gamedata.history.war.army.ArmyLayer theseArmies = armyLayer;
-            getHistory().onOathBroken(theseArmies::huntersNow);
+            getHistory().onOathBroken((betrayed, followed) -> {
+                theseArmies.huntersNow(betrayed);
+                theseArmies.hostTurnsOnThePlayer(followed);
+            });
             armyLayer.beastHealth(id -> {
                 com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
                 com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(id);
@@ -1544,6 +1547,23 @@ public class WorldManager {
         getHistory().sleepThroughWar(clock -> {
             if (layer != null) layer.tick(clock);
         });
+    }
+
+    /** The march goes on (A36): the armies move turn by turn as for any sleep, up to {@code most}, until the host comes to something. Returns the turns passed. */
+    public int marchOn(com.bpm.minotaur.gamedata.history.war.army.MarchOn march, int most) {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.watchBattle(null);
+        return getHistory().marchUntil(most, clock -> {
+            if (layer != null) layer.tick(clock);
+            return march.after(getHistory().roster()) != com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.NONE;
+        });
+    }
+
+    /** Whether the host the player follows is in their chunk now. */
+    public boolean followedHostHere() {
+        com.bpm.minotaur.gamedata.history.war.army.Army host = getHistory().roster().army(getHistory().oath().following);
+        return host != null && currentLevel == 1 && currentPlayerChunkId != null
+                && host.x == currentPlayerChunkId.x && host.y == currentPlayerChunkId.y;
     }
 
     /** Whether soldiers who would not leave a sleeper be stand in the player's chunk now. */

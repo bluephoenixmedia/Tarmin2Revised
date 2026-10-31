@@ -370,6 +370,18 @@ public final class ArmyLayer {
         }
     }
 
+    /** Debug: this army marches on that chunk, now. */
+    public void marchNow(Army a, int x, int y) {
+        goTo(a, x, y);
+    }
+
+    /** A host whose follower has broken their oath comes for them where they stand, at once (A41). */
+    public void hostTurnsOnThePlayer(int armyId) {
+        Army a = roster.army(armyId);
+        GridPoint2 at = watch == null ? null : watch.surfaceChunk();
+        if (a != null && at != null && !a.battle) goTo(a, at.x, at.y);
+    }
+
     private int[] sideHouses(int[] armies, int lead) {
         int[] houses = {lead};
         for (int id : armies) {
