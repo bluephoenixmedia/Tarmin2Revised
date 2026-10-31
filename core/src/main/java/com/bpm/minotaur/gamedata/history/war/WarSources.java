@@ -141,7 +141,7 @@ public final class WarSources {
                 out.sources.add(new Source(a.soldiers >= MARCH_SIZE ? Kind.MARCH : Kind.PARTY, a.id, a.x, a.y, house, -1, 1f));
             } else if (a.kind == Army.Kind.RAID) {
                 out.sources.add(new Source(Kind.BURNING, a.id, a.x, a.y, house, -1, 1f));
-            } else if (a.objective == Army.Objective.SEAT && a.x == a.targetX && a.y == a.targetY) {
+            } else if (a.sieging >= 0) {
                 out.sources.add(new Source(Kind.INVESTED, a.id, a.x, a.y, house, -1, 1f));
             } else if (a.isHost()) {
                 out.sources.add(new Source(Kind.CAMP, a.id, a.x, a.y, house, -1, 1f));
@@ -182,9 +182,7 @@ public final class WarSources {
                     beacons.add(new Beacons(seat, new GridPoint2(a.targetX, a.targetY), lit));
                 }
             }
-            if (a.objective == Army.Objective.SEAT && !a.battle && a.halted() && a.x == a.targetX && a.y == a.targetY) {
-                callForRelief(armies, seatOf, a);
-            }
+            if (a.sieging >= 0) callForRelief(armies, seatOf, a);
         }
     }
 

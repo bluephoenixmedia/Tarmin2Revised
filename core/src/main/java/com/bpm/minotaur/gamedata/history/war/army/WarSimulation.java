@@ -105,6 +105,7 @@ public final class WarSimulation {
         int unitsMax = 0, battlesMax = 0;
         long measured = 0, paths = 0, battlesFought = 0, overland = 0, encounters = 0, pitched = 0, expeditions = 0, earshot = 0, seasonsPassed = 0;
         int warsEnded = 0, warsBoth = 0, warSeasons = 0;
+        long siegesLaid = 0, siegesRaised = 0, seatsFell = 0, siegeTurns = 0;
         for (long seed : seeds) {
             HistoryManager history = HistoryManager.create(seed, catalog);
             BiomeManager biomes = new BiomeManager(seed);
@@ -164,6 +165,11 @@ public final class WarSimulation {
             expeditions += walker.expeditions;
             earshot += walker.earshot;
             seasonsPassed += history.world().season() - startSeason;
+            long[] sieged = layer.siegeCounts();
+            siegesLaid += sieged[0];
+            siegesRaised += sieged[1];
+            seatsFell += sieged[2];
+            siegeTurns += sieged[3];
             for (War w : history.world().wars()) {
                 if (w.isActive() || w.endSeason < startSeason) continue;
                 warsEnded++;
@@ -188,6 +194,8 @@ public final class WarSimulation {
         out.add(line("Battles: %.2f a Season (target about 1); pitched at the walker's side, one per %.0f expeditions (target about 20); earshot %.1f%% of overland turns",
                 (double) battlesFought / Math.max(1, seasonsPassed), pitched == 0 ? 0.0 : (double) expeditions / pitched, 100.0 * earshot / Math.max(1, overland)));
         out.add(line("Wars ended %d, mean %.1f Seasons (target 4-16), both houses standing %d", warsEnded, warsEnded == 0 ? 0.0 : (double) warSeasons / warsEnded, warsBoth));
+        out.add(line("Sieges of seats: laid %d, raised %d, seats fell %d, mean %.1f Seasons to their end", siegesLaid, siegesRaised, seatsFell,
+                siegesRaised + seatsFell == 0 ? 0.0 : (double) siegeTurns / (siegesRaised + seatsFell) / HistoryManager.SEASON_TURNS));
         out.add(line("War turn: mean %.3f ms (budget %.2f) %s", mean, BUDGET_TURN_MEAN_MS, verdict(mean, BUDGET_TURN_MEAN_MS)));
         out.add(line("War turn: p50 %.3f ms, p99 %.3f ms (budget %.0f) %s, max %.2f ms", turn[turn.length / 2] / 1e6, p99, BUDGET_TURN_P99_MS, verdict(p99, BUDGET_TURN_P99_MS), turn[turn.length - 1] / 1e6));
         out.add(line("Sleep jump: p50 %.1f ms, worst %.1f ms, first in a fresh JVM %.1f ms (budget %.0f) %s", jumps.get(jumps.size() / 2), jumps.get(jumps.size() - 1), coldJump, BUDGET_JUMP_MS, verdict(jumpWorst, BUDGET_JUMP_MS)));

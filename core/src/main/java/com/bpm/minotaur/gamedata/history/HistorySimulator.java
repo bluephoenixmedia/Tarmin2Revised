@@ -886,7 +886,7 @@ public final class HistorySimulator {
     // ------------------------------------------------------------------ upkeep
 
     /** Strength a house regains in a live Season, now that it counts soldiers (Living War A3). */
-    private static final float ARMY_RECOVERY = 5f;
+    public static final float ARMY_RECOVERY = 5f;
 
     private void recover() {
         for (House h : world.houses) {
@@ -1007,6 +1007,10 @@ public final class HistorySimulator {
             armyBattle(deed);
         } else if (deed.kind == PlayerDeed.Kind.SUED_FOR_PEACE) {
             suedForPeace(deed);
+        } else if (deed.kind == PlayerDeed.Kind.SEAT_INVESTED || deed.kind == PlayerDeed.Kind.SIEGE_RAISED) {
+            HistoryEvent e = record(deed.kind == PlayerDeed.Kind.SEAT_INVESTED ? EventType.SEAT_INVESTED : EventType.SIEGE_RAISED);
+            e.houseA = deed.target;
+            e.houseB = deed.other;
         } else if (deed.kind == PlayerDeed.Kind.ARMY_ATTRITION) {
             House h = world.house(deed.target);
             if (h != null && !h.isExtinct() && deed.deadCounts != null && deed.deadCounts.length > 0) {

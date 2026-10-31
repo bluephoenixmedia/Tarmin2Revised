@@ -228,6 +228,38 @@
       "passable": false
     },
     {
+      "id": "siege_palisade",
+      "asset": "images/props/siege_palisade.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.4,
+      "passable": false
+    },
+    {
+      "id": "siege_wall",
+      "asset": "images/props/siege_wall.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.6,
+      "passable": false
+    },
+    {
+      "id": "siege_ladders",
+      "asset": "images/forest/log_pile_01.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 0.8,
+      "passable": false
+    },
+    {
+      "id": "siege_ram",
+      "asset": "images/forest/log_fallen_01.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.7,
+      "passable": false
+    },
+    {
       "id": "stone_arch",
       "asset": "images/props/stone_arch.png",
       "renderMode": "SPRITE",

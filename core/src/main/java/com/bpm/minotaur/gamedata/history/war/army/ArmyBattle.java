@@ -21,6 +21,12 @@ public class ArmyBattle {
     public int[] armiesB = new int[0];
     /** The house whose garrison stands with side B at its own seat, or -1. */
     public int garrisonOf = -1;
+    /** What side B's position is worth against side A's blows; 0 for what its garrison's walls always were. */
+    public float wallEdge;
+    /** A storming of the seat, not its garrison coming out: fought over the walls, and then the yard (A33). */
+    public boolean assault;
+    /** The walls are lost, and the last of the garrison stands in the yard: only clearing it takes the seat. */
+    public boolean yard;
     public int moraleA = 100;
     public int moraleB = 100;
     public int startA;

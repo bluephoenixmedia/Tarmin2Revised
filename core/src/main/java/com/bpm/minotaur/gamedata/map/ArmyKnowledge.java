@@ -362,9 +362,7 @@ public final class ArmyKnowledge {
         if (besieger >= 0 && biomes != null && biomes.getCastleSite() != null) {
             out.add(siege(besieger, world.tarminHouse().id, Math.round(biomes.getCastleSite().x), Math.round(biomes.getCastleSite().y), clock));
         }
-        for (ArmyBattle b : roster.battles) {
-            if (b.garrisonOf >= 0) out.add(siege(b.houseA, b.garrisonOf, b.x, b.y, clock));
-        }
+        for (com.bpm.minotaur.gamedata.history.war.army.SeatSiege s : roster.sieges) out.add(siege(s.besieger, s.holder, s.x, s.y, clock));
         return out;
     }
 

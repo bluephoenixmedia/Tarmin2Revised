@@ -105,6 +105,7 @@ public final class BattleDirector {
     private final List<GridPoint2> volley = new ArrayList<>();
     private int volleyCount;
     private int battleTurns;
+    private boolean yardCalled;
 
     /**
      * @param edgeA   the edge side A marches in from: 0 west, 1 east, 2 south, 3 north. Side B takes
@@ -229,6 +230,7 @@ public final class BattleDirector {
         captains(recruiter, false);
         march(recruiter, true, LINE);
         march(recruiter, false, LINE);
+        if (battle.assault) r.messages.add("Ladders against the walls: " + name(battle.houseA) + " storms the seat of " + name(battle.houseB) + ".");
         r.messages.add(underWay
                 ? "Steel and screaming: " + name(battle.houseA) + " and " + name(battle.houseB) + " are at each other's throats here."
                 : "The lines close. " + name(battle.houseA) + " and " + name(battle.houseB)
@@ -242,7 +244,7 @@ public final class BattleDirector {
             if (figureId < 0 || reserve(a) <= 0) continue;
             Figure leader = world.figure(figureId);
             House house = leader == null ? null : world.house(leader.houseId);
-            GridPoint2 at = edgeTile(a ? edgeA : opposite(edgeA));
+            GridPoint2 at = homeTile(a);
             Monster m = at == null || house == null ? null : enlist(recruiter, a, house.id, at.x, at.y);
             if (m == null) continue;
             m.setFigureId(figureId);
@@ -264,6 +266,12 @@ public final class BattleDirector {
         if (battle.winner >= 0) {
             rout(playerTile, spoils, r);
             return;
+        }
+        if (battle.yard && !yardCalled) {
+            yardCalled = true;
+            r.messages.add("The walls are lost. What is left of " + name(battle.houseB) + " falls back to the yard, to make its last stand.");
+            GridPoint2 court = new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2);
+            for (Monster m : sideB) m.setMarchTarget(court);
         }
         march(recruiter, true, MARCH_PER_TURN);
         march(recruiter, false, MARCH_PER_TURN);
@@ -421,7 +429,7 @@ public final class BattleDirector {
     /** Fills a side's line, by no more than {@code count} this turn. */
     private void march(Recruiter recruiter, boolean a, int count) {
         for (int i = 0; i < count && reserve(a) > 0 && lineOf(a) < LINE; i++) {
-            GridPoint2 at = edgeTile(a ? edgeA : opposite(edgeA));
+            GridPoint2 at = homeTile(a);
             if (at == null || enlist(recruiter, a, at.x, at.y) == null) return;
         }
     }
@@ -469,6 +477,26 @@ public final class BattleDirector {
         maze.addMonster(m);
         (a ? sideA : sideB).add(m);
         return m;
+    }
+
+    /** Where a side's soldiers come from: a garrison from within its ring, or out of its gates in a sally (A32, A34); the rest from their edge. */
+    private GridPoint2 homeTile(boolean a) {
+        if (!a && battle.garrisonOf >= 0 && !battle.assault) {
+            List<GridPoint2> gates = com.bpm.minotaur.gamedata.history.war.SeatRing.gates(maze.getWidth(), maze.getHeight());
+            GridPoint2 gate = gates.get(rng.nextInt(gates.size()));
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, gate.x, gate.y);
+            if (at != null) return at;
+        }
+        if (!a && battle.assault) {
+            int w = maze.getWidth(), h = maze.getHeight();
+            int reach = com.bpm.minotaur.gamedata.history.war.SeatRing.RADIUS - 2;
+            for (int attempt = 0; attempt < 12; attempt++) {
+                int x = w / 2 - reach + rng.nextInt(2 * reach + 1), y = h / 2 - reach + rng.nextInt(2 * reach + 1);
+                GridPoint2 at = WorldManager.findSafeArrivalTile(maze, x, y);
+                if (at != null && com.bpm.minotaur.gamedata.history.war.SeatRing.inside(w, h, at.x, at.y)) return at;
+            }
+        }
+        return edgeTile(a ? edgeA : opposite(edgeA));
     }
 
     /** A free tile near the given edge, as deep as this battle has come. */

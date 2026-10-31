@@ -91,6 +91,8 @@ public final class EncounterDirector {
     static final String AFTERMATH = "AFTERMATH";
     static final String CAMP = "CAMP";
     static final String BIVOUAC = "BIVOUAC";
+    /** A seat's ring and the camp around it. */
+    static final String SIEGE = "SIEGE";
     private static final String[] FIELD = {"corpse_pile", "scorched_ground", "crow", "war_banner", "bone_pile", "skull_pile"};
 
     private final DoctrineCatalog catalog;
@@ -168,6 +170,7 @@ public final class EncounterDirector {
         town = townKey;
         if (chunk == null || sanctuary || maze == null) return t;
         if (level == 1) layTheFields(history, maze, props, spoils);
+        if (level == 1) dressTheSiege(history, maze, playerTile, props);
         long clock = history.warClock();
         HistoryWorld world = history.world();
         for (Encounter e : encounters) {
@@ -195,7 +198,7 @@ public final class EncounterDirector {
         for (Encounter c : camps) {
             if (!c.chunkAt(clock).equals(chunk) || ledger.isSpent(c)) continue;
             String key = c.key() + "@" + chunk.x + "," + chunk.y;
-            if (stagedHere.add(key)) stages.put(key, camp(c, world, maze, recruiter, props, ledger, t));
+            if (stagedHere.add(key)) stages.put(key, camp(c, world, maze, recruiter, props, ledger, t, history.roster().siegeAt(chunk.x, chunk.y) != null));
         }
         for (Iterator<Stage> it = stages.values().iterator(); it.hasNext(); ) {
             Stage s = it.next();
@@ -459,13 +462,15 @@ public final class EncounterDirector {
     }
 
     private Stage camp(Encounter c, HistoryWorld world, Maze maze, BattleDirector.Recruiter recruiter, Props props,
-            EncounterLedger ledger, Turn t) {
+            EncounterLedger ledger, Turn t, boolean besieging) {
         Random r = rng(world, c, 4);
         Stage s = new Stage(c, Phase.HOLD);
         EncounterLedger.Dressing camp = campDressing(ledger, c);
         GridPoint2 centre;
         if (camp == null) {
-            centre = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2, maze.getHeight() / 2);
+            // A besieging host camps outside the ring it has shut the garrison in (A32).
+            int offset = besieging ? com.bpm.minotaur.gamedata.history.war.SeatRing.RADIUS + 5 : 0;
+            centre = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2, maze.getHeight() / 2 - offset);
             if (centre == null) return s;
             camp = dressing(CAMP, ledger);
             camp.warId = c.warId;
@@ -697,6 +702,8 @@ public final class EncounterDirector {
             boolean gone;
             if (AFTERMATH.equals(d.kind) || BIVOUAC.equals(d.kind)) {
                 gone = ledger.sleeps >= d.clearAtSleep;
+            } else if (SIEGE.equals(d.kind)) {
+                gone = history.roster().siegeAt(chunk.x, chunk.y) == null;
             } else {
                 gone = true;
                 for (Encounter c : camps) {
@@ -707,6 +714,112 @@ public final class EncounterDirector {
             clear(d, maze);
             it.remove();
         }
+    }
+
+    /**
+     * A seat under siege (A31, A32): the walled ring about the chunk's centre with its two gates, the
+     * camp outside, and the works as they are finished. Struck when the siege ends.
+     */
+    private void dressTheSiege(HistoryManager history, Maze maze, GridPoint2 playerTile, Props props) {
+        EncounterLedger ledger = history.encounterLedger();
+        com.bpm.minotaur.gamedata.history.war.army.SeatSiege siege = history.roster().siegeAt(chunk.x, chunk.y);
+        EncounterLedger.Dressing d = null;
+        for (EncounterLedger.Dressing o : ledger.dressings) {
+            if (SIEGE.equals(o.kind) && o.chunkX == chunk.x && o.chunkY == chunk.y && o.level == 1) d = o;
+        }
+        if (siege == null) {
+            if (d != null) {
+                clear(d, maze);
+                ledger.dressings.remove(d);
+            }
+            return;
+        }
+        String piece = siege.stone ? "siege_wall" : "siege_palisade";
+        boolean fresh = d == null;
+        if (fresh) d = dressing(SIEGE, ledger);
+        List<GridPoint2> wall = com.bpm.minotaur.gamedata.history.war.SeatRing.wall(maze.getWidth(), maze.getHeight());
+        if (ringLeavesAWayOut(maze, wall)) {
+            // Each turn, so a tile someone stood on when the wall went up is closed once they move off it.
+            for (GridPoint2 at : wall) {
+                if (at.equals(playerTile) || !maze.isPassable(at.x, at.y) || maze.getLadders().containsKey(at)) continue;
+                // Grass and the like gives way to the wall; a prop someone placed there does not.
+                Scenery there = maze.getScenery().get(at);
+                if (there != null && there.getPropId() == null) maze.removeScenery(at.x, at.y);
+                place(maze, props, piece, at, d);
+            }
+            for (GridPoint2 gate : com.bpm.minotaur.gamedata.history.war.SeatRing.gates(maze.getWidth(), maze.getHeight())) {
+                if (!gate.equals(playerTile) && maze.isPassable(gate.x, gate.y)) {
+                    place(maze, props, "stone_arch", gate, d);
+                }
+            }
+            // The keep or court: what the last of them stand around.
+            GridPoint2 court = new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2);
+            if (!court.equals(playerTile) && maze.isPassable(court.x, court.y)) place(maze, props, "war_banner", court, d);
+        }
+        if (fresh) {
+            // The camp, out toward the edge.
+            int r = com.bpm.minotaur.gamedata.history.war.SeatRing.RADIUS + 4;
+            int cx = maze.getWidth() / 2, cy = maze.getHeight() / 2;
+            int[][] tents = {{-r, -r}, {r, -r}, {-r, r}, {r, r}};
+            for (int[] t : tents) {
+                GridPoint2 at = new GridPoint2(cx + t[0], cy + t[1]);
+                if (!at.equals(playerTile) && maze.isPassable(at.x, at.y)) place(maze, props, "camp_tent", at, d);
+            }
+            keep(ledger, d);
+        }
+        // Works in progress show in the camp.
+        if (siege.laddersBuilt() && !d.props.contains("siege_ladders")) {
+            placeWork(maze, props, "siege_ladders", playerTile, d, ledger);
+        }
+        if (siege.ramBuilt() && siege.stone && !d.props.contains("siege_ram")) {
+            placeWork(maze, props, "siege_ram", playerTile, d, ledger);
+        }
+    }
+
+    /**
+     * Whether the yard reaches, with the ring up, every exit of the chunk it reaches without it. In a
+     * walled chunk a gap in the ring may open on nothing, and nobody may be shut in or out by it.
+     */
+    private static boolean ringLeavesAWayOut(Maze maze, List<GridPoint2> wall) {
+        java.util.Set<GridPoint2> without = reachFromTheYard(maze, java.util.Collections.emptySet());
+        java.util.Set<GridPoint2> with = reachFromTheYard(maze, new java.util.HashSet<>(wall));
+        for (GridPoint2 exit : maze.getGates().keySet()) if (without.contains(exit) && !with.contains(exit)) return false;
+        for (GridPoint2 exit : maze.getLadders().keySet()) if (without.contains(exit) && !with.contains(exit)) return false;
+        return !touchesTheEdge(maze, without) || touchesTheEdge(maze, with);
+    }
+
+    private static java.util.Set<GridPoint2> reachFromTheYard(Maze maze, java.util.Set<GridPoint2> shut) {
+        GridPoint2 start = new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2);
+        java.util.Set<GridPoint2> reached = new java.util.HashSet<>();
+        java.util.ArrayDeque<GridPoint2> todo = new java.util.ArrayDeque<>();
+        reached.add(start);
+        todo.add(start);
+        while (!todo.isEmpty()) {
+            GridPoint2 at = todo.poll();
+            for (com.bpm.minotaur.gamedata.Direction dir : com.bpm.minotaur.gamedata.Direction.values()) {
+                if (maze.isWallBlocking(at.x, at.y, dir)) continue;
+                GridPoint2 next = new GridPoint2(at.x + (int) dir.getVector().x, at.y + (int) dir.getVector().y);
+                if (next.x < 0 || next.y < 0 || next.x >= maze.getWidth() || next.y >= maze.getHeight()) continue;
+                if (shut.contains(next) || !reached.add(next)) continue;
+                // An exit counts as reached; only open ground leads on. Anyone standing there will move.
+                if (maze.getMonsters().containsKey(next) || maze.isPassable(next.x, next.y)) todo.add(next);
+            }
+        }
+        return reached;
+    }
+
+    private static boolean touchesTheEdge(Maze maze, java.util.Set<GridPoint2> reached) {
+        for (GridPoint2 t : reached) {
+            if (t.x == 0 || t.y == 0 || t.x == maze.getWidth() - 1 || t.y == maze.getHeight() - 1) return true;
+        }
+        return false;
+    }
+
+    private static void placeWork(Maze maze, Props props, String prop, GridPoint2 playerTile, EncounterLedger.Dressing d, EncounterLedger ledger) {
+        int y = maze.getHeight() / 2 + com.bpm.minotaur.gamedata.history.war.SeatRing.RADIUS + 3;
+        int x = maze.getWidth() / 2 + ("siege_ram".equals(prop) ? 3 : -3);
+        GridPoint2 at = new GridPoint2(x, y);
+        if (!at.equals(playerTile) && maze.isPassable(x, y)) place(maze, props, prop, at, d);
     }
 
     /** Takes a dressing's props off the ground, those of them still standing. */

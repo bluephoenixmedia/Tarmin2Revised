@@ -73,6 +73,8 @@ public class Army {
     /** The enemy armies it has already seen: a new one makes it think again. */
     public int[] seen = new int[0];
 
+    /** The {@link SeatSiege} it is camped around; -1 if none. */
+    public int sieging = -1;
     /** The war turn its seat mustered it, for the beacons (A57); -1 for an army from before they were kept. */
     public long musteredAt = -1;
 

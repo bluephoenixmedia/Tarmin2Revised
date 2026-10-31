@@ -55,7 +55,7 @@ public class WarSourcesTest {
         army(1, 3, 1, 0, 15, false);
         assertEquals(Kind.CAMP, only(sources(null)));
         armies.clear();
-        army(1, 3, 1, 0, 15, false).objective = Army.Objective.SEAT;
+        army(1, 3, 1, 0, 15, false).sieging = 7;
         assertEquals(Kind.INVESTED, only(sources(null)));
         armies.clear();
         army(1, 3, 1, 0, 5, false).kind = Army.Kind.RAID;
@@ -176,7 +176,7 @@ public class WarSourcesTest {
     @Test
     public void reliefIsCalledFromAHostNotAPartySentOnAnErrand() {
         GridPoint2 seat = new GridPoint2(10, 10);
-        army(1, 3, 10, 10, 15, false).objective = Army.Objective.SEAT;
+        army(1, 3, 10, 10, 15, false).sieging = 7;
         army(2, 4, 11, 10, 5, true).kind = Army.Kind.FORAGERS;
         assertTrue(WarSources.of(armies, battles, null, Collections.emptyList(), null, h -> h == 4 ? seat : new GridPoint2(90, 90), 100).beacons().isEmpty());
     }
@@ -191,7 +191,7 @@ public class WarSourcesTest {
     @Test
     public void anInvestedSeatCallsToItsLordsNearestHost() {
         GridPoint2 seat = new GridPoint2(10, 10);
-        army(1, 3, 10, 10, 15, false).objective = Army.Objective.SEAT;
+        army(1, 3, 10, 10, 15, false).sieging = 7;
         army(2, 4, 30, 10, 15, true);
         army(3, 4, 15, 10, 15, true);
         WarSources s = WarSources.of(armies, battles, null, Collections.emptyList(), null, h -> h == 4 ? seat : new GridPoint2(90, 90), 100);

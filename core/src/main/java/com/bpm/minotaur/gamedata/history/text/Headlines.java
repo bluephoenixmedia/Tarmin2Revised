@@ -46,6 +46,8 @@ public final class Headlines {
                 return 10;
             case SIEGE_LIFTED:
             case SIEGE_BROKEN:
+            case SEAT_INVESTED:
+            case SIEGE_RAISED:
                 return 8;
             case WAR_DECLARED:
             case HOUSE_EXTINGUISHED:
