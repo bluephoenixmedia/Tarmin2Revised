@@ -72,6 +72,8 @@ public final class ArmyKnowledge {
         public final Army.Objective objective;
         /** Where else it has been known to be, oldest first, as x, y pairs. */
         public final int[] past;
+        /** For a siege: the house besieged, or -1. */
+        public int besiegedHouseId = -1;
 
         Marker(int armyId, int houseId, int x, int y, int dx, int dy, Size size, int captainId, long observedAt, Source source,
                 int exactSoldiers, Army.Objective objective, int[] past) {
@@ -330,7 +332,7 @@ public final class ArmyKnowledge {
         Map<Integer, Marker> out = new LinkedHashMap<>(markers);
         if (swornHouse >= 0) {
             for (Army a : roster.armies) {
-                if (a.soldiers <= 0 || a.houseId != swornHouse) continue;
+                if (a.soldiers <= 0 || a.houseId != swornHouse || !aHost(a)) continue;
                 int[] heading = headingOf(a);
                 int[] road = new int[a.trail.length * 2];
                 for (int i = 0; i < a.trail.length; i++) {
@@ -347,8 +349,23 @@ public final class ArmyKnowledge {
     }
 
     /** A siege, marked exactly: {@code at} is where it is, and everyone knows it (A49). */
-    public static Marker siege(int houseId, int x, int y, long clock) {
-        return new Marker(-1 - houseId, houseId, x, y, 0, 0, Size.HOST, -1, clock, Source.SIEGE, -1, null, new int[0]);
+    public static Marker siege(int houseId, int besiegedHouseId, int x, int y, long clock) {
+        Marker m = new Marker(-1 - houseId, houseId, x, y, 0, 0, Size.HOST, -1, clock, Source.SIEGE, -1, null, new int[0]);
+        m.besiegedHouseId = besiegedHouseId;
+        return m;
+    }
+
+    /** What is public whatever the player has heard: Castle Tarmin's siege, and any seat under assault (A49). */
+    public static List<Marker> sieges(com.bpm.minotaur.gamedata.history.HistoryWorld world, WarRoster roster, com.bpm.minotaur.managers.BiomeManager biomes, long clock) {
+        List<Marker> out = new ArrayList<>();
+        int besieger = com.bpm.minotaur.gamedata.history.war.Siege.besieger(world);
+        if (besieger >= 0 && biomes != null && biomes.getCastleSite() != null) {
+            out.add(siege(besieger, world.tarminHouse().id, Math.round(biomes.getCastleSite().x), Math.round(biomes.getCastleSite().y), clock));
+        }
+        for (ArmyBattle b : roster.battles) {
+            if (b.garrisonOf >= 0) out.add(siege(b.houseA, b.garrisonOf, b.x, b.y, clock));
+        }
+        return out;
     }
 
     public List<Sound> sounds(long clock) {
@@ -357,6 +374,11 @@ public final class ArmyKnowledge {
     }
 
     // ---- Telling ----
+
+    /** What is reported as a house's hosts: not its foragers, heralds or hunters. */
+    private static boolean aHost(Army a) {
+        return a.kind != Army.Kind.FORAGERS && a.kind != Army.Kind.HERALD && a.kind != Army.Kind.HUNTING_PARTY;
+    }
 
     /** Words for a heading: "north-east"; null for none. */
     public static String headingWords(int dx, int dy) {
@@ -415,7 +437,7 @@ public final class ArmyKnowledge {
         String ago = sleeps == 0 ? "today" : sleeps == 1 ? "1 sleep ago" : sleeps + " sleeps ago";
         switch (m.source) {
             case WAR_TABLE:
-                return "Reported to the War Table " + ago + ", roughly here";
+                return "The War Table's word " + ago;
             case TOWN:
                 return "Rumoured in a town, " + ago;
             case TRACKS:

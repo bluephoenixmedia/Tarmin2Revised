@@ -168,21 +168,6 @@ public class ExpeditionMapScreen extends BaseScreen {
     private List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Sound> knownSounds = new ArrayList<>();
     private com.bpm.minotaur.ui.ArmsAtlas arms;
 
-    /** What is public whatever the player has heard: the sieges (Living War A49). */
-    private List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker> sieges(long clock) {
-        List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker> out = new ArrayList<>();
-        HistoryWorld world = worldManager.getHistory().world();
-        int besieger = com.bpm.minotaur.gamedata.history.war.Siege.besieger(world);
-        BiomeManager biomes = model.getBiomes();
-        if (besieger >= 0 && biomes != null && biomes.getCastleSite() != null) {
-            out.add(com.bpm.minotaur.gamedata.map.ArmyKnowledge.siege(besieger, Math.round(biomes.getCastleSite().x), Math.round(biomes.getCastleSite().y), clock));
-        }
-        for (com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b : worldManager.getHistory().roster().battles) {
-            if (b.garrisonOf >= 0) out.add(com.bpm.minotaur.gamedata.map.ArmyKnowledge.siege(b.houseA, b.x, b.y, clock));
-        }
-        return out;
-    }
-
     /** What the player knows of the armies, as marks for the map (Living War A46-A49). */
     private List<MapSurface.ArmyMark> armyMarks() {
         List<MapSurface.ArmyMark> marks = new ArrayList<>();
@@ -191,7 +176,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         long clock = history.warClock();
         com.bpm.minotaur.gamedata.map.ArmyKnowledge known = knowledge.getArmies();
         int sworn = history.oath().sworn() ? history.oath().houseId : -1;
-        knownArmies = known.markers(history.roster(), sworn, sieges(clock), clock);
+        knownArmies = known.markers(history.roster(), sworn, com.bpm.minotaur.gamedata.map.ArmyKnowledge.sieges(history.world(), history.roster(), model.getBiomes(), clock), clock);
         knownSounds = known.sounds(clock);
         if (arms == null) arms = new com.bpm.minotaur.ui.ArmsAtlas(history.world(), DoctrineCatalog.getInstance());
         for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker m : knownArmies) {
@@ -221,6 +206,7 @@ public class ExpeditionMapScreen extends BaseScreen {
                     captain != null ? captain.name : null, clock)) {
                 line(words, m.rumour() ? UiTheme.TEXT_DIM : UiTheme.TEXT);
             }
+            if (m.source == com.bpm.minotaur.gamedata.map.ArmyKnowledge.Source.WAR_TABLE) line("Somewhere in this region.", UiTheme.TEXT_DIM);
         }
         for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Sound s : knownSounds) {
             if (s.x != c.x || s.y != c.y) continue;

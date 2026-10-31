@@ -173,6 +173,10 @@ public final class UiTheme {
     /** The HUD's war tally under the minimap (Living War W30): its gap below the map, and its bar's height. */
     public static final float WAR_TALLY_GAP = 4 * 3f;
     public static final float WAR_TALLY_H = 4 * 3f;
+    /** The War Table: its rail's width, and the shield on each row (Living War A50). */
+    public static final float WAR_TABLE_RAIL = 520f;
+    public static final float WAR_TABLE_ARMS = 32f;
+    public static final float WAR_TABLE_RAIL_ARMS = 17f;
     /** The shield at each end of the war tally (Living War A46). */
     public static final float WAR_TALLY_ARMS = 30f;
     /** A soldier's shield at one, two and three tiles or more (Living War A45). */

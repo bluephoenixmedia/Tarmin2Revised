@@ -251,7 +251,7 @@ public class ArmyKnowledgeTest {
 
     @Test
     public void aSiegeIsPublicAndNeverAges() {
-        ArmyKnowledge.Marker siege = ArmyKnowledge.siege(HOUSE, 5, 6, 100);
+        ArmyKnowledge.Marker siege = ArmyKnowledge.siege(HOUSE, LEAGUE, 5, 6, 100);
         assertTrue(siege.exact());
         assertEquals(1f, siege.strength(100000), 0f);
         List<ArmyKnowledge.Marker> all = known.markers(roster, -1, Collections.singletonList(siege), 100);
