@@ -2343,6 +2343,7 @@ public class GameScreen extends BaseScreen {
         TownTalk talk = new TownTalk(worldManager.getHistory(), town, folk, worldManager.nearbyTowns(town.key),
                 com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(),
                 com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(), pack);
+        talk.setHostRumour(() -> townRumourOfAHost(town.key));
         com.bpm.minotaur.gamedata.ShopkeeperNpc merchant = maze.getShopkeeper();
         Runnable trade = merchant == null ? null
                 : () -> eventManager.addEvent(new GameEvent(GameEvent.EventType.SHOPKEEPER_INTERACTION, merchant));
@@ -2738,6 +2739,7 @@ public class GameScreen extends BaseScreen {
             for (com.bpm.minotaur.managers.EncounterDirector.Cue cue : t.cues) soundManager.playEncounterCue(cue);
         }
         hearTheWar(g);
+        learnOfTheArmies(g);
         monsterAiManager.setPlayerInTheFight(encounterDirector.playerInTheFight()
                 || (warManager.active() != null && warManager.active().playerJoined()));
         monsterAiManager.setTakesPlayerForKin(disguise());
@@ -3212,6 +3214,45 @@ public class GameScreen extends BaseScreen {
     }
 
     private final com.bpm.minotaur.managers.WarAudio warAudio = new com.bpm.minotaur.managers.WarAudio();
+
+    /** The chunk whose trails were last read, so they speak once on stepping in. */
+    private GridPoint2 tracksReadAt;
+
+    /** What the player sees and hears of the armies, this turn (Living War A47, A49). */
+    private void learnOfTheArmies(WarManager.Ground g) {
+        if (g.level != 1 || g.chunk == null) {
+            tracksReadAt = null;
+            return;
+        }
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.map.MapKnowledge knowledge = com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance();
+        com.bpm.minotaur.gamedata.map.ArmyKnowledge armies = knowledge.getArmies();
+        long clock = history.warClock();
+        boolean changed = armies.onTurn(history.roster(), g.chunk.x, g.chunk.y, clock);
+        if (!g.chunk.equals(tracksReadAt)) {
+            tracksReadAt = new GridPoint2(g.chunk);
+            com.bpm.minotaur.gamedata.map.ArmyKnowledge.Tracks tracks = armies.readTracks(history.roster(), g.chunk.x, g.chunk.y, clock);
+            if (tracks != null) {
+                say(com.bpm.minotaur.gamedata.map.ArmyKnowledge.tracksLine(tracks, houseName(tracks.marker.houseId)), 4f);
+                changed = true;
+            }
+        }
+        if (changed) knowledge.saveArmies();
+    }
+
+    /** A townsperson's word of a host, while a war runs (Living War A49); it goes on the map as a rumour. */
+    private String townRumourOfAHost(String townKey) {
+        if (worldManager.currentFronts().isEmpty()) return null;
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.map.MapKnowledge knowledge = com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance();
+        long clock = history.warClock();
+        com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker said = knowledge.getArmies().hearInTown(history.roster(), clock,
+                townKey.hashCode() + (int) (clock / com.bpm.minotaur.managers.HistoryManager.SLEEP_TURNS));
+        if (said == null) return null;
+        knowledge.saveArmies();
+        GridPoint2 here = worldManager.getCurrentPlayerChunkId();
+        return com.bpm.minotaur.gamedata.map.ArmyKnowledge.townLine(said, houseName(said.houseId), here.x, here.y);
+    }
 
     private com.bpm.minotaur.ui.ArmsAtlas armsAtlas;
     private com.bpm.minotaur.gamedata.history.HistoryWorld armsWorld;
@@ -5530,6 +5571,9 @@ public class GameScreen extends BaseScreen {
             // A season passes in the Maze while the player sleeps; they wake to its news.
             java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = worldManager.getHistory().onSleep();
             worldManager.sleepThroughWar();
+            // The War Table has fresh word of the hosts by morning (Living War A49).
+            com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().getArmies().hearWarTable(worldManager.getHistory().roster(), worldManager.getHistory().warClock());
+            com.bpm.minotaur.gamedata.map.MapKnowledge.getInstance().saveArmies();
             // This shelter is now the one the player wakes in.
             if (currentLevel() == 1) {
                 com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()

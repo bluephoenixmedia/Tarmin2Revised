@@ -72,6 +72,7 @@ public final class PlaytestRunner {
                 new LivingWarScenario(),
                 new BivouacScenario(),
                 new ArmsFieldScenario(),
+                new ArmyMarksScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),

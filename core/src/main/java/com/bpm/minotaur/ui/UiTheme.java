@@ -162,6 +162,10 @@ public final class UiTheme {
     public static final float HERALDRY_TEXT_LIFT = 0.45f;
     /** A fresh battlefield's mark on the map (Living War W28). */
     public static final Color MAP_BATTLEFIELD = new Color(0.62f, 0.12f, 0.08f, 1f);
+    /** An army's shield on the map (Living War A46), its heading arrow's reach, and the mark of a battle only heard. */
+    public static final float MAP_ARMY_MARKER = 14f;
+    public static final float MAP_ARMY_ARROW = 20f;
+    public static final float MAP_ARMY_SOUND = 24f;
     /** Thickness of the border a front carries in the defending house's colour, and of the minimap's war rim. */
     public static final float FRONT_RIM = 3f;
     /** The HUD's war tally under the minimap (Living War W30): its gap below the map, and its bar's height. */

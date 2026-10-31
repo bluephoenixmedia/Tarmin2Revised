@@ -2974,15 +2974,7 @@ public final class IsometricDioramaRenderer implements Disposable {
             if (s.at == null) continue;
             float z = getChunkTopZ(provider, s.at.x, s.at.y);
             Vector2 p = project(s.at.x + 0.5f, s.at.y + 0.5f, z + 6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT);
-            if (s.kind == MapSurface.WarSign.Kind.COLUMN && s.toward != null) {
-                Vector2 a = toGdxScreen(project(s.at.x + 0.5f, s.at.y + 0.5f, z + 0.6f, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                float tz = getChunkTopZ(provider, s.toward.x, s.toward.y) + 0.6f;
-                Vector2 b = toGdxScreen(project(s.toward.x + 0.5f, s.toward.y + 0.5f, tz, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
-                drawDashedThickLine(shapes, a.x, a.y, b.x, b.y, 1f, withAlpha(s.color, 0.9f * alpha), 3f, 2f, -elapsedTime * 5f);
-            }
-            String glyph = s.kind == MapSurface.WarSign.Kind.BATTLEFIELD ? "grave"
-                    : s.kind == MapSurface.WarSign.Kind.CAMP ? "danger" : "flag";
-            drawPlate(shapes, p.x, p.y, glyph, s.color, COLOR_INK, alpha);
+            drawPlate(shapes, p.x, p.y, "grave", s.color, COLOR_INK, alpha);
         }
         shapes.end();
     }
@@ -3220,6 +3212,12 @@ public final class IsometricDioramaRenderer implements Disposable {
             drawCaveBadges(shapes, provider, ca);
         }
         drawSelection(shapes, provider);
+    }
+
+    /** Where a chunk's top stands on the finished picture, in its own pixels with y up. */
+    Vector2 chunkOnPicture(MapKnowledgeMask.KnowledgeProvider provider, float wx, float wy) {
+        float z = getChunkTopZ(provider, (int) Math.floor(wx), (int) Math.floor(wy));
+        return toGdxScreen(project(wx, wy, z, camX, camY, camZoom, camRot, FBO_WIDTH, FBO_HEIGHT));
     }
 
     private static Vector2 toGdxScreen(Vector2 topDown) {
