@@ -282,6 +282,7 @@ public class Monster implements Renderable {
     public static final int SEAL_BEARER = 3;
     /** The seeker has struck this monster at least once; a seal lord's seal is theirs if it falls. */
     private transient boolean seekerDrewBlood;
+    private transient boolean seekerKilled;
     private transient int battleSide;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
@@ -1608,6 +1609,14 @@ public class Monster implements Renderable {
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
     public boolean seekerDrewBlood() {
         return seekerDrewBlood;
+    }
+
+    public boolean seekerKilled() {
+        return seekerKilled;
+    }
+
+    public void markSeekerKilled() {
+        seekerKilled = true;
     }
 
     public void markSeekerDrewBlood() {

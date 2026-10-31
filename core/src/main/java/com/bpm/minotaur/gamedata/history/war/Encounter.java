@@ -52,6 +52,14 @@ public final class Encounter {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
 
+    /** A levy's camp: the house whose banner it flies, who swears and pays at it (A39); -1 if its own. */
+    public int liege = -1;
+
+    /** The house this camp's banner answers for. */
+    public int bannerHouse() {
+        return liege >= 0 ? liege : houseA;
+    }
+
     public Encounter(Kind kind, long slot, int warId, int houseA, int houseB, long start, long end,
             GridPoint2 from, GridPoint2 to) {
         this.kind = kind;

@@ -127,13 +127,14 @@ public class PlayerDeed {
     /** For {@code ARMY_BATTLE}: the house the player fought for, or -1, and whether they stood there at the end (A17, A24). */
     public int foughtFor = -1;
     public boolean witnessed;
-    /** ARMY_BATTLE: the player stood to the end with this house; -1 if they didn't (A40). */
-    public int stoodWith = -1;
+    /** The houses of the side the player stood with to the end, if they did, and whether it won; for the contract in hand. */
+    public transient int[] stoodWith;
+    public transient boolean stoodAndWon;
     /** ARMY_BATTLE: the player turned it, a fifth or more of the enemy dead on a winning side (A40). */
     public boolean turned;
-    /** ARMY_BATTLE: the armies that routed and that held the field, for the contracts that name them (A38). */
-    public int[] armiesRouted;
-    public int[] armiesHeld;
+    /** The armies that routed and that held the field, for the contract in hand (A38). */
+    public transient int[] armiesRouted;
+    public transient int[] armiesHeld;
     /** ARMY_BEAST: it died of this, and what it has left if it did not. */
     public boolean beastSlain;
     public int beastHp;

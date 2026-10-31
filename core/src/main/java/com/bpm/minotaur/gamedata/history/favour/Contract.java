@@ -167,8 +167,8 @@ public class Contract {
         }
         if (targetArmy >= 0) {
             Army a = roster.army(targetArmy);
-            if (a == null || a.soldiers <= 0) return true;
-            // Its host's going home, or its war's end, takes a camp or a stand with it too.
+            // A host being cut down in a battle hasn't gone until it ends: then it may count as done.
+            if (a == null || (a.soldiers <= 0 && !a.battle)) return true;
         }
         if (targetFigure >= 0) {
             Figure f = world.figure(targetFigure);
@@ -183,8 +183,8 @@ public class Contract {
      * True if this kept it.
      */
     public boolean onBattle(PlayerDeed deed) {
-        if (done || deed.kind != PlayerDeed.Kind.ARMY_BATTLE || deed.stoodWith != giverId) return false;
-        boolean won = deed.target == giverId;
+        if (done || !has(deed.stoodWith, giverId)) return false;
+        boolean won = deed.stoodAndWon;
         switch (kind) {
             case BREAK_HOST:
             case CUT_SUPPLY:

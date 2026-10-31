@@ -2676,10 +2676,10 @@ public class GameScreen extends BaseScreen {
         if (t.volleyDamage > 0 && player != null) {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
         }
-        if (t.foughtFor >= 0 && t.favour > 0) {
+        if (t.stoodWith >= 0 && t.favour > 0) {
             com.bpm.minotaur.managers.HistoryManager warHistory = worldManager.getHistory();
-            warHistory.favour().change(warHistory.world(), t.foughtFor, t.favour);
-            say(houseName(t.foughtFor) + (t.foughtFor == t.winner ? " will remember that you stood with it." : " saw you stand to the end."), 4f);
+            warHistory.favour().change(warHistory.world(), t.stoodWith, t.favour);
+            say(houseName(t.stoodWith) + (t.won ? " will remember that you stood with it." : " saw you stand to the end."), 4f);
             if (t.turned) say("It was your hand that turned the day.", 4f);
         }
         if (t.offerSides && warManager.active() != null) offerSides(warManager.active());
@@ -2804,7 +2804,7 @@ public class GameScreen extends BaseScreen {
         for (com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing d : worldManager.getHistory().encounterLedger().dressings) {
             if (!"CAMP".equals(d.kind) || d.chunkX != chunk.x || d.chunkY != chunk.y) continue;
             for (int i = 0; i + 1 < d.tiles.size(); i += 2) {
-                if (d.tiles.get(i) == tile.x && d.tiles.get(i + 1) == tile.y) return d.houseId;
+                if (d.tiles.get(i) == tile.x && d.tiles.get(i + 1) == tile.y) return d.banner >= 0 ? d.banner : d.houseId;
             }
         }
         return -1;

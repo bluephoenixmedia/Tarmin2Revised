@@ -97,7 +97,7 @@ public final class HistoryManager {
         }
         if (save.oath != null) m.oath = save.oath;
         if (m.oath.contract != null && m.oath.contract.oldStyle()) m.oath.contract = null;
-        if (m.oath.heldUntil >= 0) m.favour.holdAtTolerated(m.oath.houseId, m.oath.heldUntil);
+        if (m.oath.heldUntil > m.world.liveSeasons()) m.favour.holdAtTolerated(m.oath.houseId, m.oath.heldUntil);
         if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
         if (save.townSettlementKeys != null && save.townSettlementIds != null) {
             for (int i = 0; i < Math.min(save.townSettlementKeys.size(), save.townSettlementIds.size()); i++) {
@@ -502,6 +502,7 @@ public final class HistoryManager {
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();
         apply(deed);
+        contractKeptInBattle |= oath.contract != null && oath.contract.onBattle(deed);
         if (deed.kind == PlayerDeed.Kind.ARMY_BEAST) {
             if (deed.beastSlain) {
                 beastHp.remove(deed.target);
@@ -512,7 +513,6 @@ public final class HistoryManager {
             encounterLedger().battleFought(deed.chunkX, deed.chunkY, deed.other, deed.witnessed, EncounterDirector.AFTERMATH_SLEEPS);
         }
         if (deed.kind == PlayerDeed.Kind.ARMY_BATTLE) {
-            contractKeptInBattle |= oath.contract != null && oath.contract.onBattle(deed);
             encounterLedger().battleFought(deed.chunkX, deed.chunkY, deed.other, deed.witnessed, EncounterDirector.AFTERMATH_SLEEPS);
         }
     }

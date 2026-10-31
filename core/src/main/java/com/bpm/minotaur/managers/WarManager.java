@@ -46,7 +46,9 @@ public final class WarManager {
         /** When the battle breaks: who held the field, and whom the player fought for (W19); -1 otherwise. */
         public int winner = -1;
         public int foughtFor = -1;
-        /** What the house fought for makes of it (A40): zero if the player didn't stand with one. */
+        /** The house paid for the player's stand: their liege if it was of that side, else the side's lead; -1 if they stood with none (A40). */
+        public int stoodWith = -1;
+        public boolean won;
         public int favour;
         /** The player's hand turned it (A40). */
         public boolean turned;
@@ -105,11 +107,16 @@ public final class WarManager {
         if (r.winner != -1) t.cues.add(Cue.ROUT);
         if (r.winner >= 0) {
             t.winner = r.winner;
-            t.foughtFor = active.playerStoodWith();
-            if (t.foughtFor >= 0) {
-                t.favour = com.bpm.minotaur.gamedata.history.favour.BattleFavour.of(t.foughtFor == r.winner, active.battle.playerShare, active.battle.playerSlewCaptain);
-                t.turned = com.bpm.minotaur.gamedata.history.favour.BattleFavour.turned(t.foughtFor == r.winner, active.battle.playerShare);
-            }
+            t.foughtFor = active.playerFoughtFor();
+        }
+        if (r.winner != -1 && active.battle.stoodHouses != null) {
+            int lead = active.battle.stoodWith();
+            int liege = history.oath().houseId;
+            boolean forLiege = liege >= 0 && com.bpm.minotaur.gamedata.history.war.army.ArmyBattle.holds(active.battle.stoodHouses, liege);
+            t.stoodWith = forLiege ? liege : lead;
+            t.won = lead == r.winner;
+            t.favour = com.bpm.minotaur.gamedata.history.favour.BattleFavour.of(t.won, active.battle.playerShare, active.battle.playerSlewCaptain);
+            t.turned = active.battle.playerTurned;
         }
         if (active.phase() == BattleDirector.Phase.DONE) active = null;
         return t;

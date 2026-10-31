@@ -59,7 +59,8 @@ public class ContractAndFavourTest {
 
     private PlayerDeed deed(int winner, int stoodWith) {
         PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.ARMY_BATTLE, winner, 0);
-        d.stoodWith = stoodWith;
+        if (stoodWith >= 0) d.stoodWith = new int[] {stoodWith};
+        d.stoodAndWon = stoodWith == winner;
         return d;
     }
 
@@ -168,6 +169,27 @@ public class ContractAndFavourTest {
         assertFalse(c.done);
     }
 
+    /** The liege's own host cut to nothing while the battle still goes: it may yet count as done. */
+    @Test
+    public void aTargetDownInABattleStillGoingIsNotYetGone() {
+        Army target = army(50, enemy, 1, 1);
+        target.soldiers = 0;
+        target.battle = true;
+        Contract c = contract(Contract.Kind.BREAK_HOST, target.id);
+        assertFalse(c.targetGone(history.world(), history.roster()));
+        target.battle = false;
+        assertTrue(c.targetGone(history.world(), history.roster()));
+    }
+
+    @Test
+    public void aLiegeWhoIsAnAllyOfTheLeadStillCounts() {
+        Contract c = contract(Contract.Kind.BREAK_HOST, 50);
+        PlayerDeed d = deed(enemy, enemy);
+        d.stoodWith = new int[] {enemy, liege};
+        d.armiesRouted = new int[] {50};
+        assertTrue(c.onBattle(d));
+    }
+
     @Test
     public void aNamedCaptainMayBeKilledOrTakenInBattleOrSlainByThePlayer() {
         Contract c = contract(Contract.Kind.TAKE_CAPTAIN, 50);
@@ -231,7 +253,7 @@ public class ContractAndFavourTest {
     @Test
     public void aPlayerWhoFledIsPaidNothing() {
         PlayerDeed fled = deed(liege, -1);
-        assertEquals(-1, fled.stoodWith);
+        assertNull(fled.stoodWith);
         Contract c = contract(Contract.Kind.BREAK_HOST, 50);
         fled.armiesRouted = new int[] {50};
         assertFalse(c.onBattle(fled));
@@ -316,6 +338,18 @@ public class ContractAndFavourTest {
         HistoryManager loaded = HistoryManager.fromSave(0L, history.toSave(), catalog);
         loaded.favour().change(loaded.world(), enemy, 60);
         assertEquals(Favour.Tier.TOLERATED, loaded.favour().tier(enemy));
+    }
+
+    @Test
+    public void aHoldLongOverIsNotAppliedAgainOnLoad() {
+        history.favour().set(liege, 70);
+        history.swear(liege);
+        history.favour().set(enemy, 80);
+        history.swear(enemy);
+        history.onSleep();
+        history.favour().set(enemy, 90);
+        HistoryManager loaded = HistoryManager.fromSave(0L, history.toSave(), catalog);
+        assertEquals(Favour.Tier.FRIEND, loaded.favour().tier(enemy));
     }
 
     @Test

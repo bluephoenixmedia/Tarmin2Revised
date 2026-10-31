@@ -90,6 +90,36 @@ public class ArmyEncountersTest {
         for (Encounter c : l.camps()) assertFalse(c.slot == ArmyLayer.SEAT_CAMP && c.houseA == s.holder);
     }
 
+    /** A41: the nearest host sends a party at once, and one already out turns instead of a second. */
+    @Test
+    public void aBrokenOathSendsTheNearestHostsPartyAtOnce() {
+        HistoryManager h = HistoryManager.create(8919L, catalog);
+        ArmyLayer l = layer(h, 8919L);
+        run(h, l, 1);
+        Encounter seat = null;
+        for (Encounter c : l.camps()) if (c.slot == ArmyLayer.SEAT_CAMP) seat = c;
+        int house = seat.houseA;
+        h.roster().armies.removeIf(a -> a.houseId == house);
+        Army host = new Army();
+        host.id = 7000;
+        host.houseId = house;
+        host.x = seat.from.x + 2;
+        host.y = seat.from.y;
+        host.soldiers = ArmyTuning.MIN_ARMY + ArmyTuning.RAID_SIZE;
+        h.roster().armies.add(host);
+        h.roster().notePlayerSeen(house, seat.from.x + 3, seat.from.y);
+        l.huntersNow(house);
+        List<Army> parties = new java.util.ArrayList<>();
+        for (Army a : h.roster().armies) if (a.houseId == house && a.kind == Army.Kind.HUNTING_PARTY) parties.add(a);
+        assertEquals(1, parties.size());
+        assertEquals(host.x, parties.get(0).x);
+        assertEquals(ArmyTuning.MIN_ARMY, host.soldiers);
+        l.huntersNow(house);
+        int count = 0;
+        for (Army a : h.roster().armies) if (a.houseId == house && a.kind == Army.Kind.HUNTING_PARTY) count++;
+        assertEquals("the one out turns", 1, count);
+    }
+
     @Test
     public void aHostMarchesOnWhetherOrNotAnyoneWasThere() {
         HistoryManager h = HistoryManager.create(24757L, catalog);

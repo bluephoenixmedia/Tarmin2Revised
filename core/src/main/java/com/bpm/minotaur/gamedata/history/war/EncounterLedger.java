@@ -16,6 +16,8 @@ public class EncounterLedger {
      * three sleeps (W2), or a war camp, struck when its war ends.
      */
     public static class Dressing {
+        /** A camp of a levy: the house its banner answers for; -1 if its own (A39). */
+        public int banner = -1;
         public int chunkX;
         public int chunkY;
         /** "AFTERMATH", "CAMP" or "BIVOUAC". */

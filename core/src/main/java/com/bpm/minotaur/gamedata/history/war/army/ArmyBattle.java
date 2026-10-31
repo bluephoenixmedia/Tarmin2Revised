@@ -51,8 +51,10 @@ public class ArmyBattle {
     /** Enemy soldiers the player has killed here, and whether one was a captain (A40). */
     public int playerKills;
     public boolean playerSlewCaptain;
-    /** At the end: the player's share of the enemy dead, and whether they stayed for it. */
+    /** At the end, for one still on the field: the player's share of the enemy dead, whether that turned it, and the houses of their side. */
     public transient float playerShare;
+    public transient boolean playerTurned;
+    public transient int[] stoodHouses;
     /** Sides the player has drawn blood from, as bits: 1 for A, 2 for B. */
     public int playerStruck;
     /** Whether the player was on the ground when it broke, for its deed (A24). */
@@ -103,7 +105,7 @@ public class ArmyBattle {
         return more;
     }
 
-    static boolean holds(int[] list, int value) {
+    public static boolean holds(int[] list, int value) {
         for (int v : list) if (v == value) return true;
         return false;
     }

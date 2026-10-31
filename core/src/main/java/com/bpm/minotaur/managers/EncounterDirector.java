@@ -209,6 +209,8 @@ public final class EncounterDirector {
         for (Iterator<Stage> it = stages.values().iterator(); it.hasNext(); ) {
             Stage s = it.next();
             tallyTheFallen(s, history);
+            // A column cut down to the last, on the march or halted (A37).
+            if (s.e.kind == Encounter.Kind.COLUMN && s.e.slot > 0 && !s.a.isEmpty() && standing(maze, s.a) == 0) t.brokenArmy = (int) s.e.slot;
             if (calledAway(s, history)) {
                 for (Monster m : s.a) maze.removeMonster(m);
                 it.remove();
@@ -216,7 +218,7 @@ public final class EncounterDirector {
             }
             tick(s, history, maze, playerTile, clock, props, spoils, t);
             if (s.phase == Phase.DONE) it.remove();
-            else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.houseA;
+            else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.bannerHouse();
         }
         return t;
     }
@@ -481,6 +483,7 @@ public final class EncounterDirector {
             camp = dressing(CAMP, ledger);
             camp.warId = c.warId;
             camp.houseId = c.houseA;
+            camp.banner = c.liege;
             place(maze, props, "campfire", centre, camp);
             // Nobody swears at a camp with no banner, so it keeps looking until it finds the ground.
             for (int tries = 0; tries < BANNER_TRIES && !place(maze, props, "war_banner", around(maze, centre, 2 + tries, r), camp); tries++) { }
@@ -554,12 +557,11 @@ public final class EncounterDirector {
                 boolean destroyed = true;
                 for (Monster m : s.a) if (m.isAlive()) destroyed = false;
                 if (destroyed) {
-                    t.brokenArmy = (int) s.e.slot;
                     ledger.spend(s.e);
                     t.messages.add("The column of " + name(world, s.e.houseA) + " is broken. Its banners lie in the mud.");
                 } else if (player != null) {
                     t.escorted = s.e.houseA;
-                    t.escortedArmy = (int) s.e.slot;
+                    if (s.e.slot > 0) t.escortedArmy = (int) s.e.slot;
                 }
                 s.phase = Phase.DONE;
                 return;

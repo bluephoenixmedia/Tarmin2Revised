@@ -83,14 +83,14 @@ public final class Favour {
     /** {@code delta} with house {@code houseId}; its enemies at war hear half of it, reversed (W19). */
     public void change(HistoryWorld world, int houseId, int delta) {
         if (world == null) set(houseId, of(houseId) + delta);
-        else setHeld(world, houseId, of(houseId) + delta);
+        else setBelowAnyHold(world, houseId, of(houseId) + delta);
         if (world == null || delta / 2 == 0) return;
         for (House h : world.livingHouses()) {
-            if (h.id != houseId && world.activeWarBetween(h.id, houseId) != null) setHeld(world, h.id, of(h.id) - delta / 2);
+            if (h.id != houseId && world.activeWarBetween(h.id, houseId) != null) setBelowAnyHold(world, h.id, of(h.id) - delta / 2);
         }
     }
 
-    private void setHeld(HistoryWorld world, int houseId, int value) {
+    private void setBelowAnyHold(HistoryWorld world, int houseId, int value) {
         set(houseId, houseId == heldHouse && world.liveSeasons() < heldUntil ? Math.min(value, FRIEND_AT - 1) : value);
     }
 
