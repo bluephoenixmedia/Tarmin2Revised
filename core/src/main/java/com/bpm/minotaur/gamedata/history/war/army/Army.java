@@ -56,6 +56,8 @@ public class Army {
     public int marchStep;
     /** A party sent in peacetime: it burns and goes home, and no one's armies are at war with it. */
     public boolean peaceRaid;
+    /** The house whose lands a raid is burning, or -1. */
+    public int raidOn = -1;
     /** The Season a raid or Hunting Party goes home, or -1. */
     public int homeBySeason = -1;
     /** A host sends one raid until it next goes home. */

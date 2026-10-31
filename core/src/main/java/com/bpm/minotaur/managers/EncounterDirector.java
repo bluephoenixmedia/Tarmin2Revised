@@ -53,6 +53,8 @@ public final class EncounterDirector {
         public int foughtFor = -1;
         /** The player cut down this house's herald (W29). */
         public int heraldSlain = -1;
+        /** The player beat raiders off this house's lands (A11). */
+        public int raidBeaten = -1;
     }
 
     /** Hunters a house sends after a seeker it counts its enemy (W18). */
@@ -72,6 +74,7 @@ public final class EncounterDirector {
     static final int SENTRIES = 3;
     /** Things a raid sets alight, and how far from its centre it looks for them. */
     static final int RAID_BURNS = 3;
+    static final int RAID_BURNS_CRUEL = 5;
     static final int RAID_REACH = 8;
     /** Props never put to the torch: the way in and out, and the war's own. */
     private static final java.util.Set<String> UNBURNABLE = new java.util.HashSet<>(java.util.Arrays.asList(
@@ -90,7 +93,11 @@ public final class EncounterDirector {
 
     private final DoctrineCatalog catalog;
     private final Map<String, Stage> stages = new LinkedHashMap<>();
+    /** What has been put in this chunk since the player came: a column that has marched through does not march through again. */
+    private final java.util.Set<String> stagedHere = new java.util.HashSet<>();
     private GridPoint2 chunk;
+    /** The captain of the raid being staged, or -1. */
+    private int raidArmyCaptain = -1;
     private int chunkLevel;
     /** The town whose ground the player stands on, or null: a raid on its gate is the town's to thank for (W32). */
     private String town;
@@ -164,10 +171,13 @@ public final class EncounterDirector {
         long clock = history.warClock();
         HistoryWorld world = history.world();
         for (Encounter e : encounters) {
+            com.bpm.minotaur.gamedata.history.war.army.Army behind = level == 1 && e.kind == Encounter.Kind.RAID && e.slot > 0
+                    ? history.roster().army((int) e.slot) : null;
+            raidArmyCaptain = behind == null ? -1 : behind.captainId;
             // A battle of the armies is the WarManager's to bring to the field.
             if (e.underArms || !e.visible() || !e.chunkAt(clock).equals(chunk) || ledger.isSpent(e)) continue;
             String key = e.key() + "@" + chunk.x + "," + chunk.y;
-            if (stages.containsKey(key)) continue;
+            if (!stagedHere.add(key)) continue;
             Stage s = null;
             switch (e.kind) {
                 case SKIRMISH: s = skirmish(e, world, maze, recruiter, t); break;
@@ -181,11 +191,16 @@ public final class EncounterDirector {
         for (Encounter c : camps) {
             if (!c.chunkAt(clock).equals(chunk) || ledger.isSpent(c)) continue;
             String key = c.key() + "@" + chunk.x + "," + chunk.y;
-            if (!stages.containsKey(key)) stages.put(key, camp(c, world, maze, recruiter, props, ledger, t));
+            if (stagedHere.add(key)) stages.put(key, camp(c, world, maze, recruiter, props, ledger, t));
         }
         for (Iterator<Stage> it = stages.values().iterator(); it.hasNext(); ) {
             Stage s = it.next();
             tallyTheFallen(s, history);
+            if (calledAway(s, history)) {
+                for (Monster m : s.a) maze.removeMonster(m);
+                it.remove();
+                continue;
+            }
             tick(s, history, maze, playerTile, clock, props, spoils, t);
             if (s.phase == Phase.DONE) it.remove();
             else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.houseA;
@@ -197,11 +212,24 @@ public final class EncounterDirector {
     private void tallyTheFallen(Stage s, HistoryManager history) {
         if (chunkLevel != 1 || s.e.slot <= 0 || s.e.kind == Encounter.Kind.SKIRMISH) return;
         int dead = 0;
-        for (Monster m : s.a) if (!m.isAlive()) dead++;
+        // A herald is one soldier on the roster; its escort is its own affair.
+        if (s.e.kind == Encounter.Kind.HERALD) dead = s.captainA != null && !s.captainA.isAlive() ? 1 : 0;
+        else for (Monster m : s.a) if (!m.isAlive()) dead++;
         if (dead > s.fallen) {
             history.roster().slainInTheField((int) s.e.slot, dead - s.fallen);
             s.fallen = dead;
         }
+    }
+
+    /**
+     * Whether these soldiers' army has gone where they cannot follow: into a battle here, which
+     * raises its own line (A21), or off this chunk, for a party that stood waiting in it.
+     */
+    private boolean calledAway(Stage s, HistoryManager history) {
+        if (chunkLevel != 1 || s.e.slot <= 0 || s.e.kind == Encounter.Kind.SKIRMISH) return false;
+        com.bpm.minotaur.gamedata.history.war.army.Army a = history.roster().army((int) s.e.slot);
+        if (a != null && a.battle) return true;
+        return s.e.kind == Encounter.Kind.COLUMN && s.phase == Phase.HOLD && (a == null || a.x != chunk.x || a.y != chunk.y);
     }
 
     /**
@@ -220,7 +248,7 @@ public final class EncounterDirector {
             int kept = ledger.dressings.size();
             lay(maze, props, ledger, centre, r);
             if (ledger.dressings.size() > kept) ledger.dressings.get(kept).clearAtSleep = f.clearAtSleep;
-            if (!f.witnessed && spoils != null) spoils.pickedOver(maze, centre, f.loser);
+            if (!f.witnessed && spoils != null) spoils.pickedOver(maze, centre);
         }
     }
 
@@ -259,6 +287,7 @@ public final class EncounterDirector {
             if (s.phase == Phase.FIGHT && s.e.kind == Encounter.Kind.SKIRMISH) ledger.spend(s.e);
         }
         stages.clear();
+        stagedHere.clear();
     }
 
     // ------------------------------------------------------------------ staging
@@ -288,6 +317,7 @@ public final class EncounterDirector {
 
     private Stage column(Encounter e, HistoryWorld world, Maze maze, BattleDirector.Recruiter recruiter, Turn t) {
         Random r = rng(world, e, 2);
+        if (e.from.equals(e.to)) return waiting(e, world, maze, recruiter, r, t);
         Stage s = new Stage(e, Phase.MARCH);
         int dx = Integer.signum(e.to.x - e.from.x);
         int dy = Integer.signum(e.to.y - e.from.y);
@@ -311,6 +341,21 @@ public final class EncounterDirector {
         s.a.get(0).setDisplayName("Standard-bearer of " + name(world, e.houseA));
         s.startA = s.a.size();
         t.messages.add("Drums. A column of " + name(world, e.houseA) + " marches through, banners high.");
+        t.cues.add(Cue.DRUMS);
+        return s;
+    }
+
+    /** A party with nowhere yet to march (a Hunting Party on a cold trail, foragers at their work): it stands here until it moves. */
+    private Stage waiting(Encounter e, HistoryWorld world, Maze maze, BattleDirector.Recruiter recruiter, Random r, Turn t) {
+        Stage s = new Stage(e, Phase.HOLD);
+        GridPoint2 centre = WorldManager.findSafeArrivalTile(maze, maze.getWidth() / 2, maze.getHeight() / 2);
+        for (int i = 0; i < Math.min(e.soldiers, BattleDirector.LINE); i++) {
+            Monster m = enlist(s.a, maze, recruiter, world, e.houseA, around(maze, centre, 6, r), r);
+            if (m != null) m.setState(Monster.MonsterState.WANDERING);
+        }
+        if (s.a.isEmpty()) return null;
+        s.startA = s.a.size();
+        t.messages.add("Soldiers of " + name(world, e.houseA) + " stand about here, banners furled.");
         t.cues.add(Cue.DRUMS);
         return s;
     }
@@ -356,15 +401,16 @@ public final class EncounterDirector {
         fires.clearAtSleep = ledger.sleeps + AFTERMATH_SLEEPS;
         // They burn what stands here -- trees, stores, shrines -- and light the rest of the ground.
         int burnt = 0;
+        int burns = cruelCaptain(world) ? RAID_BURNS_CRUEL : RAID_BURNS;
         for (GridPoint2 at : burnable(maze, centre, RAID_REACH)) {
-            if (burnt >= RAID_BURNS) break;
+            if (burnt >= burns) break;
             maze.removeScenery(at.x, at.y);
             if (place(maze, props, "campfire", at, fires)) {
                 maze.addBlood(at.x, at.y, 0.2f);
                 burnt++;
             }
         }
-        for (int i = burnt; i < RAID_BURNS; i++) place(maze, props, "campfire", around(maze, centre, 3, r), fires);
+        for (int i = burnt; i < burns; i++) place(maze, props, "campfire", around(maze, centre, 3, r), fires);
         keep(ledger, fires);
         int n = RAIDERS_MIN + r.nextInt(RAIDERS_MAX - RAIDERS_MIN + 1);
         for (int i = 0; i < n; i++) {
@@ -378,6 +424,13 @@ public final class EncounterDirector {
                 : "Smoke and shouting: raiders of " + name(world, e.houseA) + " are burning the ground here.");
         t.cues.add(Cue.FIRE);
         return s;
+    }
+
+    /** A cruel captain's raid leaves more behind it (A4). */
+    private boolean cruelCaptain(HistoryWorld world) {
+        if (raidArmyCaptain < 0) return false;
+        Figure f = world.figure(raidArmyCaptain);
+        return f != null && f.has(com.bpm.minotaur.gamedata.history.Trait.CRUEL);
     }
 
     /**
@@ -537,6 +590,7 @@ public final class EncounterDirector {
                             t.messages.add(town.name + " will remember who held its gate.");
                         }
                     } else {
+                        if (chunkLevel == 1 && joined(s)) t.raidBeaten = s.e.houseB;
                         t.messages.add(chunkLevel == 1
                                 ? "The raiders of " + name(world, s.e.houseA) + " are dead. Their fires burn on."
                                 : "The raiders of " + name(world, s.e.houseA) + " are dead.");

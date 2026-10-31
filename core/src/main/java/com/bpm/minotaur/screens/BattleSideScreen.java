@@ -93,6 +93,7 @@ public class BattleSideScreen extends BaseScreen {
                 .growX().padBottom(UiTheme.PAD_MD).row();
         for (Map.Entry<String, Runnable> o : offered.entrySet()) {
             TextButton b = new TextButton(UiGlyphs.sanitize(o.getKey()), UiStyles.secondary(hudSkin));
+            b.getLabel().setEllipsis(true);
             b.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {

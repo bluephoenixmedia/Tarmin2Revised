@@ -46,13 +46,11 @@ public final class BattleSpoils implements BattleDirector.Spoils {
 
     @Override
     public void drop(Maze maze, GridPoint2 near, int loserHouseId, boolean lordFell) {
-        List<Item.ItemType> field = new ArrayList<>();
+        List<Item.ItemType> field = commonArms();
         List<Item.ItemType> weapons = new ArrayList<>();
         for (Item.ItemType t : Item.ItemType.values()) {
             ItemTemplate tpl = items.getTemplate(t);
-            if (tpl == null || !(tpl.isWeapon || tpl.isArmor)) continue;
-            if (tpl.baseValue > 0 && tpl.baseValue <= FIELD_VALUE_MAX) field.add(t);
-            if (tpl.isWeapon) weapons.add(t);
+            if (tpl != null && tpl.isWeapon) weapons.add(t);
         }
         // A lord carries one of the costliest third of the weapons there are.
         weapons.sort((x, y) -> Integer.compare(items.getTemplate(y).baseValue, items.getTemplate(x).baseValue));
@@ -73,14 +71,20 @@ public final class BattleSpoils implements BattleDirector.Spoils {
 
     /** After the crows and the strippers of the dead: a piece or two, and no one's signet (A24). */
     @Override
-    public void pickedOver(Maze maze, GridPoint2 near, int loserHouseId) {
+    public void pickedOver(Maze maze, GridPoint2 near) {
+        List<Item.ItemType> field = commonArms();
+        int count = 1 + rng.nextInt(PICKED_OVER);
+        for (int i = 0; i < count && !field.isEmpty(); i++) place(maze, near, field.get(rng.nextInt(field.size())), ItemColor.TAN);
+    }
+
+    /** Gear a common soldier might carry. */
+    private List<Item.ItemType> commonArms() {
         List<Item.ItemType> field = new ArrayList<>();
         for (Item.ItemType t : Item.ItemType.values()) {
             ItemTemplate tpl = items.getTemplate(t);
             if (tpl != null && (tpl.isWeapon || tpl.isArmor) && tpl.baseValue > 0 && tpl.baseValue <= FIELD_VALUE_MAX) field.add(t);
         }
-        int count = 1 + rng.nextInt(PICKED_OVER);
-        for (int i = 0; i < count && !field.isEmpty(); i++) place(maze, near, field.get(rng.nextInt(field.size())), ItemColor.TAN);
+        return field;
     }
 
     private static void trophy(Item item, int houseId, String name) {

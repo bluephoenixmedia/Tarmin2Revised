@@ -41,7 +41,7 @@ public class OneBattleStateTest {
         }
 
         @Override
-        public void pickedOver(Maze m, GridPoint2 near, int loser) {
+        public void pickedOver(Maze m, GridPoint2 near) {
             pickedOver++;
         }
     };
@@ -204,6 +204,149 @@ public class OneBattleStateTest {
             assertFalse("a fallen captain stays fallen", back.side(true).contains(m));
         }
         for (Monster m : back.side(false)) assertEquals("wounds are forgotten", 20, m.getCurrentHP());
+    }
+
+    @Test
+    public void aSideBrokenByTheCountOnLeavingBrokeWithNoOneThere() {
+        BattleDirector d = walkIn();
+        tick(d);
+        f.battle.moraleA = 1;
+        slay(d.side(true), 3);
+        d.collapse(++clock);
+        assertFalse(f.history.roster().battles.contains(f.battle));
+        assertFalse("no witness", f.battle.witnessed);
+        assertFalse(f.history.encounterLedger().fields.get(0).witnessed);
+    }
+
+    @Test
+    public void aHouseKnowsItsSideAndABlowThatKilledStillCounts() {
+        BattleDirector d = walkIn();
+        tick(d);
+        assertEquals(1, d.sideOf(f.battle.houseA));
+        assertEquals(2, d.sideOf(f.battle.houseB));
+        assertFalse(d.playerStruckSideOf(f.battle.houseA));
+        Monster m = d.side(true).get(0);
+        m.markSeekerDrewBlood();
+        m.setCurrentHP(0);
+        maze.removeMonster(m);
+        tick(d);
+        assertTrue(d.playerStruckSideOf(f.battle.houseA));
+        assertFalse(d.playerStruckSideOf(f.battle.houseB));
+    }
+
+    // ---------- what the player meets of a real army (A22) ----------
+
+    private List<com.bpm.minotaur.gamedata.history.war.Encounter> one(com.bpm.minotaur.gamedata.history.war.Encounter e) {
+        return java.util.Collections.singletonList(e);
+    }
+
+    private com.bpm.minotaur.gamedata.history.war.Encounter meet(com.bpm.minotaur.gamedata.history.war.Encounter.Kind kind, Army a, GridPoint2 to) {
+        com.bpm.minotaur.gamedata.history.war.Encounter e = new com.bpm.minotaur.gamedata.history.war.Encounter(
+                kind, a.id, a.warId, a.houseId, -1, 0, Long.MAX_VALUE, CHUNK, to);
+        e.soldiers = a.soldiers;
+        return e;
+    }
+
+    private EncounterDirector.Turn stage(EncounterDirector s, com.bpm.minotaur.gamedata.history.war.Encounter e) {
+        return s.onTurn(f.history, CHUNK, 1, false, maze, TILE, one(e), new ArrayList<>(), BattleFixture::soldier, OneBattleStateTest::prop, spoils);
+    }
+
+    private Army freeArmy() {
+        Army a = f.armyA();
+        a.battle = false;
+        a.x = CHUNK.x;
+        a.y = CHUNK.y;
+        f.history.roster().battles.clear();
+        return a;
+    }
+
+    @Test
+    public void aPartyWithNowhereToGoStandsAndIsNotAnnouncedAgain() {
+        Army a = freeArmy();
+        a.soldiers = 6;
+        EncounterDirector s = new EncounterDirector(catalog);
+        com.bpm.minotaur.gamedata.history.war.Encounter e = meet(com.bpm.minotaur.gamedata.history.war.Encounter.Kind.COLUMN, a, CHUNK);
+        assertEquals(1, stage(s, e).messages.size());
+        int soldiers = maze.getMonsters().size();
+        assertEquals(6, soldiers);
+        for (int i = 0; i < 60; i++) assertTrue(stage(s, e).messages.isEmpty());
+        assertEquals("nobody marched off the field", soldiers, maze.getMonsters().size());
+        a.x = CHUNK.x + 1;
+        stage(s, e);
+        assertTrue("when it moves on, they go", maze.getMonsters().isEmpty());
+    }
+
+    @Test
+    public void aColumnThatHasMarchedThroughDoesNotMarchThroughAgain() {
+        Army a = freeArmy();
+        EncounterDirector s = new EncounterDirector(catalog);
+        com.bpm.minotaur.gamedata.history.war.Encounter e = meet(com.bpm.minotaur.gamedata.history.war.Encounter.Kind.COLUMN, a, new GridPoint2(CHUNK.x + 1, CHUNK.y));
+        stage(s, e);
+        assertFalse(maze.getMonsters().isEmpty());
+        for (Monster m : new ArrayList<>(maze.getMonsters().values())) maze.removeMonster(m);
+        stage(s, e);
+        assertTrue(stage(s, e).messages.isEmpty());
+        assertTrue("not raised a second time", maze.getMonsters().isEmpty());
+    }
+
+    @Test
+    public void anArmyDrawnIntoABattleLeavesItsColumnToTheLine() {
+        Army a = freeArmy();
+        EncounterDirector s = new EncounterDirector(catalog);
+        com.bpm.minotaur.gamedata.history.war.Encounter e = meet(com.bpm.minotaur.gamedata.history.war.Encounter.Kind.COLUMN, a, new GridPoint2(CHUNK.x + 1, CHUNK.y));
+        stage(s, e);
+        int before = a.soldiers;
+        Monster slain = maze.getMonsters().values().iterator().next();
+        slain.setCurrentHP(0);
+        maze.removeMonster(slain);
+        a.battle = true;
+        stage(s, e);
+        assertEquals("the last kill still counts", before - 1, a.soldiers);
+        assertTrue("and the column is gone", maze.getMonsters().isEmpty());
+    }
+
+    @Test
+    public void aHeraldsEscortFallingLeavesTheHeraldOnTheRoster() {
+        Army a = freeArmy();
+        a.soldiers = 1;
+        EncounterDirector s = new EncounterDirector(catalog);
+        com.bpm.minotaur.gamedata.history.war.Encounter e = meet(com.bpm.minotaur.gamedata.history.war.Encounter.Kind.HERALD, a, new GridPoint2(CHUNK.x + 1, CHUNK.y));
+        stage(s, e);
+        for (Monster m : new ArrayList<>(maze.getMonsters().values())) {
+            if (!m.isPeaceful()) {
+                m.setCurrentHP(0);
+                maze.removeMonster(m);
+            }
+        }
+        stage(s, e);
+        assertNotNull(f.history.roster().army(a.id));
+    }
+
+    @Test
+    public void beatingRaidersEarnsTheThanksOfTheHouseRaided() {
+        Army a = freeArmy();
+        EncounterDirector s = new EncounterDirector(catalog);
+        com.bpm.minotaur.gamedata.history.war.Encounter e = new com.bpm.minotaur.gamedata.history.war.Encounter(
+                com.bpm.minotaur.gamedata.history.war.Encounter.Kind.RAID, a.id, a.warId, a.houseId, f.battle.houseB, 0, Long.MAX_VALUE, CHUNK, CHUNK);
+        stage(s, e);
+        for (Monster m : new ArrayList<>(maze.getMonsters().values())) {
+            m.markSeekerDrewBlood();
+            m.setCurrentHP(0);
+            maze.removeMonster(m);
+        }
+        assertEquals(f.battle.houseB, stage(s, e).raidBeaten);
+    }
+
+    @Test
+    public void aBrokenCampIsOfOnePlace() {
+        com.bpm.minotaur.gamedata.history.war.Encounter here = new com.bpm.minotaur.gamedata.history.war.Encounter(
+                com.bpm.minotaur.gamedata.history.war.Encounter.Kind.CAMP, 5, 1, 2, -1, 0, Long.MAX_VALUE, CHUNK, CHUNK);
+        com.bpm.minotaur.gamedata.history.war.Encounter there = new com.bpm.minotaur.gamedata.history.war.Encounter(
+                com.bpm.minotaur.gamedata.history.war.Encounter.Kind.CAMP, 5, 1, 2, -1, 0, Long.MAX_VALUE, new GridPoint2(9, 9), new GridPoint2(9, 9));
+        EncounterLedger ledger = f.history.encounterLedger();
+        ledger.spend(here);
+        assertTrue(ledger.isSpent(here));
+        assertFalse("the host pitches again wherever it next halts", ledger.isSpent(there));
     }
 
     @Test

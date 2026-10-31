@@ -93,6 +93,8 @@ public class BattleEquivalenceTest {
                 f.history.world(), catalog, seed, true);
         BattleDirector.Spoils none = (m, near, loser, lordFell) -> { };
         GridPoint2 corner = new GridPoint2(0, 0);
+        // Volleys and charges fall about the player's tile, which here is the thick of it; they kill too.
+        GridPoint2 thick = new GridPoint2(18, 18);
         long clock = 1;
         d.tick(maze, null, BattleEquivalenceTest::real, none, clock++);
         int turns = 0;
@@ -109,7 +111,7 @@ public class BattleEquivalenceTest {
                 }
             }
             player.setPosition(corner.x + 0.5f, corner.y + 0.5f);
-            d.tick(maze, null, BattleEquivalenceTest::real, none, clock++);
+            d.tick(maze, thick, BattleEquivalenceTest::real, none, clock++);
             turns++;
             if (under(f)) killed = dead(f);
         }

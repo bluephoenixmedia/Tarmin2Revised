@@ -186,7 +186,7 @@ public final class ArmyLayer {
         if (a.path != null && a.marchStep < a.path.length) {
             next = new GridPoint2(terrain.xOf(a.path[a.marchStep]), terrain.yOf(a.path[a.marchStep]));
         }
-        Encounter e = new Encounter(kind, a.id, a.warId, a.houseId, -1, 0, Long.MAX_VALUE, at, next);
+        Encounter e = new Encounter(kind, a.id, a.warId, a.houseId, a.kind == Army.Kind.RAID ? a.raidOn : -1, 0, Long.MAX_VALUE, at, next);
         e.soldiers = a.soldiers;
         return e;
     }
@@ -269,6 +269,7 @@ public final class ArmyLayer {
 
     private void marchOnLands(Army r, House enemy, int fromX, int fromY) {
         r.objective = Army.Objective.RAID;
+        r.raidOn = enemy.id;
         if (!hasSeat(enemy.id)) return;
         int ex = seatXs[enemy.id], ey = seatYs[enemy.id];
         GridPoint2 shelter = enemy.isGreat() ? terrain.shelterOnRoadTo(ex, ey, fromX, fromY) : null;

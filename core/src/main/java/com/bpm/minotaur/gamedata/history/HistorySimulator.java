@@ -1053,7 +1053,10 @@ public final class HistorySimulator {
             if (f == null || !f.isAlive() || f.ageless) continue;
             kill(f, Figure.Fate.BATTLE);
             if (e.figureB < 0) e.figureB = f.id;
-            grudge(f.houseId, f.houseId == winner.id ? loser.id : winner.id, CasusBelli.SLAIN_KIN, e.id, 4f);
+            // A levy or an ally who fell on the winning side holds it against the losers, not its friends.
+            boolean won = f.houseId == winner.id || world.stance(f.houseId, winner.id) != HistoryWorld.Stance.WAR
+                    && world.stance(f.houseId, loser.id) == HistoryWorld.Stance.WAR;
+            grudge(f.houseId, won ? loser.id : winner.id, CasusBelli.SLAIN_KIN, e.id, 4f);
         }
         for (int id : taken) {
             Figure f = world.figure(id);

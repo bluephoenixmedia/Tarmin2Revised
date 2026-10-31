@@ -2446,9 +2446,9 @@ public class GameScreen extends BaseScreen {
     private void offerSides(com.bpm.minotaur.managers.BattleDirector d) {
         com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b = d.battle;
         com.bpm.minotaur.gamedata.history.favour.Oath oath = worldManager.getHistory().oath();
-        boolean sworn = oath.sworn();
-        boolean liegeA = sworn && (b.houseA == oath.houseId || d.layer().housesOn(b, true).containsKey(oath.houseId));
-        boolean liegeB = sworn && (b.houseB == oath.houseId || d.layer().housesOn(b, false).containsKey(oath.houseId));
+        int liege = oath.sworn() ? d.sideOf(oath.houseId) : 0;
+        boolean liegeA = liege == 1;
+        boolean liegeB = liege == 2;
         boolean either = !liegeA && !liegeB;
         java.util.Map<String, Runnable> sides = new java.util.LinkedHashMap<>();
         if (either || liegeA) sides.put("Help " + houseName(b.houseA), () -> d.chooseSide(1));
@@ -2591,7 +2591,15 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.gamedata.history.favour.Favour favour = history.favour();
         com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
         if (t.foughtFor >= 0) foughtFor(t.foughtFor);
+        if (t.raidBeaten >= 0) foughtFor(t.raidBeaten);
         if (t.heraldSlain >= 0) favour.change(world, t.heraldSlain, com.bpm.minotaur.gamedata.history.favour.Favour.HERALD_SLAIN);
+
+        // Struck its side in a battle, the blow that killed included: the oath is broken (W21, A26).
+        if (oath.sworn() && warManager.active() != null && warManager.active().playerStruckSideOf(oath.houseId)) {
+            String betrayed = houseName(oath.houseId);
+            history.breakOath();
+            say("You have struck the line of " + betrayed + ". Your oath is broken, and every house hears of it.", 6f);
+        }
 
         // Struck a soldier of the sworn house: the oath is broken (W21).
         if (oath.sworn() && maze != null) {

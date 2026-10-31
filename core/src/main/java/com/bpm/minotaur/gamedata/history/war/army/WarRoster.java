@@ -58,11 +58,11 @@ public class WarRoster {
     /** The player's own kills on the road or at a camp (A22): the army is that much smaller, and pays at the Season. */
     public void slainInTheField(int armyId, int dead) {
         Army a = army(armyId);
-        if (a == null || a.battle || dead <= 0) return;
+        if (a == null || dead <= 0) return;
         int n = Math.min(a.soldiers, dead);
         a.soldiers -= n;
         addAttrition(a.houseId, n);
-        if (a.soldiers <= 0) armies.remove(a);
+        if (a.soldiers <= 0 && !a.battle) armies.remove(a);
     }
 
     /** Where house {@code houseId}'s armies last saw the player, or null. */

@@ -7,6 +7,9 @@ package com.bpm.minotaur.gamedata.history.war.army;
  */
 public class ArmyBattle {
 
+    /** Soldiers of a side that can strike at once, and that stand on the field while it is watched (A20, A21). */
+    public static final int LINE = 16;
+
     public int id;
     public int x;
     public int y;

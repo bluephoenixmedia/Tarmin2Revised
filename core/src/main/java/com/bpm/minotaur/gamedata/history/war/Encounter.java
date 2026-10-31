@@ -4,8 +4,8 @@ import com.badlogic.gdx.math.GridPoint2;
 
 /**
  * A piece of the surface war happening now (Living War W2): a skirmish, a column on the march, a
- * raid, a pitched battle brought to the player, a war camp, or a fight too far off to see. Made by
- * {@link EncounterScheduler}; never saved -- the same clock and ledger always make the same ones.
+ * raid, a pitched battle brought to the player, a war camp, or a fight too far off to see. Made
+ * from the roster by the army layer, or by {@code RaidsBelow} under ground; never saved.
  */
 public final class Encounter {
 
@@ -29,7 +29,7 @@ public final class Encounter {
     }
 
     public final Kind kind;
-    /** The schedule slot it belongs to; -1 for the first skirmish, -2 for a camp. */
+    /** The id of the army or battle behind it on the surface; below ground and at the castle, its own slot, negative at the castle. */
     public final long slot;
     /** The war it is part of, or -1 for a raid in peacetime. */
     public final int warId;
@@ -89,7 +89,8 @@ public final class Encounter {
 
     /** What the ledger calls it once the player has dealt with it. */
     public String key() {
-        if (kind == Kind.CAMP) return kind.name() + ":" + slot + ":" + warId + ":" + houseA + (slot == -4 ? "@" + from.x + "," + from.y : "");
+        // A camp is of one place: a host broken up here pitches again wherever it next halts.
+        if (kind == Kind.CAMP) return kind.name() + ":" + slot + ":" + warId + ":" + houseA + "@" + from.x + "," + from.y;
         // Raids below ground share slots with the surface's; the place tells them apart.
         if (kind == Kind.RAID) return kind.name() + ":" + slot + "@" + from.x + "," + from.y;
         return kind.name() + ":" + slot;

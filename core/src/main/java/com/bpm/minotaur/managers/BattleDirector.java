@@ -48,7 +48,7 @@ public final class BattleDirector {
         void drop(Maze maze, GridPoint2 near, int loserHouseId, boolean lordFell);
 
         /** What is left for one who comes after the crows (A24). */
-        default void pickedOver(Maze maze, GridPoint2 near, int loserHouseId) {
+        default void pickedOver(Maze maze, GridPoint2 near) {
         }
     }
 
@@ -57,11 +57,11 @@ public final class BattleDirector {
     /** Soldiers holding each gate once the lines close (plan D16, T2.5). */
     public static final int GATE_GUARD = 2;
     /** Soldiers of a side on the field at once, not counting those at the gates (A21). */
-    public static final int LINE = 16;
+    public static final int LINE = ArmyBattle.LINE;
     /** Soldiers of the reserve who reach the field in a turn (A21). */
     public static final int MARCH_PER_TURN = 3;
     /** Share of the blows between soldiers of a battle that land: tuned against BattleEquivalenceTest (A22). */
-    public static final float BLOWS_LAND = 0.40f;
+    public static final float BLOWS_LAND = 0.33f;
     /** How deep from its edge a line is found: fresh from the march, or already at it. */
     private static final int DEPTH_FRESH = 4;
     private static final int DEPTH_UNDER_WAY = 9;
@@ -183,14 +183,16 @@ public final class BattleDirector {
 
     /**
      * The player has gone (A23). What has died so far is counted, the soldiers are gone with no
-     * more said, wounds and all, and the number carries on by itself.
+     * more said, wounds and all, and the number carries on by itself. Should that very count break
+     * a side, it broke with the player gone: no spoils but what is left after, and no witness.
      */
     public void collapse(long clock) {
-        if (lined && layer.watchedBattle() == battle && layer.roster().battles.contains(battle)) {
+        boolean count = lined && layer.watchedBattle() == battle && layer.roster().battles.contains(battle);
+        if (layer.watchedBattle() == battle) layer.watchBattle(null);
+        if (count) {
             int[] lost = countTheFallen(null);
             if (lost[0] + lost[1] > 0) layer.watchedTurn(battle, lost[0], lost[1], lost[2], lost[3], clock);
         }
-        if (layer.watchedBattle() == battle) layer.watchBattle(null);
         if (maze != null) {
             maze.removeLight(volleyLight());
             for (Monster m : sideA) maze.removeMonster(m);
@@ -388,6 +390,19 @@ public final class BattleDirector {
         for (Monster m : sideA) if (m.seekerDrewBlood()) return true;
         for (Monster m : sideB) if (m.seekerDrewBlood()) return true;
         return false;
+    }
+
+    /** Which side a house fights on here: 1 for A, 2 for B, 0 if it is in neither. */
+    public int sideOf(int houseId) {
+        if (houseId == battle.houseA || layer.housesOn(battle, true).containsKey(houseId)) return 1;
+        if (houseId == battle.houseB || layer.housesOn(battle, false).containsKey(houseId)) return 2;
+        return 0;
+    }
+
+    /** Whether the player has drawn the blood of this house's side here, kills and all (A26). */
+    public boolean playerStruckSideOf(int houseId) {
+        int side = sideOf(houseId);
+        return side != 0 && (battle.playerStruck & side) != 0;
     }
 
     /** The house the player fought for: the one whose enemies alone they struck; -1 if both or neither (W19). */

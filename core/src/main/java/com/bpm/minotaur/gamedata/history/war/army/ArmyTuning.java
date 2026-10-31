@@ -32,7 +32,7 @@ final class ArmyTuning {
     /** Chance per soldier in the line, per turn, of killing one (Living War A20). */
     static final float KILL_RATE = 0.012f;
     /** Soldiers of a side that can strike at once. */
-    static final int LINE = 16;
+    static final int LINE = ArmyBattle.LINE;
     static final int MORALE_PER_LOSS = 4;
     /** Chance per turn that a captain in a battle falls, and what that costs the side. */
     static final float CAPTAIN_FALL = 0.004f;
