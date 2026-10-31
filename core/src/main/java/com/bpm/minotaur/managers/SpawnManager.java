@@ -596,6 +596,35 @@ public class SpawnManager {
         Gdx.app.log("SpawnManager", "Periodic Spawn: " + type + " at " + spawnPoint);
     }
 
+    /** A monster of the spawn table on a free tile beside the player, or null if there is no room (A62). */
+    public Monster spawnBeside(Player player) {
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        GridPoint2 spawnPoint = null;
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int x = px + (int) d.getVector().x;
+            int y = py + (int) d.getVector().y;
+            if (maze.isWallBlocking(px, py, d) || !maze.isPassable(x, y) || maze.getMonsters().containsKey(new GridPoint2(x, y))) continue;
+            spawnPoint = new GridPoint2(x, y);
+            break;
+        }
+        if (spawnPoint == null) return null;
+        SpawnContext ctx = createSpawnContext();
+        Optional<Map.Entry<String, MonsterTemplate>> result = monsterSpawner.spawnRandomMonster(ctx);
+        if (result.isEmpty()) return null;
+        MonsterType type;
+        try {
+            type = MonsterType.valueOf(result.get().getKey());
+        } catch (Exception e) {
+            return null;
+        }
+        Monster monster = monsterFactory.createMonster(type, level, ctx);
+        monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+        monster.setState(Monster.MonsterState.HUNTING);
+        maze.addMonster(monster);
+        return monster;
+    }
+
     private GridPoint2 findRuntimeSpawnPoint(Player player) {
         int width = maze.getWidth();
         int height = maze.getHeight();

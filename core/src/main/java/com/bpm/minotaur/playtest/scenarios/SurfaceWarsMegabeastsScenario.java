@@ -70,7 +70,7 @@ public final class SurfaceWarsMegabeastsScenario implements PlaytestScenario {
 
         script.key("the hosts meet", Input.Keys.PERIOD, ctx);
         script.repeat("wait warning turns", BattleDirector.WARNING_TURNS + 1, Input.Keys.PERIOD, ctx);
-        script.until("keep away from the prompt", 120, () -> ctx.chooseSide("Keep away"));
+        script.until("keep away from the prompt", 120, () -> ctx.choose("Keep away"));
         script.wait("back on the field", 10);
 
         script.once("verify battle lines formed", () -> {

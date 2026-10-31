@@ -40,6 +40,12 @@ public class CraftingManager {
         }
     }
 
+    /** What a Bivouac Kit is made of, and what mending one takes. */
+    public static final int KIT_LEATHER = 3;
+    public static final int KIT_STICKS = 2;
+    public static final int KIT_BONES = 1;
+    public static final int KIT_MEND_LEATHER = 1;
+
     private final List<Recipe> legacyRecipes = new ArrayList<>();
     private final ItemDataManager itemDataManager;
     private final AssetManager assetManager;
@@ -87,6 +93,38 @@ public class CraftingManager {
 
     public List<Recipe> getAllRecipes() {
         return legacyRecipes;
+    }
+
+    // =========================================================================
+    // FIELD GEAR: the Bivouac Kit (Living War A60)
+    // =========================================================================
+
+    public boolean canMakeBivouacKit(Player player) {
+        return countMaterial(player, ItemType.LEATHER_SCRAP) >= KIT_LEATHER
+                && countMaterial(player, ItemType.STICK) >= KIT_STICKS
+                && countMaterial(player, ItemType.BONE) >= KIT_BONES;
+    }
+
+    public Item makeBivouacKit(Player player) {
+        if (!canMakeBivouacKit(player)) return null;
+        consumeMaterial(player, ItemType.LEATHER_SCRAP, KIT_LEATHER);
+        consumeMaterial(player, ItemType.STICK, KIT_STICKS);
+        consumeMaterial(player, ItemType.BONE, KIT_BONES);
+        Item kit = itemDataManager.createItem(ItemType.BIVOUAC_KIT, 0, 0, ItemColor.TAN, assetManager);
+        if (kit != null) depositItem(player, kit);
+        return kit;
+    }
+
+    public boolean canMendBivouacKit(Player player, Item kit) {
+        return kit != null && com.bpm.minotaur.gamedata.shelter.Bivouac.canMend(kit)
+                && countMaterial(player, ItemType.LEATHER_SCRAP) >= KIT_MEND_LEATHER;
+    }
+
+    public boolean mendBivouacKit(Player player, Item kit) {
+        if (!canMendBivouacKit(player, kit)) return false;
+        consumeMaterial(player, ItemType.LEATHER_SCRAP, KIT_MEND_LEATHER);
+        com.bpm.minotaur.gamedata.shelter.Bivouac.mend(kit);
+        return true;
     }
 
     // =========================================================================

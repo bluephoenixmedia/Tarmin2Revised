@@ -70,6 +70,7 @@ public final class PlaytestRunner {
                 new ArtBarScenario(),
                 new MasteryUiScenario(),
                 new LivingWarScenario(),
+                new com.bpm.minotaur.playtest.scenarios.BivouacScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),

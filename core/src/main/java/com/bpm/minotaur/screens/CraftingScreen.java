@@ -169,7 +169,8 @@ public class CraftingScreen extends BaseScreen {
                 .addTab(1, "Forge & refine")
                 .addTab(2, "Salvage & scrap")
                 .addTab(3, "Ossuary & relics")
-                .addTab(4, "Alchemy cauldron");
+                .addTab(4, "Alchemy cauldron")
+                .addTab(5, "Field gear");
         tabs.onSelect(this::switchTab);
         tabs.setSelectedSilently(currentTab);
         root.add(tabs).center().padBottom(15).row();
@@ -275,6 +276,17 @@ public class CraftingScreen extends BaseScreen {
 
         if (currentTab == 3) {
             populateAlchemyRecipeCodex();
+            return;
+        }
+        if (currentTab == FIELD_GEAR_TAB) {
+            Label sectionLabel = new Label("Your kits", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+            leftPanelContent.add(sectionLabel).left().padBottom(15).row();
+            for (Item kit : bivouacKits()) {
+                Label row = new Label(kit.getDisplayName() + ": " + UiNames.plural(com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit), "night", "nights") + " left",
+                        new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE));
+                row.setWrap(true);
+                leftPanelContent.add(row).left().expandX().fillX().padBottom(6).row();
+            }
             return;
         }
 
@@ -408,8 +420,64 @@ public class CraftingScreen extends BaseScreen {
             renderSalvageWorkbench();
         } else if (currentTab == 2) {
             renderOssuaryWorkbench();
+        } else if (currentTab == FIELD_GEAR_TAB) {
+            renderFieldGearWorkbench();
         } else {
             renderAlchemyWorkbench();
+        }
+    }
+
+    // =========================================================================
+    // TAB 5: FIELD GEAR (Living War A60)
+    // =========================================================================
+
+    private static final int FIELD_GEAR_TAB = 4;
+
+    private List<Item> bivouacKits() {
+        List<Item> kits = new ArrayList<>();
+        for (Item item : player.getInventory().getAllItems()) {
+            if (item != null && item.getType() == ItemType.BIVOUAC_KIT) kits.add(item);
+        }
+        return kits;
+    }
+
+    private void renderFieldGearWorkbench() {
+        Label title = new Label("BIVOUAC KIT", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        rightPanelContent.add(title).center().padBottom(20).row();
+
+        Label needs = new Label(String.format("Takes %d Leather Scrap (%d), %d Sticks (%d) and %d Bone (%d). Lasts %d nights.",
+                CraftingManager.KIT_LEATHER, craftingManager.countMaterial(player, ItemType.LEATHER_SCRAP),
+                CraftingManager.KIT_STICKS, craftingManager.countMaterial(player, ItemType.STICK),
+                CraftingManager.KIT_BONES, craftingManager.countMaterial(player, ItemType.BONE),
+                com.bpm.minotaur.gamedata.shelter.Bivouac.KIT_NIGHTS),
+                new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
+        needs.setWrap(true);
+        rightPanelContent.add(needs).expandX().fillX().padBottom(15).row();
+
+        TextButton make = createActionButton("Make a kit", craftingManager.canMakeBivouacKit(player));
+        make.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (make.isDisabled()) return;
+                feedbackLabel.setText(craftingManager.makeBivouacKit(player) != null ? "A Bivouac Kit, ready for the road." : "You lack the materials.");
+                refreshAll();
+            }
+        });
+        rightPanelContent.add(make).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padBottom(25).row();
+
+        for (final Item kit : bivouacKits()) {
+            TextButton mend = createActionButton("Mend (" + CraftingManager.KIT_MEND_LEATHER + " Leather Scrap, " + com.bpm.minotaur.gamedata.shelter.Bivouac.MEND_NIGHTS + " nights)",
+                    craftingManager.canMendBivouacKit(player, kit));
+            mend.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (mend.isDisabled()) return;
+                    craftingManager.mendBivouacKit(player, kit);
+                    feedbackLabel.setText("The kit will last " + UiNames.plural(com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit), "night", "nights") + " more.");
+                    refreshAll();
+                }
+            });
+            rightPanelContent.add(mend).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
         }
     }
 
