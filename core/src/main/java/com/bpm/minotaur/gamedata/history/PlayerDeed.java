@@ -24,6 +24,10 @@ public class PlayerDeed {
          * held the field; {@link #other} routed.
          */
         BATTLE_WITNESSED,
+        /** Not the player's doing: house {@link #target} has camped around the seat of house {@link #other} (Living War A30). */
+        SEAT_INVESTED,
+        /** Not the player's doing: house {@link #target} no longer besieges the seat of house {@link #other}, which stands. */
+        SIEGE_RAISED,
         /** The player killed a megabeast. {@link #target} is its id. */
         SLEW_MEGABEAST,
         /**

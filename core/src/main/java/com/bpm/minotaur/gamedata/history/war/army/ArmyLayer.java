@@ -110,10 +110,12 @@ public final class ArmyLayer {
             Army a = armies.get(i);
             if (a.battle) continue;
             if (newSeason) decide(a, clock);
+            if (a.sieging >= 0) continue;
             march(a, clock);
             if (armies.size() <= i || armies.get(i) != a) i--; // it disbanded
         }
         logistics(clock);
+        sieges(clock, newSeason);
         contacts();
         for (int i = roster.battles.size() - 1; i >= 0; i--) {
             if (roster.battles.get(i) != watched) stepBattle(roster.battles.get(i), clock);
@@ -460,19 +462,178 @@ public final class ArmyLayer {
         alliesMarchIn(battle);
     }
 
-    /** An army reaches an enemy seat: its garrison comes out to meet it, behind its walls (A21). */
-    private void assault(Army a, House holder) {
+    // ---------- sieges of seats (A30-A34) ----------
+
+    /** An army reaches an enemy seat: it camps around it, and the seat's lord calls in its hosts. */
+    private void invest(Army a, House holder, long clock) {
+        SeatSiege s = roster.siegeAt(a.x, a.y);
+        if (s != null) {
+            a.sieging = s.id;
+            s.armies = ArmyBattle.append(s.armies, a.id);
+            return;
+        }
+        s = new SeatSiege();
+        s.id = roster.nextArmyId++;
+        s.x = a.x;
+        s.y = a.y;
+        s.holder = holder.id;
+        s.besieger = a.side();
+        s.since = clock;
+        s.stone = holder.gashIndex >= 0;
+        s.armies = new int[] {a.id};
+        roster.sieges.add(s);
+        a.sieging = s.id;
+        a.path = null;
+        siegeDeed(PlayerDeed.Kind.SEAT_INVESTED, s);
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army o = roster.armies.get(i);
+            if (o.houseId == holder.id && !o.battle && o.isHost()) decide(o, clock);
+        }
+    }
+
+    private void siegeDeed(PlayerDeed.Kind kind, SeatSiege s) {
+        PlayerDeed deed = new PlayerDeed(kind, s.besieger, world.liveSeasons());
+        deed.other = s.holder;
+        deed.chunkX = s.x;
+        deed.chunkY = s.y;
+        deeds.accept(deed);
+    }
+
+    private void sieges(long clock, boolean newSeason) {
+        for (int i = roster.sieges.size() - 1; i >= 0; i--) {
+            SeatSiege s = roster.sieges.get(i);
+            if (newSeason) s.wear();
+            if (siegeIsOver(s)) {
+                raise(s);
+                continue;
+            }
+            if (battleAt(s.x, s.y) != null) continue;
+            s.works++;
+            long day = clock - s.since;
+            if (day > 0 && day % SeatSiege.STARVE_TURNS == 0 && roster.garrison(world, s.holder) > 0) roster.addAttrition(s.holder, 1);
+            if ((clock + s.id) % SeatSiege.THINK_EVERY == 0) think(s, clock);
+        }
+    }
+
+    /** The besiegers are gone or going, the war is done, or the seat is no longer the holder's to lose. */
+    private boolean siegeIsOver(SeatSiege s) {
+        int stayed = 0;
+        for (int id : s.armies) {
+            Army a = roster.army(id);
+            if (a == null || a.sieging != s.id) continue;
+            if (a.objective != Army.Objective.SEAT || a.x != s.x || a.y != s.y) a.sieging = -1;
+            else stayed++;
+        }
+        if (stayed == 0) return true;
+        House holder = world.house(s.holder);
+        return holder == null || holder.isExtinct() || world.activeWarBetween(s.besieger, s.holder) == null;
+    }
+
+    private void raise(SeatSiege s) {
+        roster.sieges.remove(s);
+        release(s);
+        siegeDeed(PlayerDeed.Kind.SIEGE_RAISED, s);
+    }
+
+    private void release(SeatSiege s) {
+        for (int id : s.armies) {
+            Army a = roster.army(id);
+            if (a != null && a.sieging == s.id) a.sieging = -1;
+        }
+    }
+
+    private void think(SeatSiege s, long clock) {
+        Figure captain = besiegingCaptain(s);
+        int soldiers = 0;
+        for (int id : s.armies) {
+            Army a = roster.army(id);
+            if (a != null && a.sieging == s.id) soldiers += a.soldiers;
+        }
+        int garrison = roster.garrison(world, s.holder);
+        boolean wrathful = captain != null && captain.has(Trait.WRATHFUL);
+        boolean patient = captain != null && captain.has(Trait.PATIENT);
+        if (SeatSiege.readyToAssault(soldiers, garrison, s.assaultEdge(), s.laddersBuilt(), wrathful, patient)) {
+            assault(s);
+            return;
+        }
+        House holder = world.house(s.holder);
+        Figure lord = holder == null ? null : world.figure(holder.lordId);
+        boolean spoiling = lord != null && !lord.has(Trait.PATIENT) && !lord.has(Trait.CRAVEN)
+                && (lord.has(Trait.WRATHFUL) || lord.has(Trait.AMBITIOUS));
+        if (SeatSiege.readyToSally(garrison, soldiers, spoiling)
+                && new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ s.id).nextDouble() < SeatSiege.SALLY_CHANCE) {
+            sally(s);
+        }
+    }
+
+    private Figure besiegingCaptain(SeatSiege s) {
+        for (int id : s.armies) {
+            Army a = roster.army(id);
+            if (a != null && a.captainId >= 0 && a.sieging == s.id) return world.figure(a.captainId);
+        }
+        return null;
+    }
+
+    /** The captain takes the walls: only his temper and the numbers say when (A33). */
+    private void assault(SeatSiege s) {
+        ArmyBattle battle = siegeBattle(s);
+        battle.assault = true;
+        battle.wallEdge = s.assaultEdge();
+    }
+
+    /** The garrison strikes the camp: a battle there, fought the same way, with no wall to stand behind (A34). */
+    private void sally(SeatSiege s) {
+        siegeBattle(s).wallEdge = 1f;
+    }
+
+    private ArmyBattle siegeBattle(SeatSiege s) {
         ArmyBattle battle = new ArmyBattle();
         battle.id = roster.nextArmyId++;
-        battle.x = a.x;
-        battle.y = a.y;
-        battle.houseA = a.side();
-        battle.houseB = holder.id;
-        battle.garrisonOf = holder.id;
-        battle.startB = roster.garrison(world, holder.id);
+        battle.x = s.x;
+        battle.y = s.y;
+        battle.houseA = s.besieger;
+        battle.houseB = s.holder;
+        battle.garrisonOf = s.holder;
+        battle.startB = roster.garrison(world, s.holder);
         roster.battles.add(battle);
-        enlist(battle, a, true);
+        for (int id : s.armies) {
+            Army a = roster.army(id);
+            if (a != null && a.sieging == s.id) enlist(battle, a, true);
+        }
         alliesMarchIn(battle);
+        return battle;
+    }
+
+    /** Debug: this house's host is camped around that enemy seat, now, with its ladders up. Null if it can't be. */
+    public SeatSiege investNow(House besieger, House holder, long clock) {
+        GridPoint2 seat = seats == null ? null : seats.seat(holder.id);
+        War w = world.activeWarBetween(besieger.id, holder.id);
+        if (seat == null || w == null || !hasSeat(besieger.id)) return null;
+        Army a = raise(besieger, ArmyTuning.ARMY_SIZE, Army.Kind.HOST);
+        a.warId = w.id;
+        a.x = seat.x;
+        a.y = seat.y;
+        a.objective = Army.Objective.SEAT;
+        a.targetX = seat.x;
+        a.targetY = seat.y;
+        invest(a, holder, clock);
+        SeatSiege s = roster.siegeAt(seat.x, seat.y);
+        if (s != null) s.works = SeatSiege.RAM_TURNS;
+        return s;
+    }
+
+    /** Debug: the garrison comes out now, whatever its lord's temper. */
+    public ArmyBattle sallyNow(SeatSiege s) {
+        sally(s);
+        return battleAt(s.x, s.y);
+    }
+
+    /** Debug: the captain goes in now, whatever his temper. */
+    public ArmyBattle assaultNow(SeatSiege s) {
+        ArmyBattle there = battleAt(s.x, s.y);
+        if (there != null) return there.assault ? there : null;
+        assault(s);
+        return battleAt(s.x, s.y);
     }
 
     private void enlist(ArmyBattle battle, Army a, boolean sideA) {
@@ -641,7 +802,7 @@ public final class ArmyLayer {
         b.turn++;
         SplittableRandom rng = battleRng(b, clock);
         int aliveA = alive(b, true), aliveB = alive(b, false);
-        float edgeB = b.garrisonOf >= 0 ? ArmyTuning.WALL_EDGE : 1f;
+        float edgeB = b.wallEdge > 0f ? b.wallEdge : b.garrisonOf >= 0 ? ArmyTuning.WALL_EDGE : 1f;
         int lostB = kill(b, false, Math.min(aliveB, hits(aliveA, 1f, rng)));
         int lostA = kill(b, true, Math.min(aliveA, hits(aliveB, edgeB, rng)));
         settle(b, lostA, lostB, captainsFall(b, b.armiesA, rng), captainsFall(b, b.armiesB, rng), clock, rng);
@@ -653,11 +814,26 @@ public final class ArmyLayer {
         b.moraleB = moraleAfter(b.moraleB, lostB, b.startB) - captainCostB;
         boolean aBroke = b.moraleA <= 0 || alive(b, true) <= 0;
         boolean bBroke = b.moraleB <= 0 || alive(b, false) <= 0;
+        if (b.assault) bBroke = fallingBack(b, bBroke, aBroke);
         if (aBroke || bBroke) {
             endBattle(b, aBroke && (!bBroke || b.moraleA <= b.moraleB), clock, rng);
         } else if (b.turn >= ArmyTuning.TURN_CAP) {
-            endBattle(b, alive(b, true) * Math.max(1, b.moraleA) < alive(b, false) * Math.max(1, b.moraleB), clock, rng);
+            // A seat is taken only by clearing its yard: an assault out of time has failed.
+            endBattle(b, b.assault || alive(b, true) * Math.max(1, b.moraleA) < alive(b, false) * Math.max(1, b.moraleB), clock, rng);
         }
+    }
+
+    /** A garrison broken on the walls falls back to the yard; there it stands until none are left (A33). */
+    private boolean fallingBack(ArmyBattle b, boolean broke, boolean attackersBroke) {
+        boolean gone = alive(b, false) <= 0;
+        if (b.yard) return gone;
+        if (broke && !gone && !attackersBroke) {
+            b.yard = true;
+            b.moraleB = 100;
+            b.wallEdge = SeatSiege.YARD_EDGE;
+            return false;
+        }
+        return broke;
     }
 
     private static int moraleAfter(int morale, int lost, int start) {
@@ -692,7 +868,8 @@ public final class ArmyLayer {
         deed.deadCounts = b.deadCounts;
         deed.skirmish = b.startA + b.startB < ArmyTuning.SKIRMISH_UNDER;
         deed.atSeat = b.garrisonOf >= 0;
-        deed.seatFell = b.garrisonOf >= 0 && !aLost;
+        // A sally beaten back loses men, not the seat.
+        deed.seatFell = b.assault && !aLost;
         int[] slain = new int[0], taken = new int[0];
         for (int side = 0; side < 2; side++) {
             for (int id : side == 0 ? won : lost) {
@@ -722,7 +899,14 @@ public final class ArmyLayer {
             b.lordFell |= h != null && h.lordId == id;
         }
         deeds.accept(deed);
-        if (deed.seatFell) refreshSeats();
+        if (deed.seatFell) {
+            SeatSiege fallen = roster.siegeAt(b.x, b.y);
+            if (fallen != null) {
+                roster.sieges.remove(fallen);
+                release(fallen);
+            }
+            refreshSeats();
+        }
 
         for (int id : won) {
             Army a = roster.army(id);
@@ -931,7 +1115,7 @@ public final class ArmyLayer {
         if (a.objective == Army.Objective.SEAT) {
             House holder = holderOfSeatAt(a);
             if (holder != null) {
-                assault(a, holder);
+                invest(a, holder, clock);
                 return;
             }
         }
@@ -1087,6 +1271,7 @@ public final class ArmyLayer {
     /** Thinks again: only ever on an event, never on a timer of its own. */
     void decide(Army a, long clock) {
         if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return; // a party keeps its errand
+        if (a.sieging >= 0) return; // it stays at the walls until the siege ends
         House h = world.house(a.houseId);
         if (h == null) return;
         War war = war(a);
@@ -1135,6 +1320,17 @@ public final class ArmyLayer {
         if (!has(a, Trait.HONOURABLE) && !a.raidSent && canRaid && enemy != null && !enemy.isExtinct()) {
             float raid = 0.3f + (has(a, Trait.CUNNING) ? 0.5f : 0f) + (has(a, Trait.CRUEL) ? 0.4f : 0f) + (float) rng.nextDouble() * 0.35f;
             if (raid > bestScore || has(a, Trait.CUNNING) || has(a, Trait.CRUEL)) sendRaid(a, enemy, war);
+        }
+        // Its own seat under siege outweighs anything else it might do (A30).
+        for (int i = 0; i < roster.sieges.size(); i++) {
+            SeatSiege besieged = roster.sieges.get(i);
+            if (besieged.holder != a.side()) continue;
+            bestScore = Float.MAX_VALUE;
+            best = Army.Objective.HUNT;
+            tx = besieged.x;
+            ty = besieged.y;
+            target = besieged.armies[0];
+            break;
         }
         Army nearest = nearestKnownEnemy(a);
         if (nearest != null) {

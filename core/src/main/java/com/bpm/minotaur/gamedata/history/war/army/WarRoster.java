@@ -21,6 +21,8 @@ public class WarRoster {
     /** History events already cried by heralds; -1 until armies first march (A15). */
     public int eventsHeard = -1;
     public List<ArmyBattle> battles = new ArrayList<>();
+    /** Enemy seats under investment (A30). */
+    public List<SeatSiege> sieges = new ArrayList<>();
     /** What each war's houses stood at when it began, as warId, attacker's and defender's strength. */
     public List<float[]> warStarts = new ArrayList<>();
 
@@ -32,6 +34,15 @@ public class WarRoster {
 
     static int packed(int x, int y) {
         return (x + 4096) << 13 | (y + 4096);
+    }
+
+    /** The siege laid at this chunk, or null. */
+    public SeatSiege siegeAt(int x, int y) {
+        for (int i = 0; i < sieges.size(); i++) {
+            SeatSiege s = sieges.get(i);
+            if (s.x == x && s.y == y) return s;
+        }
+        return null;
     }
 
     /** A chunk as trails hold it. */

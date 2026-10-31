@@ -631,6 +631,40 @@
         "In the year {year} {A} camped beneath Castle Tarmin, too foolish to see that it was the one besieged."
       ]
     },
+    "SEAT_INVESTED": {
+      "NEUTRAL": [
+        "In the year {year} {A} camped around the seat of {B}.",
+        "{A} invested the seat of {B} in the year {year}.",
+        "In the year {year} the walls of {B} looked out on the fires of {A}."
+      ],
+      "FOR": [
+        "In the year {year} {A} shut {B} up behind its own walls.",
+        "{A} ringed the seat of {B} in the year {year}, and set to building ladders.",
+        "In the year {year} {A} brought its host to the very gates of {B}."
+      ],
+      "AGAINST": [
+        "In the year {year} {A} came to starve {B} rather than fight it.",
+        "{A} sat down around the seat of {B} in the year {year}, and waited for hunger to do its work.",
+        "In the year {year} {A} made a camp of the fields of {B}, and burned them for its cookfires."
+      ]
+    },
+    "SIEGE_RAISED": {
+      "NEUTRAL": [
+        "In the year {year} {A} raised its siege of {B}.",
+        "The siege of {B} by {A} ended in the year {year}, and the walls still stood.",
+        "{A} broke camp before the walls of {B} in the year {year}."
+      ],
+      "FOR": [
+        "In the year {year} {A} marched away from the walls of {B} with its host whole.",
+        "{A} gave up the siege of {B} in the year {year}, to fight on elsewhere.",
+        "In the year {year} {A} left the seat of {B} to its hunger, having better fights to find."
+      ],
+      "AGAINST": [
+        "In the year {year} {B} saw the back of {A}, and its walls stood.",
+        "{A} left the seat of {B} in the year {year} with nothing to show for its ladders.",
+        "In the year {year} the siege of {B} by {A} came to nothing."
+      ]
+    },
     "SIEGE_LIFTED": {
       "NEUTRAL": [
         "In the year {year} {A} lifted its siege of Castle Tarmin.",
