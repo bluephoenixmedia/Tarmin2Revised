@@ -96,24 +96,42 @@ final class MapSurface extends Widget implements Disposable {
         }
     }
 
-    /**
-     * A mark of the war on the map (Living War W28): a fresh battlefield, a column on the march
-     * toward where it is bound, or a house's war camp.
-     */
+    /** A fresh battlefield on the map (Living War W28). Armies are for {@link ArmyMark}, and only as known. */
     static final class WarSign {
-        enum Kind { BATTLEFIELD, COLUMN, CAMP }
+        final GridPoint2 at;
+        final Color color;
+
+        WarSign(GridPoint2 at, Color color) {
+            this.at = at;
+            this.color = color;
+        }
+    }
+
+    /**
+     * What is known of an army, or of a battle only heard (Living War A46-A49): a shield with an arrow
+     * for its heading, and the road it is known to have taken, shown when its chunk is selected.
+     */
+    static final class ArmyMark {
+        enum Kind { HOST, SIEGE, SOUND }
 
         final Kind kind;
         final GridPoint2 at;
-        /** Where a column is bound; null for the rest. */
-        final GridPoint2 toward;
-        final Color color;
+        /** Null for a sound. */
+        final com.badlogic.gdx.graphics.g2d.TextureRegion shield;
+        final int dx;
+        final int dy;
+        final float strength;
+        /** Oldest first, as x, y pairs. */
+        final int[] road;
 
-        WarSign(Kind kind, GridPoint2 at, GridPoint2 toward, Color color) {
+        ArmyMark(Kind kind, GridPoint2 at, com.badlogic.gdx.graphics.g2d.TextureRegion shield, int dx, int dy, float strength, int[] road) {
             this.kind = kind;
             this.at = at;
-            this.toward = toward;
-            this.color = color;
+            this.shield = shield;
+            this.dx = dx;
+            this.dy = dy;
+            this.strength = strength;
+            this.road = road;
         }
     }
 
@@ -146,6 +164,7 @@ final class MapSurface extends Widget implements Disposable {
     private GridPoint2 suggestion;
     private List<FrontMark> fronts = java.util.Collections.emptyList();
     private List<WarSign> warSigns = java.util.Collections.emptyList();
+    private List<ArmyMark> armyMarks = java.util.Collections.emptyList();
 
     private Zoom zoom = Zoom.REGION;
     private int floor = 1;
@@ -216,6 +235,10 @@ final class MapSurface extends Widget implements Disposable {
         pinIcons.put(MapKnowledge.Pin.TRADER, "pin_trader");
         pinIcons.put(MapKnowledge.Pin.LOCKED, "pin_locked");
         pinIcons.put(MapKnowledge.Pin.UNKNOWN, "pin_unknown");
+    }
+
+    void setArmyMarks(List<ArmyMark> marks) {
+        this.armyMarks = marks;
     }
 
     /** The wars being fought on the surface right now (Houses of the Maze plan T2.2). */
@@ -733,6 +756,12 @@ final class MapSurface extends Widget implements Disposable {
             TextureRegion reg = dioramaRenderer.getFboRegion();
             if (reg != null) batch.draw(reg, getX(), getY(), getWidth(), getHeight());
             batch.setColor(Color.WHITE);
+            if (floor == 1 && clipBegin(getX(), getY(), getWidth(), getHeight())) {
+                drawArmyMarks(batch);
+                batch.flush();
+                clipEnd();
+            }
+            batch.setColor(Color.WHITE);
             return;
         }
 
@@ -747,6 +776,7 @@ final class MapSurface extends Widget implements Disposable {
                 drawAreas(batch);
                 drawFronts(batch);
                 drawWarSigns(batch);
+                drawArmyMarks(batch);
                 drawRoads(batch);
                 drawSuggestedRoute(batch);
                 drawSurfaceIcons(batch);
@@ -829,25 +859,61 @@ final class MapSurface extends Widget implements Disposable {
     private void drawWarSigns(Batch batch) {
         int size = zoom.icon;
         float half = zoom.cell / 2f;
-        float thickness = zoom == Zoom.REGION ? 4f : 2f;
         for (WarSign s : warSigns) {
             if (!inView(s.at)) continue;
-            float x = cellX(s.at.x) + half;
-            float y = cellY(s.at.y) + half;
-            switch (s.kind) {
-                case BATTLEFIELD:
-                    icon(batch, "grave", s.color, 1f, x, y, size, 0f);
-                    break;
-                case CAMP:
-                    icon(batch, "pin_danger", s.color, 1f, x, y, size, 0f);
-                    break;
-                default:
-                    if (s.toward != null) {
-                        line(batch, s.color, 0.9f, x, y, cellX(s.toward.x) + half, cellY(s.toward.y) + half, thickness);
-                    }
-                    icon(batch, "waypoint", s.color, 1f, x, y, size, 0f);
-                    break;
+            icon(batch, "grave", s.color, 1f, cellX(s.at.x) + half, cellY(s.at.y) + half, size, 0f);
+        }
+    }
+
+    /** Where a spot of the world is on this actor, whichever way the map is being drawn. */
+    private Vector2 onMap(float wx, float wy) {
+        if (dioramaEnabled && Gdx.gl != null) {
+            Vector2 p = dioramaRenderer.chunkOnPicture(provider, wx, wy);
+            return new Vector2(getX() + p.x / IsometricDioramaRenderer.FBO_WIDTH * getWidth(),
+                    getY() + p.y / IsometricDioramaRenderer.FBO_HEIGHT * getHeight());
+        }
+        return new Vector2(cellX(0) + wx * zoom.cell, cellY(0) + wy * zoom.cell);
+    }
+
+    private void drawArmyMarks(Batch batch) {
+        float size = UiTheme.MAP_ARMY_MARKER;
+        for (ArmyMark m : armyMarks) {
+            if (m.at.equals(cursor)) drawKnownRoad(batch, m);
+        }
+        for (ArmyMark m : armyMarks) {
+            Vector2 p = onMap(m.at.x + 0.5f, m.at.y + 0.5f);
+            if (p.x < getX() || p.y < getY() || p.x > getX() + getWidth() || p.y > getY() + getHeight()) continue;
+            if (m.kind == ArmyMark.Kind.SOUND) {
+                icon(batch, "pin_danger", UiTheme.MAP_BATTLEFIELD, m.strength, p.x, p.y, UiTheme.MAP_ARMY_SOUND, 0f);
+                continue;
             }
+            if (m.kind == ArmyMark.Kind.SIEGE) icon(batch, "castle", UiTheme.DANGER, 1f, p.x, p.y, UiTheme.MAP_ARMY_SOUND, 0f);
+            if (m.dx != 0 || m.dy != 0) {
+                Vector2 toward = onMap(m.at.x + 0.5f + m.dx, m.at.y + 0.5f + m.dy).sub(p).nor();
+                float reach = UiTheme.MAP_ARMY_ARROW;
+                float tipX = p.x + toward.x * reach, tipY = p.y + toward.y * reach;
+                float t = UiTheme.MAP_ARMY_LINE;
+                line(batch, UiTheme.GOLD, m.strength, p.x, p.y, tipX, tipY, t);
+                float wing = UiTheme.MAP_ARMY_ARROW_WING;
+                line(batch, UiTheme.GOLD, m.strength, tipX, tipY, tipX - (toward.x - toward.y) * wing, tipY - (toward.y + toward.x) * wing, t);
+                line(batch, UiTheme.GOLD, m.strength, tipX, tipY, tipX - (toward.x + toward.y) * wing, tipY - (toward.y - toward.x) * wing, t);
+            }
+            if (m.shield != null) {
+                float high = m.shield.getRegionHeight();
+                batch.setColor(1f, 1f, 1f, m.strength);
+                batch.draw(m.shield, Math.round(p.x - size / 2f), Math.round(p.y - high / 2f));
+                batch.setColor(Color.WHITE);
+            }
+        }
+    }
+
+    private void drawKnownRoad(Batch batch, ArmyMark m) {
+        if (m.road.length < 2) return;
+        Vector2 from = onMap(m.road[0] + 0.5f, m.road[1] + 0.5f);
+        for (int i = 2; i <= m.road.length; i += 2) {
+            Vector2 to = i == m.road.length ? onMap(m.at.x + 0.5f, m.at.y + 0.5f) : onMap(m.road[i] + 0.5f, m.road[i + 1] + 0.5f);
+            line(batch, UiTheme.GOLD, m.strength * UiTheme.MAP_GHOST_ALPHA, from.x, from.y, to.x, to.y, UiTheme.MAP_ARMY_LINE);
+            from = to;
         }
     }
 

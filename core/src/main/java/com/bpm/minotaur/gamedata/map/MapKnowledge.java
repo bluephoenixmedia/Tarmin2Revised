@@ -90,6 +90,7 @@ public final class MapKnowledge implements SlotScopedState {
     private final Map<Integer, Map<GridPoint2, Pin>> pins = new HashMap<>();
     private final Map<TileSpot, Pin> tilePins = new HashMap<>();
     private Spot waypoint;
+    private final ArmyKnowledge armies = new ArmyKnowledge();
 
     private MapKnowledge() {
         load();
@@ -266,6 +267,16 @@ public final class MapKnowledge implements SlotScopedState {
         save();
     }
 
+    /** What the player knows of where the armies are (Living War A47). */
+    public ArmyKnowledge getArmies() {
+        return armies;
+    }
+
+    /** The armies' news has changed in a way worth keeping. */
+    public void saveArmies() {
+        save();
+    }
+
     /** A death or an upgrade laid out a new world: nothing learned about the old one applies. */
     public void forgetWorld() {
         reset();
@@ -283,6 +294,9 @@ public final class MapKnowledge implements SlotScopedState {
         public List<int[]> tilePins = new ArrayList<>();
         /** floor, x, y; null for none. */
         public int[] waypoint;
+        /** What {@link ArmyKnowledge} knows, as it encodes it. */
+        public List<int[]> armyMarkers = new ArrayList<>();
+        public List<int[]> armySounds = new ArrayList<>();
     }
 
     private String getSaveFilePath() {
@@ -306,6 +320,8 @@ public final class MapKnowledge implements SlotScopedState {
             }
             data.waypoint = waypoint == null ? null
                     : new int[]{waypoint.floor, waypoint.chunk.x, waypoint.chunk.y};
+            data.armyMarkers = armies.encodedMarkers();
+            data.armySounds = armies.encodedSounds();
             SaveManager.getInstance().atomicWriteJson(Gdx.files.local(getSaveFilePath()), data);
         } catch (Exception e) {
             if (Gdx.app != null) Gdx.app.error("MapKnowledge", "Failed to save: " + e.getMessage());
@@ -341,6 +357,7 @@ public final class MapKnowledge implements SlotScopedState {
             if (data.waypoint != null && data.waypoint.length == 3) {
                 waypoint = new Spot(data.waypoint[0], new GridPoint2(data.waypoint[1], data.waypoint[2]));
             }
+            armies.decode(data.armyMarkers, data.armySounds);
         } catch (Exception e) {
             if (Gdx.app != null) Gdx.app.error("MapKnowledge", "Failed to load: " + e.getMessage());
         }
@@ -359,6 +376,7 @@ public final class MapKnowledge implements SlotScopedState {
         pins.clear();
         tilePins.clear();
         waypoint = null;
+        armies.clear();
     }
 
     @Override

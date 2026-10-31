@@ -34,6 +34,19 @@ public class WarRoster {
         return (x + 4096) << 13 | (y + 4096);
     }
 
+    /** A chunk as trails hold it. */
+    public static int packedChunk(int x, int y) {
+        return packed(x, y);
+    }
+
+    public static int unpackedX(int packed) {
+        return (packed >> 13) - 4096;
+    }
+
+    public static int unpackedY(int packed) {
+        return (packed & 0x1FFF) - 4096;
+    }
+
     /** Whether any army crossed this chunk this Season or last (A29). */
     public boolean onTrail(int x, int y) {
         int p = packed(x, y);

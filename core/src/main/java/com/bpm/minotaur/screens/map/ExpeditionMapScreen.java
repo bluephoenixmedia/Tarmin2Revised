@@ -153,31 +153,82 @@ public class ExpeditionMapScreen extends BaseScreen {
         return marks;
     }
 
-    /** Fresh battlefields, columns on the march and war camps (Living War W28). */
+    /** Fresh battlefields (Living War W28). */
     private List<MapSurface.WarSign> warSigns() {
         List<MapSurface.WarSign> signs = new ArrayList<>();
         if (worldManager == null) return signs;
-        HistoryWorld world = worldManager.getHistory().world();
-        DoctrineCatalog catalog = DoctrineCatalog.getInstance();
         com.bpm.minotaur.gamedata.history.war.EncounterLedger ledger = worldManager.getHistory().encounterLedger();
         for (com.bpm.minotaur.gamedata.history.war.EncounterLedger.Dressing d : ledger.dressings) {
-            if ("AFTERMATH".equals(d.kind)) {
-                signs.add(new MapSurface.WarSign(MapSurface.WarSign.Kind.BATTLEFIELD, new GridPoint2(d.chunkX, d.chunkY),
-                        null, UiTheme.MAP_BATTLEFIELD));
-            }
-        }
-        long clock = worldManager.getHistory().warClock();
-        if (worldManager.getCurrentLevel() == 1) {
-            for (com.bpm.minotaur.gamedata.history.war.Encounter e : worldManager.currentEncounters()) {
-                if (e.kind != com.bpm.minotaur.gamedata.history.war.Encounter.Kind.COLUMN) continue;
-                signs.add(new MapSurface.WarSign(MapSurface.WarSign.Kind.COLUMN, e.chunkAt(clock), e.to,
-                        HouseHeraldry.primary(world, e.houseA, catalog)));
-            }
-        }
-        for (com.bpm.minotaur.gamedata.history.war.Encounter c : worldManager.currentCamps()) {
-            signs.add(new MapSurface.WarSign(MapSurface.WarSign.Kind.CAMP, c.from, null, HouseHeraldry.primary(world, c.houseA, catalog)));
+            if ("AFTERMATH".equals(d.kind)) signs.add(new MapSurface.WarSign(new GridPoint2(d.chunkX, d.chunkY), UiTheme.MAP_BATTLEFIELD));
         }
         return signs;
+    }
+
+    private List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker> knownArmies = new ArrayList<>();
+    private List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Sound> knownSounds = new ArrayList<>();
+    private com.bpm.minotaur.ui.ArmsAtlas arms;
+
+    /** What is public whatever the player has heard: the sieges (Living War A49). */
+    private List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker> sieges(long clock) {
+        List<com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker> out = new ArrayList<>();
+        HistoryWorld world = worldManager.getHistory().world();
+        int besieger = com.bpm.minotaur.gamedata.history.war.Siege.besieger(world);
+        BiomeManager biomes = model.getBiomes();
+        if (besieger >= 0 && biomes != null && biomes.getCastleSite() != null) {
+            out.add(com.bpm.minotaur.gamedata.map.ArmyKnowledge.siege(besieger, Math.round(biomes.getCastleSite().x), Math.round(biomes.getCastleSite().y), clock));
+        }
+        for (com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b : worldManager.getHistory().roster().battles) {
+            if (b.garrisonOf >= 0) out.add(com.bpm.minotaur.gamedata.map.ArmyKnowledge.siege(b.houseA, b.x, b.y, clock));
+        }
+        return out;
+    }
+
+    /** What the player knows of the armies, as marks for the map (Living War A46-A49). */
+    private List<MapSurface.ArmyMark> armyMarks() {
+        List<MapSurface.ArmyMark> marks = new ArrayList<>();
+        if (worldManager == null) return marks;
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        long clock = history.warClock();
+        com.bpm.minotaur.gamedata.map.ArmyKnowledge known = knowledge.getArmies();
+        int sworn = history.oath().sworn() ? history.oath().houseId : -1;
+        knownArmies = known.markers(history.roster(), sworn, sieges(clock), clock);
+        knownSounds = known.sounds(clock);
+        if (arms == null) arms = new com.bpm.minotaur.ui.ArmsAtlas(history.world(), DoctrineCatalog.getInstance());
+        for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker m : knownArmies) {
+            MapSurface.ArmyMark.Kind kind = m.source == com.bpm.minotaur.gamedata.map.ArmyKnowledge.Source.SIEGE ? MapSurface.ArmyMark.Kind.SIEGE : MapSurface.ArmyMark.Kind.HOST;
+            marks.add(new MapSurface.ArmyMark(kind, new GridPoint2(m.x, m.y), arms.shield(m.houseId, (int) UiTheme.MAP_ARMY_MARKER),
+                    m.dx, m.dy, m.strength(clock), m.past));
+        }
+        for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Sound s : knownSounds) {
+            marks.add(new MapSurface.ArmyMark(MapSurface.ArmyMark.Kind.SOUND, new GridPoint2(s.x, s.y), null, 0, 0, s.strength(clock), new int[0]));
+        }
+        return marks;
+    }
+
+    /** The cards of what is known in this chunk, and any battle heard from this way (A48). */
+    private void armiesSection(GridPoint2 c) {
+        if (worldManager == null) return;
+        HistoryWorld world = worldManager.getHistory().world();
+        long clock = worldManager.getHistory().warClock();
+        boolean any = false;
+        for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker m : knownArmies) {
+            if (m.x != c.x || m.y != c.y) continue;
+            if (!any) section("ARMIES");
+            any = true;
+            com.bpm.minotaur.gamedata.history.House house = world.house(m.houseId);
+            com.bpm.minotaur.gamedata.history.Figure captain = m.captainId >= 0 ? world.figure(m.captainId) : null;
+            for (String words : com.bpm.minotaur.gamedata.map.ArmyKnowledge.card(m, house != null ? house.name : "a house that is gone",
+                    captain != null ? captain.name : null, clock)) {
+                line(words, m.rumour() ? UiTheme.TEXT_DIM : UiTheme.TEXT);
+            }
+        }
+        for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Sound s : knownSounds) {
+            if (s.x != c.x || s.y != c.y) continue;
+            if (!any) section("ARMIES");
+            any = true;
+            line("Sounds of battle came from this way.", UiTheme.TEXT_DIM);
+        }
+        if (any) rule();
     }
 
     public ExpeditionMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
@@ -206,6 +257,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         surface.setModel(model, knowledge);
         surface.setFronts(frontMarks());
         surface.setWarSigns(warSigns());
+        surface.setArmyMarks(armyMarks());
         surface.setPlayer(playerMark());
         surface.setThreat(findThreatMark(surface.getFloor()));
         surface.setZoomListener(this::onZoomChanged);
@@ -1136,6 +1188,7 @@ public class ExpeditionMapScreen extends BaseScreen {
         statRow(stats, "PIN", pinRow);
         panel.add(stats).width(panelW()).left().row();
         rule();
+        if (floor == 1) armiesSection(c);
 
         ChunkSummary summary = visited ? surface.summary(floor, c, true) : null;
         List<String> notes = new ArrayList<>();
@@ -1397,6 +1450,10 @@ public class ExpeditionMapScreen extends BaseScreen {
         if (skin != null) {
             skin.dispose();
             skin = null;
+        }
+        if (arms != null) {
+            arms.dispose();
+            arms = null;
         }
     }
 }

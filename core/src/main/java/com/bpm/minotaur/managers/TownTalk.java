@@ -105,6 +105,14 @@ public final class TownTalk {
                 .replace("{predecessor}", before != null ? before.name : "the founders");
     }
 
+    private java.util.function.Supplier<String> hostRumour;
+    private String hostRumourHeard;
+
+    /** A town's word of a host in the field: asked once a visit, and null if there is none (Living War A49). */
+    public void setHostRumour(java.util.function.Supplier<String> hostRumour) {
+        this.hostRumour = hostRumour;
+    }
+
     /** Rumours: the loudest news of the last few seasons, as it travels down here. */
     public List<String> rumours() {
         HistoryWorld w = history.world();
@@ -117,6 +125,8 @@ public final class TownTalk {
         }
         List<String> out = new ArrayList<>();
         for (String line : Headlines.of(w, recent, RUMOURS, grammar, catalog)) out.add(clean(line));
+        if (hostRumourHeard == null && hostRumour != null) hostRumourHeard = hostRumour.get();
+        if (hostRumourHeard != null) out.add(hostRumourHeard);
         if (out.isEmpty()) out.add(say("QUIET_SEASONS"));
         return out;
     }

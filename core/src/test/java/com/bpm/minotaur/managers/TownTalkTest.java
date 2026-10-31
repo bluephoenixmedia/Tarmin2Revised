@@ -255,6 +255,26 @@ public class TownTalkTest {
         assertEquals(h.standing().of(t), loaded.standing().of(t));
     }
 
+    /** Living War A49: at least one word of a host per visit, while a war runs; asked once, so it is the same word twice. */
+    @Test
+    public void aTownGivesWordOfAHostOnceAVisit() {
+        HistoryManager h = HistoryManager.create(3L, catalog);
+        Town t = null;
+        for (int i = 0; t == null || t.welcome != 0; i++) t = h.town(Town.keyOf(3, i, 2));
+        TownTalk inn = talk(h, t, Town.Role.INNKEEPER, new FakePack());
+        int[] asked = {0};
+        inn.setHostRumour(() -> {
+            asked[0]++;
+            return "A host of House Gullet was seen away to the east.";
+        });
+        assertTrue(inn.rumours().contains("A host of House Gullet was seen away to the east."));
+        assertTrue(inn.rumours().contains("A host of House Gullet was seen away to the east."));
+        assertEquals(1, asked[0]);
+        TownTalk quiet = talk(h, t, Town.Role.INNKEEPER, new FakePack());
+        quiet.setHostRumour(() -> null);
+        assertFalse("in peace, nothing added", quiet.rumours().isEmpty());
+    }
+
     @Test
     public void rumoursAreRecentNewsAndAHostileTownWillNotTalk() {
         HistoryManager h = HistoryManager.create(3L, catalog);
