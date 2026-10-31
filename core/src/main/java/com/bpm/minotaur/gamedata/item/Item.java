@@ -188,6 +188,8 @@ public class Item implements Renderable {
         SHELTER_HEARTH_COLD, SHELTER_HEARTH_LIT, TINDER_BUNDLE,
         // A portable camp for sleeping in the field (Living War A60).
         BIVOUAC_KIT,
+        // One night's wards over it (Living War A64).
+        STAKED_HIDE_SCREEN, TRIPWIRE_BELLS, ASH_BONE_CIRCLE,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
@@ -227,7 +229,7 @@ public class Item implements Renderable {
         SCROLL_FIREBALL, SCROLL_MISTY_STEP, SCROLL_MAGIC_MISSILE, SCROLL_LIGHTNING_BOLT,
 
         // Milestone Tarmin Tomes
-        TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN,
+        TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN, TOME_OF_THE_WAYFARER,
 
         // Void salvage: the traveling merchant's chain laser and what restores it
         VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT,

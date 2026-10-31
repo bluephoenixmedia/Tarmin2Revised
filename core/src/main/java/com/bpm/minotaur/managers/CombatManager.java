@@ -992,13 +992,18 @@ public class CombatManager {
         player.getStats().addTaint(com.bpm.minotaur.gamedata.blight.Taint.BLIGHTED_HIT);
     }
 
-    /** Each of these strikes in turn, for so many rounds, while it lives and the player does (A63). */
-    public void freeRounds(java.util.List<Monster> strikers, int rounds) {
+    /** A Shield standing over a sleeper, for the free rounds alone (A64). */
+    private com.bpm.minotaur.gamedata.shelter.Ward.Shield freeRoundsShield;
+
+    /** Each of these strikes in turn, for so many rounds, while it lives and the player does; a Shield takes the first of it (A63, A64). */
+    public void freeRounds(java.util.List<Monster> strikers, int rounds, int shield) {
+        freeRoundsShield = shield > 0 ? new com.bpm.minotaur.gamedata.shelter.Ward.Shield(shield) : null;
         for (int round = 0; round < rounds; round++) {
             for (Monster m : strikers) {
                 if (m.isAlive() && player.getStats().getCurrentHP() > 0) monsterMeleeStrike(m);
             }
         }
+        freeRoundsShield = null;
     }
 
     public void monsterMeleeStrike(Monster attacker) {
@@ -1038,7 +1043,14 @@ public class CombatManager {
                 }
             }
 
-            actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            if (freeRoundsShield != null) {
+                int through = freeRoundsShield.absorb(dmg);
+                if (through < dmg) eventManager.addEvent(new GameEvent("Your Shield takes " + (dmg - through) + " dmg", 1f));
+                dmg = through;
+            }
+            // takeDamage never gives less than a scratch, and a blow the Shield stopped gives none.
+            boolean stopped = freeRoundsShield != null && dmg == 0;
+            actualDamage = stopped ? 0 : player.takeDamage(dmg, DamageType.PHYSICAL);
             applyBlightedTaint(attacker, actualDamage);
             showPlayerDamageText(actualDamage);
             bleedPlayer(actualDamage);

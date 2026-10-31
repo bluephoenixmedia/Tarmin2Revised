@@ -7558,5 +7558,74 @@
       "TARMIN"
     ],
     "healing": false
+  },
+  "SLEEPERS_WARD": {
+    "id": "SLEEPERS_WARD",
+    "name": "Sleeper's Ward",
+    "level": 1,
+    "school": "abjuration",
+    "mpCost": 8,
+    "range": 0,
+    "targetType": "SELF",
+    "damageDice": "0",
+    "damageType": "RADIANT",
+    "domain": "SPIRITUAL",
+    "duration": "1 night",
+    "statusEffect": null,
+    "visualArchetype": "HOLY_RADIANCE",
+    "description": "A ward cast on pitching a Bivouac, holding no spell slot. For one night it absorbs the first 20 damage of the blows that fall before you can rise.",
+    "secondaryArchetype": "HOLY_RADIANCE",
+    "runeSchool": "ABJURATION",
+    "bespokeEffect": null,
+    "tomePools": [
+      "WAYFARER"
+    ],
+    "healing": false
+  },
+  "WATCHFUL_SLEEP": {
+    "id": "WATCHFUL_SLEEP",
+    "name": "Watchful Sleep",
+    "level": 1,
+    "school": "abjuration",
+    "mpCost": 5,
+    "range": 0,
+    "targetType": "SELF",
+    "damageDice": "0",
+    "damageType": "RADIANT",
+    "domain": "SPIRITUAL",
+    "duration": "1 night",
+    "statusEffect": null,
+    "visualArchetype": "HOLY_RADIANCE",
+    "description": "A ward cast on pitching a Bivouac, holding no spell slot. For one night it wakes you when a hostile comes within 6 tiles, so nothing strikes you sleeping. It is no help against an army arriving.",
+    "secondaryArchetype": "HOLY_RADIANCE",
+    "runeSchool": "ABJURATION",
+    "bespokeEffect": null,
+    "tomePools": [
+      "WAYFARER"
+    ],
+    "healing": false
+  },
+  "VEIL_OF_THE_SLEEPER": {
+    "id": "VEIL_OF_THE_SLEEPER",
+    "name": "Veil of the Sleeper",
+    "level": 1,
+    "school": "abjuration",
+    "mpCost": 10,
+    "range": 0,
+    "targetType": "SELF",
+    "damageDice": "0",
+    "damageType": "RADIANT",
+    "domain": "SPIRITUAL",
+    "duration": "1 night",
+    "statusEffect": null,
+    "visualArchetype": "HOLY_RADIANCE",
+    "description": "A ward cast on pitching a Bivouac, holding no spell slot. For one night you are unseen by monsters below intelligence 12 that are not spellcasters. It will not hold over a fire.",
+    "secondaryArchetype": "HOLY_RADIANCE",
+    "runeSchool": "ABJURATION",
+    "bespokeEffect": null,
+    "tomePools": [
+      "WAYFARER"
+    ],
+    "healing": false
   }
 }

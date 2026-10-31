@@ -55,7 +55,7 @@ public final class TomeChoice {
     public static List<String> generalCandidates(Tome tome, Collection<String> knownIds, Perks perks) {
         int maxLevel = tome == Tome.TARMIN ? perks.tarminMaxLevel() : tome.getMaxSpellLevel();
         List<String> candidates = new ArrayList<>();
-        for (SpellTemplate spell : SpellDataManager.getInstance().getAllSpells()) {
+        for (SpellTemplate spell : SpellDataManager.getInstance().getFoundSpells()) {
             String id = spell.getId().toUpperCase(Locale.ROOT);
             if (!spell.isInTomePool(tome) && !id.equals(FALLBACK_MP_BONUS_ID) && spell.getLevel() <= maxLevel && !knownIds.contains(id)) {
                 candidates.add(id);

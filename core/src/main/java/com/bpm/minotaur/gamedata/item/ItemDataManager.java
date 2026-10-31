@@ -636,7 +636,7 @@ public class ItemDataManager {
     private void assignDefaultSpellToBook(Item item) {
         try {
             com.bpm.minotaur.gamedata.spells.SpellDataManager sdm = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance();
-            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> all = sdm.getAllSpells();
+            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> all = sdm.getFoundSpells();
             if (all != null && !all.isEmpty()) {
                 com.bpm.minotaur.gamedata.progression.ShelterAltar altar = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
                 List<com.bpm.minotaur.gamedata.spells.SpellTemplate> unsealed = new ArrayList<>();
@@ -1291,6 +1291,10 @@ public class ItemDataManager {
                 "A heavy iron-clasped grimoire containing high arcanum formulas. Heavy cargo. Unlocks Spell Slot 4.", 30.0f);
         registerTomeTemplate(ItemType.TOME_OF_TARMIN, "Tome of Tarmin",
                 "The legendary grand grimoire of Castle Tarmin itself, radiating forbidden power. Heavy cargo. Unlocks Spell Slot 5.", 35.0f);
+        // Not a milestone: a pocket book of the road, found early (Living War A64).
+        registerTomeTemplate(ItemType.TOME_OF_THE_WAYFARER, "Wayfarer's Tome",
+                "A thumbed pocket book of the charms travellers say over a night in the open. Study it to learn one.", 2.0f);
+        itemTemplates.get(ItemType.TOME_OF_THE_WAYFARER).baseValue = 80;
 
         // Fragments of the Maze's history (stand-in art: book and scroll)
         registerFragmentTemplate(ItemType.CHRONICLE_PAGE, "Chronicle Page",

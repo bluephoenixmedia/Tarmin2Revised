@@ -313,6 +313,27 @@ public class LootPoolTest {
         return exps.stream().mapToInt(m -> m.getOrDefault(type, 0)).average().orElse(0);
     }
 
+    /** Living War A64: early loot, inside the chests of the first levels, and gone from the deep. */
+    @Test
+    public void theWayfarersTomeIsEarlyLoot() {
+        double perExpedition = mean(sampleExpeditions(1, 1, 353), "TOME_OF_THE_WAYFARER");
+        System.out.printf(Locale.ROOT, "A64 Wayfarer's Tomes per depth-1 expedition: %.3f%n", perExpedition);
+        assertTrue("found within a few expeditions, never commonly: " + perExpedition, perExpedition >= 0.05 && perExpedition <= 0.3);
+        assertTrue(hasWayfarersTome(1));
+        assertTrue(hasWayfarersTome(8));
+        assertFalse(hasWayfarersTome(9));
+        assertNotNull("a real item", itemDataManager.getTemplate(ItemType.TOME_OF_THE_WAYFARER));
+    }
+
+    private boolean hasWayfarersTome(int edl) {
+        Random random = new Random(353);
+        WeightedRandomList<SpawnTableEntry> loot = SpawnManager.buildContainerLootPool(spawnTables, edl);
+        for (int i = 0; i < 5000; i++) {
+            if ("TOME_OF_THE_WAYFARER".equals(loot.getRandomEntry(random).type)) return true;
+        }
+        return false;
+    }
+
     @Test
     public void depthOneExpeditionsMeetTheConsumableTargets() {
         List<Map<String, Integer>> exps = sampleExpeditions(1, 1, 196);

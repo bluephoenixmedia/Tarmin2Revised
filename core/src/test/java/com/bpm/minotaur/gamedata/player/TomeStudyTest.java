@@ -89,6 +89,22 @@ public class TomeStudyTest {
         assertFalse("The Tome is used up", player.getInventory().getMainInventory().contains(tome));
     }
 
+    /** Living War A64: what the Wayfarer's Tome teaches is known at once and holds no slot. */
+    @Test
+    public void theWayfarersTomeTeachesAWardThatTakesNoSlot() {
+        Maze shelter = new Maze(1, new int[12][12]);
+        shelter.addHomeTile(new GridPoint2(1, 1));
+        Item tome = tome(Item.ItemType.TOME_OF_THE_WAYFARER);
+        assertTrue(player.beginTomeStudy(tome, shelter, events));
+        assertTrue(player.getPendingTomeChoice().getOptions().contains("WATCHFUL_SLEEP"));
+
+        assertTrue(player.chooseTomeSpell("WATCHFUL_SLEEP", events));
+
+        assertTrue(player.getPermanentSpellIds().contains("WATCHFUL_SLEEP"));
+        assertFalse("cast on pitching, not from a slot", player.isSpellPrepared("WATCHFUL_SLEEP"));
+        assertFalse("the Tome is used up", player.getInventory().getMainInventory().contains(tome));
+    }
+
     @Test
     public void onlyAnOfferedSpellCanBeChosen() {
         Maze shelter = new Maze(1, new int[12][12]);

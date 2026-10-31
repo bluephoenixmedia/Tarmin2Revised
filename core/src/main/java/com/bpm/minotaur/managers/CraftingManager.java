@@ -127,6 +127,41 @@ public class CraftingManager {
         return true;
     }
 
+    /** What one night's ward takes to make (Living War A64). */
+    public static java.util.Map<ItemType, Integer> wardRecipe(com.bpm.minotaur.gamedata.shelter.Ward ward) {
+        switch (ward) {
+            case SHIELD: return java.util.Map.of(ItemType.LEATHER_SCRAP, 2, ItemType.STICK, 2);
+            case ALARM: return java.util.Map.of(ItemType.METAL_SCRAP, 1, ItemType.STICK, 1);
+            default: return java.util.Map.of(ItemType.FIREWOOD, 1, ItemType.BONE, 1);
+        }
+    }
+
+    /** The same, as the bench puts it. */
+    public static String wardRecipeText(com.bpm.minotaur.gamedata.shelter.Ward ward) {
+        switch (ward) {
+            case SHIELD: return "2 Leather Scrap, 2 Sticks";
+            case ALARM: return "1 Metal Scrap, 1 Stick";
+            default: return "1 Firewood, 1 Bone";
+        }
+    }
+
+    public boolean canMakeWard(Player player, com.bpm.minotaur.gamedata.shelter.Ward ward) {
+        for (java.util.Map.Entry<ItemType, Integer> need : wardRecipe(ward).entrySet()) {
+            if (countMaterial(player, need.getKey()) < need.getValue()) return false;
+        }
+        return true;
+    }
+
+    public Item makeWard(Player player, com.bpm.minotaur.gamedata.shelter.Ward ward) {
+        if (!canMakeWard(player, ward)) return null;
+        for (java.util.Map.Entry<ItemType, Integer> need : wardRecipe(ward).entrySet()) {
+            consumeMaterial(player, need.getKey(), need.getValue());
+        }
+        Item made = itemDataManager.createItem(ward.itemType, 0, 0, ItemColor.TAN, assetManager);
+        if (made != null) depositItem(player, made);
+        return made;
+    }
+
     // =========================================================================
     // ALCHEMY CAULDRON PILLAR
     // =========================================================================

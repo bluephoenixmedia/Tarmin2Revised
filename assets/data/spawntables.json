@@ -3072,6 +3072,12 @@
     "containerLoot": {
         "default": [
             {
+                "type": "TOME_OF_THE_WAYFARER",
+                "minLevel": 1,
+                "maxLevel": 8,
+                "weight": 2
+            },
+            {
                 "type": "TINDER_BUNDLE",
                 "minLevel": 1,
                 "maxLevel": 99,

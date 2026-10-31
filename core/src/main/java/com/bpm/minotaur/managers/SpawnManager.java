@@ -620,6 +620,32 @@ public class SpawnManager {
         return monster;
     }
 
+    /** A monster of the spawn table on its way to the player, as far off as an Alarm hears it (A64). */
+    public Monster spawnWithin(Player player, int tiles) {
+        GridPoint2 tile = tileWithin(maze, (int) player.getPosition().x, (int) player.getPosition().y, tiles, random);
+        if (tile == null) return spawnBeside(player);
+        Monster monster = spawnAt(tile, "Bivouac Ambush (heard coming)");
+        if (monster != null) monster.setState(Monster.MonsterState.HUNTING);
+        return monster;
+    }
+
+    /** A free tile as near this many tiles away as the ground allows and never adjoining, or null. Public for the tests. */
+    public static GridPoint2 tileWithin(Maze maze, int px, int py, int tiles, Random random) {
+        for (int ring = tiles; ring >= 2; ring--) {
+            List<GridPoint2> found = new ArrayList<>();
+            for (int y = Math.max(0, py - ring); y <= Math.min(maze.getHeight() - 1, py + ring); y++) {
+                for (int x = Math.max(0, px - ring); x <= Math.min(maze.getWidth() - 1, px + ring); x++) {
+                    double away = Math.hypot(x - px, y - py);
+                    if (away > ring || away <= ring - 1 || !maze.isPassable(x, y)) continue;
+                    GridPoint2 tile = new GridPoint2(x, y);
+                    if (!maze.getMonsters().containsKey(tile)) found.add(tile);
+                }
+            }
+            if (!found.isEmpty()) return found.get(random.nextInt(found.size()));
+        }
+        return null;
+    }
+
     private GridPoint2 findRuntimeSpawnPoint(Player player) {
         int width = maze.getWidth();
         int height = maze.getHeight();

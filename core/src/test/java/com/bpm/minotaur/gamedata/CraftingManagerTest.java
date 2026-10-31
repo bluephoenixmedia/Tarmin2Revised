@@ -73,6 +73,29 @@ public class CraftingManagerTest {
         assertEquals(10, com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit));
     }
 
+    /** Living War A64: each ward's recipe, spent as it is made. */
+    @Test
+    public void eachWardHasItsRecipe() {
+        com.bpm.minotaur.gamedata.player.Player p = playerWith(2, 2, 0);
+        assertTrue(craftingManager.canMakeWard(p, com.bpm.minotaur.gamedata.shelter.Ward.SHIELD));
+        assertFalse("no scrap of metal", craftingManager.canMakeWard(p, com.bpm.minotaur.gamedata.shelter.Ward.ALARM));
+        assertFalse("no firewood, no bone", craftingManager.canMakeWard(p, com.bpm.minotaur.gamedata.shelter.Ward.CONCEALMENT));
+        assertNull(craftingManager.makeWard(p, com.bpm.minotaur.gamedata.shelter.Ward.CONCEALMENT));
+        Item screen = craftingManager.makeWard(p, com.bpm.minotaur.gamedata.shelter.Ward.SHIELD);
+        assertEquals(ItemType.STAKED_HIDE_SCREEN, screen.getType());
+        assertEquals(0, craftingManager.countMaterial(p, ItemType.LEATHER_SCRAP));
+        assertEquals(0, craftingManager.countMaterial(p, ItemType.STICK));
+
+        com.bpm.minotaur.gamedata.player.Player q = playerWith(0, 1, 1);
+        q.getInventory().pickup(Item.fromTemplate(ItemType.METAL_SCRAP, new ItemTemplate()));
+        q.getInventory().pickup(Item.fromTemplate(ItemType.FIREWOOD, new ItemTemplate()));
+        assertEquals(ItemType.TRIPWIRE_BELLS, craftingManager.makeWard(q, com.bpm.minotaur.gamedata.shelter.Ward.ALARM).getType());
+        assertEquals(0, craftingManager.countMaterial(q, ItemType.METAL_SCRAP));
+        assertEquals("the stick went on the bells", 0, craftingManager.countMaterial(q, ItemType.STICK));
+        assertEquals(ItemType.ASH_BONE_CIRCLE, craftingManager.makeWard(q, com.bpm.minotaur.gamedata.shelter.Ward.CONCEALMENT).getType());
+        assertEquals(0, craftingManager.countMaterial(q, ItemType.FIREWOOD));
+    }
+
     @Test
     public void mendingAKitTakesOneLeatherForThreeNights() {
         com.bpm.minotaur.gamedata.player.Player p = playerWith(1, 0, 0);

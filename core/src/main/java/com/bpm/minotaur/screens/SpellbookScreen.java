@@ -301,6 +301,9 @@ public class SpellbookScreen extends BaseScreen {
             case UNKNOWN_SPELL:
                 setStatus("You do not know that spell.", false);
                 break;
+            case CAST_ON_PITCHING:
+                setStatus("A ward is cast when you pitch a Bivouac, and holds no slot.", false);
+                break;
         }
         refresh();
     }

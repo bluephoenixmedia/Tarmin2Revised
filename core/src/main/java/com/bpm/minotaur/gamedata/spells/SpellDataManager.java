@@ -175,9 +175,16 @@ public class SpellDataManager {
         return list;
     }
 
+    /** Every spell the world can hand out at large: all but the wards, which one tome alone teaches (Living War A64). */
+    public List<SpellTemplate> getFoundSpells() {
+        List<SpellTemplate> list = getAllSpells();
+        list.removeIf(s -> com.bpm.minotaur.gamedata.shelter.Ward.ofSpell(s.id) != null);
+        return list;
+    }
+
     public List<SpellTemplate> getSpellsByLevel(int level) {
         List<SpellTemplate> result = new ArrayList<>();
-        for (SpellTemplate s : getAllSpells()) {
+        for (SpellTemplate s : getFoundSpells()) {
             if (s.level == level) {
                 result.add(s);
             }
@@ -187,7 +194,7 @@ public class SpellDataManager {
 
     public List<SpellTemplate> getSpellsBySchoolAndMaxLevel(String school, int maxLevel) {
         List<SpellTemplate> result = new ArrayList<>();
-        for (SpellTemplate s : getAllSpells()) {
+        for (SpellTemplate s : getFoundSpells()) {
             if (s.level <= maxLevel && (school == null || (s.school != null && s.school.equalsIgnoreCase(school)))) {
                 result.add(s);
             }

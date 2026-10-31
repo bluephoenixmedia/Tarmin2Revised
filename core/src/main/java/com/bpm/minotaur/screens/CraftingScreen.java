@@ -478,6 +478,22 @@ public class CraftingScreen extends BaseScreen {
             });
             rightPanelContent.add(mend).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
         }
+
+        rightPanelContent.add(UiLabels.ellipsized("WARDS, ONE NIGHT EACH", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                .center().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_SM).row();
+        for (final com.bpm.minotaur.gamedata.shelter.Ward ward : com.bpm.minotaur.gamedata.shelter.Ward.values()) {
+            TextButton makeWard = createActionButton(ward.itemName + " (" + CraftingManager.wardRecipeText(ward) + ")", craftingManager.canMakeWard(player, ward));
+            makeWard.getLabel().setEllipsis(true);
+            makeWard.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (makeWard.isDisabled()) return;
+                    feedbackLabel.setText(craftingManager.makeWard(player, ward) != null ? ward.itemName + ", ready for one night." : "You lack the materials.");
+                    refreshAll();
+                }
+            });
+            rightPanelContent.add(makeWard).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
+        }
     }
 
     // =========================================================================

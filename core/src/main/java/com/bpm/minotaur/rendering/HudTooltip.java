@@ -104,7 +104,7 @@ public class HudTooltip extends Table {
         }
         if (sb.length() == 0) {
             if (item.isTome()) {
-                sb.append("Milestone Tome");
+                sb.append(item.isCargo() ? "Milestone Tome" : "Tome");
             } else if (item.isConsumableOrTool()) {
                 sb.append("Consumable Tool");
             } else if (item.isTreasure()) {

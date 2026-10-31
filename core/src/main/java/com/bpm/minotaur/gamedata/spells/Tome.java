@@ -3,15 +3,17 @@ package com.bpm.minotaur.gamedata.spells;
 import com.bpm.minotaur.gamedata.item.Item;
 
 /**
- * The four milestone Tomes: the Spell Slot each unlocks, how long a field study
- * takes, and the highest spell level its Tome Choice offers. Pool membership is
- * the {@code tomePools} tag on each spell in spells.json.
+ * The four milestone Tomes and the Wayfarer's: the Spell Slot each unlocks (the
+ * Wayfarer's, none), how long a field study takes, and the highest spell level its
+ * Tome Choice offers. Pool membership is the {@code tomePools} tag on each spell in
+ * spells.json.
  */
 public enum Tome {
     INITIATE(Item.ItemType.TOME_OF_THE_INITIATE, "Tome of the Initiate", 2, 10, 1),
     ELEMENTS(Item.ItemType.TOME_OF_ELEMENTS, "Tome of Elements", 3, 15, 3),
     ARCANE(Item.ItemType.TOME_OF_THE_ARCANE, "Tome of the Arcane", 4, 20, 5),
-    TARMIN(Item.ItemType.TOME_OF_TARMIN, "Tome of Tarmin", 5, 25, 8);
+    TARMIN(Item.ItemType.TOME_OF_TARMIN, "Tome of Tarmin", 5, 25, 8),
+    WAYFARER(Item.ItemType.TOME_OF_THE_WAYFARER, "Wayfarer's Tome", 0, 10, 1);
 
     private final Item.ItemType itemType;
     private final String displayName;
