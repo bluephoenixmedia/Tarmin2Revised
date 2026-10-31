@@ -114,6 +114,13 @@ public final class ArmsFieldScenario implements PlaytestScenario {
         });
         script.wait("drawn", 6);
         script.shot("arms01_one_two_three_tiles", ctx);
+        com.bpm.minotaur.managers.DebugManager debug = com.bpm.minotaur.managers.DebugManager.getInstance();
+        // The other engine draws them its own way, and must agree, with one in its face too.
+        script.once("to the raycaster", () -> debug.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.RAYCASTER));
+        script.wait("drawn", 4);
+        script.shot("arms04_raycaster", ctx);
+        script.once("back to the planes", () -> debug.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D));
+        script.wait("drawn", 4);
         script.once("the nearest stands aside", () -> ctx.getMaze().removeMonster(nearest.get(0)));
         script.wait("drawn", 4);
         script.shot("arms02_two_and_three_tiles", ctx);
@@ -121,12 +128,11 @@ public final class ArmsFieldScenario implements PlaytestScenario {
         script.wait("drawn", 4);
         script.shot("arms03_three_tiles_and_the_captain", ctx);
 
-        // The other engine draws them its own way, and must agree.
-        com.bpm.minotaur.managers.DebugManager debug = com.bpm.minotaur.managers.DebugManager.getInstance();
-        script.once("to the raycaster", () -> debug.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.RAYCASTER));
+        // Retro mode flattens the world to one colour a surface; the Arms must keep theirs.
+        script.once("to Retro", () -> debug.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.RETRO));
         script.wait("drawn", 4);
-        script.shot("arms04_raycaster", ctx);
-        script.once("back to the planes", () -> debug.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D));
+        script.shot("arms05_retro", ctx);
+        script.once("back to Modern", () -> debug.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN));
     }
 
     private static Monster soldier(PlaytestContext ctx, House house, int ahead, int aside) {

@@ -1550,7 +1550,8 @@ public class EntityRenderer {
             if (m.getCurrentHP() <= 0) continue;
             float dist = player.getPosition().dst(m.getPosition());
             if (fogEnabled && dist > fogDistance) continue;
-            if (dist > 25f) continue; // Only show bars for visible monsters within reasonable range
+            boolean barred = dist <= 25f; // Only show bars for visible monsters within reasonable range
+            if (!barred && !com.bpm.minotaur.ui.ArmsInField.bearsBanner(m)) continue;
 
             float spriteX = m.getPosition().x - player.getPosition().x;
             float spriteY = m.getPosition().y - player.getPosition().y;
@@ -1589,6 +1590,8 @@ public class EntityRenderer {
             float barHeight = Math.max(4, baseSpriteHeight * 0.04f);
             float barX = (screenX + offX * spriteWidth) - barWidth / 2f;
             float barY = topBorder + 10f;
+            overheads.add(new Overhead(m, screenX + offX * spriteWidth, barY + barHeight, dist));
+            if (!barred) continue;
 
             float hpRatio = (m.getMaxHP() > 0) ? (float) m.getCurrentHP() / m.getMaxHP() : 0f;
 
@@ -1605,7 +1608,6 @@ public class EntityRenderer {
                     : (hpRatio > 0.25f) ? Color.valueOf("E8A63A") : Color.valueOf("C24A34");
             shapeRenderer.setColor(barColor);
             shapeRenderer.rect(barX, barY, barWidth * hpRatio, barHeight);
-            overheads.add(new Overhead(m, screenX + offX * spriteWidth, barY + barHeight, dist));
         }
 
         shapeRenderer.end();
@@ -1642,6 +1644,8 @@ public class EntityRenderer {
         }
         spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
         spriteBatch.begin();
+        // A soldier close enough to fill the view has them brought down into it.
+        float roof = viewport.getCamera().viewportHeight - com.bpm.minotaur.ui.UiTheme.PAD_MD;
         for (Overhead o : overheads) {
             if (!com.bpm.minotaur.ui.ArmsInField.bearsArms(o.monster)) continue;
             float at = o.y + com.bpm.minotaur.ui.UiTheme.PAD_XS;
@@ -1649,6 +1653,7 @@ public class EntityRenderer {
             TextureRegion shield = alpha > 0f ? arms.shield(o.monster.getHouseId(), com.bpm.minotaur.ui.ArmsInField.shieldSize(o.tiles)) : null;
             if (shield != null) {
                 spriteBatch.setColor(1f, 1f, 1f, alpha);
+                at = Math.min(at, roof - shield.getRegionHeight());
                 spriteBatch.draw(shield, o.x - shield.getRegionWidth() / 2f, at);
                 at += shield.getRegionHeight() + com.bpm.minotaur.ui.UiTheme.PAD_XS;
             }
@@ -1656,7 +1661,7 @@ public class EntityRenderer {
                     ? arms.banner(o.monster.getHouseId(), (int) com.bpm.minotaur.ui.UiTheme.ARMS_BANNER) : null;
             if (banner != null) {
                 spriteBatch.setColor(Color.WHITE);
-                spriteBatch.draw(banner, o.x - banner.getRegionWidth() / 2f, at);
+                spriteBatch.draw(banner, o.x - banner.getRegionWidth() / 2f, Math.min(at, roof - banner.getRegionHeight()));
             }
         }
         spriteBatch.setColor(Color.WHITE);

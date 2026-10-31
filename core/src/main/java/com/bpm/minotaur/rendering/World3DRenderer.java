@@ -2124,10 +2124,14 @@ public class World3DRenderer implements Disposable {
         armsTint.a = alpha;
         dynamicBatcher.addBillboard(x - camDir.x * 0.003f, y - camDir.y * 0.003f, z - camDir.z * 0.003f, w, h, region, armsTint,
                 camRight, camUp, camDir);
-        // A house's colours must read the same in a shadow as in the sun, or the sides cannot be told apart.
+        // A house's colours must read the same in a shadow as in the sun, or the sides cannot be told
+        // apart; and in Retro mode, which would flatten them to one colour.
+        boolean isRetro = DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO;
+        shader.setUniformi("u_retroMode", 0);
         shader.setUniformf("u_unlit", 1f);
         dynamicBatcher.flush(shader, region.getTexture());
         shader.setUniformf("u_unlit", 0f);
+        shader.setUniformi("u_retroMode", isRetro ? 1 : 0);
     }
 
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
@@ -2297,14 +2301,14 @@ public class World3DRenderer implements Disposable {
                         if (zCam < 0.1f) zCam = 0.1f;
 
                         float pixelWorldHeight = (2.0f * zCam * MathUtils.tanDeg(camera.fieldOfView / 2.0f)) / camera.viewportHeight;
-                        float gapWorld = 10.0f * pixelWorldHeight;
+                        float gapWorld = HEALTH_BAR_GAP * pixelWorldHeight;
 
                         float barFeetX = mex + camUp.x * (h + gapWorld) - camDir.x * 0.002f;
                         float barFeetY = monsterY + camUp.y * (h + gapWorld) - camDir.y * 0.002f;
                         float barFeetZ = mwz + camUp.z * (h + gapWorld) - camDir.z * 0.002f;
 
                         float barW = Math.max(0.35f, w * 0.75f);
-                        float barH = Math.max(0.04f, 6.0f * pixelWorldHeight);
+                        float barH = Math.max(HEALTH_BAR_MIN_HEIGHT, HEALTH_BAR_PIXELS * pixelWorldHeight);
                         float hpRatio = (m.getMaxHP() > 0) ? Math.max(0f, Math.min(1f, (float) m.getCurrentHP() / m.getMaxHP())) : 0f;
 
                         // Dark background
@@ -2350,14 +2354,14 @@ public class World3DRenderer implements Disposable {
                         if (zCam < 0.1f) zCam = 0.1f;
 
                         float pixelWorldHeight = (2.0f * zCam * MathUtils.tanDeg(camera.fieldOfView / 2.0f)) / camera.viewportHeight;
-                        float gapWorld = 10.0f * pixelWorldHeight;
+                        float gapWorld = HEALTH_BAR_GAP * pixelWorldHeight;
 
                         float barFeetX = ex + camUp.x * (h + gapWorld) - camDir.x * 0.002f;
                         float barFeetY = camUp.y * (h + gapWorld) - camDir.y * 0.002f;
                         float barFeetZ = wz + camUp.z * (h + gapWorld) - camDir.z * 0.002f;
 
                         float barW = Math.max(0.35f, w * 0.75f);
-                        float barH = Math.max(0.04f, 6.0f * pixelWorldHeight);
+                        float barH = Math.max(HEALTH_BAR_MIN_HEIGHT, HEALTH_BAR_PIXELS * pixelWorldHeight);
                         float hpRatio = (sk.getMaxHP() > 0)
                                 ? Math.max(0f, Math.min(1f, (float) sk.getCurrentHP() / sk.getMaxHP())) : 0f;
 

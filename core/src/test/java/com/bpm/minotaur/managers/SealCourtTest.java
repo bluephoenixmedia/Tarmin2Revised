@@ -37,6 +37,20 @@ public class SealCourtTest {
         return s;
     }
 
+    /** Living War A45: a Court is of a house, and its people show that house's shield. */
+    @Test
+    public void aCourtsPeopleBearTheirHousesArms() {
+        SealLord.Spec s = spec(SealLord.Behaviour.CALLS_RETINUE);
+        Monster sword = new Monster(Monster.MonsterType.HOBGOBLIN, 26, 10);
+        SealCourt.dressRetainer(sword, new SealLord.Retainer(9, "Haskric, sworn to House Gullet", "HOBGOBLIN"), s, 1);
+        assertTrue(com.bpm.minotaur.ui.ArmsInField.bearsArms(sword));
+        assertEquals(s.houseId, sword.getHouseId());
+        Monster lord = new Monster(Monster.MonsterType.MIND_FLAYER, 40, 15);
+        SealCourt.dressLord(lord, s, 1);
+        assertTrue(com.bpm.minotaur.ui.ArmsInField.bearsArms(lord));
+        assertFalse("the banner is for armies in the field", com.bpm.minotaur.ui.ArmsInField.bearsBanner(lord));
+    }
+
     private static Monster lord(SealLord.Spec spec, Maze maze) {
         Monster m = new Monster(Monster.MonsterType.MIND_FLAYER, 40, 15);
         m.setDamageDice("2d10+6");

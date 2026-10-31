@@ -3940,6 +3940,7 @@ public class Hud implements Disposable {
         BitmapFont font = hudSkin.getFontSmall();
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
+        spriteBatch.setColor(1f, 1f, 1f, globalAlpha);
         if (arms != null) {
             drawTallyShield(arms.shield(warTally.houseA, (int) shield), x, top);
             drawTallyShield(arms.shield(warTally.houseB, (int) shield), x + width - shield, top);

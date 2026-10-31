@@ -5206,7 +5206,8 @@ public class GameScreen extends BaseScreen {
             hud.dispose();
         if (entityRenderer != null)
             entityRenderer.dispose();
-            if (armsAtlas != null) armsAtlas.dispose();
+        if (armsAtlas != null)
+            armsAtlas.dispose();
         if (soundManager != null)
             soundManager.dispose();
         if (fbo != null)

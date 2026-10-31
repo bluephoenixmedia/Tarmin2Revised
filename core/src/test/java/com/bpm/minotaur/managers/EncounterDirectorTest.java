@@ -148,6 +148,7 @@ public class EncounterDirectorTest {
         assertTrue(t.cues.contains(EncounterDirector.Cue.DRUMS));
         List<Monster> marchers = band(war.attackerId);
         assertTrue(marchers.size() >= 8);
+        assertEquals("one carries the standard", 1, marchers.stream().filter(Monster::isStandardBearer).count());
         for (Monster m : marchers) {
             assertNotNull(m.getMarchTarget());
             assertEquals("bound east", 34, m.getMarchTarget().x);
