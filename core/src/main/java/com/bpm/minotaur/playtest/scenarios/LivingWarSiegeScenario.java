@@ -68,8 +68,11 @@ public final class LivingWarSiegeScenario implements PlaytestScenario {
                 for (War x : w.activeWars()) if (x.involves(w.tarminHouse().id)) war = x;
             }
             ctx.assertTrue(war != null, "a war on the castle");
-            HistorySimulator.forceSiege(w, war, 6);
             int besieger = war.enemyOf(w.tarminHouse().id);
+            // A real host before the walls: the breach stands while it holds (A35).
+            ctx.getWorldManager().armyLayer().tick(h.warClock());
+            ctx.assertTrue(ctx.getWorldManager().armyLayer().besiegeTheCastleNow(w.house(besieger), h.warClock()) != null, "a host camps before the castle");
+            ctx.assertTrue(w.activeSiege() == war, "the siege is laid");
             h.favour().set(besieger, Favour.FRIEND_AT);
             com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance().awardSeal(0);
             ctx.log("Siege by " + w.house(besieger).name + "; seals held "

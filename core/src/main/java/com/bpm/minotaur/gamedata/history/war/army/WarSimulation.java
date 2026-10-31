@@ -106,6 +106,7 @@ public final class WarSimulation {
         long measured = 0, paths = 0, battlesFought = 0, overland = 0, encounters = 0, pitched = 0, expeditions = 0, earshot = 0, seasonsPassed = 0;
         int warsEnded = 0, warsBoth = 0, warSeasons = 0;
         long siegesLaid = 0, siegesRaised = 0, seatsFell = 0, siegeTurns = 0;
+        long[] castleSieges = new long[3];
         for (long seed : seeds) {
             HistoryManager history = HistoryManager.create(seed, catalog);
             BiomeManager biomes = new BiomeManager(seed);
@@ -165,6 +166,8 @@ public final class WarSimulation {
             expeditions += walker.expeditions;
             earshot += walker.earshot;
             seasonsPassed += history.world().season() - startSeason;
+            long[] castle = layer.castleSiegeCounts();
+            for (int c = 0; c < 3; c++) castleSieges[c] += castle[c];
             long[] sieged = layer.siegeCounts();
             siegesLaid += sieged[0];
             siegesRaised += sieged[1];
@@ -196,6 +199,7 @@ public final class WarSimulation {
         out.add(line("Wars ended %d, mean %.1f Seasons (target 4-16), both houses standing %d", warsEnded, warsEnded == 0 ? 0.0 : (double) warSeasons / warsEnded, warsBoth));
         out.add(line("Sieges of seats: laid %d, raised %d, seats fell %d, mean %.1f Seasons to their end", siegesLaid, siegesRaised, seatsFell,
                 siegesRaised + seatsFell == 0 ? 0.0 : (double) siegeTurns / (siegesRaised + seatsFell) / HistoryManager.SEASON_TURNS));
+        out.add(line("Sieges of the castle: laid %d, broken %d, lifted %d", castleSieges[0], castleSieges[1], castleSieges[2]));
         out.add(line("War turn: mean %.3f ms (budget %.2f) %s", mean, BUDGET_TURN_MEAN_MS, verdict(mean, BUDGET_TURN_MEAN_MS)));
         out.add(line("War turn: p50 %.3f ms, p99 %.3f ms (budget %.0f) %s, max %.2f ms", turn[turn.length / 2] / 1e6, p99, BUDGET_TURN_P99_MS, verdict(p99, BUDGET_TURN_P99_MS), turn[turn.length - 1] / 1e6));
         out.add(line("Sleep jump: p50 %.1f ms, worst %.1f ms, first in a fresh JVM %.1f ms (budget %.0f) %s", jumps.get(jumps.size() / 2), jumps.get(jumps.size() - 1), coldJump, BUDGET_JUMP_MS, verdict(jumpWorst, BUDGET_JUMP_MS)));

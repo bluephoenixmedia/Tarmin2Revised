@@ -36,6 +36,9 @@ public final class ArmyLayer {
     private final Pathfinder paths;
     private final Consumer<PlayerDeed> deeds;
     private long battlesEnded;
+    private long castleSiegesLaid;
+    private long castleSiegesBroken;
+    private long castleSiegesLifted;
     private long siegesLaid;
     private long siegesRaised;
     private long seatsFell;
@@ -119,12 +122,13 @@ public final class ArmyLayer {
             Army a = armies.get(i);
             if (a.battle) continue;
             if (newSeason) decide(a, clock);
-            if (a.sieging >= 0) continue;
+            if (a.sieging >= 0 || a.beforeTheCastle) continue;
             march(a, clock);
             if (armies.size() <= i || armies.get(i) != a) i--; // it disbanded
         }
         logistics(clock);
         sieges(clock, newSeason);
+        castleSiege(clock);
         contacts();
         for (int i = roster.battles.size() - 1; i >= 0; i--) {
             if (roster.battles.get(i) != watched) stepBattle(roster.battles.get(i), clock);
@@ -471,6 +475,117 @@ public final class ArmyLayer {
         alliesMarchIn(battle);
     }
 
+    // ---------- the siege of Castle Tarmin (A35) ----------
+
+    /** Where a house's host may camp before the castle: the ring side nearest it. Null without a castle. */
+    private GridPoint2 ringBeforeTheCastle(Army a) {
+        House tarmin = world.tarminHouse();
+        GridPoint2 castle = tarmin == null || seats == null ? null : seats.seat(tarmin.id);
+        if (castle == null) return null;
+        int r = com.bpm.minotaur.gamedata.history.war.Siege.CAMP_RING;
+        int dx = a.x - castle.x, dy = a.y - castle.y;
+        if (Math.abs(dx) >= Math.abs(dy)) return new GridPoint2(castle.x + (dx < 0 ? -r : r), castle.y);
+        return new GridPoint2(castle.x, castle.y + (dy < 0 ? -r : r));
+    }
+
+    private boolean layCastleSiege(Army a, long clock) {
+        House tarmin = world.tarminHouse();
+        if (tarmin == null || world.activeWarBetween(a.side(), tarmin.id) == null) return false;
+        a.beforeTheCastle = true;
+        a.path = null;
+        castleSiegesLaid++;
+        SplittableRandom rng = new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ a.id);
+        PlayerDeed deed = new PlayerDeed(PlayerDeed.Kind.CASTLE_SIEGE_LAID, a.side(), world.liveSeasons());
+        deed.other = tarmin.id;
+        deed.figure = a.id;
+        deed.seasons = com.bpm.minotaur.gamedata.history.HistorySimulator.SIEGE_MIN_SEASONS
+                + rng.nextInt(com.bpm.minotaur.gamedata.history.HistorySimulator.SIEGE_MAX_SEASONS - com.bpm.minotaur.gamedata.history.HistorySimulator.SIEGE_MIN_SEASONS + 1);
+        deeds.accept(deed);
+        return true;
+    }
+
+    /** Broken if its host routs, lifted when its war ends or its term is up; while it holds, the Legion may come out at it. */
+    private void castleSiege(long clock) {
+        House tarmin = world.tarminHouse();
+        if (tarmin == null) return;
+        for (int i = 0; i < wars.size(); i++) {
+            War w = wars.get(i);
+            if (w.siegeHost < 0 || w.siegeSince < 0) continue;
+            Army host = roster.army(w.siegeHost);
+            // A war's end turns its hosts for home: that lifts a siege, it doesn't break one.
+            boolean holds = host != null && host.beforeTheCastle
+                    && (host.objective == Army.Objective.CASTLE || (host.objective == Army.Objective.DISBAND && !w.isActive()));
+            if (!holds) {
+                endCastleSiege(w, tarmin, PlayerDeed.Kind.CASTLE_SIEGE_BROKEN, host, clock);
+            } else if (!host.battle && (!w.isActive() || world.season() >= w.siegeUntil)) {
+                endCastleSiege(w, tarmin, PlayerDeed.Kind.CASTLE_SIEGE_LIFTED, host, clock);
+            } else if (!host.battle && (clock + host.id) % SeatSiege.THINK_EVERY == 0 && battleAt(host.x, host.y) == null) {
+                Figure lord = world.figure(tarmin.lordId);
+                boolean spoiling = lord != null && !lord.has(Trait.PATIENT) && !lord.has(Trait.CRAVEN);
+                if (SeatSiege.readyToSally(roster.garrison(world, tarmin.id), host.soldiers, spoiling)
+                        && new SplittableRandom(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ host.id).nextDouble() < SeatSiege.SALLY_CHANCE) {
+                    legionComesOut(host, tarmin);
+                }
+            }
+        }
+    }
+
+    private void endCastleSiege(War w, House tarmin, PlayerDeed.Kind kind, Army host, long clock) {
+        if (kind == PlayerDeed.Kind.CASTLE_SIEGE_BROKEN) castleSiegesBroken++;
+        else castleSiegesLifted++;
+        PlayerDeed deed = new PlayerDeed(kind, w.enemyOf(tarmin.id), world.liveSeasons());
+        deed.other = tarmin.id;
+        deeds.accept(deed);
+        if (host != null && host.beforeTheCastle) {
+            host.beforeTheCastle = false;
+            decide(host, clock);
+        }
+    }
+
+    /** A sally from the castle at the host before it: a real battle, which can break the siege and never the castle (A35). */
+    private ArmyBattle legionComesOut(Army host, House tarmin) {
+        ArmyBattle battle = new ArmyBattle();
+        battle.id = roster.nextArmyId++;
+        battle.x = host.x;
+        battle.y = host.y;
+        battle.houseA = host.side();
+        battle.houseB = tarmin.id;
+        battle.garrisonOf = tarmin.id;
+        battle.wallEdge = 1f;
+        battle.startB = roster.garrison(world, tarmin.id);
+        roster.battles.add(battle);
+        enlist(battle, host, true);
+        alliesMarchIn(battle);
+        return battle;
+    }
+
+    /** Sieges of the castle laid, broken and lifted, for the batch. */
+    public long[] castleSiegeCounts() {
+        return new long[] {castleSiegesLaid, castleSiegesBroken, castleSiegesLifted};
+    }
+
+    /** Debug: a host of this house camps before the castle, now. Null if there is no war or no castle. */
+    public Army besiegeTheCastleNow(House besieger, long clock) {
+        House tarmin = world.tarminHouse();
+        War w = tarmin == null ? null : world.activeWarBetween(besieger.id, tarmin.id);
+        if (w == null || !hasSeat(besieger.id) || world.activeSiege() != null) return null;
+        Army a = raise(besieger, ArmyTuning.ARMY_SIZE, Army.Kind.HOST);
+        a.warId = w.id;
+        GridPoint2 ring = ringBeforeTheCastle(a);
+        if (ring == null) return null;
+        a.x = ring.x;
+        a.y = ring.y;
+        a.objective = Army.Objective.CASTLE;
+        a.targetX = ring.x;
+        a.targetY = ring.y;
+        return layCastleSiege(a, clock) ? a : null;
+    }
+
+    /** Debug: the Legion comes out now, whatever its lord's temper. */
+    public ArmyBattle legionComesOutNow(Army host) {
+        return legionComesOut(host, world.tarminHouse());
+    }
+
     // ---------- sieges of seats (A30-A34) ----------
 
     /** An army reaches an enemy seat: it camps around it, and the seat's lord calls in its hosts. */
@@ -634,7 +749,7 @@ public final class ArmyLayer {
     public SeatSiege investNow(House besieger, House holder, long clock) {
         GridPoint2 seat = seats == null ? null : seats.seat(holder.id);
         War w = world.activeWarBetween(besieger.id, holder.id);
-        if (seat == null || w == null || !hasSeat(besieger.id)) return null;
+        if (seat == null || w == null || !hasSeat(besieger.id) || holder.holdsCastle) return null;
         Army a = raise(besieger, ArmyTuning.ARMY_SIZE, Army.Kind.HOST);
         a.warId = w.id;
         a.x = seat.x;
@@ -1148,6 +1263,7 @@ public final class ArmyLayer {
             return;
         }
         if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return;
+        if (a.objective == Army.Objective.CASTLE && a.x == a.targetX && a.y == a.targetY && world.activeSiege() == null && layCastleSiege(a, clock)) return;
         if (a.objective == Army.Objective.SEAT) {
             House holder = holderOfSeatAt(a);
             if (holder != null) {
@@ -1308,7 +1424,7 @@ public final class ArmyLayer {
     /** Thinks again: only ever on an event, never on a timer of its own. */
     void decide(Army a, long clock) {
         if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return; // a party keeps its errand
-        if (a.sieging >= 0) return; // it stays at the walls until the siege ends
+        if (a.sieging >= 0 || a.beforeTheCastle) return; // it stays at the walls until the siege ends
         House h = world.house(a.houseId);
         if (h == null) return;
         War war = war(a);
@@ -1350,6 +1466,18 @@ public final class ArmyLayer {
                 best = Army.Objective.SEAT;
                 tx = enemySeat.x;
                 ty = enemySeat.y;
+            }
+        }
+        // Against the castle's house, at its full strength, a host may go and hold the breach open (A35).
+        if (enemy != null && enemy.holdsCastle && !enemy.isExtinct() && h.strength >= com.bpm.minotaur.gamedata.history.HistorySimulator.SIEGE_STRENGTH
+                && a.kind == Army.Kind.HOST && world.activeSiege() == null) {
+            GridPoint2 ring = ringBeforeTheCastle(a);
+            float score = 0.6f + (has(a, Trait.AMBITIOUS) ? 0.5f : 0f) + (has(a, Trait.ZEALOT) ? 0.2f : 0f) - (has(a, Trait.PATIENT) ? 0.2f : 0f) + (float) rng.nextDouble() * 0.15f;
+            if (ring != null && score > bestScore) {
+                bestScore = score;
+                best = Army.Objective.CASTLE;
+                tx = ring.x;
+                ty = ring.y;
             }
         }
         // A host of the usual size has none to spare, so its party comes up from the garrison.

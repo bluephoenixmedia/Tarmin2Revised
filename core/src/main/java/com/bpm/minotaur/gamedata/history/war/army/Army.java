@@ -26,7 +26,9 @@ public class Army {
         /** March with a liege's army. */
         FOLLOW,
         /** The war is over: go home and rejoin the garrison. */
-        DISBAND
+        DISBAND,
+        /** Camp in the ring before Castle Tarmin, and hold it open (A35). */
+        CASTLE
     }
 
     public int id;
@@ -73,6 +75,8 @@ public class Army {
     /** The enemy armies it has already seen: a new one makes it think again. */
     public int[] seen = new int[0];
 
+    /** Camped before Castle Tarmin, the host a siege's breach depends on (A35). */
+    public boolean beforeTheCastle;
     /** The {@link SeatSiege} it is camped around; -1 if none. */
     public int sieging = -1;
     /** The war turn its seat mustered it, for the beacons (A57); -1 for an army from before they were kept. */
