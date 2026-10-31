@@ -20,6 +20,9 @@ import java.util.Set;
  */
 public final class LivingWarScenario implements PlaytestScenario {
 
+    /** Turns to wait for the world to bring a battle before two hosts are raised for the purpose. */
+    private static final int WAIT_FOR_BATTLE = 1000;
+
     @Override
     public String name() {
         return "living-war";
@@ -28,6 +31,33 @@ public final class LivingWarScenario implements PlaytestScenario {
     @Override
     public String description() {
         return "Reads the War Table, finds real armies on the roster, walks into them, and chooses a side in a battle under way.";
+    }
+
+    /**
+     * A turn of standing about. Nothing is arranged around the hero, so a battle may start where they
+     * stand, or a quartermaster's stall open; they answer as anyone would, and a wait does not kill them.
+     */
+    private static void passATurn(PlaytestContext ctx) {
+        ctx.chooseSide("Keep away");
+        ctx.dismissModals();
+        ctx.press(Input.Keys.END);
+        ctx.press(Input.Keys.PERIOD);
+    }
+
+    /** Stands beside a soldier and swings: the pathfinder will not route onto a tile someone stands on. */
+    private static void strike(PlaytestContext ctx, Monster foe) {
+        int fx = (int) foe.getPosition().x, fy = (int) foe.getPosition().y;
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int x = fx - (int) d.getVector().x, y = fy - (int) d.getVector().y;
+            GridPoint2 at = new GridPoint2(x, y);
+            boolean mine = (int) ctx.getPlayer().getPosition().x == x && (int) ctx.getPlayer().getPosition().y == y;
+            if (!mine && (!ctx.getMaze().isPassable(x, y) || ctx.getMaze().getMonsters().containsKey(at))) continue;
+            if (ctx.getMaze().isWallBlocking(x, y, d)) continue;
+            ctx.getPlayer().setPosition(x + 0.5f, y + 0.5f);
+            ctx.getPlayer().setFacing(d);
+            ctx.press(Input.Keys.UP);
+            return;
+        }
     }
 
     private static boolean shown(PlaytestContext ctx) {
@@ -75,7 +105,7 @@ public final class LivingWarScenario implements PlaytestScenario {
                 if (e.kind == Encounter.Kind.COLUMN) column[0] = e;
             }
             if (column[0] != null) return true;
-            ctx.press(Input.Keys.PERIOD);
+            passATurn(ctx);
             return false;
         });
         script.once("stand in its way", () -> {
@@ -98,7 +128,7 @@ public final class LivingWarScenario implements PlaytestScenario {
         script.until("wait for a host to halt", 6000, () -> {
             if (ctx.getFrame() % 2 != 0) return false;
             for (Encounter c : ctx.getWorldManager().currentCamps()) if (c.slot > 0) return true;
-            ctx.press(Input.Keys.PERIOD);
+            passATurn(ctx);
             return false;
         });
         script.once("go to a camp", () -> {
@@ -170,31 +200,39 @@ public final class LivingWarScenario implements PlaytestScenario {
 
         // A battle under way (A21, A26): find one on the roster, walk in, choose a side and fight.
         com.bpm.minotaur.gamedata.history.war.army.ArmyBattle[] battle = {null};
-        script.until("wait for a battle", 8000, () -> {
-            // One may come to the hero, who has stood idle a long while.
-            if (ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen) {
-                battle[0] = ctx.getWarManager().active().battle;
-                return true;
-            }
+        int[] waited = {0};
+        script.until("wait for a battle", 2200, () -> {
             if (ctx.getFrame() % 2 != 0) return false;
-            ctx.press(Input.Keys.END); // nor should a wait kill them
             for (com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b : ctx.getWorldManager().getHistory().roster().battles) {
+                GridPoint2 here = ctx.getWorldManager().getCurrentPlayerChunkId();
+                if (b.x == here.x && b.y == here.y) continue; // walking into one is the point
                 if (b.turn > 1 && b.turn < 60 && b.startA + b.startB >= 20) battle[0] = b;
             }
-            if (battle[0] != null) return true;
-            ctx.press(Input.Keys.PERIOD);
+            if (battle[0] != null || ++waited[0] >= WAIT_FOR_BATTLE) return true;
+            passATurn(ctx);
+            return false;
+        });
+        // Whether one comes in time is the world's affair, and the war simulation's to measure.
+        script.once("or two hosts meet next door", () -> {
+            GridPoint2 here = ctx.getWorldManager().getCurrentPlayerChunkId();
+            ctx.log("Clock " + ctx.getWorldManager().getHistory().warClock() + ", state " + ctx.getCombatManager().getCurrentState()
+                    + ", screen " + ctx.getGame().getScreen().getClass().getSimpleName() + ". Waited " + waited[0] + " turns; " + ctx.getWorldManager().armyLayer().battlesEnded() + " battles ended meanwhile; found "
+                    + (battle[0] != null));
+            if (battle[0] == null) battle[0] = ctx.getWorldManager().armyLayer().raiseBattleAt(here.x + 1, here.y);
+            ctx.assertTrue(battle[0] != null, "a battle to walk into");
+        });
+        script.until("it is under way", 400, () -> {
+            if (battle[0].turn > 1) return true;
+            if (ctx.getFrame() % 2 == 0) passATurn(ctx);
             return false;
         });
         script.once("walk into it", () -> {
-            if (ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen) return;
             ctx.log("Battle at " + battle[0].x + "," + battle[0].y + ": " + battle[0].startA + " against " + battle[0].startB
                     + ", turn " + battle[0].turn);
             ctx.getGameScreen().travelToChunk(new GridPoint2(battle[0].x, battle[0].y), new GridPoint2(16, 16));
         });
         script.until("arrive at the battle", 300, () -> shown(ctx));
-        script.once("a turn passes", () -> {
-            if (!(ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen)) ctx.press(Input.Keys.PERIOD);
-        });
+        script.key("a turn passes", Input.Keys.PERIOD, ctx);
         script.until("the side prompt comes up", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen);
         script.shot("lw08_choose_a_side", ctx);
         String[] chosen = {null};
@@ -231,7 +269,8 @@ public final class LivingWarScenario implements PlaytestScenario {
                 }
             }
             ctx.press(Input.Keys.END);
-            if (foe != null) ctx.steerToward(new GridPoint2((int) foe.getPosition().x, (int) foe.getPosition().y));
+            if (foe != null) strike(ctx, foe);
+            else ctx.press(Input.Keys.PERIOD);
             return false;
         });
         script.once("the blow counted", () -> {
