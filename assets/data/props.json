@@ -113,6 +113,14 @@
     },
 
     {
+      "id": "bivouac_bedroll",
+      "asset": "images/items/bedroll.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 0.4,
+      "passable": true
+    },
+    {
       "id": "camp_tent",
       "asset": "images/props/camp_tent.png",
       "renderMode": "SPRITE",

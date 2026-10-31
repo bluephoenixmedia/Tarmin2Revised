@@ -90,6 +90,7 @@ public final class EncounterDirector {
     public static final int AFTERMATH_SLEEPS = 3;
     static final String AFTERMATH = "AFTERMATH";
     static final String CAMP = "CAMP";
+    static final String BIVOUAC = "BIVOUAC";
     private static final String[] FIELD = {"corpse_pile", "scorched_ground", "crow", "war_banner", "bone_pile", "skull_pile"};
 
     private final DoctrineCatalog catalog;
@@ -161,10 +162,8 @@ public final class EncounterDirector {
             leave(ledger);
             chunk = here != null ? new GridPoint2(here) : null;
             chunkLevel = level;
-            if (chunk != null && maze != null && level == 1) {
-                reconcile(history, maze, camps);
-                readTheTrail(history, maze, props);
-            }
+            if (chunk != null && maze != null) reconcile(history, maze, camps);
+            if (chunk != null && maze != null && level == 1) readTheTrail(history, maze, props);
         }
         town = townKey;
         if (chunk == null || sanctuary || maze == null) return t;
@@ -688,9 +687,9 @@ public final class EncounterDirector {
         EncounterLedger ledger = history.encounterLedger();
         for (Iterator<EncounterLedger.Dressing> it = ledger.dressings.iterator(); it.hasNext(); ) {
             EncounterLedger.Dressing d = it.next();
-            if (d.chunkX != chunk.x || d.chunkY != chunk.y) continue;
+            if (d.chunkX != chunk.x || d.chunkY != chunk.y || d.level != chunkLevel) continue;
             boolean gone;
-            if (AFTERMATH.equals(d.kind)) {
+            if (AFTERMATH.equals(d.kind) || BIVOUAC.equals(d.kind)) {
                 gone = ledger.sleeps >= d.clearAtSleep;
             } else {
                 gone = true;
@@ -699,14 +698,58 @@ public final class EncounterDirector {
                 }
             }
             if (!gone) continue;
-            for (int i = 0; i < d.props.size(); i++) {
-                int x = d.tiles.get(2 * i);
-                int y = d.tiles.get(2 * i + 1);
-                Scenery s = maze.getScenery().get(new GridPoint2(x, y));
-                if (s != null && d.props.get(i).equals(s.getPropId())) maze.removeScenery(x, y);
-            }
+            clear(d, maze);
             it.remove();
         }
+    }
+
+    /** Takes a dressing's props off the ground, those of them still standing. */
+    private static void clear(EncounterLedger.Dressing d, Maze maze) {
+        for (int i = 0; i < d.props.size(); i++) {
+            int x = d.tiles.get(2 * i);
+            int y = d.tiles.get(2 * i + 1);
+            Scenery s = maze.getScenery().get(new GridPoint2(x, y));
+            if (s != null && d.props.get(i).equals(s.getPropId())) maze.removeScenery(x, y);
+        }
+    }
+
+    /**
+     * A Bivouac's tent and bedroll (A60): whatever was pitched here before is struck, the new one
+     * stands on open ground two tiles off so it blocks no way through, and it is gone after the next sleep.
+     */
+    public static void pitchBivouac(EncounterLedger ledger, Maze maze, GridPoint2 chunk, int level, GridPoint2 sleeper, Props props, int clearAtSleep) {
+        for (Iterator<EncounterLedger.Dressing> it = ledger.dressings.iterator(); it.hasNext(); ) {
+            EncounterLedger.Dressing d = it.next();
+            if (BIVOUAC.equals(d.kind) && d.chunkX == chunk.x && d.chunkY == chunk.y && d.level == level) {
+                clear(d, maze);
+                it.remove();
+            }
+        }
+        EncounterLedger.Dressing d = new EncounterLedger.Dressing();
+        d.kind = BIVOUAC;
+        d.chunkX = chunk.x;
+        d.chunkY = chunk.y;
+        d.level = level;
+        d.clearAtSleep = clearAtSleep;
+        String[] pieces = {"camp_tent", "bivouac_bedroll"};
+        int placed = 0;
+        for (com.bpm.minotaur.gamedata.Direction dir : com.bpm.minotaur.gamedata.Direction.values()) {
+            if (placed >= pieces.length) break;
+            GridPoint2 at = new GridPoint2(sleeper.x + (int) dir.getVector().x * 2, sleeper.y + (int) dir.getVector().y * 2);
+            if (openGround(maze, at) && place(maze, props, pieces[placed], at, d)) placed++;
+        }
+        keep(ledger, d);
+    }
+
+    /** Free ground with free ground all round it, and no gate. */
+    private static boolean openGround(Maze maze, GridPoint2 at) {
+        if (!maze.isPassable(at.x, at.y) || maze.getGates().containsKey(at)) return false;
+        for (com.bpm.minotaur.gamedata.Direction dir : com.bpm.minotaur.gamedata.Direction.values()) {
+            if (maze.isWallBlocking(at.x, at.y, dir)) return false;
+            GridPoint2 by = new GridPoint2(at.x + (int) dir.getVector().x, at.y + (int) dir.getVector().y);
+            if (!maze.isPassable(by.x, by.y) || maze.getGates().containsKey(by)) return false;
+        }
+        return true;
     }
 
     /** What stands near {@code centre} that a raid can burn, nearest first. */

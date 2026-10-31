@@ -18,6 +18,8 @@ public class GameEvent {
         CHOICE_EVENT_TRIGGERED,
         PLAYER_DIED,
         SHOPKEEPER_INTERACTION,
+        /** The player used a Bivouac Kit; payload is the kit (Living War A61). */
+        BIVOUAC_PITCHED,
         /** The merchant fired his Void chain laser; payload is the resolved LaserBurst.BurstResult. */
         LASER_BURST,
         /** A stray from the merchant clipped the player; payload is the ShopkeeperNpc making amends. */

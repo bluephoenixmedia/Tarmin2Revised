@@ -70,6 +70,7 @@ public final class PlaytestRunner {
                 new ArtBarScenario(),
                 new MasteryUiScenario(),
                 new LivingWarScenario(),
+                new BivouacScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),

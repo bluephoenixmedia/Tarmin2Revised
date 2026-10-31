@@ -25,32 +25,34 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Coming upon a battle under way (Living War A26): help one side, help the other, or keep away.
- * Which sides are on offer is the caller's to say, since an oath narrows them.
+ * A plain question put to the player, with one way to decline it: which side of a battle to stand
+ * with (Living War A26), or how to spend a night in the field (A61).
  */
-public class BattleSideScreen extends BaseScreen {
+public class ChoiceScreen extends BaseScreen {
 
-    private static final String CONTEXT = "BATTLE_SIDE";
+    private static final String CONTEXT = "CHOICE";
 
     private final GameScreen parentScreen;
     private final String header;
     private final String body;
     private final Map<String, Runnable> offered;
-    private final Runnable keepAway;
+    private final String declineLabel;
+    private final Runnable decline;
 
     private Stage stage;
     private HudSkin hudSkin;
 
-    /** @param offered what can be chosen, by label, in order; "keep away" is added by this screen. */
-    public BattleSideScreen(Tarmin2 game, GameScreen parentScreen, String header, String body,
-            Map<String, Runnable> offered, Runnable keepAway) {
+    /** @param offered what can be chosen, by label, in order; declining is added by this screen, and Esc does it. */
+    public ChoiceScreen(Tarmin2 game, GameScreen parentScreen, String header, String body,
+            Map<String, Runnable> offered, String declineLabel, Runnable decline) {
         super(game);
         this.parentScreen = parentScreen;
         this.header = header;
         this.body = body;
         this.offered = new LinkedHashMap<>(offered);
-        this.keepAway = keepAway;
-        this.offered.put("Keep away", keepAway);
+        this.declineLabel = declineLabel;
+        this.decline = decline;
+        this.offered.put(declineLabel, decline);
     }
 
     @Override
@@ -63,7 +65,7 @@ public class BattleSideScreen extends BaseScreen {
             @Override
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.ESCAPE) {
-                    choose(keepAway);
+                    choose(decline);
                     return true;
                 }
                 return false;
@@ -103,7 +105,7 @@ public class BattleSideScreen extends BaseScreen {
             panel.add(b).growX().height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
         }
         root.add(panel).growX().row();
-        root.add(new KeyHintLegend(hudSkin).escapeHint("Keep away")).right().padTop(UiTheme.PAD_SM).row();
+        root.add(new KeyHintLegend(hudSkin).escapeHint(declineLabel)).right().padTop(UiTheme.PAD_SM).row();
         stage.addActor(root);
     }
 

@@ -1773,6 +1773,13 @@ public class Player {
             return;
         }
 
+        // --- Bivouac Kit: the game asks how the night is to be spent (Living War A61) ---
+        if (item.getType() == Item.ItemType.BIVOUAC_KIT) {
+            if (eventManager != null) eventManager.addEvent(new GameEvent(GameEvent.EventType.BIVOUAC_PITCHED, item));
+            lastUseSpentTurn = false;
+            return;
+        }
+
         // --- Tinder Bundle: kindles a field fire (#194). A cold hearth is lit by interacting with it. ---
         if (item.getType() == Item.ItemType.TINDER_BUNDLE) {
             if (kindleFieldFire(maze, eventManager)) {

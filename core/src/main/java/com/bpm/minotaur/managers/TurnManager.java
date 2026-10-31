@@ -528,6 +528,15 @@ public class TurnManager {
         return false;
     }
 
+    /** A night in the field (Living War A61): the cold works on a sleeper, and a fire burns down, turn by turn. */
+    public void sleepThroughExposure(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager, int turns) {
+        for (int i = 0; i < turns; i++) {
+            turnCounter++;
+            updateExposure(player, maze, worldManager, eventManager, 1f);
+            tickFieldFires(maze, eventManager);
+        }
+    }
+
     /**
      * Burns the chunk's field fires a turn (#194). A fire that goes out takes its flames and
      * light with it. While it burns, monsters that can see it within

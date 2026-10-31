@@ -58,6 +58,9 @@ public class ItemSaveData {
             this.stackCount = item.getStackCount();
             this.trophyHouseId = item.getTrophyHouseId();
             this.heraldry = item.getHeraldry();
+            if (item.getType() == Item.ItemType.BIVOUAC_KIT) {
+                this.currentCharges = com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(item);
+            }
             if (item.getType() == Item.ItemType.WATERSKIN) {
                 this.currentCharges = item.getCurrentCharges();
                 this.liquidContent = item.getLiquidContent();
@@ -90,6 +93,10 @@ public class ItemSaveData {
         }
         item.setTrophyHouseId(trophyHouseId);
         item.setHeraldry(heraldry);
+        if (type == Item.ItemType.BIVOUAC_KIT) {
+            item.setMaxCharges(com.bpm.minotaur.gamedata.shelter.Bivouac.KIT_NIGHTS);
+            item.setCurrentCharges(currentCharges);
+        }
         if (type == Item.ItemType.WATERSKIN) {
             item.setMaxCharges(com.bpm.minotaur.gamedata.player.Thirst.WATERSKIN_CAPACITY);
             // A skin saved under the old five-drink capacity comes back holding at most two (#312).

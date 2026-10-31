@@ -565,6 +565,16 @@ public final class ArmyLayer {
         settle(b, lostA, lostB, captainsA * ArmyTuning.MORALE_CAPTAIN, captainsB * ArmyTuning.MORALE_CAPTAIN, clock, battleRng(b, clock));
     }
 
+    /** Whether a sleeper here has soldiers on them: a battle, or any army not of a house {@code friend} says leaves them be. */
+    public boolean threatIn(int x, int y, java.util.function.IntPredicate friend) {
+        if (battleAt(x, y) != null) return true;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            if (a.x == x && a.y == y && a.kind != Army.Kind.HERALD && !friend.test(a.houseId)) return true;
+        }
+        return false;
+    }
+
     /** Debug: a host of each of two warring houses meets at this chunk, now. Null with no war to fight. */
     public ArmyBattle raiseBattleAt(int x, int y) {
         List<War> active = world.activeWars();

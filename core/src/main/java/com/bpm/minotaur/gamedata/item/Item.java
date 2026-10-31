@@ -186,6 +186,8 @@ public class Item implements Renderable {
         BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_PORTAL_TUNDRA, BIOME_PORTAL_BLIGHT, BIOME_RETURN_PORTAL,
         // An outpost shelter's hearth, cold until lit with a Tinder Bundle, which claims the shelter.
         SHELTER_HEARTH_COLD, SHELTER_HEARTH_LIT, TINDER_BUNDLE,
+        // A portable camp for sleeping in the field (Living War A60).
+        BIVOUAC_KIT,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,

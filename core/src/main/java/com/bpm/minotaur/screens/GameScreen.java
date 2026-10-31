@@ -1395,6 +1395,10 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.BIVOUAC_PITCHED)) != null) {
+            if (event.payload instanceof Item) offerBivouac((Item) event.payload);
+        }
+
         // --- Merchant Void Chain Laser: the resolution already happened in
         // ShopkeeperAiManager; here we only make it visible. ---
         while ((event = eventManager.findAndConsume(GameEvent.EventType.LASER_BURST)) != null) {
@@ -2342,6 +2346,154 @@ public class GameScreen extends BaseScreen {
         game.setScreen(new TalkScreen(game, this, talk, trade));
     }
 
+    /** The day moves on as far as a sleep takes it. */
+    private void passTheNight() {
+        if (worldManager == null || worldManager.getDayNightManager() == null) return;
+        com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
+        if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
+                || dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.DUSK) {
+            dnm.setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
+        } else {
+            dnm.advanceMinutes(180f);
+        }
+    }
+
+    /** A Season's great events toll Tarmin's Knell (plan K4); the rest is rumour, and becomes known history, readable at the Lectern. */
+    private void hearTheNews(java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news) {
+        tollKnell();
+        java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> rumours = new java.util.ArrayList<>(news);
+        rumours.removeIf(e -> com.bpm.minotaur.gamedata.history.text.Knell.tolls(worldManager.getHistory().world(), e));
+        for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(rumours, 3)) {
+            worldManager.getHistory().unlock(heard.id);
+        }
+        for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(worldManager.getHistory().world(), rumours, 3,
+                com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
+                com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
+            eventManager.addEvent(new GameEvent(rumour, 6f));
+        }
+    }
+
+    // ------------------------------------------------------------------ the Bivouac (Living War A60-A63)
+
+    /** How close a hostile may be for anyone to lie down. */
+    private static final int BIVOUAC_CLEAR_TILES = 5;
+    /** Sleeps the tent stands for, after the night it was pitched for. */
+    private static final int BIVOUAC_STANDS_SLEEPS = 1;
+    /** Minutes of the day a whole night in the field is worth, when something cuts it short. */
+    private static final float BIVOUAC_NIGHT_MINUTES = 480f;
+    /** What the coming night holds, if a play-test has decided it. */
+    private com.bpm.minotaur.gamedata.shelter.Bivouac.Night nextNight;
+
+    public void decideNextNight(com.bpm.minotaur.gamedata.shelter.Bivouac.Night night) {
+        nextNight = night;
+    }
+
+    /** Why no one can pitch here, or null if they can. */
+    private String bivouacRefused() {
+        if (maze == null || player == null) return "There is no ground here to pitch on.";
+        if (!maze.getSanctuaryTiles().isEmpty()) return "This is warded ground: sleep in the shelter's own bed.";
+        if (worldManager.townHere() != null) return "The town will not have a bivouac in its streets.";
+        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) return "Not in the middle of a fight.";
+        if (worldManager.armiesThreatenHere() || warManager.active() != null) return "Not with soldiers on this ground.";
+        for (Monster m : maze.getMonsters().values()) {
+            if (m == null || !m.isAlive() || m.isPeaceful() || m.isAlly()) continue;
+            if (m.getPosition().dst(player.getPosition()) <= BIVOUAC_CLEAR_TILES) return "Not with something this close.";
+        }
+        return null;
+    }
+
+    /** The kit is unrolled: how shall the night be spent? (A61) */
+    private void offerBivouac(Item kit) {
+        String refused = bivouacRefused();
+        if (refused != null) {
+            say(refused, 3f);
+            return;
+        }
+        Item tinder = null;
+        for (Item i : player.getInventory().getAllItems()) {
+            if (i != null && i.getType() == Item.ItemType.TINDER_BUNDLE) tinder = i;
+        }
+        final Item fuel = tinder;
+        java.util.Map<String, Runnable> nights = new java.util.LinkedHashMap<>();
+        nights.put("Sleep", () -> sleepInBivouac(kit, null));
+        if (fuel != null && !fireHere()) nights.put("Sleep by a fire (burns a Tinder Bundle)", () -> sleepInBivouac(kit, fuel));
+        String body = "A night here gives back half your strength and clears no ailment, and the world moves on as it would for any sleep. "
+                + "Something may find you. A fire keeps off the cold, and draws the eye. The kit has "
+                + com.bpm.minotaur.ui.UiNames.plural(com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit), "night", "nights") + " left.";
+        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, "Bivouac", body, nights, "Not here", () -> { })));
+    }
+
+    /** Whether a field fire already warms the player's tile. */
+    private boolean fireHere() {
+        return maze.fieldFireWarming((int) player.getPosition().x, (int) player.getPosition().y) != null;
+    }
+
+    private void sleepInBivouac(Item kit, Item tinder) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        if (tinder != null && player.kindleFieldFire(maze, eventManager)) player.getInventory().consumeOne(tinder);
+        boolean fire = fireHere();
+        DoomManager doom = DoomManager.getInstance();
+        GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
+        int full = com.bpm.minotaur.managers.HistoryManager.SLEEP_TURNS;
+        com.bpm.minotaur.gamedata.shelter.Bivouac.Night night = nextNight;
+        nextNight = null;
+        if (night == null) {
+            float chance = com.bpm.minotaur.gamedata.shelter.Bivouac.ambushChance(worldManager.calculateEffectiveDifficulty(chunk, currentLevel()),
+                    doom.getDoomStage(), currentLevel() > 1, fire);
+            night = com.bpm.minotaur.gamedata.shelter.Bivouac.roll(new java.util.Random(worldManager.getWorldSeed() ^ (history.warClock() * 0x9E3779B97F4A7C15L)), chance, full);
+        }
+        // The sleep about to pass counts, so the tent outlasts this night and goes with the next.
+        com.bpm.minotaur.managers.EncounterDirector.pitchBivouac(history.encounterLedger(), maze, chunk, currentLevel(),
+                new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y), com.bpm.minotaur.gamedata.Scenery::fromProp,
+                history.encounterLedger().sleeps + 1 + BIVOUAC_STANDS_SLEEPS);
+        wearOutKit(kit);
+
+        java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
+        int slept = worldManager.sleepInTheField(night.quiet() ? full : night.ambushTurn);
+        boolean soldiers = worldManager.armiesThreatenHere();
+
+        com.bpm.minotaur.gamedata.player.PlayerStats stats = player.getStats();
+        stats.setCurrentHP(Math.min(stats.getMaxHP(), stats.getCurrentHP() + com.bpm.minotaur.gamedata.shelter.Bivouac.rest(stats.getMaxHP(), slept, full)));
+        stats.setCurrentMP(Math.min(stats.getMaxMP(), stats.getCurrentMP() + com.bpm.minotaur.gamedata.shelter.Bivouac.rest(stats.getMaxMP(), slept, full)));
+        if (currentLevel() > 1) doom.addExpeditionTurns(com.bpm.minotaur.gamedata.shelter.Bivouac.linger(slept));
+        turnManager.sleepThroughExposure(player, maze, worldManager, eventManager, slept);
+        if (slept >= full) passTheNight();
+        else if (worldManager.getDayNightManager() != null) worldManager.getDayNightManager().advanceMinutes(BIVOUAC_NIGHT_MINUTES * slept / full);
+        hearTheNews(news);
+        needsAsciiRender = true;
+        // The cold got there first: the game's own check takes it from here.
+        if (stats.getCurrentHP() <= 0) return;
+
+        if (soldiers) {
+            say("Drums in the dark, and feet. Soldiers have come upon your bivouac.", 5f);
+        } else if (!night.quiet()) {
+            // Waking is the turn: the free rounds were theirs, and the next move is the player's.
+            ambushed(night, fire);
+        } else {
+            say("You wake with the light, stiff and cold, and whole.", 4f);
+            playerTurnTakesAction();
+        }
+    }
+
+    /** They were on the sleeper before the sleeper knew: each beside them strikes before they can rise (A63). */
+    private void ambushed(com.bpm.minotaur.gamedata.shelter.Bivouac.Night night, boolean fire) {
+        java.util.List<Monster> found = worldManager.ambushSleeper(player, maze, night.ambushers);
+        say(fire ? "Your fire has drawn something out of the dark. You wake to it on top of you!"
+                : "You wake to something on top of you!", 5f);
+        combatManager.freeRounds(found, com.bpm.minotaur.gamedata.shelter.Bivouac.freeRounds(fire));
+    }
+
+    /** A night's wear; worn through, the kit comes apart into scraps (A60). */
+    private void wearOutKit(Item kit) {
+        if (!com.bpm.minotaur.gamedata.shelter.Bivouac.wear(kit)) return;
+        player.getInventory().removeItem(kit);
+        for (int i = 0; i < com.bpm.minotaur.gamedata.shelter.Bivouac.WORN_SCRAPS; i++) {
+            Item scrap = game.getItemDataManager().createItem(Item.ItemType.LEATHER_SCRAP, 0, 0, ItemColor.TAN, game.getAssetManager());
+            if (scrap != null) player.getInventory().pickup(scrap);
+        }
+        say("The kit has come apart at last. You keep what scraps you can.", 4f);
+    }
+
     private final WarManager warManager = new WarManager(com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
 
     /** A front over the player's chunk sounds the horns; staying fights the battle (plan T2.3-T2.7). */
@@ -2458,7 +2610,7 @@ public class GameScreen extends BaseScreen {
                         : "The lines are locked across this ground, and neither has yet given way.");
         String a = houseName(b.houseA);
         String header = Character.toUpperCase(a.charAt(0)) + a.substring(1) + " against " + houseName(b.houseB);
-        Gdx.app.postRunnable(() -> game.setScreen(new BattleSideScreen(game, this, header, body, sides, () -> d.chooseSide(0))));
+        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, header, body, sides, "Keep away", () -> d.chooseSide(0))));
     }
 
     private final com.bpm.minotaur.managers.EncounterDirector encounterDirector =
@@ -5278,34 +5430,14 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
                         .recordRest(worldManager.getCurrentPlayerChunkId());
             }
-            if (worldManager != null && worldManager.getDayNightManager() != null) {
-                com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
-                if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
-                        || dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.DUSK) {
-                    dnm.setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
-                } else {
-                    dnm.advanceMinutes(180f);
-                }
-            }
+            passTheNight();
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
             SaveManager.getInstance().backupActiveSlot();
             autoSaveTimer = 0f;
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
-            // The season's great events toll Tarmin's Knell (plan K4); the rest is shelter rumour.
-            tollKnell();
-            news = new java.util.ArrayList<>(news);
-            news.removeIf(e -> com.bpm.minotaur.gamedata.history.text.Knell.tolls(worldManager.getHistory().world(), e));
-            // The news is a shelter rumour: it becomes known history, readable at the Lectern.
-            for (com.bpm.minotaur.gamedata.history.HistoryEvent heard : com.bpm.minotaur.gamedata.history.text.Headlines.pick(news, 3)) {
-                worldManager.getHistory().unlock(heard.id);
-            }
-            for (String rumour : com.bpm.minotaur.gamedata.history.text.Headlines.of(worldManager.getHistory().world(), news, 3,
-                    com.bpm.minotaur.gamedata.history.text.ChronicleGrammar.getInstance(),
-                    com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance())) {
-                eventManager.addEvent(new GameEvent(rumour, 6f));
-            }
+            hearTheNews(news);
             playerTurnTakesAction();
             needsAsciiRender = true;
             tryDreamDimensionShift(DREAM_SHIFT_CHANCE_PER_BED_REST);

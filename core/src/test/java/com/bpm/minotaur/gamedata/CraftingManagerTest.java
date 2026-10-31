@@ -43,6 +43,47 @@ public class CraftingManagerTest {
         shelterChest.clear();
     }
 
+    // --- The Bivouac Kit (Living War A60) ---
+
+    private com.bpm.minotaur.gamedata.player.Player playerWith(int leather, int sticks, int bones) {
+        if (com.badlogic.gdx.Gdx.app == null) {
+            com.badlogic.gdx.Gdx.app = (com.badlogic.gdx.Application) java.lang.reflect.Proxy.newProxyInstance(
+                    com.badlogic.gdx.Application.class.getClassLoader(), new Class<?>[]{com.badlogic.gdx.Application.class}, (proxy, method, args) -> null);
+        }
+        com.bpm.minotaur.gamedata.player.Player p = new com.bpm.minotaur.gamedata.player.Player(5f, 5f);
+        for (int i = 0; i < leather; i++) p.getInventory().pickup(Item.fromTemplate(ItemType.LEATHER_SCRAP, new ItemTemplate()));
+        for (int i = 0; i < sticks; i++) p.getInventory().pickup(Item.fromTemplate(ItemType.STICK, new ItemTemplate()));
+        for (int i = 0; i < bones; i++) p.getInventory().pickup(Item.fromTemplate(ItemType.BONE, new ItemTemplate()));
+        return p;
+    }
+
+    @Test
+    public void aBivouacKitTakesThreeLeatherTwoSticksAndABone() {
+        com.bpm.minotaur.gamedata.player.Player short1 = playerWith(2, 2, 1);
+        assertFalse(craftingManager.canMakeBivouacKit(short1));
+        assertNull(craftingManager.makeBivouacKit(short1));
+        com.bpm.minotaur.gamedata.player.Player p = playerWith(3, 2, 1);
+        assertTrue(craftingManager.canMakeBivouacKit(p));
+        Item kit = craftingManager.makeBivouacKit(p);
+        assertNotNull(kit);
+        assertEquals(ItemType.BIVOUAC_KIT, kit.getType());
+        assertEquals(0, craftingManager.countMaterial(p, ItemType.LEATHER_SCRAP));
+        assertEquals(0, craftingManager.countMaterial(p, ItemType.STICK));
+        assertEquals(0, craftingManager.countMaterial(p, ItemType.BONE));
+        assertEquals(10, com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit));
+    }
+
+    @Test
+    public void mendingAKitTakesOneLeatherForThreeNights() {
+        com.bpm.minotaur.gamedata.player.Player p = playerWith(1, 0, 0);
+        Item kit = Item.fromTemplate(ItemType.BIVOUAC_KIT, new ItemTemplate());
+        assertFalse("a new kit wants no mending", craftingManager.canMendBivouacKit(p, kit));
+        kit.setCurrentCharges(2);
+        assertTrue(craftingManager.mendBivouacKit(p, kit));
+        assertEquals(5, com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit));
+        assertFalse("no leather left", craftingManager.mendBivouacKit(p, kit));
+    }
+
     private Item createWeapon(ItemType type, String name) {
         ItemTemplate t = new ItemTemplate();
         t.friendlyName = name;

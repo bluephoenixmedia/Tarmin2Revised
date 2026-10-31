@@ -481,6 +481,17 @@ public final class HistoryManager {
         for (int i = 0; i < SLEEP_TURNS; i++) eachTurn.accept(++warClock);
     }
 
+    /**
+     * A sleep that something may cut short (A62): as {@link #sleepThroughWar}, for up to {@code most}
+     * turns, stopping at the turn {@code eachTurn} says a threat has arrived. Returns the turns slept.
+     */
+    public int sleepUntil(int most, java.util.function.LongPredicate eachTurn) {
+        for (int i = 0; i < most; i++) {
+            if (eachTurn.test(++warClock)) return i + 1;
+        }
+        return most;
+    }
+
     /** Something the armies did to the history (ADR 0006): written now, replayed from the log. */
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();

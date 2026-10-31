@@ -1529,6 +1529,47 @@ public class WorldManager {
         });
     }
 
+    /** Whether soldiers who would not leave a sleeper be stand in the player's chunk now. */
+    public boolean armiesThreatenHere() {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer == null || currentLevel != 1 || currentPlayerChunkId == null) return false;
+        return layer.threatIn(currentPlayerChunkId.x, currentPlayerChunkId.y, this::leavesASleeperBe);
+    }
+
+    private boolean leavesASleeperBe(int houseId) {
+        return getHistory().stanceOf(houseId).ordinal()
+                >= com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED.ordinal();
+    }
+
+    /**
+     * A night in the field (A61, A62): the armies march turn by turn as for any sleep, up to
+     * {@code most} turns, and the sleep stops at the turn soldiers reach the sleeper. Returns the turns slept.
+     */
+    public int sleepInTheField(int most) {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.watchBattle(null);
+        return getHistory().sleepUntil(most, clock -> {
+            if (layer != null) layer.tick(clock);
+            return armiesThreatenHere();
+        });
+    }
+
+    /**
+     * Monsters of this chunk's own spawn table come upon a sleeper, and stand beside them (A62).
+     * Returns those that found room.
+     */
+    public java.util.List<com.bpm.minotaur.gamedata.monster.Monster> ambushSleeper(Player player, Maze maze, int count) {
+        SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
+                calculateEffectiveDifficulty(currentPlayerChunkId, currentLevel) + DoomManager.getInstance().getDoomEDLBonus(),
+                player.getLevel(), player.getLuck(), null, spawnTableData, System.nanoTime(), null);
+        java.util.List<com.bpm.minotaur.gamedata.monster.Monster> out = new java.util.ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            com.bpm.minotaur.gamedata.monster.Monster m = sm.spawnBeside(player);
+            if (m != null) out.add(m);
+        }
+        return out;
+    }
+
     /**
      * Where the houses sit in this world, or null in a world laid out before the shelter roads,
      * which has no seal sites to seat them at.

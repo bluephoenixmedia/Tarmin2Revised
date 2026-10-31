@@ -38,7 +38,7 @@ public final class LivingWarScenario implements PlaytestScenario {
      * stand, or a quartermaster's stall open; they answer as anyone would, and a wait does not kill them.
      */
     private static void passATurn(PlaytestContext ctx) {
-        ctx.chooseSide("Keep away");
+        ctx.choose("Keep away");
         ctx.dismissModals();
         ctx.press(Input.Keys.END);
         ctx.press(Input.Keys.PERIOD);
@@ -233,15 +233,15 @@ public final class LivingWarScenario implements PlaytestScenario {
         });
         script.until("arrive at the battle", 300, () -> shown(ctx));
         script.key("a turn passes", Input.Keys.PERIOD, ctx);
-        script.until("the side prompt comes up", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen);
+        script.until("the side prompt comes up", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.ChoiceScreen);
         script.shot("lw08_choose_a_side", ctx);
         String[] chosen = {null};
         script.once("choose a side", () -> {
-            java.util.Set<String> labels = ((com.bpm.minotaur.screens.BattleSideScreen) ctx.getGame().getScreen()).labels();
+            java.util.Set<String> labels = ((com.bpm.minotaur.screens.ChoiceScreen) ctx.getGame().getScreen()).labels();
             ctx.log("On offer: " + labels);
             ctx.assertTrue(labels.contains("Keep away"), "keeping away is always on offer");
             chosen[0] = labels.iterator().next();
-            ctx.assertTrue(ctx.chooseSide(chosen[0]), "the side is taken");
+            ctx.assertTrue(ctx.choose(chosen[0]), "the side is taken");
         });
         script.wait("back on the field", 10);
         script.once("the lines stand from the numbers, and the side stands by you", () -> {

@@ -136,6 +136,11 @@ public class DoomManager implements SlotScopedState {
         expeditionTurns++;
     }
 
+    /** Time that counts toward lingering without the turns being walked: a night in the field (A61). */
+    public void addExpeditionTurns(int turns) {
+        expeditionTurns += Math.max(0, turns);
+    }
+
     public void resetExpeditionTurns() {
         expeditionTurns = 0;
     }

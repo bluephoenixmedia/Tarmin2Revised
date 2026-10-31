@@ -562,11 +562,16 @@ public class SpawnManager {
         if (spawnPoint == null)
             return;
 
+        spawnAt(spawnPoint, "Periodic Spawn (Runtime)");
+    }
+
+    /** A monster of the spawn table at this tile, or null if the table gives none. */
+    private Monster spawnAt(GridPoint2 spawnPoint, String why) {
         SpawnContext ctx = createSpawnContext();
 
         Optional<Map.Entry<String, MonsterTemplate>> result = monsterSpawner.spawnRandomMonster(ctx);
         if (result.isEmpty())
-            return;
+            return null;
 
         String monsterId = result.get().getKey();
         MonsterTemplate template = result.get().getValue();
@@ -575,12 +580,12 @@ public class SpawnManager {
         try {
             type = MonsterType.valueOf(monsterId);
         } catch (Exception e) {
-            return;
+            return null;
         }
 
         if ((template.generationFlags & MonsterTemplate.G_UNIQ) != 0) {
             if (uniqueMonstersSpawned.contains(monsterId))
-                return;
+                return null;
             uniqueMonstersSpawned.add(monsterId);
         }
 
@@ -591,9 +596,28 @@ public class SpawnManager {
 
         maze.addMonster(monster);
 
-        SpawnLogger.getInstance().logMonsterSpawn(monster, "Periodic Spawn (Runtime)");
+        SpawnLogger.getInstance().logMonsterSpawn(monster, why);
 
-        Gdx.app.log("SpawnManager", "Periodic Spawn: " + type + " at " + spawnPoint);
+        Gdx.app.log("SpawnManager", why + ": " + type + " at " + spawnPoint);
+        return monster;
+    }
+
+    /** A monster of the spawn table on a free tile beside the player, or null if there is no room (A62). */
+    public Monster spawnBeside(Player player) {
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        GridPoint2 spawnPoint = null;
+        for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+            int x = px + (int) d.getVector().x;
+            int y = py + (int) d.getVector().y;
+            if (maze.isWallBlocking(px, py, d) || !maze.isPassable(x, y) || maze.getMonsters().containsKey(new GridPoint2(x, y))) continue;
+            spawnPoint = new GridPoint2(x, y);
+            break;
+        }
+        if (spawnPoint == null) return null;
+        Monster monster = spawnAt(spawnPoint, "Bivouac Ambush");
+        if (monster != null) monster.setState(Monster.MonsterState.HUNTING);
+        return monster;
     }
 
     private GridPoint2 findRuntimeSpawnPoint(Player player) {
