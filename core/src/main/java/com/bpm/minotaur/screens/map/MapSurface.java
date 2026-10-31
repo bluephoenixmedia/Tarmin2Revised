@@ -112,7 +112,7 @@ final class MapSurface extends Widget implements Disposable {
      * for its heading, and the road it is known to have taken, shown when its chunk is selected.
      */
     static final class ArmyMark {
-        enum Kind { HOST, RUMOUR, EXACT, SIEGE, SOUND }
+        enum Kind { HOST, SIEGE, SOUND }
 
         final Kind kind;
         final GridPoint2 at;
@@ -237,11 +237,11 @@ final class MapSurface extends Widget implements Disposable {
         pinIcons.put(MapKnowledge.Pin.UNKNOWN, "pin_unknown");
     }
 
-    /** The wars being fought on the surface right now (Houses of the Maze plan T2.2). */
     void setArmyMarks(List<ArmyMark> marks) {
         this.armyMarks = marks;
     }
 
+    /** The wars being fought on the surface right now (Houses of the Maze plan T2.2). */
     void setWarSigns(List<WarSign> signs) {
         this.warSigns = signs == null ? java.util.Collections.emptyList() : signs;
     }
@@ -892,10 +892,11 @@ final class MapSurface extends Widget implements Disposable {
                 Vector2 toward = onMap(m.at.x + 0.5f + m.dx, m.at.y + 0.5f + m.dy).sub(p).nor();
                 float reach = UiTheme.MAP_ARMY_ARROW;
                 float tipX = p.x + toward.x * reach, tipY = p.y + toward.y * reach;
-                line(batch, UiTheme.GOLD, m.strength, p.x, p.y, tipX, tipY, 2f);
-                float wing = reach * 0.4f;
-                line(batch, UiTheme.GOLD, m.strength, tipX, tipY, tipX - (toward.x - toward.y) * wing, tipY - (toward.y + toward.x) * wing, 2f);
-                line(batch, UiTheme.GOLD, m.strength, tipX, tipY, tipX - (toward.x + toward.y) * wing, tipY - (toward.y - toward.x) * wing, 2f);
+                float t = UiTheme.MAP_ARMY_LINE;
+                line(batch, UiTheme.GOLD, m.strength, p.x, p.y, tipX, tipY, t);
+                float wing = UiTheme.MAP_ARMY_ARROW_WING;
+                line(batch, UiTheme.GOLD, m.strength, tipX, tipY, tipX - (toward.x - toward.y) * wing, tipY - (toward.y + toward.x) * wing, t);
+                line(batch, UiTheme.GOLD, m.strength, tipX, tipY, tipX - (toward.x + toward.y) * wing, tipY - (toward.y - toward.x) * wing, t);
             }
             if (m.shield != null) {
                 float high = m.shield.getRegionHeight();
@@ -911,7 +912,7 @@ final class MapSurface extends Widget implements Disposable {
         Vector2 from = onMap(m.road[0] + 0.5f, m.road[1] + 0.5f);
         for (int i = 2; i <= m.road.length; i += 2) {
             Vector2 to = i == m.road.length ? onMap(m.at.x + 0.5f, m.at.y + 0.5f) : onMap(m.road[i] + 0.5f, m.road[i + 1] + 0.5f);
-            line(batch, UiTheme.GOLD, m.strength * UiTheme.MAP_GHOST_ALPHA, from.x, from.y, to.x, to.y, 2f);
+            line(batch, UiTheme.GOLD, m.strength * UiTheme.MAP_GHOST_ALPHA, from.x, from.y, to.x, to.y, UiTheme.MAP_ARMY_LINE);
             from = to;
         }
     }

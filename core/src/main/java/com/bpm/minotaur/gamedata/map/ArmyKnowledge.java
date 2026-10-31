@@ -107,8 +107,7 @@ public final class ArmyKnowledge {
         /** How strongly it is drawn: dimming with age, and fainter still if only said. */
         public float strength(long now) {
             if (exact()) return 1f;
-            float aged = Math.min(1f, Math.max(0L, now - observedAt) / (float) HistoryManager.SEASON_TURNS);
-            float s = 1f - aged * (1f - MIN_STRENGTH);
+            float s = aged(now - observedAt);
             return rumour() ? s * RUMOUR_STRENGTH : s;
         }
     }
@@ -126,6 +125,10 @@ public final class ArmyKnowledge {
             this.y = y;
             this.heardAt = heardAt;
         }
+
+        public float strength(long now) {
+            return aged(now - heardAt);
+        }
     }
 
     /** What a trail says, and the host it was left by. */
@@ -137,6 +140,11 @@ public final class ArmyKnowledge {
             this.marker = marker;
             this.ageTurns = ageTurns;
         }
+    }
+
+    private static float aged(long turns) {
+        float share = Math.min(1f, Math.max(0L, turns) / (float) HistoryManager.SEASON_TURNS);
+        return 1f - share * (1f - MIN_STRENGTH);
     }
 
     /** How far off an army can be and still be seen: this chunk, or the next. */
@@ -178,8 +186,8 @@ public final class ArmyKnowledge {
         for (ArmyBattle b : roster.battles) {
             int off = Math.max(Math.abs(b.x - px), Math.abs(b.y - py));
             if (off > WarSoundscape.EARSHOT || off == 0) continue;
-            int rx = px + Integer.signum(b.x - px) * off;
-            int ry = py + Integer.signum(b.y - py) * off;
+            int rx = region(b.x);
+            int ry = region(b.y);
             Sound was = sounds.put(b.id, new Sound(b.id, rx, ry, clock));
             if (was == null || was.x != rx || was.y != ry) changed = true;
         }
@@ -227,7 +235,8 @@ public final class ArmyKnowledge {
         Tracks best = null;
         int packed = WarRoster.packedChunk(x, y);
         for (Army a : roster.armies) {
-            if (a.soldiers <= 0) continue;
+            // Hunters show only when seen.
+            if (a.soldiers <= 0 || a.kind == Army.Kind.HUNTING_PARTY) continue;
             Tracks t = readTrail(a, a.trail, packed, x, y, clock, false);
             if (t == null) t = readTrail(a, a.trailLast, packed, x, y, clock, true);
             if (t != null && (best == null || t.ageTurns < best.ageTurns)) best = t;
@@ -265,12 +274,18 @@ public final class ArmyKnowledge {
         return intoSeason * (length - i) / length;
     }
 
-    /** Newer word replaces older; a captain once seen, and the road it has been on, stay known. */
+    /**
+     * Newer word replaces older, with two exceptions. Nothing said unseats what was seen or read from
+     * a trail: that stays, only ageing, until it is dropped (A47). A town's named place betters the
+     * War Table's region, however old. A captain once seen, and the road it has been on, stay known.
+     */
     private void learn(Marker m) {
         Marker was = markers.get(m.armyId);
-        if (was != null && was.observedAt > m.observedAt) return;
-        // Word of the same moment never unseats what was seen.
-        if (was != null && was.observedAt == m.observedAt && m.rumour() && !was.rumour()) return;
+        if (was != null) {
+            if (m.rumour() && !was.rumour()) return;
+            boolean townOverTable = m.source == Source.TOWN && was.source == Source.WAR_TABLE;
+            if (was.observedAt > m.observedAt && !townOverTable) return;
+        }
         int captain = m.captainId >= 0 ? m.captainId : was != null ? was.captainId : -1;
         int[] past = was == null ? new int[0] : was.past;
         if (was != null && !was.rumour() && !m.rumour() && (was.x != m.x || was.y != m.y)) past = appended(past, was.x, was.y);

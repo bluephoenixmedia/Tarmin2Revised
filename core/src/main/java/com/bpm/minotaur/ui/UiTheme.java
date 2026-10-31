@@ -165,6 +165,8 @@ public final class UiTheme {
     /** An army's shield on the map (Living War A46), its heading arrow's reach, and the mark of a battle only heard. */
     public static final float MAP_ARMY_MARKER = 14f;
     public static final float MAP_ARMY_ARROW = 20f;
+    public static final float MAP_ARMY_ARROW_WING = 8f;
+    public static final float MAP_ARMY_LINE = 2f;
     public static final float MAP_ARMY_SOUND = 24f;
     /** Thickness of the border a front carries in the defending house's colour, and of the minimap's war rim. */
     public static final float FRONT_RIM = 3f;

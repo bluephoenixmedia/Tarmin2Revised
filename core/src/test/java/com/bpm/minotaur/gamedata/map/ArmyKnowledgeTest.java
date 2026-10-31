@@ -144,6 +144,45 @@ public class ArmyKnowledgeTest {
         assertTrue(markers(500).isEmpty());
     }
 
+    /** A47: a sighting only ages. A sleep beside the Table does not turn it back into a rumour. */
+    @Test
+    public void wordOfAHostDoesNotUnseatASighting() {
+        Army a = army(1, HOUSE, 21, 30, 15);
+        known.onTurn(roster, 21, 30, 500);
+        a.x = 60;
+        long later = 500 + HistoryManager.SLEEP_TURNS;
+        known.hearWarTable(roster, later);
+        known.hearInTown(roster, later, 0);
+        ArmyKnowledge.Marker m = only(later);
+        assertEquals(ArmyKnowledge.Source.SIGHTED, m.source);
+        assertEquals(21, m.x);
+        assertEquals(1, m.sleepsAgo(later));
+        long dropped = 500 + HistoryManager.SEASON_TURNS;
+        known.hearWarTable(roster, dropped);
+        assertEquals("once it is dropped, word may stand", ArmyKnowledge.Source.WAR_TABLE, only(dropped).source);
+    }
+
+    @Test
+    public void aTownsNamedPlaceBettersTheTablesRegionEvenIfOlder() {
+        Army a = army(1, HOUSE, 21, 30, 15);
+        a.trail = new int[]{WarRoster.packedChunk(19, 30)};
+        long clock = HistoryManager.SEASON_TURNS * 4 + 300;
+        known.hearWarTable(roster, clock);
+        known.hearInTown(roster, clock, 0);
+        assertEquals(ArmyKnowledge.Source.TOWN, only(clock).source);
+        assertEquals(19, only(clock).x);
+    }
+
+    /** #328: a Hunting Party shows on the map only when seen. */
+    @Test
+    public void huntersLeaveNoWordInTheirTracks() {
+        Army a = army(1, HOUSE, 8, 8, 5);
+        a.kind = Army.Kind.HUNTING_PARTY;
+        a.trail = new int[]{WarRoster.packedChunk(5, 5)};
+        assertNull(known.readTracks(roster, 5, 5, 700));
+        assertTrue(markers(700).isEmpty());
+    }
+
     @Test
     public void aFresherSightingReplacesARumourAndARumourOfTheSameMomentDoesNot() {
         army(1, HOUSE, 21, 30, 15);
@@ -230,8 +269,8 @@ public class ArmyKnowledgeTest {
         assertTrue(known.onTurn(roster, 10, 10, 100));
         List<ArmyKnowledge.Sound> heard = known.sounds(100);
         assertEquals(1, heard.size());
-        assertEquals("the way it lies, at the distance it lies", 14, heard.get(0).x);
-        assertEquals(14, heard.get(0).y);
+        assertEquals("its region, not its chunk", 14, heard.get(0).x);
+        assertEquals(10, heard.get(0).y);
         assertFalse("still the same news", known.onTurn(roster, 10, 10, 101));
         assertTrue(known.sounds(100 + HistoryManager.SEASON_TURNS + 1).isEmpty());
     }

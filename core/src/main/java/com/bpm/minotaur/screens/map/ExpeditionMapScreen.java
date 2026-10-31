@@ -195,14 +195,12 @@ public class ExpeditionMapScreen extends BaseScreen {
         knownSounds = known.sounds(clock);
         if (arms == null) arms = new com.bpm.minotaur.ui.ArmsAtlas(history.world(), DoctrineCatalog.getInstance());
         for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker m : knownArmies) {
-            MapSurface.ArmyMark.Kind kind = m.source == com.bpm.minotaur.gamedata.map.ArmyKnowledge.Source.SIEGE ? MapSurface.ArmyMark.Kind.SIEGE
-                    : m.exact() ? MapSurface.ArmyMark.Kind.EXACT : m.rumour() ? MapSurface.ArmyMark.Kind.RUMOUR : MapSurface.ArmyMark.Kind.HOST;
+            MapSurface.ArmyMark.Kind kind = m.source == com.bpm.minotaur.gamedata.map.ArmyKnowledge.Source.SIEGE ? MapSurface.ArmyMark.Kind.SIEGE : MapSurface.ArmyMark.Kind.HOST;
             marks.add(new MapSurface.ArmyMark(kind, new GridPoint2(m.x, m.y), arms.shield(m.houseId, (int) UiTheme.MAP_ARMY_MARKER),
                     m.dx, m.dy, m.strength(clock), m.past));
         }
         for (com.bpm.minotaur.gamedata.map.ArmyKnowledge.Sound s : knownSounds) {
-            float faded = 1f - Math.min(1f, (clock - s.heardAt) / (float) com.bpm.minotaur.managers.HistoryManager.SEASON_TURNS) * (1f - UiTheme.MAP_GHOST_ALPHA);
-            marks.add(new MapSurface.ArmyMark(MapSurface.ArmyMark.Kind.SOUND, new GridPoint2(s.x, s.y), null, 0, 0, faded, new int[0]));
+            marks.add(new MapSurface.ArmyMark(MapSurface.ArmyMark.Kind.SOUND, new GridPoint2(s.x, s.y), null, 0, 0, s.strength(clock), new int[0]));
         }
         return marks;
     }
