@@ -23,6 +23,8 @@ public class Oath {
     public int hardDone;
     /** The seal has been granted. */
     public boolean sealGranted;
+    /** The live Season until which a turncoat's Favour with this house is held at Tolerated, or -1 (A41). */
+    public int heldUntil = -1;
 
     public boolean sworn() {
         return houseId >= 0;
@@ -35,6 +37,7 @@ public class Oath {
         done = 0;
         hardDone = 0;
         sealGranted = false;
+        heldUntil = -1;
     }
 
     public void forsake() {

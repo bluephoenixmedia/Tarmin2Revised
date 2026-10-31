@@ -460,6 +460,23 @@
         "In the year {year} {A} could not beat {B}, so it bought a monster to do it."
       ]
     },
+    "BATTLE_TURNED": {
+      "NEUTRAL": [
+        "In the year {year} a seeker turned the battle between {A} and {B}.",
+        "{A} broke {B} in the year {year}, and a mortal blade was why.",
+        "In the year {year} {B} would have held the field, but for a seeker at the side of {A}."
+      ],
+      "FOR": [
+        "In the year {year} a seeker stood with {A} against {B}, and the day was won.",
+        "{A} had the day in the year {year}, with a seeker in its line worth a company.",
+        "In the year {year} {A} and one mortal broke {B} between them."
+      ],
+      "AGAINST": [
+        "In the year {year} a hired blade won for {A} what it could not win against {B}.",
+        "{B} was beaten in the year {year} by a seeker, and by {A} a little.",
+        "In the year {year} {A} took the field from {B} on another's back."
+      ]
+    },
     "MEGABEAST_FELLED": {
       "NEUTRAL": [
         "In the year {year} the soldiers of {A} killed {beast}.",

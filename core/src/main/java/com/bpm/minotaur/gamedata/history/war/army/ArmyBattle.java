@@ -48,6 +48,13 @@ public class ArmyBattle {
     public int[] captainFell = new int[0];
     /** The side the player chose to stand with (A26): 0 for neither, 1 for A, 2 for B. */
     public int playerSide;
+    /** Enemy soldiers the player has killed here, and whether one was a captain (A40). */
+    public int playerKills;
+    public boolean playerSlewCaptain;
+    /** At the end, for one still on the field: the player's share of the enemy dead, whether that turned it, and the houses of their side. */
+    public transient float playerShare;
+    public transient boolean playerTurned;
+    public transient int[] stoodHouses;
     /** Sides the player has drawn blood from, as bits: 1 for A, 2 for B. */
     public int playerStruck;
     /** Whether the player was on the ground when it broke, for its deed (A24). */
@@ -66,6 +73,12 @@ public class ArmyBattle {
         if (playerStruck == 1) return houseB;
         if (playerStruck == 2) return houseA;
         return -1;
+    }
+
+    /** The house the player stood with: by the blows they struck, or by their word if they struck none (A26, A40). */
+    public int stoodWith() {
+        if (foughtFor() >= 0) return foughtFor();
+        return playerSide == 1 ? houseA : playerSide == 2 ? houseB : -1;
     }
 
     int deadOf(int houseId) {
@@ -92,7 +105,7 @@ public class ArmyBattle {
         return more;
     }
 
-    static boolean holds(int[] list, int value) {
+    public static boolean holds(int[] list, int value) {
         for (int v : list) if (v == value) return true;
         return false;
     }

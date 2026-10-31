@@ -453,6 +453,59 @@ public class OneBattleStateTest {
         assertEquals("both sides is neither", -1, b.foughtFor());
     }
 
+    /** A40: one who walked off before the rout stood with nobody, whatever blows they struck. */
+    @Test
+    public void onlyOneStillOnTheFieldAtTheEndStoodToIt() {
+        BattleDirector d = walkIn();
+        tick(d);
+        d.side(false).get(0).markSeekerDrewBlood();
+        tick(d);
+        f.battle.moraleA = 1;
+        slay(d.side(true), 3);
+        d.collapse(++clock);
+        assertFalse(f.history.roster().battles.contains(f.battle));
+        PlayerDeed deed = null;
+        for (PlayerDeed x : f.history.toSave().deeds) if (x.kind == PlayerDeed.Kind.ARMY_BATTLE) deed = x;
+        assertNotNull(deed);
+        assertNull(deed.stoodWith);
+        assertNull(f.battle.stoodHouses);
+    }
+
+    /** A40 counts the dead, not the wounded: a soldier the player only cut, and someone else finished, is no kill. */
+    @Test
+    public void aWoundIsNotAKill() {
+        BattleDirector d = walkIn();
+        tick(d);
+        com.bpm.minotaur.gamedata.monster.Monster wounded = d.side(false).get(0);
+        wounded.markSeekerDrewBlood();
+        wounded.setCurrentHP(0);
+        tick(d);
+        assertEquals(0, f.battle.playerKills);
+        com.bpm.minotaur.gamedata.monster.Monster killed = d.side(false).get(0);
+        killed.markSeekerDrewBlood();
+        killed.markSeekerKilled();
+        killed.setCurrentHP(0);
+        tick(d);
+        assertEquals(1, f.battle.playerKills);
+    }
+
+    @Test
+    public void standingToTheEndIsRecordedWithTheShareOfTheDead() {
+        BattleDirector d = walkIn();
+        tick(d);
+        com.bpm.minotaur.gamedata.monster.Monster killed = d.side(false).get(0);
+        killed.markSeekerDrewBlood();
+        killed.markSeekerKilled();
+        killed.setCurrentHP(0);
+        breakIt(d);
+        PlayerDeed deed = null;
+        for (PlayerDeed x : f.history.toSave().deeds) if (x.kind == PlayerDeed.Kind.ARMY_BATTLE) deed = x;
+        assertNotNull(deed);
+        assertNotNull(deed.stoodWith);
+        assertEquals(f.battle.houseA, deed.stoodWith[0]);
+        assertTrue(f.battle.playerShare > 0f);
+    }
+
     @Test
     public void theDeedSaysWhomThePlayerFoughtForAndThatTheyStoodThere() {
         BattleDirector d = walkIn();

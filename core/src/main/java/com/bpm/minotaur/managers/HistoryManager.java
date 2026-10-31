@@ -96,6 +96,8 @@ public final class HistoryManager {
             }
         }
         if (save.oath != null) m.oath = save.oath;
+        if (m.oath.contract != null && m.oath.contract.oldStyle()) m.oath.contract = null;
+        if (m.oath.heldUntil > m.world.liveSeasons()) m.favour.holdAtTolerated(m.oath.houseId, m.oath.heldUntil);
         if (save.townsFound != null) m.townsFound.addAll(save.townsFound);
         if (save.townSettlementKeys != null && save.townSettlementIds != null) {
             for (int i = 0; i < Math.min(save.townSettlementKeys.size(), save.townSettlementIds.size()); i++) {
@@ -500,6 +502,7 @@ public final class HistoryManager {
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();
         apply(deed);
+        contractKeptInBattle |= oath.contract != null && oath.contract.onBattle(deed);
         if (deed.kind == PlayerDeed.Kind.ARMY_BEAST) {
             if (deed.beastSlain) {
                 beastHp.remove(deed.target);
@@ -548,8 +551,14 @@ public final class HistoryManager {
 
     /** The player swears to {@code houseId} at its camp (W20); a former oath is broken by it (W21). */
     public void swear(int houseId) {
+        boolean turncoat = oath.sworn() && oath.houseId != houseId && world.activeWarBetween(oath.houseId, houseId) != null;
         if (oath.sworn() && oath.houseId != houseId) breakOath();
         oath.swear(houseId);
+        if (turncoat) {
+            // Allowed, mid-war; but the new liege holds them short of Friend for a Season (A41).
+            oath.heldUntil = world.liveSeasons() + 1;
+            favour.holdAtTolerated(houseId, oath.heldUntil);
+        }
         apply(new PlayerDeed(PlayerDeed.Kind.SWORE_OATH, houseId, world.liveSeasons()));
     }
 
@@ -564,6 +573,33 @@ public final class HistoryManager {
         apply(new PlayerDeed(PlayerDeed.Kind.BROKE_OATH, betrayed, world.liveSeasons()));
         favour.changeAll(world, com.bpm.minotaur.gamedata.history.favour.Favour.OATH_BROKEN_ALL);
         favour.set(betrayed, com.bpm.minotaur.gamedata.history.favour.Favour.MIN);
+        if (onOathBroken != null) onOathBroken.accept(betrayed);
+    }
+
+    private java.util.function.IntConsumer onOathBroken;
+
+    /** What the armies do about a broken oath (A41). */
+    public void onOathBroken(java.util.function.IntConsumer then) {
+        onOathBroken = then;
+    }
+
+    private boolean contractKeptInBattle;
+
+    /** A battle just ended has kept the player's contract: once, for the telling. */
+    public boolean takeContractKeptInBattle() {
+        boolean kept = contractKeptInBattle;
+        contractKeptInBattle = false;
+        return kept;
+    }
+
+    /** The player's contract, if its target has gone without it being done, is void; the news of that, or null (A38). */
+    public String contractVoided() {
+        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        if (c == null || c.done) return null;
+        c.reportWhereItIs(roster);
+        if (!c.targetGone(world, roster)) return null;
+        oath.contract = null;
+        return "Your task is void: what it named is gone.";
     }
 
     /**
@@ -574,25 +610,19 @@ public final class HistoryManager {
     public boolean onSoldierSlain(int houseId, int figureId) {
         favour.change(world, houseId, com.bpm.minotaur.gamedata.history.favour.Favour.KILLED_SOLDIER);
         com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
-        if (c != null && !c.done && c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.KILL_CAPTAIN
-                && c.targetId == houseId && figureId >= 0) {
-            c.done = true;
-            return true;
-        }
-        return false;
+        return c != null && c.onSoldierSlain(figureId);
     }
 
     /**
      * The sworn house sets its next task (W25). A great house at Friend sets hard ones, toward the
      * seal of its gash (W26). Null when it is at war with no one.
      */
-    public com.bpm.minotaur.gamedata.history.favour.Contract offerContract(
-            java.util.List<com.bpm.minotaur.gamedata.history.war.Front> fronts, com.badlogic.gdx.math.GridPoint2 player) {
+    public com.bpm.minotaur.gamedata.history.favour.Contract offerContract() {
         if (!oath.sworn()) return null;
         com.bpm.minotaur.gamedata.history.House h = world.house(oath.houseId);
         boolean hard = h != null && h.isGreat() && !oath.sealGranted
                 && favour.tier(oath.houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND;
-        oath.contract = com.bpm.minotaur.gamedata.history.favour.Contract.offer(world, oath.houseId, oath.done, hard, fronts, player);
+        oath.contract = com.bpm.minotaur.gamedata.history.favour.Contract.offer(world, roster, oath.houseId, oath.done, hard);
         return oath.contract;
     }
 

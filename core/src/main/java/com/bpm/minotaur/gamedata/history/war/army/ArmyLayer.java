@@ -198,13 +198,27 @@ public final class ArmyLayer {
         return out;
     }
 
+    /** The slot of the camp a house keeps at its seat, which is no army's. */
+    public static final long SEAT_CAMP = -5;
+
     /** Every host that has halted, its tents pitched where it stands. */
     public List<Encounter> camps() {
         List<Encounter> out = new ArrayList<>();
         for (int i = 0; i < roster.armies.size(); i++) {
             Army a = roster.armies.get(i);
             boolean main = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
-            if (main && !a.battle && (a.path == null || a.marchStep >= a.path.length)) out.add(encounter(Encounter.Kind.CAMP, a));
+            if (main && !a.battle && (a.path == null || a.marchStep >= a.path.length)) {
+                Encounter camp = encounter(Encounter.Kind.CAMP, a);
+                camp.liege = a.side();
+                out.add(camp);
+            }
+        }
+        // A house keeps its banner at its seat, for its oath and its contracts (A39), unless the seat is under siege.
+        for (int i = 0; i < houses.size(); i++) {
+            House h = houses.get(i);
+            if (h.isExtinct() || h.holdsCastle || !hasSeat(h.id) || roster.siegeAt(seatXs[h.id], seatYs[h.id]) != null) continue;
+            GridPoint2 seat = new GridPoint2(seatXs[h.id], seatYs[h.id]);
+            out.add(new Encounter(Encounter.Kind.CAMP, SEAT_CAMP, -1, h.id, -1, 0, Long.MAX_VALUE, seat, seat));
         }
         return out;
     }
@@ -354,6 +368,50 @@ public final class ArmyLayer {
             if (h.isExtinct() || !hasSeat(h.id) || !watch.countsPlayerAnEnemy(h.id)) continue;
             sendHuntersOf(h);
         }
+    }
+
+    private int[] sideHouses(int[] armies, int lead) {
+        int[] houses = {lead};
+        for (int id : armies) {
+            Army a = roster.army(id);
+            if (a == null) continue;
+            if (!ArmyBattle.holds(houses, a.houseId)) houses = ArmyBattle.append(houses, a.houseId);
+            if (!ArmyBattle.holds(houses, a.side())) houses = ArmyBattle.append(houses, a.side());
+        }
+        return houses;
+    }
+
+    /**
+     * An oath broken: the betrayed house's nearest host sends a Hunting Party at once, from where it
+     * stands, or one already out turns toward the player (A41). A house with no host and none to spare
+     * from its seat sends nobody.
+     */
+    public void huntersNow(int houseId) {
+        House h = world.house(houseId);
+        GridPoint2 at = watch == null ? null : watch.surfaceChunk();
+        if (at != null) roster.notePlayerSeen(houseId, at.x, at.y);
+        int[] seen = roster.playerSeenBy(houseId);
+        if (h == null || h.isExtinct() || !hasSeat(houseId) || seen == null) return;
+        Army nearest = null;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            if (a.houseId != houseId) continue;
+            if (a.kind == Army.Kind.HUNTING_PARTY) {
+                a.homeBySeason = season + ArmyTuning.HUNT_SEASONS;
+                goTo(a, seen[1], seen[2]);
+                return;
+            }
+            if (a.isHost() && !a.battle && a.soldiers >= ArmyTuning.MIN_ARMY + ArmyTuning.RAID_SIZE
+                    && (nearest == null || cheb(a.x, a.y, seen[1], seen[2]) < cheb(nearest.x, nearest.y, seen[1], seen[2]))) {
+                nearest = a;
+            }
+        }
+        if (nearest == null && spare(h) < ArmyTuning.RAID_SIZE) return;
+        if (nearest != null) nearest.soldiers -= ArmyTuning.RAID_SIZE;
+        Army p = party(h, Army.Kind.HUNTING_PARTY, ArmyTuning.RAID_SIZE, nearest != null ? nearest.x : seatXs[h.id], nearest != null ? nearest.y : seatYs[h.id]);
+        p.homeBySeason = season + ArmyTuning.HUNT_SEASONS;
+        p.objective = Army.Objective.HUNT;
+        goTo(p, seen[1], seen[2]);
     }
 
     /** A party from house {@code h}, toward where its armies last saw the player; none if they never have. */
@@ -1190,6 +1248,20 @@ public final class ArmyLayer {
         deed.captainsTaken = taken;
         deed.foughtFor = b.foughtFor();
         deed.witnessed = b.witnessed;
+        // Only one still on the field at the end stood to it: one who fled was no longer watching (A40).
+        int stoodWith = b.stoodWith();
+        if (b.witnessed && stoodWith != -1) {
+            boolean withA = stoodWith == b.houseA;
+            int enemyDead = (withA ? b.startB : b.startA) - alive(b, !withA);
+            b.playerShare = enemyDead > 0 ? Math.min(1f, b.playerKills / (float) enemyDead) : 0f;
+            b.stoodHouses = sideHouses(withA ? b.armiesA : b.armiesB, stoodWith);
+            deed.stoodWith = b.stoodHouses;
+            deed.stoodAndWon = stoodWith == winner;
+            b.playerTurned = b.beastId < 0 && com.bpm.minotaur.gamedata.history.favour.BattleFavour.turned(deed.stoodAndWon, b.playerShare);
+            deed.turned = b.playerTurned;
+        }
+        deed.armiesRouted = lost;
+        deed.armiesHeld = won;
         b.winner = winner;
         b.loser = loser;
         for (int id : slain) {

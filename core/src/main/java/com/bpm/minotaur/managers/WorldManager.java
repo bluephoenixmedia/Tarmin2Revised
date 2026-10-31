@@ -315,10 +315,11 @@ public class WorldManager {
     public void onMonsterSlain(com.bpm.minotaur.gamedata.monster.Monster m, GameEventManager events) {
         // A soldier of the Maze slain: its house thinks less of the seeker, and a contract may be kept (W19, W25).
         int house = houseOf(m);
+        if (m != null) m.markSeekerKilled();
         if (m != null && house >= 0 && m.getMegabeastId() < 0 && getHistory().onSoldierSlain(house, m.getFigureId())
                 && events != null) {
             events.addEvent(new com.bpm.minotaur.gamedata.GameEvent(
-                    "A contract kept. Return to a war camp of your house to be paid.", 5f));
+                    "A contract kept. Go to a camp or the seat of your house to be paid.", 5f));
         }
         onNemesisSlain(m);
         dropTelling(m, house);
@@ -1505,6 +1506,8 @@ public class WorldManager {
                     return getHistory().stanceOf(houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY;
                 }
             });
+            final com.bpm.minotaur.gamedata.history.war.army.ArmyLayer theseArmies = armyLayer;
+            getHistory().onOathBroken(theseArmies::huntersNow);
             armyLayer.beastHealth(id -> {
                 com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
                 com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(id);

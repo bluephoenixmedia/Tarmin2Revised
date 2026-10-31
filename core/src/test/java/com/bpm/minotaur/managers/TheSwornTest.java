@@ -109,32 +109,19 @@ public class TheSwornTest {
     }
 
     @Test
-    public void aContractIsSetAgainstAnEnemyAtWarAndKillingItsCaptainKeepsIt() {
+    public void aContractNamingACaptainIsKeptByKillingThem() {
         HistoryManager h = HistoryManager.create(71L, catalog);
         War w = h.world().activeWars().get(0);
         h.swear(w.attackerId);
-        Contract c = null;
-        for (int i = 0; i < 40 && (c == null || c.kind != Contract.Kind.KILL_CAPTAIN); i++) {
-            h.oath().done = i;
-            c = h.offerContract(null, new GridPoint2(0, 0));
-        }
-        assertNotNull(c);
-        assertEquals(Contract.Kind.KILL_CAPTAIN, c.kind);
-        assertEquals(w.defenderId, c.targetId);
+        Contract c = new Contract();
+        c.kind = Contract.Kind.TAKE_CAPTAIN;
+        c.giverId = w.attackerId;
+        c.targetId = w.defenderId;
+        c.targetFigure = 3;
+        h.oath().contract = c;
         assertFalse("a common soldier is no captain", h.onSoldierSlain(w.defenderId, -1));
         assertTrue(h.onSoldierSlain(w.defenderId, 3));
         assertTrue(c.done);
-    }
-
-    @Test
-    public void holdingTheFrontCountsOnlyOnItsChunk() {
-        Contract c = new Contract();
-        c.kind = Contract.Kind.HOLD_CHUNK;
-        c.chunkX = 4;
-        c.chunkY = 5;
-        for (int i = 0; i < Contract.HOLD_TURNS - 1; i++) assertFalse(c.held(new GridPoint2(4, 5)));
-        assertFalse("elsewhere does not count", c.held(new GridPoint2(0, 0)));
-        assertTrue(c.held(new GridPoint2(4, 5)));
     }
 
     @Test
@@ -164,7 +151,8 @@ public class TheSwornTest {
             if (w.activeWarCount(holder.id) == 0) continue;
             h.favour().set(holder.id, Favour.FRIEND_AT);
             h.swear(holder.id);
-            Contract c = h.offerContract(null, new GridPoint2(0, 0));
+            host(h, w.activeWars().stream().filter(x -> x.attackerId == holder.id || x.defenderId == holder.id).findFirst().get().enemyOf(holder.id));
+            Contract c = h.offerContract();
             assertNotNull(c);
             assertTrue(c.hard);
             assertEquals(Contract.HARD_FAVOUR, c.favour());
@@ -180,7 +168,8 @@ public class TheSwornTest {
         War w = live.world().activeWars().get(0);
         live.favour().set(w.attackerId, 70);
         live.swear(w.attackerId);
-        live.offerContract(null, new GridPoint2(1, 1));
+        host(live, w.defenderId);
+        assertNotNull(live.offerContract());
         WorldSaveData save = new WorldSaveData();
         save.history = live.toSave();
         Json json = new Json();
@@ -191,6 +180,15 @@ public class TheSwornTest {
         assertEquals(70, restored.favour().of(w.attackerId));
         assertEquals(w.attackerId, restored.oath().houseId);
         assertEquals(live.oath().contract.kind, restored.oath().contract.kind);
+    }
+
+    private static void host(HistoryManager h, int houseId) {
+        com.bpm.minotaur.gamedata.history.war.army.Army a = new com.bpm.minotaur.gamedata.history.war.army.Army();
+        a.id = 500;
+        a.houseId = houseId;
+        a.soldiers = 15;
+        a.captainId = 1;
+        h.roster().armies.add(a);
     }
 
     @Test

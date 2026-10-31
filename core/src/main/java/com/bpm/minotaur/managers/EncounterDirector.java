@@ -47,8 +47,14 @@ public final class EncounterDirector {
         public int campHouse = -1;
         /** A column of this house left the chunk with the player beside it, alive (W25). */
         public int escorted = -1;
+        /** The army of that column, for a contract that names it (A37); -1 if none. */
+        public int escortedArmy = -1;
+        /** The army of a column the player broke up; -1 if none. */
+        public int brokenArmy = -1;
         /** The player cut down every sentry of this house's camp (W25). */
         public int campBroken = -1;
+        /** The army whose camp that was, for a contract that names it (A37); -1 if it was none. */
+        public int campBrokenArmy = -1;
         /** The player fought for this house in a skirmish, and it held the ground (W19). */
         public int foughtFor = -1;
         /** The player cut down this house's herald (W29). */
@@ -203,6 +209,8 @@ public final class EncounterDirector {
         for (Iterator<Stage> it = stages.values().iterator(); it.hasNext(); ) {
             Stage s = it.next();
             tallyTheFallen(s, history);
+            // A column cut down to the last, on the march or halted (A37).
+            if (s.e.kind == Encounter.Kind.COLUMN && s.e.slot > 0 && !s.a.isEmpty() && standing(maze, s.a) == 0) t.brokenArmy = (int) s.e.slot;
             if (calledAway(s, history)) {
                 for (Monster m : s.a) maze.removeMonster(m);
                 it.remove();
@@ -210,7 +218,7 @@ public final class EncounterDirector {
             }
             tick(s, history, maze, playerTile, clock, props, spoils, t);
             if (s.phase == Phase.DONE) it.remove();
-            else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.houseA;
+            else if (s.e.kind == Encounter.Kind.CAMP) t.campHouse = s.e.bannerHouse();
         }
         return t;
     }
@@ -475,6 +483,7 @@ public final class EncounterDirector {
             camp = dressing(CAMP, ledger);
             camp.warId = c.warId;
             camp.houseId = c.houseA;
+            camp.banner = c.liege;
             place(maze, props, "campfire", centre, camp);
             // Nobody swears at a camp with no banner, so it keeps looking until it finds the ground.
             for (int tries = 0; tries < BANNER_TRIES && !place(maze, props, "war_banner", around(maze, centre, 2 + tries, r), camp); tries++) { }
@@ -552,6 +561,7 @@ public final class EncounterDirector {
                     t.messages.add("The column of " + name(world, s.e.houseA) + " is broken. Its banners lie in the mud.");
                 } else if (player != null) {
                     t.escorted = s.e.houseA;
+                    if (s.e.slot > 0) t.escortedArmy = (int) s.e.slot;
                 }
                 s.phase = Phase.DONE;
                 return;
@@ -586,6 +596,7 @@ public final class EncounterDirector {
                     if (!s.a.isEmpty() && standing(maze, s.a) == 0) {
                         ledger.spend(s.e);
                         t.campBroken = s.e.houseA;
+                        if (s.e.slot > 0) t.campBrokenArmy = (int) s.e.slot;
                         t.messages.add("The camp of " + name(world, s.e.houseA) + " stands empty.");
                         s.phase = Phase.DONE;
                     }

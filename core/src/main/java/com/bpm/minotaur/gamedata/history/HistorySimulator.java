@@ -1121,6 +1121,11 @@ public final class HistorySimulator {
         winner.prestige += deed.skirmish ? 1 : 2;
         int[] slain = deed.captainsSlain == null ? new int[0] : deed.captainsSlain;
         int[] taken = deed.captainsTaken == null ? new int[0] : deed.captainsTaken;
+        if (deed.turned) {
+            HistoryEvent t = record(EventType.BATTLE_TURNED);
+            t.houseA = winner.id;
+            t.houseB = loser.id;
+        }
         if (slain.length == 0 && taken.length == 0 && !deed.seatFell) return;
         rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xA2B7L);
         HistoryEvent e = record(EventType.BATTLE);
