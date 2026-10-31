@@ -93,6 +93,7 @@ public final class WarTableScenario implements PlaytestScenario {
             army(roster, 9003, houses.get(3).id, here.x + 50, here.y + 3, Army.Kind.LEVY, 15);
             army(roster, 9004, houses.get(4).id, here.x, here.y - 55, Army.Kind.HOST, 8);
             army(roster, 9005, houses.get(5).id, here.x + 2, here.y, Army.Kind.HUNTING_PARTY, 5);
+            history.favour().change(world, houses.get(5).id, -200);
             ArmyBattle siege = new ArmyBattle();
             siege.id = 9100;
             siege.x = here.x + 12;
@@ -122,7 +123,7 @@ public final class WarTableScenario implements PlaytestScenario {
             ctx.assertTrue(ctx.getGame().getScreen() instanceof WarTableScreen, "ESC on a page returned to the news, not the Shelter");
             HistoryManager history = ctx.getWorldManager().getHistory();
             history.oath().houseId = houses.get(0).id;
-            history.roster().armies.get(history.roster().armies.size() - 6).objective = Army.Objective.SEAT;
+            history.roster().army(9000).objective = Army.Objective.SEAT;
             ctx.getGame().setScreen(ctx.getGameScreen());
             open(ctx);
         });

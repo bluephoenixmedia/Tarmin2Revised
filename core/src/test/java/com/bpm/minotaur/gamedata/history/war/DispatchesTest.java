@@ -75,7 +75,7 @@ public class DispatchesTest {
         army(1, GULLET, 60, 0, 15);
         army(2, SEEP, 2, 0, 15);
         army(3, SEEP, 90, 0, 15);
-        List<ArmyKnowledge.Marker> sieges = Collections.singletonList(ArmyKnowledge.siege(SEEP, 7, 7, 100));
+        List<ArmyKnowledge.Marker> sieges = Collections.singletonList(ArmyKnowledge.siege(SEEP, GULLET, 7, 7, 100));
         List<Dispatches.Row> rows = news(seen(GULLET, sieges), Collections.singletonList(SEEP), "Hold the ground");
         assertEquals(Arrays.asList(Dispatches.Section.AIMED_AT_YOU, Dispatches.Section.YOUR_HOUSE, Dispatches.Section.SIEGES,
                 Dispatches.Section.NEAR_THE_SHELTER, Dispatches.Section.FARTHER_OFF), new ArrayList<>(Dispatches.bySection(rows).keySet()));
@@ -106,17 +106,48 @@ public class DispatchesTest {
         army(1, SEEP, 2, 0, 5).kind = Army.Kind.HUNTING_PARTY;
         army(2, SEEP, 9, 0, 5).kind = Army.Kind.HUNTING_PARTY;
         army(3, GULLET, 9, 0, 15);
-        List<Dispatches.Row> rows = news(Collections.emptyList(), Dispatches.hunted(roster.armies), null);
+        List<Dispatches.Row> rows = news(Collections.emptyList(), Dispatches.hunted(roster.armies, h -> true), null);
         assertEquals(1, rows.size());
         assertEquals(Dispatches.Section.AIMED_AT_YOU, rows.get(0).section);
         assertTrue(rows.get(0).title, rows.get(0).title.contains("price on you"));
         assertNull("no waypoint to a hunter", rows.get(0).at);
     }
 
+    /** Sworn to it, or at peace with it now: its party out is not aimed at the player. */
+    @Test
+    public void aHouseThatNoLongerCountsThePlayerAnEnemyIsNotWarnedOf() {
+        army(1, SEEP, 2, 0, 5).kind = Army.Kind.HUNTING_PARTY;
+        assertFalse(Dispatches.hunted(roster.armies, h -> false).iterator().hasNext());
+    }
+
+    @Test
+    public void aSwornPlayersOwnForagersAndHuntersAreNotAmongItsHosts() {
+        army(1, GULLET, 40, 0, 15);
+        army(2, GULLET, 50, 0, 5).kind = Army.Kind.HUNTING_PARTY;
+        army(3, GULLET, 60, 0, 5).kind = Army.Kind.FORAGERS;
+        army(4, GULLET, 70, 0, 5).kind = Army.Kind.HERALD;
+        assertEquals(1, news(seen(GULLET, Collections.emptyList()), Collections.emptyList(), null).size());
+    }
+
+    @Test
+    public void aSwornPlayerIsAlwaysToldWhatTheirHouseWants() {
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = new com.bpm.minotaur.gamedata.history.favour.Oath();
+        assertNull(Dispatches.task(oath, null));
+        oath.houseId = GULLET;
+        assertTrue(Dispatches.task(oath, null).contains("war banner"));
+    }
+
+    @Test
+    public void aSiegeNamesWhoIsBesieged() {
+        List<Dispatches.Row> rows = news(Collections.singletonList(ArmyKnowledge.siege(SEEP, GULLET, 7, 7, 100)), Collections.emptyList(), null);
+        assertEquals("House Seep lays siege to House Gullet", rows.get(0).title);
+        assertEquals("on the besieged house's page too", 1, Dispatches.ofWar(rows, GULLET, 9).size());
+    }
+
     @Test
     public void hostAndSiegeRowsCarryAWaypoint() {
         army(1, SEEP, 2, 0, 15);
-        for (Dispatches.Row r : news(seen(-1, Collections.singletonList(ArmyKnowledge.siege(GULLET, 7, 7, 100))), Collections.emptyList(), "A task")) {
+        for (Dispatches.Row r : news(seen(-1, Collections.singletonList(ArmyKnowledge.siege(GULLET, SEEP, 7, 7, 100))), Collections.emptyList(), "A task")) {
             if (r.section == Dispatches.Section.AIMED_AT_YOU) assertNull(r.at);
             else assertNotNull(r.title, r.at);
         }
@@ -142,7 +173,7 @@ public class DispatchesTest {
             a.targetY = 1;
         }
         army(1, SEEP, 2, 0, 15);
-        List<ArmyKnowledge.Marker> sieges = Collections.singletonList(ArmyKnowledge.siege(SEEP, 7, 7, 100));
+        List<ArmyKnowledge.Marker> sieges = Collections.singletonList(ArmyKnowledge.siege(SEEP, GULLET, 7, 7, 100));
         for (Dispatches.Row r : news(seen(GULLET, sieges), Collections.singletonList(SEEP), "A task")) {
             assertEquals(r.title, -1, UiGlyphs.firstUnsupportedIndex(r.title));
             assertEquals(r.detail, -1, UiGlyphs.firstUnsupportedIndex(r.detail));

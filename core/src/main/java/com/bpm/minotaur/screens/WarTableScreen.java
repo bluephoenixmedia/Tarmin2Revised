@@ -193,9 +193,8 @@ public class WarTableScreen extends BaseScreen {
         long clock = history.warClock();
         int sworn = oath.sworn() ? oath.houseId : -1;
         List<ArmyKnowledge.Marker> markers = known.markers(history.roster(), sworn, ArmyKnowledge.sieges(world, history.roster(), worldManager.getBiomeManager(), clock), clock);
-        String task = !oath.sworn() || oath.contract == null ? null
-                : oath.contract.done ? "Your task is done. Go to a war banner of your house to be paid." : oath.contract.describe(world);
-        return Dispatches.news(markers, shelter(), Dispatches.hunted(history.roster().armies), task, clock,
+        Iterable<Integer> hunted = Dispatches.hunted(history.roster().armies, h -> history.stanceOf(h) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY);
+        return Dispatches.news(markers, shelter(), hunted, Dispatches.task(oath, world), clock,
                 h -> {
                     com.bpm.minotaur.gamedata.history.House house = world.house(h);
                     return house != null ? house.name : "a house of the Maze";
@@ -289,11 +288,14 @@ public class WarTableScreen extends BaseScreen {
             return;
         }
         selected = Math.max(0, Math.min(placed.size() - 1, index));
+        if (footerHint != null) footerHint.setText(page != null ? KEYS_ON_A_PAGE : KEYS_ON_THE_NEWS);
         Table row = placedRows.get(selected);
         row.setBackground(hudSkin.getSlotRecessed());
         if (newsScroll != null) {
             newsScroll.layout();
-            if (row.getParent() != null) newsScroll.scrollTo(row.getX(), row.getY(), row.getWidth(), row.getHeight());
+            // The first row brings back what stands above it, which takes no waypoint and cannot be selected.
+            if (selected == 0) newsScroll.setScrollY(0f);
+            else if (row.getParent() != null) newsScroll.scrollTo(row.getX(), row.getY(), row.getWidth(), row.getHeight());
         }
     }
 
@@ -332,7 +334,7 @@ public class WarTableScreen extends BaseScreen {
         if (!risk.isEmpty()) {
             railHeading(rail, "SEATS AT RISK");
             for (WarReport.SeatAtRisk s : risk) {
-                rail.add(UiLabels.wrapping(UiGlyphs.sanitize(railName(s.house) + " holds " + s.gash + " at strength " + s.strength + "."),
+                rail.add(UiLabels.wrapping(UiGlyphs.sanitize(railName(s.house) + " holds " + s.gash + " at strength " + s.strength + ". One more lost battle may cost it the gash."),
                         style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE))).growX().left().padBottom(UiTheme.PAD_XS).row();
             }
         }

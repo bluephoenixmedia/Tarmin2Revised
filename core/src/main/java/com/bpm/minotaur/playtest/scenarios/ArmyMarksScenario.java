@@ -106,7 +106,7 @@ public final class ArmyMarksScenario implements PlaytestScenario {
             roster.battles.add(siege);
 
             Set<ArmyKnowledge.Source> sources = EnumSet.noneOf(ArmyKnowledge.Source.class);
-            for (ArmyKnowledge.Marker m : known.markers(roster, history.oath().houseId, List.of(ArmyKnowledge.siege(siege.houseA, siege.x, siege.y, clock)), clock)) {
+            for (ArmyKnowledge.Marker m : known.markers(roster, history.oath().houseId, List.of(ArmyKnowledge.siege(siege.houseA, siege.houseB, siege.x, siege.y, clock)), clock)) {
                 sources.add(m.source);
             }
             ctx.log("Sources: " + sources + ", sounds " + known.sounds(clock).size());

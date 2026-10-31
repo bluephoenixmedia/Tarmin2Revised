@@ -1,6 +1,7 @@
 package com.bpm.minotaur.gamedata.history.war;
 
 import com.badlogic.gdx.math.GridPoint2;
+import com.bpm.minotaur.gamedata.history.favour.Oath;
 import com.bpm.minotaur.gamedata.history.war.army.Army;
 import com.bpm.minotaur.gamedata.map.ArmyKnowledge;
 
@@ -42,8 +43,10 @@ public final class Dispatches {
         /** Where the W key sets the waypoint; null if the news has no place. */
         public final GridPoint2 at;
         final int distance;
+        /** For a siege: the house besieged, or -1. */
+        final int besieged;
 
-        Row(Section section, int houseId, String title, String detail, String distanceWords, GridPoint2 at, int distance) {
+        Row(Section section, int houseId, String title, String detail, String distanceWords, GridPoint2 at, int distance, int besieged) {
             this.section = section;
             this.houseId = houseId;
             this.title = title;
@@ -51,6 +54,7 @@ public final class Dispatches {
             this.distanceWords = distanceWords;
             this.at = at;
             this.distance = distance;
+            this.besieged = besieged;
         }
     }
 
@@ -73,10 +77,10 @@ public final class Dispatches {
             IntFunction<String> houseName, IntFunction<String> figureName) {
         List<Row> rows = new ArrayList<>();
         for (int house : hunted) {
-            rows.add(new Row(Section.AIMED_AT_YOU, house, houseName.apply(house) + " has put a price on you",
-                    "Hunters are out. Concealment wards and going below are the answers.", null, null, 0));
+            rows.add(new Row(Section.AIMED_AT_YOU, house, opening(houseName.apply(house)) + " has put a price on you",
+                    "Hunters are out. Concealment wards and going below are the answers.", null, null, 0, -1));
         }
-        if (task != null) rows.add(new Row(Section.AIMED_AT_YOU, -1, "Your task", task, null, null, 0));
+        if (task != null) rows.add(new Row(Section.AIMED_AT_YOU, -1, "Your task", task, null, null, 0, -1));
         for (ArmyKnowledge.Marker m : known) rows.add(rowOf(m, shelter, clock, houseName, figureName));
         // Stable, so what has no distance keeps its order.
         rows.sort(Comparator.<Row>comparingInt(r -> r.section.ordinal()).thenComparingInt(r -> r.distance));
@@ -89,13 +93,18 @@ public final class Dispatches {
         String far = daysFrom(distance);
         String house = houseName.apply(m.houseId);
         if (m.source == ArmyKnowledge.Source.SIEGE) {
-            return new Row(Section.SIEGES, m.houseId, house + " lays siege", "This much is certain.", far, at, distance);
+            return new Row(Section.SIEGES, m.houseId, opening(house) + " lays siege to " + houseName.apply(m.besiegedHouseId), "This much is certain.", far, at, distance, m.besiegedHouseId);
         }
         List<String> card = ArmyKnowledge.card(m, house, m.captainId >= 0 ? figureName.apply(m.captainId) : null, clock);
         String title = card.get(0);
         String detail = String.join(". ", card.subList(1, card.size())) + ".";
         Section section = m.exact() ? Section.YOUR_HOUSE : distance <= NEAR_DAYS * CHUNKS_PER_DAY ? Section.NEAR_THE_SHELTER : Section.FARTHER_OFF;
-        return new Row(section, m.houseId, title, detail, far, at, distance);
+        return new Row(section, m.houseId, title, detail, far, at, distance, -1);
+    }
+
+    /** A name beginning a line: "the Antlered Host" takes a capital there. */
+    private static String opening(String name) {
+        return name.isEmpty() ? name : Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     private static String daysFrom(int chunks) {
@@ -116,16 +125,30 @@ public final class Dispatches {
         List<Row> out = new ArrayList<>();
         for (Row r : rows) {
             if (r.section != Section.AIMED_AT_YOU && (r.houseId == attackerId || r.houseId == defenderId)) out.add(r);
+            // A house under siege by a third party is that house's war's news too.
+            else if (r.section == Section.SIEGES && (r.besieged == attackerId || r.besieged == defenderId)) out.add(r);
         }
         return out;
     }
 
-    /** The houses with a Hunting Party out, each once: the Table warns of them, but not of where they are. */
-    public static Iterable<Integer> hunted(Iterable<Army> armies) {
+    /**
+     * The houses with a Hunting Party out after the player, each once: the Table warns of them, but
+     * not of where they are.
+     *
+     * @param countsThePlayerAnEnemy a party out from a house that no longer does is not aimed at them
+     */
+    public static Iterable<Integer> hunted(Iterable<Army> armies, java.util.function.IntPredicate countsThePlayerAnEnemy) {
         TreeSet<Integer> out = new TreeSet<>();
         for (Army a : armies) {
-            if (a.kind == Army.Kind.HUNTING_PARTY && a.soldiers > 0) out.add(a.houseId);
+            if (a.kind == Army.Kind.HUNTING_PARTY && a.soldiers > 0 && countsThePlayerAnEnemy.test(a.houseId)) out.add(a.houseId);
         }
         return out;
+    }
+
+    /** What a sworn player's house asks of them, or null if they are not sworn. */
+    public static String task(Oath oath, com.bpm.minotaur.gamedata.history.HistoryWorld world) {
+        if (!oath.sworn()) return null;
+        if (oath.contract == null) return "Your house has no task for you. Go to its war banner.";
+        return oath.contract.done ? "Your task is done. Go to its war banner to be paid." : oath.contract.describe(world);
     }
 }
