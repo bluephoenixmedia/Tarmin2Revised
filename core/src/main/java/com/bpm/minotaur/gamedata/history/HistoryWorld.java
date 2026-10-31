@@ -79,6 +79,17 @@ public class HistoryWorld {
         armiesFromLiveSeason = season;
     }
 
+    private boolean castleSiegesRoll = true;
+
+    /** Whether the Season still rolls sieges of the castle, as in a save from before hosts laid them (Living War A35). */
+    public boolean castleSiegesRoll() {
+        return castleSiegesRoll;
+    }
+
+    public void castleSiegesRoll(boolean roll) {
+        castleSiegesRoll = roll;
+    }
+
     /** Whether armies, not the Season's roll, settle this Season's wars. */
     boolean armiesFight() {
         return liveSeasons >= armiesFromLiveSeason;

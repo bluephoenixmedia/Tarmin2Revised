@@ -55,7 +55,7 @@ public class SiegeTest {
     public void aStrongEnemyOfTheCastleLaysSiegeInLivePlayAndItEnds() {
         for (long seed = 1; seed <= 200; seed++) {
             HistoryManager h = HistoryManager.create(seed, catalog);
-            h.world().armiesFromLiveSeason(Integer.MAX_VALUE); // a world from before the armies, whose Season still rolls
+            h.world().castleSiegesRoll(true); // a world from before the armies, whose Season still rolls
             War war = warOnTheCastle(h.world());
             if (war == null) continue;
             House besieger = h.world().house(war.enemyOf(h.world().tarminHouse().id));
@@ -158,7 +158,7 @@ public class SiegeTest {
     public void aSiegeInLivePlayReplaysFromTheSave() {
         for (long seed = 1; seed <= 300; seed++) {
             HistoryManager h = HistoryManager.create(seed, catalog);
-            h.world().armiesFromLiveSeason(Integer.MAX_VALUE); // a world from before the armies, whose Season still rolls
+            h.world().castleSiegesRoll(true); // a world from before the armies, whose Season still rolls
             if (warOnTheCastle(h.world()) == null) continue;
             boolean laid = false;
             for (int i = 0; i < 40 && !laid; i++) {
@@ -183,7 +183,7 @@ public class SiegeTest {
         GridPoint2 castle = new GridPoint2(0, 30);
         for (long seed = 1; seed <= 300; seed++) {
             HistoryManager h = HistoryManager.create(seed, catalog);
-            h.world().armiesFromLiveSeason(Integer.MAX_VALUE); // a world from before the armies, whose Season still rolls
+            h.world().castleSiegesRoll(true); // a world from before the armies, whose Season still rolls
             War war = warOnTheCastle(h.world());
             if (war == null) continue;
             House besieger = h.world().house(war.enemyOf(h.world().tarminHouse().id));

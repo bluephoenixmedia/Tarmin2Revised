@@ -453,7 +453,7 @@ public final class ArmyKnowledge {
             case GUARD: return "Guarding its seat";
             case RECOVER: return "Going home to recover";
             case FOLLOW: return "Marching with its liege";
-            case CASTLE: return "Marching on Castle Tarmin";
+            case CASTLE: return "Besieging Castle Tarmin";
             default: return "Going home, its war done";
         }
     }

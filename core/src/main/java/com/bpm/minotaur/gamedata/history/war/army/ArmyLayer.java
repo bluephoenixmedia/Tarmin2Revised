@@ -483,9 +483,23 @@ public final class ArmyLayer {
         GridPoint2 castle = tarmin == null || seats == null ? null : seats.seat(tarmin.id);
         if (castle == null) return null;
         int r = com.bpm.minotaur.gamedata.history.war.Siege.CAMP_RING;
-        int dx = a.x - castle.x, dy = a.y - castle.y;
-        if (Math.abs(dx) >= Math.abs(dy)) return new GridPoint2(castle.x + (dx < 0 ? -r : r), castle.y);
-        return new GridPoint2(castle.x, castle.y + (dy < 0 ? -r : r));
+        GridPoint2 best = null;
+        int bestD = Integer.MAX_VALUE;
+        int[][] sides = {{r, 0}, {-r, 0}, {0, r}, {0, -r}};
+        for (int[] side : sides) {
+            int x = castle.x + side[0], y = castle.y + side[1];
+            int d = cheb(a.x, a.y, x, y);
+            if (d < bestD && terrain.passable(x, y)) {
+                bestD = d;
+                best = new GridPoint2(x, y);
+            }
+        }
+        return best;
+    }
+
+    /** Whether this war may send a host to the castle now: it is at war with its house, no siege holds, and none just ended. */
+    private boolean castleOpenToSiege(War w) {
+        return w != null && w.isActive() && !world.castleSiegesRoll() && world.activeSiege() == null && world.season() >= w.noSiegeBefore;
     }
 
     private boolean layCastleSiege(Army a, long clock) {
@@ -1110,8 +1124,9 @@ public final class ArmyLayer {
             GridPoint2 to = newTarget(a, now);
             GridPoint2 at = SeatMap.nearestOpen(new GridPoint2(Math.round(now.x + (to.x - now.x) * along),
                     Math.round(now.y + (to.y - now.y) * along)), c -> terrain.passable(c.x, c.y));
-            a.x = at.x;
-            a.y = at.y;
+            // A host camped before the castle stays before it, wherever the world has put it.
+            a.x = a.beforeTheCastle ? to.x : at.x;
+            a.y = a.beforeTheCastle ? to.y : at.y;
             a.targetX = to.x;
             a.targetY = to.y;
             a.marchFromX = at.x;
@@ -1123,6 +1138,10 @@ public final class ArmyLayer {
     }
 
     private GridPoint2 newTarget(Army a, GridPoint2 home) {
+        if (a.objective == Army.Objective.CASTLE) {
+            GridPoint2 ring = ringBeforeTheCastle(a);
+            if (ring != null) return ring;
+        }
         if (a.objective == Army.Objective.SEAT || a.objective == Army.Objective.HUNT) {
             War war = war(a);
             GridPoint2 s = war == null ? null : seats.seat(war.enemyOf(a.side()));
@@ -1263,7 +1282,7 @@ public final class ArmyLayer {
             return;
         }
         if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return;
-        if (a.objective == Army.Objective.CASTLE && a.x == a.targetX && a.y == a.targetY && world.activeSiege() == null && layCastleSiege(a, clock)) return;
+        if (a.objective == Army.Objective.CASTLE && a.x == a.targetX && a.y == a.targetY && castleOpenToSiege(war(a)) && layCastleSiege(a, clock)) return;
         if (a.objective == Army.Objective.SEAT) {
             House holder = holderOfSeatAt(a);
             if (holder != null) {
@@ -1470,7 +1489,7 @@ public final class ArmyLayer {
         }
         // Against the castle's house, at its full strength, a host may go and hold the breach open (A35).
         if (enemy != null && enemy.holdsCastle && !enemy.isExtinct() && h.strength >= com.bpm.minotaur.gamedata.history.HistorySimulator.SIEGE_STRENGTH
-                && a.kind == Army.Kind.HOST && world.activeSiege() == null) {
+                && a.kind == Army.Kind.HOST && castleOpenToSiege(war)) {
             GridPoint2 ring = ringBeforeTheCastle(a);
             float score = 0.6f + (has(a, Trait.AMBITIOUS) ? 0.5f : 0f) + (has(a, Trait.ZEALOT) ? 0.2f : 0f) - (has(a, Trait.PATIENT) ? 0.2f : 0f) + (float) rng.nextDouble() * 0.15f;
             if (ring != null && score > bestScore) {

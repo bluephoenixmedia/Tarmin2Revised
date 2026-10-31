@@ -119,6 +119,23 @@ public class CastleSiegeTest {
         assertFalse("free to go", host.beforeTheCastle);
     }
 
+    /** A host at the end of its term does not simply lay the siege again. */
+    @Test
+    public void aSiegeLiftedIsNotLaidAgainAtOnce() {
+        Army host = besiege();
+        history.world().activeSiege().siegeUntil = history.world().season();
+        long laid = count(EventType.SIEGE_LAID);
+        run(ArmyTuning.IDLE_EVERY * 3);
+        assertEquals("not again so soon", laid, count(EventType.SIEGE_LAID));
+        assertFalse(host.beforeTheCastle);
+    }
+
+    @Test
+    public void aNewWorldRollsNoSiegeAndKeepsThatInItsSave() {
+        assertFalse(history.world().castleSiegesRoll());
+        assertFalse(HistoryManager.fromSave(0L, history.toSave(), catalog).world().castleSiegesRoll());
+    }
+
     @Test
     public void itIsLiftedWhenItsWarEnds() {
         besiege();
@@ -228,10 +245,13 @@ public class CastleSiegeTest {
     public void anOldSiegeFromTheRollStillReplays() {
         for (long s = 1; s <= 300; s++) {
             HistoryManager old = HistoryManager.create(s, catalog);
-            old.world().armiesFromLiveSeason(Integer.MAX_VALUE);
+            // A save from develop before hosts laid them: armies on, the Season rolling, no mark in the file.
+            old.world().castleSiegesRoll(true);
             for (int i = 0; i < 40 && old.world().activeSiege() == null; i++) old.onSleep();
             if (old.world().activeSiege() == null) continue;
-            HistoryManager loaded = HistoryManager.fromSave(0L, old.toSave(), catalog);
+            com.bpm.minotaur.gamedata.history.HistorySaveData save = old.toSave();
+            save.castleSiegesByHosts = null;
+            HistoryManager loaded = HistoryManager.fromSave(0L, save, catalog);
             assertEquals(old.world().fingerprint(), loaded.world().fingerprint());
             assertEquals(old.world().activeSiege().id, loaded.world().activeSiege().id);
             assertEquals("no host behind it", -1, loaded.world().activeSiege().siegeHost);

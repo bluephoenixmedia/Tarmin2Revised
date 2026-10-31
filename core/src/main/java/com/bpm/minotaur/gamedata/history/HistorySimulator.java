@@ -180,7 +180,7 @@ public final class HistorySimulator {
             }
             return;
         }
-        if (world.armiesFight()) return;
+        if (!world.castleSiegesRoll()) return;
         for (War w : world.activeWars()) {
             if (!w.involves(tarmin.id)) continue;
             House besieger = world.house(w.enemyOf(tarmin.id));
@@ -1057,6 +1057,7 @@ public final class HistorySimulator {
             w.siegeSince = -1;
             w.siegeUntil = -1;
             w.siegeHost = -1;
+            w.noSiegeBefore = world.season + SIEGE_MIN_SEASONS;
         }
     }
 
