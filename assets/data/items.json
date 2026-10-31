@@ -6513,6 +6513,7 @@
             "y": 0.5
         },
         "baseValue": 40,
+        "probability": 0,
         "isUsable": true
     },
     "TINDER_BUNDLE": {
