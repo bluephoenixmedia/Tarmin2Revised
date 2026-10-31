@@ -36,6 +36,10 @@ public final class ArmyLayer {
     private final Pathfinder paths;
     private final Consumer<PlayerDeed> deeds;
     private long battlesEnded;
+    private long siegesLaid;
+    private long siegesRaised;
+    private long seatsFell;
+    private long siegeTurns;
     private PlayerWatch watch;
 
     /**
@@ -81,6 +85,11 @@ public final class ArmyLayer {
     }
 
     /** Battles ended so far, for the war simulation's report. */
+    /** Sieges laid, raised, and ended by the seat falling, and the war turns those ended lasted, for the batch. */
+    public long[] siegeCounts() {
+        return new long[] {siegesLaid, siegesRaised, seatsFell, siegeTurns};
+    }
+
     public long battlesEnded() {
         return battlesEnded;
     }
@@ -469,7 +478,7 @@ public final class ArmyLayer {
         SeatSiege s = roster.siegeAt(a.x, a.y);
         if (s != null) {
             a.sieging = s.id;
-            s.armies = ArmyBattle.append(s.armies, a.id);
+            if (!ArmyBattle.holds(s.armies, a.id)) s.armies = ArmyBattle.append(s.armies, a.id);
             return;
         }
         s = new SeatSiege();
@@ -482,6 +491,7 @@ public final class ArmyLayer {
         s.stone = holder.gashIndex >= 0;
         s.armies = new int[] {a.id};
         roster.sieges.add(s);
+        siegesLaid++;
         a.sieging = s.id;
         a.path = null;
         siegeDeed(PlayerDeed.Kind.SEAT_INVESTED, s);
@@ -489,6 +499,15 @@ public final class ArmyLayer {
             Army o = roster.armies.get(i);
             if (o.houseId == holder.id && !o.battle && o.isHost()) decide(o, clock);
         }
+    }
+
+    /** The first army still camped around it, or null. */
+    private Army firstAt(SeatSiege s) {
+        for (int id : s.armies) {
+            Army a = roster.army(id);
+            if (a != null && a.sieging == s.id) return a;
+        }
+        return null;
     }
 
     private void siegeDeed(PlayerDeed.Kind kind, SeatSiege s) {
@@ -502,9 +521,13 @@ public final class ArmyLayer {
     private void sieges(long clock, boolean newSeason) {
         for (int i = roster.sieges.size() - 1; i >= 0; i--) {
             SeatSiege s = roster.sieges.get(i);
-            if (newSeason) s.wear();
+            if (newSeason) {
+                s.wear();
+                // Shut in, a house takes in no one to replace the Season's dead.
+                roster.addAttrition(s.holder, Math.round(com.bpm.minotaur.gamedata.history.HistorySimulator.ARMY_RECOVERY));
+            }
             if (siegeIsOver(s)) {
-                raise(s);
+                raiseSiege(s, clock);
                 continue;
             }
             if (battleAt(s.x, s.y) != null) continue;
@@ -526,10 +549,13 @@ public final class ArmyLayer {
         }
         if (stayed == 0) return true;
         House holder = world.house(s.holder);
-        return holder == null || holder.isExtinct() || world.activeWarBetween(s.besieger, s.holder) == null;
+        if (holder == null || holder.isExtinct() || world.activeWarBetween(s.besieger, s.holder) == null) return true;
+        return !hasSeat(s.holder) || seatXs[s.holder] != s.x || seatYs[s.holder] != s.y;
     }
 
-    private void raise(SeatSiege s) {
+    private void raiseSiege(SeatSiege s, long clock) {
+        siegesRaised++;
+        siegeTurns += clock - s.since;
         roster.sieges.remove(s);
         release(s);
         siegeDeed(PlayerDeed.Kind.SIEGE_RAISED, s);
@@ -620,6 +646,12 @@ public final class ArmyLayer {
         SeatSiege s = roster.siegeAt(seat.x, seat.y);
         if (s != null) s.works = SeatSiege.RAM_TURNS;
         return s;
+    }
+
+    /** An army back at its walls takes up its place again. */
+    void reinvest(Army a, long clock) {
+        House holder = holderOfSeatAt(a);
+        if (holder != null) invest(a, holder, clock);
     }
 
     /** Debug: the garrison comes out now, whatever its lord's temper. */
@@ -825,12 +857,14 @@ public final class ArmyLayer {
 
     /** A garrison broken on the walls falls back to the yard; there it stands until none are left (A33). */
     private boolean fallingBack(ArmyBattle b, boolean broke, boolean attackersBroke) {
-        boolean gone = alive(b, false) <= 0;
-        if (b.yard) return gone;
-        if (broke && !gone && !attackersBroke) {
+        int left = alive(b, false);
+        if (b.yard) return left <= 0;
+        boolean wallsLost = broke || left <= b.startB * SeatSiege.WALLS_HELD_TO;
+        if (wallsLost && left > 0 && !attackersBroke) {
             b.yard = true;
             b.moraleB = 100;
             b.wallEdge = SeatSiege.YARD_EDGE;
+            b.turn = 0; // a fresh fight, with its own time
             return false;
         }
         return broke;
@@ -902,6 +936,8 @@ public final class ArmyLayer {
         if (deed.seatFell) {
             SeatSiege fallen = roster.siegeAt(b.x, b.y);
             if (fallen != null) {
+                seatsFell++;
+                siegeTurns += clock - fallen.since;
                 roster.sieges.remove(fallen);
                 release(fallen);
             }
@@ -1158,6 +1194,7 @@ public final class ArmyLayer {
     }
 
     private void musterHosts(House h, long clock) {
+        if (hasSeat(h.id) && roster.siegeAt(seatXs[h.id], seatYs[h.id]) != null) return; // no host marches out of an invested seat
         int wanted = Math.max(1, Math.round(h.strength / ArmyTuning.STRENGTH_PER_ARMY));
         while (true) {
             int avail = spare(h);
@@ -1324,12 +1361,13 @@ public final class ArmyLayer {
         // Its own seat under siege outweighs anything else it might do (A30).
         for (int i = 0; i < roster.sieges.size(); i++) {
             SeatSiege besieged = roster.sieges.get(i);
-            if (besieged.holder != a.side()) continue;
+            Army besieger = besieged.holder == a.side() ? firstAt(besieged) : null;
+            if (besieger == null) continue;
             bestScore = Float.MAX_VALUE;
             best = Army.Objective.HUNT;
             tx = besieged.x;
             ty = besieged.y;
-            target = besieged.armies[0];
+            target = besieger.id;
             break;
         }
         Army nearest = nearestKnownEnemy(a);

@@ -2696,7 +2696,7 @@ public class GameScreen extends BaseScreen {
         if (either || liegeA) sides.put("Help " + houseName(b.houseA), () -> d.chooseSide(1));
         if (either || liegeB) sides.put("Help " + houseName(b.houseB), () -> d.chooseSide(2));
         String body = (liegeA || liegeB ? "Your oath binds you to " + houseName(oath.houseId) + ". " : "")
-                + (b.garrisonOf >= 0 ? houseName(b.houseA) + " is assaulting the seat of " + houseName(b.houseB) + "."
+                + (b.assault ? houseName(b.houseA) + " is assaulting the seat of " + houseName(b.houseB) + "."
                         : "The lines are locked across this ground, and neither has yet given way.");
         String a = houseName(b.houseA);
         String header = Character.toUpperCase(a.charAt(0)) + a.substring(1) + " against " + houseName(b.houseB);

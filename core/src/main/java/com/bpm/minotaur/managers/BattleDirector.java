@@ -270,6 +270,8 @@ public final class BattleDirector {
         if (battle.yard && !yardCalled) {
             yardCalled = true;
             r.messages.add("The walls are lost. What is left of " + name(battle.houseB) + " falls back to the yard, to make its last stand.");
+            GridPoint2 court = new GridPoint2(maze.getWidth() / 2, maze.getHeight() / 2);
+            for (Monster m : sideB) m.setMarchTarget(court);
         }
         march(recruiter, true, MARCH_PER_TURN);
         march(recruiter, false, MARCH_PER_TURN);
@@ -477,10 +479,15 @@ public final class BattleDirector {
         return m;
     }
 
-    /** A free tile near the given edge, as deep as this battle has come. */
-    /** Where a side's soldiers come from: a garrison from within its ring (A32), the rest from their edge. */
+    /** Where a side's soldiers come from: a garrison from within its ring, or out of its gates in a sally (A32, A34); the rest from their edge. */
     private GridPoint2 homeTile(boolean a) {
-        if (!a && battle.garrisonOf >= 0) {
+        if (!a && battle.garrisonOf >= 0 && !battle.assault) {
+            List<GridPoint2> gates = com.bpm.minotaur.gamedata.history.war.SeatRing.gates(maze.getWidth(), maze.getHeight());
+            GridPoint2 gate = gates.get(rng.nextInt(gates.size()));
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, gate.x, gate.y);
+            if (at != null) return at;
+        }
+        if (!a && battle.assault) {
             int w = maze.getWidth(), h = maze.getHeight();
             int reach = com.bpm.minotaur.gamedata.history.war.SeatRing.RADIUS - 2;
             for (int attempt = 0; attempt < 12; attempt++) {
@@ -492,6 +499,7 @@ public final class BattleDirector {
         return edgeTile(a ? edgeA : opposite(edgeA));
     }
 
+    /** A free tile near the given edge, as deep as this battle has come. */
     private GridPoint2 edgeTile(int edge) {
         int w = maze.getWidth();
         int h = maze.getHeight();

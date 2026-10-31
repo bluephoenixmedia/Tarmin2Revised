@@ -886,7 +886,7 @@ public final class HistorySimulator {
     // ------------------------------------------------------------------ upkeep
 
     /** Strength a house regains in a live Season, now that it counts soldiers (Living War A3). */
-    private static final float ARMY_RECOVERY = 5f;
+    public static final float ARMY_RECOVERY = 5f;
 
     private void recover() {
         for (House h : world.houses) {

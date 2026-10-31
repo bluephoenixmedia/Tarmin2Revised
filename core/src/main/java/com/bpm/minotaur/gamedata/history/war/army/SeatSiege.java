@@ -8,7 +8,7 @@ package com.bpm.minotaur.gamedata.history.war.army;
 public class SeatSiege {
 
     /** Walls begin here, against the attackers' blows (A30, tune). */
-    public static final float WALLS_START = 4f;
+    public static final float WALLS_START = ArmyTuning.WALL_EDGE;
     public static final float WALLS_FLOOR = 1.5f;
     /** What the walls lose to a Season under siege. */
     public static final float WALLS_WEAR = 0.5f;
@@ -19,8 +19,10 @@ public class SeatSiege {
     /** Turns to the garrison's next soldier lost to hunger. */
     public static final int STARVE_TURNS = 100;
     /** Turns of work to build the ladders, and then the ram or the fire. */
-    public static final int LADDER_TURNS = 200;
-    public static final int RAM_TURNS = 400;
+    public static final int LADDER_TURNS = 500;
+    public static final int RAM_TURNS = 1000;
+    /** The walls are given up when this share of those who first held them is left, if morale has not gone first (A33). */
+    static final float WALLS_HELD_TO = 1f / 3f;
     /** How often the captain weighs an assault and the garrison a sally. */
     public static final int THINK_EVERY = 25;
     /** A besieger this many times what the walls are worth is ready to go in, by temper. */

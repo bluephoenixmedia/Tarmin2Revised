@@ -166,10 +166,11 @@ public class SiegesOfSeatsTest {
         for (int i = startedDeeds; i < deeds.size(); i++) assertFalse(deeds.get(i).seatFell);
 
         // No morale can end it now: only the last of them falling.
+        b.moraleA = 100;
         b.moraleB = -50;
-        history.roster().armies.get(0);
         run(1);
-        if (history.roster().battles.contains(b)) assertTrue(b.yard);
+        assertTrue("morale counts for nothing in the yard", history.roster().battles.contains(b));
+        for (PlayerDeed d : deeds) assertFalse(d.seatFell);
     }
 
     @Test
@@ -198,6 +199,43 @@ public class SiegesOfSeatsTest {
         b.moraleB = 100;
         run(1);
         for (PlayerDeed d : deeds) assertFalse(d.seatFell);
+    }
+
+    /** A33: morale or none, the walls are given up when too few are left to man them. */
+    @Test
+    public void aGarrisonWornDownAbandonsTheWallsWhateverItsMorale() {
+        ArmyBattle b = storm();
+        assertFalse(b.yard);
+        b.startB = 300;
+        run(1);
+        assertTrue(b.yard);
+    }
+
+    /** A besieged house takes in no one: its Season's recovery is lost with the starving. */
+    @Test
+    public void aBesiegedHouseCannotMakeGoodItsDead() {
+        SeatSiege s = invest();
+        history.roster().attritionHouses = new int[0];
+        history.roster().attritionDead = new int[0];
+        int before = history.roster().garrison(history.world(), s.holder);
+        s.works = 0;
+        for (int i = 0; i < com.bpm.minotaur.managers.HistoryManager.SEASON_TURNS * 2 && history.roster().siegeAt(s.x, s.y) != null; i++) {
+            s.works = 0;
+            history.roster().battles.removeIf(o -> o.x == s.x && o.y == s.y);
+            run(1);
+        }
+        assertTrue("a garrison left the poorer: " + before + " to " + history.roster().garrison(history.world(), s.holder),
+                history.roster().garrison(history.world(), s.holder) < before);
+    }
+
+    @Test
+    public void anArmyThatComesBackToItsSiegeIsCountedOnce() {
+        SeatSiege s = invest();
+        Army a = history.roster().army(s.armies[0]);
+        int n = s.armies.length;
+        a.objective = Army.Objective.SEAT;
+        layer.reinvest(a, history.warClock());
+        assertEquals(n, s.armies.length);
     }
 
     /** A34: a garrison beaten in its sally has lost soldiers, not its seat. */
