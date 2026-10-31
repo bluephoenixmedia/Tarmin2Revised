@@ -98,6 +98,15 @@ public final class SeatOathScenario implements PlaytestScenario {
             a.x = 2;
             a.y = 2;
             h.roster().armies.add(a);
+            // And one of the house's own, for hunters to come from whatever the world rolled.
+            Army own = new Army();
+            own.id = 9002;
+            own.houseId = house[0].id;
+            own.soldiers = 40;
+            own.captainId = -1;
+            own.x = 4;
+            own.y = 4;
+            h.roster().armies.add(own);
         });
         script.key("swear", Input.Keys.O, ctx);
         script.wait("sworn", 15);
