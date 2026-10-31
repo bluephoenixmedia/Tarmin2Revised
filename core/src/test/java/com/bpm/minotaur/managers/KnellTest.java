@@ -54,7 +54,7 @@ public class KnellTest {
         EnumSet<EventType> always = EnumSet.of(EventType.SEAT_SEIZED, EventType.HOUSE_EXTINGUISHED,
                 EventType.LORD_SLAIN_IN_COURT, EventType.SLAIN_BY_PLAYER, EventType.PEACE, EventType.MEGABEAST_STIRS,
                 EventType.MEGABEAST_SLAIN, EventType.MEGABEAST_PACIFIED, EventType.TOWN_BETRAYED, EventType.TARMIN_ASCENDANT,
-                EventType.SIEGE_LAID, EventType.SIEGE_LIFTED, EventType.SIEGE_BROKEN);
+                EventType.MEGABEAST_FELLED, EventType.SIEGE_LAID, EventType.SIEGE_LIFTED, EventType.SIEGE_BROKEN);
         EnumSet<EventType> conditional = EnumSet.of(EventType.SUCCESSION, EventType.USURPATION,
                 EventType.DISPUTED_SUCCESSION, EventType.BATTLE);
         for (EventType t : EventType.values()) {

@@ -861,6 +861,11 @@
       "Something old opens its eyes below you: {beast}. Tread softly.",
       "{beast} stirs. I did not wake it. I simply did not stop it."
     ],
+    "MEGABEAST_FELLED": [
+      "{beast} is dead on the spears of {A}. It took enough of them. I counted.",
+      "{A} has killed {beast}. Mortals by the hundred, for one of mine. A fair price.",
+      "{beast} is gone. {A} will sing of it, until I give them something else to sing of."
+    ],
     "MEGABEAST_SLAIN": [
       "{beast} is dead, and a mortal did it. You. I will remember this, seeker.",
       "You killed {beast}. Older than any house, and you killed it. Interesting.",

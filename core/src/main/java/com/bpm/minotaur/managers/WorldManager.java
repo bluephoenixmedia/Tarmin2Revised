@@ -1508,7 +1508,7 @@ public class WorldManager {
             armyLayer.beastHealth(id -> {
                 com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
                 com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(id);
-                return getHistory().beastHp(id, catalog == null || b == null ? 400 : BeastForge.wholeHp(b, catalog));
+                return getHistory().beastHp(id, catalog == null || b == null ? WAR_BEAST_HP : BeastForge.wholeHp(b, catalog));
             });
             if (old != null) armyLayer.shiftFrom(old.seats());
             armyLayerBiomes = biomeManager;
@@ -1517,6 +1517,8 @@ public class WorldManager {
         return armyLayer;
     }
 
+    /** A beast's hit points if the catalogue has nothing to say of it. */
+    private static final int WAR_BEAST_HP = 400;
     private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armyLayer;
     private BiomeManager armyLayerBiomes;
     private HistoryManager armyLayerHistory;
@@ -1915,7 +1917,7 @@ public class WorldManager {
     public void megabeastsFollow(Maze maze, com.badlogic.gdx.math.Vector2 playerPos, GridPoint2 toChunk, int toLevel) {
         if (history == null || maze == null || playerPos == null || toChunk == null) return;
         for (com.bpm.minotaur.gamedata.monster.Monster m : new java.util.ArrayList<>(maze.getMonsters().values())) {
-            if (m == null || m.getMegabeastId() < 0 || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
+            if (m == null || m.getMegabeastId() < 0 || m.isWarBand() || m.getState() != com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING) continue;
             if (Math.abs(m.getPosition().x - playerPos.x) + Math.abs(m.getPosition().y - playerPos.y) > FOLLOW_REACH) continue;
             history.setBeastHp(m.getMegabeastId(), m.getCurrentHP());
             history.startHunt(m.getMegabeastId(), toChunk, toLevel);

@@ -498,12 +498,14 @@ public final class ArmyLayer {
             com.bpm.minotaur.gamedata.history.Megabeast b = beasts.get(i);
             if (!b.isAlive() || b.raidingHouse < 0 || roster.beastRaidDone(b.id, b.raidSeason)) continue;
             roster.markBeastRaid(b.id, b.raidSeason);
+            // Bought off, it stays in its lair; and it can only be in one fight at a time.
+            if (b.isPacified() || beastInBattle(b.id)) continue;
             GridPoint2 lair = com.bpm.minotaur.gamedata.history.beast.BeastTracks.lairChunk(world.seed, b);
             Army nearest = null;
             int best = Integer.MAX_VALUE;
             for (int j = 0; j < roster.armies.size(); j++) {
                 Army a = roster.armies.get(j);
-                if (a.houseId != b.raidingHouse || a.battle || a.soldiers <= 0) continue;
+                if (a.houseId != b.raidingHouse || a.battle || a.soldiers <= 0 || a.kind == Army.Kind.HERALD || battleAt(a.x, a.y) != null) continue;
                 int d = cheb(a.x, a.y, lair.x, lair.y);
                 if (d < best) {
                     best = d;
@@ -522,14 +524,23 @@ public final class ArmyLayer {
         int[] hunting = watch == null ? null : watch.huntingBeast(clock);
         if (hunting == null) return;
         com.bpm.minotaur.gamedata.history.Megabeast b = world.megabeast(hunting[0]);
-        if (b == null || !b.isAlive() || battleAt(hunting[1], hunting[2]) != null) return;
+        if (b == null || !b.isAlive() || b.isPacified() || beastInBattle(b.id) || battleAt(hunting[1], hunting[2]) != null) return;
         for (int i = 0; i < roster.armies.size(); i++) {
             Army a = roster.armies.get(i);
-            if (!a.battle && a.soldiers > 0 && a.kind != Army.Kind.HERALD && a.x == hunting[1] && a.y == hunting[2]) {
+            // A host it has just routed is going home, and is let go.
+            boolean leaving = a.objective == Army.Objective.RECOVER || a.objective == Army.Objective.DISBAND;
+            if (!a.battle && !leaving && a.soldiers > 0 && a.kind != Army.Kind.HERALD && a.x == hunting[1] && a.y == hunting[2]) {
                 beastFights(b.id, a, a.side());
                 return;
             }
         }
+    }
+
+    private boolean beastInBattle(int beastId) {
+        for (int i = 0; i < roster.battles.size(); i++) {
+            if (roster.battles.get(i).beastId == beastId) return true;
+        }
+        return false;
     }
 
     private ArmyBattle beastFights(int beastId, Army a, int house) {
@@ -541,13 +552,12 @@ public final class ArmyLayer {
         return battle;
     }
 
-    private ArmyBattle beastAtTheSeat(int beastId, int house) {
+    private void beastAtTheSeat(int beastId, int house) {
         ArmyBattle battle = beastBattle(beastId, seatXs[house], seatYs[house], house);
         battle.garrisonOf = house;
         battle.wallEdge = 1f;
         battle.startB = roster.garrison(world, house);
         alliesMarchIn(battle);
-        return battle;
     }
 
     private ArmyBattle beastBattle(int beastId, int x, int y, int house) {
@@ -565,6 +575,9 @@ public final class ArmyLayer {
     }
 
     private void stepBeastBattle(ArmyBattle b, long clock, SplittableRandom rng) {
+        // Killed elsewhere meanwhile, by the player or by another fight's last blow.
+        com.bpm.minotaur.gamedata.history.Megabeast beast = world.megabeast(b.beastId);
+        if (beast == null || !beast.isAlive()) b.beastHp = 0;
         b.beastHp -= hits(alive(b, false), 1f, rng) * ArmyTuning.BEAST_BLOW;
         int lostB = rng.nextDouble() < ArmyTuning.BEAST_KILLS ? kill(b, false, 1) : 0;
         settle(b, 0, lostB, 0, captainsFall(b, b.armiesB, rng), clock, rng);
@@ -1093,6 +1106,8 @@ public final class ArmyLayer {
         if (b.assault) bBroke = fallingBack(b, bBroke, aBroke);
         if (aBroke || bBroke) {
             endBattle(b, aBroke && (!bBroke || b.moraleA <= b.moraleB), clock, rng);
+        } else if (b.beastId >= 0 && b.turn >= ArmyTuning.BEAST_TURN_CAP) {
+            endBattle(b, true, clock, rng);
         } else if (b.turn >= ArmyTuning.TURN_CAP) {
             // A seat is taken only by clearing its yard: an assault out of time has failed.
             endBattle(b, b.assault || alive(b, true) * Math.max(1, b.moraleA) < alive(b, false) * Math.max(1, b.moraleB), clock, rng);

@@ -34,6 +34,8 @@ final class ArmyTuning {
     /** The soldiers a megabeast kills a turn, and what each soldier's blow that lands costs it (A28, tune). */
     static final float BEAST_KILLS = 0.25f;
     static final int BEAST_BLOW = 15;
+    /** A beast gives up a fight after this long, wounded or not: a raid, not a war. */
+    static final int BEAST_TURN_CAP = 80;
     /** A beast nobody has told the layer about, for the headless batch. */
     static final int BEAST_WHOLE_HP = 400;
     /** Soldiers of a side that can strike at once. */

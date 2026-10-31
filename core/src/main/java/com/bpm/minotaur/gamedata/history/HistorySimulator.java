@@ -1060,8 +1060,11 @@ public final class HistorySimulator {
                 house.prestige += HOUSE_ROSE_PRESTIGE;
             }
         }
-        int[] slain = deed.captainsSlain == null ? new int[0] : deed.captainsSlain;
-        for (int id : slain) {
+        // A beast takes no prisoners: a captain it would have taken is as dead as one it slew.
+        List<Integer> fallen = new ArrayList<>();
+        if (deed.captainsSlain != null) for (int id : deed.captainsSlain) fallen.add(id);
+        if (deed.captainsTaken != null) for (int id : deed.captainsTaken) fallen.add(id);
+        for (int id : fallen) {
             Figure f = world.figure(id);
             if (f == null || !f.isAlive() || f.ageless) continue;
             kill(f, Figure.Fate.BATTLE);

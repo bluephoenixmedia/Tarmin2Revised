@@ -3946,7 +3946,10 @@ public class Hud implements Disposable {
             drawTallyShield(arms.shield(warTally.houseB, (int) shield), x + width - shield, top);
         }
         font.setColor(HudSkin.COL_GOLD_BRIGHT);
-        String nameA = shortHouseName(world, warTally.houseA, font, barW);
+        String nameA = warTally.nameA != null ? com.bpm.minotaur.ui.UiNames.shortHouse(com.bpm.minotaur.ui.UiGlyphs.sanitize(warTally.nameA), barW, words -> {
+            glyphLayout.setText(font, words);
+            return glyphLayout.width;
+        }) : shortHouseName(world, warTally.houseA, font, barW);
         String nameB = shortHouseName(world, warTally.houseB, font, barW);
         glyphLayout.setText(font, nameA);
         float widthA = glyphLayout.width;

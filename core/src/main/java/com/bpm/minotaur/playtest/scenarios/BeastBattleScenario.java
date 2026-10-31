@@ -83,7 +83,10 @@ public final class BeastBattleScenario implements PlaytestScenario {
             ctx.assertTrue(m.isWarBand() && m.getBattleSide() == 1, "the beast is a side of the battle");
             ctx.assertTrue(ctx.countWarBand() > 1, "against soldiers");
             ctx.log("On the field: " + ctx.countWarBand() + ", the beast at " + m.getCurrentHP() + "/" + m.getMaxHP());
-            ctx.getPlayer().setPosition(m.getPosition().x + 0.5f, m.getPosition().y - 4f);
+            // Trees would hide what the shot is here to show.
+            ctx.getMaze().getScenery().clear();
+            ctx.getMaze().getBackdropScenery().clear();
+            ctx.getPlayer().setPosition((int) m.getPosition().x + 0.5f, (int) m.getPosition().y - 2.5f);
             ctx.getPlayer().setFacing(com.bpm.minotaur.gamedata.Direction.NORTH);
         });
         script.wait("drawn", 4);

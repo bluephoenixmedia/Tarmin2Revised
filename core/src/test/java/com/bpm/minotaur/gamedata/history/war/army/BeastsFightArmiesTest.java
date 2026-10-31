@@ -197,6 +197,72 @@ public class BeastsFightArmiesTest {
         assertTrue(w.history.roster().beastRaidDone(beast.id, beast.raidSeason));
     }
 
+    /** One beast, one fight: it is not in two places, and its wounds are not forgotten by a second. */
+    @Test
+    public void aBeastInAFightIsSentToNoOther() {
+        World w = new World(1000L);
+        ArmyBattle b = w.fight();
+        House h = w.history.world().house(b.houseB);
+        Megabeast beast = w.history.world().megabeast(b.beastId);
+        beast.raidingHouse = h.id;
+        beast.raidSeason = w.history.world().season();
+        w.history.onSleep();
+        w.run(1);
+        int fights = 0;
+        for (ArmyBattle o : w.history.roster().battles) if (o.beastId == beast.id) fights++;
+        assertTrue(fights <= 1);
+    }
+
+    @Test
+    public void aBeastKilledElsewhereStopsFighting() {
+        World w = new World(1000L);
+        ArmyBattle b = w.fight();
+        w.history.recordMegabeastSlain(b.beastId);
+        long felled = w.count(EventType.MEGABEAST_FELLED);
+        w.run(1);
+        assertTrue(w.over(b));
+        assertEquals("the kill was the player's, and is not credited twice", felled, w.count(EventType.MEGABEAST_FELLED));
+    }
+
+    @Test
+    public void aBeastGivesUpAFightItCannotFinish() {
+        World w = new World(1000L);
+        ArmyBattle b = w.fight();
+        int id = b.beastId;
+        b.turn = ArmyTuning.BEAST_TURN_CAP;
+        b.beastHp = 300;
+        w.run(1);
+        assertTrue(w.over(b));
+        assertTrue(w.history.world().megabeast(id).isAlive());
+        assertTrue("its wounds come home with it", w.history.beastHp(id, 9999) <= 300);
+    }
+
+    @Test
+    public void aBeastsWoundsSurviveAReload() {
+        World w = new World(1000L);
+        ArmyBattle b = w.fight();
+        int id = b.beastId;
+        b.beastHp = 150;
+        b.moraleB = -100;
+        for (int i = 0; i < 5 && !w.over(b); i++) w.run(1);
+        assertEquals(w.history.beastHp(id, 9999), HistoryManager.fromSave(0L, w.history.toSave(), catalog).beastHp(id, 9999));
+        assertTrue(w.history.beastHp(id, 9999) <= 150);
+    }
+
+    @Test
+    public void aBoughtOffBeastDoesNotMarch() {
+        World w = new World(1000L);
+        House h = w.aHouse();
+        Megabeast beast = w.aBeast();
+        ArmyLayerAccess.ensureArmyOf(w, h);
+        beast.pacifiedSeason = 0;
+        beast.raidingHouse = h.id;
+        beast.raidSeason = w.history.world().season();
+        w.history.onSleep();
+        w.run(1);
+        for (ArmyBattle o : w.history.roster().battles) assertNotEquals(beast.id, o.beastId);
+    }
+
     @Test
     public void aRaidIsNoLongerABlowFromTheRoll() {
         World w = new World(1000L);

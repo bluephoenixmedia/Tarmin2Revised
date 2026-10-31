@@ -98,10 +98,10 @@ public final class WarManager {
             t.cues.add(Cue.JOINED);
             t.offerSides = g.battle != null && g.battle.playerSide == 0 && g.battle.beastId < 0;
         }
+        if (r.winner != -1) t.cues.add(Cue.ROUT);
         if (r.winner >= 0) {
             t.winner = r.winner;
             t.foughtFor = active.playerFoughtFor();
-            t.cues.add(Cue.ROUT);
         }
         if (active.phase() == BattleDirector.Phase.DONE) active = null;
         return t;
