@@ -171,7 +171,13 @@ public final class LivingWarScenario implements PlaytestScenario {
         // A battle under way (A21, A26): find one on the roster, walk in, choose a side and fight.
         com.bpm.minotaur.gamedata.history.war.army.ArmyBattle[] battle = {null};
         script.until("wait for a battle", 8000, () -> {
+            // One may come to the hero, who has stood idle a long while.
+            if (ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen) {
+                battle[0] = ctx.getWarManager().active().battle;
+                return true;
+            }
             if (ctx.getFrame() % 2 != 0) return false;
+            ctx.press(Input.Keys.END); // nor should a wait kill them
             for (com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b : ctx.getWorldManager().getHistory().roster().battles) {
                 if (b.turn > 1 && b.turn < 60 && b.startA + b.startB >= 20) battle[0] = b;
             }
@@ -180,12 +186,15 @@ public final class LivingWarScenario implements PlaytestScenario {
             return false;
         });
         script.once("walk into it", () -> {
+            if (ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen) return;
             ctx.log("Battle at " + battle[0].x + "," + battle[0].y + ": " + battle[0].startA + " against " + battle[0].startB
                     + ", turn " + battle[0].turn);
             ctx.getGameScreen().travelToChunk(new GridPoint2(battle[0].x, battle[0].y), new GridPoint2(16, 16));
         });
         script.until("arrive at the battle", 300, () -> shown(ctx));
-        script.key("a turn passes", Input.Keys.PERIOD, ctx);
+        script.once("a turn passes", () -> {
+            if (!(ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen)) ctx.press(Input.Keys.PERIOD);
+        });
         script.until("the side prompt comes up", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen);
         script.shot("lw08_choose_a_side", ctx);
         String[] chosen = {null};
