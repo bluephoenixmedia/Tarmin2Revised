@@ -351,6 +351,19 @@ public final class ArmyKnowledge {
         return new Marker(-1 - houseId, houseId, x, y, 0, 0, Size.HOST, -1, clock, Source.SIEGE, -1, null, new int[0]);
     }
 
+    /** What is public whatever the player has heard: Castle Tarmin's siege, and any seat under assault (A49). */
+    public static List<Marker> sieges(com.bpm.minotaur.gamedata.history.HistoryWorld world, WarRoster roster, com.bpm.minotaur.managers.BiomeManager biomes, long clock) {
+        List<Marker> out = new ArrayList<>();
+        int besieger = com.bpm.minotaur.gamedata.history.war.Siege.besieger(world);
+        if (besieger >= 0 && biomes != null && biomes.getCastleSite() != null) {
+            out.add(siege(besieger, Math.round(biomes.getCastleSite().x), Math.round(biomes.getCastleSite().y), clock));
+        }
+        for (ArmyBattle b : roster.battles) {
+            if (b.garrisonOf >= 0) out.add(siege(b.houseA, b.x, b.y, clock));
+        }
+        return out;
+    }
+
     public List<Sound> sounds(long clock) {
         forget(clock);
         return new ArrayList<>(sounds.values());
@@ -415,7 +428,7 @@ public final class ArmyKnowledge {
         String ago = sleeps == 0 ? "today" : sleeps == 1 ? "1 sleep ago" : sleeps + " sleeps ago";
         switch (m.source) {
             case WAR_TABLE:
-                return "Reported to the War Table " + ago + ", roughly here";
+                return "The War Table's word " + ago;
             case TOWN:
                 return "Rumoured in a town, " + ago;
             case TRACKS:
