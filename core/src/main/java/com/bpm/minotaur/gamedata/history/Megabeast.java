@@ -17,6 +17,9 @@ public class Megabeast {
     public final int lairLevel;
     public final int awakenSeason;
     public int deathSeason = -1;
+    /** The house the Season sent it at, and in which Season, for the armies to bring about (Living War A28). */
+    public int raidingHouse = -1;
+    public int raidSeason = -1;
     /** The season the player bought its peace, or -1 (plan T4.5). */
     public int pacifiedSeason = -1;
 

@@ -2652,6 +2652,7 @@ public class GameScreen extends BaseScreen {
         String carried = worldManager.getHistory().onFront(worldManager.frontHere());
         if (carried != null) eventManager.addEvent(new GameEvent(carried, 4f));
         g.layer = worldManager.armyLayer();
+        g.beastForger = worldManager::forgeBeast;
         g.battle = g.layer != null && g.chunk != null && g.level == 1 ? g.layer.battleIn(g.chunk.x, g.chunk.y) : null;
         g.seats = g.battle != null ? worldManager.houseSeats() : null;
         g.maze = maze;

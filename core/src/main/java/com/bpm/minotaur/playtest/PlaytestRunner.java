@@ -75,6 +75,7 @@ public final class PlaytestRunner {
                 new ArmyMarksScenario(),
                 new WarTableScenario(),
                 new SeatAssaultScenario(),
+                new BeastBattleScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),

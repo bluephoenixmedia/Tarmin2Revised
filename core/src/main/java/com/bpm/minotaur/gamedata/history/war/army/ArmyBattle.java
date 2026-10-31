@@ -19,6 +19,11 @@ public class ArmyBattle {
     public int houseB;
     public int[] armiesA = new int[0];
     public int[] armiesB = new int[0];
+    /** Side A's "house" when side A is a megabeast. */
+    public static final int THE_BEAST = -2;
+    /** The megabeast that is side A, or -1 (A28): it fights alone, by its hit points. */
+    public int beastId = -1;
+    public int beastHp;
     /** The house whose garrison stands with side B at its own seat, or -1. */
     public int garrisonOf = -1;
     /** What side B's position is worth against side A's blows; 0 for what its garrison's walls always were. */

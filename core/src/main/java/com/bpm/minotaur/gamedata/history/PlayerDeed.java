@@ -37,6 +37,11 @@ public class PlayerDeed {
         CASTLE_SIEGE_BROKEN,
         /** Not the player's doing: house {@link #target} ended its siege of the castle, by its term or its war's. */
         CASTLE_SIEGE_LIFTED,
+        /**
+         * Not the player's doing: megabeast {@link #target} fought an army or the garrison of house
+         * {@link #other} (Living War A28). Chronicled only if the beast or a captain died.
+         */
+        ARMY_BEAST,
         /** The player killed a megabeast. {@link #target} is its id. */
         SLEW_MEGABEAST,
         /**
@@ -122,6 +127,9 @@ public class PlayerDeed {
     /** For {@code ARMY_BATTLE}: the house the player fought for, or -1, and whether they stood there at the end (A17, A24). */
     public int foughtFor = -1;
     public boolean witnessed;
+    /** ARMY_BEAST: it died of this, and what it has left if it did not. */
+    public boolean beastSlain;
+    public int beastHp;
     /** CASTLE_SIEGE_LAID: Seasons the host means to stay. */
     public int seasons;
     public int chunkX;

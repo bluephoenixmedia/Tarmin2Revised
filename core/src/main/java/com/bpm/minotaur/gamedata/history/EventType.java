@@ -58,6 +58,8 @@ public enum EventType {
     SIEGE_LAID,
     /** The siege by {@code houseA} ends: it marched away, or its war ended. */
     SIEGE_LIFTED,
+    /** A house's soldiers killed a megabeast (Living War A28). */
+    MEGABEAST_FELLED,
     /** An army camped around an enemy seat (Living War A30). */
     SEAT_INVESTED,
     /** A siege of a seat ended without its falling (Living War A30). */

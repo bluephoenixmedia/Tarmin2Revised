@@ -31,6 +31,8 @@ public final class WarManager {
         public SeatMap seats;
         public Maze maze;
         public GridPoint2 playerTile;
+        /** Makes a beast's flesh for a battle here (A28); may be null. */
+        public BattleDirector.BeastForger beastForger;
     }
 
     /** The war's sounds (plan T2.9): horns at the warning, drums as the lines close, horns at the rout. */
@@ -85,15 +87,16 @@ public final class WarManager {
                 t.cues.add(Cue.HORNS);
                 return t;
             }
-            t.offerSides = g.battle.playerSide == 0;
+            t.offerSides = g.battle.playerSide == 0 && g.battle.beastId < 0;
         }
+        active.beastForger(g.beastForger);
         BattleDirector.Phase was = active.phase();
         BattleDirector.Report r = active.tick(g.maze, g.playerTile, recruiter, spoils, clock);
         t.messages.addAll(r.messages);
         t.volleyDamage = r.volleyDamage;
         if (was == BattleDirector.Phase.WARNING && active.phase() == BattleDirector.Phase.BATTLE) {
             t.cues.add(Cue.JOINED);
-            t.offerSides = g.battle != null && g.battle.playerSide == 0;
+            t.offerSides = g.battle != null && g.battle.playerSide == 0 && g.battle.beastId < 0;
         }
         if (r.winner >= 0) {
             t.winner = r.winner;
