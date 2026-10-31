@@ -28,6 +28,15 @@ public class PlayerDeed {
         SEAT_INVESTED,
         /** Not the player's doing: house {@link #target} no longer besieges the seat of house {@link #other}, which stands. */
         SIEGE_RAISED,
+        /**
+         * Not the player's doing: a host of house {@link #target} camps before Castle Tarmin (Living War
+         * A35). {@link #figure} is the army, {@link #seasons} how long it means to stay.
+         */
+        CASTLE_SIEGE_LAID,
+        /** Not the player's doing: the host of house {@link #target} before the castle routed. */
+        CASTLE_SIEGE_BROKEN,
+        /** Not the player's doing: house {@link #target} ended its siege of the castle, by its term or its war's. */
+        CASTLE_SIEGE_LIFTED,
         /** The player killed a megabeast. {@link #target} is its id. */
         SLEW_MEGABEAST,
         /**
@@ -113,6 +122,8 @@ public class PlayerDeed {
     /** For {@code ARMY_BATTLE}: the house the player fought for, or -1, and whether they stood there at the end (A17, A24). */
     public int foughtFor = -1;
     public boolean witnessed;
+    /** CASTLE_SIEGE_LAID: Seasons the host means to stay. */
+    public int seasons;
     public int chunkX;
     public int chunkY;
 

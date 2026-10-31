@@ -130,15 +130,15 @@ public final class HistorySimulator {
     private static final int MAX_WARS = 2;
 
     /** A house this strong, at war with the Antlered Host, may besiege Castle Tarmin (W33). */
-    static final float SIEGE_STRENGTH = 70f;
+    public static final float SIEGE_STRENGTH = 70f;
     /** A besieger this weak cannot hold its lines: the siege is broken. */
     static final float SIEGE_BREAKS = 40f;
     /** Each season, a strong enough enemy's chance of laying siege. */
     static final float SIEGE_CHANCE = 0.15f;
     /** Strength a siege costs its besieger each season it holds. */
     static final float SIEGE_ATTRITION = 2f;
-    static final int SIEGE_MIN_SEASONS = 3;
-    static final int SIEGE_MAX_SEASONS = 6;
+    public static final int SIEGE_MIN_SEASONS = 3;
+    public static final int SIEGE_MAX_SEASONS = 6;
     private static final long SIEGE_SALT = 0x51E6EL;
 
     /**
@@ -153,7 +153,7 @@ public final class HistorySimulator {
         HistorySimulator sim = new HistorySimulator(world, null);
         War siege = world.activeSiege();
         for (War w : world.wars) {
-            if (w.siegeSince >= 0 && !w.isActive() && w.siegeUntil >= 0) {
+            if (w.siegeHost < 0 && w.siegeSince >= 0 && !w.isActive() && w.siegeUntil >= 0) {
                 // The war ended under the walls; so did the siege.
                 HistoryEvent e = sim.record(EventType.SIEGE_LIFTED);
                 e.houseA = w.enemyOf(tarmin.id);
@@ -163,6 +163,8 @@ public final class HistorySimulator {
                 w.siegeUntil = -1;
             }
         }
+        // A real host's siege is the armies' to end; a world that fights with armies lays no other (A35).
+        if (siege != null && siege.siegeHost >= 0) return;
         if (siege != null) {
             House besieger = world.house(siege.enemyOf(tarmin.id));
             besieger.strength = Math.max(5f, besieger.strength - SIEGE_ATTRITION);
@@ -178,6 +180,7 @@ public final class HistorySimulator {
             }
             return;
         }
+        if (!world.castleSiegesRoll()) return;
         for (War w : world.activeWars()) {
             if (!w.involves(tarmin.id)) continue;
             House besieger = world.house(w.enemyOf(tarmin.id));
@@ -1007,6 +1010,9 @@ public final class HistorySimulator {
             armyBattle(deed);
         } else if (deed.kind == PlayerDeed.Kind.SUED_FOR_PEACE) {
             suedForPeace(deed);
+        } else if (deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_LAID || deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_BROKEN
+                || deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_LIFTED) {
+            castleSiege(deed);
         } else if (deed.kind == PlayerDeed.Kind.SEAT_INVESTED || deed.kind == PlayerDeed.Kind.SIEGE_RAISED) {
             HistoryEvent e = record(deed.kind == PlayerDeed.Kind.SEAT_INVESTED ? EventType.SEAT_INVESTED : EventType.SIEGE_RAISED);
             e.houseA = deed.target;
@@ -1023,6 +1029,35 @@ public final class HistorySimulator {
             if (w == null) return;
             rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xBA77L);
             fought(w, winner, loser).detail = 1;
+        }
+    }
+
+    /** A real host before Castle Tarmin (Living War A35): the breach is open exactly while the war says it is. */
+    private void castleSiege(PlayerDeed deed) {
+        House tarmin = world.tarminHouse();
+        House besieger = world.house(deed.target);
+        if (tarmin == null || besieger == null) return;
+        War w = null;
+        for (War o : world.wars) {
+            if (o.involves(tarmin.id) && o.involves(besieger.id) && (w == null || o.isActive() || o.siegeHost >= 0)) w = o;
+            if (w != null && w.siegeHost >= 0) break;
+        }
+        if (w == null) return;
+        boolean laid = deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_LAID;
+        HistoryEvent e = record(laid ? EventType.SIEGE_LAID : deed.kind == PlayerDeed.Kind.CASTLE_SIEGE_BROKEN ? EventType.SIEGE_BROKEN : EventType.SIEGE_LIFTED);
+        e.houseA = besieger.id;
+        e.houseB = tarmin.id;
+        e.causeEventId = w.declaredEventId;
+        if (laid) {
+            e.figureA = besieger.lordId;
+            w.siegeSince = world.season;
+            w.siegeUntil = world.season + deed.seasons;
+            w.siegeHost = deed.figure;
+        } else {
+            w.siegeSince = -1;
+            w.siegeUntil = -1;
+            w.siegeHost = -1;
+            w.noSiegeBefore = world.season + SIEGE_MIN_SEASONS;
         }
     }
 

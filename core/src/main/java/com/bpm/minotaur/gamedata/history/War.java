@@ -13,6 +13,10 @@ public class War {
     public int siegeSince = -1;
     /** The season the siege is lifted, if it holds that long. */
     public int siegeUntil = -1;
+    /** The army camped before the castle, whose holding it the breach depends on (A35); -1 for a siege from the Season's old roll. */
+    public int siegeHost = -1;
+    /** The Season its host may come back to the castle: a siege just ended is not at once laid again. */
+    public int noSiegeBefore = -1;
 
     public War(int id, int attackerId, int defenderId, CasusBelli casusBelli, int declaredEventId, int startSeason) {
         this.id = id;

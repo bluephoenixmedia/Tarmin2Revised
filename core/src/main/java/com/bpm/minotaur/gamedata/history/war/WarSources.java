@@ -141,7 +141,7 @@ public final class WarSources {
                 out.sources.add(new Source(a.soldiers >= MARCH_SIZE ? Kind.MARCH : Kind.PARTY, a.id, a.x, a.y, house, -1, 1f));
             } else if (a.kind == Army.Kind.RAID) {
                 out.sources.add(new Source(Kind.BURNING, a.id, a.x, a.y, house, -1, 1f));
-            } else if (a.sieging >= 0) {
+            } else if (a.sieging >= 0 || a.beforeTheCastle) {
                 out.sources.add(new Source(Kind.INVESTED, a.id, a.x, a.y, house, -1, 1f));
             } else if (a.isHost()) {
                 out.sources.add(new Source(Kind.CAMP, a.id, a.x, a.y, house, -1, 1f));

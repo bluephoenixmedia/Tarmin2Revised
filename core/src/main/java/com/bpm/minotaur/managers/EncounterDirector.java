@@ -749,7 +749,7 @@ public final class EncounterDirector {
             }
             for (GridPoint2 gate : com.bpm.minotaur.gamedata.history.war.SeatRing.gates(maze.getWidth(), maze.getHeight())) {
                 if (!gate.equals(playerTile) && maze.isPassable(gate.x, gate.y)) {
-                    place(maze, props, "stone_arch", gate, d);
+                    place(maze, props, "siege_gate", gate, d);
                 }
             }
             // The keep or court: what the last of them stand around.

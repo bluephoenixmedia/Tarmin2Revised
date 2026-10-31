@@ -22,7 +22,7 @@ public final class Siege {
     /** The level of Castle Tarmin's halls, beneath the castle (W36). */
     public static final int HALLS_LEVEL = 2;
     /** Chunks from the castle the besieger's camps stand. */
-    static final int CAMP_RING = 2;
+    public static final int CAMP_RING = 2;
 
     private Siege() {
     }
