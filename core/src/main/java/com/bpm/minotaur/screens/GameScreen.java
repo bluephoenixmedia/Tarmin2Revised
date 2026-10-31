@@ -867,6 +867,8 @@ public class GameScreen extends BaseScreen {
             // Blindness rendering (black screen)
             game.getBatch().end();
         } else if (player != null && maze != null) {
+            world3DRenderer.setArms(armsAtlas());
+            entityRenderer.setArms(armsAtlas());
             if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
                 world3DRenderer.render(player, maze, currentViewport, worldManager, currentLevel(), gameMode, combatManager);
                 // The merchant's Void chain laser only renders in the modern planar-3D
@@ -1039,6 +1041,7 @@ public class GameScreen extends BaseScreen {
                 hud.combatMenu.setVisible(combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU);
             }
             hud.setGlobalAlpha(hudAlpha);
+            hud.setArms(armsAtlas());
             hud.render();
         }
 
@@ -3210,6 +3213,20 @@ public class GameScreen extends BaseScreen {
 
     private final com.bpm.minotaur.managers.WarAudio warAudio = new com.bpm.minotaur.managers.WarAudio();
 
+    private com.bpm.minotaur.ui.ArmsAtlas armsAtlas;
+    private com.bpm.minotaur.gamedata.history.HistoryWorld armsWorld;
+
+    /** This world's Arms; a reborn world's houses bear their own. */
+    private com.bpm.minotaur.ui.ArmsAtlas armsAtlas() {
+        com.bpm.minotaur.gamedata.history.HistoryWorld world = worldManager.getHistory().world();
+        if (world != armsWorld) {
+            if (armsAtlas != null) armsAtlas.dispose();
+            armsAtlas = new com.bpm.minotaur.ui.ArmsAtlas(world, com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance());
+            armsWorld = world;
+        }
+        return armsAtlas;
+    }
+
     /** The war heard from where the player stands, this turn (Living War W9). */
     private void hearTheWar(WarManager.Ground g) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
@@ -5189,6 +5206,7 @@ public class GameScreen extends BaseScreen {
             hud.dispose();
         if (entityRenderer != null)
             entityRenderer.dispose();
+            if (armsAtlas != null) armsAtlas.dispose();
         if (soundManager != null)
             soundManager.dispose();
         if (fbo != null)

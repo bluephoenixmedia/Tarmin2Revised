@@ -2068,6 +2068,68 @@ public class World3DRenderer implements Disposable {
         return tree.getPosition().dst2(player.getPosition()) > FOREST_TREE_RANGE * FOREST_TREE_RANGE;
     }
 
+    /** The overhead health bar's measures, in pixels and world units. */
+    private static final float HEALTH_BAR_GAP = 10.0f;
+    private static final float HEALTH_BAR_PIXELS = 6.0f;
+    private static final float HEALTH_BAR_MIN_HEIGHT = 0.04f;
+
+    private com.bpm.minotaur.ui.ArmsAtlas arms;
+    private final Color armsTint = new Color(Color.WHITE);
+
+    /** Each house's Arms, for what the soldiers bear overhead. */
+    public void setArms(com.bpm.minotaur.ui.ArmsAtlas arms) {
+        this.arms = arms;
+    }
+
+    /**
+     * A soldier's shield and a captain's banner over the head, the same size on screen whatever the
+     * perspective makes of them (Living War A45). In the entity pass, so walls hide them. A soldier
+     * close enough to fill the view has them brought down into it.
+     */
+    private void drawArms(Monster m, float x, float y, float z, float h, Player player,
+            Vector3 camRight, Vector3 camUp, Vector3 camDir) {
+        if (arms == null || !com.bpm.minotaur.ui.ArmsInField.bearsArms(m)) return;
+        float tiles = player.getPosition().dst(m.getPosition());
+        float toX = x - camera.position.x, toY = y + h - camera.position.y, toZ = z - camera.position.z;
+        float zCam = Math.max(0.1f, toX * camera.direction.x + toY * camera.direction.y + toZ * camera.direction.z);
+        float halfView = zCam * MathUtils.tanDeg(camera.fieldOfView / 2.0f);
+        float unit = 2.0f * halfView / camera.viewportHeight;
+        float roof = camera.position.y + halfView - unit * com.bpm.minotaur.ui.UiTheme.PAD_MD;
+
+        // Above the health bar, which keeps a floor of its own height close to.
+        float feet = y + h + unit * (HEALTH_BAR_GAP + com.bpm.minotaur.ui.UiTheme.PAD_XS) + Math.max(HEALTH_BAR_MIN_HEIGHT, HEALTH_BAR_PIXELS * unit);
+        float alpha = com.bpm.minotaur.ui.ArmsInField.shieldAlpha(tiles);
+        if (alpha > 0f) {
+            int size = com.bpm.minotaur.ui.ArmsInField.shieldSize(tiles);
+            TextureRegion shield = arms.shield(m.getHouseId(), size);
+            if (shield != null) {
+                float high = shield.getRegionHeight() * unit;
+                float at = Math.min(feet, roof - high);
+                drawOverhead(shield, x, at, z, size * unit, high, alpha, camRight, camUp, camDir);
+                feet = at + high + unit * com.bpm.minotaur.ui.UiTheme.PAD_XS;
+            }
+        }
+        if (com.bpm.minotaur.ui.ArmsInField.bearsBanner(m)) {
+            int size = (int) com.bpm.minotaur.ui.UiTheme.ARMS_BANNER;
+            TextureRegion banner = arms.banner(m.getHouseId(), size);
+            if (banner != null) {
+                float high = banner.getRegionHeight() * unit;
+                drawOverhead(banner, x, Math.min(feet, roof - high), z, size * unit, high, 1f, camRight, camUp, camDir);
+            }
+        }
+    }
+
+    private void drawOverhead(TextureRegion region, float x, float y, float z, float w, float h, float alpha,
+            Vector3 camRight, Vector3 camUp, Vector3 camDir) {
+        armsTint.a = alpha;
+        dynamicBatcher.addBillboard(x - camDir.x * 0.003f, y - camDir.y * 0.003f, z - camDir.z * 0.003f, w, h, region, armsTint,
+                camRight, camUp, camDir);
+        // A house's colours must read the same in a shadow as in the sun, or the sides cannot be told apart.
+        shader.setUniformf("u_unlit", 1f);
+        dynamicBatcher.flush(shader, region.getTexture());
+        shader.setUniformf("u_unlit", 0f);
+    }
+
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
         shader.setUniformMatrix("u_worldTrans", identityMatrix);
         shader.setUniformf("u_retroBorder", 0.0f);
@@ -2260,6 +2322,7 @@ public class World3DRenderer implements Disposable {
                         }
                         dynamicBatcher.flush(shader, blankTexture);
                     }
+                    drawArms(m, mex, monsterY, mwz, h, player, camRight, camUp, camDir);
                 }
             } else if (r instanceof ShopkeeperNpc) {
                 ShopkeeperNpc sk = (ShopkeeperNpc) r;

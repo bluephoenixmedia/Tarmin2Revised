@@ -175,6 +175,7 @@ public class OneBattleStateTest {
         Monster captain = null;
         for (Monster m : d.captainsOnField().keySet()) if (d.side(true).contains(m)) captain = m;
         assertNotNull("a captain for the army", captain);
+        assertTrue("who carries its standard", captain.isStandardBearer());
         captain.setCurrentHP(0);
         maze.removeMonster(captain);
         slay(d.side(true).subList(1, d.side(true).size()), 4);

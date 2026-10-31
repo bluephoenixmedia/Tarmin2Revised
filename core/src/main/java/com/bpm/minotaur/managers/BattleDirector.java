@@ -246,6 +246,7 @@ public final class BattleDirector {
             Monster m = at == null || house == null ? null : enlist(recruiter, a, house.id, at.x, at.y);
             if (m == null) continue;
             m.setFigureId(figureId);
+            m.setStandardBearer(true);
             m.setDisplayName(house.lordId == figureId ? leader.name + ", Lord of " + house.name : "Captain " + leader.name + " of " + house.name);
             m.setMaxHP(m.getMaxHP() * 2);
             m.setCurrentHP(m.getMaxHP());

@@ -64,6 +64,17 @@ public class UiNamesTest {
         return true;
     }
 
+    /** Living War A46: a name that will not fit loses whole words, never part of one. */
+    @Test
+    public void aHouseNameIsShortenedByWholeWords() {
+        java.util.function.ToDoubleFunction<String> oneEach = String::length;
+        assertEquals("Shacklemere", UiNames.shortHouse("House Shacklemere", 20, oneEach));
+        assertEquals("Old Vellum", UiNames.shortHouse("House Old Vellum", 10, oneEach));
+        assertEquals("Old", UiNames.shortHouse("House Old Vellum", 9, oneEach));
+        assertEquals("no part of a word is ever shown", "", UiNames.shortHouse("House Shacklemere", 5, oneEach));
+        assertEquals("Vellum", UiNames.shortHouse("Vellum", 20, oneEach));
+    }
+
     @Test
     public void theNamesTheAuditScreenshotted() {
         // LEVELUP-8, ALTAR-9

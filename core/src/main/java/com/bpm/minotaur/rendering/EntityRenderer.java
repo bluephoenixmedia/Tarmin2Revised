@@ -1605,10 +1605,63 @@ public class EntityRenderer {
                     : (hpRatio > 0.25f) ? Color.valueOf("E8A63A") : Color.valueOf("C24A34");
             shapeRenderer.setColor(barColor);
             shapeRenderer.rect(barX, barY, barWidth * hpRatio, barHeight);
+            overheads.add(new Overhead(m, screenX + offX * spriteWidth, barY + barHeight, dist));
         }
 
         shapeRenderer.end();
+        drawOverheads(viewport);
         Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private com.bpm.minotaur.ui.ArmsAtlas arms;
+    private final java.util.List<Overhead> overheads = new java.util.ArrayList<>();
+
+    /** Each house's Arms, for what the soldiers bear overhead. */
+    public void setArms(com.bpm.minotaur.ui.ArmsAtlas arms) {
+        this.arms = arms;
+    }
+
+    /** Where a monster's health bar left off, for the Arms above it. */
+    private static final class Overhead {
+        final Monster monster;
+        final float x, y, tiles;
+
+        Overhead(Monster monster, float x, float y, float tiles) {
+            this.monster = monster;
+            this.x = x;
+            this.y = y;
+            this.tiles = tiles;
+        }
+    }
+
+    /** A soldier's shield and a captain's banner over the head (Living War A45). */
+    private void drawOverheads(Viewport viewport) {
+        if (arms == null) {
+            overheads.clear();
+            return;
+        }
+        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+        spriteBatch.begin();
+        for (Overhead o : overheads) {
+            if (!com.bpm.minotaur.ui.ArmsInField.bearsArms(o.monster)) continue;
+            float at = o.y + com.bpm.minotaur.ui.UiTheme.PAD_XS;
+            float alpha = com.bpm.minotaur.ui.ArmsInField.shieldAlpha(o.tiles);
+            TextureRegion shield = alpha > 0f ? arms.shield(o.monster.getHouseId(), com.bpm.minotaur.ui.ArmsInField.shieldSize(o.tiles)) : null;
+            if (shield != null) {
+                spriteBatch.setColor(1f, 1f, 1f, alpha);
+                spriteBatch.draw(shield, o.x - shield.getRegionWidth() / 2f, at);
+                at += shield.getRegionHeight() + com.bpm.minotaur.ui.UiTheme.PAD_XS;
+            }
+            TextureRegion banner = com.bpm.minotaur.ui.ArmsInField.bearsBanner(o.monster)
+                    ? arms.banner(o.monster.getHouseId(), (int) com.bpm.minotaur.ui.UiTheme.ARMS_BANNER) : null;
+            if (banner != null) {
+                spriteBatch.setColor(Color.WHITE);
+                spriteBatch.draw(banner, o.x - banner.getRegionWidth() / 2f, at);
+            }
+        }
+        spriteBatch.setColor(Color.WHITE);
+        spriteBatch.end();
+        overheads.clear();
     }
 
     public void dispose() {

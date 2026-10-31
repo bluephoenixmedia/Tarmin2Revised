@@ -837,6 +837,7 @@ public final class EncounterDirector {
         } else {
             m.setDisplayName("A captain of " + name(world, houseId));
         }
+        m.setStandardBearer(true);
         m.setMaxHP(m.getMaxHP() * 2);
         m.setCurrentHP(m.getMaxHP());
         return m;
