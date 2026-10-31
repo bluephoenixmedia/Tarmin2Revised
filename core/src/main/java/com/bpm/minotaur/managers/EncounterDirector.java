@@ -72,6 +72,7 @@ public final class EncounterDirector {
     static final int RAIDERS_MIN = 4;
     static final int RAIDERS_MAX = 6;
     static final int SENTRIES = 3;
+    private static final int BANNER_TRIES = 8;
     /** Things a raid sets alight, and how far from its centre it looks for them. */
     static final int RAID_BURNS = 3;
     static final int RAID_BURNS_CRUEL = 5;
@@ -465,7 +466,8 @@ public final class EncounterDirector {
             camp.warId = c.warId;
             camp.houseId = c.houseA;
             place(maze, props, "campfire", centre, camp);
-            place(maze, props, "war_banner", around(maze, centre, 2, r), camp);
+            // Nobody swears at a camp with no banner, so it keeps looking until it finds the ground.
+            for (int tries = 0; tries < BANNER_TRIES && !place(maze, props, "war_banner", around(maze, centre, 2 + tries, r), camp); tries++) { }
             for (int i = 0; i < 3; i++) place(maze, props, "camp_tent", around(maze, centre, 5, r), camp);
             for (int i = 0; i < 2; i++) place(maze, props, "brazier", around(maze, centre, 4, r), camp);
             keep(ledger, camp);

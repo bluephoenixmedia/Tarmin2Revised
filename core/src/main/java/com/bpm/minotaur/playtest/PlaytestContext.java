@@ -93,6 +93,10 @@ public final class PlaytestContext {
                 && screen.getHud().getLevelUpModal().isVisible()) {
             screen.getHud().getLevelUpModal().close();
         }
+        if (screen.getHud() != null && screen.getHud().getShopkeeperWindow() != null
+                && screen.getHud().getShopkeeperWindow().isVisible()) {
+            screen.getHud().getShopkeeperWindow().close();
+        }
     }
 
     public void press(int keycode) {
