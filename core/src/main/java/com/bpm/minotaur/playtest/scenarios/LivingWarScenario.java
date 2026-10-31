@@ -15,9 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * The Living War, phase 1 (L1.8): a new game hears the war at once, meets its first skirmish next
- * door within 150 turns, walks into it, sees it break and leave a battlefield, and keeps meeting
- * the war after.
+ * The Living War as a simulation (A1, A2): nothing is placed for the player, so the scenario finds
+ * an army on the roster, walks to where it stands, and meets it on the ground.
  */
 public final class LivingWarScenario implements PlaytestScenario {
 
@@ -28,12 +27,7 @@ public final class LivingWarScenario implements PlaytestScenario {
 
     @Override
     public String description() {
-        return "Hears the war from the shelter, meets the first skirmish, watches it break, and counts the encounters after.";
-    }
-
-    private static Encounter first(PlaytestContext ctx) {
-        for (Encounter e : ctx.getWorldManager().currentEncounters()) if (e.slot == -1) return e;
-        return null;
+        return "Reads the War Table, finds real armies on the roster, walks into them, and chooses a side in a battle under way.";
     }
 
     private static boolean shown(PlaytestContext ctx) {
@@ -73,95 +67,6 @@ public final class LivingWarScenario implements PlaytestScenario {
         script.once("back to the shelter", () -> ctx.getGame().setScreen(ctx.getGameScreen()));
         script.wait("back", 10);
 
-        long[] waited = {0};
-        script.until("wait for the first skirmish", 600, () -> {
-            if (ctx.getFrame() % 2 != 0) return false;
-            ctx.press(Input.Keys.PERIOD);
-            waited[0]++;
-            return first(ctx) != null;
-        });
-
-        GridPoint2[] where = {null};
-        script.once("it is next door, and heard", () -> {
-            Encounter e = first(ctx);
-            ctx.assertTrue(e != null, "the first skirmish has come");
-            EncounterLedger ledger = ctx.getWorldManager().getHistory().encounterLedger();
-            ctx.log("First skirmish at war-clock " + ledger.firstAt + ", after about " + waited[0] + " waits: " + e);
-            GridPoint2 me = ctx.getWorldManager().getCurrentPlayerChunkId();
-            long clock = ctx.getWorldManager().getHistory().warClock();
-            where[0] = e.chunkAt(clock);
-            ctx.assertEquals(1, com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(me, where[0]), "next to the player");
-            WarSoundscape.Mix mix = WarSoundscape.mix(ctx.getWorldManager().currentEncounters(),
-                    ctx.getWorldManager().currentFronts(), clock, me, 1, ctx.getPlayer().getFacing(), false);
-            ctx.log("Heard: near " + mix.volume(WarSoundscape.Bed.NEAR) + ", far " + mix.volume(WarSoundscape.Bed.FAR)
-                    + ", drums " + mix.volume(WarSoundscape.Bed.DRUMS) + ", one-shots " + mix.shots.size());
-            ctx.assertTrue(mix.volume(WarSoundscape.Bed.NEAR) > 0f, "steel and screams from next door (W9)");
-        });
-
-        for (int i = 0; i < 4; i++) {
-            script.shot("lw01_horizon_" + i, ctx);
-            script.key("turn", Input.Keys.RIGHT, ctx);
-            script.wait("turned", 8);
-        }
-
-        script.once("walk into it", () -> {
-            ctx.getGameScreen().travelToChunk(where[0], new GridPoint2(16, 16));
-        });
-        script.until("arrive", 300, () -> shown(ctx));
-        script.key("a turn passes", Input.Keys.PERIOD, ctx);
-        script.wait("the bands come on", 10);
-
-        int[] houses = {0};
-        script.once("two war-bands on the ground", () -> {
-            Set<Integer> seen = new HashSet<>();
-            for (Monster m : ctx.getMaze().getMonsters().values()) if (m.isWarBand()) seen.add(m.getHouseId());
-            houses[0] = seen.size();
-            com.bpm.minotaur.managers.HistoryManager h = ctx.getWorldManager().getHistory();
-            ctx.log("At " + ctx.getWorldManager().getCurrentPlayerChunkId() + " clock " + h.warClock()
-                    + "; encounters " + ctx.getWorldManager().currentEncounters() + "; spent " + h.encounterLedger().spent
-                    + "; monsters " + ctx.getMaze().getMonsters().size() + "; shelter " + !ctx.getMaze().getSanctuaryTiles().isEmpty());
-            ctx.log("War-band soldiers: " + ctx.countWarBand() + " of " + seen.size() + " houses");
-            ctx.assertTrue(ctx.countWarBand() >= 12, "two war-bands of 6-10");
-            ctx.assertTrue(seen.size() == 2, "of two houses");
-        });
-        script.shot("lw02_skirmish", ctx);
-
-        script.until("watch it break", 3000, () -> {
-            if (ctx.getFrame() % 2 != 0) return false;
-            ctx.press(Input.Keys.PERIOD);
-            return ctx.countWarBand() == 0;
-        });
-
-        script.once("a battlefield is left", () -> {
-            EncounterLedger ledger = ctx.getWorldManager().getHistory().encounterLedger();
-            boolean field = false;
-            for (EncounterLedger.Dressing d : ledger.dressings) {
-                if ("AFTERMATH".equals(d.kind) && d.chunkX == where[0].x && d.chunkY == where[0].y) field = true;
-            }
-            ctx.assertTrue(field, "the dead and the broken lie where they fought");
-            ctx.assertTrue(ledger.firstDone || ledger.spent.contains(first(ctx) == null ? "" : first(ctx).key())
-                    || first(ctx) == null, "the first skirmish is done with");
-        });
-        script.shot("lw03_aftermath", ctx);
-
-        Set<String> kinds = new HashSet<>();
-        script.until("keep walking the war", 4000, () -> {
-            if (ctx.getFrame() % 2 != 0) return false;
-            ctx.press(Input.Keys.PERIOD);
-            for (Encounter e : ctx.getWorldManager().currentEncounters()) if (e.visible()) kinds.add(e.kind.name());
-            return ctx.getWorldManager().getHistory().encounterLedger().anchors.size() >= 6;
-        });
-        script.once("the war keeps coming", () -> {
-            EncounterLedger ledger = ctx.getWorldManager().getHistory().encounterLedger();
-            int visible = 0;
-            for (EncounterLedger.Anchor a : ledger.anchors) if (a.kind != null) visible++;
-            ctx.log("Encounters met: " + kinds + "; slots anchored " + ledger.anchors.size() + ", visible " + visible);
-            ctx.assertTrue(visible >= 3, "an encounter every 80-120 turns (W4)");
-            Maze here = ctx.getMaze();
-            ctx.log("Scenery in the chunk now: " + (here == null ? 0 : here.getScenery().size()));
-        });
-        script.shot("lw04_later", ctx);
-
         // A column on the march: find one, and stand in its way.
         Encounter[] column = {null};
         script.until("wait for a column", 6000, () -> {
@@ -185,14 +90,19 @@ public final class LivingWarScenario implements PlaytestScenario {
             int marching = 0;
             for (Monster m : ctx.getMaze().getMonsters().values()) if (m.isWarBand() && m.getMarchTarget() != null) marching++;
             ctx.log("Soldiers on the march: " + marching);
-            ctx.assertTrue(marching >= 8, "a column of 8-15");
+            ctx.assertTrue(marching >= 1, "the soldiers the roster says are marching");
         });
         script.shot("lw05_column", ctx);
 
-        // A war camp beside a front.
+        // A war camp: wherever a host has halted, which it does when it has nowhere better to be.
+        script.until("wait for a host to halt", 6000, () -> {
+            if (ctx.getFrame() % 2 != 0) return false;
+            for (Encounter c : ctx.getWorldManager().currentCamps()) if (c.slot > 0) return true;
+            ctx.press(Input.Keys.PERIOD);
+            return false;
+        });
         script.once("go to a camp", () -> {
             java.util.List<Encounter> camps = ctx.getWorldManager().currentCamps();
-            ctx.assertTrue(!camps.isEmpty(), "every war has its camps");
             ctx.log("Camp: " + camps.get(0));
             ctx.getGameScreen().travelToChunk(camps.get(0).from, new GridPoint2(16, 16));
         });
@@ -257,5 +167,70 @@ public final class LivingWarScenario implements PlaytestScenario {
             ctx.assertTrue(ctx.getMaze().getShopkeeper() != null, "its quartermaster trades with a friend");
         });
         script.shot("lw07_sworn", ctx);
+
+        // A battle under way (A21, A26): find one on the roster, walk in, choose a side and fight.
+        com.bpm.minotaur.gamedata.history.war.army.ArmyBattle[] battle = {null};
+        script.until("wait for a battle", 8000, () -> {
+            if (ctx.getFrame() % 2 != 0) return false;
+            for (com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b : ctx.getWorldManager().getHistory().roster().battles) {
+                if (b.turn > 1 && b.turn < 60 && b.startA + b.startB >= 20) battle[0] = b;
+            }
+            if (battle[0] != null) return true;
+            ctx.press(Input.Keys.PERIOD);
+            return false;
+        });
+        script.once("walk into it", () -> {
+            ctx.log("Battle at " + battle[0].x + "," + battle[0].y + ": " + battle[0].startA + " against " + battle[0].startB
+                    + ", turn " + battle[0].turn);
+            ctx.getGameScreen().travelToChunk(new GridPoint2(battle[0].x, battle[0].y), new GridPoint2(16, 16));
+        });
+        script.until("arrive at the battle", 300, () -> shown(ctx));
+        script.key("a turn passes", Input.Keys.PERIOD, ctx);
+        script.until("the side prompt comes up", 120, () -> ctx.getGame().getScreen() instanceof com.bpm.minotaur.screens.BattleSideScreen);
+        script.shot("lw08_choose_a_side", ctx);
+        String[] chosen = {null};
+        script.once("choose a side", () -> {
+            java.util.Set<String> labels = ((com.bpm.minotaur.screens.BattleSideScreen) ctx.getGame().getScreen()).labels();
+            ctx.log("On offer: " + labels);
+            ctx.assertTrue(labels.contains("Keep away"), "keeping away is always on offer");
+            chosen[0] = labels.iterator().next();
+            ctx.assertTrue(ctx.chooseSide(chosen[0]), "the side is taken");
+        });
+        script.wait("back on the field", 10);
+        script.once("the lines stand from the numbers, and the side stands by you", () -> {
+            int field = ctx.countWarBand();
+            ctx.log("Soldiers on the field: " + field + ", chose " + chosen[0] + ", side " + battle[0].playerSide);
+            ctx.assertTrue(field >= 2, "the lines are on the field");
+            ctx.assertTrue(battle[0].playerSide != 0, "the player stands with a side");
+            ctx.assertTrue(ctx.getWorldManager().armyLayer().watchedBattle() == battle[0], "the map is the truth while watched");
+        });
+        script.shot("lw09_in_the_battle", ctx);
+        int[] alive = {0};
+        script.once("note the numbers", () -> alive[0] = ctx.getWorldManager().armyLayer().aliveOn(battle[0], battle[0].playerSide != 1));
+        script.until("cut down an enemy soldier", 1500, () -> {
+            if (ctx.getFrame() % 2 != 0) return false;
+            if (ctx.getWarManager().active() == null || !ctx.getWarManager().active().battle.equals(battle[0])) return true;
+            if (battle[0].playerStruck != 0 && ctx.getWorldManager().armyLayer().aliveOn(battle[0], battle[0].playerSide != 1) < alive[0]) return true;
+            Monster foe = null;
+            float best = Float.MAX_VALUE;
+            for (Monster m : ctx.getMaze().getMonsters().values()) {
+                if (m == null || !m.isAlive() || !m.isWarBand() || m.isGateGuard() || m.getBattleSide() == battle[0].playerSide) continue;
+                float d = m.getPosition().dst(ctx.getPlayer().getPosition());
+                if (d < best) {
+                    best = d;
+                    foe = m;
+                }
+            }
+            ctx.press(Input.Keys.END);
+            if (foe != null) ctx.steerToward(new GridPoint2((int) foe.getPosition().x, (int) foe.getPosition().y));
+            return false;
+        });
+        script.once("the blow counted", () -> {
+            ctx.log("Struck " + battle[0].playerStruck + ", fought for " + battle[0].foughtFor() + ", battle "
+                    + ctx.battlePhase() + ", enemy numbers " + alive[0] + " to "
+                    + ctx.getWorldManager().armyLayer().aliveOn(battle[0], battle[0].playerSide != 1));
+            ctx.assertTrue(battle[0].playerStruck != 0 || ctx.getWarManager().active() == null, "the player drew blood, or the battle broke first");
+        });
+        script.shot("lw10_fighting", ctx);
     }
 }

@@ -24,6 +24,7 @@ public final class HistoryManager {
     private final List<PlayerDeed> deeds = new ArrayList<>();
     private final Set<Integer> unlocked = new LinkedHashSet<>();
     private long warClock;
+    private com.bpm.minotaur.gamedata.history.war.army.WarRoster roster = new com.bpm.minotaur.gamedata.history.war.army.WarRoster();
     private final java.util.Map<Integer, Integer> beastHp = new java.util.HashMap<>();
     private com.bpm.minotaur.gamedata.history.beast.BeastTracks.Hunt hunt;
     private final java.util.Set<String> townsFound = new java.util.LinkedHashSet<>();
@@ -45,6 +46,7 @@ public final class HistoryManager {
     /** A new world's history: prehistory only. */
     public static HistoryManager create(long worldSeed, DoctrineCatalog catalog) {
         HistoryManager m = past(worldSeed, catalog);
+        m.world.armiesFromLiveSeason(0);
         // A new game opens on a war, so there is one to hear from the first step (Living War W6).
         PlayerDeed opening = HistorySimulator.openingWar(m.world);
         if (opening != null) m.apply(opening);
@@ -63,6 +65,8 @@ public final class HistoryManager {
     public static HistoryManager fromSave(long fallbackSeed, HistorySaveData save, DoctrineCatalog catalog) {
         if (save == null) return create(fallbackSeed, catalog);
         HistoryManager m = past(save.seed != null ? save.seed : fallbackSeed, catalog);
+        // A save from before armies keeps the past it had; armies take over from its next Season.
+        m.world.armiesFromLiveSeason(save.armiesFromLiveSeason != null ? save.armiesFromLiveSeason : save.liveSeasons);
         for (int season = 0; season <= save.liveSeasons; season++) {
             for (PlayerDeed d : save.deeds) {
                 if (d.liveSeason == season) m.replay(d);
@@ -78,6 +82,10 @@ public final class HistoryManager {
         }
         m.hunt = save.hunt;
         if (save.encounters != null) m.encounters = save.encounters;
+        if (save.roster != null) {
+            m.roster = save.roster;
+            m.roster.reconcile(m.world);
+        }
         if (save.favourHouses != null && save.favourValues != null) {
             for (int i = 0; i < Math.min(save.favourHouses.size(), save.favourValues.size()); i++) {
                 m.favour.set(save.favourHouses.get(i), save.favourValues.get(i));
@@ -258,16 +266,6 @@ public final class HistoryManager {
             if (d.kind == PlayerDeed.Kind.DOOM_STAGE) highest = Math.max(highest, d.target);
         }
         return highest;
-    }
-
-    /**
-     * A battle the player stood in has broken: {@code winner} held the field and {@code loser}
-     * routed. It enters the history like any battle of the war (plan T2.6).
-     */
-    public void recordBattle(int winner, int loser) {
-        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.BATTLE_WITNESSED, winner, world.liveSeasons());
-        d.other = loser;
-        apply(d);
     }
 
     /** The player bought a beast's peace: it hunts them no more, and the history says so. */
@@ -472,6 +470,36 @@ public final class HistoryManager {
         if (warClock % SEASON_TURNS == 0) HistorySimulator.tickSeason(world, catalog);
     }
 
+    /** War turns a sleep passes (Living War A58), half a waking Season. */
+    public static final int SLEEP_TURNS = 250;
+
+    /**
+     * The war clock runs on through a sleep. The sleep's own Season has already passed, so no waking
+     * Season falls inside it; the armies march every turn of it, by {@code eachTurn}.
+     */
+    public void sleepThroughWar(java.util.function.LongConsumer eachTurn) {
+        for (int i = 0; i < SLEEP_TURNS; i++) eachTurn.accept(++warClock);
+    }
+
+    /** Something the armies did to the history (ADR 0006): written now, replayed from the log. */
+    public void recordArmyDeed(PlayerDeed deed) {
+        deed.liveSeason = world.liveSeasons();
+        apply(deed);
+        if (deed.kind == PlayerDeed.Kind.ARMY_BATTLE) {
+            encounterLedger().battleFought(deed.chunkX, deed.chunkY, deed.other, deed.witnessed, EncounterDirector.AFTERMATH_SLEEPS);
+        }
+    }
+
+    /** One turn of a sleep, for the war simulation: the clock moves and no waking Season passes. */
+    public void sleepTurn() {
+        warClock++;
+    }
+
+    /** Every army in the field. */
+    public com.bpm.minotaur.gamedata.history.war.army.WarRoster roster() {
+        return roster;
+    }
+
     /** Turns of the war clock to a season of the Maze, when the seeker does not sleep. */
     public static final int SEASON_TURNS = 500;
 
@@ -556,21 +584,6 @@ public final class HistoryManager {
     }
 
     /**
-     * The surface war's encounters under way now (Living War W2): the ones the player can walk into
-     * and the fights out of sight. {@code surface}: the player is on the overland.
-     */
-    public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
-            boolean surface) {
-        return encounters(playerChunk, surface, null);
-    }
-
-    /** As {@link #encounters(com.badlogic.gdx.math.GridPoint2, boolean)}; {@code seats} send columns toward their fronts. */
-    public List<com.bpm.minotaur.gamedata.history.war.Encounter> encounters(com.badlogic.gdx.math.GridPoint2 playerChunk,
-            boolean surface, com.bpm.minotaur.gamedata.history.war.SeatMap seats) {
-        return com.bpm.minotaur.gamedata.history.war.EncounterScheduler.at(world, warClock, encounters, playerChunk, surface, seats);
-    }
-
-    /**
      * The player fought in a skirmish until it broke (Living War W12): {@code winner} held the ground,
      * {@code loser} routed; {@code captainFell} is a named captain who died in it, or -1.
      */
@@ -611,6 +624,8 @@ public final class HistoryManager {
         }
         save.hunt = hunt;
         save.encounters = encounters;
+        save.roster = roster;
+        save.armiesFromLiveSeason = world.armiesFromLiveSeason();
         for (java.util.Map.Entry<Integer, Integer> e : favour.all().entrySet()) {
             save.favourHouses.add(e.getKey());
             save.favourValues.add(e.getValue());

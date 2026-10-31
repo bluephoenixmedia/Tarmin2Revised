@@ -73,7 +73,16 @@ public class PlayerDeed {
          * The Champion slew Tarmin (#291): {@link #target} is 1 if they took the throne, 0 if they
          * returned the Treasure; {@link #victim} is the life's name.
          */
-        TARMIN_SLAIN
+        TARMIN_SLAIN,
+        /**
+         * A battle of the armies, watched or not (Living War A17). {@link #target} held the field
+         * and {@link #other} routed; see {@link #deadHouses} and the fields beside it.
+         */
+        ARMY_BATTLE,
+        /** House {@link #target} has lost half its strength and can raise no host: it sues {@link #other} for peace (A25). */
+        SUED_FOR_PEACE,
+        /** The land's toll on house {@link #target}'s armies this Season (A27): {@link #deadCounts}, never chronicled. */
+        ARMY_ATTRITION
     }
 
     public Kind kind;
@@ -97,8 +106,23 @@ public class PlayerDeed {
     public int level = -1;
     /** For {@code SEEKER_FELL}: Tarmin's Hunger after the death, which may open a new Era (#292); -1 if unknown. */
     public int hunger = -1;
+    /** For {@code ARMY_BATTLE}: the house the player fought for, or -1, and whether they stood there at the end (A17, A24). */
+    public int foughtFor = -1;
+    public boolean witnessed;
     public int chunkX;
     public int chunkY;
+
+    /** For {@code ARMY_BATTLE}: each house that lost soldiers, and how many, as parallel lists. */
+    public int[] deadHouses;
+    public int[] deadCounts;
+    /** For {@code ARMY_BATTLE}: captains slain, and captains taken by the winner. */
+    public int[] captainsSlain;
+    public int[] captainsTaken;
+    /** For {@code ARMY_BATTLE}: fought at a seat, and whether that seat fell. */
+    public boolean atSeat;
+    public boolean seatFell;
+    /** For {@code ARMY_BATTLE}: under about 20 soldiers in all. */
+    public boolean skirmish;
 
     /** For the save reader. */
     public PlayerDeed() {

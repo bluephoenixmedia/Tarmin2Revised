@@ -313,6 +313,18 @@ task runDuelSimulation(type: JavaExec) {
     args = (project.findProperty('duelArgs') ?: '').toString().tokenize(' ')
 }
 
+// The war with nobody watching, for its budget and pacing (Living War A59), e.g.
+//   ./gradlew :lwjgl3:runWarSimulation -PwarArgs="--seasons=40"
+task runWarSimulation(type: JavaExec) {
+    group = "verification"
+    description = "Runs the army simulation headless and prints its budget and what the war did"
+    mainClass = 'com.bpm.minotaur.lwjgl3.WarSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    args = (project.findProperty('warArgs') ?: '').toString().tokenize(' ')
+}
+
 // Balance regression guard (#202): fails if level-1 band leaves 90-98% win rate or 2-4 swings to kill.
 task checkCombatBalance(type: JavaExec) {
     group = "verification"

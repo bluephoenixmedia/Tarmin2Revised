@@ -53,6 +53,11 @@ public class HistoryWorld {
     int tarminHouseId = -1;
     int tarminRisesSeason;
     int seekersFallen;
+    /**
+     * The live Season armies took over the war (Living War A1): Seasons before it keep the abstract
+     * roll, so a save from before armies replays the past it had. Prehistory never reaches it.
+     */
+    int armiesFromLiveSeason = Integer.MAX_VALUE;
 
     HistoryWorld(long seed) {
         this.seed = seed;
@@ -64,6 +69,19 @@ public class HistoryWorld {
 
     public int year() {
         return season / SEASONS_PER_YEAR;
+    }
+
+    public int armiesFromLiveSeason() {
+        return armiesFromLiveSeason;
+    }
+
+    public void armiesFromLiveSeason(int season) {
+        armiesFromLiveSeason = season;
+    }
+
+    /** Whether armies, not the Season's roll, settle this Season's wars. */
+    boolean armiesFight() {
+        return liveSeasons >= armiesFromLiveSeason;
     }
 
     public int liveSeasons() {
@@ -257,7 +275,9 @@ public class HistoryWorld {
     }
 
     public War activeWarBetween(int a, int b) {
-        for (War w : wars) {
+        // By index: the armies ask this every turn, and must make no garbage doing so (Living War A59).
+        for (int i = 0; i < wars.size(); i++) {
+            War w = wars.get(i);
             if (w.isActive() && w.involves(a) && w.involves(b)) return w;
         }
         return null;
@@ -265,7 +285,8 @@ public class HistoryWorld {
 
     public int activeWarCount(int houseId) {
         int n = 0;
-        for (War w : wars) {
+        for (int i = 0; i < wars.size(); i++) {
+            War w = wars.get(i);
             if (w.isActive() && w.involves(houseId)) n++;
         }
         return n;

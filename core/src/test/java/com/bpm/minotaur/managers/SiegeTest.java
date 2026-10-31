@@ -87,11 +87,11 @@ public class SiegeTest {
         HistorySimulator.forceSiege(h.world(), war, 10);
         assertSame(war, h.world().activeSiege());
         House besieger = h.world().house(war.enemyOf(h.world().tarminHouse().id));
-        besieger.strength = 39f;
+        besieger.strength = 30f;
         h.onSleep();
         boolean broken = false;
         for (HistoryEvent e : h.world().events()) if (e.type == EventType.SIEGE_BROKEN) broken = true;
-        assertTrue("39, plus a season's recovery, less its attrition, is under the line", broken || !war.isActive());
+        assertTrue("30, plus a season's recovery, less its attrition, is under the line", broken || !war.isActive());
         assertNull(h.world().activeSiege());
     }
 

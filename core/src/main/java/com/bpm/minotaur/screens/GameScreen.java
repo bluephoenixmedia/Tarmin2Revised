@@ -2407,10 +2407,11 @@ public class GameScreen extends BaseScreen {
         // whether home tiles, if a chunk has any, are warded -- and reading it as "a shelter" kept
         // every battle and encounter off the overland.
         g.sanctuary = maze != null && !maze.getSanctuaryTiles().isEmpty();
-        g.front = worldManager.frontHere();
-        String carried = worldManager.getHistory().onFront(g.front);
+        String carried = worldManager.getHistory().onFront(worldManager.frontHere());
         if (carried != null) eventManager.addEvent(new GameEvent(carried, 4f));
-        g.seats = g.front != null ? worldManager.houseSeats() : null;
+        g.layer = worldManager.armyLayer();
+        g.battle = g.layer != null && g.chunk != null && g.level == 1 ? g.layer.battleIn(g.chunk.x, g.chunk.y) : null;
+        g.seats = g.battle != null ? worldManager.houseSeats() : null;
         g.maze = maze;
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
         WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
@@ -2433,7 +2434,31 @@ public class GameScreen extends BaseScreen {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
         }
         if (t.winner >= 0 && t.foughtFor == t.winner) foughtFor(t.winner);
+        if (t.offerSides && warManager.active() != null) offerSides(warManager.active());
         tickEncounters(g);
+    }
+
+    /**
+     * Coming upon a battle (Living War A26): help one side, help the other, or keep away. A sworn
+     * player is offered only their liege's side, if it is in this fight; the unsworn stand as the
+     * chosen side's ally until the fight ends.
+     */
+    private void offerSides(com.bpm.minotaur.managers.BattleDirector d) {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyBattle b = d.battle;
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = worldManager.getHistory().oath();
+        int liege = oath.sworn() ? d.sideOf(oath.houseId) : 0;
+        boolean liegeA = liege == 1;
+        boolean liegeB = liege == 2;
+        boolean either = !liegeA && !liegeB;
+        java.util.Map<String, Runnable> sides = new java.util.LinkedHashMap<>();
+        if (either || liegeA) sides.put("Help " + houseName(b.houseA), () -> d.chooseSide(1));
+        if (either || liegeB) sides.put("Help " + houseName(b.houseB), () -> d.chooseSide(2));
+        String body = (liegeA || liegeB ? "Your oath binds you to " + houseName(oath.houseId) + ". " : "")
+                + (b.garrisonOf >= 0 ? houseName(b.houseA) + " is assaulting the seat of " + houseName(b.houseB) + "."
+                        : "The lines are locked across this ground, and neither has yet given way.");
+        String a = houseName(b.houseA);
+        String header = Character.toUpperCase(a.charAt(0)) + a.substring(1) + " against " + houseName(b.houseB);
+        Gdx.app.postRunnable(() -> game.setScreen(new BattleSideScreen(game, this, header, body, sides, () -> d.chooseSide(0))));
     }
 
     private final com.bpm.minotaur.managers.EncounterDirector encounterDirector =
@@ -2476,6 +2501,7 @@ public class GameScreen extends BaseScreen {
                 || (warManager.active() != null && warManager.active().playerJoined()));
         monsterAiManager.setTakesPlayerForKin(disguise());
         monsterAiManager.setHoldsItsPeace(m -> {
+            if (warManager.alliedWith(m)) return true;
             int house = worldManager.houseOf(m);
             return house >= 0 && history.stanceOf(house).ordinal()
                     >= com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED.ordinal();
@@ -2483,7 +2509,7 @@ public class GameScreen extends BaseScreen {
         tendTheSworn(g, t);
         tendTheSiege(g);
         if (hud != null) {
-            com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally(maze) : null;
+            com.bpm.minotaur.gamedata.history.war.WarTally tally = warManager.active() != null ? warManager.active().tally() : null;
             hud.setWarTally(tally != null ? tally : encounterDirector.tally(maze));
         }
     }
@@ -2495,13 +2521,13 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
         if (g.chunk == null) return out;
         if (town != null) {
-            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.RaidsBelow
                     .townRaid(history.world(), history.warClock(), town.key, g.chunk);
             if (e != null) out.add(e);
         }
         com.bpm.minotaur.gamedata.history.House holder = gashHolderHere(g);
         if (holder != null) {
-            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.EncounterScheduler
+            com.bpm.minotaur.gamedata.history.war.Encounter e = com.bpm.minotaur.gamedata.history.war.RaidsBelow
                     .gashRaid(history.world(), history.warClock(), g.chunk, g.level, holder.id);
             if (e != null) out.add(e);
         }
@@ -2565,7 +2591,15 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.gamedata.history.favour.Favour favour = history.favour();
         com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
         if (t.foughtFor >= 0) foughtFor(t.foughtFor);
+        if (t.raidBeaten >= 0) foughtFor(t.raidBeaten);
         if (t.heraldSlain >= 0) favour.change(world, t.heraldSlain, com.bpm.minotaur.gamedata.history.favour.Favour.HERALD_SLAIN);
+
+        // Struck its side in a battle, the blow that killed included: the oath is broken (W21, A26).
+        if (oath.sworn() && warManager.active() != null && warManager.active().playerStruckSideOf(oath.houseId)) {
+            String betrayed = houseName(oath.houseId);
+            history.breakOath();
+            say("You have struck the line of " + betrayed + ". Your oath is broken, and every house hears of it.", 6f);
+        }
 
         // Struck a soldier of the sworn house: the oath is broken (W21).
         if (oath.sworn() && maze != null) {
@@ -2592,24 +2626,7 @@ public class GameScreen extends BaseScreen {
                 say("A contract kept. Return to a war camp of " + houseName(oath.houseId) + " to be paid.", 5f);
             }
         }
-
-        // Hunters: once a slot, a house that counts the player its enemy may send them (W18).
-        long clock = history.warClock();
-        if (g.level == 1 && !g.sanctuary && clock % com.bpm.minotaur.gamedata.history.war.EncounterScheduler.SLOT == 0) {
-            for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
-                if (history.stanceOf(h.id) != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY) continue;
-                java.util.Random r = new java.util.Random(world.seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (h.id * 31L));
-                if (r.nextFloat() >= HUNT_CHANCE) continue;
-                com.bpm.minotaur.managers.EncounterDirector.Turn hunted = new com.bpm.minotaur.managers.EncounterDirector.Turn();
-                encounterDirector.hunt(history, maze, h.id, g.playerTile, worldManager::recruit, hunted);
-                for (String line : hunted.messages) say(line, 5f);
-                break;
-            }
-        }
     }
-
-    /** Chance a slot brings hunters from a house that counts the player its enemy (W18). */
-    private static final float HUNT_CHANCE = 0.3f;
 
     /** Standing in a house's war camp: its signets returned, its sentries' greeting, its quartermaster (W18-W20). */
     private void atCamp(int houseId, WarManager.Ground g) {
@@ -2718,6 +2735,7 @@ public class GameScreen extends BaseScreen {
         DoomManager.getInstance().resetExpeditionTurns();
 
         java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
+        worldManager.sleepThroughWar();
         if (worldManager != null && worldManager.getDayNightManager() != null) {
             com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
             if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
@@ -2883,7 +2901,7 @@ public class GameScreen extends BaseScreen {
         if (g.chunk.equals(castle) && maze != null) keepTheBreach(siege != null);
         if (siege == null) return;
         long clock = history.warClock();
-        if (com.bpm.minotaur.gamedata.history.war.EncounterScheduler.distance(g.chunk, castle) <= RED_LIGHTNING_REACH
+        if (com.bpm.minotaur.gamedata.history.war.Encounter.distance(g.chunk, castle) <= RED_LIGHTNING_REACH
                 && clock % RED_LIGHTNING_EVERY == 0) {
             if (worldManager.getWeatherManager() != null) worldManager.getWeatherManager().knellFlash(0.5f);
             if (soundManager != null) soundManager.playSound("lightning_crash_2", 0.7f);
@@ -3280,6 +3298,7 @@ public class GameScreen extends BaseScreen {
         worldManager.processTurn(player, turnCount);
         // The wars go on, on the surface and in the strata alike, and may reach the player.
         worldManager.getHistory().tickWarClock();
+        worldManager.marchArmies();
         tickWar();
         tollKnell();
         com.bpm.minotaur.gamedata.history.town.Town town = worldManager.townHere();
@@ -5253,6 +5272,7 @@ public class GameScreen extends BaseScreen {
             DoomManager.getInstance().resetExpeditionTurns();
             // A season passes in the Maze while the player sleeps; they wake to its news.
             java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = worldManager.getHistory().onSleep();
+            worldManager.sleepThroughWar();
             // This shelter is now the one the player wakes in.
             if (currentLevel() == 1) {
                 com.bpm.minotaur.gamedata.shelter.ShelterNetwork.getInstance()
@@ -5798,20 +5818,11 @@ public class GameScreen extends BaseScreen {
                     eventManager.addEvent(new GameEvent("Debug: battles are fought on the surface", 2f));
                     return true;
                 }
-                com.bpm.minotaur.gamedata.history.HistoryWorld hw = worldManager.getHistory().world();
                 GridPoint2 here = worldManager.getCurrentPlayerChunkId();
-                com.bpm.minotaur.gamedata.history.war.Front front;
-                if (!hw.activeWars().isEmpty()) {
-                    com.bpm.minotaur.gamedata.history.War war = hw.activeWars().get(0);
-                    front = new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
-                } else {
-                    // No war under way: the first two houses fight anyway, and the history will not hear of it.
-                    java.util.List<com.bpm.minotaur.gamedata.history.House> living = hw.livingHouses();
-                    front = new com.bpm.minotaur.gamedata.history.war.Front(-1, living.get(0).id, living.get(1).id, here);
-                }
-                String horns = warManager.soundHorns(worldManager.getHistory(), front, here, worldManager.houseSeats());
-                if (soundManager != null) soundManager.playWarCue(WarManager.Cue.HORNS);
-                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(horns), 5f));
+                com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = worldManager.armyLayer();
+                boolean raised = layer != null && here != null && layer.raiseBattleAt(here.x, here.y) != null;
+                eventManager.addEvent(new GameEvent(com.bpm.minotaur.ui.UiGlyphs.sanitize(
+                        raised ? "Debug: two hosts meet here" : "Debug: no battle can be raised here"), 3f));
                 return true;
             }
             case MEGABEAST_HERE: {

@@ -1478,6 +1478,57 @@ public class WorldManager {
         return -1;
     }
 
+    /** The armies on this world's overland (Living War A1), rebuilt when the world is reborn. Null without roads. */
+    private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armies() {
+        if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
+        if (armyLayer == null || armyLayerBiomes != biomeManager || armyLayerHistory != getHistory()) {
+            com.bpm.minotaur.gamedata.history.war.army.ArmyLayer old = armyLayerHistory == getHistory() ? armyLayer : null;
+            if (old != null) old.resolveBattles(getHistory().warClock());
+            armyLayer = new com.bpm.minotaur.gamedata.history.war.army.ArmyLayer(getHistory().world(),
+                    com.bpm.minotaur.gamedata.history.war.army.Terrain.of(biomeManager), this::houseSeats, getHistory().roster(),
+                    getHistory()::recordArmyDeed);
+            armyLayer.watch(new com.bpm.minotaur.gamedata.history.war.army.ArmyLayer.PlayerWatch() {
+                @Override
+                public GridPoint2 surfaceChunk() {
+                    return currentLevel == 1 ? currentPlayerChunkId : null;
+                }
+
+                @Override
+                public boolean countsPlayerAnEnemy(int houseId) {
+                    return getHistory().stanceOf(houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY;
+                }
+            });
+            if (old != null) armyLayer.shiftFrom(old.seats());
+            armyLayerBiomes = biomeManager;
+            armyLayerHistory = getHistory();
+        }
+        return armyLayer;
+    }
+
+    private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armyLayer;
+    private BiomeManager armyLayerBiomes;
+    private HistoryManager armyLayerHistory;
+
+    /** The armies of this world, or null in a world with no roads to march. */
+    public com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armyLayer() {
+        return armies();
+    }
+
+    /** One war turn for the armies, wherever the player is. */
+    public void marchArmies() {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.tick(getHistory().warClock());
+    }
+
+    /** The war goes on while the seeker sleeps (Living War A58): every turn at full detail. */
+    public void sleepThroughWar() {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.watchBattle(null);
+        getHistory().sleepThroughWar(clock -> {
+            if (layer != null) layer.tick(clock);
+        });
+    }
+
     /**
      * Where the houses sit in this world, or null in a world laid out before the shelter roads,
      * which has no seal sites to seat them at.
@@ -1485,7 +1536,7 @@ public class WorldManager {
     public com.bpm.minotaur.gamedata.history.war.SeatMap houseSeats() {
         if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
         return com.bpm.minotaur.gamedata.history.war.SeatMap.of(getHistory().world(), biomeManager.getRoads(),
-                biomeManager.getCastleSite(), worldSeed);
+                biomeManager.getCastleSite(), worldSeed, biomeManager::isOpenLand);
     }
 
     /**
@@ -1832,20 +1883,12 @@ public class WorldManager {
     }
 
     /**
-     * Every war's front right now, and the pitched battle an expedition brings to the player (Living
-     * War W4); empty in a world with no seats.
+     * Every war's front right now; empty in a world with no seats.
      */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Front> currentFronts() {
         com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
         if (seats == null) return java.util.Collections.emptyList();
-        java.util.List<com.bpm.minotaur.gamedata.history.war.Front> fronts = new java.util.ArrayList<>(getHistory().fronts(seats));
-        long clock = getHistory().warClock();
-        for (com.bpm.minotaur.gamedata.history.war.Encounter e : currentEncounters()) {
-            if (e.kind == com.bpm.minotaur.gamedata.history.war.Encounter.Kind.BATTLE) {
-                fronts.add(new com.bpm.minotaur.gamedata.history.war.Front(e.warId, e.houseA, e.houseB, e.chunkAt(clock)));
-            }
-        }
-        return fronts;
+        return getHistory().fronts(seats);
     }
 
     private java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> encountersNow = java.util.Collections.emptyList();
@@ -1862,7 +1905,8 @@ public class WorldManager {
         long clock = history.warClock();
         if (clock != encountersAt || currentLevel != encountersLevel
                 || (currentPlayerChunkId != null && !currentPlayerChunkId.equals(encountersFor))) {
-            encountersNow = new java.util.ArrayList<>(history.encounters(currentPlayerChunkId, currentLevel == 1, houseSeats()));
+            com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+            encountersNow = layer == null ? new java.util.ArrayList<>() : layer.encounters();
             // The siege of the castle, heard and seen across the overland (W34).
             encountersNow.addAll(com.bpm.minotaur.gamedata.history.war.Siege.at(history.world(), castleSite()));
             encountersAt = clock;
@@ -1872,12 +1916,11 @@ public class WorldManager {
         return encountersNow;
     }
 
-    /** Every war's camps, one each side of its front (Living War W2); empty in a world with no seats. */
+    /** Every host that has halted, and the camps around a besieged castle; empty in a world with no seats. */
     public java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> currentCamps() {
-        com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
-        if (seats == null) return java.util.Collections.emptyList();
-        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> camps = new java.util.ArrayList<>(
-                com.bpm.minotaur.gamedata.history.war.EncounterScheduler.camps(getHistory().world(), seats));
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer == null) return java.util.Collections.emptyList();
+        java.util.List<com.bpm.minotaur.gamedata.history.war.Encounter> camps = layer.camps();
         camps.addAll(com.bpm.minotaur.gamedata.history.war.Siege.camps(getHistory().world(), castleSite()));
         return camps;
     }

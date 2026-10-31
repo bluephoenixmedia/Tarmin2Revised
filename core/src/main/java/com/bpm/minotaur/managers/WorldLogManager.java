@@ -217,6 +217,8 @@ public final class WorldLogManager implements SlotScopedState {
                 return Fact.of(Fact.Kind.QUEST_DONE, deed.note);
             case BATTLE_WITNESSED:
                 return Fact.of(Fact.Kind.BATTLE_WITNESSED, houseName(world, deed.target));
+            case ARMY_BATTLE:
+                return deed.witnessed ? Fact.of(Fact.Kind.BATTLE_WITNESSED, houseName(world, deed.target)) : null;
             case SKIRMISH:
                 return Fact.of(Fact.Kind.SKIRMISH, houseName(world, deed.target));
             case SWORE_OATH:

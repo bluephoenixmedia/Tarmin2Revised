@@ -75,11 +75,23 @@ public final class HistorySimulator {
      */
     public static PlayerDeed openingWar(HistoryWorld world) {
         if (!world.activeWars().isEmpty()) return null;
+        return declaration(world);
+    }
+
+    /**
+     * War pressure (Living War A9): with fewer than {@code floor} wars under way, the same choice as
+     * the opening war brings another, in the same deed. Null when the floor is met or no one can.
+     */
+    public static PlayerDeed warPressure(HistoryWorld world, int floor) {
+        return world.activeWars().size() >= floor ? null : declaration(world);
+    }
+
+    private static PlayerDeed declaration(HistoryWorld world) {
         House attacker = null;
         House defender = null;
         float worst = 0f;
         for (House h : world.livingHouses()) {
-            if (h.liegeId >= 0) continue;
+            if (h.liegeId >= 0 || world.activeWarCount(h.id) >= MAX_WARS) continue;
             for (House t : world.livingHouses()) {
                 if (t == h || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
                 float g = world.grudgeWeight(h.id, t.id);
@@ -94,7 +106,7 @@ public final class HistorySimulator {
             // No grudge to settle: the strongest free house comes for a seat it does not hold -- a
             // gash or the castle -- and, failing that, for anyone it is not bound to.
             for (House h : world.livingHouses()) {
-                if (h.liegeId >= 0) continue;
+                if (h.liegeId >= 0 || world.activeWarCount(h.id) >= MAX_WARS) continue;
                 House prey = null;
                 for (House t : world.livingHouses()) {
                     if (t == h || world.stance(h.id, t.id) != HistoryWorld.Stance.NEUTRAL) continue;
@@ -113,6 +125,9 @@ public final class HistorySimulator {
         d.other = defender.id;
         return d;
     }
+
+    /** War pressure never pushes a house into a third war at once. */
+    private static final int MAX_WARS = 2;
 
     /** A house this strong, at war with the Antlered Host, may besiege Castle Tarmin (W33). */
     static final float SIEGE_STRENGTH = 70f;
@@ -761,7 +776,8 @@ public final class HistorySimulator {
             if (!w.isActive()) continue;
             House a = world.house(w.attackerId);
             House d = world.house(w.defenderId);
-            if (rng.nextFloat() < 0.2f) battle(w, a, d);
+            // In live play armies fight, and every outcome reaches the history as a deed (A1, A16).
+            if (!world.armiesFight() && rng.nextFloat() < 0.2f) battle(w, a, d);
             if (!w.isActive()) continue;
             int age = world.season - w.startSeason;
             boolean exhausted = a.strength < 30f && d.strength < 30f;
@@ -869,10 +885,13 @@ public final class HistorySimulator {
 
     // ------------------------------------------------------------------ upkeep
 
+    /** Strength a house regains in a live Season, now that it counts soldiers (Living War A3). */
+    private static final float ARMY_RECOVERY = 5f;
+
     private void recover() {
         for (House h : world.houses) {
             if (h.isExtinct()) continue;
-            h.strength = Math.min(h.strengthCap(), h.strength + 1.2f);
+            h.strength = Math.min(h.strengthCap(), h.strength + (world.armiesFight() ? ARMY_RECOVERY : 1.2f));
         }
         for (Grudge g : world.grudges) g.weight *= 0.992f;
         world.grudges.removeIf(g -> g.weight < 0.25f);
@@ -984,6 +1003,15 @@ public final class HistorySimulator {
             if (type == EventType.OATH_BROKEN) h.prestige = Math.max(0, h.prestige - 2);
         } else if (deed.kind == PlayerDeed.Kind.SKIRMISH) {
             skirmish(deed);
+        } else if (deed.kind == PlayerDeed.Kind.ARMY_BATTLE) {
+            armyBattle(deed);
+        } else if (deed.kind == PlayerDeed.Kind.SUED_FOR_PEACE) {
+            suedForPeace(deed);
+        } else if (deed.kind == PlayerDeed.Kind.ARMY_ATTRITION) {
+            House h = world.house(deed.target);
+            if (h != null && !h.isExtinct() && deed.deadCounts != null && deed.deadCounts.length > 0) {
+                h.strength = Math.max(5f, h.strength - deed.deadCounts[0]);
+            }
         } else if (deed.kind == PlayerDeed.Kind.BATTLE_WITNESSED) {
             House winner = world.house(deed.target);
             House loser = world.house(deed.other);
@@ -992,6 +1020,74 @@ public final class HistorySimulator {
             rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xBA77L);
             fought(w, winner, loser).detail = 1;
         }
+    }
+
+    /**
+     * A battle of the armies (Living War A17): the dead come off their houses, the winner gains
+     * prestige, and it enters the chronicle only if a captain fell or was taken, or a seat fell.
+     */
+    private void armyBattle(PlayerDeed deed) {
+        House winner = world.house(deed.target);
+        House loser = world.house(deed.other);
+        if (deed.deadHouses != null) {
+            for (int i = 0; i < deed.deadHouses.length; i++) {
+                House h = world.house(deed.deadHouses[i]);
+                if (h != null && !h.isExtinct()) h.strength = Math.max(5f, h.strength - deed.deadCounts[i]);
+            }
+        }
+        if (winner == null || loser == null) return;
+        winner.prestige += deed.skirmish ? 1 : 2;
+        int[] slain = deed.captainsSlain == null ? new int[0] : deed.captainsSlain;
+        int[] taken = deed.captainsTaken == null ? new int[0] : deed.captainsTaken;
+        if (slain.length == 0 && taken.length == 0 && !deed.seatFell) return;
+        rng = new Random(world.seed ^ (world.events.size() * 0x9E3779B97F4A7C15L) ^ 0xA2B7L);
+        HistoryEvent e = record(EventType.BATTLE);
+        e.houseA = winner.id;
+        e.houseB = loser.id;
+        e.place = NameForge.place(rng);
+        e.detail = deed.witnessed ? 1 : e.detail;
+        War w = world.activeWarBetween(winner.id, loser.id);
+        if (w != null) e.causeEventId = w.declaredEventId;
+        for (int id : slain) {
+            Figure f = world.figure(id);
+            if (f == null || !f.isAlive() || f.ageless) continue;
+            kill(f, Figure.Fate.BATTLE);
+            if (e.figureB < 0) e.figureB = f.id;
+            // A levy or an ally who fell on the winning side holds it against the losers, not its friends.
+            boolean won = f.houseId == winner.id || world.stance(f.houseId, winner.id) != HistoryWorld.Stance.WAR
+                    && world.stance(f.houseId, loser.id) == HistoryWorld.Stance.WAR;
+            grudge(f.houseId, won ? loser.id : winner.id, CasusBelli.SLAIN_KIN, e.id, 4f);
+        }
+        for (int id : taken) {
+            Figure f = world.figure(id);
+            if (f == null || !f.isAlive() || f.ageless || f.hostageOf >= 0) continue;
+            f.hostageOf = winner.id;
+            HistoryEvent t = record(EventType.HOSTAGE_TAKEN);
+            t.houseA = winner.id;
+            t.houseB = f.houseId;
+            t.figureB = f.id;
+            t.causeEventId = e.id;
+            grudge(f.houseId, winner.id, CasusBelli.HOSTAGE_HELD, t.id, 2f);
+        }
+        if (deed.seatFell && w != null) seize(w, winner, loser, e);
+    }
+
+    /** A beaten house buys peace with its honour, and the hostages it holds go home (A25). */
+    private void suedForPeace(PlayerDeed deed) {
+        House beaten = world.house(deed.target);
+        House victor = world.house(deed.other);
+        War w = beaten == null || victor == null ? null : world.activeWarBetween(beaten.id, victor.id);
+        if (w == null) return;
+        w.endSeason = world.season;
+        beaten.prestige = Math.max(0, beaten.prestige - 2);
+        victor.prestige += 2;
+        for (Figure f : world.figures) {
+            if (f.isAlive() && f.hostageOf == beaten.id && f.houseId == victor.id) f.hostageOf = -1;
+        }
+        HistoryEvent e = record(EventType.PEACE);
+        e.houseA = victor.id;
+        e.houseB = beaten.id;
+        e.causeEventId = w.declaredEventId;
     }
 
     /** Strength a skirmish the player fought in moves from the loser to the winner (W12). */

@@ -395,16 +395,6 @@ public class EncounterDirectorTest {
     }
 
     @Test
-    public void huntersComeOnTheTrail() {
-        EncounterDirector.Turn t = new EncounterDirector.Turn();
-        director.hunt(history, maze, war.attackerId, PLAYER, recruiter, t);
-        List<Monster> hunters = band(war.attackerId);
-        assertTrue(hunters.size() >= EncounterDirector.HUNTERS_MIN);
-        for (Monster m : hunters) assertEquals(PLAYER, m.getLastKnownTargetPos());
-        assertFalse(t.messages.isEmpty());
-    }
-
-    @Test
     public void theShelterIsLeftInPeace() {
         director.onTurn(history, HERE, 1, true, maze, PLAYER, List.of(skirmish(1000)), Collections.emptyList(), recruiter, props, null);
         assertTrue(maze.getMonsters().isEmpty());

@@ -1,7 +1,7 @@
 # Shrinks the generated charges to 64x64 white silhouettes,.
 import os
 from PIL import Image
-SRC = 'assets/images/heralds'
+SRC = 'docs/game_assets/heralds'
 OUT = 'assets/images/arms'
 MAP = {
  'flayed_hand': 'flayed_hand.png', 'open_mouth': 'open_mouth_singing.png', 'hymnal': 'hymnal_boundinskin.png',

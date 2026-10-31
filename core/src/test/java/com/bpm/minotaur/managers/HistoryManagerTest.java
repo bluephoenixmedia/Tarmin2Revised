@@ -225,7 +225,7 @@ public class HistoryManagerTest {
     }
 
     @Test
-    public void aBattleThePlayerStoodInEntersTheHistoryAndReplays() {
+    public void aBattleFromAnOlderSaveStillReplays() {
         HistoryManager m = null;
         com.bpm.minotaur.gamedata.history.War war = null;
         for (long seed = 40; war == null; seed++) {
@@ -233,7 +233,10 @@ public class HistoryManagerTest {
             if (!m.world().activeWars().isEmpty()) war = m.world().activeWars().get(0);
         }
         int before = m.world().events().size();
-        m.recordBattle(war.defenderId, war.attackerId);
+        com.bpm.minotaur.gamedata.history.PlayerDeed d = new com.bpm.minotaur.gamedata.history.PlayerDeed(
+                com.bpm.minotaur.gamedata.history.PlayerDeed.Kind.BATTLE_WITNESSED, war.defenderId, m.world().liveSeasons());
+        d.other = war.attackerId;
+        m.recordArmyDeed(d);
         HistoryEvent battle = m.world().events().get(before);
         assertEquals(EventType.BATTLE, battle.type);
         assertEquals(war.defenderId, battle.houseA);
@@ -242,13 +245,5 @@ public class HistoryManagerTest {
 
         HistoryManager b = HistoryManager.fromSave(0L, m.toSave(), catalog);
         assertEquals(m.world().fingerprint(), b.world().fingerprint());
-    }
-
-    @Test
-    public void aBattleBetweenHousesNoLongerAtWarIsForgotten() {
-        HistoryManager m = HistoryManager.create(41L, catalog);
-        int before = m.world().events().size();
-        m.recordBattle(0, 0);
-        assertEquals(before, m.world().events().size());
     }
 }

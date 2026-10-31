@@ -51,14 +51,14 @@ public class WarSoundscapeTest {
     @Test
     public void itFadesWithDistanceAndIsGoneBeyondEarshot() {
         float last = Float.MAX_VALUE;
-        for (int d = 1; d <= EncounterScheduler.EARSHOT; d++) {
+        for (int d = 1; d <= WarSoundscape.EARSHOT; d++) {
             WarSoundscape.Mix m = hear(fightAt(d, 0), 1);
             float loudest = Math.max(m.volume(WarSoundscape.Bed.NEAR), m.volume(WarSoundscape.Bed.FAR));
             assertTrue("heard at " + d, loudest > 0f);
             assertTrue("no louder at " + d, loudest <= last);
             last = loudest;
         }
-        assertTrue(hear(fightAt(EncounterScheduler.EARSHOT + 1, 0), 1).silent());
+        assertTrue(hear(fightAt(WarSoundscape.EARSHOT + 1, 0), 1).silent());
     }
 
     @Test

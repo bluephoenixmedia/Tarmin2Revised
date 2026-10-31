@@ -530,18 +530,14 @@ public class UXScreenCaptureScreen extends BaseScreen {
         tasks.add(new CaptureTask("29_battle", "Surface battle, lines closed", () -> {
             com.bpm.minotaur.managers.WorldManager wm = sharedGameScreen.getWorldManager();
             com.bpm.minotaur.managers.HistoryManager history = wm.getHistory();
-            java.util.List<com.bpm.minotaur.gamedata.history.War> wars = history.world().activeWars();
-            if (!wars.isEmpty()) {
-                com.bpm.minotaur.gamedata.history.War war = wars.get(0);
-                com.badlogic.gdx.math.GridPoint2 here = wm.getCurrentPlayerChunkId();
-                com.bpm.minotaur.gamedata.history.war.Front front =
-                        new com.bpm.minotaur.gamedata.history.war.Front(war.id, war.attackerId, war.defenderId, here);
-                com.bpm.minotaur.managers.BattleDirector battle = new com.bpm.minotaur.managers.BattleDirector(
-                        front, here, 0, history.world(), com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), 29L);
+            com.badlogic.gdx.math.GridPoint2 here = wm.getCurrentPlayerChunkId();
+            com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = wm.armyLayer();
+            com.bpm.minotaur.gamedata.history.war.army.ArmyBattle fight = layer == null ? null : layer.raiseBattleAt(here.x, here.y);
+            if (fight != null) {
+                com.bpm.minotaur.managers.BattleDirector battle = new com.bpm.minotaur.managers.BattleDirector(fight, layer, here, 0,
+                        history.world(), com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance(), 29L, true);
                 com.badlogic.gdx.math.GridPoint2 at = new com.badlogic.gdx.math.GridPoint2((int) sharedPlayer.getPosition().x, (int) sharedPlayer.getPosition().y);
-                for (int i = 0; i < com.bpm.minotaur.managers.BattleDirector.WARNING_TURNS + 1; i++) {
-                    battle.tick(sharedMaze, at, wm::recruit, (m, near, loser, lordFell) -> { });
-                }
+                battle.tick(sharedMaze, at, wm::recruit, (m, near, loser, lordFell) -> { }, history.warClock());
                 int soldiers = 0;
                 for (com.bpm.minotaur.gamedata.monster.Monster m : sharedMaze.getMonsters().values()) {
                     if (m.isWarBand()) soldiers++;

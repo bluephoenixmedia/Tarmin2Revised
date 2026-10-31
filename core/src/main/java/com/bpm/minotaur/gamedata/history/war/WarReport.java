@@ -127,7 +127,7 @@ public final class WarReport {
     /** "here", or "3 chunks north-east" (x east, y north). */
     public static String bearing(GridPoint2 from, GridPoint2 to) {
         int dx = to.x - from.x, dy = to.y - from.y;
-        int d = EncounterScheduler.distance(from, to);
+        int d = Encounter.distance(from, to);
         if (d == 0) return "here";
         String ns = dy * 2 > Math.abs(dx) ? "north" : -dy * 2 > Math.abs(dx) ? "south" : "";
         String ew = dx * 2 > Math.abs(dy) ? "east" : -dx * 2 > Math.abs(dy) ? "west" : "";

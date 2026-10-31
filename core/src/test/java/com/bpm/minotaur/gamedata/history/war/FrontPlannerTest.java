@@ -28,7 +28,7 @@ public class FrontPlannerTest {
 
     private static SeatMap seats(HistoryWorld w, long worldSeed) {
         ShelterRoads roads = new ShelterRoads(worldSeed, new GridPoint2(0, 50));
-        return SeatMap.of(w, roads, new GridPoint2(0, 50), worldSeed);
+        return SeatMap.of(w, roads, new GridPoint2(0, 50), worldSeed, c -> true);
     }
 
     /** A world with at least one war under way. */
@@ -43,7 +43,7 @@ public class FrontPlannerTest {
     public void greatHousesSitAtTheirSealSitesAndTarminZulAtTheCastle() {
         HistoryWorld w = HistorySimulator.prehistory(3L, catalog);
         ShelterRoads roads = new ShelterRoads(77L, new GridPoint2(0, 50));
-        SeatMap seats = SeatMap.of(w, roads, new GridPoint2(0, 50), 77L);
+        SeatMap seats = SeatMap.of(w, roads, new GridPoint2(0, 50), 77L, c -> true);
         for (int g = 0; g < HistoryWorld.GASH_COUNT; g++) {
             House h = w.gashHolder(g);
             assertEquals(roads.getRoad(g + 1).getEnd(), seats.seat(h.id));
@@ -94,7 +94,7 @@ public class FrontPlannerTest {
             HistoryWorld w = HistorySimulator.prehistory(seed, catalog);
             if (w.activeWars().isEmpty()) continue;
             ShelterRoads roads = new ShelterRoads(seed, new GridPoint2(0, 50));
-            SeatMap seats = SeatMap.of(w, roads, new GridPoint2(0, 50), seed);
+            SeatMap seats = SeatMap.of(w, roads, new GridPoint2(0, 50), seed, c -> true);
             for (long clock = 0; clock < FrontPlanner.PERIOD && !crossed; clock += 25) {
                 for (Front f : FrontPlanner.fronts(w, seats, clock)) {
                     for (GridPoint2 c : f.chunks()) {
