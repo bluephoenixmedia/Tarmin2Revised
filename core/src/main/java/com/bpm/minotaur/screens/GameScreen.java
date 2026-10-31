@@ -2676,7 +2676,12 @@ public class GameScreen extends BaseScreen {
         if (t.volleyDamage > 0 && player != null) {
             player.takeDamage(t.volleyDamage, com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
         }
-        if (t.winner >= 0 && t.foughtFor == t.winner) foughtFor(t.winner);
+        if (t.foughtFor >= 0 && t.favour > 0) {
+            com.bpm.minotaur.managers.HistoryManager warHistory = worldManager.getHistory();
+            warHistory.favour().change(warHistory.world(), t.foughtFor, t.favour);
+            say(houseName(t.foughtFor) + (t.foughtFor == t.winner ? " will remember that you stood with it." : " saw you stand to the end."), 4f);
+            if (t.turned) say("It was your hand that turned the day.", 4f);
+        }
         if (t.offerSides && warManager.active() != null) offerSides(warManager.active());
         tickEncounters(g);
     }
@@ -2861,15 +2866,19 @@ public class GameScreen extends BaseScreen {
         else campGreeted = null;
 
         com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
+        boolean contractWasOpen = c != null && !c.done;
         if (c != null && !c.done) {
-            boolean kept = c.held(g.chunk)
-                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.ESCORT_COLUMN && t.escorted == oath.houseId)
-                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.BURN_CAMP && t.campBroken == c.targetId);
-            if (kept) {
-                c.done = true;
-                say("A contract kept. Return to a war camp of " + houseName(oath.houseId) + " to be paid.", 5f);
-            }
+            boolean kept = (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.ESCORT_SUPPLY && t.escortedArmy == c.targetArmy)
+                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.CUT_SUPPLY && t.brokenArmy == c.targetArmy)
+                    || (c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.BREAK_CAMP && t.campBrokenArmy == c.targetArmy);
+            if (kept) c.done = true;
         }
+        if ((c != null && c.done && contractWasOpen) || history.takeContractKeptInBattle()) {
+            say("A contract kept. Go to a camp or the seat of " + houseName(oath.houseId) + " to be paid.", 5f);
+        }
+
+        String voided = history.contractVoided();
+        if (voided != null) say(voided, 5f);
     }
 
     /** Standing in a house's war camp: its signets returned, its sentries' greeting, its quartermaster (W18-W20). */
@@ -2946,8 +2955,7 @@ public class GameScreen extends BaseScreen {
         if (c != null && c.done) pay(houseId, c);
         if (oath.sealDue()) grantSeal(houseId);
         if (oath.contract == null) {
-            com.bpm.minotaur.gamedata.history.favour.Contract next = history.offerContract(worldManager.currentFronts(),
-                    worldManager.getCurrentPlayerChunkId());
+            com.bpm.minotaur.gamedata.history.favour.Contract next = history.offerContract();
             if (next != null) say("The captain sets you a task. " + next.describe(world), 7f);
             else say("The captain has no task for you while " + name + " is at peace.", 4f);
         } else {

@@ -148,7 +148,7 @@ public class SiegeTest {
         HistorySimulator.forceSiege(h.world(), war, 5);
         int besieger = Siege.besieger(h.world());
         h.swear(besieger);
-        Contract c = h.offerContract(null, new GridPoint2(0, 0));
+        Contract c = h.offerContract();
         assertEquals(Contract.Kind.SIEGE_ASSAULT, c.kind);
         assertEquals(h.world().tarminHouse().id, c.targetId);
         assertFalse(c.describe(h.world()).contains("_"));

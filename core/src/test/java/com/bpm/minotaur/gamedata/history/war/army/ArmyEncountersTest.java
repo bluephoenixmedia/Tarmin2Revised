@@ -62,6 +62,7 @@ public class ArmyEncountersTest {
                 }
             }
             for (Encounter c : l.camps()) {
+                if (c.slot == ArmyLayer.SEAT_CAMP) continue;
                 Army a = h.roster().army((int) c.slot);
                 assertNotNull(a);
                 assertFalse(a.battle);
@@ -69,6 +70,24 @@ public class ArmyEncountersTest {
         }
         assertTrue(kinds.toString(), kinds.contains(Encounter.Kind.COLUMN));
         assertTrue(kinds.toString(), kinds.contains(Encounter.Kind.SKIRMISH));
+    }
+
+    /** A39: a house can swear and pay at its seat, unless the seat is under siege. */
+    @Test
+    public void aSeatKeepsItsBannerUntilItIsBesieged() {
+        HistoryManager h = HistoryManager.create(8919L, catalog);
+        ArmyLayer l = layer(h, 8919L);
+        run(h, l, 1);
+        Encounter at = null;
+        for (Encounter c : l.camps()) if (c.slot == ArmyLayer.SEAT_CAMP) at = c;
+        assertNotNull(at);
+        SeatSiege s = new SeatSiege();
+        s.id = 1;
+        s.holder = at.houseA;
+        s.x = at.from.x;
+        s.y = at.from.y;
+        h.roster().sieges.add(s);
+        for (Encounter c : l.camps()) assertFalse(c.slot == ArmyLayer.SEAT_CAMP && c.houseA == s.holder);
     }
 
     @Test

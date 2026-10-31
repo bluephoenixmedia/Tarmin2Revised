@@ -1505,6 +1505,8 @@ public class WorldManager {
                     return getHistory().stanceOf(houseId) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.ENEMY;
                 }
             });
+            final com.bpm.minotaur.gamedata.history.war.army.ArmyLayer theseArmies = armyLayer;
+            getHistory().onOathBroken(theseArmies::huntersNow);
             armyLayer.beastHealth(id -> {
                 com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
                 com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(id);

@@ -199,12 +199,22 @@ public final class ArmyLayer {
     }
 
     /** Every host that has halted, its tents pitched where it stands. */
+    /** The slot of the camp a house keeps at its seat, which is no army's. */
+    public static final long SEAT_CAMP = -5;
+
     public List<Encounter> camps() {
         List<Encounter> out = new ArrayList<>();
         for (int i = 0; i < roster.armies.size(); i++) {
             Army a = roster.armies.get(i);
             boolean main = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
             if (main && !a.battle && (a.path == null || a.marchStep >= a.path.length)) out.add(encounter(Encounter.Kind.CAMP, a));
+        }
+        // A house keeps its banner at its seat, for its oath and its contracts (A39), unless the seat is under siege.
+        for (int i = 0; i < houses.size(); i++) {
+            House h = houses.get(i);
+            if (h.isExtinct() || h.holdsCastle || !hasSeat(h.id) || roster.siegeAt(seatXs[h.id], seatYs[h.id]) != null) continue;
+            GridPoint2 seat = new GridPoint2(seatXs[h.id], seatYs[h.id]);
+            out.add(new Encounter(Encounter.Kind.CAMP, SEAT_CAMP, -1, h.id, -1, 0, Long.MAX_VALUE, seat, seat));
         }
         return out;
     }
@@ -353,6 +363,34 @@ public final class ArmyLayer {
             House h = houses.get(i);
             if (h.isExtinct() || !hasSeat(h.id) || !watch.countsPlayerAnEnemy(h.id)) continue;
             sendHuntersOf(h);
+        }
+    }
+
+    /** An oath broken: the betrayed house's nearest host sends its party at once, from where it stands (A41). */
+    public void huntersNow(int houseId) {
+        House h = world.house(houseId);
+        GridPoint2 at = watch == null ? null : watch.surfaceChunk();
+        if (at != null) roster.notePlayerSeen(houseId, at.x, at.y);
+        if (h == null || h.isExtinct() || !hasSeat(houseId) || roster.playerSeenBy(houseId) == null) return;
+        int before = roster.armies.size();
+        sendHuntersOf(h);
+        if (roster.armies.size() == before || at == null) return;
+        Army party = roster.armies.get(roster.armies.size() - 1);
+        Army nearest = null;
+        int best = Integer.MAX_VALUE;
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army a = roster.armies.get(i);
+            if (a.houseId != houseId || !a.isHost()) continue;
+            int d = cheb(a.x, a.y, at.x, at.y);
+            if (d < best) {
+                best = d;
+                nearest = a;
+            }
+        }
+        if (nearest != null) {
+            party.x = nearest.x;
+            party.y = nearest.y;
+            goTo(party, at.x, at.y);
         }
     }
 
@@ -1190,6 +1228,16 @@ public final class ArmyLayer {
         deed.captainsTaken = taken;
         deed.foughtFor = b.foughtFor();
         deed.witnessed = b.witnessed;
+        // Only one still on the field at the end stood to it: one who fled was no longer watching (A40).
+        int stoodWith = b.stoodWith();
+        deed.stoodWith = b.witnessed ? stoodWith : -1;
+        deed.armiesRouted = lost;
+        deed.armiesHeld = won;
+        int enemyLeftStanding = alive(b, stoodWith != b.houseA);
+        int enemyDead = (stoodWith == b.houseA ? b.startB : b.startA) - enemyLeftStanding;
+        b.playerShare = enemyDead > 0 ? Math.min(1f, b.playerKills / (float) enemyDead) : 0f;
+        deed.turned = b.beastId < 0 && deed.stoodWith >= 0
+                && com.bpm.minotaur.gamedata.history.favour.BattleFavour.turned(deed.stoodWith == winner, b.playerShare);
         b.winner = winner;
         b.loser = loser;
         for (int id : slain) {

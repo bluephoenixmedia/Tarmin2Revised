@@ -329,8 +329,11 @@ public final class BattleDirector {
                 line.remove(i);
                 layer.soldierFell(battle, a, m.getHouseId());
                 lost[side]++;
+                boolean byThePlayer = m.seekerDrewBlood();
+                if (byThePlayer) battle.playerKills++;
                 Integer army = captains.remove(m);
                 if (army == null) continue;
+                if (byThePlayer) battle.playerSlewCaptain = true;
                 layer.captainFell(battle, army);
                 lost[side + 2]++;
                 if (r != null) r.messages.add(m.getDisplayName() + " is down! The line of " + name(a ? battle.houseA : battle.houseB) + " wavers.");
@@ -460,6 +463,10 @@ public final class BattleDirector {
     }
 
     /** The house the player fought for: the one whose enemies alone they struck; -1 if both or neither (W19). */
+    public int playerStoodWith() {
+        return battle.stoodWith();
+    }
+
     public int playerFoughtFor() {
         return battle.foughtFor();
     }

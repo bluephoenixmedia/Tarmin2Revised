@@ -60,6 +60,8 @@ public final class Headlines {
                 return 7;
             case BATTLE:
                 return e.figureB >= 0 ? 7 : 4;
+            case BATTLE_TURNED:
+                return 6;
             case MEGABEAST_SLAIN:
             case MEGABEAST_FELLED:
             case TOWN_BETRAYED:

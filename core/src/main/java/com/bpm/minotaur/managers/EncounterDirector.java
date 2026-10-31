@@ -47,8 +47,14 @@ public final class EncounterDirector {
         public int campHouse = -1;
         /** A column of this house left the chunk with the player beside it, alive (W25). */
         public int escorted = -1;
+        /** The army of that column, for a contract that names it (A37); -1 if none. */
+        public int escortedArmy = -1;
+        /** The army of a column the player broke up; -1 if none. */
+        public int brokenArmy = -1;
         /** The player cut down every sentry of this house's camp (W25). */
         public int campBroken = -1;
+        /** The army whose camp that was, for a contract that names it (A37); -1 if it was none. */
+        public int campBrokenArmy = -1;
         /** The player fought for this house in a skirmish, and it held the ground (W19). */
         public int foughtFor = -1;
         /** The player cut down this house's herald (W29). */
@@ -548,10 +554,12 @@ public final class EncounterDirector {
                 boolean destroyed = true;
                 for (Monster m : s.a) if (m.isAlive()) destroyed = false;
                 if (destroyed) {
+                    t.brokenArmy = (int) s.e.slot;
                     ledger.spend(s.e);
                     t.messages.add("The column of " + name(world, s.e.houseA) + " is broken. Its banners lie in the mud.");
                 } else if (player != null) {
                     t.escorted = s.e.houseA;
+                    t.escortedArmy = (int) s.e.slot;
                 }
                 s.phase = Phase.DONE;
                 return;
@@ -586,6 +594,7 @@ public final class EncounterDirector {
                     if (!s.a.isEmpty() && standing(maze, s.a) == 0) {
                         ledger.spend(s.e);
                         t.campBroken = s.e.houseA;
+                        if (s.e.slot > 0) t.campBrokenArmy = (int) s.e.slot;
                         t.messages.add("The camp of " + name(world, s.e.houseA) + " stands empty.");
                         s.phase = Phase.DONE;
                     }

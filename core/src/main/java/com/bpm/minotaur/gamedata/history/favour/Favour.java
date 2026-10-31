@@ -40,6 +40,16 @@ public final class Favour {
     public static final int OATH_BROKEN_ALL = -20;
 
     private final Map<Integer, Integer> byHouse = new LinkedHashMap<>();
+    /** A turncoat's new liege, and the live Season until which its regard stays short of Friend (A41). */
+    private int heldHouse = -1;
+    private int heldUntil = -1;
+
+    /** House {@code houseId} holds the player at Tolerated or below until {@code liveSeason}. */
+    public void holdAtTolerated(int houseId, int liveSeason) {
+        heldHouse = houseId;
+        heldUntil = liveSeason;
+        if (of(houseId) >= FRIEND_AT) set(houseId, FRIEND_AT - 1);
+    }
 
     public int of(int houseId) {
         return byHouse.getOrDefault(houseId, 0);
@@ -72,11 +82,16 @@ public final class Favour {
 
     /** {@code delta} with house {@code houseId}; its enemies at war hear half of it, reversed (W19). */
     public void change(HistoryWorld world, int houseId, int delta) {
-        set(houseId, of(houseId) + delta);
+        if (world == null) set(houseId, of(houseId) + delta);
+        else setHeld(world, houseId, of(houseId) + delta);
         if (world == null || delta / 2 == 0) return;
         for (House h : world.livingHouses()) {
-            if (h.id != houseId && world.activeWarBetween(h.id, houseId) != null) set(h.id, of(h.id) - delta / 2);
+            if (h.id != houseId && world.activeWarBetween(h.id, houseId) != null) setHeld(world, h.id, of(h.id) - delta / 2);
         }
+    }
+
+    private void setHeld(HistoryWorld world, int houseId, int value) {
+        set(houseId, houseId == heldHouse && world.liveSeasons() < heldUntil ? Math.min(value, FRIEND_AT - 1) : value);
     }
 
     /** Every house's regard falls by {@code delta}, without spillover: a betrayal heard by all. */

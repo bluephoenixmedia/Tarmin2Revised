@@ -46,6 +46,10 @@ public final class WarManager {
         /** When the battle breaks: who held the field, and whom the player fought for (W19); -1 otherwise. */
         public int winner = -1;
         public int foughtFor = -1;
+        /** What the house fought for makes of it (A40): zero if the player didn't stand with one. */
+        public int favour;
+        /** The player's hand turned it (A40). */
+        public boolean turned;
         /** The lines have just appeared, and the player has not said where they stand (A26). */
         public boolean offerSides;
     }
@@ -101,7 +105,11 @@ public final class WarManager {
         if (r.winner != -1) t.cues.add(Cue.ROUT);
         if (r.winner >= 0) {
             t.winner = r.winner;
-            t.foughtFor = active.playerFoughtFor();
+            t.foughtFor = active.playerStoodWith();
+            if (t.foughtFor >= 0) {
+                t.favour = com.bpm.minotaur.gamedata.history.favour.BattleFavour.of(t.foughtFor == r.winner, active.battle.playerShare, active.battle.playerSlewCaptain);
+                t.turned = com.bpm.minotaur.gamedata.history.favour.BattleFavour.turned(t.foughtFor == r.winner, active.battle.playerShare);
+            }
         }
         if (active.phase() == BattleDirector.Phase.DONE) active = null;
         return t;
