@@ -620,6 +620,42 @@ public class SpawnManager {
         return monster;
     }
 
+    /** A monster of the spawn table on its way to the player, as far off as an Alarm hears it (A64). */
+    public Monster spawnWithin(Player player, int tiles) {
+        GridPoint2 tile = tileWithin(maze, (int) player.getPosition().x, (int) player.getPosition().y, tiles, random);
+        if (tile == null) return spawnBeside(player);
+        Monster monster = spawnAt(tile, "Bivouac Ambush (heard coming)");
+        if (monster != null) monster.setState(Monster.MonsterState.HUNTING);
+        return monster;
+    }
+
+    /**
+     * A free tile as many steps away as the walls allow, up to {@code tiles}, and never the next
+     * step, or null. Steps, not distance: what an Alarm hears has a way to the sleeper. Public for the tests.
+     */
+    public static GridPoint2 tileWithin(Maze maze, int px, int py, int tiles, Random random) {
+        Set<GridPoint2> seen = new HashSet<>();
+        List<GridPoint2> ring = new ArrayList<>();
+        ring.add(new GridPoint2(px, py));
+        seen.add(ring.get(0));
+        List<GridPoint2> farthest = new ArrayList<>();
+        for (int step = 1; step <= tiles && !ring.isEmpty(); step++) {
+            List<GridPoint2> next = new ArrayList<>();
+            List<GridPoint2> free = new ArrayList<>();
+            for (GridPoint2 from : ring) {
+                for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+                    GridPoint2 to = new GridPoint2(from.x + (int) d.getVector().x, from.y + (int) d.getVector().y);
+                    if (maze.isWallBlocking(from.x, from.y, d) || !maze.isPassable(to.x, to.y) || !seen.add(to)) continue;
+                    next.add(to);
+                    if (!maze.getMonsters().containsKey(to)) free.add(to);
+                }
+            }
+            if (step >= 2 && !free.isEmpty()) farthest = free;
+            ring = next;
+        }
+        return farthest.isEmpty() ? null : farthest.get(random.nextInt(farthest.size()));
+    }
+
     private GridPoint2 findRuntimeSpawnPoint(Player player) {
         int width = maze.getWidth();
         int height = maze.getHeight();

@@ -1555,17 +1555,22 @@ public class WorldManager {
     }
 
     /**
-     * Monsters of this chunk's own spawn table come upon a sleeper, and stand beside them (A62).
-     * Returns those that found room.
+     * Monsters of this chunk's own spawn table come upon a sleeper, and stand beside them (A62),
+     * or are heard coming if an Alarm is set; Concealment turns the dull ones past (A64).
+     * Returns those that found the sleeper.
      */
-    public java.util.List<com.bpm.minotaur.gamedata.monster.Monster> ambushSleeper(Player player, Maze maze, int count) {
+    public java.util.List<com.bpm.minotaur.gamedata.monster.Monster> ambushSleeper(Player player, Maze maze, int count,
+            com.bpm.minotaur.gamedata.shelter.NightsWards wards) {
         SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
                 calculateEffectiveDifficulty(currentPlayerChunkId, currentLevel) + DoomManager.getInstance().getDoomEDLBonus(),
                 player.getLevel(), player.getLuck(), null, spawnTableData, System.nanoTime(), null);
         java.util.List<com.bpm.minotaur.gamedata.monster.Monster> out = new java.util.ArrayList<>();
         for (int i = 0; i < count; i++) {
-            com.bpm.minotaur.gamedata.monster.Monster m = sm.spawnBeside(player);
-            if (m != null) out.add(m);
+            com.bpm.minotaur.gamedata.monster.Monster m = wards.has(com.bpm.minotaur.gamedata.shelter.Ward.ALARM)
+                    ? sm.spawnWithin(player, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES) : sm.spawnBeside(player);
+            if (m == null) continue;
+            if (wards.hiddenFrom(m.getIntelligence(), m.isSpellcaster())) maze.removeMonster(m);
+            else out.add(m);
         }
         return out;
     }

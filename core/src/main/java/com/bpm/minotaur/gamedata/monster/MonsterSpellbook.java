@@ -63,7 +63,7 @@ public class MonsterSpellbook {
         // 2. If we need more spells and have dataManager, pull from school affinities
         if (dataManager != null && chosen.size() < targetPrepared && schools != null && !schools.isEmpty()) {
             List<SpellTemplate> candidates = new ArrayList<>();
-            for (SpellTemplate t : dataManager.getAllSpells()) {
+            for (SpellTemplate t : dataManager.getFoundSpells()) {
                 if (t == null || t.id == null || chosen.contains(t.id)) continue;
                 if (t.level <= maxCircle) {
                     for (String sc : schools) {

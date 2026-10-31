@@ -6516,6 +6516,42 @@
         "probability": 0,
         "isUsable": true
     },
+    "STAKED_HIDE_SCREEN": {
+        "friendlyName": "Staked Hide Screen",
+        "category": "TOOL",
+        "description": "Stitched hides stretched between two stakes. A ward for one Bivouac: raised on pitching, it absorbs the first 20 damage of the blows that fall before you can rise.",
+        "texturePath": "images/items/staked_hide_screen.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 15,
+        "probability": 0
+    },
+    "TRIPWIRE_BELLS": {
+        "friendlyName": "Tripwire Bells",
+        "category": "TOOL",
+        "description": "Thin wire strung with small iron bells. A ward for one Bivouac: set on pitching, it wakes you when a hostile comes within 6 tiles, so nothing strikes you sleeping. It is no help against an army arriving.",
+        "texturePath": "images/items/tripwire_bells.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 15,
+        "probability": 0
+    },
+    "ASH_BONE_CIRCLE": {
+        "friendlyName": "Ash-and-Bone Circle",
+        "category": "TOOL",
+        "description": "A ring of ash set about with small bones. A ward for one Bivouac: laid on pitching, it hides you from monsters below intelligence 12 that are not spellcasters. It will not hold over a fire.",
+        "texturePath": "images/items/ash_bone_circle.png",
+        "scale": {
+            "x": 0.5,
+            "y": 0.5
+        },
+        "baseValue": 15,
+        "probability": 0
+    },
     "TINDER_BUNDLE": {
         "friendlyName": "Tinder Bundle",
         "category": "TOOL",

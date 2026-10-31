@@ -168,10 +168,10 @@ public class CraftingScreen extends BaseScreen {
         // each other -- "]][" and "]D[". The number goes in a keycap and the tab is as wide as
         // its name.
         tabs = new UiTabs(hudSkin)
-                .addTab(1, "Forge & refine")
-                .addTab(2, "Salvage & scrap")
-                .addTab(3, "Ossuary & relics")
-                .addTab(4, "Alchemy cauldron")
+                .addTab(1, "Forge")
+                .addTab(2, "Salvage")
+                .addTab(3, "Ossuary")
+                .addTab(4, "Alchemy")
                 .addTab(5, "Field gear");
         tabs.onSelect(this::switchTab);
         tabs.setSelectedSilently(currentTab);
@@ -226,7 +226,7 @@ public class CraftingScreen extends BaseScreen {
         footer.add(feedbackLabel).growX().center();
         // WORK-12: nothing on this screen said how to leave it.
         footer.add(new KeyHintLegend(hudSkin)
-                .hint("1-4", "Tab")
+                .hint("1-5", "Tab")
                 .escapeHint("Back to shelter")).right();
         root.add(footer).growX().padTop(10);
 
@@ -477,6 +477,22 @@ public class CraftingScreen extends BaseScreen {
                 }
             });
             rightPanelContent.add(mend).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
+        }
+
+        rightPanelContent.add(UiLabels.ellipsized("WARDS, ONE NIGHT EACH", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT)))
+                .center().padTop(UiTheme.PAD_MD).padBottom(UiTheme.PAD_SM).row();
+        for (final com.bpm.minotaur.gamedata.shelter.Ward ward : com.bpm.minotaur.gamedata.shelter.Ward.values()) {
+            TextButton makeWard = createActionButton(ward.itemName + " (" + CraftingManager.wardRecipeText(ward) + ")", craftingManager.canMakeWard(player, ward));
+            makeWard.getLabel().setEllipsis(true);
+            makeWard.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (makeWard.isDisabled()) return;
+                    feedbackLabel.setText(craftingManager.makeWard(player, ward) != null ? ward.itemName + ", ready for one night." : "You lack the materials.");
+                    refreshAll();
+                }
+            });
+            rightPanelContent.add(makeWard).growX().height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_SM).row();
         }
     }
 

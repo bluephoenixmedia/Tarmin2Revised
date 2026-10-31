@@ -2402,8 +2402,12 @@ public class GameScreen extends BaseScreen {
         return null;
     }
 
-    /** The kit is unrolled: how shall the night be spent? (A61) */
     private void offerBivouac(Item kit) {
+        offerBivouac(kit, new com.bpm.minotaur.gamedata.shelter.NightsWards());
+    }
+
+    /** The kit is unrolled: how shall the night be spent, and under what wards? (A61, A64) */
+    private void offerBivouac(Item kit, com.bpm.minotaur.gamedata.shelter.NightsWards wards) {
         String refused = bivouacRefused();
         if (refused != null) {
             say(refused, 3f);
@@ -2415,12 +2419,73 @@ public class GameScreen extends BaseScreen {
         }
         final Item fuel = tinder;
         java.util.Map<String, Runnable> nights = new java.util.LinkedHashMap<>();
-        nights.put("Sleep", () -> sleepInBivouac(kit, null));
-        if (fuel != null && !fireHere()) nights.put("Sleep by a fire (burns a Tinder Bundle)", () -> sleepInBivouac(kit, fuel));
+        nights.put("Sleep", () -> sleepInBivouac(kit, null, wards));
+        if (fuel != null && !fireHere() && wards.canKindle()) nights.put("Sleep by a fire (burns a Tinder Bundle)", () -> sleepInBivouac(kit, fuel, wards));
+        offerWards(kit, wards, nights);
         String body = "A night here gives back half your strength and clears no ailment, and the world moves on as it would for any sleep. "
                 + "Something may find you. A fire keeps off the cold, and draws the eye. The kit has "
-                + com.bpm.minotaur.ui.UiNames.plural(com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit), "night", "nights") + " left.";
+                + com.bpm.minotaur.ui.UiNames.plural(com.bpm.minotaur.gamedata.shelter.Bivouac.nightsLeft(kit), "night", "nights") + " left."
+                + (nights.size() > 2 || !wards.wards().isEmpty() ? " A Shield takes the first " + com.bpm.minotaur.gamedata.shelter.Ward.SHIELD_ABSORBS
+                        + " damage of a surprise, an Alarm wakes you before anything is on you, and Concealment hides you from dull eyes and will have no fire." : "")
+                + (wards.wards().isEmpty() ? "" : " Readied: " + wardsReadied(wards) + ".");
         Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, "Bivouac", body, nights, "Not here", () -> { })));
+    }
+
+    /** One choice each way of raising a ward this sleeper can pay for, or of taking one down; the prompt comes back after each. */
+    private void offerWards(Item kit, com.bpm.minotaur.gamedata.shelter.NightsWards wards, java.util.Map<String, Runnable> nights) {
+        boolean fire = fireInSight();
+        for (com.bpm.minotaur.gamedata.shelter.Ward ward : com.bpm.minotaur.gamedata.shelter.Ward.values()) {
+            if (wards.has(ward)) {
+                nights.put("Take down the " + ward.label, () -> {
+                    wards.takeDown(ward);
+                    offerBivouac(kit, wards);
+                });
+                continue;
+            }
+            if (wards.canLay(ward, carried(ward.itemType) != null, fire)) {
+                nights.put(ward.label + ": " + ward.itemName, () -> {
+                    wards.lay(ward);
+                    offerBivouac(kit, wards);
+                });
+            }
+            if (wards.canCast(ward, player.getKnownSpellIds().contains(ward.spellId), player.getStats().getCurrentMP(), fire)) {
+                nights.put(ward.label + ": " + ward.spellName + " (" + ward.mpCost + " MP)", () -> {
+                    wards.cast(ward);
+                    offerBivouac(kit, wards);
+                });
+            }
+        }
+    }
+
+    /** Whether a burning field fire can draw the eye to this tile: more than the warmth of one, which is {@link #fireHere}. */
+    private boolean fireInSight() {
+        for (com.bpm.minotaur.gamedata.shelter.FieldFire f : maze.getFieldFires()) {
+            if (f.reaches((int) player.getPosition().x, (int) player.getPosition().y, (int) com.bpm.minotaur.gamedata.shelter.FieldFire.SIGHT_RADIUS)) return true;
+        }
+        return false;
+    }
+
+    private static String wardsReadied(com.bpm.minotaur.gamedata.shelter.NightsWards wards) {
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (com.bpm.minotaur.gamedata.shelter.Ward ward : wards.wards()) {
+            names.add(ward.label + " (" + (wards.isCast(ward) ? ward.mpCost + " MP" : ward.itemName) + ")");
+        }
+        return String.join(", ", names);
+    }
+
+    private Item carried(Item.ItemType type) {
+        for (Item i : player.getInventory().getAllItems()) {
+            if (i != null && i.getType() == type) return i;
+        }
+        return null;
+    }
+
+    /** Each ward is paid for as the sleeper lies down, and lasts the one night (A64). */
+    private void payForWards(com.bpm.minotaur.gamedata.shelter.NightsWards wards) {
+        for (com.bpm.minotaur.gamedata.shelter.Ward ward : wards.wards()) {
+            if (wards.isCast(ward)) player.getStats().setCurrentMP(player.getStats().getCurrentMP() - ward.mpCost);
+            else player.getInventory().consumeOne(carried(ward.itemType));
+        }
     }
 
     /** Whether a field fire already warms the player's tile. */
@@ -2428,7 +2493,7 @@ public class GameScreen extends BaseScreen {
         return maze.fieldFireWarming((int) player.getPosition().x, (int) player.getPosition().y) != null;
     }
 
-    private void sleepInBivouac(Item kit, Item tinder) {
+    private void sleepInBivouac(Item kit, Item tinder, com.bpm.minotaur.gamedata.shelter.NightsWards wards) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
         if (tinder != null && player.kindleFieldFire(maze, eventManager)) player.getInventory().consumeOne(tinder);
         boolean fire = fireHere();
@@ -2447,10 +2512,22 @@ public class GameScreen extends BaseScreen {
                 new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y), com.bpm.minotaur.gamedata.Scenery::fromProp,
                 history.encounterLedger().sleeps + 1 + BIVOUAC_STANDS_SLEEPS);
         wearOutKit(kit);
+        payForWards(wards);
 
         java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
         int slept = worldManager.sleepInTheField(night.quiet() ? full : night.ambushTurn);
         boolean soldiers = worldManager.armiesThreatenHere();
+        java.util.List<Monster> found = java.util.Collections.emptyList();
+        boolean passedBy = false;
+        if (!soldiers && !night.quiet()) {
+            found = worldManager.ambushSleeper(player, maze, night.ambushers, wards);
+            if (found.isEmpty()) {
+                // Nothing came of it after all, and the night goes on.
+                passedBy = wards.has(com.bpm.minotaur.gamedata.shelter.Ward.CONCEALMENT);
+                slept += worldManager.sleepInTheField(full - slept);
+                soldiers = worldManager.armiesThreatenHere();
+            }
+        }
 
         com.bpm.minotaur.gamedata.player.PlayerStats stats = player.getStats();
         stats.setCurrentHP(Math.min(stats.getMaxHP(), stats.getCurrentHP() + com.bpm.minotaur.gamedata.shelter.Bivouac.rest(stats.getMaxHP(), slept, full)));
@@ -2464,23 +2541,32 @@ public class GameScreen extends BaseScreen {
         // The cold got there first: the game's own check takes it from here.
         if (stats.getCurrentHP() <= 0) return;
 
-        if (soldiers) {
-            say("Drums in the dark, and feet. Soldiers have come upon your bivouac.", 5f);
-        } else if (!night.quiet()) {
-            // Waking is the turn: the free rounds were theirs, and the next move is the player's.
-            ambushed(night, fire);
-        } else {
-            say("You wake with the light, stiff and cold, and whole.", 4f);
-            playerTurnTakesAction();
+        switch (wards.waking(soldiers, found.size())) {
+            case ARMY:
+                say("Drums in the dark, and feet. Soldiers have come upon your bivouac.", 5f);
+                break;
+            case ALARM:
+                // They are coming and not yet here: the next move is the player's.
+                say(wards.isCast(com.bpm.minotaur.gamedata.shelter.Ward.ALARM) ? "Your Watchful Sleep breaks. Something is coming!"
+                        : "The bells! Something is coming!", 5f);
+                break;
+            case AMBUSH:
+                // Waking is the turn: the free rounds were theirs, and the next move is the player's.
+                ambushed(found, fire, wards);
+                break;
+            default:
+                say(passedBy ? "Something passed close in the dark and never saw you. You wake with the light, stiff and cold, and whole."
+                        : "You wake with the light, stiff and cold, and whole.", 4f);
+                playerTurnTakesAction();
+                break;
         }
     }
 
     /** They were on the sleeper before the sleeper knew: each beside them strikes before they can rise (A63). */
-    private void ambushed(com.bpm.minotaur.gamedata.shelter.Bivouac.Night night, boolean fire) {
-        java.util.List<Monster> found = worldManager.ambushSleeper(player, maze, night.ambushers);
+    private void ambushed(java.util.List<Monster> found, boolean fire, com.bpm.minotaur.gamedata.shelter.NightsWards wards) {
         say(fire ? "Your fire has drawn something out of the dark. You wake to it on top of you!"
                 : "You wake to something on top of you!", 5f);
-        combatManager.freeRounds(found, com.bpm.minotaur.gamedata.shelter.Bivouac.freeRounds(fire));
+        combatManager.freeRounds(found, wards.freeRounds(fire), wards.shield());
     }
 
     /** A night's wear; worn through, the kit comes apart into scraps (A60). */

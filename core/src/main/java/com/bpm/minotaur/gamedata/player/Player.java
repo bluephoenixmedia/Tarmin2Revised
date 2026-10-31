@@ -477,13 +477,14 @@ public class Player {
     }
 
     public void prepareSpell(int slot, String spellId) {
+        if (com.bpm.minotaur.gamedata.shelter.Ward.ofSpell(spellId) != null) return;
         if (slot >= 0 && slot < unlockedSpellSlots && slot < preparedSpells.length) {
             preparedSpells[slot] = spellId != null ? spellId.toUpperCase() : null;
         }
     }
 
     /** Outcome of a Spellbook request to change a Spell Slot. */
-    public enum SlotChange { OK, HOSTILE_IN_VIEW, SLOT_LOCKED, UNKNOWN_SPELL }
+    public enum SlotChange { OK, HOSTILE_IN_VIEW, SLOT_LOCKED, UNKNOWN_SPELL, CAST_ON_PITCHING }
 
     /**
      * The Spellbook's way to change a Spell Slot: puts a Known Spell into an unlocked
@@ -498,6 +499,9 @@ public class Player {
         String id = spellId != null ? spellId.toUpperCase() : null;
         if (id != null && !knownSpellIds.contains(id)) {
             return SlotChange.UNKNOWN_SPELL;
+        }
+        if (com.bpm.minotaur.gamedata.shelter.Ward.ofSpell(id) != null) {
+            return SlotChange.CAST_ON_PITCHING;
         }
         if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
             // While a hostile is in view:
@@ -652,6 +656,8 @@ public class Player {
         } else {
             learnRunSpellId(spellId);
         }
+        // A ward is cast from the Bivouac's own prompt, and holds no slot.
+        if (com.bpm.minotaur.gamedata.shelter.Ward.ofSpell(spellId) != null) return -1;
         for (int i = 0; i < unlockedSpellSlots && i < preparedSpells.length; i++) {
             if (preparedSpells[i] == null) {
                 prepareSpell(i, spellId);
@@ -729,7 +735,7 @@ public class Player {
         // Fallback: If generic BOOK with no spell assigned yet, assign one dynamically
         if (spellId == null || spellId.isEmpty()) {
             com.bpm.minotaur.gamedata.spells.SpellDataManager sdm = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance();
-            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> available = sdm.getAllSpells();
+            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> available = sdm.getFoundSpells();
             if (available != null && !available.isEmpty()) {
                 com.bpm.minotaur.gamedata.progression.ShelterAltar altar = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
                 List<com.bpm.minotaur.gamedata.spells.SpellTemplate> pool = new ArrayList<>();

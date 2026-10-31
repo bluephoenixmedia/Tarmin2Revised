@@ -52,14 +52,72 @@ public class BivouacWakingTest {
     @Test
     public void eachAmbusherStrikesOnceARound() {
         Monster a = ghoul(6f), b = ghoul(4f);
-        combat.freeRounds(Arrays.asList(a, b), 1);
+        combat.freeRounds(Arrays.asList(a, b), 1, 0);
         assertEquals(Arrays.asList(a, b), struck);
+    }
+
+    /** Living War A64, through the real blow: the Shield stops the first 20, and only in the free rounds. */
+    @Test
+    public void aShieldTakesTheFirstBlowsOfTheFreeRoundsAndThenIsGone() {
+        List<Integer> felt = new ArrayList<>();
+        Player sleeper = new Player(5f, 5f) {
+            @Override
+            public int takeDamage(int amount, com.bpm.minotaur.gamedata.DamageType type) {
+                felt.add(amount);
+                return amount;
+            }
+        };
+        CombatManager real = new CombatManager(sleeper, maze, null, new AnimationManager() {}, new GameEventManager(),
+                new HeadlessSoundManager(), null, null, null, null, null);
+        Monster striker = ghoul(6f);
+        striker.setDamageDice("7d1");
+        real.freeRounds(Arrays.asList(striker), 60, com.bpm.minotaur.gamedata.shelter.Ward.SHIELD_ABSORBS);
+        assertTrue("it hit often enough to see: " + felt, felt.size() >= 2);
+        assertEquals("7 + 7 + 6 stopped, and 1 through", Integer.valueOf(1), felt.get(0));
+        assertEquals(Integer.valueOf(7), felt.get(1));
+        felt.clear();
+        real.monsterMeleeStrike(striker);
+        real.freeRounds(Arrays.asList(striker), 60, 0);
+        assertTrue(felt.size() >= 2);
+        assertEquals("no Shield, no help", Integer.valueOf(7), felt.get(0));
+    }
+
+    /** Living War A64: an Alarm hears them at six tiles, and never has them adjoining. */
+    @Test
+    public void whatAnAlarmHearsIsSixTilesOffAndNeverBeside() {
+        java.util.Random rng = new java.util.Random(5);
+        for (int i = 0; i < 50; i++) {
+            GridPoint2 tile = SpawnManager.tileWithin(maze, 8, 8, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES, rng);
+            assertEquals("six steps", 6, Math.abs(tile.x - 8) + Math.abs(tile.y - 8));
+        }
+        Maze tiny = new Maze(2, new int[3][3]);
+        GridPoint2 cramped = SpawnManager.tileWithin(tiny, 0, 0, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES, rng);
+        assertEquals("as far as the ground goes", 4, cramped.x + cramped.y);
+        assertNull("nothing but what adjoins", SpawnManager.tileWithin(new Maze(2, new int[1][2]), 0, 0, 6, rng));
+    }
+
+    /** A wall between two tiles is no way through: nothing is heard coming from behind one. */
+    @Test
+    public void whatAnAlarmHearsHasAWayToTheSleeper() {
+        int eastWall = com.bpm.minotaur.gamedata.Direction.EAST.getWallMask();
+        int westWall = com.bpm.minotaur.gamedata.Direction.WEST.getWallMask();
+        int[][] walls = new int[16][16];
+        for (int y = 0; y < 16; y++) {
+            walls[y][8] = eastWall;
+            walls[y][9] = westWall;
+        }
+        Maze divided = new Maze(2, walls);
+        java.util.Random rng = new java.util.Random(6);
+        for (int i = 0; i < 50; i++) {
+            GridPoint2 tile = SpawnManager.tileWithin(divided, 8, 8, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES, rng);
+            assertTrue("this side of the wall: " + tile, tile.x <= 8);
+        }
     }
 
     @Test
     public void aFireDrawnAmbushStrikesTwice() {
         Monster a = ghoul(6f), b = ghoul(4f);
-        combat.freeRounds(Arrays.asList(a, b), 2);
+        combat.freeRounds(Arrays.asList(a, b), 2, 0);
         assertEquals(Arrays.asList(a, b, a, b), struck);
     }
 
@@ -68,11 +126,11 @@ public class BivouacWakingTest {
         Monster dead = ghoul(6f);
         dead.setCurrentHP(0);
         Monster live = ghoul(4f);
-        combat.freeRounds(Arrays.asList(dead, live), 1);
+        combat.freeRounds(Arrays.asList(dead, live), 1, 0);
         assertEquals(Arrays.asList(live), struck);
         struck.clear();
         player.getStats().setCurrentHP(0);
-        combat.freeRounds(Arrays.asList(live), 2);
+        combat.freeRounds(Arrays.asList(live), 2, 0);
         assertTrue(struck.isEmpty());
     }
 
