@@ -1971,6 +1971,26 @@ public class WorldManager {
         return camps;
     }
 
+    private com.bpm.minotaur.gamedata.history.war.WarSources warSources;
+    private long warSourcesAt = Long.MIN_VALUE;
+
+    /** Every real thing the war is making a sound or smoke with, this turn (Living War A53). */
+    public com.bpm.minotaur.gamedata.history.war.WarSources warSources() {
+        HistoryManager h = getHistory();
+        long clock = h.warClock();
+        if (warSources == null || clock != warSourcesAt) {
+            GridPoint2 castle = castleSite();
+            boolean besieged = com.bpm.minotaur.gamedata.history.war.Siege.besieger(h.world()) >= 0;
+            java.util.List<GridPoint2> camps = new java.util.ArrayList<>();
+            for (com.bpm.minotaur.gamedata.history.war.Encounter e : com.bpm.minotaur.gamedata.history.war.Siege.camps(h.world(), castle)) camps.add(e.from);
+            com.bpm.minotaur.gamedata.history.war.SeatMap seats = houseSeats();
+            warSources = com.bpm.minotaur.gamedata.history.war.WarSources.of(h.roster().armies, h.roster().battles, besieged ? castle : null, camps,
+                    h.encounterLedger(), seats == null ? null : seats::seat, clock);
+            warSourcesAt = clock;
+        }
+        return warSources;
+    }
+
     /** Castle Tarmin's chunk, or null in a world laid out before it. */
     public GridPoint2 castleSite() {
         return biomeManager != null ? biomeManager.getCastleSite() : null;

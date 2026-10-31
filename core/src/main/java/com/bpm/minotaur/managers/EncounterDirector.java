@@ -274,6 +274,7 @@ public final class EncounterDirector {
         }
         natives.sort(java.util.Comparator.<Monster>comparingInt(m -> (int) m.getPosition().y).thenComparingInt(m -> (int) m.getPosition().x));
         EncounterLedger.Dressing field = dressing(AFTERMATH, ledger);
+        field.trail = true;
         field.clearAtSleep = ledger.sleeps + AFTERMATH_SLEEPS;
         for (int i = 0; i < natives.size(); i++) {
             Monster m = natives.get(i);

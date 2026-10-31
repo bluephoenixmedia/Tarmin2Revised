@@ -150,8 +150,8 @@ public final class ArmyLayer {
         for (int i = 0; i < roster.armies.size(); i++) {
             Army a = roster.armies.get(i);
             if (a.battle) continue;
-            boolean halted = a.path == null || a.marchStep >= a.path.length;
-            boolean main = a.kind == Army.Kind.HOST || a.kind == Army.Kind.LEVY;
+            boolean halted = a.halted();
+            boolean main = a.isHost();
             if (main && halted) continue;
             Encounter.Kind kind = a.kind == Army.Kind.HERALD ? Encounter.Kind.HERALD
                     : a.kind == Army.Kind.RAID && halted ? Encounter.Kind.RAID : Encounter.Kind.COLUMN;
@@ -979,6 +979,7 @@ public final class ArmyLayer {
             int avail = spare(h);
             if (avail < ArmyTuning.MIN_ARMY || hostsOf(h.id) >= wanted) return;
             Army a = raise(h, Math.min(ArmyTuning.ARMY_SIZE, avail), Army.Kind.HOST);
+            a.musteredAt = clock;
             a.warId = warFor(h, a).id;
             decide(a, clock);
         }
@@ -994,6 +995,7 @@ public final class ArmyLayer {
         int n = Math.round(h.strength * ArmyTuning.LEVY_SHARE);
         if (n < ArmyTuning.MIN_ARMY || spare(h) < n) return;
         Army a = raise(h, n, Army.Kind.LEVY);
+        a.musteredAt = clock;
         a.levyOf = liege.id;
         for (War w : wars) {
             if (w.isActive() && w.involves(liege.id)) {

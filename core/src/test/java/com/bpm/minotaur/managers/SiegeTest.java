@@ -130,7 +130,7 @@ public class SiegeTest {
         assertFalse("entered only by the breach", siege.visible());
         assertTrue(siege.fighting());
         assertEquals(4, Siege.camps(h.world(), castle).size());
-        WarSoundscape.Mix m = WarSoundscape.mix(at, Collections.emptyList(), 0, new GridPoint2(0, 27), 1, Direction.NORTH, false);
+        WarSoundscape.Mix m = WarSoundscape.mix(com.bpm.minotaur.gamedata.history.war.WarSources.of(Collections.emptyList(), Collections.emptyList(), castle, Collections.emptyList(), null, null, 0), new GridPoint2(0, 27), 1, Direction.NORTH, false);
         boolean barrage = false;
         for (WarSoundscape.Shot s : m.shots) barrage |= s.key.equals("siege_barrage");
         assertTrue("the engines are heard", barrage);

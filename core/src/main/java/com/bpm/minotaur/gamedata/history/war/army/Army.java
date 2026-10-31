@@ -73,11 +73,24 @@ public class Army {
     /** The enemy armies it has already seen: a new one makes it think again. */
     public int[] seen = new int[0];
 
+    /** The war turn its seat mustered it, for the beacons (A57); -1 for an army from before they were kept. */
+    public long musteredAt = -1;
+
     /** The march's chunks; null when it must be searched again, as after a load. */
     transient int[] path;
 
     /** For the save reader. */
     public Army() {
+    }
+
+    /** A house's fighting host or a vassal's levy, not a party sent on an errand. */
+    public boolean isHost() {
+        return kind == Kind.HOST || kind == Kind.LEVY;
+    }
+
+    /** Not on the march. */
+    public boolean halted() {
+        return path == null || marchStep >= path.length;
     }
 
     boolean hasSeen(int armyId) {
