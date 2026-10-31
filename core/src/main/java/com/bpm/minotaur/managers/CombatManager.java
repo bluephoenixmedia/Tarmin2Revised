@@ -998,12 +998,15 @@ public class CombatManager {
     /** Each of these strikes in turn, for so many rounds, while it lives and the player does; a Shield takes the first of it (A63, A64). */
     public void freeRounds(java.util.List<Monster> strikers, int rounds, int shield) {
         freeRoundsShield = shield > 0 ? new com.bpm.minotaur.gamedata.shelter.Ward.Shield(shield) : null;
-        for (int round = 0; round < rounds; round++) {
-            for (Monster m : strikers) {
-                if (m.isAlive() && player.getStats().getCurrentHP() > 0) monsterMeleeStrike(m);
+        try {
+            for (int round = 0; round < rounds; round++) {
+                for (Monster m : strikers) {
+                    if (m.isAlive() && player.getStats().getCurrentHP() > 0) monsterMeleeStrike(m);
+                }
             }
+        } finally {
+            freeRoundsShield = null;
         }
-        freeRoundsShield = null;
     }
 
     public void monsterMeleeStrike(Monster attacker) {
@@ -1059,8 +1062,10 @@ public class CombatManager {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageHouse(
                     worldManager != null ? worldManager.houseOf(attacker) : -1);
-            maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
-            eventManager.addEvent(new GameEvent(attacker.getName() + " hits you for " + actualDamage, 1f));
+            if (!stopped) {
+                maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+                eventManager.addEvent(new GameEvent(attacker.getName() + " hits you for " + actualDamage, 1f));
+            }
 
             if (attacker != null && attacker.canSpeak() && com.badlogic.gdx.math.MathUtils.randomBoolean(0.35f)) {
                 boolean comprehend = (player != null && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.COMPREHEND_LANGUAGES));

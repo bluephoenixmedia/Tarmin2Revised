@@ -13,8 +13,8 @@ public final class NightsWards {
     private final EnumMap<Ward, Boolean> castNotLaid = new EnumMap<>(Ward.class);
 
     /** Whether this ward can be readied with what is carried. */
-    public boolean canLay(Ward ward, int carried, boolean fire) {
-        return carried > 0 && open(ward, fire);
+    public boolean canLay(Ward ward, boolean carried, boolean fire) {
+        return carried && open(ward, fire);
     }
 
     /** Whether this ward can be cast, the MP of those already readied being spoken for. */

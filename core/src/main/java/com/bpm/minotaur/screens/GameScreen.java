@@ -2433,7 +2433,7 @@ public class GameScreen extends BaseScreen {
 
     /** One choice each way of raising a ward this sleeper can pay for, or of taking one down; the prompt comes back after each. */
     private void offerWards(Item kit, com.bpm.minotaur.gamedata.shelter.NightsWards wards, java.util.Map<String, Runnable> nights) {
-        boolean fire = fireHere();
+        boolean fire = fireInSight();
         for (com.bpm.minotaur.gamedata.shelter.Ward ward : com.bpm.minotaur.gamedata.shelter.Ward.values()) {
             if (wards.has(ward)) {
                 nights.put("Take down the " + ward.label, () -> {
@@ -2442,7 +2442,7 @@ public class GameScreen extends BaseScreen {
                 });
                 continue;
             }
-            if (wards.canLay(ward, carried(ward.itemType) == null ? 0 : 1, fire)) {
+            if (wards.canLay(ward, carried(ward.itemType) != null, fire)) {
                 nights.put(ward.label + ": " + ward.itemName, () -> {
                     wards.lay(ward);
                     offerBivouac(kit, wards);
@@ -2455,6 +2455,14 @@ public class GameScreen extends BaseScreen {
                 });
             }
         }
+    }
+
+    /** Whether a burning field fire can draw the eye to this tile: more than the warmth of one, which is {@link #fireHere}. */
+    private boolean fireInSight() {
+        for (com.bpm.minotaur.gamedata.shelter.FieldFire f : maze.getFieldFires()) {
+            if (f.reaches((int) player.getPosition().x, (int) player.getPosition().y, (int) com.bpm.minotaur.gamedata.shelter.FieldFire.SIGHT_RADIUS)) return true;
+        }
+        return false;
     }
 
     private static String wardsReadied(com.bpm.minotaur.gamedata.shelter.NightsWards wards) {

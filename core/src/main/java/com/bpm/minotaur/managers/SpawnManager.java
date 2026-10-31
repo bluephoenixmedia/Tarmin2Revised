@@ -629,21 +629,31 @@ public class SpawnManager {
         return monster;
     }
 
-    /** A free tile as near this many tiles away as the ground allows and never adjoining, or null. Public for the tests. */
+    /**
+     * A free tile as many steps away as the walls allow, up to {@code tiles}, and never the next
+     * step, or null. Steps, not distance: what an Alarm hears has a way to the sleeper. Public for the tests.
+     */
     public static GridPoint2 tileWithin(Maze maze, int px, int py, int tiles, Random random) {
-        for (int ring = tiles; ring >= 2; ring--) {
-            List<GridPoint2> found = new ArrayList<>();
-            for (int y = Math.max(0, py - ring); y <= Math.min(maze.getHeight() - 1, py + ring); y++) {
-                for (int x = Math.max(0, px - ring); x <= Math.min(maze.getWidth() - 1, px + ring); x++) {
-                    double away = Math.hypot(x - px, y - py);
-                    if (away > ring || away <= ring - 1 || !maze.isPassable(x, y)) continue;
-                    GridPoint2 tile = new GridPoint2(x, y);
-                    if (!maze.getMonsters().containsKey(tile)) found.add(tile);
+        Set<GridPoint2> seen = new HashSet<>();
+        List<GridPoint2> ring = new ArrayList<>();
+        ring.add(new GridPoint2(px, py));
+        seen.add(ring.get(0));
+        List<GridPoint2> farthest = new ArrayList<>();
+        for (int step = 1; step <= tiles && !ring.isEmpty(); step++) {
+            List<GridPoint2> next = new ArrayList<>();
+            List<GridPoint2> free = new ArrayList<>();
+            for (GridPoint2 from : ring) {
+                for (com.bpm.minotaur.gamedata.Direction d : com.bpm.minotaur.gamedata.Direction.values()) {
+                    GridPoint2 to = new GridPoint2(from.x + (int) d.getVector().x, from.y + (int) d.getVector().y);
+                    if (maze.isWallBlocking(from.x, from.y, d) || !maze.isPassable(to.x, to.y) || !seen.add(to)) continue;
+                    next.add(to);
+                    if (!maze.getMonsters().containsKey(to)) free.add(to);
                 }
             }
-            if (!found.isEmpty()) return found.get(random.nextInt(found.size()));
+            if (step >= 2 && !free.isEmpty()) farthest = free;
+            ring = next;
         }
-        return null;
+        return farthest.isEmpty() ? null : farthest.get(random.nextInt(farthest.size()));
     }
 
     private GridPoint2 findRuntimeSpawnPoint(Player player) {

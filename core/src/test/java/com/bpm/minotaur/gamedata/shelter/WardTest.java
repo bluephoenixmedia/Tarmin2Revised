@@ -98,7 +98,7 @@ public class WardTest {
     @Test
     public void concealmentAndALitFireCannotBeCombined() {
         NightsWards night = new NightsWards();
-        assertFalse("not over a fire", night.canLay(Ward.CONCEALMENT, 1, true));
+        assertFalse("not over a fire", night.canLay(Ward.CONCEALMENT, true, true));
         assertFalse("not over a fire", night.canCast(Ward.CONCEALMENT, true, 99, true));
         assertTrue(night.canKindle());
         night.lay(Ward.CONCEALMENT);
@@ -129,8 +129,8 @@ public class WardTest {
         night.takeDown(Ward.SHIELD);
         night.lay(Ward.SHIELD);
         assertEquals("a screen costs no MP", 5, night.mpDue());
-        assertFalse("readied once", night.canLay(Ward.SHIELD, 1, false));
-        assertFalse("none carried", new NightsWards().canLay(Ward.ALARM, 0, false));
+        assertFalse("readied once", night.canLay(Ward.SHIELD, true, false));
+        assertFalse("none carried", new NightsWards().canLay(Ward.ALARM, false, false));
     }
 
     @Test

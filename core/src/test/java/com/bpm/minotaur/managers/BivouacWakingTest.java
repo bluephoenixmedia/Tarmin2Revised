@@ -88,13 +88,30 @@ public class BivouacWakingTest {
         java.util.Random rng = new java.util.Random(5);
         for (int i = 0; i < 50; i++) {
             GridPoint2 tile = SpawnManager.tileWithin(maze, 8, 8, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES, rng);
-            double away = Math.hypot(tile.x - 8, tile.y - 8);
-            assertTrue("" + away, away > 5 && away <= 6);
+            assertEquals("six steps", 6, Math.abs(tile.x - 8) + Math.abs(tile.y - 8));
         }
         Maze tiny = new Maze(2, new int[3][3]);
         GridPoint2 cramped = SpawnManager.tileWithin(tiny, 0, 0, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES, rng);
-        assertTrue("as far as the ground goes", Math.hypot(cramped.x, cramped.y) > 1);
-        assertNull("nothing but what adjoins", SpawnManager.tileWithin(new Maze(2, new int[2][1]), 0, 0, 6, rng));
+        assertEquals("as far as the ground goes", 4, cramped.x + cramped.y);
+        assertNull("nothing but what adjoins", SpawnManager.tileWithin(new Maze(2, new int[1][2]), 0, 0, 6, rng));
+    }
+
+    /** A wall between two tiles is no way through: nothing is heard coming from behind one. */
+    @Test
+    public void whatAnAlarmHearsHasAWayToTheSleeper() {
+        int eastWall = com.bpm.minotaur.gamedata.Direction.EAST.getWallMask();
+        int westWall = com.bpm.minotaur.gamedata.Direction.WEST.getWallMask();
+        int[][] walls = new int[16][16];
+        for (int y = 0; y < 16; y++) {
+            walls[y][8] = eastWall;
+            walls[y][9] = westWall;
+        }
+        Maze divided = new Maze(2, walls);
+        java.util.Random rng = new java.util.Random(6);
+        for (int i = 0; i < 50; i++) {
+            GridPoint2 tile = SpawnManager.tileWithin(divided, 8, 8, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES, rng);
+            assertTrue("this side of the wall: " + tile, tile.x <= 8);
+        }
     }
 
     @Test

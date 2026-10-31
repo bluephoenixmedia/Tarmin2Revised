@@ -129,20 +129,20 @@ public class CraftingManager {
 
     /** What one night's ward takes to make (Living War A64). */
     public static java.util.Map<ItemType, Integer> wardRecipe(com.bpm.minotaur.gamedata.shelter.Ward ward) {
-        switch (ward) {
-            case SHIELD: return java.util.Map.of(ItemType.LEATHER_SCRAP, 2, ItemType.STICK, 2);
-            case ALARM: return java.util.Map.of(ItemType.METAL_SCRAP, 1, ItemType.STICK, 1);
-            default: return java.util.Map.of(ItemType.FIREWOOD, 1, ItemType.BONE, 1);
-        }
+        return switch (ward) {
+            case SHIELD -> java.util.Map.of(ItemType.LEATHER_SCRAP, 2, ItemType.STICK, 2);
+            case ALARM -> java.util.Map.of(ItemType.METAL_SCRAP, 1, ItemType.STICK, 1);
+            case CONCEALMENT -> java.util.Map.of(ItemType.FIREWOOD, 1, ItemType.BONE, 1);
+        };
     }
 
     /** The same, as the bench puts it. */
     public static String wardRecipeText(com.bpm.minotaur.gamedata.shelter.Ward ward) {
-        switch (ward) {
-            case SHIELD: return "2 Leather Scrap, 2 Sticks";
-            case ALARM: return "1 Metal Scrap, 1 Stick";
-            default: return "1 Firewood, 1 Bone";
-        }
+        return switch (ward) {
+            case SHIELD -> "2 Leather Scrap, 2 Sticks";
+            case ALARM -> "1 Metal Scrap, 1 Stick";
+            case CONCEALMENT -> "1 Firewood, 1 Bone";
+        };
     }
 
     public boolean canMakeWard(Player player, com.bpm.minotaur.gamedata.shelter.Ward ward) {

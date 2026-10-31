@@ -169,6 +169,11 @@ public final class BivouacScenario implements PlaytestScenario {
                 if (i != null && i.getType() == Item.ItemType.STAKED_HIDE_SCREEN) screens++;
             }
             ctx.assertEquals(1, screens, "one of two screens spent");
+            for (Monster m : ctx.getMaze().getMonsters().values()) {
+                if (m == null || !m.isAlive()) continue;
+                ctx.log("Saw through the veil: " + m.getName() + " (intelligence " + m.getIntelligence() + ", caster " + m.isSpellcaster() + ")");
+                ctx.assertTrue(!com.bpm.minotaur.gamedata.shelter.Ward.concealmentHidesFrom(m.getIntelligence(), m.isSpellcaster()), "only the clever or magical find a veiled sleeper");
+            }
         });
         clearGround(script, ctx);
 

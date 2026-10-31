@@ -53,7 +53,7 @@ public enum Tome {
         return displayName;
     }
 
-    /** 1-based Spell Slot this Tome unlocks. */
+    /** 1-based Spell Slot this Tome unlocks; 0 for the Wayfarer's, which unlocks none. */
     public int getSlotNumber() {
         return slotNumber;
     }
