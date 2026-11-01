@@ -130,6 +130,9 @@ public class PlayerDeed {
     /** The houses of the side the player stood with to the end, if they did, and whether it won; for the contract in hand. */
     public transient int[] stoodWith;
     public transient boolean stoodAndWon;
+    /** ARMY_BATTLE: it was a storming of the seat, and the player drew blood on the other side in it (A42). */
+    public transient boolean assault;
+    public transient boolean fought;
     /** ARMY_BATTLE: the player turned it, a fifth or more of the enemy dead on a winning side (A40). */
     public boolean turned;
     /** The armies that routed and that held the field, for the contract in hand (A38). */

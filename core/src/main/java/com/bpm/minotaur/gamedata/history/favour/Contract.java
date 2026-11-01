@@ -40,6 +40,8 @@ public class Contract {
         STAND_WITH_HOST,
         /** The house besieges Castle Tarmin: join the assault, through the breach into its halls (W37). */
         SIEGE_ASSAULT,
+        /** Be first over the wall of the seat the host one follows besieges (A42). */
+        FIRST_LADDER,
         // The kinds before A37, for reading old saves: a contract of these is void on load.
         HOLD_CHUNK, KILL_CAPTAIN, ESCORT_COLUMN, BURN_CAMP
     }
@@ -65,6 +67,8 @@ public class Contract {
     public int held;
     public boolean hard;
     public boolean done;
+    /** Paid as a hard one, though it isn't one and won't count toward the seal: an assault fought in, and the seat fell (A42). */
+    public boolean hardRate;
 
     /** For the save reader. */
     public Contract() {
@@ -113,6 +117,14 @@ public class Contract {
         return open.get(r.nextInt(open.size()));
     }
 
+    /** What the captain asks of a Friend when the ladders are up (A42): always a hard task. */
+    public static Contract firstLadder(int giverId, SeatSiege siege) {
+        Contract base = new Contract();
+        base.giverId = giverId;
+        base.hard = true;
+        return aimed(base, Kind.FIRST_LADDER, siege.holder, -1, -1, siege.id, siege.x, siege.y);
+    }
+
     private static Contract aimed(Contract base, Kind kind, int enemy, int army, int figure, int siege, int x, int y) {
         Contract c = new Contract();
         c.giverId = base.giverId;
@@ -132,12 +144,25 @@ public class Contract {
         return kind == null || kind == Kind.HOLD_CHUNK || kind == Kind.KILL_CAPTAIN || kind == Kind.ESCORT_COLUMN || kind == Kind.BURN_CAMP;
     }
 
+    private boolean paysHard() {
+        return hard || hardRate;
+    }
+
     public int favour() {
-        return hard ? HARD_FAVOUR : FAVOUR;
+        return paysHard() ? HARD_FAVOUR : FAVOUR;
     }
 
     public int coin() {
-        return hard ? COIN * 2 : COIN;
+        return paysHard() ? COIN * 2 : COIN;
+    }
+
+    /** Whether this is the first ladder of that siege, not yet climbed. */
+    public boolean firstLadderAt(int siegeId) {
+        return !done && kind == Kind.FIRST_LADDER && targetSiege == siegeId;
+    }
+
+    private boolean atItsChunk(PlayerDeed deed) {
+        return deed.chunkX == chunkX && deed.chunkY == chunkY;
     }
 
     /** A32's sight: how near one of the liege's armies must be to report where the target is. */
@@ -195,10 +220,15 @@ public class Contract {
                 done = has(deed.captainsSlain, targetFigure) || has(deed.captainsTaken, targetFigure);
                 break;
             case RELIEVE_SEAT:
-                done = won && deed.chunkX == chunkX && deed.chunkY == chunkY;
+                done = won && atItsChunk(deed);
                 break;
             case JOIN_ASSAULT:
-                done = won && deed.seatFell && deed.chunkX == chunkX && deed.chunkY == chunkY;
+                // Done by fighting in it, whatever comes of it; the seat falling only raises the pay.
+                done = deed.assault && deed.fought && atItsChunk(deed);
+                hardRate = done && deed.seatFell;
+                break;
+            case FIRST_LADDER:
+                done = deed.seatFell && deed.fought && atItsChunk(deed);
                 break;
             case STAND_WITH_HOST:
                 // Through it, win or lose.
@@ -207,6 +237,18 @@ public class Contract {
             default:
                 break;
         }
+        return done;
+    }
+
+    /**
+     * A siege raised, or a battle the besiegers lost: a relief contract is done if the player was inside
+     * the ring or with the relief, in the line or not (A42). True if this kept it.
+     */
+    public boolean onSiegeLifted(PlayerDeed deed, boolean playerThere) {
+        if (done || kind != Kind.RELIEVE_SEAT || !playerThere || !atItsChunk(deed)) return false;
+        boolean raised = deed.kind == PlayerDeed.Kind.SIEGE_RAISED;
+        boolean routed = deed.kind == PlayerDeed.Kind.ARMY_BATTLE && deed.other == targetId;
+        done = raised || routed;
         return done;
     }
 
@@ -247,10 +289,13 @@ public class Contract {
                 ask = "Break a war camp of " + enemy + ": cut down every sentry in it" + where;
                 break;
             case RELIEVE_SEAT:
-                ask = "Our seat is besieged by " + enemy + ": fight at its walls and drive them off, at chunk " + chunkX + ", " + chunkY + ".";
+                ask = "Our seat is besieged by " + enemy + ": pass their ring and hold its walls, or come with the relief, at chunk " + chunkX + ", " + chunkY + ".";
                 break;
             case JOIN_ASSAULT:
-                ask = "Join our assault on the seat of " + enemy + ", at chunk " + chunkX + ", " + chunkY + ".";
+                ask = "Fight in our assault on the seat of " + enemy + ", at chunk " + chunkX + ", " + chunkY + ". If it falls, we pay as for a hard task.";
+                break;
+            case FIRST_LADDER:
+                ask = "Be first up the ladders at the seat of " + enemy + ", and see it fall.";
                 break;
             case STAND_WITH_HOST:
                 ask = "Stand with one of our hosts through its next battle" + where;

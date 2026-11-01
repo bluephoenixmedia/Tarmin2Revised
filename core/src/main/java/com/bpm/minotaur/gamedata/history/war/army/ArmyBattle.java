@@ -35,6 +35,8 @@ public class ArmyBattle {
     public float wallEdge;
     /** A storming of the seat, not its garrison coming out: fought over the walls, and then the yard (A33). */
     public boolean assault;
+    /** The garrison coming out against the camp (A34). */
+    public boolean sally;
     /** The walls are lost, and the last of the garrison stands in the yard: only clearing it takes the seat. */
     public boolean yard;
     public int moraleA = 100;

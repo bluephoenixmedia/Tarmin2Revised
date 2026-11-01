@@ -8,14 +8,17 @@ import java.util.function.ToIntFunction;
 
 /**
  * The player marching with a host of their liege (Living War A36): time skips, the player keeping to
- * the host chunk by chunk, until the host meets anything. This only watches; a followed host goes
- * where it would have gone, and the player never steers it.
+ * the host chunk by chunk, until the host meets anything. With a host that has sat down around a seat
+ * it is a wait in the siege (A42), until the assault, a relief or a sally. This only watches; a
+ * followed host goes where it would have gone, and the player never steers it.
  */
 public final class MarchOn {
 
     /** What ended a slice of the march. NONE and MOVED go on; the rest stop it. */
     public enum Stop {
-        NONE, MOVED, GONE, BATTLE, SIEGE, ARMY, HALTED, NATIVES;
+        NONE, MOVED, GONE, BATTLE, SIEGE, ARMY, HALTED, NATIVES,
+        /** Of a wait in the siege. */
+        ASSAULT, SALLY, RELIEF, RAISED, LADDERS;
 
         public boolean goesOn() {
             return this == NONE || this == MOVED;
@@ -33,12 +36,26 @@ public final class MarchOn {
     /** Armies already here when this began or last checked: a meeting is with one newly come. */
     private int[] known = new int[0];
     private Stop last = Stop.NONE;
+    private final boolean waiting;
+    private boolean laddersUp;
 
     public MarchOn(Army host, WarRoster roster) {
+        this(host, roster, false);
+    }
+
+    private MarchOn(Army host, WarRoster roster, boolean waiting) {
         hostId = host.id;
         x = host.x;
         y = host.y;
+        this.waiting = waiting;
         note(host, roster);
+        SeatSiege s = roster.siege(host.sieging);
+        laddersUp = s != null && s.laddersBuilt();
+    }
+
+    /** A wait beside a host camped around a seat (A42). */
+    public static MarchOn waitingInTheSiege(Army host, WarRoster roster) {
+        return new MarchOn(host, roster, true);
     }
 
     private void note(Army host, WarRoster roster) {
@@ -63,6 +80,7 @@ public final class MarchOn {
     private Stop check(WarRoster roster) {
         Army host = roster.army(hostId);
         if (host == null || host.soldiers <= 0) return Stop.GONE;
+        if (waiting) return inTheSiege(host, roster);
         if (host.battle) return Stop.BATTLE;
         if (host.sieging >= 0 || host.beforeTheCastle) return Stop.SIEGE;
         boolean moved = host.x != x || host.y != y;
@@ -71,16 +89,43 @@ public final class MarchOn {
             y = host.y;
             known = new int[0];
         }
-        for (int i = 0; i < roster.armies.size(); i++) {
-            Army o = roster.armies.get(i);
-            if (o == host || o.x != host.x || o.y != host.y || o.side() == host.side()) continue;
-            if (!ArmyBattle.holds(known, o.id)) {
-                known = ArmyBattle.append(known, o.id);
-                return Stop.ARMY;
-            }
-        }
+        if (anotherSideComes(host, roster, false)) return Stop.ARMY;
         if (host.halted()) return Stop.HALTED;
         return moved ? Stop.MOVED : Stop.NONE;
+    }
+
+    private boolean anotherSideComes(Army host, WarRoster roster, boolean hostsOnly) {
+        for (int i = 0; i < roster.armies.size(); i++) {
+            Army o = roster.armies.get(i);
+            if (o == host || o.x != host.x || o.y != host.y || o.side() == host.side() || (hostsOnly && !o.isHost())) continue;
+            if (!ArmyBattle.holds(known, o.id)) {
+                known = ArmyBattle.append(known, o.id);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Stop inTheSiege(Army host, WarRoster roster) {
+        if (host.battle) {
+            ArmyBattle b = roster.battleOf(host.id);
+            return b != null && b.assault ? Stop.ASSAULT : b != null && b.sally ? Stop.SALLY : Stop.RELIEF;
+        }
+        if (host.sieging < 0) return Stop.RAISED;
+        if (anotherSideComes(host, roster, true)) return Stop.RELIEF;
+        SeatSiege s = roster.siege(host.sieging);
+        if (s != null && s.laddersBuilt() && !laddersUp) {
+            laddersUp = true;
+            return Stop.LADDERS;
+        }
+        return Stop.NONE;
+    }
+
+    /** Whether marching with this host is being with the relief of the seat at that chunk: it stands there, or is bound there to fight (A42). */
+    public static boolean withTheRelief(Army host, int seatX, int seatY) {
+        if (host == null) return false;
+        if (host.x == seatX && host.y == seatY) return true;
+        return host.objective != Army.Objective.RECOVER && host.targetX == seatX && host.targetY == seatY;
     }
 
     /** Whether the player is still with the host: in its chunk or the next, on the surface. */

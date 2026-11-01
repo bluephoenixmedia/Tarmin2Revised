@@ -255,6 +255,7 @@ public class Tarmin2 extends Game {
         //   ./gradlew lwjgl3:run --args="--playtest"
         if (hasArg("--playtest") || hasArgPrefix("--playtest=")) {
             Gdx.app.log("Tarmin2", "Booting straight into the QA Playtest Runner");
+            Gdx.app.log("Playtest", "Audio: " + Gdx.audio.getClass().getSimpleName());
             new com.bpm.minotaur.playtest.PlaytestRunner(this).start();
             return;
         }

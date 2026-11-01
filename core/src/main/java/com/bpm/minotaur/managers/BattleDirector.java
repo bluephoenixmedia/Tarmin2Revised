@@ -278,17 +278,30 @@ public final class BattleDirector {
     /** Set while the player, having marched in with a host here, has yet to reach its line. */
     private boolean goingToTheLine;
     private boolean tookTheLine;
+    /** They hold the contract for the first ladder: their place is over the wall (A42). */
+    private boolean firstUp;
 
     /** The player marched in with a host of this battle: they stand in its line from the start (A36). Once. */
-    public void standInLine(int side) {
+    /** @param firstLadder and they hold the first ladder of an assault, if this is one */
+    public void standInLine(int side, boolean firstLadder) {
         if (tookTheLine) return;
         tookTheLine = true;
+        firstUp = firstLadder && battle.assault && side == 1;
         battle.playerSide = side;
         goingToTheLine = true;
     }
 
     private void takeTheLine(Report r) {
         goingToTheLine = false;
+        if (firstUp) {
+            GridPoint2 over = com.bpm.minotaur.gamedata.history.war.SeatRing.overTheWall(maze.getWidth(), maze.getHeight(), edgeA);
+            GridPoint2 at = WorldManager.findSafeArrivalTile(maze, over.x, over.y);
+            if (at != null && com.bpm.minotaur.gamedata.history.war.SeatRing.inside(maze.getWidth(), maze.getHeight(), at.x, at.y)) {
+                r.standAt = at;
+                r.messages.add("You are first up the ladder, and over the wall of " + name(battle.houseB) + ". The rest are behind you. Somewhere.");
+                return;
+            }
+        }
         boolean a = battle.playerSide == 1;
         List<Monster> ours = side(a);
         // The gate guards are enlisted first, the line last.

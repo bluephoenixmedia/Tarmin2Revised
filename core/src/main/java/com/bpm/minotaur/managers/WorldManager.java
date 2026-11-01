@@ -1482,6 +1482,8 @@ public class WorldManager {
     /** The armies on this world's overland (Living War A1), rebuilt when the world is reborn. Null without roads. */
     private com.bpm.minotaur.gamedata.history.war.army.ArmyLayer armies() {
         if (biomeManager == null || biomeManager.getRoads() == null || biomeManager.getCastleSite() == null) return null;
+        // Before any tick, so a siege raised on the first turn after a load still finds the player where they stand.
+        getHistory().watchRelief(relieving);
         if (armyLayer == null || armyLayerBiomes != biomeManager || armyLayerHistory != getHistory()) {
             com.bpm.minotaur.gamedata.history.war.army.ArmyLayer old = armyLayerHistory == getHistory() ? armyLayer : null;
             if (old != null) old.resolveBattles(getHistory().warClock());
@@ -1521,6 +1523,13 @@ public class WorldManager {
             armyLayerHistory = getHistory();
         }
         return armyLayer;
+    }
+
+    private HistoryManager.Relieving relieving;
+
+    /** Asks the one who knows where the player stands whether they are at a seat's relief (A42). */
+    public void watchRelief(HistoryManager.Relieving relieving) {
+        this.relieving = relieving;
     }
 
     /** A beast's hit points if the catalogue has nothing to say of it. */

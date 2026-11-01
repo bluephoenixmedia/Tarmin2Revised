@@ -215,17 +215,200 @@ public class ContractAndFavourTest {
         assertTrue(won.onBattle(w));
     }
 
-    @Test
-    public void anAssaultCountsOnlyIfTheSeatFell() {
-        Contract c = contract(Contract.Kind.JOIN_ASSAULT, -1);
+    // ---- A42: the seat contracts ----
+
+    private Contract atTheSeat(Contract.Kind kind) {
+        Contract c = contract(kind, -1);
         c.chunkX = 3;
         c.chunkY = 4;
-        PlayerDeed d = deed(liege, liege);
+        return c;
+    }
+
+    private PlayerDeed theAssault(int winner, int stoodWith, boolean fought) {
+        PlayerDeed d = deed(winner, stoodWith);
         d.chunkX = 3;
         d.chunkY = 4;
-        assertFalse(c.onBattle(d));
-        d.seatFell = true;
-        assertTrue(c.onBattle(d));
+        d.assault = true;
+        d.fought = fought;
+        d.seatFell = winner == liege;
+        return d;
+    }
+
+    @Test
+    public void joiningTheAssaultIsDoneByFightingInItEvenIfItFails() {
+        Contract c = atTheSeat(Contract.Kind.JOIN_ASSAULT);
+        assertTrue(c.onBattle(theAssault(enemy, liege, true)));
+        assertEquals("the ordinary rate", Contract.FAVOUR, c.favour());
+        assertEquals(Contract.COIN, c.coin());
+    }
+
+    @Test
+    public void joiningTheAssaultPaysTheHardRateIfTheSeatFallsWithoutBeingAHardOne() {
+        Contract c = atTheSeat(Contract.Kind.JOIN_ASSAULT);
+        assertTrue(c.onBattle(theAssault(liege, liege, true)));
+        assertEquals(Contract.HARD_FAVOUR, c.favour());
+        assertEquals(Contract.COIN * 2, c.coin());
+        assertFalse("nor does it count toward the seal", c.hard);
+    }
+
+    @Test
+    public void standingByWhileOthersStormItIsNotJoiningIt() {
+        assertFalse(atTheSeat(Contract.Kind.JOIN_ASSAULT).onBattle(theAssault(liege, liege, false)));
+        PlayerDeed elsewhere = theAssault(liege, liege, true);
+        elsewhere.chunkX = 9;
+        assertFalse("another seat", atTheSeat(Contract.Kind.JOIN_ASSAULT).onBattle(elsewhere));
+        PlayerDeed sally = theAssault(liege, liege, true);
+        sally.assault = false;
+        sally.seatFell = false;
+        assertFalse("a sally is no assault", atTheSeat(Contract.Kind.JOIN_ASSAULT).onBattle(sally));
+        assertFalse("fled before the end", atTheSeat(Contract.Kind.JOIN_ASSAULT).onBattle(theAssault(liege, -1, true)));
+    }
+
+    @Test
+    public void theFirstLadderIsDoneOnlyIfTheSeatFalls() {
+        SeatSiege s = new SeatSiege();
+        s.id = 40;
+        s.x = 3;
+        s.y = 4;
+        s.holder = enemy;
+        Contract c = Contract.firstLadder(liege, s);
+        assertTrue(c.hard);
+        assertEquals(enemy, c.targetId);
+        assertEquals(40, c.targetSiege);
+        assertFalse("thrown back: it stands until the siege ends", c.onBattle(theAssault(enemy, liege, true)));
+        assertFalse("nobody climbed", c.onBattle(theAssault(liege, liege, false)));
+        assertTrue(c.onBattle(theAssault(liege, liege, true)));
+        assertEquals(Contract.HARD_FAVOUR, c.favour());
+    }
+
+    @Test
+    public void theFirstLadderIsOfOneSeatOnly() {
+        SeatSiege s = new SeatSiege();
+        s.id = 40;
+        s.holder = enemy;
+        Contract c = Contract.firstLadder(liege, s);
+        assertTrue(c.firstLadderAt(40));
+        assertFalse("another siege", c.firstLadderAt(41));
+        c.done = true;
+        assertFalse("already climbed", c.firstLadderAt(40));
+        assertFalse("another task", contract(Contract.Kind.BREAK_HOST, 1).firstLadderAt(-1));
+    }
+
+    private Army besieging(SeatSiege s) {
+        history.roster().sieges.add(s);
+        Army host = army(60, liege, s.x, s.y);
+        host.sieging = s.id;
+        return host;
+    }
+
+    private SeatSiege laddersUp() {
+        SeatSiege s = new SeatSiege();
+        s.id = 40;
+        s.x = 3;
+        s.y = 4;
+        s.holder = enemy;
+        s.besieger = liege;
+        s.works = SeatSiege.LADDER_TURNS;
+        return s;
+    }
+
+    @Test
+    public void aFriendWithTheHostIsAskedOnceWhenTheLaddersAreUp() {
+        SeatSiege s = laddersUp();
+        Army host = besieging(s);
+        history.favour().set(liege, Favour.FRIEND_AT);
+        history.swear(liege);
+        assertNull("following no host", history.firstLadderDue());
+        history.oath().following = host.id;
+        assertSame(s, history.firstLadderDue());
+        history.oath().ladderAsked = s.id;
+        assertNull("once a siege", history.firstLadderDue());
+    }
+
+    @Test
+    public void noFirstLadderBeforeTheWorksOrBelowFriendOrOnceTheFightIsOn() {
+        SeatSiege s = laddersUp();
+        Army host = besieging(s);
+        history.favour().set(liege, Favour.FRIEND_AT);
+        history.swear(liege);
+        history.oath().following = host.id;
+        s.works = SeatSiege.LADDER_TURNS - 1;
+        assertNull("the works", history.firstLadderDue());
+        s.works = SeatSiege.LADDER_TURNS;
+        history.favour().set(liege, Favour.FRIEND_AT - 1);
+        assertNull("Tolerated", history.firstLadderDue());
+        history.favour().set(liege, Favour.FRIEND_AT);
+        host.battle = true;
+        assertNull("too late, the fight is on", history.firstLadderDue());
+        host.battle = false;
+        history.oath().contract = contract(Contract.Kind.BREAK_HOST, 99);
+        assertSame("a task in hand is no bar: a Friend always has one", s, history.firstLadderDue());
+    }
+
+    private PlayerDeed raised(int x) {
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.SIEGE_RAISED, enemy, 0);
+        d.other = liege;
+        d.chunkX = x;
+        d.chunkY = 4;
+        return d;
+    }
+
+    private PlayerDeed besiegersRouted() {
+        PlayerDeed d = new PlayerDeed(PlayerDeed.Kind.ARMY_BATTLE, liege, 0);
+        d.other = enemy;
+        d.chunkX = 3;
+        d.chunkY = 4;
+        return d;
+    }
+
+    @Test
+    public void reliefIsDoneIfTheSiegeIsRaisedOrTheBesiegersRoutWhileThePlayerIsThere() {
+        Contract c = atTheSeat(Contract.Kind.RELIEVE_SEAT);
+        assertTrue(c.onSiegeLifted(raised(3), true));
+        c = atTheSeat(Contract.Kind.RELIEVE_SEAT);
+        assertTrue(c.onSiegeLifted(besiegersRouted(), true));
+    }
+
+    @Test
+    public void reliefIsNotDoneFromAfarNorByAnotherSeatsNorByAnyoneElsesRout() {
+        assertFalse("not there", atTheSeat(Contract.Kind.RELIEVE_SEAT).onSiegeLifted(raised(3), false));
+        assertFalse("another seat", atTheSeat(Contract.Kind.RELIEVE_SEAT).onSiegeLifted(raised(9), true));
+        PlayerDeed lost = new PlayerDeed(PlayerDeed.Kind.ARMY_BATTLE, enemy, 0);
+        lost.other = liege;
+        lost.chunkX = 3;
+        lost.chunkY = 4;
+        assertFalse("they won", atTheSeat(Contract.Kind.RELIEVE_SEAT).onSiegeLifted(lost, true));
+        assertFalse("another contract", atTheSeat(Contract.Kind.JOIN_ASSAULT).onSiegeLifted(raised(3), true));
+    }
+
+    @Test
+    public void aSiegeRaisedWithThePlayerInsideKeepsTheContractBeforeItCanBeVoid() {
+        SeatSiege s = new SeatSiege();
+        s.id = 40;
+        s.x = 3;
+        s.y = 4;
+        Contract c = atTheSeat(Contract.Kind.RELIEVE_SEAT);
+        c.targetSiege = 40;
+        history.favour().set(liege, Favour.FRIEND_AT);
+        history.swear(liege);
+        history.oath().contract = c;
+        history.watchRelief((x, y) -> x == 3 && y == 4);
+        history.recordArmyDeed(raised(3));
+        assertTrue(c.done);
+        assertTrue(history.takeContractKeptInBattle());
+        assertNull("the siege gone, it is not void", history.contractVoided());
+    }
+
+    @Test
+    public void aSiegeRaisedWithThePlayerElsewhereVoidsIt() {
+        Contract c = atTheSeat(Contract.Kind.RELIEVE_SEAT);
+        c.targetSiege = 40;
+        history.favour().set(liege, Favour.FRIEND_AT);
+        history.swear(liege);
+        history.oath().contract = c;
+        history.recordArmyDeed(raised(3));
+        assertFalse(c.done);
+        assertNotNull(history.contractVoided());
     }
 
     // ---- A40's table ----

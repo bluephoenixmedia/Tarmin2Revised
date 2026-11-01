@@ -512,6 +512,8 @@ public final class HistoryManager {
         deed.liveSeason = world.liveSeasons();
         apply(deed);
         contractKeptInBattle |= oath.contract != null && oath.contract.onBattle(deed);
+        contractKeptInBattle |= oath.contract != null && relieving != null
+                && oath.contract.onSiegeLifted(deed, relieving.at(deed.chunkX, deed.chunkY));
         if (deed.kind == PlayerDeed.Kind.ARMY_BEAST) {
             if (deed.beastSlain) {
                 beastHp.remove(deed.target);
@@ -589,6 +591,30 @@ public final class HistoryManager {
     /** The host the player marches with, or null (A36). */
     public com.bpm.minotaur.gamedata.history.war.army.Army followedHost() {
         return roster.army(oath.following);
+    }
+
+    /** Whether the player is inside the ring of the seat at a chunk, or with its relief, this moment (A42). */
+    public interface Relieving {
+        boolean at(int seatX, int seatY);
+    }
+
+    private Relieving relieving;
+
+    public void watchRelief(Relieving relieving) {
+        this.relieving = relieving;
+    }
+
+    /**
+     * The siege whose captain asks the player for the first ladder now (A42): a Friend following a host
+     * around it, its ladders up and the fight not yet begun, and asked once. Null otherwise. A task in
+     * hand is no bar, or a Friend would never be asked: taking the ladder sets it aside.
+     */
+    public com.bpm.minotaur.gamedata.history.war.army.SeatSiege firstLadderDue() {
+        com.bpm.minotaur.gamedata.history.war.army.Army host = followedHost();
+        com.bpm.minotaur.gamedata.history.war.army.SeatSiege s = host == null ? null : roster.siege(host.sieging);
+        if (s == null || host.battle || !s.laddersBuilt() || oath.ladderAsked == s.id
+                || favour.tier(oath.houseId) != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) return null;
+        return s;
     }
 
     /** What the armies do about a broken oath (A41). */
