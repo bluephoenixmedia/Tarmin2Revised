@@ -63,8 +63,8 @@ public class HintManagerTest {
     @Test
     public void eachWarHintFiresOnceAcrossAReload() {
         fireEveryWarHint();
-        assertNotNull(hintManager.firstFightWords());
-        assertTrue(hintManager.openWarTable());
+        assertNotNull(hintManager.takeFirstFightWords());
+        assertTrue(hintManager.noteWarTableOpened());
         int shown = eventManager.getMessageEvents().size();
         assertEquals(5, shown);
 
@@ -74,8 +74,8 @@ public class HintManagerTest {
         hintManager.load();
         fireEveryWarHint();
         assertEquals("and once more after a reload is still once", shown, eventManager.getMessageEvents().size());
-        assertNull(hintManager.firstFightWords());
-        assertFalse(hintManager.openWarTable());
+        assertNull(hintManager.takeFirstFightWords());
+        assertFalse(hintManager.noteWarTableOpened());
         assertTrue(hintManager.livingWarUnlocked());
     }
 
@@ -93,7 +93,7 @@ public class HintManagerTest {
     public void everyWarStringSurvivesTheFont() {
         fireEveryWarHint();
         for (GameEvent e : eventManager.getMessageEvents()) assertEquals(e.message, UiGlyphs.sanitize(e.message));
-        String fight = hintManager.firstFightWords();
+        String fight = hintManager.takeFirstFightWords();
         assertEquals(fight, UiGlyphs.sanitize(fight));
         for (String line : com.bpm.minotaur.gamedata.history.war.WarCodex.FIRST_OPENING) assertEquals(line, UiGlyphs.sanitize(line));
         for (com.bpm.minotaur.gamedata.history.war.WarCodex.Section s : com.bpm.minotaur.gamedata.history.war.WarCodex.PAGE) {
@@ -102,13 +102,31 @@ public class HintManagerTest {
         }
     }
 
-    /** The page unlocks on the first visit even for one with hints off; its three lines are hints, and stay quiet. */
+    /** A51 lists the three lines and the page apart from its hints: turning hints off loses neither. */
     @Test
-    public void theCodexPageUnlocksWithHintsOff() {
+    public void theFirstOpeningAndTheCodexPageComeWithHintsOff() {
         SettingsManager.getInstance().setShowHints(false);
         assertFalse(hintManager.livingWarUnlocked());
-        assertFalse(hintManager.openWarTable());
+        assertTrue(hintManager.noteWarTableOpened());
         assertTrue(hintManager.livingWarUnlocked());
+    }
+
+    @Test
+    public void aTableAlreadyReadIsNotPointedOut() {
+        hintManager.noteWarTableOpened();
+        assertFalse(hintManager.checkWarTable(eventManager));
+        assertEquals(0, eventManager.getMessageEvents().size());
+    }
+
+    @Test
+    public void aHostOrAFightWithNoHeadingStillReads() {
+        hintManager.checkWarSighting("House Vellum", null, eventManager);
+        hintManager.checkWarEarshot(null, eventManager);
+        hintManager.checkWarTrail(null, eventManager);
+        List<GameEvent> e = eventManager.getMessageEvents();
+        assertTrue(e.get(0).message.startsWith("A host of House Vellum has made camp. "));
+        assertTrue(e.get(1).message.startsWith("Horns close by: a battle."));
+        assertTrue(e.get(2).message.startsWith("Tracks: a host passed here. "));
     }
 
     @Test

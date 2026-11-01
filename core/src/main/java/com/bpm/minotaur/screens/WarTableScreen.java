@@ -108,7 +108,7 @@ public class WarTableScreen extends BaseScreen {
         Gdx.input.setInputProcessor(multiplexer);
         UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
         firstWord();
-        firstOpening = com.bpm.minotaur.managers.HintManager.getInstance().openWarTable();
+        firstOpening = com.bpm.minotaur.managers.HintManager.getInstance().noteWarTableOpened();
         build();
     }
 
@@ -153,7 +153,7 @@ public class WarTableScreen extends BaseScreen {
         header.add(UiLabels.of("THE WAR TABLE", style(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT))).center().row();
         header.add(UiLabels.of("What the Shelter has heard", style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED))).center().padTop(UiTheme.PAD_XS);
         root.add(header).colspan(2).growX().padBottom(UiTheme.PAD_SM).row();
-        if (firstOpening) root.add(firstWords()).colspan(2).growX().padBottom(UiTheme.PAD_SM).row();
+        if (firstOpening) root.add(firstOpeningLines()).colspan(2).growX().padBottom(UiTheme.PAD_SM).row();
 
         List<Dispatches.Row> news = news();
         List<WarReport.WarLine> wars = wars();
@@ -182,7 +182,7 @@ public class WarTableScreen extends BaseScreen {
         select(selected);
     }
 
-    private Table firstWords() {
+    private Table firstOpeningLines() {
         Table box = new Table();
         box.setBackground(hudSkin.getDoubleBorderPanel());
         box.pad(UiTheme.PAD_SM, UiTheme.PAD_MD, UiTheme.PAD_SM, UiTheme.PAD_MD);

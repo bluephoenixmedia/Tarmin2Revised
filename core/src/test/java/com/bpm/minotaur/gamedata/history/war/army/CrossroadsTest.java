@@ -56,12 +56,18 @@ public class CrossroadsTest {
     }
 
     @Test
-    public void theCrossroadsAreWhereEachRoadFirstMeetsAShelter() {
-        World w = new World();
-        List<GridPoint2> crossroads = w.terrain.crossroads();
-        assertEquals(com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT, crossroads.size());
-        for (int r = 0; r < crossroads.size(); r++) {
-            assertEquals(w.biomes.getRoads().getRoad(r).getShelters().get(0), crossroads.get(r));
+    public void theCrossroadsLieOnEachRoadJustPastItsFirstShelterAndNeverOnOne() {
+        for (long seed : WarSimulation.DEFAULT_SEEDS) {
+            BiomeManager biomes = new BiomeManager(seed);
+            Terrain terrain = Terrain.of(biomes);
+            List<GridPoint2> crossroads = terrain.crossroads();
+            assertEquals(com.bpm.minotaur.generation.ShelterRoads.ROAD_COUNT, crossroads.size());
+            for (int r = 0; r < crossroads.size(); r++) {
+                GridPoint2 c = crossroads.get(r), first = biomes.getRoads().getRoad(r).getShelters().get(0);
+                assertNull("no battle can be fought on a shelter's ground", biomes.getRoads().shelterAt(c, biomes::isOpenLand));
+                assertTrue(biomes.isOpenLand(c));
+                assertTrue("near its shelter", Math.max(Math.abs(c.x - first.x), Math.abs(c.y - first.y)) <= 8);
+            }
         }
     }
 
@@ -86,8 +92,8 @@ public class CrossroadsTest {
         GridPoint2 crossing = near.terrain.crossroads().get(0);
         far.layer.watch(standingAt(55, 55));
         near.layer.watch(standingAt(crossing.x, crossing.y));
-        int checked = 0;
-        for (int t = 0; t < 4000; t++) {
+        int held = 0;
+        for (int t = 0; t < 10000; t++) {
             far.run(1);
             near.run(1);
             List<Army> a = far.history.roster().armies, b = near.history.roster().armies;
@@ -97,10 +103,11 @@ public class CrossroadsTest {
                 assertEquals(a.get(i).targetX, b.get(i).targetX);
                 assertEquals(a.get(i).targetY, b.get(i).targetY);
                 assertEquals(a.get(i).x, b.get(i).x);
-                checked++;
+                assertEquals(a.get(i).y, b.get(i).y);
+                if (a.get(i).objective == Army.Objective.CROSSING) held++;
             }
         }
-        assertTrue(checked > 0);
+        assertTrue("and the weight was in play", held > 0);
     }
 
     @Test

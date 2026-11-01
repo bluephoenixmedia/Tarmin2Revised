@@ -206,11 +206,11 @@ public final class ArmyKnowledge {
         return null;
     }
 
-    /** A battle the player can hear from this chunk, for the first horns' hint; null if none. The ear is true where the map's mark is rough. */
+    /** A battle of the houses the player can hear from this chunk, for the first horns' hint; null if none. A beast's fight offers no side to choose. The ear is true where the map's mark is rough. */
     public static ArmyBattle battleInEarshot(WarRoster roster, int px, int py) {
         for (ArmyBattle b : roster.battles) {
             int off = Math.max(Math.abs(b.x - px), Math.abs(b.y - py));
-            if (off > 0 && off <= WarSoundscape.EARSHOT) return b;
+            if (off > 0 && off <= WarSoundscape.EARSHOT && b.beastId < 0) return b;
         }
         return null;
     }
@@ -473,6 +473,7 @@ public final class ArmyKnowledge {
             case RECOVER: return "Going home to recover";
             case FOLLOW: return "Marching with its liege";
             case CASTLE: return "Besieging Castle Tarmin";
+            case CROSSING: return "Holding the crossroads";
             default: return "Going home, its war done";
         }
     }

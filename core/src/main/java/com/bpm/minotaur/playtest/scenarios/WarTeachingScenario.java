@@ -67,7 +67,7 @@ public final class WarTeachingScenario implements PlaytestScenario {
         script.once("settle traits", ctx::settleTraits);
         script.wait("traits settle", 15);
         script.once("a fresh slate of hints", () -> {
-            SettingsManager.getInstance().setShowHints(true);
+            SettingsManager.getInstance().showHintsThisRun();
             HintManager.getInstance().resetForNewGame();
         });
 
@@ -149,7 +149,7 @@ public final class WarTeachingScenario implements PlaytestScenario {
         script.wait("drawn", 10);
         script.shot("wt04_the_codex_page", ctx);
         script.once("the second opening says nothing", () -> {
-            ctx.assertTrue(!HintManager.getInstance().openWarTable(), "the three lines are shown once");
+            ctx.assertTrue(!HintManager.getInstance().noteWarTableOpened(), "the three lines are shown once");
             ctx.getGame().setScreen(parent[0]);
         });
         script.wait("back", 6);

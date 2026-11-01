@@ -230,18 +230,18 @@ public class HintManager implements SlotScopedState {
 
     /** The first return to the Shelter: the Table is pointed out (A51). */
     public boolean checkWarTable(GameEventManager eventManager) {
-        if (!shouldShow(HintId.WAR_TABLE)) return false;
+        if (livingWarUnlocked() || !shouldShow(HintId.WAR_TABLE)) return false;
         return postHint(HintId.WAR_TABLE, eventManager, "The War Table stands by the Lectern. Study it to hear what the Shelter knows of the houses' wars.", 5.0f);
     }
 
     /**
-     * The War Table is opened: true the first time, if hints are on, for its three lines. The Codex
-     * page unlocks whether they are on or not, so this is noted either way.
+     * The War Table is being opened: true the first time, for its three lines. They are how the Table
+     * explains itself rather than a hint, so they and the Codex page come whatever the setting.
      */
-    public synchronized boolean openWarTable() {
+    public synchronized boolean noteWarTableOpened() {
         boolean first = seenHints.add(HintId.WAR_TABLE_OPENED.name());
         if (first) save();
-        return first && SettingsManager.getInstance().isShowHints();
+        return first;
     }
 
     /** The "Living War" Codex page unlocks on the first Table visit (A51). */
@@ -276,7 +276,7 @@ public class HintManager implements SlotScopedState {
     }
 
     /** The side-choice prompt explains itself, the first time: its words, or null (A51). */
-    public synchronized String firstFightWords() {
+    public synchronized String takeFirstFightWords() {
         if (!shouldShow(HintId.WAR_FIGHT)) return null;
         seenHints.add(HintId.WAR_FIGHT.name());
         save();

@@ -2721,7 +2721,7 @@ public class GameScreen extends BaseScreen {
         String body = (liegeA || liegeB ? "Your oath binds you to " + houseName(oath.houseId) + ". " : "")
                 + (b.assault ? houseName(b.houseA) + " is assaulting the seat of " + houseName(b.houseB) + "."
                         : "The lines are locked across this ground, and neither has yet given way.");
-        String firstFight = HintManager.getInstance().firstFightWords();
+        String firstFight = HintManager.getInstance().takeFirstFightWords();
         if (firstFight != null) body = body + " " + firstFight;
         String prompt = body;
         String a = houseName(b.houseA);
@@ -3501,9 +3501,10 @@ public class GameScreen extends BaseScreen {
     private void hintOfToleration() {
         HintManager hints = HintManager.getInstance();
         if (hints.hasSeen(HintManager.HintId.WAR_TOLERATED)) return;
-        com.bpm.minotaur.gamedata.history.favour.Favour favour = worldManager.getHistory().favour();
-        for (int house : favour.all().keySet()) {
-            if (favour.tier(house) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        for (int house : history.favour().all().keySet()) {
+            // As it treats them: its enemy's sworn are not tolerated, whatever it thinks of them, and one's liege need not be sought.
+            if (house != history.oath().houseId && history.stanceOf(house) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED) {
                 hints.checkWarTolerated(houseName(house), eventManager);
                 return;
             }

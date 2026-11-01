@@ -54,6 +54,7 @@ public final class Terrain {
             return b == Biome.TUNDRA || b == Biome.BLIGHT ? ROUGH_TURNS : OFF_ROAD_TURNS;
         });
         t.roads = roads;
+        if (roads != null) t.findCrossroads(biomes);
         for (int y = -RADIUS; y <= RADIUS; y++) {
             for (int x = -RADIUS; x <= RADIUS; x++) {
                 at.set(x, y);
@@ -63,14 +64,33 @@ public final class Terrain {
         return t;
     }
 
-    /** The crossroads near the Shelter (A52): where each road, leaving the maze, first meets a shelter. Fixed by the seed; empty without roads. */
+    /** How far on down its road a crossroads lies from the road's first shelter, at the least. */
+    private static final int CROSSROADS_PAST = 2;
+    private final java.util.List<GridPoint2> crossroads = new java.util.ArrayList<>();
+
+    /**
+     * The crossroads near the Shelter (A52): each road, just past its first shelter, where the way from
+     * the maze meets the country. Never a shelter's own chunk, where no battle can be fought. Fixed by
+     * the seed; empty without roads.
+     */
     public java.util.List<GridPoint2> crossroads() {
-        java.util.List<GridPoint2> out = new java.util.ArrayList<>();
-        if (roads == null) return out;
+        return crossroads;
+    }
+
+    private void findCrossroads(BiomeManager biomes) {
         for (ShelterRoads.Road r : roads.getRoads()) {
-            if (!r.getShelters().isEmpty()) out.add(r.getShelters().get(0));
+            if (r.getShelters().isEmpty()) continue;
+            GridPoint2 first = r.getShelters().get(0), end = r.getEnd();
+            double dx = end.x - first.x, dy = end.y - first.y, len = Math.hypot(dx, dy);
+            if (len < 1) continue;
+            for (int on = CROSSROADS_PAST; on < len; on++) {
+                GridPoint2 at = new GridPoint2((int) Math.round(first.x + dx / len * on), (int) Math.round(first.y + dy / len * on));
+                if (biomes.isOpenLand(at) && roads.shelterAt(at, biomes::isOpenLand) == null) {
+                    crossroads.add(at);
+                    break;
+                }
+            }
         }
-        return out;
     }
 
     /** Roads are straight spokes from the maze, so a chunk is on one if it lies beside that line. */
