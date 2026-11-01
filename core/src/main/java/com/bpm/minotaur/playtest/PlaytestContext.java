@@ -247,10 +247,19 @@ public final class PlaytestContext {
         }
     }
 
+    /** Levels the seeker by the cheat itself: its key is the Chronicle's scroll first, so pressing it would level nobody. */
+    public void levelUp(int levels) {
+        Player p = screen.getPlayer();
+        if (p == null) return;
+        for (int i = 0; i < levels; i++) {
+            com.bpm.minotaur.debug.DebugCheats.levelUp(p, getEventManager());
+        }
+    }
+
     public void outfitHero(int levels) {
         Player p = screen.getPlayer();
         if (p == null) return;
-        for (int i = 0; i < levels; i++) press(Input.Keys.PAGE_UP);
+        levelUp(levels);
         dismissModals();
         p.getStats().setMaxHP(9999);
         p.getStats().setCurrentHP(9999);

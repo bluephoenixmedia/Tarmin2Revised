@@ -11,7 +11,7 @@ import com.bpm.minotaur.screens.PlayerDeathScreen;
 
 /**
  * Dies for real and wakes in the shelter, twice (fixes 2026-10-10, items 1 and 3): the first spell
- * slot must still hold Mote of Light, as on a new game, and the quick slots must survive.
+ * slot must still hold Cure Wounds, as on a new game, and the quick slots must survive.
  */
 public final class RespawnScenario implements PlaytestScenario {
 
@@ -67,8 +67,8 @@ public final class RespawnScenario implements PlaytestScenario {
             script.wait("traits settle (" + n + ")", 15);
             script.once("after death " + n, () -> {
                 ctx.log("After death " + n + ": " + state(ctx));
-                ctx.assertTrue("MOTE_OF_LIGHT".equals(ctx.getPlayer().getPreparedSpells()[0]),
-                        "spell slot 1 holds Mote of Light after a respawn, as on a new game (death " + n + ")");
+                ctx.assertTrue(Player.STARTING_HEAL_SPELL.equals(ctx.getPlayer().getPreparedSpells()[0]),
+                        "spell slot 1 holds Cure Wounds after a respawn, as on a new game (death " + n + ")");
             });
             script.shot("respawn_" + n, ctx);
         }
