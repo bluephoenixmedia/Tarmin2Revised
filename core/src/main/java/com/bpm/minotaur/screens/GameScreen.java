@@ -3004,14 +3004,18 @@ public class GameScreen extends BaseScreen {
     /** The march under way, a slice a frame (A59); null when none is. */
     private com.bpm.minotaur.gamedata.history.war.army.MarchOn marching;
 
-    /** The halted host of this house in the player's chunk, or -1. */
+    /** The halted host of this house in the player's chunk, the one around the walls first if there are two, or -1. */
     private int hostCampedHere(int houseId) {
         GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
         if (chunk == null || currentLevel() != 1) return -1;
+        int found = -1;
         for (com.bpm.minotaur.gamedata.history.war.Encounter c : worldManager.currentCamps()) {
-            if (c.slot > 0 && c.bannerHouse() == houseId && c.from.equals(chunk)) return (int) c.slot;
+            if (c.slot <= 0 || c.bannerHouse() != houseId || !c.from.equals(chunk)) continue;
+            com.bpm.minotaur.gamedata.history.war.army.Army a = worldManager.getHistory().roster().army((int) c.slot);
+            if (a != null && a.sieging >= 0) return a.id;
+            if (found < 0) found = (int) c.slot;
         }
-        return -1;
+        return found;
     }
 
     /** The one key of it: ask a halted host of the liege to be followed, march on with a marching one, take leave of a camped one. */

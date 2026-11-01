@@ -58,8 +58,9 @@ public final class SwornSiegeScenario implements PlaytestScenario {
             ctx.outfitHero(14);
             HistoryManager h = history(ctx);
             siege[0] = SeatAssaultScenario.layASiege(ctx, sides);
-            // Today is about the assault: no relief comes to wake anyone first.
-            h.roster().armies.removeIf(o -> o.houseId == sides[1].id && o.isHost());
+            // Today is about the assault: nothing else is fought here first.
+            ctx.getWorldManager().getHistory().world().figure(sides[1].lordId).traits.clear();
+            keepThePeace(ctx, sides[0].id);
             host[0] = h.roster().army(siege[0].armies[0]);
             host[0].soldiers = 60;
             // Short of the ladders, and too few to go in before they ask.
@@ -69,7 +70,10 @@ public final class SwornSiegeScenario implements PlaytestScenario {
             h.swear(sides[0].id);
             ctx.getGameScreen().travelToChunk(new GridPoint2(siege[0].x, siege[0].y), new GridPoint2(3, 3));
         });
-        script.until("arrive", 300, () -> shown(ctx));
+        script.until("arrive", 300, () -> {
+            keepThePeace(ctx, sides[0].id);
+            return shown(ctx);
+        });
         script.once("the natives are out of the way", () -> {
             for (Monster m : new ArrayList<>(ctx.getMaze().getMonsters().values())) ctx.getMaze().removeMonster(m);
             ctx.dismissModals();
@@ -139,7 +143,14 @@ public final class SwornSiegeScenario implements PlaytestScenario {
                 return false;
             }
             Monster near = nearestDefender(ctx);
-            if (near != null && ctx.getFrame() % 3 == 0) ctx.steerToward(new GridPoint2((int) near.getPosition().x, (int) near.getPosition().y));
+            if (near == null) return false;
+            GridPoint2 at = new GridPoint2((int) near.getPosition().x, (int) near.getPosition().y);
+            // The walk is not what is under test, and a wall may lie between: every so often they are set beside one.
+            if (ctx.getFrame() % 120 == 0) {
+                GridPoint2 beside = com.bpm.minotaur.managers.WorldManager.findSafeArrivalTile(ctx.getMaze(), at.x, at.y);
+                if (beside != null) ctx.getPlayer().setPosition(beside.x + 0.5f, beside.y + 0.5f);
+            }
+            if (ctx.getFrame() % 3 == 0) ctx.steerToward(at);
             return false;
         });
         script.once("the blow is counted", () -> ctx.log("Kills " + battle[0].playerKills + ", struck " + battle[0].playerStruck));
@@ -169,6 +180,14 @@ public final class SwornSiegeScenario implements PlaytestScenario {
         script.key("a turn after", Input.Keys.PERIOD, ctx);
         script.wait("drawn", 6);
         script.shot("ss04_the_seat_fell", ctx);
+    }
+
+    /** Only the besiegers stand on this ground, and no battle is on it, whichever war this world rolled. */
+    private static void keepThePeace(PlaytestContext ctx, int besieger) {
+        HistoryManager h = history(ctx);
+        h.roster().armies.removeIf(o -> o.side() != besieger);
+        h.roster().battles.clear();
+        for (Army a : h.roster().armies) a.battle = false;
     }
 
     private static Monster nearestDefender(PlaytestContext ctx) {
