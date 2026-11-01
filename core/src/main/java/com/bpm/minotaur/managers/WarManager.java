@@ -35,6 +35,8 @@ public final class WarManager {
         public BattleDirector.BeastForger beastForger;
         /** The army the player marches with, or -1 (A36). */
         public int followed = -1;
+        /** They hold the first ladder of an assault on a seat (A42). */
+        public boolean firstLadder;
     }
 
     /** The war's sounds (plan T2.9): horns at the warning, drums as the lines close, horns at the rout. */
@@ -132,7 +134,7 @@ public final class WarManager {
     /** At the start, or the moment the followed host joins a fight already here: the player's place is in its line (A36). */
     private void standWithTheHost(Ground g) {
         int line = ArmyBattle.holds(active.battle.armiesA, g.followed) ? 1 : ArmyBattle.holds(active.battle.armiesB, g.followed) ? 2 : 0;
-        if (line != 0) active.standInLine(line);
+        if (line != 0) active.standInLine(line, g.firstLadder);
     }
 
     /** Whether this soldier stands on the side the player chose: an ally until the fight ends (A26). */

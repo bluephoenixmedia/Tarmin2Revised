@@ -2668,6 +2668,9 @@ public class GameScreen extends BaseScreen {
         g.maze = maze;
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
         g.followed = worldManager.getHistory().oath().following;
+        com.bpm.minotaur.gamedata.history.favour.Contract task = worldManager.getHistory().oath().contract;
+        g.firstLadder = task != null && !task.done && task.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.FIRST_LADDER;
+        worldManager.getHistory().relievedBy(this::relieving);
         WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
                 new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
                         worldManager.getHistory().warClock() ^ worldManager.getWorldSeed(),
@@ -2877,6 +2880,7 @@ public class GameScreen extends BaseScreen {
 
         if (t.campHouse >= 0) atCamp(t.campHouse, g);
         else campGreeted = null;
+        withinTheWalls(g);
 
         if (oath.following >= 0) {
             com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(oath.following);
@@ -2985,8 +2989,11 @@ public class GameScreen extends BaseScreen {
         } else {
             say("Your task: " + oath.contract.describe(world), 6f);
         }
-        if (oath.following < 0 && hostCampedHere(houseId) >= 0) {
-            say("The captain marches when the host does. Press " + actionKeys.keyName("MARCH_ON") + " to go with it.", 6f);
+        int campedHere = oath.following < 0 ? hostCampedHere(houseId) : -1;
+        if (campedHere >= 0) {
+            com.bpm.minotaur.gamedata.history.war.army.Army camped = history.roster().army(campedHere);
+            say((camped != null && camped.sieging >= 0 ? "The captain holds the ring. Press " + actionKeys.keyName("MARCH_ON") + " to stand with the host."
+                    : "The captain marches when the host does. Press " + actionKeys.keyName("MARCH_ON") + " to go with it."), 6f);
         }
     }
 
@@ -3023,19 +3030,75 @@ public class GameScreen extends BaseScreen {
                 return;
             }
             oath.following = here;
-            say("The captain nods. You march with this host, where it goes. Sleep at its fire until it moves. Shift+"
-                    + actionKeys.keyName("MARCH_ON") + " takes your leave.", 6f);
-        } else if (host.halted() || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.SHIFT_LEFT)
-                || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.SHIFT_RIGHT)) {
+            com.bpm.minotaur.gamedata.history.war.army.Army joined = history.followedHost();
+            String key = actionKeys.keyName("MARCH_ON");
+            say(joined != null && joined.sieging >= 0
+                    ? "The captain nods. You stand with this host around the walls. " + key + " waits in the siege; Shift+" + key + " takes your leave."
+                    : "The captain nods. You march with this host, where it goes. Sleep at its fire until it moves. Shift+" + key + " takes your leave.", 6f);
+        } else if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.SHIFT_RIGHT)
+                || (host.halted() && host.sieging < 0)) {
             oath.following = -1;
             say("You take your leave of the host.", 3f);
         } else if (!com.bpm.minotaur.gamedata.history.war.army.MarchOn.stillWith(host, worldManager.getCurrentPlayerChunkId(), currentLevel())) {
             say("The host is too far off to march with.", 3f);
+        } else if (host.sieging >= 0) {
+            if (askForTheFirstLadder()) return;
+            marching = com.bpm.minotaur.gamedata.history.war.army.MarchOn.waitingInTheSiege(host, history.roster());
+            keepToTheHost(host);
+            say("You wait in the siege.", 2f);
         } else {
             marching = new com.bpm.minotaur.gamedata.history.war.army.MarchOn(host, history.roster());
             keepToTheHost(host);
             say("You march on with the host.", 2f);
         }
+    }
+
+    /** The ladders are up, and the captain looks to a Friend to go first (A42). The assault is still his to order. True if he asked. */
+    private boolean askForTheFirstLadder() {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.war.army.SeatSiege siege = history.firstLadderDue();
+        if (siege == null) return false;
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        oath.ladderAsked = siege.id;
+        java.util.Map<String, Runnable> answers = new java.util.LinkedHashMap<>();
+        answers.put("Take the first ladder", () -> {
+            oath.contract = com.bpm.minotaur.gamedata.history.favour.Contract.firstLadder(oath.houseId, siege);
+            say("The captain grips your arm. When he gives the word, the first ladder is yours.", 5f);
+        });
+        String body = "The ladders are built. When the assault goes in, someone must be first over the wall of "
+                + houseName(siege.holder) + ". The captain looks at you. It is a hard task, paid only if the seat falls.";
+        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, "The first ladder", body, answers, "Not this time", () -> { })));
+        return true;
+    }
+
+    /** The relief contract's ground (A42): inside the ring of that seat, or marching with a host at it or bound for it. */
+    private boolean relieving(int seatX, int seatY) {
+        GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
+        if (chunk == null || currentLevel() != 1) return false;
+        if (com.bpm.minotaur.gamedata.history.war.army.MarchOn.withTheRelief(worldManager.getHistory().followedHost(), seatX, seatY)) return true;
+        return chunk.x == seatX && chunk.y == seatY && insideTheRing();
+    }
+
+    private boolean insideTheRing() {
+        return maze != null && player != null && com.bpm.minotaur.gamedata.history.war.SeatRing.inside(maze.getWidth(), maze.getHeight(),
+                (int) player.getPosition().x, (int) player.getPosition().y);
+    }
+
+    /** The seat the player was last let into; a gate opens to its sworn once a visit (A42). */
+    private GridPoint2 withinWallsOf;
+
+    /** The ring's gates stand to anyone who can reach them; a garrison knows its own, and the player is told they count as inside. */
+    private void withinTheWalls(WarManager.Ground g) {
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
+        com.bpm.minotaur.gamedata.history.war.army.SeatSiege s = g.chunk == null || g.level != 1 ? null : history.roster().siegeAt(g.chunk.x, g.chunk.y);
+        if (s == null || !oath.sworn() || s.holder != oath.houseId || !insideTheRing()) {
+            withinWallsOf = null;
+            return;
+        }
+        if (g.chunk.equals(withinWallsOf)) return;
+        withinWallsOf = new GridPoint2(g.chunk);
+        say("The garrison of " + houseName(s.holder) + " knows your colours, and lets you within the walls.", 5f);
     }
 
     /** Moves the player to the host's chunk if they are not in it. */
@@ -3068,14 +3131,21 @@ public class GameScreen extends BaseScreen {
         marching = null;
         String told = marchStopped(stop);
         if (told != null) say(told, 5f);
-        if (player.getStats().getCurrentHP() > 0) playerTurnTakesAction();
+        if (player.getStats().getCurrentHP() <= 0) return;
+        playerTurnTakesAction();
+        if (stop == com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.LADDERS) askForTheFirstLadder();
     }
 
     private static String marchStopped(com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop stop) {
         switch (stop) {
             case BATTLE: return "Horns ahead. The host wheels into line.";
             case ARMY: return "The column stops. There are soldiers on the road.";
-            case SIEGE: return "The host sits down before the walls.";
+            case SIEGE: return "The host sits down before the walls. There is nothing now but to wait.";
+            case ASSAULT: return "Horns at the ladders. The captain sends them in.";
+            case SALLY: return "The gates burst open. The garrison is coming for the camp!";
+            case RELIEF: return "Soldiers on the road to the walls. The relief has come.";
+            case RAISED: return "The siege is over. The host strikes its tents.";
+            case LADDERS: return "The ladders are built, and stacked in the camp.";
             case HALTED: return "The host halts and pitches its tents.";
             case NATIVES: return "The column stops. Something here will not leave it alone.";
             case GONE: return HOST_GONE;

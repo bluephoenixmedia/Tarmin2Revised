@@ -466,6 +466,37 @@ public class OneBattleStateTest {
         assertNull("once", tick(d).standAt);
     }
 
+    /** A42: the first ladder puts them inside the wall on the attackers' side, not in the line behind it. */
+    @Test
+    public void theFirstLadderStandsThemOverTheWall() {
+        f.battle.assault = true;
+        BattleDirector d = walkIn();
+        d.standInLine(1, true);
+        GridPoint2 at = tick(d).standAt;
+        assertNotNull(at);
+        assertTrue(com.bpm.minotaur.gamedata.history.war.SeatRing.inside(36, 36, at.x, at.y));
+        assertTrue("toward the attackers' edge", at.x < 18);
+    }
+
+    @Test
+    public void onlyAnAssaultHasAFirstLadderAndOnlyForItsAttackers() {
+        BattleDirector d = walkIn();
+        d.standInLine(1, true);
+        assertFalse("no assault", com.bpm.minotaur.gamedata.history.war.SeatRing.inside(36, 36, tick(d).standAt.x, 18));
+        setUpAnotherAssault();
+        BattleDirector defenders = walkIn();
+        defenders.standInLine(2, true);
+        GridPoint2 at = tick(defenders).standAt;
+        assertNotNull(at);
+        Monster inLine = defenders.side(false).get(defenders.side(false).size() - 1);
+        assertTrue("the defender's place is their line", inLine.getPosition().dst(at.x, at.y) < 6f);
+    }
+
+    private void setUpAnotherAssault() {
+        f.battle.assault = true;
+        f.battle.playerSide = 0;
+    }
+
     /** A36: a host that joins a fight already on the field puts its follower in the line then, and only once. */
     @Test
     public void aFollowerTakesTheLineWhenTheHostJoinsLater() {

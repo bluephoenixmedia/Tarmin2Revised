@@ -38,7 +38,7 @@ public final class SeatAssaultScenario implements PlaytestScenario {
 
     /** Wars are the history's to declare; only a staged fight reaches past it. */
     @SuppressWarnings("unchecked")
-    private static java.util.List<War> warsOf(HistoryWorld world) {
+    static java.util.List<War> warsOf(HistoryWorld world) {
         try {
             java.lang.reflect.Field wars = HistoryWorld.class.getDeclaredField("wars");
             wars.setAccessible(true);
@@ -46,6 +46,28 @@ public final class SeatAssaultScenario implements PlaytestScenario {
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /** A siege of one seated house by another, a war given them for it if this world rolled none: the two sides in {@code sides}. */
+    static SeatSiege layASiege(PlaytestContext ctx, House[] sides) {
+        HistoryManager history = ctx.getWorldManager().getHistory();
+        HistoryWorld world = history.world();
+        ArmyLayer layer = ctx.getWorldManager().armyLayer();
+        SeatMap seats = ctx.getWorldManager().houseSeats();
+        layer.tick(history.warClock());
+        House first = null, second = null;
+        for (House h : world.livingHouses()) {
+            if (h.holdsCastle || seats.seat(h.id) == null) continue;
+            if (first == null) first = h;
+            else if (second == null) second = h;
+        }
+        ctx.assertTrue(second != null, "two houses with seats");
+        if (world.activeWarBetween(first.id, second.id) == null) warsOf(world).add(new War(9000, first.id, second.id, com.bpm.minotaur.gamedata.history.CasusBelli.values()[0], -1, world.season()));
+        SeatSiege siege = layer.investNow(first, second, history.warClock());
+        ctx.assertTrue(siege != null, "a seat under siege");
+        sides[0] = first;
+        sides[1] = second;
+        return siege;
     }
 
     /** Which side to take is asked on a screen of its own, which stops the turns until it is answered. */

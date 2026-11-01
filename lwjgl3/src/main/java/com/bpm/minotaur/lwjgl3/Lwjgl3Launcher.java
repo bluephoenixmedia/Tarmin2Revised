@@ -37,7 +37,10 @@ public class Lwjgl3Launcher {
             for (String a : Tarmin2.getStartupArgs()) {
                 if ("--headless".equalsIgnoreCase(a)) {
                     headless = true;
-                    break;
+                }
+                // Test runs are silent: someone may be using the machine for something else. Every sound in the game goes through Gdx.audio.
+                if ("--mute".equalsIgnoreCase(a) || a.startsWith("--playtest")) {
+                    configuration.disableAudio(true);
                 }
             }
         }

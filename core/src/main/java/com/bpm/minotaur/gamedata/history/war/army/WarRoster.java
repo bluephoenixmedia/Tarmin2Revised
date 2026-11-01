@@ -58,6 +58,22 @@ public class WarRoster {
     }
 
     /** The siege laid at this chunk, or null. */
+    public SeatSiege siege(int id) {
+        for (int i = 0; i < sieges.size(); i++) {
+            if (sieges.get(i).id == id) return sieges.get(i);
+        }
+        return null;
+    }
+
+    /** The battle this army is in, or null. */
+    public ArmyBattle battleOf(int armyId) {
+        for (int i = 0; i < battles.size(); i++) {
+            ArmyBattle b = battles.get(i);
+            if (ArmyBattle.holds(b.armiesA, armyId) || ArmyBattle.holds(b.armiesB, armyId)) return b;
+        }
+        return null;
+    }
+
     public SeatSiege siegeAt(int x, int y) {
         for (int i = 0; i < sieges.size(); i++) {
             SeatSiege s = sieges.get(i);

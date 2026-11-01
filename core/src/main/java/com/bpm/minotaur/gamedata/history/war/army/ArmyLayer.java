@@ -939,7 +939,9 @@ public final class ArmyLayer {
 
     /** The garrison strikes the camp: a battle there, fought the same way, with no wall to stand behind (A34). */
     private void sally(SeatSiege s) {
-        siegeBattle(s).wallEdge = 1f;
+        ArmyBattle battle = siegeBattle(s);
+        battle.sally = true;
+        battle.wallEdge = 1f;
     }
 
     private ArmyBattle siegeBattle(SeatSiege s) {
@@ -1251,6 +1253,7 @@ public final class ArmyLayer {
         deed.atSeat = b.garrisonOf >= 0;
         // A sally beaten back loses men, not the seat.
         deed.seatFell = b.assault && !aLost;
+        deed.assault = b.assault;
         int[] slain = new int[0], taken = new int[0];
         for (int side = 0; side < 2; side++) {
             for (int id : side == 0 ? won : lost) {
@@ -1281,6 +1284,7 @@ public final class ArmyLayer {
             b.stoodHouses = sideHouses(withA ? b.armiesA : b.armiesB, stoodWith);
             deed.stoodWith = b.stoodHouses;
             deed.stoodAndWon = stoodWith == winner;
+            deed.fought = b.playerKills > 0 || (b.playerStruck & (withA ? 2 : 1)) != 0;
             b.playerTurned = b.beastId < 0 && com.bpm.minotaur.gamedata.history.favour.BattleFavour.turned(deed.stoodAndWon, b.playerShare);
             deed.turned = b.playerTurned;
         }

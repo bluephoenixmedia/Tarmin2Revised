@@ -78,6 +78,8 @@ public final class PlaytestRunner {
                 new BeastBattleScenario(),
                 new SeatOathScenario(),
                 new FollowHostScenario(),
+                new SwornSiegeScenario(),
+                new SeatReliefScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),

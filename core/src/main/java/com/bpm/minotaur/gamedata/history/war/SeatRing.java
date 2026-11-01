@@ -43,6 +43,17 @@ public final class SeatRing {
         return out;
     }
 
+    /** The tile just within the wall on the side of a battle's edge (0 west, 1 east, 2 south, 3 north): where the first ladder comes over (A42). */
+    public static GridPoint2 overTheWall(int width, int height, int edge) {
+        int cx = width / 2, cy = height / 2, in = RADIUS - 1;
+        switch (edge) {
+            case 0: return new GridPoint2(cx - in, cy);
+            case 1: return new GridPoint2(cx + in, cy);
+            case 2: return new GridPoint2(cx, cy - in);
+            default: return new GridPoint2(cx, cy + in);
+        }
+    }
+
     /** Whether a tile lies within the wall. */
     public static boolean inside(int width, int height, int x, int y) {
         return Math.abs(x - width / 2) < RADIUS && Math.abs(y - height / 2) < RADIUS;

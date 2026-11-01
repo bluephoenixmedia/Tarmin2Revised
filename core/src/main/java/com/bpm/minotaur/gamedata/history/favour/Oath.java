@@ -27,6 +27,8 @@ public class Oath {
     public int heldUntil = -1;
     /** The host of this house the player marches with, by its army id, or -1 (A36). */
     public int following = -1;
+    /** The siege whose captain last asked the player to take the first ladder, or -1: he asks once (A42). */
+    public int ladderAsked = -1;
 
     public boolean sworn() {
         return houseId >= 0;
@@ -41,6 +43,7 @@ public class Oath {
         sealGranted = false;
         heldUntil = -1;
         following = -1;
+        ladderAsked = -1;
     }
 
     public void forsake() {

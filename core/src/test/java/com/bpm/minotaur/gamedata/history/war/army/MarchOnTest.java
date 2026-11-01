@@ -175,6 +175,144 @@ public class MarchOnTest {
         assertEquals(MarchOn.Stop.NONE, m.after(roster));
     }
 
+    // ---- waiting in the siege (A42) ----
+
+    private Army besieger(SeatSiege s) {
+        Army host = army(1, 1, 5, 5);
+        host.path = null;
+        host.sieging = s.id;
+        return host;
+    }
+
+    private SeatSiege siege() {
+        SeatSiege s = new SeatSiege();
+        s.id = 40;
+        s.x = 5;
+        s.y = 5;
+        s.holder = 2;
+        s.besieger = 1;
+        roster.sieges.add(s);
+        return s;
+    }
+
+    private ArmyBattle battleOf(Army host) {
+        ArmyBattle b = new ArmyBattle();
+        b.armiesA = new int[] {host.id};
+        roster.battles.add(b);
+        host.battle = true;
+        return b;
+    }
+
+    @Test
+    public void aWaitGoesOnWhileNothingComes() {
+        MarchOn m = MarchOn.waitingInTheSiege(besieger(siege()), roster);
+        assertEquals(MarchOn.Stop.NONE, m.after(roster));
+        assertEquals(MarchOn.Stop.NONE, m.after(roster));
+    }
+
+    @Test
+    public void itWakesForTheAssault() {
+        Army host = besieger(siege());
+        MarchOn m = MarchOn.waitingInTheSiege(host, roster);
+        battleOf(host).assault = true;
+        assertEquals(MarchOn.Stop.ASSAULT, m.after(roster));
+    }
+
+    @Test
+    public void itWakesForASally() {
+        Army host = besieger(siege());
+        MarchOn m = MarchOn.waitingInTheSiege(host, roster);
+        battleOf(host).sally = true;
+        assertEquals(MarchOn.Stop.SALLY, m.after(roster));
+    }
+
+    @Test
+    public void itWakesForAReliefComingToTheWallsAndForItsBattle() {
+        Army host = besieger(siege());
+        MarchOn m = MarchOn.waitingInTheSiege(host, roster);
+        army(2, 2, 5, 5);
+        assertEquals(MarchOn.Stop.RELIEF, m.after(roster));
+        assertEquals("once", MarchOn.Stop.NONE, m.after(roster));
+        battleOf(host);
+        assertEquals(MarchOn.Stop.RELIEF, m.after(roster));
+    }
+
+    @Test
+    public void itWakesWhenTheSiegeIsOverOrTheHostIsGone() {
+        Army host = besieger(siege());
+        MarchOn m = MarchOn.waitingInTheSiege(host, roster);
+        host.sieging = -1;
+        assertEquals(MarchOn.Stop.RAISED, m.after(roster));
+        roster.armies.remove(host);
+        assertEquals(MarchOn.Stop.GONE, m.after(roster));
+    }
+
+    @Test
+    public void itWakesOnceWhenTheLaddersAreUp() {
+        SeatSiege s = siege();
+        MarchOn m = MarchOn.waitingInTheSiege(besieger(s), roster);
+        s.works = SeatSiege.LADDER_TURNS;
+        assertEquals(MarchOn.Stop.LADDERS, m.after(roster));
+        assertEquals(MarchOn.Stop.NONE, m.after(roster));
+        assertEquals("ladders already up are no news", MarchOn.Stop.NONE, MarchOn.waitingInTheSiege(roster.army(1), roster).after(roster));
+    }
+
+    @Test
+    public void ladderAndAssaultOnOneTurnWakeThemForTheAssault() {
+        SeatSiege s = siege();
+        Army host = besieger(s);
+        MarchOn m = MarchOn.waitingInTheSiege(host, roster);
+        s.works = SeatSiege.LADDER_TURNS;
+        battleOf(host).assault = true;
+        assertEquals(MarchOn.Stop.ASSAULT, m.after(roster));
+    }
+
+    /** A42: only the captain's temper and the numbers say when; waiting moves it by no turn. */
+    @Test
+    public void theAssaultComesOnTheSameTurnWhetherThePlayerWaitsOrNot() {
+        long seed = 1000L;
+        HistoryManager alone = HistoryManager.create(seed, catalog), waiting = HistoryManager.create(seed, catalog);
+        ArmyLayer la = layer(alone, seed), lw = layer(waiting, seed);
+        run(alone, la, 1);
+        run(waiting, lw, 1);
+        SeatSiege sa = null, sw = null;
+        for (War w : waiting.world().activeWars()) {
+            com.bpm.minotaur.gamedata.history.House a = waiting.world().house(w.attackerId), b = waiting.world().house(w.defenderId);
+            if (a == null || b == null || a.holdsCastle || b.holdsCastle) continue;
+            sw = lw.investNow(a, b, waiting.warClock());
+            if (sw == null) continue;
+            sa = la.investNow(alone.world().house(a.id), alone.world().house(b.id), alone.warClock());
+            break;
+        }
+        assertNotNull("a siege to wait in", sw);
+        assertNotNull(sa);
+        // Ladders finished on a turn the captain thinks would go in on that turn, with no turn between to ask.
+        int toLadders = (waiting.warClock() + 40 + sw.id) % SeatSiege.THINK_EVERY == 0 ? 41 : 40;
+        sa.works = sw.works = SeatSiege.LADDER_TURNS - toLadders;
+        Army host = waiting.roster().army(sw.armies[0]), twin = alone.roster().army(sa.armies[0]);
+        host.soldiers = twin.soldiers = 5000;
+        MarchOn wait = MarchOn.waitingInTheSiege(host, waiting.roster());
+        List<MarchOn.Stop> woke = new ArrayList<>();
+        long wokeAt = -1;
+        for (int slice = 0; slice < 40 && wokeAt < 0; slice++) {
+            // Turn by turn beside the one left alone: the wait wakes as often as it likes and changes nothing.
+            for (int t = 0; t < MarchOn.SLICE && wokeAt < 0; t++) {
+                waiting.marchUntil(1, clock -> {
+                    lw.tick(clock);
+                    return wait.after(waiting.roster()) != MarchOn.Stop.NONE;
+                });
+                run(alone, la, 1);
+                assertEquals("works, clock " + waiting.warClock(), sa.works, sw.works);
+                assertEquals("a battle or none, clock " + waiting.warClock(), twin.battle, host.battle);
+                if (!wait.last().goesOn()) woke.add(wait.last());
+                if (wait.last() == MarchOn.Stop.ASSAULT) wokeAt = waiting.warClock();
+            }
+        }
+        assertEquals("the ladders woke them, then the assault", List.of(MarchOn.Stop.LADDERS, MarchOn.Stop.ASSAULT), woke);
+        assertTrue(twin.battle);
+        assertEquals(alone.warClock(), wokeAt);
+    }
+
     /** A36: a Soldier near enough stops the march on coming into a chunk; far off, or Fodder, or a house's, it does not. */
     @Test
     public void itStopsForANativeSoldierNearby() {
@@ -205,6 +343,18 @@ public class MarchOnTest {
         assertTrue(w.keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER));
         assertFalse(w.keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY));
         assertFalse("not one's own wards", new com.bpm.minotaur.gamedata.shelter.NightsWards().keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER));
+    }
+
+    /** A42: with the relief is marching with a host at that seat, or bound for it. */
+    @Test
+    public void aFollowedHostIsTheReliefIfAtTheSeatOrBoundForIt() {
+        Army host = army(1, 1, 5, 5);
+        assertTrue("at it", MarchOn.withTheRelief(host, 5, 5));
+        assertFalse("elsewhere, bound elsewhere", MarchOn.withTheRelief(host, 9, 9));
+        host.targetX = 9;
+        host.targetY = 9;
+        assertTrue("bound for it", MarchOn.withTheRelief(host, 9, 9));
+        assertFalse("following no one", MarchOn.withTheRelief(null, 5, 5));
     }
 
     @Test
