@@ -55,7 +55,7 @@ public final class SealLordDuelScenario implements PlaytestScenario {
             // The level the world expects here: depth plus half the distance (WorldManager's EDL).
             int regional = ctx.getWorldManager().getCurrentLevel() + (Math.abs(c.x) + Math.abs(c.y)) / 2;
             courtLevel[0] = regional;
-            while (ctx.getPlayer().getLevel() < regional) ctx.press(Input.Keys.PAGE_UP);
+            ctx.levelUp(regional - ctx.getPlayer().getLevel());
         });
         script.wait("level-up opens", 10);
         script.once("decide later", ctx::dismissModals);

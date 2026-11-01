@@ -108,11 +108,13 @@ public final class SwornSiegeScenario implements PlaytestScenario {
             // Now the numbers say go: only they do, and the player's word never did.
             host[0].soldiers = 2000;
         });
-        script.key("wait on", Input.Keys.Y, ctx);
         ArmyBattle[] battle = {null};
-        script.until("the assault wakes them", 200, () -> {
+        script.until("wait on until the assault wakes them", 200, () -> {
             battle[0] = history(ctx).roster().battleOf(host[0].id);
-            return battle[0] != null && battle[0].assault;
+            if (battle[0] != null && battle[0].assault) return true;
+            // The cold can take a moment, and with it the key; while the wait is on the key does nothing.
+            if (ctx.getFrame() % 10 == 0) ctx.press(Input.Keys.Y);
+            return false;
         });
         GridPoint2 standing = new GridPoint2();
         script.until("over the wall", 400, () -> {
