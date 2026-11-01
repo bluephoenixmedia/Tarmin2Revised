@@ -498,6 +498,15 @@ public final class HistoryManager {
         return most;
     }
 
+    /** Waking turns skipped on the march (A36): each as a turn walked, Seasons and all, until {@code eachTurn} says stop. Returns the turns passed. */
+    public int marchUntil(int most, java.util.function.LongPredicate eachTurn) {
+        for (int i = 0; i < most; i++) {
+            tickWarClock();
+            if (eachTurn.test(warClock)) return i + 1;
+        }
+        return most;
+    }
+
     /** Something the armies did to the history (ADR 0006): written now, replayed from the log. */
     public void recordArmyDeed(PlayerDeed deed) {
         deed.liveSeason = world.liveSeasons();
@@ -569,17 +578,28 @@ public final class HistoryManager {
     public void breakOath() {
         if (!oath.sworn()) return;
         int betrayed = oath.houseId;
+        int followed = oath.following;
         oath.forsake();
         apply(new PlayerDeed(PlayerDeed.Kind.BROKE_OATH, betrayed, world.liveSeasons()));
         favour.changeAll(world, com.bpm.minotaur.gamedata.history.favour.Favour.OATH_BROKEN_ALL);
         favour.set(betrayed, com.bpm.minotaur.gamedata.history.favour.Favour.MIN);
-        if (onOathBroken != null) onOathBroken.accept(betrayed);
+        if (onOathBroken != null) onOathBroken.broken(betrayed, followed);
     }
 
-    private java.util.function.IntConsumer onOathBroken;
+    /** The host the player marches with, or null (A36). */
+    public com.bpm.minotaur.gamedata.history.war.army.Army followedHost() {
+        return roster.army(oath.following);
+    }
 
     /** What the armies do about a broken oath (A41). */
-    public void onOathBroken(java.util.function.IntConsumer then) {
+    public interface OathBroken {
+        /** @param followed the host the player was marching with, or -1 */
+        void broken(int betrayed, int followed);
+    }
+
+    private OathBroken onOathBroken;
+
+    public void onOathBroken(OathBroken then) {
         onOathBroken = then;
     }
 

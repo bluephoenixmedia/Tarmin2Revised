@@ -453,6 +453,33 @@ public class OneBattleStateTest {
         assertEquals("both sides is neither", -1, b.foughtFor());
     }
 
+    /** A36: one who marched in with a host is in its line from the start, and is offered no side to choose. */
+    @Test
+    public void aFollowerTakesTheirPlaceInTheLine() {
+        BattleDirector d = walkIn();
+        d.standInLine(2);
+        assertEquals(2, f.battle.playerSide);
+        BattleDirector.Report r = tick(d);
+        assertNotNull(r.standAt);
+        Monster inLine = d.side(false).get(d.side(false).size() - 1);
+        assertTrue(inLine.getPosition().dst(r.standAt.x, r.standAt.y) < 6f);
+        assertNull("once", tick(d).standAt);
+    }
+
+    /** A36: a host that joins a fight already on the field puts its follower in the line then, and only once. */
+    @Test
+    public void aFollowerTakesTheLineWhenTheHostJoinsLater() {
+        BattleDirector d = walkIn();
+        tick(d);
+        tick(d);
+        d.standInLine(1);
+        assertNotNull(tick(d).standAt);
+        d.chooseSide(0);
+        d.standInLine(1);
+        assertEquals("a second asking changes nothing", 0, f.battle.playerSide);
+        assertNull(tick(d).standAt);
+    }
+
     /** A40: one who walked off before the rout stood with nobody, whatever blows they struck. */
     @Test
     public void onlyOneStillOnTheFieldAtTheEndStoodToIt() {

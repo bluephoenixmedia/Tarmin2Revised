@@ -344,6 +344,10 @@ public class WarTableScreen extends BaseScreen {
         if (oath.sworn() && world.house(oath.houseId) != null) {
             rail.add(UiLabels.wrapping(UiGlyphs.sanitize("Sworn to " + railName(world.house(oath.houseId).name) + "."),
                     style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT))).growX().left().padBottom(UiTheme.PAD_XS).row();
+            if (oath.following >= 0) {
+                rail.add(UiLabels.wrapping(UiGlyphs.sanitize("You march with one of its hosts."),
+                        style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT))).growX().left().padBottom(UiTheme.PAD_XS).row();
+            }
         }
         for (com.bpm.minotaur.gamedata.history.House h : world.livingHouses()) {
             Table line = new Table();

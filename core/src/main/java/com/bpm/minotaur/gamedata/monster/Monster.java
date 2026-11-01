@@ -283,6 +283,7 @@ public class Monster implements Renderable {
     /** The seeker has struck this monster at least once; a seal lord's seal is theirs if it falls. */
     private transient boolean seekerDrewBlood;
     private transient boolean seekerKilled;
+    private transient boolean turnedOnSeeker;
     private transient int battleSide;
     private Monster targetMonster = null;
     private int retaliationTurnsRemaining = 0;
@@ -1609,6 +1610,15 @@ public class Monster implements Renderable {
     /** A seal lord and its retinue hold their gash; they never follow the player out of it. */
     public boolean seekerDrewBlood() {
         return seekerDrewBlood;
+    }
+
+    /** A soldier of a line the player betrayed, who leaves the enemy for them (A41). */
+    public boolean turnedOnSeeker() {
+        return turnedOnSeeker;
+    }
+
+    public void turnOnSeeker() {
+        turnedOnSeeker = true;
     }
 
     public boolean seekerKilled() {

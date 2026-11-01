@@ -1507,7 +1507,10 @@ public class WorldManager {
                 }
             });
             final com.bpm.minotaur.gamedata.history.war.army.ArmyLayer theseArmies = armyLayer;
-            getHistory().onOathBroken(theseArmies::huntersNow);
+            getHistory().onOathBroken((betrayed, followed) -> {
+                theseArmies.huntersNow(betrayed);
+                theseArmies.hostTurnsOnThePlayer(followed);
+            });
             armyLayer.beastHealth(id -> {
                 com.bpm.minotaur.gamedata.history.beast.MegabeastCatalog catalog = com.bpm.minotaur.gamedata.history.DoctrineCatalog.getInstance().beasts();
                 com.bpm.minotaur.gamedata.history.Megabeast b = getHistory().world().megabeast(id);
@@ -1546,6 +1549,23 @@ public class WorldManager {
         });
     }
 
+    /** The march goes on (A36): the armies move turn by turn as for any sleep, up to {@code most}, until the host comes to something. Returns the turns passed. */
+    public int marchOn(com.bpm.minotaur.gamedata.history.war.army.MarchOn march, int most) {
+        com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
+        if (layer != null) layer.watchBattle(null);
+        return getHistory().marchUntil(most, clock -> {
+            if (layer != null) layer.tick(clock);
+            return march.after(getHistory().roster()) != com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.NONE;
+        });
+    }
+
+    /** Whether the host the player follows is in their chunk now. */
+    public boolean followedHostHere() {
+        com.bpm.minotaur.gamedata.history.war.army.Army host = getHistory().followedHost();
+        return host != null && currentLevel == 1 && currentPlayerChunkId != null
+                && host.x == currentPlayerChunkId.x && host.y == currentPlayerChunkId.y;
+    }
+
     /** Whether soldiers who would not leave a sleeper be stand in the player's chunk now. */
     public boolean armiesThreatenHere() {
         com.bpm.minotaur.gamedata.history.war.army.ArmyLayer layer = armies();
@@ -1567,7 +1587,8 @@ public class WorldManager {
         if (layer != null) layer.watchBattle(null);
         return getHistory().sleepUntil(most, clock -> {
             if (layer != null) layer.tick(clock);
-            return armiesThreatenHere();
+            com.bpm.minotaur.gamedata.history.war.army.Army host = getHistory().followedHost();
+            return armiesThreatenHere() || (host != null && host.battle);
         });
     }
 
@@ -1586,7 +1607,7 @@ public class WorldManager {
             com.bpm.minotaur.gamedata.monster.Monster m = wards.has(com.bpm.minotaur.gamedata.shelter.Ward.ALARM)
                     ? sm.spawnWithin(player, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES) : sm.spawnBeside(player);
             if (m == null) continue;
-            if (wards.hiddenFrom(m.getIntelligence(), m.isSpellcaster())) maze.removeMonster(m);
+            if (wards.hiddenFrom(m.getIntelligence(), m.isSpellcaster()) || wards.keptOffBySentries(m.getRole())) maze.removeMonster(m);
             else out.add(m);
         }
         return out;

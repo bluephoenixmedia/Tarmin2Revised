@@ -50,6 +50,17 @@ public class WarManagerTest {
         return wars.onTurn(history, ground, BattleFixture::soldier, spoils);
     }
 
+    /** A36: one marching with a host of a fight under way is in its line, and is asked nothing. */
+    @Test
+    public void aFollowerIsOfferedNoSide() {
+        fixture.battle.turn = 5;
+        ground.followed = fixture.battle.armiesB[0];
+        WarManager.Turn t = turn();
+        assertFalse(t.offerSides);
+        assertEquals(2, fixture.battle.playerSide);
+        assertNotNull(t.standAt);
+    }
+
     @Test
     public void aBattleBeginningAroundThePlayerSoundsTheHorns() {
         WarManager.Turn t = turn();

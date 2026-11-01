@@ -33,6 +33,8 @@ public final class WarManager {
         public GridPoint2 playerTile;
         /** Makes a beast's flesh for a battle here (A28); may be null. */
         public BattleDirector.BeastForger beastForger;
+        /** The army the player marches with, or -1 (A36). */
+        public int followed = -1;
     }
 
     /** The war's sounds (plan T2.9): horns at the warning, drums as the lines close, horns at the rout. */
@@ -49,6 +51,8 @@ public final class WarManager {
         /** The house paid for the player's stand: their liege if it was of that side, else the side's lead; -1 if they stood with none (A40). */
         public int stoodWith = -1;
         public boolean won;
+        /** Where the player takes their place in the line (A36). */
+        public GridPoint2 standAt;
         public int favour;
         /** The player's hand turned it (A40). */
         public boolean turned;
@@ -88,6 +92,7 @@ public final class WarManager {
             int edgeA = BattleDirector.edgeToward(g.chunk, g.seats == null ? null : g.seats.seat(g.battle.houseA));
             long seed = history.world().seed ^ (clock * 0x9E3779B97F4A7C15L) ^ (g.chunk.x * 31L + g.chunk.y);
             active = new BattleDirector(g.battle, g.layer, g.chunk, edgeA, history.world(), catalog, seed, underWay);
+            standWithTheHost(g);
             if (!underWay) {
                 t.messages.add(active.warning());
                 t.cues.add(Cue.HORNS);
@@ -96,10 +101,12 @@ public final class WarManager {
             t.offerSides = g.battle.playerSide == 0 && g.battle.beastId < 0;
         }
         active.beastForger(g.beastForger);
+        standWithTheHost(g);
         BattleDirector.Phase was = active.phase();
         BattleDirector.Report r = active.tick(g.maze, g.playerTile, recruiter, spoils, clock);
         t.messages.addAll(r.messages);
         t.volleyDamage = r.volleyDamage;
+        t.standAt = r.standAt;
         if (was == BattleDirector.Phase.WARNING && active.phase() == BattleDirector.Phase.BATTLE) {
             t.cues.add(Cue.JOINED);
             t.offerSides = g.battle != null && g.battle.playerSide == 0 && g.battle.beastId < 0;
@@ -120,6 +127,12 @@ public final class WarManager {
         }
         if (active.phase() == BattleDirector.Phase.DONE) active = null;
         return t;
+    }
+
+    /** At the start, or the moment the followed host joins a fight already here: the player's place is in its line (A36). */
+    private void standWithTheHost(Ground g) {
+        int line = ArmyBattle.holds(active.battle.armiesA, g.followed) ? 1 : ArmyBattle.holds(active.battle.armiesB, g.followed) ? 2 : 0;
+        if (line != 0) active.standInLine(line);
     }
 
     /** Whether this soldier stands on the side the player chose: an ally until the fight ends (A26). */

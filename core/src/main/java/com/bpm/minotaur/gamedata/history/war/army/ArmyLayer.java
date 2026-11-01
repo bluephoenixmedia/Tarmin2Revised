@@ -370,6 +370,30 @@ public final class ArmyLayer {
         }
     }
 
+    /** Debug: this army marches on that chunk, now. */
+    public void marchNow(Army a, int x, int y) {
+        goTo(a, x, y);
+    }
+
+    /** A host whose follower has broken their oath comes for them where they stand, at once (A41). */
+    public void hostTurnsOnThePlayer(int armyId) {
+        Army a = roster.army(armyId);
+        if (a == null) return;
+        if (a.battle) {
+            // No more an ally in its line.
+            for (int i = 0; i < roster.battles.size(); i++) {
+                ArmyBattle b = roster.battles.get(i);
+                int line = ArmyBattle.holds(b.armiesA, a.id) ? 1 : ArmyBattle.holds(b.armiesB, a.id) ? 2 : 0;
+                if (line == 0) continue;
+                b.playerSide = 0;
+                b.turnedOnPlayer = line;
+            }
+            return;
+        }
+        GridPoint2 at = watch == null ? null : watch.surfaceChunk();
+        if (at != null) goTo(a, at.x, at.y);
+    }
+
     private int[] sideHouses(int[] armies, int lead) {
         int[] houses = {lead};
         for (int id : armies) {

@@ -11,6 +11,21 @@ import java.util.Set;
 public final class NightsWards {
 
     private final EnumMap<Ward, Boolean> castNotLaid = new EnumMap<>(Ward.class);
+    private boolean kept;
+
+    /** A followed host's camp keeps its sentries on the sleeper's behalf: Alarm and Shield, and nothing to pay (A36). */
+    public static NightsWards ofAHostsCamp() {
+        NightsWards wards = new NightsWards();
+        wards.lay(Ward.ALARM);
+        wards.lay(Ward.SHIELD);
+        wards.kept = true;
+        return wards;
+    }
+
+    /** Whether others keep these wards, so the sleeper owes nothing for them. */
+    public boolean kept() {
+        return kept;
+    }
 
     /** Whether this ward can be readied with what is carried. */
     public boolean canLay(Ward ward, boolean carried, boolean fire) {
@@ -72,6 +87,11 @@ public final class NightsWards {
     /** What a Shield will take of the free rounds. */
     public int shield() {
         return has(Ward.SHIELD) ? Ward.SHIELD_ABSORBS : 0;
+    }
+
+    /** Whether a thing of this role passes a sleeper in a host's camp by: native Fodder leave the column alone (A36). */
+    public boolean keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole role) {
+        return kept && role == com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER;
     }
 
     /** Whether this ambusher passes the sleeper by. */
