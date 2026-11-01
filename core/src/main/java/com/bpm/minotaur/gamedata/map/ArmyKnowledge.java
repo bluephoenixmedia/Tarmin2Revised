@@ -196,6 +196,25 @@ public final class ArmyKnowledge {
         return changed;
     }
 
+    /** The mark of a host in sight of this chunk, if one is, for the first sighting's hint; null if none. */
+    public Marker hostInSight(WarRoster roster, int px, int py) {
+        for (Army a : roster.armies) {
+            if (a.soldiers <= 0 || !a.isHost() || Math.max(Math.abs(a.x - px), Math.abs(a.y - py)) > SIGHT_CHUNKS) continue;
+            Marker m = markers.get(a.id);
+            if (m != null) return m;
+        }
+        return null;
+    }
+
+    /** A battle the player can hear from this chunk, for the first horns' hint; null if none. The ear is true where the map's mark is rough. */
+    public static ArmyBattle battleInEarshot(WarRoster roster, int px, int py) {
+        for (ArmyBattle b : roster.battles) {
+            int off = Math.max(Math.abs(b.x - px), Math.abs(b.y - py));
+            if (off > 0 && off <= WarSoundscape.EARSHOT) return b;
+        }
+        return null;
+    }
+
     /** A sleep beside the War Table: each host's rough region and heading (A49). */
     public void hearWarTable(WarRoster roster, long clock) {
         forget(clock);

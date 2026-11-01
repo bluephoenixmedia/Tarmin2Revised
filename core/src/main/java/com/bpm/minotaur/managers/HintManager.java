@@ -33,7 +33,15 @@ public class HintManager implements SlotScopedState {
         DIVINITY,
         DOOM,
         LOCKED_SPELL_SLOT,
-        HEAL_READY
+        HEAL_READY,
+        /** The Living War (A51): the first of each, once. */
+        WAR_TABLE,
+        WAR_TABLE_OPENED,
+        WAR_SIGHTING,
+        WAR_EARSHOT,
+        WAR_TRAIL,
+        WAR_FIGHT,
+        WAR_TOLERATED
     }
 
     private static HintManager instance;
@@ -218,6 +226,61 @@ public class HintManager implements SlotScopedState {
         if (!shouldShow(HintId.LOCKED_SPELL_SLOT)) return false;
         String msg = "Locked spell slot: spell slots unlock at levels 2, 5, 8 and 11.";
         return postHint(HintId.LOCKED_SPELL_SLOT, eventManager, msg, 3.5f);
+    }
+
+    /** The first return to the Shelter: the Table is pointed out (A51). */
+    public boolean checkWarTable(GameEventManager eventManager) {
+        if (!shouldShow(HintId.WAR_TABLE)) return false;
+        return postHint(HintId.WAR_TABLE, eventManager, "The War Table stands by the Lectern. Study it to hear what the Shelter knows of the houses' wars.", 5.0f);
+    }
+
+    /**
+     * The War Table is opened: true the first time, if hints are on, for its three lines. The Codex
+     * page unlocks whether they are on or not, so this is noted either way.
+     */
+    public synchronized boolean openWarTable() {
+        boolean first = seenHints.add(HintId.WAR_TABLE_OPENED.name());
+        if (first) save();
+        return first && SettingsManager.getInstance().isShowHints();
+    }
+
+    /** The "Living War" Codex page unlocks on the first Table visit (A51). */
+    public boolean livingWarUnlocked() {
+        return hasSeen(HintId.WAR_TABLE_OPENED);
+    }
+
+    /** @param heading "north-east" and the like; null for a host standing still */
+    public boolean checkWarSighting(String houseName, String heading, GameEventManager eventManager) {
+        if (!shouldShow(HintId.WAR_SIGHTING)) return false;
+        String first = "A host of " + houseName + (heading != null ? " marches " + heading : " has made camp");
+        return postHint(HintId.WAR_SIGHTING, eventManager, first + ". Armies move whether you watch or not; the map remembers where you saw them.", 6.0f);
+    }
+
+    /** @param heading "east" and the like */
+    public boolean checkWarEarshot(String heading, GameEventManager eventManager) {
+        if (!shouldShow(HintId.WAR_EARSHOT)) return false;
+        String first = heading != null ? "Horns to the " + heading : "Horns close by";
+        return postHint(HintId.WAR_EARSHOT, eventManager, first + ": a battle. Follow the sound, and choose a side when you arrive.", 6.0f);
+    }
+
+    /** @param heading "north-east" and the like */
+    public boolean checkWarTrail(String heading, GameEventManager eventManager) {
+        if (!shouldShow(HintId.WAR_TRAIL)) return false;
+        String first = "Tracks: a host passed here" + (heading != null ? ", heading " + heading : "");
+        return postHint(HintId.WAR_TRAIL, eventManager, first + ". Following them updates where you think it is.", 6.0f);
+    }
+
+    public boolean checkWarTolerated(String houseName, GameEventManager eventManager) {
+        if (!shouldShow(HintId.WAR_TOLERATED)) return false;
+        return postHint(HintId.WAR_TOLERATED, eventManager, houseName + " tolerates you. At Friend, kneel at its banner to swear to it.", 6.0f);
+    }
+
+    /** The side-choice prompt explains itself, the first time: its words, or null (A51). */
+    public synchronized String firstFightWords() {
+        if (!shouldShow(HintId.WAR_FIGHT)) return null;
+        seenHints.add(HintId.WAR_FIGHT.name());
+        save();
+        return UiGlyphs.sanitize("Choose, and that side's soldiers fight beside you until it ends. Or keep away, and get off this ground.");
     }
 
     // --- Persistence & SlotScopedState ---

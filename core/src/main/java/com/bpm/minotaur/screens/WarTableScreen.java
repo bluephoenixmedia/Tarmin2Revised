@@ -61,6 +61,8 @@ public class WarTableScreen extends BaseScreen {
     private Label footerHint;
     private static final String KEYS_ON_THE_NEWS = "UP DN select    W waypoint    1-9 a war    ESC return";
     private static final String KEYS_ON_A_PAGE = "UP DN select    W waypoint    ESC the news";
+    /** This is the first time this save has read the Table: it says what it is (A51). */
+    private boolean firstOpening;
 
     public WarTableScreen(Tarmin2 game, GameScreen parentScreen, WorldManager worldManager) {
         super(game);
@@ -106,6 +108,7 @@ public class WarTableScreen extends BaseScreen {
         Gdx.input.setInputProcessor(multiplexer);
         UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
         firstWord();
+        firstOpening = com.bpm.minotaur.managers.HintManager.getInstance().openWarTable();
         build();
     }
 
@@ -150,6 +153,7 @@ public class WarTableScreen extends BaseScreen {
         header.add(UiLabels.of("THE WAR TABLE", style(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT))).center().row();
         header.add(UiLabels.of("What the Shelter has heard", style(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED))).center().padTop(UiTheme.PAD_XS);
         root.add(header).colspan(2).growX().padBottom(UiTheme.PAD_SM).row();
+        if (firstOpening) root.add(firstWords()).colspan(2).growX().padBottom(UiTheme.PAD_SM).row();
 
         List<Dispatches.Row> news = news();
         List<WarReport.WarLine> wars = wars();
@@ -176,6 +180,16 @@ public class WarTableScreen extends BaseScreen {
         root.add(footer).colspan(2).growX().padTop(UiTheme.PAD_SM);
         stage.addActor(root);
         select(selected);
+    }
+
+    private Table firstWords() {
+        Table box = new Table();
+        box.setBackground(hudSkin.getDoubleBorderPanel());
+        box.pad(UiTheme.PAD_SM, UiTheme.PAD_MD, UiTheme.PAD_SM, UiTheme.PAD_MD);
+        for (String line : com.bpm.minotaur.gamedata.history.war.WarCodex.FIRST_OPENING) {
+            box.add(UiLabels.wrapping(line, style(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE))).left().growX().padBottom(UiTheme.PAD_XS).row();
+        }
+        return box;
     }
 
     private ScrollPane scrollOf(Table content) {

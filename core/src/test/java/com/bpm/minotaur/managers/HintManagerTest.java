@@ -50,6 +50,67 @@ public class HintManagerTest {
         assertEquals(1, eventManager.getMessageEvents().size());
     }
 
+    // ---- the Living War (A51) ----
+
+    private void fireEveryWarHint() {
+        hintManager.checkWarTable(eventManager);
+        hintManager.checkWarSighting("House Vellum", "north", eventManager);
+        hintManager.checkWarEarshot("east", eventManager);
+        hintManager.checkWarTrail("north-east", eventManager);
+        hintManager.checkWarTolerated("House Vellum", eventManager);
+    }
+
+    @Test
+    public void eachWarHintFiresOnceAcrossAReload() {
+        fireEveryWarHint();
+        assertNotNull(hintManager.firstFightWords());
+        assertTrue(hintManager.openWarTable());
+        int shown = eventManager.getMessageEvents().size();
+        assertEquals(5, shown);
+
+        fireEveryWarHint();
+        assertEquals("once", shown, eventManager.getMessageEvents().size());
+
+        hintManager.load();
+        fireEveryWarHint();
+        assertEquals("and once more after a reload is still once", shown, eventManager.getMessageEvents().size());
+        assertNull(hintManager.firstFightWords());
+        assertFalse(hintManager.openWarTable());
+        assertTrue(hintManager.livingWarUnlocked());
+    }
+
+    @Test
+    public void warHintsAreWordedAsAgreed() {
+        fireEveryWarHint();
+        List<GameEvent> e = eventManager.getMessageEvents();
+        assertEquals("A host of House Vellum marches north. Armies move whether you watch or not; the map remembers where you saw them.", e.get(1).message);
+        assertEquals("Horns to the east: a battle. Follow the sound, and choose a side when you arrive.", e.get(2).message);
+        assertEquals("Tracks: a host passed here, heading north-east. Following them updates where you think it is.", e.get(3).message);
+        assertEquals("House Vellum tolerates you. At Friend, kneel at its banner to swear to it.", e.get(4).message);
+    }
+
+    @Test
+    public void everyWarStringSurvivesTheFont() {
+        fireEveryWarHint();
+        for (GameEvent e : eventManager.getMessageEvents()) assertEquals(e.message, UiGlyphs.sanitize(e.message));
+        String fight = hintManager.firstFightWords();
+        assertEquals(fight, UiGlyphs.sanitize(fight));
+        for (String line : com.bpm.minotaur.gamedata.history.war.WarCodex.FIRST_OPENING) assertEquals(line, UiGlyphs.sanitize(line));
+        for (com.bpm.minotaur.gamedata.history.war.WarCodex.Section s : com.bpm.minotaur.gamedata.history.war.WarCodex.PAGE) {
+            assertEquals(s.heading, UiGlyphs.sanitize(s.heading));
+            assertEquals(s.body, UiGlyphs.sanitize(s.body));
+        }
+    }
+
+    /** The page unlocks on the first visit even for one with hints off; its three lines are hints, and stay quiet. */
+    @Test
+    public void theCodexPageUnlocksWithHintsOff() {
+        SettingsManager.getInstance().setShowHints(false);
+        assertFalse(hintManager.livingWarUnlocked());
+        assertFalse(hintManager.openWarTable());
+        assertTrue(hintManager.livingWarUnlocked());
+    }
+
     @Test
     public void hintsAreSuppressedWhenDisabledInSettings() {
         SettingsManager.getInstance().setShowHints(false);

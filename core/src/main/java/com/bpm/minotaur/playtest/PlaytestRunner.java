@@ -80,6 +80,7 @@ public final class PlaytestRunner {
                 new FollowHostScenario(),
                 new SwornSiegeScenario(),
                 new SeatReliefScenario(),
+                new WarTeachingScenario(),
                 new LivingWarSiegeScenario(),
                 new TarminsKnellScenario(),
                 new TownsAndTradeScenario(),

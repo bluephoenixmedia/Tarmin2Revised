@@ -28,7 +28,9 @@ public class Army {
         /** The war is over: go home and rejoin the garrison. */
         DISBAND,
         /** Camp in the ring before Castle Tarmin, and hold it open (A35). */
-        CASTLE
+        CASTLE,
+        /** Hold a crossroads near the Shelter until its next decision (A52). */
+        CROSSING
     }
 
     public int id;

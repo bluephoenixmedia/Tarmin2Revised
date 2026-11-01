@@ -92,8 +92,20 @@ public final class WarSimulation {
         }
     }
 
+    /** How near the Shelter is near, as the Table counts it: three days' march. */
+    private static final int NEAR_THE_SHELTER = com.bpm.minotaur.gamedata.history.war.Dispatches.NEAR_DAYS * com.bpm.minotaur.gamedata.history.war.Dispatches.CHUNKS_PER_DAY;
+    /** Chunks from a crossroads that count as being at it: a battle in earshot of someone standing there. */
+    private static final int AT_A_CROSSROADS = 3;
+
     /** @return the report, as lines */
     public static List<String> run(DoctrineCatalog catalog, long[] seeds, int seasons) {
+        return run(catalog, seeds, seasons, ArmyTuning.CROSSROADS_WEIGHT);
+    }
+
+    /** @param crossroadsWeight A52's weight, to compare it on and off */
+    public static List<String> run(DoctrineCatalog catalog, long[] seeds, int seasons, float crossroadsWeight) {
+        long battlesAll = 0, battlesNear = 0, hostTurns = 0, hostTurnsNear = 0, seasonsAll = 0, seasonsNear = 0;
+        long battlesAtCrossroads = 0, hostTurnsAtCrossroads = 0, seasonsAtCrossroads = 0, busiestChunk = 0;
         com.sun.management.ThreadMXBean mx = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
         long me = Thread.currentThread().getId();
         int warm = HistoryManager.SEASON_TURNS;
@@ -112,6 +124,11 @@ public final class WarSimulation {
             BiomeManager biomes = new BiomeManager(seed);
             ArmyLayer layer = new ArmyLayer(history.world(), Terrain.of(biomes),
                     () -> SeatMap.of(history.world(), biomes.getRoads(), biomes.getCastleSite(), seed, biomes::isOpenLand), history.roster(), history::recordArmyDeed);
+            layer.crossroadsWeight(crossroadsWeight);
+            Set<Integer> battlesCounted = new HashSet<>();
+            Set<Integer> seasonsWithOneNear = new HashSet<>(), seasonsWithOneAtCrossroads = new HashSet<>();
+            java.util.Map<String, Integer> battlesByChunk = new java.util.HashMap<>();
+            List<GridPoint2> crossroads = Terrain.of(biomes).crossroads();
             int startSeason = history.world().season();
             if (coldJump < 0) {
                 long start = System.nanoTime();
@@ -156,6 +173,26 @@ public final class WarSimulation {
                 battles += layer.roster().battles.size();
                 battlesMax = Math.max(battlesMax, layer.roster().battles.size());
                 if (asleep == 0) walker.observe(layer.roster());
+                for (int b = 0; b < layer.roster().battles.size(); b++) {
+                    ArmyBattle fight = layer.roster().battles.get(b);
+                    boolean near = Math.max(Math.abs(fight.x), Math.abs(fight.y)) <= NEAR_THE_SHELTER;
+                    boolean atCrossroads = atACrossroads(crossroads, fight.x, fight.y);
+                    if (battlesCounted.add(fight.id)) {
+                        battlesAll++;
+                        if (near) battlesNear++;
+                        if (atCrossroads) battlesAtCrossroads++;
+                        battlesByChunk.merge(fight.x + "," + fight.y, 1, Integer::sum);
+                    }
+                    if (near) seasonsWithOneNear.add(history.world().season());
+                    if (atCrossroads) seasonsWithOneAtCrossroads.add(history.world().season());
+                }
+                for (int h = 0; h < layer.roster().armies.size(); h++) {
+                    Army host = layer.roster().armies.get(h);
+                    if (!host.isHost()) continue;
+                    hostTurns++;
+                    if (Math.max(Math.abs(host.x), Math.abs(host.y)) <= NEAR_THE_SHELTER) hostTurnsNear++;
+                    if (atACrossroads(crossroads, host.x, host.y)) hostTurnsAtCrossroads++;
+                }
                 if (i % 25 == 0) wars += history.world().activeWars().size() * 25;
             }
             paths += layer.pathCalls() - pathStart;
@@ -166,6 +203,12 @@ public final class WarSimulation {
             expeditions += walker.expeditions;
             earshot += walker.earshot;
             seasonsPassed += history.world().season() - startSeason;
+            seasonsAll += history.world().season() - startSeason;
+            seasonsNear += seasonsWithOneNear.size();
+            seasonsAtCrossroads += seasonsWithOneAtCrossroads.size();
+            int busiest = 0;
+            for (int count : battlesByChunk.values()) busiest = Math.max(busiest, count);
+            busiestChunk += busiest;
             long[] castle = layer.castleSiegeCounts();
             for (int c = 0; c < 3; c++) castleSieges[c] += castle[c];
             long[] sieged = layer.siegeCounts();
@@ -196,6 +239,12 @@ public final class WarSimulation {
         out.add(line("Encounters: one per %.0f overland turns (target 400-700)", encounters == 0 ? 0.0 : (double) overland / encounters));
         out.add(line("Battles: %.2f a Season (target about 1); pitched at the walker's side, one per %.0f expeditions (target about 20); earshot %.1f%% of overland turns",
                 (double) battlesFought / Math.max(1, seasonsPassed), pitched == 0 ? 0.0 : (double) expeditions / pitched, 100.0 * earshot / Math.max(1, overland)));
+        out.add(line("Near the Shelter (%d chunks, weight %.2f): %.1f%% of battles, %.1f%% of host turns, a battle there in %.1f%% of Seasons",
+                NEAR_THE_SHELTER, crossroadsWeight, 100.0 * battlesNear / Math.max(1, battlesAll), 100.0 * hostTurnsNear / Math.max(1, hostTurns),
+                100.0 * seasonsNear / Math.max(1, seasonsAll)));
+        out.add(line("At a crossroads (%d chunks): %.1f%% of battles, %.1f%% of host turns, a battle there in %.1f%% of Seasons; the busiest chunk of a world holds %.1f%% of its battles",
+                AT_A_CROSSROADS, 100.0 * battlesAtCrossroads / Math.max(1, battlesAll), 100.0 * hostTurnsAtCrossroads / Math.max(1, hostTurns),
+                100.0 * seasonsAtCrossroads / Math.max(1, seasonsAll), 100.0 * busiestChunk / Math.max(1, battlesAll)));
         out.add(line("Wars ended %d, mean %.1f Seasons (target 4-16), both houses standing %d", warsEnded, warsEnded == 0 ? 0.0 : (double) warSeasons / warsEnded, warsBoth));
         out.add(line("Sieges of seats: laid %d, raised %d, seats fell %d, mean %.1f Seasons to their end", siegesLaid, siegesRaised, seatsFell,
                 siegesRaised + seatsFell == 0 ? 0.0 : (double) siegeTurns / (siegesRaised + seatsFell) / HistoryManager.SEASON_TURNS));
@@ -204,6 +253,21 @@ public final class WarSimulation {
         out.add(line("War turn: p50 %.3f ms, p99 %.3f ms (budget %.0f) %s, max %.2f ms", turn[turn.length / 2] / 1e6, p99, BUDGET_TURN_P99_MS, verdict(p99, BUDGET_TURN_P99_MS), turn[turn.length - 1] / 1e6));
         out.add(line("Sleep jump: p50 %.1f ms, worst %.1f ms, first in a fresh JVM %.1f ms (budget %.0f) %s", jumps.get(jumps.size() / 2), jumps.get(jumps.size() - 1), coldJump, BUDGET_JUMP_MS, verdict(jumpWorst, BUDGET_JUMP_MS)));
         out.add(line("Allocated: %.2f KB a turn (budget %.0f) %s", allocKb, BUDGET_ALLOC_KB, verdict(allocKb, BUDGET_ALLOC_KB)));
+        return out;
+    }
+
+    private static boolean atACrossroads(List<GridPoint2> crossroads, int x, int y) {
+        for (int i = 0; i < crossroads.size(); i++) {
+            GridPoint2 c = crossroads.get(i);
+            if (Math.max(Math.abs(c.x - x), Math.abs(c.y - y)) <= AT_A_CROSSROADS) return true;
+        }
+        return false;
+    }
+
+    /** The default seeds, and as many more as asked for, for a comparison the noise can't decide. */
+    public static long[] seeds(int count) {
+        long[] out = java.util.Arrays.copyOf(DEFAULT_SEEDS, count);
+        for (int i = DEFAULT_SEEDS.length; i < count; i++) out[i] = 1000L + i * 15838L;
         return out;
     }
 

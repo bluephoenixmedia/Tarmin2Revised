@@ -17,12 +17,18 @@ public final class WarSimulationLauncher {
 
     public static void main(String[] args) throws IOException {
         int seasons = 40;
+        float crossroads = -1f;
+        int seeds = WarSimulation.DEFAULT_SEEDS.length;
         for (String a : args) {
             if (a.startsWith("--seasons=")) seasons = Integer.parseInt(a.substring("--seasons=".length()));
+            if (a.startsWith("--crossroads=")) crossroads = Float.parseFloat(a.substring("--crossroads=".length()));
+            if (a.startsWith("--seeds=")) seeds = Integer.parseInt(a.substring("--seeds=".length()));
         }
         DoctrineCatalog catalog = DoctrineCatalog.fromJson(read(DoctrineCatalog.DATA_PATH))
                 .withBeasts(MegabeastCatalog.fromJson(read(MegabeastCatalog.DATA_PATH)));
-        for (String line : WarSimulation.run(catalog, WarSimulation.DEFAULT_SEEDS, seasons)) System.out.println(line);
+        java.util.List<String> report = crossroads < 0f ? WarSimulation.run(catalog, WarSimulation.seeds(seeds), seasons)
+                : WarSimulation.run(catalog, WarSimulation.seeds(seeds), seasons, crossroads);
+        for (String line : report) System.out.println(line);
     }
 
     private static String read(String path) throws IOException {

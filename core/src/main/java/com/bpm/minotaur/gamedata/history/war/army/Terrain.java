@@ -63,6 +63,16 @@ public final class Terrain {
         return t;
     }
 
+    /** The crossroads near the Shelter (A52): where each road, leaving the maze, first meets a shelter. Fixed by the seed; empty without roads. */
+    public java.util.List<GridPoint2> crossroads() {
+        java.util.List<GridPoint2> out = new java.util.ArrayList<>();
+        if (roads == null) return out;
+        for (ShelterRoads.Road r : roads.getRoads()) {
+            if (!r.getShelters().isEmpty()) out.add(r.getShelters().get(0));
+        }
+        return out;
+    }
+
     /** Roads are straight spokes from the maze, so a chunk is on one if it lies beside that line. */
     private static boolean onRoad(ShelterRoads roads, int x, int y) {
         for (ShelterRoads.Road r : roads.getRoads()) {
