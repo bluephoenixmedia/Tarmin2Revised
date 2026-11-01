@@ -16,6 +16,8 @@ final class ArmyTuning {
     static final float WALL_EDGE = 4f;
     /** How much distance puts a host off marching on a seat: the farther, the more it takes (tuned against A8). */
     static final float SEAT_DISTANCE = 120f;
+    /** What a crossroads near the Shelter is worth when a lord scores objectives (A52, tune against A8). */
+    static final float CROSSROADS_WEIGHT = 0.5f;
     /** Chunks an army, or a seat, can see enemy armies from. */
     static final int SIGHT = 6;
     /** War turns between looks around for a new enemy. */

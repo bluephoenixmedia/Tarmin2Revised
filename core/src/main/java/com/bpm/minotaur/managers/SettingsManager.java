@@ -206,6 +206,11 @@ public class SettingsManager {
         return showHints;
     }
 
+    /** For a playtest: on for this run only. It stores nothing, since the player's settings are not in the saves a run snapshots. */
+    public void showHintsThisRun() {
+        showHints = true;
+    }
+
     public void setShowHints(boolean showHints) {
         this.showHints = showHints;
         Preferences prefs = getPrefs();

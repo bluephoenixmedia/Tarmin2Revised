@@ -56,7 +56,7 @@ import java.util.List;
 public class CodexScreen extends BaseScreen {
 
     public enum Tab {
-        ARMORY, ARCANE, CAMP, ANNALS
+        ARMORY, ARCANE, CAMP, ANNALS, LIVING_WAR
     }
 
     public enum CategoryFilter {
@@ -179,11 +179,14 @@ public class CodexScreen extends BaseScreen {
         // widget puts the number in a keycap of its own and lets each tab be as wide as its
         // name. The Return button was pinned to 290, which its own label overflowed, and the
         // "(ESC)" in that label is what the legend is for.
+        // Five full names and the button are wider than the canvas: the fifth tab shortens the rest.
+        boolean livingWar = com.bpm.minotaur.managers.HintManager.getInstance().livingWarUnlocked();
         tabs = new UiTabs(hudSkin)
-                .addTab(1, "Armory & Relics")
-                .addTab(2, "Arcane Mysteries")
-                .addTab(3, "Camp Renovations")
+                .addTab(1, livingWar ? "Armory" : "Armory & Relics")
+                .addTab(2, livingWar ? "Arcane" : "Arcane Mysteries")
+                .addTab(3, livingWar ? "Camp" : "Camp Renovations")
                 .addTab(4, "Annals");
+        if (livingWar) tabs.addTab(5, "Living War");
         tabs.onSelect(index -> {
             Tab picked = Tab.values()[index];
             if (activeTab != picked) {
@@ -211,7 +214,7 @@ public class CodexScreen extends BaseScreen {
         root.add(bodyContainer).expand().fill().padBottom(8).row();
 
         root.add(new KeyHintLegend(hudSkin)
-                .hint("1-4", "Tab")
+                .hint(livingWar ? "1-5" : "1-4", "Tab")
                 .escapeHint("Return to shelter")).right().row();
 
         stage.addActor(root);
@@ -263,7 +266,27 @@ public class CodexScreen extends BaseScreen {
             case ANNALS:
                 buildAnnalsTab();
                 break;
+            case LIVING_WAR:
+                buildLivingWarTab();
+                break;
         }
+    }
+
+    // =========================================================================
+    // TAB 5: THE LIVING WAR (A51), unlocked by the first visit to the War Table
+    // =========================================================================
+
+    private void buildLivingWarTab() {
+        Table content = new Table();
+        content.top().left();
+        for (com.bpm.minotaur.gamedata.history.war.WarCodex.Section s : com.bpm.minotaur.gamedata.history.war.WarCodex.PAGE) {
+            content.add(UiLabels.ellipsized(s.heading, new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT))).left().growX().padTop(UiTheme.PAD_MD).row();
+            content.add(UiLabels.wrapping(s.body, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED))).left().growX().padTop(UiTheme.PAD_XS).row();
+        }
+        com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scroll = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane(content, com.bpm.minotaur.ui.UiStyles.scrollPane(hudSkin));
+        scroll.setFadeScrollBars(false);
+        scroll.setScrollingDisabled(true, false);
+        bodyContainer.add(scroll).grow().pad(UiTheme.PAD_MD).row();
     }
 
     // =========================================================================

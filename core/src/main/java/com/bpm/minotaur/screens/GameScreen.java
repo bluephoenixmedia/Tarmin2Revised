@@ -2668,6 +2668,7 @@ public class GameScreen extends BaseScreen {
         g.seats = g.battle != null ? worldManager.houseSeats() : null;
         g.maze = maze;
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
+        pointOutTheTable(g);
         g.followed = worldManager.getHistory().oath().following;
         com.bpm.minotaur.gamedata.history.favour.Contract task = worldManager.getHistory().oath().contract;
         com.bpm.minotaur.gamedata.history.war.army.SeatSiege siegeHere = g.chunk == null ? null : worldManager.getHistory().roster().siegeAt(g.chunk.x, g.chunk.y);
@@ -2720,9 +2721,12 @@ public class GameScreen extends BaseScreen {
         String body = (liegeA || liegeB ? "Your oath binds you to " + houseName(oath.houseId) + ". " : "")
                 + (b.assault ? houseName(b.houseA) + " is assaulting the seat of " + houseName(b.houseB) + "."
                         : "The lines are locked across this ground, and neither has yet given way.");
+        String firstFight = HintManager.getInstance().takeFirstFightWords();
+        if (firstFight != null) body = body + " " + firstFight;
+        String prompt = body;
         String a = houseName(b.houseA);
         String header = Character.toUpperCase(a.charAt(0)) + a.substring(1) + " against " + houseName(b.houseB);
-        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, header, body, sides, "Keep away", () -> d.chooseSide(0))));
+        Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, header, prompt, sides, "Keep away", () -> d.chooseSide(0))));
     }
 
     private final com.bpm.minotaur.managers.EncounterDirector encounterDirector =
@@ -2882,6 +2886,7 @@ public class GameScreen extends BaseScreen {
         if (t.campHouse >= 0) atCamp(t.campHouse, g);
         else campGreeted = null;
         letWithinTheWalls(g);
+        hintOfToleration();
 
         if (oath.following >= 0) {
             com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(oath.following);
@@ -3446,15 +3451,64 @@ public class GameScreen extends BaseScreen {
         com.bpm.minotaur.gamedata.map.ArmyKnowledge armies = knowledge.getArmies();
         long clock = history.warClock();
         boolean changed = armies.onTurn(history.roster(), g.chunk.x, g.chunk.y, clock);
+        hintAtTheWar(armies, g.chunk);
         if (!g.chunk.equals(tracksReadAt)) {
             tracksReadAt = new GridPoint2(g.chunk);
             com.bpm.minotaur.gamedata.map.ArmyKnowledge.Tracks tracks = armies.readTracks(history.roster(), g.chunk.x, g.chunk.y, clock);
             if (tracks != null) {
                 say(com.bpm.minotaur.gamedata.map.ArmyKnowledge.tracksLine(tracks, houseName(tracks.marker.houseId)), 4f);
+                HintManager.getInstance().checkWarTrail(com.bpm.minotaur.gamedata.map.ArmyKnowledge.headingWords(tracks.marker.dx, tracks.marker.dy), eventManager);
                 changed = true;
             }
         }
         if (changed) knowledge.saveArmies();
+    }
+
+    /** The first host in sight and the first horns in earshot, each once (A51). */
+    private void hintAtTheWar(com.bpm.minotaur.gamedata.map.ArmyKnowledge armies, GridPoint2 chunk) {
+        HintManager hints = HintManager.getInstance();
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        if (!hints.hasSeen(HintManager.HintId.WAR_SIGHTING)) {
+            com.bpm.minotaur.gamedata.map.ArmyKnowledge.Marker seen = armies.hostInSight(history.roster(), chunk.x, chunk.y);
+            if (seen != null) hints.checkWarSighting(houseName(seen.houseId), com.bpm.minotaur.gamedata.map.ArmyKnowledge.headingWords(seen.dx, seen.dy), eventManager);
+        }
+        if (!hints.hasSeen(HintManager.HintId.WAR_EARSHOT)) {
+            com.bpm.minotaur.gamedata.history.war.army.ArmyBattle heard = com.bpm.minotaur.gamedata.map.ArmyKnowledge.battleInEarshot(history.roster(), chunk.x, chunk.y);
+            if (heard != null) hints.checkWarEarshot(com.bpm.minotaur.gamedata.map.ArmyKnowledge.headingWords(Integer.signum(heard.x - chunk.x), Integer.signum(heard.y - chunk.y)), eventManager);
+        }
+    }
+
+    /** Whether the player has left the home Shelter since this session began. */
+    private boolean leftTheShelter;
+
+    /** The first return to the Shelter points out the War Table, if it stands there yet (A51). */
+    private void pointOutTheTable(WarManager.Ground g) {
+        boolean home = g.level == 1 && g.chunk != null && g.chunk.x == 0 && g.chunk.y == 0;
+        if (!home) {
+            leftTheShelter = true;
+            return;
+        }
+        if (!leftTheShelter || maze == null || HintManager.getInstance().hasSeen(HintManager.HintId.WAR_TABLE)) return;
+        for (Item i : maze.getItems().values()) {
+            if (i != null && i.getType() == Item.ItemType.HOME_WAR_TABLE) {
+                HintManager.getInstance().checkWarTable(eventManager);
+                return;
+            }
+        }
+    }
+
+    /** The first house to come to tolerate the player, once (A51). */
+    private void hintOfToleration() {
+        HintManager hints = HintManager.getInstance();
+        if (hints.hasSeen(HintManager.HintId.WAR_TOLERATED)) return;
+        com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
+        for (int house : history.favour().all().keySet()) {
+            // As it treats them: its enemy's sworn are not tolerated, whatever it thinks of them, and one's liege need not be sought.
+            if (house != history.oath().houseId && history.stanceOf(house) == com.bpm.minotaur.gamedata.history.favour.Favour.Tier.TOLERATED) {
+                hints.checkWarTolerated(houseName(house), eventManager);
+                return;
+            }
+        }
     }
 
     /** A townsperson's word of a host, while a war runs (Living War A49); it goes on the map as a rumour. */

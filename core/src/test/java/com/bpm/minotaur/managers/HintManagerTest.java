@@ -50,6 +50,85 @@ public class HintManagerTest {
         assertEquals(1, eventManager.getMessageEvents().size());
     }
 
+    // ---- the Living War (A51) ----
+
+    private void fireEveryWarHint() {
+        hintManager.checkWarTable(eventManager);
+        hintManager.checkWarSighting("House Vellum", "north", eventManager);
+        hintManager.checkWarEarshot("east", eventManager);
+        hintManager.checkWarTrail("north-east", eventManager);
+        hintManager.checkWarTolerated("House Vellum", eventManager);
+    }
+
+    @Test
+    public void eachWarHintFiresOnceAcrossAReload() {
+        fireEveryWarHint();
+        assertNotNull(hintManager.takeFirstFightWords());
+        assertTrue(hintManager.noteWarTableOpened());
+        int shown = eventManager.getMessageEvents().size();
+        assertEquals(5, shown);
+
+        fireEveryWarHint();
+        assertEquals("once", shown, eventManager.getMessageEvents().size());
+
+        hintManager.load();
+        fireEveryWarHint();
+        assertEquals("and once more after a reload is still once", shown, eventManager.getMessageEvents().size());
+        assertNull(hintManager.takeFirstFightWords());
+        assertFalse(hintManager.noteWarTableOpened());
+        assertTrue(hintManager.livingWarUnlocked());
+    }
+
+    @Test
+    public void warHintsAreWordedAsAgreed() {
+        fireEveryWarHint();
+        List<GameEvent> e = eventManager.getMessageEvents();
+        assertEquals("A host of House Vellum marches north. Armies move whether you watch or not; the map remembers where you saw them.", e.get(1).message);
+        assertEquals("Horns to the east: a battle. Follow the sound, and choose a side when you arrive.", e.get(2).message);
+        assertEquals("Tracks: a host passed here, heading north-east. Following them updates where you think it is.", e.get(3).message);
+        assertEquals("House Vellum tolerates you. At Friend, kneel at its banner to swear to it.", e.get(4).message);
+    }
+
+    @Test
+    public void everyWarStringSurvivesTheFont() {
+        fireEveryWarHint();
+        for (GameEvent e : eventManager.getMessageEvents()) assertEquals(e.message, UiGlyphs.sanitize(e.message));
+        String fight = hintManager.takeFirstFightWords();
+        assertEquals(fight, UiGlyphs.sanitize(fight));
+        for (String line : com.bpm.minotaur.gamedata.history.war.WarCodex.FIRST_OPENING) assertEquals(line, UiGlyphs.sanitize(line));
+        for (com.bpm.minotaur.gamedata.history.war.WarCodex.Section s : com.bpm.minotaur.gamedata.history.war.WarCodex.PAGE) {
+            assertEquals(s.heading, UiGlyphs.sanitize(s.heading));
+            assertEquals(s.body, UiGlyphs.sanitize(s.body));
+        }
+    }
+
+    /** A51 lists the three lines and the page apart from its hints: turning hints off loses neither. */
+    @Test
+    public void theFirstOpeningAndTheCodexPageComeWithHintsOff() {
+        SettingsManager.getInstance().setShowHints(false);
+        assertFalse(hintManager.livingWarUnlocked());
+        assertTrue(hintManager.noteWarTableOpened());
+        assertTrue(hintManager.livingWarUnlocked());
+    }
+
+    @Test
+    public void aTableAlreadyReadIsNotPointedOut() {
+        hintManager.noteWarTableOpened();
+        assertFalse(hintManager.checkWarTable(eventManager));
+        assertEquals(0, eventManager.getMessageEvents().size());
+    }
+
+    @Test
+    public void aHostOrAFightWithNoHeadingStillReads() {
+        hintManager.checkWarSighting("House Vellum", null, eventManager);
+        hintManager.checkWarEarshot(null, eventManager);
+        hintManager.checkWarTrail(null, eventManager);
+        List<GameEvent> e = eventManager.getMessageEvents();
+        assertTrue(e.get(0).message.startsWith("A host of House Vellum has made camp. "));
+        assertTrue(e.get(1).message.startsWith("Horns close by: a battle."));
+        assertTrue(e.get(2).message.startsWith("Tracks: a host passed here. "));
+    }
+
     @Test
     public void hintsAreSuppressedWhenDisabledInSettings() {
         SettingsManager.getInstance().setShowHints(false);

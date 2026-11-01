@@ -61,6 +61,9 @@ public final class ArmyLayer {
         boolean countsPlayerAnEnemy(int houseId);
     }
     private SeatMap seats;
+    /** What holding a crossroads is worth to a lord (A52); {@link ArmyTuning#CROSSROADS_WEIGHT} but for the batch's comparison. */
+    private float crossroadsWeight = ArmyTuning.CROSSROADS_WEIGHT;
+    private final List<GridPoint2> crossroads;
     /** Where each house sits, by id, so that asking every turn makes no garbage; {@link #NO_SEAT} if nowhere. */
     private int[] seatXs = new int[0];
     private int[] seatYs = new int[0];
@@ -74,6 +77,7 @@ public final class ArmyLayer {
         this.wars = world.wars();
         this.houses = world.houses();
         this.terrain = terrain;
+        this.crossroads = terrain.crossroads();
         this.seatsOf = seatsOf;
         this.roster = roster;
         this.paths = new Pathfinder(terrain);
@@ -1518,6 +1522,7 @@ public final class ArmyLayer {
             return;
         }
         if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return;
+        if (a.objective == Army.Objective.CROSSING) return; // it holds until the Season's decision
         if (a.objective == Army.Objective.CASTLE && a.x == a.targetX && a.y == a.targetY && castleOpenToSiege(war(a)) && layCastleSiege(a, clock)) return;
         if (a.objective == Army.Objective.SEAT) {
             House holder = holderOfSeatAt(a);
@@ -1676,6 +1681,26 @@ public final class ArmyLayer {
         goTo(a, seatX(a), seatY(a));
     }
 
+    /** For the batch, to compare the weight on and off. */
+    public void crossroadsWeight(float weight) {
+        crossroadsWeight = weight;
+    }
+
+    /** The nearest of these not already underfoot: a host holding one moves on, so none becomes a permanent field. Null if none. */
+    static GridPoint2 nearestCrossing(List<GridPoint2> crossroads, int x, int y) {
+        GridPoint2 best = null;
+        int bestD = Integer.MAX_VALUE;
+        for (int i = 0; i < crossroads.size(); i++) {
+            GridPoint2 c = crossroads.get(i);
+            int d = cheb(x, y, c.x, c.y);
+            if (d > 0 && d < bestD) {
+                bestD = d;
+                best = c;
+            }
+        }
+        return best;
+    }
+
     /** Thinks again: only ever on an event, never on a timer of its own. */
     void decide(Army a, long clock) {
         if (a.kind != Army.Kind.HOST && a.kind != Army.Kind.LEVY) return; // a party keeps its errand
@@ -1707,6 +1732,18 @@ public final class ArmyLayer {
         float bestScore = 0.15f + (has(a, Trait.CRAVEN) ? 0.3f : 0f) + (float) rng.nextDouble() * 0.15f;
         int tx = seatX(a), ty = seatY(a);
         int target = -1;
+
+        // Crossroads near the Shelter are worth holding, in every world, whoever is or isn't there (A52).
+        GridPoint2 crossing = crossroadsWeight > 0f && a.kind == Army.Kind.HOST ? nearestCrossing(crossroads, a.x, a.y) : null;
+        if (crossing != null) {
+            float score = crossroadsWeight - cheb(a.x, a.y, crossing.x, crossing.y) / ArmyTuning.SEAT_DISTANCE + (float) rng.nextDouble() * 0.15f;
+            if (score > bestScore) {
+                bestScore = score;
+                best = Army.Objective.CROSSING;
+                tx = crossing.x;
+                ty = crossing.y;
+            }
+        }
 
         GridPoint2 enemySeat = enemy == null ? null : seats.seat(enemyId);
         if (enemy != null && !enemy.isExtinct() && !enemy.holdsCastle && enemySeat != null) {

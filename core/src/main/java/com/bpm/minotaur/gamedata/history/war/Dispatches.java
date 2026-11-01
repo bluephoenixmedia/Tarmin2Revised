@@ -59,9 +59,9 @@ public final class Dispatches {
     }
 
     /** About three days' march from the Shelter, at the {@link #CHUNKS_PER_DAY} a host keeps. */
-    static final int NEAR_DAYS = 3;
+    public static final int NEAR_DAYS = 3;
     /** How far a host off the road marches between one sleep and the next. */
-    static final int CHUNKS_PER_DAY = com.bpm.minotaur.managers.HistoryManager.SLEEP_TURNS / com.bpm.minotaur.gamedata.history.war.army.Terrain.OFF_ROAD_TURNS;
+    public static final int CHUNKS_PER_DAY = com.bpm.minotaur.managers.HistoryManager.SLEEP_TURNS / com.bpm.minotaur.gamedata.history.war.army.Terrain.OFF_ROAD_TURNS;
 
     private Dispatches() {
     }
