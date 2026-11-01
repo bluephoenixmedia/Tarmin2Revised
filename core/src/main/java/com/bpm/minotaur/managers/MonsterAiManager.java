@@ -460,7 +460,7 @@ public class MonsterAiManager {
         } else if (playerSeen && closestRival != null) {
             // In a battle the enemy line comes first; the player is a bystander until they are not.
             boolean onPlayer = monster.isWarBand()
-                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer || monster.seekerDrewBlood())
+                    ? warBandTurnsOnPlayer(playerDist, monster == engagedByPlayer || monster.seekerDrewBlood() || monster.turnedOnSeeker())
                     : playerDist <= closestRivalDist;
             if (onPlayer) {
                 monster.setTargetMonster(null);

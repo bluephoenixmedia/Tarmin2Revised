@@ -89,6 +89,11 @@ public final class NightsWards {
         return has(Ward.SHIELD) ? Ward.SHIELD_ABSORBS : 0;
     }
 
+    /** Whether a thing of this role passes a sleeper in a host's camp by: native Fodder leave the column alone (A36). */
+    public boolean keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole role) {
+        return kept && role == com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER;
+    }
+
     /** Whether this ambusher passes the sleeper by. */
     public boolean hiddenFrom(int intelligence, boolean spellcaster) {
         return has(Ward.CONCEALMENT) && Ward.concealmentHidesFrom(intelligence, spellcaster);

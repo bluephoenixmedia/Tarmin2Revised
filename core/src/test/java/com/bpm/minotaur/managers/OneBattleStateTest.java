@@ -466,6 +466,20 @@ public class OneBattleStateTest {
         assertNull("once", tick(d).standAt);
     }
 
+    /** A36: a host that joins a fight already on the field puts its follower in the line then, and only once. */
+    @Test
+    public void aFollowerTakesTheLineWhenTheHostJoinsLater() {
+        BattleDirector d = walkIn();
+        tick(d);
+        tick(d);
+        d.standInLine(1);
+        assertNotNull(tick(d).standAt);
+        d.chooseSide(0);
+        d.standInLine(1);
+        assertEquals("a second asking changes nothing", 0, f.battle.playerSide);
+        assertNull(tick(d).standAt);
+    }
+
     /** A40: one who walked off before the rout stood with nobody, whatever blows they struck. */
     @Test
     public void onlyOneStillOnTheFieldAtTheEndStoodToIt() {

@@ -93,11 +93,14 @@ public final class FollowHostScenario implements PlaytestScenario {
         });
         script.key("march on", Input.Keys.Y, ctx);
         script.until("the host meets the enemy", 600, () -> {
+            if (host[0].battle) return true;
             if (ctx.getFrame() % 4 == 0) {
                 ctx.press(Input.Keys.END);
-                if (!host[0].battle) ctx.press(Input.Keys.Y);
+                // The enemy goes its own way when it likes: this host is sent after it, the march goes on.
+                if (host[0].halted()) ctx.getWorldManager().armyLayer().marchNow(host[0], enemy[0].x, enemy[0].y);
+                if (!host[0].halted()) ctx.press(Input.Keys.Y);
             }
-            return host[0].battle;
+            return false;
         });
         script.once("the march kept to the host, and the routes are its own", () -> {
             GridPoint2 at = ctx.getWorldManager().getCurrentPlayerChunkId();
@@ -123,6 +126,22 @@ public final class FollowHostScenario implements PlaytestScenario {
             ctx.log("Standing on side " + side + " at " + ctx.getPlayer().getPosition());
         });
         script.shot("fh02_in_the_line", ctx);
+        // A41: the oath broken in the line, the line turns on them.
+        script.once("break the oath in the line", () -> {
+            history(ctx).breakOath();
+            ctx.assertTrue(history(ctx).oath().following == -1, "no more following");
+            ctx.assertTrue(battle[0].playerSide == 0, "no more an ally");
+        });
+        script.until("the soldiers come for them", 600, () -> {
+            // Combat begun is one of them at the player's throat: they stood beside them in the line.
+            if (ctx.getCombatManager().getCurrentState() != com.bpm.minotaur.managers.CombatManager.CombatState.INACTIVE) return true;
+            if (ctx.getFrame() % 2 == 0) ctx.press(Input.Keys.PERIOD);
+            for (com.bpm.minotaur.gamedata.monster.Monster m : ctx.getMaze().getMonsters().values()) {
+                if (m != null && m.turnedOnSeeker() && m.getPosition().dst(ctx.getPlayer().getPosition()) <= 1.5f) return true;
+            }
+            return false;
+        });
+        script.shot("fh03_turned_on", ctx);
     }
 
     private static Army soldiers(int id, int house, int war, GridPoint2 at) {

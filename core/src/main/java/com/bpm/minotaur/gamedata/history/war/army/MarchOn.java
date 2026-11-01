@@ -14,7 +14,13 @@ import java.util.function.ToIntFunction;
 public final class MarchOn {
 
     /** What ended a slice of the march. NONE and MOVED go on; the rest stop it. */
-    public enum Stop { NONE, MOVED, GONE, BATTLE, SIEGE, ARMY, HALTED, NATIVES }
+    public enum Stop {
+        NONE, MOVED, GONE, BATTLE, SIEGE, ARMY, HALTED, NATIVES;
+
+        public boolean goesOn() {
+            return this == NONE || this == MOVED;
+        }
+    }
 
     /** The most turns a frame (A59). */
     public static final int SLICE = 250;
@@ -98,6 +104,10 @@ public final class MarchOn {
 
     /** Whether this monster leaves the player alone for marching with a host here. */
     public static boolean leavesTheColumnAlone(Monster m, int house) {
-        return house < 0 && !m.isWarBand() && m.getRole() == MonsterRole.FODDER;
+        return leavesTheColumnAlone(m.getRole(), m.isWarBand(), house);
+    }
+
+    static boolean leavesTheColumnAlone(MonsterRole role, boolean warBand, int house) {
+        return house < 0 && !warBand && role == MonsterRole.FODDER;
     }
 }

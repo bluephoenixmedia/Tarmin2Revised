@@ -181,6 +181,7 @@ public final class BattleDirector {
             default:
                 break;
         }
+        if (goingToTheLine && lined && phase == Phase.BATTLE) takeTheLine(r);
         return r;
     }
 
@@ -272,22 +273,30 @@ public final class BattleDirector {
                 ? "Steel and screaming: " + name(battle.houseA) + " and " + name(battle.houseB) + " are at each other's throats here."
                 : "The lines close. " + name(battle.houseA) + " and " + name(battle.houseB)
                         + " meet on this ground, and you are standing on it.");
-        if (standsInLine) {
-            standsInLine = false;
-            List<Monster> ours = side(battle.playerSide == 1);
-            GridPoint2 near = ours.isEmpty() ? lineEdge(battle.playerSide == 1)
-                    : new GridPoint2((int) ours.get(ours.size() - 1).getPosition().x, (int) ours.get(ours.size() - 1).getPosition().y); // the gate guards come first, the line last
-            r.standAt = WorldManager.findSafeArrivalTile(maze, near.x, near.y);
-            r.messages.add("You take your place in the line of " + name(battle.playerSide == 1 ? battle.houseA : battle.houseB) + ".");
-        }
     }
 
-    private boolean standsInLine;
+    /** Set while the player, having marched in with a host here, has yet to reach its line. */
+    private boolean goingToTheLine;
+    private boolean tookTheLine;
 
-    /** The player marched in with a host of this battle: they stand in its line from the start (A36). */
+    /** The player marched in with a host of this battle: they stand in its line from the start (A36). Once. */
     public void standInLine(int side) {
+        if (tookTheLine) return;
+        tookTheLine = true;
         battle.playerSide = side;
-        standsInLine = true;
+        goingToTheLine = true;
+    }
+
+    private void takeTheLine(Report r) {
+        goingToTheLine = false;
+        boolean a = battle.playerSide == 1;
+        List<Monster> ours = side(a);
+        // The gate guards are enlisted first, the line last.
+        Monster inLine = ours.isEmpty() ? null : ours.get(ours.size() - 1);
+        GridPoint2 near = inLine == null ? edgeTile(a ? edgeA : opposite(edgeA))
+                : new GridPoint2((int) inLine.getPosition().x, (int) inLine.getPosition().y);
+        r.standAt = WorldManager.findSafeArrivalTile(maze, near.x, near.y);
+        r.messages.add("You take your place in the line of " + name(a ? battle.houseA : battle.houseB) + ".");
     }
 
     /** One captain for each army whose captain still stands (A21). */
@@ -313,6 +322,7 @@ public final class BattleDirector {
 
     private void fight(GridPoint2 playerTile, Recruiter recruiter, Spoils spoils, long clock, Report r) {
         battleTurns++;
+        if (battle.turnedOnPlayer != 0) for (Monster m : side(battle.turnedOnPlayer == 1)) m.turnOnSeeker();
         land(playerTile, r);
         // Its wounds on the field are its wounds in the numbers.
         if (battle.beastId >= 0 && !sideA.isEmpty() && standing(sideA.get(0))) battle.beastHp = sideA.get(0).getCurrentHP();
@@ -614,10 +624,6 @@ public final class BattleDirector {
     }
 
     // ------------------------------------------------------------------ for tests
-
-    private GridPoint2 lineEdge(boolean a) {
-        return edgeTile(a ? edgeA : opposite(edgeA));
-    }
 
     List<Monster> side(boolean a) {
         return a ? sideA : sideB;

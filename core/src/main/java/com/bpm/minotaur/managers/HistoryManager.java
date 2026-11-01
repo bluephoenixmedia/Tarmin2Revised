@@ -586,6 +586,11 @@ public final class HistoryManager {
         if (onOathBroken != null) onOathBroken.broken(betrayed, followed);
     }
 
+    /** The host the player marches with, or null (A36). */
+    public com.bpm.minotaur.gamedata.history.war.army.Army followedHost() {
+        return roster.army(oath.following);
+    }
+
     /** What the armies do about a broken oath (A41). */
     public interface OathBroken {
         /** @param followed the host the player was marching with, or -1 */

@@ -175,6 +175,38 @@ public class MarchOnTest {
         assertEquals(MarchOn.Stop.NONE, m.after(roster));
     }
 
+    /** A36: a Soldier near enough stops the march on coming into a chunk; far off, or Fodder, or a house's, it does not. */
+    @Test
+    public void itStopsForANativeSoldierNearby() {
+        com.bpm.minotaur.gamedata.monster.Monster soldier =
+                new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.values()[0], 20, 12);
+        soldier.getPosition().set(10, 10);
+        List<com.bpm.minotaur.gamedata.monster.Monster> here = List.of(soldier);
+        assertTrue(MarchOn.nativesBar(here, m -> -1, 12, 10));
+        assertFalse("too far", MarchOn.nativesBar(here, m -> -1, 30, 10));
+        assertFalse("a house's soldier is the armies' business", MarchOn.nativesBar(here, m -> 3, 12, 10));
+    }
+
+    @Test
+    public void onlyNativeFodderLeavesTheColumnAlone() {
+        assertTrue(MarchOn.leavesTheColumnAlone(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER, false, -1));
+        assertFalse(MarchOn.leavesTheColumnAlone(com.bpm.minotaur.gamedata.monster.MonsterRole.SOLDIER, false, -1));
+        assertFalse(MarchOn.leavesTheColumnAlone(com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY, false, -1));
+        assertFalse("a house's", MarchOn.leavesTheColumnAlone(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER, false, 2));
+        assertFalse("in a war band", MarchOn.leavesTheColumnAlone(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER, true, -1));
+    }
+
+    @Test
+    public void aSleeperInAHostsCampHasAlarmAndShieldForNothing() {
+        com.bpm.minotaur.gamedata.shelter.NightsWards w = com.bpm.minotaur.gamedata.shelter.NightsWards.ofAHostsCamp();
+        assertTrue(w.has(com.bpm.minotaur.gamedata.shelter.Ward.ALARM));
+        assertTrue(w.has(com.bpm.minotaur.gamedata.shelter.Ward.SHIELD));
+        assertTrue(w.kept());
+        assertTrue(w.keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER));
+        assertFalse(w.keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole.HEAVY));
+        assertFalse("not one's own wards", new com.bpm.minotaur.gamedata.shelter.NightsWards().keptOffBySentries(com.bpm.minotaur.gamedata.monster.MonsterRole.FODDER));
+    }
+
     @Test
     public void thePlayerHasLeftOnceAChunkBehindOrBelow() {
         Army host = army(1, 1, 5, 5);
@@ -223,5 +255,14 @@ public class MarchOnTest {
         l.hostTurnsOnThePlayer(host.id);
         assertEquals(6, host.targetX);
         assertEquals(5, host.targetY);
+        ArmyBattle b = new ArmyBattle();
+        b.armiesB = new int[] {host.id};
+        b.armiesA = new int[0];
+        b.playerSide = 2;
+        h.roster().battles.add(b);
+        host.battle = true;
+        l.hostTurnsOnThePlayer(host.id);
+        assertEquals("in its line, they are no more its ally", 0, b.playerSide);
+        assertEquals(2, b.turnedOnPlayer);
     }
 }

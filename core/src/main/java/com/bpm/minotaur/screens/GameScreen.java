@@ -2524,7 +2524,10 @@ public class GameScreen extends BaseScreen {
         payForWards(wards);
 
         java.util.List<com.bpm.minotaur.gamedata.history.HistoryEvent> news = history.onSleep();
+        GridPoint2 fellAsleepIn = new GridPoint2(chunk);
         int slept = worldManager.sleepInTheField(night.quiet() ? full : night.ambushTurn);
+        // A host breaks camp when it will; those who march with it wake where it has got to, and anything that comes for them comes there.
+        if (kit == null) keepToTheHost(history.followedHost());
         boolean soldiers = worldManager.armiesThreatenHere();
         java.util.List<Monster> found = java.util.Collections.emptyList();
         boolean passedBy = false;
@@ -2534,6 +2537,7 @@ public class GameScreen extends BaseScreen {
                 // Nothing came of it after all, and the night goes on.
                 passedBy = wards.has(com.bpm.minotaur.gamedata.shelter.Ward.CONCEALMENT);
                 slept += worldManager.sleepInTheField(full - slept);
+                if (kit == null) keepToTheHost(history.followedHost());
                 soldiers = worldManager.armiesThreatenHere();
             }
         }
@@ -2549,6 +2553,7 @@ public class GameScreen extends BaseScreen {
         needsAsciiRender = true;
         // The cold got there first: the game's own check takes it from here.
         if (stats.getCurrentHP() <= 0) return;
+        if (!fellAsleepIn.equals(worldManager.getCurrentPlayerChunkId())) say("The host broke camp in the night, and carried you along with its baggage.", 4f);
 
         switch (wards.waking(soldiers, found.size())) {
             case ARMY:
@@ -2877,7 +2882,7 @@ public class GameScreen extends BaseScreen {
             com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(oath.following);
             if (host == null || host.soldiers <= 0) {
                 oath.following = -1;
-                say("The host you marched with is gone.", 5f);
+                say(HOST_GONE, 5f);
             } else if (!com.bpm.minotaur.gamedata.history.war.army.MarchOn.stillWith(host, g.chunk, g.level)) {
                 oath.following = -1;
                 say("You have left the host behind.", 4f);
@@ -2981,12 +2986,13 @@ public class GameScreen extends BaseScreen {
             say("Your task: " + oath.contract.describe(world), 6f);
         }
         if (oath.following < 0 && hostCampedHere(houseId) >= 0) {
-            say("The captain marches when the host does. Press " + com.badlogic.gdx.Input.Keys.toString(SettingsManager.getInstance().getKey("MARCH_ON"))
-                    + " to go with it.", 6f);
+            say("The captain marches when the host does. Press " + actionKeys.keyName("MARCH_ON") + " to go with it.", 6f);
         }
     }
 
     // ------------------------------------------------------------------ following a host (Living War A36)
+
+    private static final String HOST_GONE = "The host you marched with is gone.";
 
     /** The march under way, a slice a frame (A59); null when none is. */
     private com.bpm.minotaur.gamedata.history.war.army.MarchOn marching;
@@ -3009,7 +3015,7 @@ public class GameScreen extends BaseScreen {
             say("Not with steel out.", 2f);
             return;
         }
-        com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(oath.following);
+        com.bpm.minotaur.gamedata.history.war.army.Army host = history.followedHost();
         if (host == null) {
             int here = oath.sworn() ? hostCampedHere(oath.houseId) : -1;
             if (here < 0) {
@@ -3017,8 +3023,10 @@ public class GameScreen extends BaseScreen {
                 return;
             }
             oath.following = here;
-            say("The captain nods. You march with this host, where it goes. Sleep at its fire until it moves.", 6f);
-        } else if (host.halted()) {
+            say("The captain nods. You march with this host, where it goes. Sleep at its fire until it moves. Shift+"
+                    + actionKeys.keyName("MARCH_ON") + " takes your leave.", 6f);
+        } else if (host.halted() || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.SHIFT_LEFT)
+                || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.SHIFT_RIGHT)) {
             oath.following = -1;
             say("You take your leave of the host.", 3f);
         } else if (!com.bpm.minotaur.gamedata.history.war.army.MarchOn.stillWith(host, worldManager.getCurrentPlayerChunkId(), currentLevel())) {
@@ -3034,6 +3042,7 @@ public class GameScreen extends BaseScreen {
     private void keepToTheHost(com.bpm.minotaur.gamedata.history.war.army.Army host) {
         GridPoint2 chunk = worldManager.getCurrentPlayerChunkId();
         if (host == null || chunk == null || (host.x == chunk.x && host.y == chunk.y)) return;
+        collectEscortAllies();
         travelToChunk(new GridPoint2(host.x, host.y), new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y));
         GridPoint2 safe = WorldManager.findSafeArrivalTile(maze, (int) player.getPosition().x, (int) player.getPosition().y);
         if (safe != null) player.setPosition(safe.x + 0.5f, safe.y + 0.5f);
@@ -3049,14 +3058,13 @@ public class GameScreen extends BaseScreen {
         if (worldManager.getDayNightManager() != null) {
             worldManager.getDayNightManager().advanceMinutes(BIVOUAC_NIGHT_MINUTES * turns / com.bpm.minotaur.managers.HistoryManager.SLEEP_TURNS);
         }
-        com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(history.oath().following);
-        keepToTheHost(host);
+        keepToTheHost(history.followedHost());
         com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop stop = marching.last();
         if (stop == com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.MOVED
                 && com.bpm.minotaur.gamedata.history.war.army.MarchOn.nativesBar(maze.getMonsters().values(), worldManager::houseOf, player.getPosition().x, player.getPosition().y)) {
             stop = com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.NATIVES;
         }
-        if (player.getStats().getCurrentHP() > 0 && (stop == com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.NONE || stop == com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.MOVED)) return;
+        if (player.getStats().getCurrentHP() > 0 && stop.goesOn()) return;
         marching = null;
         String told = marchStopped(stop);
         if (told != null) say(told, 5f);
@@ -3070,7 +3078,7 @@ public class GameScreen extends BaseScreen {
             case SIEGE: return "The host sits down before the walls.";
             case HALTED: return "The host halts and pitches its tents.";
             case NATIVES: return "The column stops. Something here will not leave it alone.";
-            case GONE: return "The host you marched with is gone.";
+            case GONE: return HOST_GONE;
             default: return null;
         }
     }
@@ -3088,9 +3096,6 @@ public class GameScreen extends BaseScreen {
         // The host one marches with keeps a sleeper's night as a Bivouac's, with its watch for wards (A36).
         if (sworn && history.oath().following >= 0 && hostCampedHere(houseId) == history.oath().following) {
             sleepInBivouac(null, null, com.bpm.minotaur.gamedata.shelter.NightsWards.ofAHostsCamp());
-            com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(history.oath().following);
-            if (host != null && !host.halted()) say("The host broke camp at first light, and you with it.", 4f);
-            keepToTheHost(host);
             return;
         }
 

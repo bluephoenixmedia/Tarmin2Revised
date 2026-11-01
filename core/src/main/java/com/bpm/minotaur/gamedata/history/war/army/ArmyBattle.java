@@ -54,6 +54,8 @@ public class ArmyBattle {
     /** At the end, for one still on the field: the player's share of the enemy dead, whether that turned it, and the houses of their side. */
     public transient float playerShare;
     public transient boolean playerTurned;
+    /** The side whose line the player betrayed while standing in it, which now comes for them (A41); 0 if none. */
+    public transient int turnedOnPlayer;
     public transient int[] stoodHouses;
     /** Sides the player has drawn blood from, as bits: 1 for A, 2 for B. */
     public int playerStruck;

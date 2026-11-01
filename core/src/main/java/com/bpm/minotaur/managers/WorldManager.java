@@ -1561,7 +1561,7 @@ public class WorldManager {
 
     /** Whether the host the player follows is in their chunk now. */
     public boolean followedHostHere() {
-        com.bpm.minotaur.gamedata.history.war.army.Army host = getHistory().roster().army(getHistory().oath().following);
+        com.bpm.minotaur.gamedata.history.war.army.Army host = getHistory().followedHost();
         return host != null && currentLevel == 1 && currentPlayerChunkId != null
                 && host.x == currentPlayerChunkId.x && host.y == currentPlayerChunkId.y;
     }
@@ -1587,7 +1587,8 @@ public class WorldManager {
         if (layer != null) layer.watchBattle(null);
         return getHistory().sleepUntil(most, clock -> {
             if (layer != null) layer.tick(clock);
-            return armiesThreatenHere();
+            com.bpm.minotaur.gamedata.history.war.army.Army host = getHistory().followedHost();
+            return armiesThreatenHere() || (host != null && host.battle);
         });
     }
 
@@ -1606,7 +1607,7 @@ public class WorldManager {
             com.bpm.minotaur.gamedata.monster.Monster m = wards.has(com.bpm.minotaur.gamedata.shelter.Ward.ALARM)
                     ? sm.spawnWithin(player, com.bpm.minotaur.gamedata.shelter.Ward.ALARM_TILES) : sm.spawnBeside(player);
             if (m == null) continue;
-            if (wards.hiddenFrom(m.getIntelligence(), m.isSpellcaster())) maze.removeMonster(m);
+            if (wards.hiddenFrom(m.getIntelligence(), m.isSpellcaster()) || wards.keptOffBySentries(m.getRole())) maze.removeMonster(m);
             else out.add(m);
         }
         return out;
