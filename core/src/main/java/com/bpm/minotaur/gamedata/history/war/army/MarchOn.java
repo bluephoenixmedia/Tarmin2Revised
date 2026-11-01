@@ -89,15 +89,15 @@ public final class MarchOn {
             y = host.y;
             known = new int[0];
         }
-        if (anotherSideComes(host, roster)) return Stop.ARMY;
+        if (anotherSideComes(host, roster, false)) return Stop.ARMY;
         if (host.halted()) return Stop.HALTED;
         return moved ? Stop.MOVED : Stop.NONE;
     }
 
-    private boolean anotherSideComes(Army host, WarRoster roster) {
+    private boolean anotherSideComes(Army host, WarRoster roster, boolean hostsOnly) {
         for (int i = 0; i < roster.armies.size(); i++) {
             Army o = roster.armies.get(i);
-            if (o == host || o.x != host.x || o.y != host.y || o.side() == host.side()) continue;
+            if (o == host || o.x != host.x || o.y != host.y || o.side() == host.side() || (hostsOnly && !o.isHost())) continue;
             if (!ArmyBattle.holds(known, o.id)) {
                 known = ArmyBattle.append(known, o.id);
                 return true;
@@ -112,7 +112,7 @@ public final class MarchOn {
             return b != null && b.assault ? Stop.ASSAULT : b != null && b.sally ? Stop.SALLY : Stop.RELIEF;
         }
         if (host.sieging < 0) return Stop.RAISED;
-        if (anotherSideComes(host, roster)) return Stop.RELIEF;
+        if (anotherSideComes(host, roster, true)) return Stop.RELIEF;
         SeatSiege s = roster.siege(host.sieging);
         if (s != null && s.laddersBuilt() && !laddersUp) {
             laddersUp = true;
@@ -121,9 +121,11 @@ public final class MarchOn {
         return Stop.NONE;
     }
 
-    /** Whether marching with this host is being with the relief of the seat at that chunk: it stands there, or is bound there (A42). */
+    /** Whether marching with this host is being with the relief of the seat at that chunk: it stands there, or is bound there to fight (A42). */
     public static boolean withTheRelief(Army host, int seatX, int seatY) {
-        return host != null && ((host.x == seatX && host.y == seatY) || (host.targetX == seatX && host.targetY == seatY));
+        if (host == null) return false;
+        if (host.x == seatX && host.y == seatY) return true;
+        return host.objective != Army.Objective.RECOVER && host.targetX == seatX && host.targetY == seatY;
     }
 
     /** Whether the player is still with the host: in its chunk or the next, on the surface. */

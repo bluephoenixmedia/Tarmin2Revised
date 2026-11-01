@@ -144,12 +144,25 @@ public class Contract {
         return kind == null || kind == Kind.HOLD_CHUNK || kind == Kind.KILL_CAPTAIN || kind == Kind.ESCORT_COLUMN || kind == Kind.BURN_CAMP;
     }
 
+    private boolean paysHard() {
+        return hard || hardRate;
+    }
+
     public int favour() {
-        return hard || hardRate ? HARD_FAVOUR : FAVOUR;
+        return paysHard() ? HARD_FAVOUR : FAVOUR;
     }
 
     public int coin() {
-        return hard || hardRate ? COIN * 2 : COIN;
+        return paysHard() ? COIN * 2 : COIN;
+    }
+
+    /** Whether this is the first ladder of that siege, not yet climbed. */
+    public boolean firstLadderAt(int siegeId) {
+        return !done && kind == Kind.FIRST_LADDER && targetSiege == siegeId;
+    }
+
+    private boolean atItsChunk(PlayerDeed deed) {
+        return deed.chunkX == chunkX && deed.chunkY == chunkY;
     }
 
     /** A32's sight: how near one of the liege's armies must be to report where the target is. */
@@ -207,15 +220,15 @@ public class Contract {
                 done = has(deed.captainsSlain, targetFigure) || has(deed.captainsTaken, targetFigure);
                 break;
             case RELIEVE_SEAT:
-                done = won && deed.chunkX == chunkX && deed.chunkY == chunkY;
+                done = won && atItsChunk(deed);
                 break;
             case JOIN_ASSAULT:
                 // Done by fighting in it, whatever comes of it; the seat falling only raises the pay.
-                done = deed.assault && deed.fought && deed.chunkX == chunkX && deed.chunkY == chunkY;
+                done = deed.assault && deed.fought && atItsChunk(deed);
                 hardRate = done && deed.seatFell;
                 break;
             case FIRST_LADDER:
-                done = deed.seatFell && deed.fought && deed.chunkX == chunkX && deed.chunkY == chunkY;
+                done = deed.seatFell && deed.fought && atItsChunk(deed);
                 break;
             case STAND_WITH_HOST:
                 // Through it, win or lose.
@@ -232,7 +245,7 @@ public class Contract {
      * the ring or with the relief, in the line or not (A42). True if this kept it.
      */
     public boolean onSiegeLifted(PlayerDeed deed, boolean playerThere) {
-        if (done || kind != Kind.RELIEVE_SEAT || !playerThere || deed.chunkX != chunkX || deed.chunkY != chunkY) return false;
+        if (done || kind != Kind.RELIEVE_SEAT || !playerThere || !atItsChunk(deed)) return false;
         boolean raised = deed.kind == PlayerDeed.Kind.SIEGE_RAISED;
         boolean routed = deed.kind == PlayerDeed.Kind.ARMY_BATTLE && deed.other == targetId;
         done = raised || routed;

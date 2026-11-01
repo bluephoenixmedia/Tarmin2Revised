@@ -57,7 +57,7 @@ public class WarRoster {
         beastRaidsDone.add(new int[] {beastId, season});
     }
 
-    /** The siege laid at this chunk, or null. */
+    /** The siege of this id, or null. */
     public SeatSiege siege(int id) {
         for (int i = 0; i < sieges.size(); i++) {
             if (sieges.get(i).id == id) return sieges.get(i);
@@ -74,6 +74,7 @@ public class WarRoster {
         return null;
     }
 
+    /** The siege laid at this chunk, or null. */
     public SeatSiege siegeAt(int x, int y) {
         for (int i = 0; i < sieges.size(); i++) {
             SeatSiege s = sieges.get(i);

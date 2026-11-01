@@ -238,6 +238,13 @@ public class MarchOnTest {
     }
 
     @Test
+    public void aSupplyColumnOnTheRoadWakesNoOne() {
+        MarchOn m = MarchOn.waitingInTheSiege(besieger(siege()), roster);
+        army(2, 2, 5, 5).kind = Army.Kind.SUPPLY;
+        assertEquals(MarchOn.Stop.NONE, m.after(roster));
+    }
+
+    @Test
     public void itWakesWhenTheSiegeIsOverOrTheHostIsGone() {
         Army host = besieger(siege());
         MarchOn m = MarchOn.waitingInTheSiege(host, roster);
@@ -355,6 +362,8 @@ public class MarchOnTest {
         host.targetY = 9;
         assertTrue("bound for it", MarchOn.withTheRelief(host, 9, 9));
         assertFalse("following no one", MarchOn.withTheRelief(null, 5, 5));
+        host.objective = Army.Objective.RECOVER;
+        assertFalse("beaten and limping there is no relief", MarchOn.withTheRelief(host, 9, 9));
     }
 
     @Test

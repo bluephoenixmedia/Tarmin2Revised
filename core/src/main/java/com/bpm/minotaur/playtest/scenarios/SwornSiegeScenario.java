@@ -59,7 +59,7 @@ public final class SwornSiegeScenario implements PlaytestScenario {
             HistoryManager h = history(ctx);
             siege[0] = SeatAssaultScenario.layASiege(ctx, sides);
             // Today is about the assault: nothing else is fought here first.
-            ctx.getWorldManager().getHistory().world().figure(sides[1].lordId).traits.clear();
+            h.world().figure(sides[1].lordId).traits.clear();
             keepThePeace(ctx, sides[0].id);
             host[0] = h.roster().army(siege[0].armies[0]);
             host[0].soldiers = 60;

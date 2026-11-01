@@ -457,7 +457,7 @@ public class OneBattleStateTest {
     @Test
     public void aFollowerTakesTheirPlaceInTheLine() {
         BattleDirector d = walkIn();
-        d.standInLine(2);
+        d.standInLine(2, false);
         assertEquals(2, f.battle.playerSide);
         BattleDirector.Report r = tick(d);
         assertNotNull(r.standAt);
@@ -503,10 +503,10 @@ public class OneBattleStateTest {
         BattleDirector d = walkIn();
         tick(d);
         tick(d);
-        d.standInLine(1);
+        d.standInLine(1, false);
         assertNotNull(tick(d).standAt);
         d.chooseSide(0);
-        d.standInLine(1);
+        d.standInLine(1, false);
         assertEquals("a second asking changes nothing", 0, f.battle.playerSide);
         assertNull(tick(d).standAt);
     }

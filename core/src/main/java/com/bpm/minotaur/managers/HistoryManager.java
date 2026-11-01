@@ -600,22 +600,21 @@ public final class HistoryManager {
 
     private Relieving relieving;
 
-    public void relievedBy(Relieving relieving) {
+    public void watchRelief(Relieving relieving) {
         this.relieving = relieving;
     }
 
     /**
      * The siege whose captain asks the player for the first ladder now (A42): a Friend following a host
-     * around it, its ladders up, with no other task in hand, and asked once. Null otherwise.
+     * around it, its ladders up and the fight not yet begun, and asked once. Null otherwise. A task in
+     * hand is no bar, or a Friend would never be asked: taking the ladder sets it aside.
      */
     public com.bpm.minotaur.gamedata.history.war.army.SeatSiege firstLadderDue() {
         com.bpm.minotaur.gamedata.history.war.army.Army host = followedHost();
         com.bpm.minotaur.gamedata.history.war.army.SeatSiege s = host == null ? null : roster.siege(host.sieging);
-        if (s == null || !s.laddersBuilt() || oath.ladderAsked == s.id
+        if (s == null || host.battle || !s.laddersBuilt() || oath.ladderAsked == s.id
                 || favour.tier(oath.houseId) != com.bpm.minotaur.gamedata.history.favour.Favour.Tier.FRIEND) return null;
-        com.bpm.minotaur.gamedata.history.favour.Contract c = oath.contract;
-        boolean free = c == null || (!c.done && c.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.JOIN_ASSAULT && c.targetSiege == s.id);
-        return free ? s : null;
+        return s;
     }
 
     /** What the armies do about a broken oath (A41). */

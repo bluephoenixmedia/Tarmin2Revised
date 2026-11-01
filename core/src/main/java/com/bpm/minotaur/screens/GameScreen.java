@@ -310,6 +310,7 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void show() {
+        if (worldManager != null) worldManager.watchRelief(this::relieving);
 
         // Gdx.input.setInputProcessor(this); // Handled below via Multiplexer
 
@@ -2669,8 +2670,8 @@ public class GameScreen extends BaseScreen {
         g.playerTile = player != null ? new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y) : null;
         g.followed = worldManager.getHistory().oath().following;
         com.bpm.minotaur.gamedata.history.favour.Contract task = worldManager.getHistory().oath().contract;
-        g.firstLadder = task != null && !task.done && task.kind == com.bpm.minotaur.gamedata.history.favour.Contract.Kind.FIRST_LADDER;
-        worldManager.getHistory().relievedBy(this::relieving);
+        com.bpm.minotaur.gamedata.history.war.army.SeatSiege siegeHere = g.chunk == null ? null : worldManager.getHistory().roster().siegeAt(g.chunk.x, g.chunk.y);
+        g.firstLadder = task != null && siegeHere != null && task.firstLadderAt(siegeHere.id);
         WarManager.Turn t = warManager.onTurn(worldManager.getHistory(), g, worldManager::recruit,
                 new BattleSpoils(game.getItemDataManager(), game.getAssetManager(),
                         worldManager.getHistory().warClock() ^ worldManager.getWorldSeed(),
@@ -2880,7 +2881,7 @@ public class GameScreen extends BaseScreen {
 
         if (t.campHouse >= 0) atCamp(t.campHouse, g);
         else campGreeted = null;
-        withinTheWalls(g);
+        letWithinTheWalls(g);
 
         if (oath.following >= 0) {
             com.bpm.minotaur.gamedata.history.war.army.Army host = history.roster().army(oath.following);
@@ -3064,13 +3065,17 @@ public class GameScreen extends BaseScreen {
         if (siege == null) return false;
         com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
         oath.ladderAsked = siege.id;
+        // The captain is here to pay what is owed; what is left undone is set aside if they go up.
+        if (oath.contract != null && oath.contract.done) pay(oath.houseId, oath.contract);
+        boolean taskInHand = oath.contract != null;
         java.util.Map<String, Runnable> answers = new java.util.LinkedHashMap<>();
         answers.put("Take the first ladder", () -> {
             oath.contract = com.bpm.minotaur.gamedata.history.favour.Contract.firstLadder(oath.houseId, siege);
             say("The captain grips your arm. When he gives the word, the first ladder is yours.", 5f);
         });
         String body = "The ladders are built. When the assault goes in, someone must be first over the wall of "
-                + houseName(siege.holder) + ". The captain looks at you. It is a hard task, paid only if the seat falls.";
+                + houseName(siege.holder) + ". The captain looks at you. It is a hard task, paid only if the seat falls."
+                + (taskInHand ? " The task you hold now would be set aside." : "");
         Gdx.app.postRunnable(() -> game.setScreen(new ChoiceScreen(game, this, "The first ladder", body, answers, "Not this time", () -> { })));
         return true;
     }
@@ -3092,7 +3097,7 @@ public class GameScreen extends BaseScreen {
     private GridPoint2 withinWallsOf;
 
     /** The ring's gates stand to anyone who can reach them; a garrison knows its own, and the player is told they count as inside. */
-    private void withinTheWalls(WarManager.Ground g) {
+    private void letWithinTheWalls(WarManager.Ground g) {
         com.bpm.minotaur.managers.HistoryManager history = worldManager.getHistory();
         com.bpm.minotaur.gamedata.history.favour.Oath oath = history.oath();
         com.bpm.minotaur.gamedata.history.war.army.SeatSiege s = g.chunk == null || g.level != 1 ? null : history.roster().siegeAt(g.chunk.x, g.chunk.y);
@@ -3131,13 +3136,17 @@ public class GameScreen extends BaseScreen {
                 && com.bpm.minotaur.gamedata.history.war.army.MarchOn.nativesBar(maze.getMonsters().values(), worldManager::houseOf, player.getPosition().x, player.getPosition().y)) {
             stop = com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.NATIVES;
         }
+        // Ladders are news only to one the captain will ask: anyone else sleeps on.
+        boolean ladders = stop == com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.LADDERS;
+        if (ladders && history.firstLadderDue() == null) return;
         if (player.getStats().getCurrentHP() > 0 && stop.goesOn()) return;
         marching = null;
         String told = marchStopped(stop);
         if (told != null) say(told, 5f);
         if (player.getStats().getCurrentHP() <= 0) return;
+        // No turn passes before he asks: the assault could come on it, and the question be asked too late.
+        if (ladders && askForTheFirstLadder()) return;
         playerTurnTakesAction();
-        if (stop == com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop.LADDERS) askForTheFirstLadder();
     }
 
     private static String marchStopped(com.bpm.minotaur.gamedata.history.war.army.MarchOn.Stop stop) {
@@ -3147,7 +3156,7 @@ public class GameScreen extends BaseScreen {
             case SIEGE: return "The host sits down before the walls. There is nothing now but to wait.";
             case ASSAULT: return "Horns at the ladders. The captain sends them in.";
             case SALLY: return "The gates burst open. The garrison is coming for the camp!";
-            case RELIEF: return "Soldiers on the road to the walls. The relief has come.";
+            case RELIEF: return "Another host comes up the road to the walls.";
             case RAISED: return "The siege is over. The host strikes its tents.";
             case LADDERS: return "The ladders are built, and stacked in the camp.";
             case HALTED: return "The host halts and pitches its tents.";

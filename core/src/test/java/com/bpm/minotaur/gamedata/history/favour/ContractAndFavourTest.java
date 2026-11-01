@@ -281,6 +281,19 @@ public class ContractAndFavourTest {
         assertEquals(Contract.HARD_FAVOUR, c.favour());
     }
 
+    @Test
+    public void theFirstLadderIsOfOneSeatOnly() {
+        SeatSiege s = new SeatSiege();
+        s.id = 40;
+        s.holder = enemy;
+        Contract c = Contract.firstLadder(liege, s);
+        assertTrue(c.firstLadderAt(40));
+        assertFalse("another siege", c.firstLadderAt(41));
+        c.done = true;
+        assertFalse("already climbed", c.firstLadderAt(40));
+        assertFalse("another task", contract(Contract.Kind.BREAK_HOST, 1).firstLadderAt(-1));
+    }
+
     private Army besieging(SeatSiege s) {
         history.roster().sieges.add(s);
         Army host = army(60, liege, s.x, s.y);
@@ -313,7 +326,7 @@ public class ContractAndFavourTest {
     }
 
     @Test
-    public void noFirstLadderBeforeTheWorksOrBelowFriendOrWithATaskInHand() {
+    public void noFirstLadderBeforeTheWorksOrBelowFriendOrOnceTheFightIsOn() {
         SeatSiege s = laddersUp();
         Army host = besieging(s);
         history.favour().set(liege, Favour.FRIEND_AT);
@@ -325,14 +338,11 @@ public class ContractAndFavourTest {
         history.favour().set(liege, Favour.FRIEND_AT - 1);
         assertNull("Tolerated", history.firstLadderDue());
         history.favour().set(liege, Favour.FRIEND_AT);
+        host.battle = true;
+        assertNull("too late, the fight is on", history.firstLadderDue());
+        host.battle = false;
         history.oath().contract = contract(Contract.Kind.BREAK_HOST, 99);
-        assertNull("another task", history.firstLadderDue());
-        Contract join = atTheSeat(Contract.Kind.JOIN_ASSAULT);
-        join.targetSiege = s.id;
-        history.oath().contract = join;
-        assertSame("joining this very assault gives way to it", s, history.firstLadderDue());
-        join.done = true;
-        assertNull("one earned is paid first", history.firstLadderDue());
+        assertSame("a task in hand is no bar: a Friend always has one", s, history.firstLadderDue());
     }
 
     private PlayerDeed raised(int x) {
@@ -382,7 +392,7 @@ public class ContractAndFavourTest {
         history.favour().set(liege, Favour.FRIEND_AT);
         history.swear(liege);
         history.oath().contract = c;
-        history.relievedBy((x, y) -> x == 3 && y == 4);
+        history.watchRelief((x, y) -> x == 3 && y == 4);
         history.recordArmyDeed(raised(3));
         assertTrue(c.done);
         assertTrue(history.takeContractKeptInBattle());

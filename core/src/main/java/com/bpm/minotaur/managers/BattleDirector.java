@@ -282,10 +282,6 @@ public final class BattleDirector {
     private boolean firstUp;
 
     /** The player marched in with a host of this battle: they stand in its line from the start (A36). Once. */
-    public void standInLine(int side) {
-        standInLine(side, false);
-    }
-
     /** @param firstLadder and they hold the first ladder of an assault, if this is one */
     public void standInLine(int side, boolean firstLadder) {
         if (tookTheLine) return;
